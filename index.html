@@ -1,174 +1,188 @@
-﻿<div class="container">
-  <h1>Widget Creator Tool</h1>
-  
-  <div class="tab-container">
-    <button class="tab-button active" onclick="openTab(event, 'tab1')">Website Widget</button>
-    <button class="tab-button" onclick="openTab(event, 'tab2')">Feature Widget</button>
-    <button class="tab-button" onclick="openTab(event, 'tab3')">Product Widget</button>
-    <button class="tab-button" onclick="openTab(event, 'tab4')">Paste Widget</button>
-  </div>
-  
-  <div id="tab1" class="tab-content active">
-    <h2>Website Widget</h2>
-    <div>
-      <label for="url-input">Enter URL:</label>
-      <input type="text" id="url-input" value="https://example.com/services">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget Creator Tool</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+      <h1>Widget Creator Tool</h1>
       
-      <label for="layout-select">Image Position:</label>
-      <select id="layout-select">
-        <option value="right">Right</option>
-        <option value="left">Left</option>
-      </select>
-      
-      <div class="image-upload-section">
-        <label for="website-image-upload">Upload Image:</label>
-        <input type="file" id="website-image-upload" accept="image/*">
-        <div id="website-image-preview" class="image-preview">No image uploaded</div>
+      <div class="tab-container">
+        <button class="tab-button active" onclick="openTab(event, 'tab1')">Website Widget</button>
+        <button class="tab-button" onclick="openTab(event, 'tab2')">Feature Widget</button>
+        <button class="tab-button" onclick="openTab(event, 'tab3')">Product Widget</button>
+        <button class="tab-button" onclick="openTab(event, 'tab4')">Paste Widget</button>
       </div>
       
-      <div class="button-row">
-        <button onclick="generateWebsite()">Generate HTML</button>
-        <button onclick="clearWebsite()">Clear Fields</button>
-      </div>
-    </div>
-    
-    <div class="output">
-      <h3>Preview:</h3>
-      <div id="website-preview" class="preview-box"></div>
-      
-      <h3>HTML Output:</h3>
-      <div class="copy-container">
-        <button onclick="copyWebsiteHTML()">Copy HTML</button>
-      </div>
-      <textarea id="website-output" rows="10"></textarea>
-    </div>
-  </div>
-  
-  <div id="tab2" class="tab-content">
-    <h2>Feature Widget</h2>
-    <div>
-      <label for="feature-title">Widget Title:</label>
-      <input type="text" id="feature-title" value="Key Features">
-      
-      <label for="feature-layout">Layout Style:</label>
-      <select id="feature-layout">
-        <option value="list">List</option>
-        <option value="grid">Grid</option>
-      </select>
-      
-      <!-- Color Picker Section -->
-      <div class="color-picker">
-        <label for="background-color">Background Color:</label>
-        <div class="color-input-row">
-          <input type="text" id="background-color" class="color-input" value="#f8f9fa" placeholder="#f8f9fa">
-          <button onclick="updateBackgroundColor()" class="color-button">Apply Color</button>
+      <div id="tab1" class="tab-content active">
+        <h2>Website Widget</h2>
+        <div>
+          <label for="url-input">Enter URL:</label>
+          <input type="text" id="url-input" value="https://example.com/services">
+          
+          <label for="layout-select">Image Position:</label>
+          <select id="layout-select">
+            <option value="right">Right</option>
+            <option value="left">Left</option>
+          </select>
+          
+          <div class="image-upload-section">
+            <label for="website-image-upload">Upload Image:</label>
+            <input type="file" id="website-image-upload" accept="image/*">
+            <div id="website-image-preview" class="image-preview">No image uploaded</div>
+          </div>
+          
+          <div class="button-row">
+            <button onclick="generateWebsite()">Generate HTML</button>
+            <button onclick="clearWebsite()">Clear Fields</button>
+          </div>
         </div>
-        <div class="color-presets">
-          <div class="color-preset-button" style="background-color: #f8f9fa;" onclick="setBackgroundColor('#f8f9fa')" title="Default (Light Gray)"></div>
-          <div class="color-preset-button" style="background-color: #e2f4ff;" onclick="setBackgroundColor('#e2f4ff')" title="Light Blue"></div>
-          <div class="color-preset-button" style="background-color: #f0e5ff;" onclick="setBackgroundColor('#f0e5ff')" title="Light Purple"></div>
-          <div class="color-preset-button" style="background-color: #fff0e5;" onclick="setBackgroundColor('#fff0e5')" title="Light Orange"></div>
+        
+        <div class="output">
+          <h3>Preview:</h3>
+          <div id="website-preview" class="preview-box"></div>
+          
+          <h3>HTML Output:</h3>
+          <div class="copy-container">
+            <button onclick="copyWebsiteHTML()">Copy HTML</button>
+          </div>
+          <textarea id="website-output" rows="10"></textarea>
         </div>
       </div>
       
-      <div id="feature-items">
-        <div class="feature-item">
-          <input type="text" placeholder="Feature title" value="24/7 Support">
-          <input type="text" placeholder="Feature description" value="Round-the-clock technical support">
-          <button onclick="removeFeature(this)">Remove</button>
+      <div id="tab2" class="tab-content">
+        <h2>Feature Widget</h2>
+        <div>
+          <label for="feature-title">Widget Title:</label>
+          <input type="text" id="feature-title" value="Key Features">
+          
+          <label for="feature-layout">Layout Style:</label>
+          <select id="feature-layout">
+            <option value="list">List</option>
+            <option value="grid">Grid</option>
+          </select>
+          
+          <!-- Color Picker Section -->
+          <div class="color-picker">
+            <label for="background-color">Background Color:</label>
+            <div class="color-input-row">
+              <input type="text" id="background-color" class="color-input" value="#f8f9fa" placeholder="#f8f9fa">
+              <button onclick="updateBackgroundColor()" class="color-button">Apply Color</button>
+            </div>
+            <div class="color-presets">
+              <div class="color-preset-button" style="background-color: #f8f9fa;" onclick="setBackgroundColor('#f8f9fa')" title="Default (Light Gray)"></div>
+              <div class="color-preset-button" style="background-color: #e2f4ff;" onclick="setBackgroundColor('#e2f4ff')" title="Light Blue"></div>
+              <div class="color-preset-button" style="background-color: #f0e5ff;" onclick="setBackgroundColor('#f0e5ff')" title="Light Purple"></div>
+              <div class="color-preset-button" style="background-color: #fff0e5;" onclick="setBackgroundColor('#fff0e5')" title="Light Orange"></div>
+            </div>
+          </div>
+          
+          <div id="feature-items">
+            <div class="feature-item">
+              <input type="text" placeholder="Feature title" value="24/7 Support">
+              <input type="text" placeholder="Feature description" value="Round-the-clock technical support">
+              <button onclick="removeFeature(this)">Remove</button>
+            </div>
+          </div>
+          
+          <div class="button-row">
+            <button onclick="addFeature()">Add Feature</button>
+            <button onclick="generateFeature()">Generate HTML</button>
+            <button onclick="clearFeature()">Clear Fields</button>
+          </div>
+        </div>
+        
+        <div class="output">
+          <h3>Preview:</h3>
+          <div id="feature-preview" class="preview-box"></div>
+          
+          <h3>HTML Output:</h3>
+          <div class="copy-container">
+            <button onclick="copyFeatureHTML()">Copy HTML</button>
+          </div>
+          <textarea id="feature-output" rows="10"></textarea>
         </div>
       </div>
       
-      <div class="button-row">
-        <button onclick="addFeature()">Add Feature</button>
-        <button onclick="generateFeature()">Generate HTML</button>
-        <button onclick="clearFeature()">Clear Fields</button>
-      </div>
-    </div>
-    
-    <div class="output">
-      <h3>Preview:</h3>
-      <div id="feature-preview" class="preview-box"></div>
-      
-      <h3>HTML Output:</h3>
-      <div class="copy-container">
-        <button onclick="copyFeatureHTML()">Copy HTML</button>
-      </div>
-      <textarea id="feature-output" rows="10"></textarea>
-    </div>
-  </div>
-  
-  <div id="tab3" class="tab-content">
-    <h2>Product Widget</h2>
-    <div>
-      <label for="product-name">Product Name:</label>
-      <input type="text" id="product-name" value="Premium Server">
-      
-      <label for="product-layout">Layout Style:</label>
-      <select id="product-layout">
-        <option value="right">Image Right</option>
-        <option value="left">Image Left</option>
-      </select>
-      
-      <div class="image-upload-section">
-        <label for="product-image-upload">Upload Product Image:</label>
-        <input type="file" id="product-image-upload" accept="image/*">
-        <div id="product-image-preview" class="image-preview">No image uploaded</div>
-      </div>
-      
-      <div id="benefit-items">
-        <div class="benefit-item">
-          <input type="text" placeholder="Product benefit" value="Enhanced Security">
-          <button onclick="removeBenefit(this)">Remove</button>
+      <div id="tab3" class="tab-content">
+        <h2>Product Widget</h2>
+        <div>
+          <label for="product-name">Product Name:</label>
+          <input type="text" id="product-name" value="Premium Server">
+          
+          <label for="product-layout">Layout Style:</label>
+          <select id="product-layout">
+            <option value="right">Image Right</option>
+            <option value="left">Image Left</option>
+          </select>
+          
+          <div class="image-upload-section">
+            <label for="product-image-upload">Upload Product Image:</label>
+            <input type="file" id="product-image-upload" accept="image/*">
+            <div id="product-image-preview" class="image-preview">No image uploaded</div>
+          </div>
+          
+          <div id="benefit-items">
+            <div class="benefit-item">
+              <input type="text" placeholder="Product benefit" value="Enhanced Security">
+              <button onclick="removeBenefit(this)">Remove</button>
+            </div>
+            <div class="benefit-item">
+              <input type="text" placeholder="Product benefit" value="99.9% Uptime">
+              <button onclick="removeBenefit(this)">Remove</button>
+            </div>
+          </div>
+          
+          <div class="button-row">
+            <button onclick="addBenefit()">Add Benefit</button>
+            <button onclick="generateProduct()">Generate HTML</button>
+            <button onclick="clearProduct()">Clear Fields</button>
+          </div>
         </div>
-        <div class="benefit-item">
-          <input type="text" placeholder="Product benefit" value="99.9% Uptime">
-          <button onclick="removeBenefit(this)">Remove</button>
+        
+        <div class="output">
+          <h3>Preview:</h3>
+          <div id="product-preview" class="preview-box"></div>
+          
+          <h3>HTML Output:</h3>
+          <div class="copy-container">
+            <button onclick="copyProductHTML()">Copy HTML</button>
+          </div>
+          <textarea id="product-output" rows="10"></textarea>
         </div>
       </div>
       
-      <div class="button-row">
-        <button onclick="addBenefit()">Add Benefit</button>
-        <button onclick="generateProduct()">Generate HTML</button>
-        <button onclick="clearProduct()">Clear Fields</button>
+      <div id="tab4" class="tab-content">
+        <h2>Paste Widget</h2>
+        <div>
+          <label for="paste-area">Paste Content from Word Document:</label>
+          <div class="paste-container">
+            <textarea id="paste-area" placeholder="Paste your Word document content here..."></textarea>
+          </div>
+          
+          <div class="button-row">
+            <button onclick="cleanPastedContent()">Clean & Format HTML</button>
+            <button onclick="clearPasteArea()" class="clear-btn">Clear Content</button>
+          </div>
+        </div>
+        
+        <div class="output">
+          <h3>Preview:</h3>
+          <div id="paste-preview" class="preview-box"></div>
+          
+          <h3>HTML Output:</h3>
+          <div class="copy-container">
+            <button onclick="copyPasteHTML()">Copy HTML</button>
+          </div>
+          <textarea id="paste-output" rows="10"></textarea>
+        </div>
       </div>
     </div>
-    
-    <div class="output">
-      <h3>Preview:</h3>
-      <div id="product-preview" class="preview-box"></div>
-      
-      <h3>HTML Output:</h3>
-      <div class="copy-container">
-        <button onclick="copyProductHTML()">Copy HTML</button>
-      </div>
-      <textarea id="product-output" rows="10"></textarea>
-    </div>
-  </div>
-  
-  <div id="tab4" class="tab-content">
-    <h2>Paste Widget</h2>
-    <div>
-      <label for="paste-area">Paste Content from Word Document:</label>
-      <div class="paste-container">
-        <textarea id="paste-area" placeholder="Paste your Word document content here..."></textarea>
-      </div>
-      
-      <div class="button-row">
-        <button onclick="cleanPastedContent()">Clean & Format HTML</button>
-        <button onclick="clearPasteArea()" class="clear-btn">Clear Content</button>
-      </div>
-    </div>
-    
-    <div class="output">
-      <h3>Preview:</h3>
-      <div id="paste-preview" class="preview-box"></div>
-      
-      <h3>HTML Output:</h3>
-      <div class="copy-container">
-        <button onclick="copyPasteHTML()">Copy HTML</button>
-      </div>
-      <textarea id="paste-output" rows="10"></textarea>
-    </div>
-  </div>
-</div>
+
+    <!-- JavaScript link -->
+    <script src="script.js"></script>
+</body>
+</html>
