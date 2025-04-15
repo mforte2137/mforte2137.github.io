@@ -1,7 +1,6 @@
-﻿{
+{
   "name": "widget-creator",
   "version": "1.0.0",
-  "description": "A simple widget creator tool",
   "dependencies": {
     "axios": "^1.6.0",
     "cheerio": "^1.0.0-rc.12"
