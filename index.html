@@ -385,7 +385,39 @@
           <textarea id="product-output" rows="10"></textarea>
         </div>
       </div>
-      
+      <div id="tab5" class="tab-content">
+  <h2>PDF Processor</h2>
+  <div>
+    <label for="pdf-upload">Upload PDF:</label>
+    <input type="file" id="pdf-upload" accept="application/pdf">
+    
+    <label for="pdf-dpi">Image Quality:</label>
+    <select id="pdf-dpi">
+      <option value="150">Low (150 DPI)</option>
+      <option value="300" selected>Medium (300 DPI)</option>
+      <option value="600">High (600 DPI)</option>
+    </select>
+    
+    <label for="pdf-page">Page to Process:</label>
+    <input type="number" id="pdf-page" value="1" min="1" max="999">
+    
+    <div class="button-row">
+      <button onclick="processPDFFile()">Process PDF</button>
+      <button onclick="clearPDF()" class="clear-btn">Clear</button>
+    </div>
+  </div>
+  
+  <div class="output">
+    <h3>Preview:</h3>
+    <div id="pdf-preview" class="preview-box" style="min-height: 300px; display: flex; align-items: center; justify-content: center;">
+      <p>PDF preview will appear here</p>
+    </div>
+    
+    <div id="pdf-download" style="display: none; margin-top: 20px; text-align: center;">
+      <button onclick="downloadProcessedPDF()">Download Processed Image</button>
+    </div>
+  </div>
+</div>
       <div id="tab4" class="tab-content">
         <h2>Paste Widget</h2>
         <div>
@@ -1051,6 +1083,312 @@ function processHtmlContent(htmlContent, url) {
       console.log("DOM loaded, event listeners initialized");
       console.log("Product templates available:", Object.keys(productTemplates));
     });
+        // PDF.js library initialization
+let pdfjsLib;
+let processedImageData = null;
+
+// Initialize PDF.js when the document loads
+document.addEventListener('DOMContentLoaded', function() {
+  // Add PDF tab button to the tab container
+  const tabContainer = document.querySelector('.tab-container');
+  const pdfTabButton = document.createElement('button');
+  pdfTabButton.className = 'tab-button';
+  pdfTabButton.onclick = function(event) { openTab(event, 'tab5'); };
+  pdfTabButton.textContent = 'PDF Processor';
+  tabContainer.appendChild(pdfTabButton);
+  
+  // Load PDF.js library
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.min.js';
+  script.onload = function() {
+    pdfjsLib = window['pdfjs-dist/build/pdf'];
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.worker.min.js';
+    console.log('PDF.js library loaded');
+  };
+  document.head.appendChild(script);
+});
+
+// Main function to process PDF file
+async function processPDFFile() {
+  if (!pdfjsLib) {
+    alert('PDF.js library is still loading. Please try again in a moment.');
+    return;
+  }
+  
+  const fileInput = document.getElementById('pdf-upload');
+  const file = fileInput.files[0];
+  
+  if (!file) {
+    alert('Please select a PDF file first.');
+    return;
+  }
+  
+  const pageNum = parseInt(document.getElementById('pdf-page').value) || 1;
+  const dpi = parseInt(document.getElementById('pdf-dpi').value) || 300;
+  
+  // Show loading indicator
+  document.getElementById('pdf-preview').innerHTML = '<p>Processing PDF... This may take a while for large files.</p>';
+  document.getElementById('pdf-download').style.display = 'none';
+  
+  try {
+    // Load the PDF
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+    
+    // Make sure page number is valid
+    const maxPages = pdf.numPages;
+    if (pageNum < 1 || pageNum > maxPages) {
+      alert(`Please enter a valid page number (1-${maxPages}).`);
+      document.getElementById('pdf-preview').innerHTML = '<p>PDF preview will appear here</p>';
+      return;
+    }
+    
+    // Get the requested page
+    const page = await pdf.getPage(pageNum);
+    
+    // Calculate scale based on DPI (PDF uses 72 dpi internally)
+    const scale = dpi / 72;
+    
+    // Get text content with positions
+    const textContent = await page.getTextContent();
+    
+    // Create a viewport at the desired DPI
+    const viewport = page.getViewport({scale: scale});
+    
+    // Create a canvas to render the page
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const context = canvas.getContext('2d');
+    
+    // Render the PDF page to the canvas
+    await page.render({
+      canvasContext: context,
+      viewport: viewport
+    }).promise;
+    
+    // Process text blocks - get their positions from textContent
+    const textBlocks = buildTextBlocks(textContent, viewport);
+    
+    // Replace text with background colors
+    await replaceTextWithBackground(context, textBlocks, canvas.width, canvas.height);
+    
+    // Show the processed image
+    processedImageData = canvas.toDataURL('image/png');
+    document.getElementById('pdf-preview').innerHTML = `<img src="${processedImageData}" style="max-width: 100%; max-height: 500px;">`;
+    document.getElementById('pdf-download').style.display = 'block';
+    
+  } catch (error) {
+    console.error('Error processing PDF:', error);
+    document.getElementById('pdf-preview').innerHTML = `<p>Error processing PDF: ${error.message}</p>`;
+  }
+}
+
+// Function to build text blocks from PDF.js text content
+function buildTextBlocks(textContent, viewport) {
+  // Group nearby text items into blocks
+  const items = textContent.items;
+  const blocks = [];
+  const margin = 5; // Margin to expand blocks slightly
+  
+  // First pass: create initial blocks from individual items
+  for (const item of items) {
+    // Transform PDF coordinates to canvas coordinates
+    const tx = pdfjsLib.Util.transform(
+      viewport.transform,
+      [1, 0, 0, 1, item.transform[4], item.transform[5]]
+    );
+    
+    // Calculate text dimensions
+    const fontHeight = Math.sqrt((item.transform[2] * item.transform[2]) + 
+                               (item.transform[3] * item.transform[3]));
+    const width = item.width * viewport.scale;
+    const height = fontHeight * viewport.scale;
+    
+    // Create block with margin
+    blocks.push({
+      x0: tx[4] - margin,
+      y0: tx[5] - height - margin,
+      x1: tx[4] + width + margin,
+      y1: tx[5] + margin,
+      text: item.str
+    });
+  }
+  
+  // Second pass: merge overlapping blocks
+  // This is a simplified approach - a more complex approach would cluster by position
+  const mergedBlocks = [];
+  
+  while (blocks.length > 0) {
+    let currentBlock = blocks.shift();
+    let merged = true;
+    
+    // Keep merging until no more overlaps
+    while (merged) {
+      merged = false;
+      
+      for (let i = 0; i < blocks.length; i++) {
+        const block = blocks[i];
+        
+        // Check if blocks overlap
+        if (!(currentBlock.x1 < block.x0 || 
+              currentBlock.x0 > block.x1 || 
+              currentBlock.y1 < block.y0 || 
+              currentBlock.y0 > block.y1)) {
+          
+          // Merge blocks
+          currentBlock = {
+            x0: Math.min(currentBlock.x0, block.x0),
+            y0: Math.min(currentBlock.y0, block.y0),
+            x1: Math.max(currentBlock.x1, block.x1),
+            y1: Math.max(currentBlock.y1, block.y1),
+            text: currentBlock.text + ' ' + block.text
+          };
+          
+          // Remove the merged block
+          blocks.splice(i, 1);
+          i--;
+          merged = true;
+        }
+      }
+    }
+    
+    mergedBlocks.push(currentBlock);
+  }
+  
+  return mergedBlocks;
+}
+
+// Function to replace text blocks with background color
+async function replaceTextWithBackground(context, textBlocks, canvasWidth, canvasHeight) {
+  // Process each text block
+  for (const block of textBlocks) {
+    // Ensure coordinates are within canvas bounds
+    const x0 = Math.max(0, Math.min(Math.floor(block.x0), canvasWidth - 1));
+    const y0 = Math.max(0, Math.min(Math.floor(block.y0), canvasHeight - 1));
+    const x1 = Math.max(0, Math.min(Math.ceil(block.x1), canvasWidth - 1));
+    const y1 = Math.max(0, Math.min(Math.ceil(block.y1), canvasHeight - 1));
+    
+    // If block dimensions are invalid, skip
+    if (x1 <= x0 || y1 <= y0) continue;
+    
+    // Detect background color
+    const backgroundColor = detectBackgroundColor(context, x0, y0, x1, y1, canvasWidth, canvasHeight);
+    
+    // Fill the block with the detected background color
+    context.fillStyle = backgroundColor;
+    context.fillRect(x0, y0, x1 - x0, y1 - y0);
+  }
+}
+
+// Function to detect background color from edges
+function detectBackgroundColor(context, x0, y0, x1, y1, canvasWidth, canvasHeight) {
+  // Collect edge pixels
+  const edgePixels = [];
+  const imageData = context.getImageData(0, 0, canvasWidth, canvasHeight);
+  const data = imageData.data;
+  
+  // Function to get pixel at x,y and return as RGB string
+  const getPixel = (x, y) => {
+    const i = (y * canvasWidth + x) * 4;
+    return `rgb(${data[i]}, ${data[i+1]}, ${data[i+2]})`;
+  };
+  
+  // Sample edge pixels (similar to your Python implementation)
+  // Top and bottom edges
+  if (y0 > 0 && y1 < canvasHeight) {
+    for (let x = x0; x < x1; x++) {
+      if (y0 > 0) edgePixels.push(getPixel(x, y0 - 1));
+      if (y1 < canvasHeight) edgePixels.push(getPixel(x, y1));
+    }
+  }
+  
+  // Left and right edges
+  if (x0 > 0 && x1 < canvasWidth) {
+    for (let y = y0; y < y1; y++) {
+      if (x0 > 0) edgePixels.push(getPixel(x0 - 1, y));
+      if (x1 < canvasWidth) edgePixels.push(getPixel(x1, y));
+    }
+  }
+  
+  // Count occurrences of each color
+  const colorCount = {};
+  edgePixels.forEach(color => {
+    colorCount[color] = (colorCount[color] || 0) + 1;
+  });
+  
+  // Find most common color
+  let maxCount = 0;
+  let backgroundColor = 'rgb(255, 255, 255)'; // Default white
+  
+  for (const color in colorCount) {
+    if (colorCount[color] > maxCount) {
+      maxCount = colorCount[color];
+      backgroundColor = color;
+    }
+  }
+  
+  // If no edge pixels found or not enough unique colors, 
+  // sample from within the block as fallback
+  if (edgePixels.length === 0 || Object.keys(colorCount).length < 3) {
+    // Sample a subset of block pixels to avoid performance issues with large blocks
+    const sampleRate = Math.max(1, Math.floor((x1 - x0) * (y1 - y0) / 1000));
+    const blockPixels = [];
+    
+    for (let y = y0; y < y1; y += sampleRate) {
+      for (let x = x0; x < x1; x += sampleRate) {
+        blockPixels.push(getPixel(x, y));
+      }
+    }
+    
+    const blockColorCount = {};
+    blockPixels.forEach(color => {
+      blockColorCount[color] = (blockColorCount[color] || 0) + 1;
+    });
+    
+    // Find most common color in block
+    let blockMaxCount = 0;
+    let blockBackgroundColor = backgroundColor; // Start with edge detection result
+    
+    for (const color in blockColorCount) {
+      if (blockColorCount[color] > blockMaxCount) {
+        blockMaxCount = blockColorCount[color];
+        blockBackgroundColor = color;
+      }
+    }
+    
+    // If block sampling found a better color, use it
+    if (blockMaxCount > 0) {
+      backgroundColor = blockBackgroundColor;
+    }
+  }
+  
+  return backgroundColor;
+}
+
+// Function to download the processed image
+function downloadProcessedPDF() {
+  if (!processedImageData) {
+    alert('No processed image available. Please process a PDF first.');
+    return;
+  }
+  
+  const link = document.createElement('a');
+  link.href = processedImageData;
+  link.download = 'processed_page.png';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// Function to clear the PDF processor
+function clearPDF() {
+  document.getElementById('pdf-upload').value = '';
+  document.getElementById('pdf-page').value = '1';
+  document.getElementById('pdf-preview').innerHTML = '<p>PDF preview will appear here</p>';
+  document.getElementById('pdf-download').style.display = 'none';
+  processedImageData = null;
+}
     </script>
 </body>
 </html>
