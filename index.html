@@ -318,47 +318,28 @@ function generateProduct() {
   const paragraphCount = parseInt(document.getElementById('product-paragraph-count').value);
   const featureCount = parseInt(document.getElementById('product-feature-count').value);
   
-  let paragraphs = [];
-  let features = [];
+  console.log("Generating product for type:", type);
   
-  // Get content based on product type
-  if (type === 'custom') {
-    // Get custom descriptions
-    const desc1 = document.getElementById('custom-description-1').value.trim();
-    const desc2 = document.getElementById('custom-description-2').value.trim();
-    const desc3 = document.getElementById('custom-description-3').value.trim();
-    
-    if (desc1) paragraphs.push(desc1);
-    if (desc2) paragraphs.push(desc2);
-    if (desc3) paragraphs.push(desc3);
-    
-    // Get custom features
-    const featureElements = document.querySelectorAll('#custom-features .custom-feature input');
-    featureElements.forEach(element => {
-      const text = element.value.trim();
-      if (text) features.push(text);
-    });
-  } else {
-    // Use template data
-    paragraphs = productTemplates[type].paragraphs;
-    features = productTemplates[type].features;
+  // Get the template for the selected product type
+  const template = productTemplates[type];
+  
+  if (!template) {
+    console.error("Template not found for type:", type);
+    return;
   }
   
   // Generate paragraphs content
   let descriptionsHtml = '';
-  for (let i = 0; i < Math.min(paragraphCount, paragraphs.length); i++) {
-    descriptionsHtml += `<p>${paragraphs[i]}</p>`;
+  for (let i = 0; i < Math.min(paragraphCount, template.paragraphs.length); i++) {
+    descriptionsHtml += `<p>${template.paragraphs[i]}</p>`;
   }
   
   // Generate features list
-  let featuresHtml = '';
-  if (features.length > 0) {
-    featuresHtml = '<h3 style="margin-top: 20px;">Key Features</h3><ul>';
-    for (let i = 0; i < Math.min(featureCount, features.length); i++) {
-      featuresHtml += `<li style="margin-bottom: 8px;">${features[i]}</li>`;
-    }
-    featuresHtml += '</ul>';
+  let featuresHtml = '<h3 style="margin-top: 20px;">Key Features</h3><ul>';
+  for (let i = 0; i < Math.min(featureCount, template.features.length); i++) {
+    featuresHtml += `<li style="margin-bottom: 8px;">${template.features[i]}</li>`;
   }
+  featuresHtml += '</ul>';
   
   // Create image HTML - use the uploaded image or placeholder
   let imageHtml;
@@ -368,7 +349,7 @@ function generateProduct() {
     imageHtml = `<div style="background: #f0f0f0; height: 240px; display: flex; align-items: center; justify-content: center;">Product Image</div>`;
   }
   
-  // Create the HTML with the data
+  // Create the HTML with the templated data
   const html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
   <table style="width: 100%; border-collapse: collapse; border: none;">
     <tr style="border: none;">
