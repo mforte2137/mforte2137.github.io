@@ -4,7 +4,220 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Widget Creator Tool</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Basic styling */
+        body {
+          font-family: Arial, sans-serif;
+          max-width: 900px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        .container {
+          border: 1px solid #ddd;
+          border-radius: 5px;
+          padding: 20px;
+        }
+        h1 {
+          text-align: center;
+          color: #333;
+        }
+        /* Tab styling */
+        .tab-container {
+          display: flex;
+          border-bottom: 1px solid #ccc;
+          margin-bottom: 20px;
+          flex-wrap: wrap;
+        }
+        .tab-button {
+          background-color: #f1f1f1;
+          border: 1px solid #ccc;
+          border-bottom: none;
+          border-radius: 5px 5px 0 0;
+          padding: 10px 20px;
+          cursor: pointer;
+          font-weight: bold;
+          margin-right: 5px;
+          margin-bottom: 5px;
+        }
+        .tab-button.active {
+          background-color: white;
+          border-bottom: 2px solid white;
+          color: #4CAF50;
+        }
+        .tab-content {
+          display: none;
+          padding: 20px;
+          border: 1px solid #ddd;
+          border-radius: 0 0 5px 5px;
+        }
+        .tab-content.active {
+          display: block;
+        }
+        /* Form styling */
+        label {
+          display: block;
+          margin-top: 15px;
+          font-weight: bold;
+        }
+        input, select, textarea {
+          width: 100%;
+          padding: 8px;
+          margin-top: 5px;
+          margin-bottom: 15px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          box-sizing: border-box;
+        }
+        .button-row {
+          display: flex;
+          gap: 10px;
+          margin: 20px 0;
+        }
+        button {
+          background-color: #4CAF50;
+          color: white;
+          border: none;
+          padding: 10px 15px;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+        button:hover {
+          background-color: #45a049;
+        }
+        .clear-btn {
+          background-color: #6c757d;
+        }
+        .clear-btn:hover {
+          background-color: #5a6268;
+        }
+        /* Output styling */
+        .output {
+          margin-top: 30px;
+        }
+        .preview-box {
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          padding: 15px;
+          min-height: 150px;
+          margin-bottom: 20px;
+        }
+        .copy-container {
+          text-align: right;
+          margin-bottom: 5px;
+        }
+        /* Feature and benefit items */
+        .feature-item, .benefit-item {
+          border: 1px solid #ddd;
+          padding: 15px;
+          margin-bottom: 10px;
+          border-radius: 4px;
+          position: relative;
+        }
+        .feature-item button, .benefit-item button {
+          background-color: #dc3545;
+          position: absolute;
+          right: 10px;
+          top: 10px;
+          width: auto;
+        }
+        .feature-item button:hover, .benefit-item button:hover {
+          background-color: #c82333;
+        }
+        /* Image upload section */
+        .image-upload-section {
+          margin: 15px 0;
+          border: 1px solid #ddd;
+          padding: 15px;
+          border-radius: 4px;
+        }
+        .image-preview {
+          max-width: 100%;
+          min-height: 100px;
+          margin-top: 10px;
+          background-color: #f0f0f0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #666;
+          text-align: center;
+          padding: 10px;
+        }
+        .image-preview img {
+          max-width: 100%;
+          max-height: 200px;
+          display: block;
+          margin: 0 auto;
+        }
+        /* Paste widget specific styles */
+        .paste-container {
+          margin: 15px 0;
+        }
+        #paste-area {
+          width: 100%;
+          min-height: 150px;
+          padding: 15px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-family: Arial, sans-serif;
+          line-height: 1.5;
+          white-space: pre-wrap;
+        }
+        /* Style for bullets in preview */
+        .formatted-list {
+          padding-left: 30px;
+          margin: 15px 0;
+        }
+        .formatted-list li {
+          margin-bottom: 10px;
+          position: relative;
+        }
+        .formatted-list-item {
+          list-style-type: disc;
+          margin-bottom: 10px;
+          padding-left: 5px;
+        }
+        /* Color picker styling */
+        .color-picker {
+          margin: 15px 0;
+          padding: 15px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+        }
+        .color-input-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 10px;
+        }
+        .color-input {
+          flex: 1;
+        }
+        .color-button {
+          background-color: #4CAF50;
+          color: white;
+          border: none;
+          padding: 8px 15px;
+          border-radius: 4px;
+          cursor: pointer;
+          width: auto;
+        }
+        .color-presets {
+          display: flex;
+          gap: 10px;
+          margin-top: 10px;
+        }
+        .color-preset-button {
+          width: 30px;
+          height: 30px;
+          border-radius: 4px;
+          border: 1px solid #ddd;
+          cursor: pointer;
+        }
+        /* Override for color input field */
+        .color-input-row input[type="text"] {
+          margin-bottom: 0;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -28,12 +241,13 @@
             <option value="right">Right</option>
             <option value="left">Left</option>
           </select>
-            <label for="paragraph-count">Number of Paragraphs:</label>
-<select id="paragraph-count">
-  <option value="1">1 Paragraph</option>
-  <option value="2">2 Paragraphs</option>
-  <option value="3">3 Paragraphs</option>
-</select>
+          
+          <label for="paragraph-count">Number of Paragraphs:</label>
+          <select id="paragraph-count">
+            <option value="1">1 Paragraph</option>
+            <option value="2">2 Paragraphs</option>
+            <option value="3">3 Paragraphs</option>
+          </select>
           
           <div class="image-upload-section">
             <label for="website-image-upload">Upload Image:</label>
@@ -113,64 +327,64 @@
         </div>
       </div>
       
-<div id="tab3" class="tab-content">
-  <h2>Product Widget</h2>
-  <div>
-    <label for="product-name">Product Name:</label>
-    <input type="text" id="product-name" value="Sophos XGS 136 Firewall">
-    
-    <label for="product-type">Product Type:</label>
-    <select id="product-type">
-      <option value="firewall">Firewall/Security</option>
-      <option value="server">Server</option>
-      <option value="storage">Storage</option>
-      <option value="network">Network Device</option>
-      <option value="software">Software</option>
-    </select>
-    
-    <label for="product-layout">Layout Style:</label>
-    <select id="product-layout">
-      <option value="right">Image Right</option>
-      <option value="left">Image Left</option>
-    </select>
-    
-    <label for="product-paragraph-count">Number of Paragraphs:</label>
-    <select id="product-paragraph-count">
-      <option value="1">1 Paragraph</option>
-      <option value="2">2 Paragraphs</option>
-      <option value="3">3 Paragraphs</option>
-    </select>
-    
-    <label for="product-feature-count">Number of Features:</label>
-    <select id="product-feature-count">
-      <option value="3">3 Features</option>
-      <option value="4">4 Features</option>
-      <option value="5">5 Features</option>
-    </select>
-    
-    <div class="image-upload-section">
-      <label for="product-image-upload">Upload Product Image:</label>
-      <input type="file" id="product-image-upload" accept="image/*">
-      <div id="product-image-preview" class="image-preview">No image uploaded</div>
-    </div>
-    
-    <div class="button-row">
-      <button onclick="generateProduct()">Generate Product Widget</button>
-      <button onclick="clearProduct()">Clear Fields</button>
-    </div>
-  </div>
-  
-  <div class="output">
-    <h3>Preview:</h3>
-    <div id="product-preview" class="preview-box"></div>
-    
-    <h3>HTML Output:</h3>
-    <div class="copy-container">
-      <button onclick="copyProductHTML()">Copy HTML</button>
-    </div>
-    <textarea id="product-output" rows="10"></textarea>
-  </div>
-</div>
+      <div id="tab3" class="tab-content">
+        <h2>Product Widget</h2>
+        <div>
+          <label for="product-name">Product Name:</label>
+          <input type="text" id="product-name" value="Sophos XGS 136 Firewall">
+          
+          <label for="product-type">Product Type:</label>
+          <select id="product-type">
+            <option value="firewall">Firewall/Security</option>
+            <option value="server">Server</option>
+            <option value="storage">Storage</option>
+            <option value="network">Network Device</option>
+            <option value="software">Software</option>
+          </select>
+          
+          <label for="product-layout">Layout Style:</label>
+          <select id="product-layout">
+            <option value="right">Image Right</option>
+            <option value="left">Image Left</option>
+          </select>
+          
+          <label for="product-paragraph-count">Number of Paragraphs:</label>
+          <select id="product-paragraph-count">
+            <option value="1">1 Paragraph</option>
+            <option value="2">2 Paragraphs</option>
+            <option value="3">3 Paragraphs</option>
+          </select>
+          
+          <label for="product-feature-count">Number of Features:</label>
+          <select id="product-feature-count">
+            <option value="3">3 Features</option>
+            <option value="4">4 Features</option>
+            <option value="5">5 Features</option>
+          </select>
+          
+          <div class="image-upload-section">
+            <label for="product-image-upload">Upload Product Image:</label>
+            <input type="file" id="product-image-upload" accept="image/*">
+            <div id="product-image-preview" class="image-preview">No image uploaded</div>
+          </div>
+          
+          <div class="button-row">
+            <button onclick="generateProduct()">Generate Product Widget</button>
+            <button onclick="clearProduct()">Clear Fields</button>
+          </div>
+        </div>
+        
+        <div class="output">
+          <h3>Preview:</h3>
+          <div id="product-preview" class="preview-box"></div>
+          
+          <h3>HTML Output:</h3>
+          <div class="copy-container">
+            <button onclick="copyProductHTML()">Copy HTML</button>
+          </div>
+          <textarea id="product-output" rows="10"></textarea>
+        </div>
+      </div>
       
       <div id="tab4" class="tab-content">
         <h2>Paste Widget</h2>
@@ -206,482 +420,159 @@
     let productImageData = null;
     let featureBackgroundColor = "#f8f9fa";  // Default light gray
 
-// Product templates for different product types
-const productTemplates = {
-  firewall: {
-    paragraphs: [
-      "This high-performance firewall delivers robust network protection with advanced threat prevention capabilities. Designed for modern businesses, it offers comprehensive security against evolving cyber threats.",
-      "With next-generation firewall technology, it combines intrusion prevention, malware detection, and deep packet inspection. The intuitive management interface simplifies configuration and monitoring while providing detailed reporting.",
-      "Perfect for organizations needing reliable security without compromising performance, this solution scales to meet growing network demands while maintaining consistent protection across all traffic."
-    ],
-    features: [
-      "Advanced threat protection with real-time security intelligence",
-      "High-speed inspection of encrypted traffic",
-      "Centralized management and reporting dashboard",
-      "Automated security updates and patches",
-      "Seamless integration with existing network infrastructure"
-    ]
-  },
-  server: {
-    paragraphs: [
-      "This enterprise-grade server delivers exceptional performance for demanding business applications. With powerful processing capabilities and reliable operation, it forms the backbone of modern IT infrastructure.",
-      "Engineered with redundant components and advanced cooling technology, it ensures maximum uptime for critical workloads. The expandable architecture accommodates growing storage and processing needs without requiring complete replacement.",
-      "Optimized for both virtualization and application hosting, this server balances computing power with energy efficiency to reduce operational costs while meeting performance requirements."
-    ],
-    features: [
-      "High-performance multi-core processors for demanding workloads",
-      "Expandable memory and storage options for future growth",
-      "Hot-swappable components for maintenance without downtime",
-      "Integrated security features including secure boot and TPM",
-      "Comprehensive remote management capabilities"
-    ]
-  },
-  storage: {
-    paragraphs: [
-      "This versatile storage solution offers high-capacity data management with exceptional reliability and performance. Designed for enterprise environments, it provides secure and accessible storage for critical business information.",
-      "With advanced data protection features including encryption, snapshots, and replication, it safeguards valuable information against loss or unauthorized access. The scalable architecture allows for seamless capacity expansion as data requirements grow.",
-      "Optimized for both structured and unstructured data, this solution supports multiple access protocols and integration with existing systems, making it ideal for diverse storage needs."
-    ],
-    features: [
-      "High-density storage design with extensive scalability",
-      "Multiple RAID configurations for optimized performance and protection",
-      "Automated tiering for cost-effective data management",
-      "Comprehensive backup and disaster recovery capabilities",
-      "Intuitive management interface with detailed monitoring"
-    ]
-  },
-  network: {
-    paragraphs: [
-      "This high-performance networking device delivers reliable connectivity with advanced management capabilities. Designed for modern network infrastructures, it supports growing bandwidth demands while maintaining consistent performance.",
-      "With support for the latest networking standards and protocols, it ensures seamless integration with existing equipment while providing a path for future upgrades. The robust quality of service features prioritize critical traffic to maintain optimal application performance.",
-      "Engineered for enterprise environments, this solution combines security, reliability, and performance in a cost-effective package that reduces total ownership costs."
-    ],
-    features: [
-      "High-speed ports with support for multiple connection types",
-      "Advanced QoS features for traffic prioritization",
-      "Comprehensive security features including access control and threat detection",
-      "Centralized management and configuration",
-      "Energy-efficient design with redundant power options"
-    ]
-  },
-  software: {
-    paragraphs: [
-      "This innovative software solution streamlines operations and enhances productivity across your organization. With an intuitive interface and powerful functionality, it addresses common challenges while adapting to specific business needs.",
-      "Designed with user experience in mind, it reduces the learning curve and improves adoption rates compared to traditional solutions. The comprehensive feature set eliminates the need for multiple specialized tools, centralizing operations in one platform.",
-      "Regular updates ensure continued compatibility with evolving technologies and security standards, protecting your investment and maintaining optimal performance over time."
-    ],
-    features: [
-      "Intuitive user interface with minimal training requirements",
-      "Comprehensive reporting and analytics capabilities",
-      "Customizable workflows to match business processes",
-      "Secure multi-user access with role-based permissions",
-      "Seamless integration with existing business systems"
-    ]
-  }
-};
-
-// Show/hide custom product section based on selection
-document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('product-type').addEventListener('change', function() {
-    const customSection = document.getElementById('custom-product-section');
-    if (this.value === 'custom') {
-      customSection.style.display = 'block';
-    } else {
-      customSection.style.display = 'none';
-    }
-  });
-});
-
-// Add custom feature
-function addCustomFeature() {
-  const container = document.getElementById('custom-features');
-  const newFeature = document.createElement('div');
-  newFeature.className = 'custom-feature';
-  newFeature.innerHTML = `
-    <input type="text" placeholder="Enter product feature" style="width: 90%;">
-    <button onclick="removeCustomFeature(this)" style="margin-left: 10px;">✕</button>
-  `;
-  container.appendChild(newFeature);
-}
-
-// Remove custom feature
-function removeCustomFeature(button) {
-  button.parentElement.remove();
-}
-
-// Generate product widget
-function generateProduct() {
-  try {
-    const name = document.getElementById('product-name').value;
-    const type = document.getElementById('product-type').value;
-    const layout = document.getElementById('product-layout').value;
-    const paragraphCount = parseInt(document.getElementById('product-paragraph-count').value);
-    const featureCount = parseInt(document.getElementById('product-feature-count').value);
+    // Product templates for different product types
+    const productTemplates = {
+      firewall: {
+        paragraphs: [
+          "This high-performance firewall delivers robust network protection with advanced threat prevention capabilities. Designed for modern businesses, it offers comprehensive security against evolving cyber threats.",
+          "With next-generation firewall technology, it combines intrusion prevention, malware detection, and deep packet inspection. The intuitive management interface simplifies configuration and monitoring while providing detailed reporting.",
+          "Perfect for organizations needing reliable security without compromising performance, this solution scales to meet growing network demands while maintaining consistent protection across all traffic."
+        ],
+        features: [
+          "Advanced threat protection with real-time security intelligence",
+          "High-speed inspection of encrypted traffic",
+          "Centralized management and reporting dashboard",
+          "Automated security updates and patches",
+          "Seamless integration with existing network infrastructure"
+        ]
+      },
+      server: {
+        paragraphs: [
+          "This enterprise-grade server delivers exceptional performance for demanding business applications. With powerful processing capabilities and reliable operation, it forms the backbone of modern IT infrastructure.",
+          "Engineered with redundant components and advanced cooling technology, it ensures maximum uptime for critical workloads. The expandable architecture accommodates growing storage and processing needs without requiring complete replacement.",
+          "Optimized for both virtualization and application hosting, this server balances computing power with energy efficiency to reduce operational costs while meeting performance requirements."
+        ],
+        features: [
+          "High-performance multi-core processors for demanding workloads",
+          "Expandable memory and storage options for future growth",
+          "Hot-swappable components for maintenance without downtime",
+          "Integrated security features including secure boot and TPM",
+          "Comprehensive remote management capabilities"
+        ]
+      },
+      storage: {
+        paragraphs: [
+          "This versatile storage solution offers high-capacity data management with exceptional reliability and performance. Designed for enterprise environments, it provides secure and accessible storage for critical business information.",
+          "With advanced data protection features including encryption, snapshots, and replication, it safeguards valuable information against loss or unauthorized access. The scalable architecture allows for seamless capacity expansion as data requirements grow.",
+          "Optimized for both structured and unstructured data, this solution supports multiple access protocols and integration with existing systems, making it ideal for diverse storage needs."
+        ],
+        features: [
+          "High-density storage design with extensive scalability",
+          "Multiple RAID configurations for optimized performance and protection",
+          "Automated tiering for cost-effective data management",
+          "Comprehensive backup and disaster recovery capabilities",
+          "Intuitive management interface with detailed monitoring"
+        ]
+      },
+      network: {
+        paragraphs: [
+          "This high-performance networking device delivers reliable connectivity with advanced management capabilities. Designed for modern network infrastructures, it supports growing bandwidth demands while maintaining consistent performance.",
+          "With support for the latest networking standards and protocols, it ensures seamless integration with existing equipment while providing a path for future upgrades. The robust quality of service features prioritize critical traffic to maintain optimal application performance.",
+          "Engineered for enterprise environments, this solution combines security, reliability, and performance in a cost-effective package that reduces total ownership costs."
+        ],
+        features: [
+          "High-speed ports with support for multiple connection types",
+          "Advanced QoS features for traffic prioritization",
+          "Comprehensive security features including access control and threat detection",
+          "Centralized management and configuration",
+          "Energy-efficient design with redundant power options"
+        ]
+      },
+      software: {
+        paragraphs: [
+          "This innovative software solution streamlines operations and enhances productivity across your organization. With an intuitive interface and powerful functionality, it addresses common challenges while adapting to specific business needs.",
+          "Designed with user experience in mind, it reduces the learning curve and improves adoption rates compared to traditional solutions. The comprehensive feature set eliminates the need for multiple specialized tools, centralizing operations in one platform.",
+          "Regular updates ensure continued compatibility with evolving technologies and security standards, protecting your investment and maintaining optimal performance over time."
+        ],
+        features: [
+          "Intuitive user interface with minimal training requirements",
+          "Comprehensive reporting and analytics capabilities",
+          "Customizable workflows to match business processes",
+          "Secure multi-user access with role-based permissions",
+          "Seamless integration with existing business systems"
+        ]
+      }
+    };
     
-    console.log("Generating product:", name, "Type:", type);
-    
-    // Get template data
-    const template = productTemplates[type];
-    
-    if (!template) {
-      console.error("Template not found for type:", type);
-      document.getElementById('product-preview').innerHTML = "Error: Product template not found.";
-      return;
-    }
-    
-    // Generate paragraphs content
-    let descriptionsHtml = '';
-    for (let i = 0; i < Math.min(paragraphCount, template.paragraphs.length); i++) {
-      descriptionsHtml += `<p>${template.paragraphs[i]}</p>`;
-    }
-    
-    // Generate features list
-    let featuresHtml = '<h3 style="margin-top: 20px;">Key Features</h3><ul>';
-    for (let i = 0; i < Math.min(featureCount, template.features.length); i++) {
-      featuresHtml += `<li style="margin-bottom: 8px;">${template.features[i]}</li>`;
-    }
-    featuresHtml += '</ul>';
-    
-    // Create image HTML - use the uploaded image or placeholder
-    let imageHtml;
-    if (productImageData) {
-      imageHtml = `<img src="${productImageData}" alt="${name}" style="max-width: 100%; display: block;">`;
-    } else {
-      imageHtml = `<div style="background: #f0f0f0; height: 240px; display: flex; align-items: center; justify-content: center;">Product Image</div>`;
-    }
-    
-    // Create the HTML with the templated data
-    const html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
-    <table style="width: 100%; border-collapse: collapse; border: none;">
-      <tr style="border: none;">
-        ${layout === 'left' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
-        <td style="padding: 20px; border: none;">
-          <h2 style="margin-top: 0;">${name}</h2>
-          ${descriptionsHtml}
-          ${featuresHtml}
-        </td>
-        ${layout === 'right' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
-      </tr>
-    </table>
-  </div>`;
-    
-    document.getElementById('product-output').value = html;
-    document.getElementById('product-preview').innerHTML = html;
-  } catch (error) {
-    console.error("Error generating product:", error);
-    document.getElementById('product-preview').innerHTML = "An error occurred while generating the product.";
-  }
-}
-
-function clearProduct() {
-  try {
-    document.getElementById('product-name').value = 'Sophos XGS 136 Firewall';
-    
-    if (document.getElementById('product-type')) {
-      document.getElementById('product-type').value = 'firewall';
-    }
-    
-    document.getElementById('product-layout').value = 'right';
-    
-    if (document.getElementById('product-paragraph-count')) {
-      document.getElementById('product-paragraph-count').value = '1';
-    }
-    
-    if (document.getElementById('product-feature-count')) {
-      document.getElementById('product-feature-count').value = '3';
-    }
-    
-    document.getElementById('product-output').value = '';
-    
-    const previewElement = document.getElementById('product-preview');
-    if (previewElement) {
-      previewElement.innerHTML = '';
-    }
-    
-    const imagePreviewElement = document.getElementById('product-image-preview');
-    if (imagePreviewElement) {
-      imagePreviewElement.innerHTML = 'No image uploaded';
-    }
-    
-    productImageData = null;
-    
-    const fileInput = document.getElementById('product-image-upload');
-    if (fileInput) {
-      fileInput.value = '';
-    }
-  } catch (error) {
-    console.error("Error clearing product:", error);
-  }
-}
-
-function copyProductHTML() {
-  const textarea = document.getElementById('product-output');
-  textarea.select();
-  document.execCommand('copy');
-  alert('HTML copied to clipboard!');
-}
-
-// Initialize after DOM loads
-document.addEventListener('DOMContentLoaded', function() {
-  console.log("DOM loaded, initializing product templates...");
-  console.log("Templates available:", Object.keys(productTemplates));
-  
-  // Initialize tab display
-  const firstTabButton = document.querySelector('.tab-button');
-  if (firstTabButton) {
-    const firstTabId = firstTabButton.getAttribute('onclick').match(/'([^']+)'/)[1];
-    document.getElementById(firstTabId).classList.add('active');
-    firstTabButton.classList.add('active');
-  }
-});
-        
     // Backend API functions
-        // Function to fetch product information
-async function fetchProductInfo(productName) {
-  try {
-    console.log('Fetching product info for:', productName);
-    // Use a CORS proxy to search for product information
-    const searchUrl = `https://corsproxy.io/?${encodeURIComponent(`https://www.google.com/search?q=${encodeURIComponent(productName)}+review+specs`)}`;
-    
-    const response = await fetch(searchUrl);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch product information');
-    }
-    
-    const htmlContent = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlContent, 'text/html');
-    
-    // Extract product information from search results
-    const paragraphs = [];
-    const features = [];
-    
-    // Look for description paragraphs in search results
-    const allParagraphs = doc.querySelectorAll('p, div > span');
-    for (let p of allParagraphs) {
-      const text = p.textContent.trim();
-      if (text.length > 60 && !text.includes('cookies') && !text.includes('JavaScript')) {
-        // Check if it looks like a product description
-        if (text.includes(productName.split(' ')[0]) || 
-            text.toLowerCase().includes('features') || 
-            text.toLowerCase().includes('performance') ||
-            text.toLowerCase().includes('specs') ||
-            text.toLowerCase().includes('designed')) {
-          paragraphs.push(text);
-          if (paragraphs.length >= 5) break; // Collect up to 5 potential paragraphs
+    async function fetchWebPageData(url) {
+      try {
+        console.log('Fetching URL:', url);
+        // Use a public CORS proxy
+        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+        console.log('Using proxy URL:', proxyUrl);
+        
+        const response = await fetch(proxyUrl);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch URL data');
         }
+        
+        const htmlContent = await response.text();
+        
+        // Basic extraction of title and description
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlContent, 'text/html');
+        
+        const title = doc.querySelector('title')?.textContent || '';
+        const metaDescription = doc.querySelector('meta[name="description"]')?.getAttribute('content') || 
+                              doc.querySelector('meta[property="og:description"]')?.getAttribute('content') || 
+                              'No description available';
+        
+        // Extract paragraphs from the body
+        const paragraphs = [];
+        const pElements = doc.querySelectorAll('p');
+        console.log('Found', pElements.length, 'paragraph elements');
+        
+        pElements.forEach(p => {
+          const text = p.textContent.trim();
+          if (text.length > 30) { // Only include meaningful paragraphs
+            paragraphs.push(text);
+          }
+        });
+        
+        console.log('Filtered to', paragraphs.length, 'meaningful paragraphs');
+        
+        // Find an image if available
+        const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content');
+        const imageUrl = ogImage || '';
+        
+        return {
+          title,
+          description: metaDescription,
+          paragraphs,
+          imageUrl
+        };
+      } catch (error) {
+        console.error('Error fetching web page data:', error);
+        return null;
       }
     }
-    
-    // Look for bullet points/features
-    const listItems = doc.querySelectorAll('li');
-    for (let li of listItems) {
-      const text = li.textContent.trim();
-      if (text.length > 20 && text.length < 200) {
-        features.push(text);
-        if (features.length >= 10) break; // Collect up to 10 potential features
-      }
-    }
-    
-    // Look for images if we don't have one uploaded
-    let imageUrl = '';
-    const images = doc.querySelectorAll('img');
-    for (let img of images) {
-      const src = img.getAttribute('src');
-      const alt = img.getAttribute('alt') || '';
-      if (src && src.includes('http') && (alt.includes(productName.split(' ')[0]) || alt.includes('product'))) {
-        if (src.includes('.jpg') || src.includes('.png') || src.includes('.jpeg')) {
-          imageUrl = src;
-          break;
-        }
-      }
-    }
-    
-    console.log(`Found ${paragraphs.length} paragraphs, ${features.length} features, and image: ${imageUrl ? 'yes' : 'no'}`);
-    
-    return {
-      name: productName,
-      paragraphs: paragraphs.length > 0 ? paragraphs : ['This product offers exceptional quality and performance for your business needs.'],
-      features: features.length > 0 ? features : ['High performance', 'Reliable design', 'Cost-effective solution'],
-      imageUrl
-    };
-  } catch (error) {
-    console.error('Error fetching product info:', error);
-    return {
-      name: productName,
-      paragraphs: ['This product offers exceptional quality and performance for your business needs.'],
-      features: ['High performance', 'Reliable design', 'Cost-effective solution'],
-      imageUrl: ''
-    };
-  }
-}
-
-// Generate product widget
-async function generateProduct() {
-  const name = document.getElementById('product-name').value;
-  const layout = document.getElementById('product-layout').value;
-  const paragraphCount = parseInt(document.getElementById('product-paragraph-count').value);
-  const featureCount = parseInt(document.getElementById('product-feature-count').value);
-  
-  // Show loading indicator
-  document.getElementById('product-preview').innerHTML = '<div style="text-align: center; padding: 20px;">Loading product information... please wait</div>';
-  
-  try {
-    // Fetch product information
-    const productInfo = await fetchProductInfo(name);
-    
-    // Generate paragraphs content
-    let descriptionsHtml = '';
-    
-    for (let i = 0; i < Math.min(paragraphCount, productInfo.paragraphs.length); i++) {
-      descriptionsHtml += `<p>${productInfo.paragraphs[i]}</p>`;
-    }
-    
-    // Generate features list
-    let featuresHtml = '';
-    if (productInfo.features.length > 0) {
-      featuresHtml = '<h3 style="margin-top: 20px;">Key Features</h3><ul>';
-      
-      for (let i = 0; i < Math.min(featureCount, productInfo.features.length); i++) {
-        featuresHtml += `<li style="margin-bottom: 8px;">${productInfo.features[i]}</li>`;
-      }
-      
-      featuresHtml += '</ul>';
-    }
-    
-    // Create image HTML - either use the uploaded image, found image, or placeholder
-    let imageHtml;
-    if (productImageData) {
-      // User uploaded image takes precedence
-      imageHtml = `<img src="${productImageData}" alt="${name}" style="max-width: 100%; display: block;">`;
-    } else if (productInfo.imageUrl) {
-      // Use found image
-      imageHtml = `<img src="${productInfo.imageUrl}" alt="${name}" style="max-width: 100%; display: block;">`;
-    } else {
-      // Fall back to placeholder
-      imageHtml = `<div style="background: #f0f0f0; height: 240px; display: flex; align-items: center; justify-content: center;">Product Image</div>`;
-    }
-    
-    // Create the HTML with fetched data
-    const html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
-    <table style="width: 100%; border-collapse: collapse; border: none;">
-      <tr style="border: none;">
-        ${layout === 'left' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
-        <td style="padding: 20px; border: none;">
-          <h2 style="margin-top: 0;">${name}</h2>
-          ${descriptionsHtml}
-          ${featuresHtml}
-        </td>
-        ${layout === 'right' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
-      </tr>
-    </table>
-  </div>`;
-    
-    document.getElementById('product-output').value = html;
-    document.getElementById('product-preview').innerHTML = html;
-  } catch (error) {
-    console.error('Error generating product widget:', error);
-    document.getElementById('product-preview').innerHTML = "An error occurred while generating the product widget. Please try again.";
-  }
-}
-
-// Clear product form
-function clearProduct() {
-  document.getElementById('product-name').value = 'Sophos XGS 136 Firewall';
-  document.getElementById('product-layout').value = 'right';
-  document.getElementById('product-paragraph-count').value = '1';
-  document.getElementById('product-feature-count').value = '3';
-  document.getElementById('product-output').value = '';
-  document.getElementById('product-preview').innerHTML = '';
-  document.getElementById('product-image-preview').innerHTML = 'No image uploaded';
-  productImageData = null;
-  document.getElementById('product-image-upload').value = ''; // Reset file input
-}
-
-// Copy product HTML to clipboard
-function copyProductHTML() {
-  const textarea = document.getElementById('product-output');
-  textarea.select();
-  document.execCommand('copy');
-  alert('HTML copied to clipboard!');
-}
-async function fetchWebPageData(url) {
-  try {
-    console.log('Fetching URL:', url);
-    // Use a public CORS proxy instead of our backend API
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    console.log('Using proxy URL:', proxyUrl);
-    
-    const response = await fetch(proxyUrl);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch URL data');
-    }
-    
-    const data = await response.json();
-    
-    // Basic extraction of title and description
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(data.contents, 'text/html');
-    
-    const title = doc.querySelector('title')?.textContent || '';
-    const description = doc.querySelector('meta[name="description"]')?.getAttribute('content') || 
-                       doc.querySelector('meta[property="og:description"]')?.getAttribute('content') || 
-                       'No description available';
-    
-    // Extract paragraphs from the body
-    const paragraphs = [];
-    doc.querySelectorAll('p').forEach(p => {
-      const text = p.textContent.trim();
-      if (text.length > 30) { // Only include meaningful paragraphs
-        paragraphs.push(text);
-      }
-    });
-    
-    // Find an image if available
-    const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content');
-    const imageUrl = ogImage || '';
-    
-    console.log('Extracted data:', { title, description, imageUrl, paragraphs: paragraphs.length });
-    
-    return {
-      title,
-      description,
-      paragraphs,
-      imageUrl
-    };
-  } catch (error) {
-    console.error('Error fetching web page data:', error);
-    return null;
-  }
-}
 
     // Function to fetch images via the backend proxy
- // Update this function as well
-function getProxiedImageUrl(originalUrl) {
-  if (!originalUrl) return null;
-  return originalUrl; // Direct use of the image URL
-}
+    function getProxiedImageUrl(originalUrl) {
+      if (!originalUrl) return null;
+      return originalUrl; // Direct use of the image URL
+    }
 
     // Tab functionality
- function openTab(evt, tabName) {
-  // Hide all tab content
-  const tabContents = document.getElementsByClassName("tab-content");
-  for (let i = 0; i < tabContents.length; i++) {
-    tabContents[i].classList.remove("active");
-  }
-  
-  // Remove active class from all tab buttons
-  const tabButtons = document.getElementsByClassName("tab-button");
-  for (let i = 0; i < tabButtons.length; i++) {
-    tabButtons[i].classList.remove("active");
-  }
-  
-  // Show the selected tab and add active class to the button
-  document.getElementById(tabName).classList.add("active");
-  evt.currentTarget.classList.add("active");
-}
+    function openTab(evt, tabName) {
+      // Hide all tab content
+      const tabContents = document.getElementsByClassName("tab-content");
+      for (let i = 0; i < tabContents.length; i++) {
+        tabContents[i].classList.remove("active");
+      }
+      
+      // Remove active class from all tab buttons
+      const tabButtons = document.getElementsByClassName("tab-button");
+      for (let i = 0; i < tabButtons.length; i++) {
+        tabButtons[i].classList.remove("active");
+      }
+      
+      // Show the selected tab and add active class to the button
+      document.getElementById(tabName).classList.add("active");
+      evt.currentTarget.classList.add("active");
+    }
 
     // Color picker functions
     function updateBackgroundColor() {
@@ -703,131 +594,82 @@ function getProxiedImageUrl(originalUrl) {
       generateFeature(); // Regenerate preview with new color
     }
 
-    // Website image upload
-  // Make sure templates are properly initialized
-document.addEventListener('DOMContentLoaded', function() {
-  console.log("DOM loaded, initializing product templates...");
-  console.log("Templates initialized:", Object.keys(productTemplates));
-  
-  // Initialize product type select listener if it exists
-  const productTypeSelect = document.getElementById('product-type');
-  if (productTypeSelect) {
-    console.log("Product type select found");
-  } else {
-    console.log("Product type select NOT found");
-  }
-});
-
-      // Product image upload
-      document.getElementById('product-image-upload').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+    // Website Widget functions
+    async function generateWebsite() {
+      const url = document.getElementById('url-input').value;
+      const layout = document.getElementById('layout-select').value;
+      const paragraphCount = parseInt(document.getElementById('paragraph-count').value);
+      
+      // Show loading indicator
+      document.getElementById('website-preview').innerHTML = '<div style="text-align: center; padding: 20px;">Loading website content... please wait</div>';
+      document.getElementById('website-output').value = ''; // Clear the output while loading
+      
+      try {
+        // Fetch data about the URL
+        const webData = await fetchWebPageData(url);
         
-        if (!file.type.match('image.*')) {
-          alert('Please select an image file (JPG, PNG, etc.)');
+        if (!webData) {
+          document.getElementById('website-preview').innerHTML = "Failed to fetch website data. Please try another URL.";
           return;
         }
         
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          productImageData = e.target.result; // This is the base64 data
+        let title = webData.title || url.replace('https://', '').replace('http://', '').split('/').pop() || 'Web Page';
+        title = title.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        
+        // Generate paragraphs content
+        let contentHtml = '';
+        
+        if (webData.paragraphs && webData.paragraphs.length > 0) {
+          // Use extracted paragraphs
+          const numParagraphs = Math.min(paragraphCount, webData.paragraphs.length);
           
-          // Show preview
-          const preview = document.getElementById('product-image-preview');
-          preview.innerHTML = `<img src="${productImageData}" alt="Product Image">`;
-          
-          // If we already generated a preview, update it
-          if (document.getElementById('product-output').value) {
-            generateProduct();
+          for (let i = 0; i < numParagraphs; i++) {
+            contentHtml += `<p>${webData.paragraphs[i]}</p>`;
           }
-        };
-        reader.readAsDataURL(file);
-      });
-
-      // Initialize the first tab
-      openTab({currentTarget: document.querySelector('.tab-button')}, 'tab1');
-      
-      // Initialize the default background color for features
-      featureBackgroundColor = "#f8f9fa";
-      document.getElementById('background-color').value = featureBackgroundColor;
-    });
-
-    // WEBSITE WIDGET FUNCTIONS
-async function generateWebsite() {
-  const url = document.getElementById('url-input').value;
-  const layout = document.getElementById('layout-select').value;
-  const paragraphCount = parseInt(document.getElementById('paragraph-count').value);
-  
-  // Show loading indicator
-  document.getElementById('website-preview').innerHTML = '<div style="text-align: center; padding: 20px;">Loading website content... please wait</div>';
-  document.getElementById('website-output').value = ''; // Clear the output while loading
-  
-  try {
-    // Fetch data about the URL
-    const webData = await fetchWebPageData(url);
-    
-    if (!webData) {
-      document.getElementById('website-preview').innerHTML = "Failed to fetch website data. Please try another URL.";
-      return;
-    }
-    
-    let title = webData.title || url.replace('https://', '').replace('http://', '').split('/').pop() || 'Web Page';
-    title = title.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    
-    // Generate paragraphs content
-    let contentHtml = '';
-    
-    if (webData.paragraphs && webData.paragraphs.length > 0) {
-      // Use extracted paragraphs
-      const numParagraphs = Math.min(paragraphCount, webData.paragraphs.length);
-      
-      for (let i = 0; i < numParagraphs; i++) {
-        contentHtml += `<p>${webData.paragraphs[i]}</p>`;
+        } else {
+          // Fallback to description
+          contentHtml = `<p>${webData.description}</p>`;
+        }
+        
+        // Create image HTML - either use the fetched image, uploaded image, or placeholder
+        let imageHtml;
+        if (websiteImageData) {
+          // User uploaded image takes precedence
+          imageHtml = `<img src="${websiteImageData}" alt="${title}" style="max-width: 100%; display: block;">`;
+        } else if (webData.imageUrl) {
+          // Direct use of image URL
+          imageHtml = `<img src="${webData.imageUrl}" alt="${title}" style="max-width: 100%; display: block;">`;
+        } else {
+          // Fall back to placeholder
+          imageHtml = `<div style="background: #f0f0f0; height: 200px; display: flex; align-items: center; justify-content: center;">Image Placeholder</div>`;
+        }
+        
+        // Create the HTML with fetched data
+        const html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
+        <table style="width: 100%; border-collapse: collapse; border: none;">
+          <tr style="border: none;">
+            ${layout === 'left' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
+            <td style="padding: 20px; border: none;">
+              <h2 style="margin-top: 0;">${title}</h2>
+              ${contentHtml}
+            </td>
+            ${layout === 'right' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
+          </tr>
+        </table>
+      </div>`;
+        
+        document.getElementById('website-output').value = html;
+        document.getElementById('website-preview').innerHTML = html;
+      } catch (error) {
+        console.error('Error generating website:', error);
+        document.getElementById('website-preview').innerHTML = "An error occurred while generating the widget. Please try again.";
       }
-    } else {
-      // Fallback to description
-      contentHtml = `<p>${webData.description}</p>`;
     }
-    
-    // Create image HTML - either use the fetched image, uploaded image, or placeholder
-    let imageHtml;
-    if (websiteImageData) {
-      // User uploaded image takes precedence
-      imageHtml = `<img src="${websiteImageData}" alt="${title}" style="max-width: 100%; display: block;">`;
-    } else if (webData.imageUrl) {
-      // Direct use of image URL
-      imageHtml = `<img src="${webData.imageUrl}" alt="${title}" style="max-width: 100%; display: block;">`;
-    } else {
-      // Fall back to placeholder
-      imageHtml = `<div style="background: #f0f0f0; height: 200px; display: flex; align-items: center; justify-content: center;">Image Placeholder</div>`;
-    }
-    
-    // Create the HTML with fetched data
-    const html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
-    <table style="width: 100%; border-collapse: collapse; border: none;">
-      <tr style="border: none;">
-        ${layout === 'left' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
-        <td style="padding: 20px; border: none;">
-          <h2 style="margin-top: 0;">${title}</h2>
-          ${contentHtml}
-        </td>
-        ${layout === 'right' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
-      </tr>
-    </table>
-  </div>`;
-    
-    document.getElementById('website-output').value = html;
-    document.getElementById('website-preview').innerHTML = html;
-  } catch (error) {
-    console.error('Error generating website:', error);
-    document.getElementById('website-preview').innerHTML = "An error occurred while generating the widget. Please try again.";
-  }
-}
-
 
     function clearWebsite() {
       document.getElementById('url-input').value = '';
       document.getElementById('layout-select').value = 'right';
+      document.getElementById('paragraph-count').value = '1';
       document.getElementById('website-output').value = '';
       document.getElementById('website-preview').innerHTML = '';
       document.getElementById('website-image-preview').innerHTML = 'No image uploaded';
@@ -842,7 +684,7 @@ async function generateWebsite() {
       alert('HTML copied to clipboard!');
     }
 
-    // FEATURE WIDGET FUNCTIONS
+    // Feature Widget functions
     function addFeature() {
       const container = document.getElementById('feature-items');
       const newFeature = document.createElement('div');
@@ -935,87 +777,109 @@ async function generateWebsite() {
       alert('HTML copied to clipboard!');
     }
 
-    // PRODUCT WIDGET FUNCTIONS
-    function addBenefit() {
-      const container = document.getElementById('benefit-items');
-      const newBenefit = document.createElement('div');
-      newBenefit.className = 'benefit-item';
-      newBenefit.innerHTML = `
-        <input type="text" placeholder="Product benefit" value="New Benefit">
-        <button onclick="removeBenefit(this)">Remove</button>
-      `;
-      container.appendChild(newBenefit);
-    }
-
-    function removeBenefit(button) {
-      button.parentElement.remove();
-    }
-
+    // Product Widget functions
     function generateProduct() {
-      const name = document.getElementById('product-name').value;
-      const layout = document.getElementById('product-layout').value;
-      
-      const benefits = [];
-      const benefitItems = document.querySelectorAll('.benefit-item');
-      
-      benefitItems.forEach(item => {
-        benefits.push(item.querySelector('input').value);
-      });
-      
-      let benefitsHTML = '';
-      if (benefits.length > 0) {
-        benefitsHTML = '<h3 style="margin-top: 20px;">Key Benefits</h3><ul>';
-        benefits.forEach(benefit => {
-          benefitsHTML += `<li style="margin-bottom: 8px;">${benefit}</li>`;
-        });
-        benefitsHTML += '</ul>';
+      try {
+        const name = document.getElementById('product-name').value;
+        const type = document.getElementById('product-type').value;
+        const layout = document.getElementById('product-layout').value;
+        const paragraphCount = parseInt(document.getElementById('product-paragraph-count').value);
+        const featureCount = parseInt(document.getElementById('product-feature-count').value);
+        
+        console.log("Generating product:", name, "Type:", type);
+        
+        // Get template data
+        const template = productTemplates[type];
+        
+        if (!template) {
+          console.error("Template not found for type:", type);
+          document.getElementById('product-preview').innerHTML = "Error: Product template not found.";
+          return;
+        }
+        
+        // Generate paragraphs content
+        let descriptionsHtml = '';
+        for (let i = 0; i < Math.min(paragraphCount, template.paragraphs.length); i++) {
+          descriptionsHtml += `<p>${template.paragraphs[i]}</p>`;
+        }
+        
+        // Generate features list
+        let featuresHtml = '<h3 style="margin-top: 20px;">Key Features</h3><ul>';
+        for (let i = 0; i < Math.min(featureCount, template.features.length); i++) {
+          featuresHtml += `<li style="margin-bottom: 8px;">${template.features[i]}</li>`;
+        }
+        featuresHtml += '</ul>';
+        
+        // Create image HTML - use the uploaded image or placeholder
+        let imageHtml;
+        if (productImageData) {
+          imageHtml = `<img src="${productImageData}" alt="${name}" style="max-width: 100%; display: block;">`;
+        } else {
+          imageHtml = `<div style="background: #f0f0f0; height: 240px; display: flex; align-items: center; justify-content: center;">Product Image</div>`;
+        }
+        
+        // Create the HTML with the templated data
+        const html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
+        <table style="width: 100%; border-collapse: collapse; border: none;">
+          <tr style="border: none;">
+            ${layout === 'left' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
+            <td style="padding: 20px; border: none;">
+              <h2 style="margin-top: 0;">${name}</h2>
+              ${descriptionsHtml}
+              ${featuresHtml}
+            </td>
+            ${layout === 'right' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
+          </tr>
+        </table>
+      </div>`;
+        
+        document.getElementById('product-output').value = html;
+        document.getElementById('product-preview').innerHTML = html;
+      } catch (error) {
+        console.error("Error generating product:", error);
+        document.getElementById('product-preview').innerHTML = "An error occurred while generating the product.";
       }
-      
-      // Create image HTML - either use the uploaded image or placeholder
-      let imageHtml;
-      if (productImageData) {
-        imageHtml = `<img src="${productImageData}" alt="${name}" style="max-width: 100%; display: block;">`;
-      } else {
-        imageHtml = `<div style="background: #f0f0f0; height: 240px; display: flex; align-items: center; justify-content: center;">Product Image</div>`;
-      }
-      
-      // Updated to remove the border
-      const html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
-      <table style="width: 100%; border-collapse: collapse; border: none;">
-        <tr style="border: none;">
-          ${layout === 'left' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
-          <td style="padding: 20px; border: none;">
-            <h2 style="margin-top: 0;">${name}</h2>
-            <p>This premium product offers exceptional quality and performance for your business needs.</p>
-            ${benefitsHTML}
-          </td>
-          ${layout === 'right' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
-        </tr>
-      </table>
-    </div>`;
-      
-      document.getElementById('product-output').value = html;
-      document.getElementById('product-preview').innerHTML = html;
     }
 
     function clearProduct() {
-      document.getElementById('product-name').value = 'Premium Server';
-      document.getElementById('product-layout').value = 'right';
-      document.getElementById('benefit-items').innerHTML = `
-        <div class="benefit-item">
-          <input type="text" placeholder="Product benefit" value="Enhanced Security">
-          <button onclick="removeBenefit(this)">Remove</button>
-        </div>
-        <div class="benefit-item">
-          <input type="text" placeholder="Product benefit" value="99.9% Uptime">
-          <button onclick="removeBenefit(this)">Remove</button>
-        </div>
-      `;
-      document.getElementById('product-output').value = '';
-      document.getElementById('product-preview').innerHTML = '';
-      document.getElementById('product-image-preview').innerHTML = 'No image uploaded';
-      productImageData = null;
-      document.getElementById('product-image-upload').value = ''; // Reset file input
+      try {
+        document.getElementById('product-name').value = 'Sophos XGS 136 Firewall';
+        
+        if (document.getElementById('product-type')) {
+          document.getElementById('product-type').value = 'firewall';
+        }
+        
+        document.getElementById('product-layout').value = 'right';
+        
+        if (document.getElementById('product-paragraph-count')) {
+          document.getElementById('product-paragraph-count').value = '1';
+        }
+        
+        if (document.getElementById('product-feature-count')) {
+          document.getElementById('product-feature-count').value = '3';
+        }
+        
+        document.getElementById('product-output').value = '';
+        
+        const previewElement = document.getElementById('product-preview');
+        if (previewElement) {
+          previewElement.innerHTML = '';
+        }
+        
+        const imagePreviewElement = document.getElementById('product-image-preview');
+        if (imagePreviewElement) {
+          imagePreviewElement.innerHTML = 'No image uploaded';
+        }
+        
+        productImageData = null;
+        
+        const fileInput = document.getElementById('product-image-upload');
+        if (fileInput) {
+          fileInput.value = '';
+        }
+      } catch (error) {
+        console.error("Error clearing product:", error);
+      }
     }
 
     function copyProductHTML() {
@@ -1025,9 +889,7 @@ async function generateWebsite() {
       alert('HTML copied to clipboard!');
     }
 
-    // PASTE WIDGET FUNCTIONS
-
-    // Function to clean and format the pasted content
+    // Paste Widget functions
     function cleanPastedContent() {
       const pasteArea = document.getElementById('paste-area');
       const content = pasteArea.value;
@@ -1103,20 +965,77 @@ async function generateWebsite() {
       document.getElementById('paste-preview').innerHTML = formattedHTML;
     }
 
-    // Function to clear the paste area
     function clearPasteArea() {
       document.getElementById('paste-area').value = '';
       document.getElementById('paste-output').value = '';
       document.getElementById('paste-preview').innerHTML = '';
     }
 
-    // Function to copy the formatted HTML
     function copyPasteHTML() {
       const textarea = document.getElementById('paste-output');
       textarea.select();
       document.execCommand('copy');
       alert('HTML copied to clipboard!');
     }
+
+    // Initialize event listeners for file uploads
+    document.addEventListener('DOMContentLoaded', function() {
+      // Website image upload
+      document.getElementById('website-image-upload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        if (!file.type.match('image.*')) {
+          alert('Please select an image file (JPG, PNG, etc.)');
+          return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          websiteImageData = e.target.result; // This is the base64 data
+          
+          // Show preview
+          const preview = document.getElementById('website-image-preview');
+          preview.innerHTML = `<img src="${websiteImageData}" alt="Website Image">`;
+          
+          // If we already generated a preview, update it
+          if (document.getElementById('website-output').value) {
+            generateWebsite();
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Product image upload
+      document.getElementById('product-image-upload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        if (!file.type.match('image.*')) {
+          alert('Please select an image file (JPG, PNG, etc.)');
+          return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          productImageData = e.target.result; // This is the base64 data
+          
+          // Show preview
+          const preview = document.getElementById('product-image-preview');
+          preview.innerHTML = `<img src="${productImageData}" alt="Product Image">`;
+          
+          // If we already generated a preview, update it
+          if (document.getElementById('product-output').value) {
+            generateProduct();
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+      
+      console.log("DOM loaded, event listeners initialized");
+      console.log("Product templates available:", Object.keys(productTemplates));
+    });
     </script>
 </body>
 </html>
+
