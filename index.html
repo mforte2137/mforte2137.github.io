@@ -129,38 +129,6 @@
       <option value="custom">Custom Product</option>
     </select>
     
-    <div id="custom-product-section" style="display: none; border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 4px;">
-      <h3>Custom Product Details</h3>
-      
-      <label for="custom-description-1">Description Paragraph 1:</label>
-      <textarea id="custom-description-1" rows="3" style="width: 100%;" placeholder="Enter primary product description..."></textarea>
-      
-      <label for="custom-description-2">Description Paragraph 2 (Optional):</label>
-      <textarea id="custom-description-2" rows="3" style="width: 100%;" placeholder="Enter additional product description..."></textarea>
-      
-      <label for="custom-description-3">Description Paragraph 3 (Optional):</label>
-      <textarea id="custom-description-3" rows="3" style="width: 100%;" placeholder="Enter additional product description..."></textarea>
-      
-      <h4 style="margin-top: 15px;">Features</h4>
-      
-      <div id="custom-features">
-        <div class="custom-feature">
-          <input type="text" placeholder="Enter product feature" style="width: 90%;">
-          <button onclick="removeCustomFeature(this)" style="margin-left: 10px;">✕</button>
-        </div>
-        <div class="custom-feature">
-          <input type="text" placeholder="Enter product feature" style="width: 90%;">
-          <button onclick="removeCustomFeature(this)" style="margin-left: 10px;">✕</button>
-        </div>
-        <div class="custom-feature">
-          <input type="text" placeholder="Enter product feature" style="width: 90%;">
-          <button onclick="removeCustomFeature(this)" style="margin-left: 10px;">✕</button>
-        </div>
-      </div>
-      
-      <button onclick="addCustomFeature()" style="margin-top: 10px;">Add Feature</button>
-    </div>
-    
     <label for="product-layout">Layout Style:</label>
     <select id="product-layout">
       <option value="right">Image Right</option>
@@ -204,18 +172,6 @@
     <textarea id="product-output" rows="10"></textarea>
   </div>
 </div>
-        
-        <div class="output">
-          <h3>Preview:</h3>
-          <div id="product-preview" class="preview-box"></div>
-          
-          <h3>HTML Output:</h3>
-          <div class="copy-container">
-            <button onclick="copyProductHTML()">Copy HTML</button>
-          </div>
-          <textarea id="product-output" rows="10"></textarea>
-        </div>
-      </div>
       
       <div id="tab4" class="tab-content">
         <h2>Paste Widget</h2>
