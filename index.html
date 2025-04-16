@@ -28,6 +28,12 @@
             <option value="right">Right</option>
             <option value="left">Left</option>
           </select>
+            <label for="paragraph-count">Number of Paragraphs:</label>
+<select id="paragraph-count">
+  <option value="1">1 Paragraph</option>
+  <option value="2">2 Paragraphs</option>
+  <option value="3">3 Paragraphs</option>
+</select>
           
           <div class="image-upload-section">
             <label for="website-image-upload">Upload Image:</label>
@@ -214,15 +220,25 @@ async function fetchWebPageData(url) {
                        doc.querySelector('meta[property="og:description"]')?.getAttribute('content') || 
                        'No description available';
     
+    // Extract paragraphs from the body
+    const paragraphs = [];
+    doc.querySelectorAll('p').forEach(p => {
+      const text = p.textContent.trim();
+      if (text.length > 30) { // Only include meaningful paragraphs
+        paragraphs.push(text);
+      }
+    });
+    
     // Find an image if available
     const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content');
     const imageUrl = ogImage || '';
     
-    console.log('Extracted data:', { title, description, imageUrl });
+    console.log('Extracted data:', { title, description, imageUrl, paragraphs: paragraphs.length });
     
     return {
       title,
       description,
+      paragraphs,
       imageUrl
     };
   } catch (error) {
@@ -339,52 +355,64 @@ function getProxiedImageUrl(originalUrl) {
     });
 
     // WEBSITE WIDGET FUNCTIONS
-    async function generateWebsite() {
-      const url = document.getElementById('url-input').value;
-      const layout = document.getElementById('layout-select').value;
-      
-      // Show loading indicator
-      document.getElementById('website-preview').innerHTML = "Loading...";
-      
-      // Fetch data about the URL
-      const webData = await fetchWebPageData(url);
-      
-      let title = webData?.title || url.replace('https://', '').replace('http://', '').split('/').pop() || 'Web Page';
-      title = title.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-      
-      let description = webData?.description || 'This is sample content for the web page. In a real implementation, this would contain content from the actual webpage.';
-      
-      // Create image HTML - either use the fetched image, uploaded image, or placeholder
-      let imageHtml;
-      if (websiteImageData) {
-        // User uploaded image takes precedence
-        imageHtml = `<img src="${websiteImageData}" alt="${title}" style="max-width: 100%; display: block;">`;
-// Replace this section in the generateWebsite function
-} else if (webData?.imageUrl) {
-  // Direct use of image URL since we're not using our API proxy anymore
-  imageHtml = `<img src="${webData.imageUrl}" alt="${title}" style="max-width: 100%; display: block;">`;
-} else {
-        // Fall back to placeholder
-        imageHtml = `<div style="background: #f0f0f0; height: 200px; display: flex; align-items: center; justify-content: center;">Image Placeholder</div>`;
-      }
-      
-      // Create the HTML with fetched data
-      const html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
-      <table style="width: 100%; border-collapse: collapse; border: none;">
-        <tr style="border: none;">
-          ${layout === 'left' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
-          <td style="padding: 20px; border: none;">
-            <h2 style="margin-top: 0;">${title}</h2>
-            <p>${description}</p>
-          </td>
-          ${layout === 'right' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
-        </tr>
-      </table>
-    </div>`;
-      
-      document.getElementById('website-output').value = html;
-      document.getElementById('website-preview').innerHTML = html;
+async function generateWebsite() {
+  const url = document.getElementById('url-input').value;
+  const layout = document.getElementById('layout-select').value;
+  const paragraphCount = parseInt(document.getElementById('paragraph-count').value);
+  
+  // Show loading indicator
+  document.getElementById('website-preview').innerHTML = "Loading...";
+  
+  // Fetch data about the URL
+  const webData = await fetchWebPageData(url);
+  
+  let title = webData?.title || url.replace('https://', '').replace('http://', '').split('/').pop() || 'Web Page';
+  title = title.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  
+  // Generate paragraphs content
+  let contentHtml = '';
+  
+  if (webData?.paragraphs && webData.paragraphs.length > 0) {
+    // Use extracted paragraphs
+    for (let i = 0; i < Math.min(paragraphCount, webData.paragraphs.length); i++) {
+      contentHtml += `<p>${webData.paragraphs[i]}</p>`;
     }
+  } else {
+    // Fallback to description or default text
+    contentHtml = `<p>${webData?.description || 'This is sample content for the web page. In a real implementation, this would contain content from the actual webpage.'}</p>`;
+  }
+  
+  // Create image HTML - either use the fetched image, uploaded image, or placeholder
+  let imageHtml;
+  if (websiteImageData) {
+    // User uploaded image takes precedence
+    imageHtml = `<img src="${websiteImageData}" alt="${title}" style="max-width: 100%; display: block;">`;
+  } else if (webData?.imageUrl) {
+    // Direct use of image URL since we're not using our API proxy anymore
+    imageHtml = `<img src="${webData.imageUrl}" alt="${title}" style="max-width: 100%; display: block;">`;
+  } else {
+    // Fall back to placeholder
+    imageHtml = `<div style="background: #f0f0f0; height: 200px; display: flex; align-items: center; justify-content: center;">Image Placeholder</div>`;
+  }
+  
+  // Create the HTML with fetched data
+  const html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
+  <table style="width: 100%; border-collapse: collapse; border: none;">
+    <tr style="border: none;">
+      ${layout === 'left' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
+      <td style="padding: 20px; border: none;">
+        <h2 style="margin-top: 0;">${title}</h2>
+        ${contentHtml}
+      </td>
+      ${layout === 'right' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
+    </tr>
+  </table>
+</div>`;
+  
+  document.getElementById('website-output').value = html;
+  document.getElementById('website-preview').innerHTML = html;
+}
+
 
     function clearWebsite() {
       document.getElementById('url-input').value = '';
