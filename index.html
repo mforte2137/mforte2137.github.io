@@ -113,11 +113,53 @@
         </div>
       </div>
       
- <div id="tab3" class="tab-content">
+<div id="tab3" class="tab-content">
   <h2>Product Widget</h2>
   <div>
     <label for="product-name">Product Name:</label>
     <input type="text" id="product-name" value="Sophos XGS 136 Firewall">
+    
+    <label for="product-type">Product Type:</label>
+    <select id="product-type">
+      <option value="firewall">Firewall/Security</option>
+      <option value="server">Server</option>
+      <option value="storage">Storage</option>
+      <option value="network">Network Device</option>
+      <option value="software">Software</option>
+      <option value="custom">Custom Product</option>
+    </select>
+    
+    <div id="custom-product-section" style="display: none; border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 4px;">
+      <h3>Custom Product Details</h3>
+      
+      <label for="custom-description-1">Description Paragraph 1:</label>
+      <textarea id="custom-description-1" rows="3" style="width: 100%;" placeholder="Enter primary product description..."></textarea>
+      
+      <label for="custom-description-2">Description Paragraph 2 (Optional):</label>
+      <textarea id="custom-description-2" rows="3" style="width: 100%;" placeholder="Enter additional product description..."></textarea>
+      
+      <label for="custom-description-3">Description Paragraph 3 (Optional):</label>
+      <textarea id="custom-description-3" rows="3" style="width: 100%;" placeholder="Enter additional product description..."></textarea>
+      
+      <h4 style="margin-top: 15px;">Features</h4>
+      
+      <div id="custom-features">
+        <div class="custom-feature">
+          <input type="text" placeholder="Enter product feature" style="width: 90%;">
+          <button onclick="removeCustomFeature(this)" style="margin-left: 10px;">✕</button>
+        </div>
+        <div class="custom-feature">
+          <input type="text" placeholder="Enter product feature" style="width: 90%;">
+          <button onclick="removeCustomFeature(this)" style="margin-left: 10px;">✕</button>
+        </div>
+        <div class="custom-feature">
+          <input type="text" placeholder="Enter product feature" style="width: 90%;">
+          <button onclick="removeCustomFeature(this)" style="margin-left: 10px;">✕</button>
+        </div>
+      </div>
+      
+      <button onclick="addCustomFeature()" style="margin-top: 10px;">Add Feature</button>
+    </div>
     
     <label for="product-layout">Layout Style:</label>
     <select id="product-layout">
@@ -209,6 +251,217 @@
     let productImageData = null;
     let featureBackgroundColor = "#f8f9fa";  // Default light gray
 
+// Product templates for different product types
+const productTemplates = {
+  firewall: {
+    paragraphs: [
+      "This high-performance firewall delivers robust network protection with advanced threat prevention capabilities. Designed for modern businesses, it offers comprehensive security against evolving cyber threats.",
+      "With next-generation firewall technology, it combines intrusion prevention, malware detection, and deep packet inspection. The intuitive management interface simplifies configuration and monitoring while providing detailed reporting.",
+      "Perfect for organizations needing reliable security without compromising performance, this solution scales to meet growing network demands while maintaining consistent protection across all traffic."
+    ],
+    features: [
+      "Advanced threat protection with real-time security intelligence",
+      "High-speed inspection of encrypted traffic",
+      "Centralized management and reporting dashboard",
+      "Automated security updates and patches",
+      "Seamless integration with existing network infrastructure"
+    ]
+  },
+  server: {
+    paragraphs: [
+      "This enterprise-grade server delivers exceptional performance for demanding business applications. With powerful processing capabilities and reliable operation, it forms the backbone of modern IT infrastructure.",
+      "Engineered with redundant components and advanced cooling technology, it ensures maximum uptime for critical workloads. The expandable architecture accommodates growing storage and processing needs without requiring complete replacement.",
+      "Optimized for both virtualization and application hosting, this server balances computing power with energy efficiency to reduce operational costs while meeting performance requirements."
+    ],
+    features: [
+      "High-performance multi-core processors for demanding workloads",
+      "Expandable memory and storage options for future growth",
+      "Hot-swappable components for maintenance without downtime",
+      "Integrated security features including secure boot and TPM",
+      "Comprehensive remote management capabilities"
+    ]
+  },
+  storage: {
+    paragraphs: [
+      "This versatile storage solution offers high-capacity data management with exceptional reliability and performance. Designed for enterprise environments, it provides secure and accessible storage for critical business information.",
+      "With advanced data protection features including encryption, snapshots, and replication, it safeguards valuable information against loss or unauthorized access. The scalable architecture allows for seamless capacity expansion as data requirements grow.",
+      "Optimized for both structured and unstructured data, this solution supports multiple access protocols and integration with existing systems, making it ideal for diverse storage needs."
+    ],
+    features: [
+      "High-density storage design with extensive scalability",
+      "Multiple RAID configurations for optimized performance and protection",
+      "Automated tiering for cost-effective data management",
+      "Comprehensive backup and disaster recovery capabilities",
+      "Intuitive management interface with detailed monitoring"
+    ]
+  },
+  network: {
+    paragraphs: [
+      "This high-performance networking device delivers reliable connectivity with advanced management capabilities. Designed for modern network infrastructures, it supports growing bandwidth demands while maintaining consistent performance.",
+      "With support for the latest networking standards and protocols, it ensures seamless integration with existing equipment while providing a path for future upgrades. The robust quality of service features prioritize critical traffic to maintain optimal application performance.",
+      "Engineered for enterprise environments, this solution combines security, reliability, and performance in a cost-effective package that reduces total ownership costs."
+    ],
+    features: [
+      "High-speed ports with support for multiple connection types",
+      "Advanced QoS features for traffic prioritization",
+      "Comprehensive security features including access control and threat detection",
+      "Centralized management and configuration",
+      "Energy-efficient design with redundant power options"
+    ]
+  },
+  software: {
+    paragraphs: [
+      "This innovative software solution streamlines operations and enhances productivity across your organization. With an intuitive interface and powerful functionality, it addresses common challenges while adapting to specific business needs.",
+      "Designed with user experience in mind, it reduces the learning curve and improves adoption rates compared to traditional solutions. The comprehensive feature set eliminates the need for multiple specialized tools, centralizing operations in one platform.",
+      "Regular updates ensure continued compatibility with evolving technologies and security standards, protecting your investment and maintaining optimal performance over time."
+    ],
+    features: [
+      "Intuitive user interface with minimal training requirements",
+      "Comprehensive reporting and analytics capabilities",
+      "Customizable workflows to match business processes",
+      "Secure multi-user access with role-based permissions",
+      "Seamless integration with existing business systems"
+    ]
+  }
+};
+
+// Show/hide custom product section based on selection
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('product-type').addEventListener('change', function() {
+    const customSection = document.getElementById('custom-product-section');
+    if (this.value === 'custom') {
+      customSection.style.display = 'block';
+    } else {
+      customSection.style.display = 'none';
+    }
+  });
+});
+
+// Add custom feature
+function addCustomFeature() {
+  const container = document.getElementById('custom-features');
+  const newFeature = document.createElement('div');
+  newFeature.className = 'custom-feature';
+  newFeature.innerHTML = `
+    <input type="text" placeholder="Enter product feature" style="width: 90%;">
+    <button onclick="removeCustomFeature(this)" style="margin-left: 10px;">✕</button>
+  `;
+  container.appendChild(newFeature);
+}
+
+// Remove custom feature
+function removeCustomFeature(button) {
+  button.parentElement.remove();
+}
+
+// Generate product widget
+function generateProduct() {
+  const name = document.getElementById('product-name').value;
+  const type = document.getElementById('product-type').value;
+  const layout = document.getElementById('product-layout').value;
+  const paragraphCount = parseInt(document.getElementById('product-paragraph-count').value);
+  const featureCount = parseInt(document.getElementById('product-feature-count').value);
+  
+  let paragraphs = [];
+  let features = [];
+  
+  // Get content based on product type
+  if (type === 'custom') {
+    // Get custom descriptions
+    const desc1 = document.getElementById('custom-description-1').value.trim();
+    const desc2 = document.getElementById('custom-description-2').value.trim();
+    const desc3 = document.getElementById('custom-description-3').value.trim();
+    
+    if (desc1) paragraphs.push(desc1);
+    if (desc2) paragraphs.push(desc2);
+    if (desc3) paragraphs.push(desc3);
+    
+    // Get custom features
+    const featureElements = document.querySelectorAll('#custom-features .custom-feature input');
+    featureElements.forEach(element => {
+      const text = element.value.trim();
+      if (text) features.push(text);
+    });
+  } else {
+    // Use template data
+    paragraphs = productTemplates[type].paragraphs;
+    features = productTemplates[type].features;
+  }
+  
+  // Generate paragraphs content
+  let descriptionsHtml = '';
+  for (let i = 0; i < Math.min(paragraphCount, paragraphs.length); i++) {
+    descriptionsHtml += `<p>${paragraphs[i]}</p>`;
+  }
+  
+  // Generate features list
+  let featuresHtml = '';
+  if (features.length > 0) {
+    featuresHtml = '<h3 style="margin-top: 20px;">Key Features</h3><ul>';
+    for (let i = 0; i < Math.min(featureCount, features.length); i++) {
+      featuresHtml += `<li style="margin-bottom: 8px;">${features[i]}</li>`;
+    }
+    featuresHtml += '</ul>';
+  }
+  
+  // Create image HTML - use the uploaded image or placeholder
+  let imageHtml;
+  if (productImageData) {
+    imageHtml = `<img src="${productImageData}" alt="${name}" style="max-width: 100%; display: block;">`;
+  } else {
+    imageHtml = `<div style="background: #f0f0f0; height: 240px; display: flex; align-items: center; justify-content: center;">Product Image</div>`;
+  }
+  
+  // Create the HTML with the data
+  const html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
+  <table style="width: 100%; border-collapse: collapse; border: none;">
+    <tr style="border: none;">
+      ${layout === 'left' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
+      <td style="padding: 20px; border: none;">
+        <h2 style="margin-top: 0;">${name}</h2>
+        ${descriptionsHtml}
+        ${featuresHtml}
+      </td>
+      ${layout === 'right' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
+    </tr>
+  </table>
+</div>`;
+  
+  document.getElementById('product-output').value = html;
+  document.getElementById('product-preview').innerHTML = html;
+}
+
+// Clear product form
+function clearProduct() {
+  document.getElementById('product-name').value = 'Sophos XGS 136 Firewall';
+  document.getElementById('product-type').value = 'firewall';
+  document.getElementById('product-layout').value = 'right';
+  document.getElementById('product-paragraph-count').value = '1';
+  document.getElementById('product-feature-count').value = '3';
+  
+  // Clear custom fields if they exist
+  if (document.getElementById('custom-description-1')) {
+    document.getElementById('custom-description-1').value = '';
+    document.getElementById('custom-description-2').value = '';
+    document.getElementById('custom-description-3').value = '';
+    
+    // Clear custom features
+    const customFeatures = document.querySelectorAll('#custom-features .custom-feature input');
+    customFeatures.forEach(input => {
+      input.value = '';
+    });
+    
+    // Hide custom section
+    document.getElementById('custom-product-section').style.display = 'none';
+  }
+  
+  document.getElementById('product-output').value = '';
+  document.getElementById('product-preview').innerHTML = '';
+  document.getElementById('product-image-preview').innerHTML = 'No image uploaded';
+  productImageData = null;
+  document.getElementById('product-image-upload').value = ''; // Reset file input
+}
+        
     // Backend API functions
         // Function to fetch product information
 async function fetchProductInfo(productName) {
