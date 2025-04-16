@@ -192,9 +192,10 @@
     // Backend API functions
 async function fetchWebPageData(url) {
   try {
-    // Use a public CORS proxy
+    console.log('Fetching URL:', url);
+    // Use a public CORS proxy instead of our backend API
     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    console.log('Fetching via proxy:', proxyUrl);
+    console.log('Using proxy URL:', proxyUrl);
     
     const response = await fetch(proxyUrl);
     
@@ -203,7 +204,6 @@ async function fetchWebPageData(url) {
     }
     
     const data = await response.json();
-    console.log('Response received:', data);
     
     // Basic extraction of title and description
     const parser = new DOMParser();
@@ -232,10 +232,11 @@ async function fetchWebPageData(url) {
 }
 
     // Function to fetch images via the backend proxy
-    function getProxiedImageUrl(originalUrl) {
-      if (!originalUrl) return null;
-      return `/api/fetch-image?url=${encodeURIComponent(originalUrl)}`;
-    }
+ // Update this function as well
+function getProxiedImageUrl(originalUrl) {
+  if (!originalUrl) return null;
+  return originalUrl; // Direct use of the image URL
+}
 
     // Tab functionality
     function openTab(evt, tabName) {
