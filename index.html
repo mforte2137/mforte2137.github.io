@@ -318,15 +318,22 @@ function generateProduct() {
   const paragraphCount = parseInt(document.getElementById('product-paragraph-count').value);
   const featureCount = parseInt(document.getElementById('product-feature-count').value);
   
-  console.log("Generating product for type:", type);
+  console.log("Product info:", {name, type, layout, paragraphCount, featureCount});
+  console.log("Templates available:", Object.keys(productTemplates));
   
   // Get the template for the selected product type
   const template = productTemplates[type];
   
+  console.log("Selected template:", template ? "Found" : "Not found");
+  
   if (!template) {
     console.error("Template not found for type:", type);
+    alert("Template for " + type + " not found. Please check the console for details.");
     return;
   }
+  
+  // Rest of function...
+}
   
   // Generate paragraphs content
   let descriptionsHtml = '';
@@ -371,32 +378,39 @@ function generateProduct() {
 // Clear product form
 function clearProduct() {
   document.getElementById('product-name').value = 'Sophos XGS 136 Firewall';
-  document.getElementById('product-type').value = 'firewall';
-  document.getElementById('product-layout').value = 'right';
-  document.getElementById('product-paragraph-count').value = '1';
-  document.getElementById('product-feature-count').value = '3';
   
-  // Clear custom fields if they exist
-  if (document.getElementById('custom-description-1')) {
-    document.getElementById('custom-description-1').value = '';
-    document.getElementById('custom-description-2').value = '';
-    document.getElementById('custom-description-3').value = '';
-    
-    // Clear custom features
-    const customFeatures = document.querySelectorAll('#custom-features .custom-feature input');
-    customFeatures.forEach(input => {
-      input.value = '';
-    });
-    
-    // Hide custom section
-    document.getElementById('custom-product-section').style.display = 'none';
+  if (document.getElementById('product-type')) {
+    document.getElementById('product-type').value = 'firewall';
+  }
+  
+  document.getElementById('product-layout').value = 'right';
+  
+  if (document.getElementById('product-paragraph-count')) {
+    document.getElementById('product-paragraph-count').value = '1';
+  }
+  
+  if (document.getElementById('product-feature-count')) {
+    document.getElementById('product-feature-count').value = '3';
   }
   
   document.getElementById('product-output').value = '';
-  document.getElementById('product-preview').innerHTML = '';
-  document.getElementById('product-image-preview').innerHTML = 'No image uploaded';
+  
+  const previewElement = document.getElementById('product-preview');
+  if (previewElement) {
+    previewElement.innerHTML = '';
+  }
+  
+  const imagePreviewElement = document.getElementById('product-image-preview');
+  if (imagePreviewElement) {
+    imagePreviewElement.innerHTML = 'No image uploaded';
+  }
+  
   productImageData = null;
-  document.getElementById('product-image-upload').value = ''; // Reset file input
+  
+  const fileInput = document.getElementById('product-image-upload');
+  if (fileInput) {
+    fileInput.value = '';
+  }
 }
         
     // Backend API functions
@@ -668,31 +682,19 @@ function getProxiedImageUrl(originalUrl) {
     }
 
     // Website image upload
-    document.addEventListener('DOMContentLoaded', function() {
-      document.getElementById('website-image-upload').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        if (!file.type.match('image.*')) {
-          alert('Please select an image file (JPG, PNG, etc.)');
-          return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          websiteImageData = e.target.result; // This is the base64 data
-          
-          // Show preview
-          const preview = document.getElementById('website-image-preview');
-          preview.innerHTML = `<img src="${websiteImageData}" alt="Website Image">`;
-          
-          // If we already generated a preview, update it
-          if (document.getElementById('website-output').value) {
-            generateWebsite();
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+  // Make sure templates are properly initialized
+document.addEventListener('DOMContentLoaded', function() {
+  console.log("DOM loaded, initializing product templates...");
+  console.log("Templates initialized:", Object.keys(productTemplates));
+  
+  // Initialize product type select listener if it exists
+  const productTypeSelect = document.getElementById('product-type');
+  if (productTypeSelect) {
+    console.log("Product type select found");
+  } else {
+    console.log("Product type select NOT found");
+  }
+});
 
       // Product image upload
       document.getElementById('product-image-upload').addEventListener('change', function(e) {
