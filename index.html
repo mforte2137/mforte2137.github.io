@@ -498,45 +498,77 @@
 async function fetchWebPageData(url) {
   try {
     console.log('Fetching URL:', url);
+    // Use AllOrigins with jsonp format
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&callback=?`;
+    console.log('Using proxy URL:', proxyUrl);
     
-    // First attempt with corsproxy.io
-    let proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-    console.log('Trying proxy URL:', proxyUrl);
-    
-    try {
-      let response = await fetch(proxyUrl);
+    // Use jQuery-like approach with promises
+    return new Promise((resolve, reject) => {
+      // Create a temporary script element to handle JSONP
+      const script = document.createElement('script');
+      const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
       
-      if (response.ok) {
-        const htmlContent = await response.text();
-        return processHtmlContent(htmlContent, url);
-      }
-    } catch (error) {
-      console.log('First proxy failed, trying alternative...');
-    }
-    
-    // Fallback to allorigins if first proxy fails
-    proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-    console.log('Trying alternative proxy URL:', proxyUrl);
-    
-    const response = await fetch(proxyUrl);
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch URL data with both proxies');
-    }
-    
-    const htmlContent = await response.text();
-    return processHtmlContent(htmlContent, url);
-    
+      // Define the callback function
+      window[callbackName] = function(data) {
+        // Clean up
+        delete window[callbackName];
+        document.body.removeChild(script);
+        
+        if (data && data.contents) {
+          // Process the HTML content
+          const htmlContent = data.contents;
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(htmlContent, 'text/html');
+          
+          const title = doc.querySelector('title')?.textContent || '';
+          const metaDescription = doc.querySelector('meta[name="description"]')?.getAttribute('content') || 
+                              doc.querySelector('meta[property="og:description"]')?.getAttribute('content') || 
+                              'No description available';
+          
+          // Extract paragraphs from the body
+          const paragraphs = [];
+          const pElements = doc.querySelectorAll('p');
+          console.log('Found', pElements.length, 'paragraph elements');
+          
+          pElements.forEach(p => {
+            const text = p.textContent.trim();
+            if (text.length > 30) { // Only include meaningful paragraphs
+              paragraphs.push(text);
+            }
+          });
+          
+          console.log('Filtered to', paragraphs.length, 'meaningful paragraphs');
+          
+          // Find an image if available
+          const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content');
+          const imageUrl = ogImage || '';
+          
+          resolve({
+            title,
+            description: metaDescription,
+            paragraphs,
+            imageUrl
+          });
+        } else {
+          reject(new Error('Failed to fetch data'));
+        }
+      };
+      
+      // Set up the script element
+      script.src = proxyUrl.replace('callback=?', 'callback=' + callbackName);
+      script.onerror = reject;
+      document.body.appendChild(script);
+    });
   } catch (error) {
     console.error('Error fetching web page data:', error);
-    // Return fallback data instead of null
+    // Return fallback data
     return {
       title: url.split('/').pop() || 'Web Page',
-      description: 'Content could not be loaded automatically. Please enter custom content if needed.',
+      description: 'Content could not be loaded automatically.',
       paragraphs: [
-        'This is a fallback paragraph since the content could not be loaded automatically.',
-        'You can customize this content by editing the HTML after generation.',
-        'Consider visiting the page directly for more accurate information.'
+        'This is placeholder content since the website data could not be loaded.',
+        'You can customize this content as needed for your specific use case.',
+        'Consider visiting the original website for more accurate information.'
       ],
       imageUrl: ''
     };
