@@ -126,7 +126,6 @@
       <option value="storage">Storage</option>
       <option value="network">Network Device</option>
       <option value="software">Software</option>
-      <option value="custom">Custom Product</option>
     </select>
     
     <label for="product-layout">Layout Style:</label>
@@ -312,106 +311,129 @@ function removeCustomFeature(button) {
 
 // Generate product widget
 function generateProduct() {
-  const name = document.getElementById('product-name').value;
-  const type = document.getElementById('product-type').value;
-  const layout = document.getElementById('product-layout').value;
-  const paragraphCount = parseInt(document.getElementById('product-paragraph-count').value);
-  const featureCount = parseInt(document.getElementById('product-feature-count').value);
-  
-  console.log("Product info:", {name, type, layout, paragraphCount, featureCount});
-  console.log("Templates available:", Object.keys(productTemplates));
-  
-  // Get the template for the selected product type
-  const template = productTemplates[type];
-  
-  console.log("Selected template:", template ? "Found" : "Not found");
-  
-  if (!template) {
-    console.error("Template not found for type:", type);
-    alert("Template for " + type + " not found. Please check the console for details.");
-    return;
+  try {
+    const name = document.getElementById('product-name').value;
+    const type = document.getElementById('product-type').value;
+    const layout = document.getElementById('product-layout').value;
+    const paragraphCount = parseInt(document.getElementById('product-paragraph-count').value);
+    const featureCount = parseInt(document.getElementById('product-feature-count').value);
+    
+    console.log("Generating product:", name, "Type:", type);
+    
+    // Get template data
+    const template = productTemplates[type];
+    
+    if (!template) {
+      console.error("Template not found for type:", type);
+      document.getElementById('product-preview').innerHTML = "Error: Product template not found.";
+      return;
+    }
+    
+    // Generate paragraphs content
+    let descriptionsHtml = '';
+    for (let i = 0; i < Math.min(paragraphCount, template.paragraphs.length); i++) {
+      descriptionsHtml += `<p>${template.paragraphs[i]}</p>`;
+    }
+    
+    // Generate features list
+    let featuresHtml = '<h3 style="margin-top: 20px;">Key Features</h3><ul>';
+    for (let i = 0; i < Math.min(featureCount, template.features.length); i++) {
+      featuresHtml += `<li style="margin-bottom: 8px;">${template.features[i]}</li>`;
+    }
+    featuresHtml += '</ul>';
+    
+    // Create image HTML - use the uploaded image or placeholder
+    let imageHtml;
+    if (productImageData) {
+      imageHtml = `<img src="${productImageData}" alt="${name}" style="max-width: 100%; display: block;">`;
+    } else {
+      imageHtml = `<div style="background: #f0f0f0; height: 240px; display: flex; align-items: center; justify-content: center;">Product Image</div>`;
+    }
+    
+    // Create the HTML with the templated data
+    const html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
+    <table style="width: 100%; border-collapse: collapse; border: none;">
+      <tr style="border: none;">
+        ${layout === 'left' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
+        <td style="padding: 20px; border: none;">
+          <h2 style="margin-top: 0;">${name}</h2>
+          ${descriptionsHtml}
+          ${featuresHtml}
+        </td>
+        ${layout === 'right' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
+      </tr>
+    </table>
+  </div>`;
+    
+    document.getElementById('product-output').value = html;
+    document.getElementById('product-preview').innerHTML = html;
+  } catch (error) {
+    console.error("Error generating product:", error);
+    document.getElementById('product-preview').innerHTML = "An error occurred while generating the product.";
   }
-  
-  // Rest of function...
-}
-  
-  // Generate paragraphs content
-  let descriptionsHtml = '';
-  for (let i = 0; i < Math.min(paragraphCount, template.paragraphs.length); i++) {
-    descriptionsHtml += `<p>${template.paragraphs[i]}</p>`;
-  }
-  
-  // Generate features list
-  let featuresHtml = '<h3 style="margin-top: 20px;">Key Features</h3><ul>';
-  for (let i = 0; i < Math.min(featureCount, template.features.length); i++) {
-    featuresHtml += `<li style="margin-bottom: 8px;">${template.features[i]}</li>`;
-  }
-  featuresHtml += '</ul>';
-  
-  // Create image HTML - use the uploaded image or placeholder
-  let imageHtml;
-  if (productImageData) {
-    imageHtml = `<img src="${productImageData}" alt="${name}" style="max-width: 100%; display: block;">`;
-  } else {
-    imageHtml = `<div style="background: #f0f0f0; height: 240px; display: flex; align-items: center; justify-content: center;">Product Image</div>`;
-  }
-  
-  // Create the HTML with the templated data
-  const html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
-  <table style="width: 100%; border-collapse: collapse; border: none;">
-    <tr style="border: none;">
-      ${layout === 'left' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
-      <td style="padding: 20px; border: none;">
-        <h2 style="margin-top: 0;">${name}</h2>
-        ${descriptionsHtml}
-        ${featuresHtml}
-      </td>
-      ${layout === 'right' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
-    </tr>
-  </table>
-</div>`;
-  
-  document.getElementById('product-output').value = html;
-  document.getElementById('product-preview').innerHTML = html;
 }
 
-// Clear product form
 function clearProduct() {
-  document.getElementById('product-name').value = 'Sophos XGS 136 Firewall';
-  
-  if (document.getElementById('product-type')) {
-    document.getElementById('product-type').value = 'firewall';
-  }
-  
-  document.getElementById('product-layout').value = 'right';
-  
-  if (document.getElementById('product-paragraph-count')) {
-    document.getElementById('product-paragraph-count').value = '1';
-  }
-  
-  if (document.getElementById('product-feature-count')) {
-    document.getElementById('product-feature-count').value = '3';
-  }
-  
-  document.getElementById('product-output').value = '';
-  
-  const previewElement = document.getElementById('product-preview');
-  if (previewElement) {
-    previewElement.innerHTML = '';
-  }
-  
-  const imagePreviewElement = document.getElementById('product-image-preview');
-  if (imagePreviewElement) {
-    imagePreviewElement.innerHTML = 'No image uploaded';
-  }
-  
-  productImageData = null;
-  
-  const fileInput = document.getElementById('product-image-upload');
-  if (fileInput) {
-    fileInput.value = '';
+  try {
+    document.getElementById('product-name').value = 'Sophos XGS 136 Firewall';
+    
+    if (document.getElementById('product-type')) {
+      document.getElementById('product-type').value = 'firewall';
+    }
+    
+    document.getElementById('product-layout').value = 'right';
+    
+    if (document.getElementById('product-paragraph-count')) {
+      document.getElementById('product-paragraph-count').value = '1';
+    }
+    
+    if (document.getElementById('product-feature-count')) {
+      document.getElementById('product-feature-count').value = '3';
+    }
+    
+    document.getElementById('product-output').value = '';
+    
+    const previewElement = document.getElementById('product-preview');
+    if (previewElement) {
+      previewElement.innerHTML = '';
+    }
+    
+    const imagePreviewElement = document.getElementById('product-image-preview');
+    if (imagePreviewElement) {
+      imagePreviewElement.innerHTML = 'No image uploaded';
+    }
+    
+    productImageData = null;
+    
+    const fileInput = document.getElementById('product-image-upload');
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  } catch (error) {
+    console.error("Error clearing product:", error);
   }
 }
+
+function copyProductHTML() {
+  const textarea = document.getElementById('product-output');
+  textarea.select();
+  document.execCommand('copy');
+  alert('HTML copied to clipboard!');
+}
+
+// Initialize after DOM loads
+document.addEventListener('DOMContentLoaded', function() {
+  console.log("DOM loaded, initializing product templates...");
+  console.log("Templates available:", Object.keys(productTemplates));
+  
+  // Initialize tab display
+  const firstTabButton = document.querySelector('.tab-button');
+  if (firstTabButton) {
+    const firstTabId = firstTabButton.getAttribute('onclick').match(/'([^']+)'/)[1];
+    document.getElementById(firstTabId).classList.add('active');
+    firstTabButton.classList.add('active');
+  }
+});
         
     // Backend API functions
         // Function to fetch product information
@@ -643,23 +665,23 @@ function getProxiedImageUrl(originalUrl) {
 }
 
     // Tab functionality
-    function openTab(evt, tabName) {
-      // Hide all tab content
-      const tabContents = document.getElementsByClassName("tab-content");
-      for (let i = 0; i < tabContents.length; i++) {
-        tabContents[i].classList.remove("active");
-      }
-      
-      // Remove active class from all tab buttons
-      const tabButtons = document.getElementsByClassName("tab-button");
-      for (let i = 0; i < tabButtons.length; i++) {
-        tabButtons[i].classList.remove("active");
-      }
-      
-      // Show the selected tab and add active class to the button
-      document.getElementById(tabName).classList.add("active");
-      evt.currentTarget.classList.add("active");
-    }
+ function openTab(evt, tabName) {
+  // Hide all tab content
+  const tabContents = document.getElementsByClassName("tab-content");
+  for (let i = 0; i < tabContents.length; i++) {
+    tabContents[i].classList.remove("active");
+  }
+  
+  // Remove active class from all tab buttons
+  const tabButtons = document.getElementsByClassName("tab-button");
+  for (let i = 0; i < tabButtons.length; i++) {
+    tabButtons[i].classList.remove("active");
+  }
+  
+  // Show the selected tab and add active class to the button
+  document.getElementById(tabName).classList.add("active");
+  evt.currentTarget.classList.add("active");
+}
 
     // Color picker functions
     function updateBackgroundColor() {
