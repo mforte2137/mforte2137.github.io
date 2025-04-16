@@ -113,41 +113,55 @@
         </div>
       </div>
       
-      <div id="tab3" class="tab-content">
-        <h2>Product Widget</h2>
-        <div>
-          <label for="product-name">Product Name:</label>
-          <input type="text" id="product-name" value="Premium Server">
-          
-          <label for="product-layout">Layout Style:</label>
-          <select id="product-layout">
-            <option value="right">Image Right</option>
-            <option value="left">Image Left</option>
-          </select>
-          
-          <div class="image-upload-section">
-            <label for="product-image-upload">Upload Product Image:</label>
-            <input type="file" id="product-image-upload" accept="image/*">
-            <div id="product-image-preview" class="image-preview">No image uploaded</div>
-          </div>
-          
-          <div id="benefit-items">
-            <div class="benefit-item">
-              <input type="text" placeholder="Product benefit" value="Enhanced Security">
-              <button onclick="removeBenefit(this)">Remove</button>
-            </div>
-            <div class="benefit-item">
-              <input type="text" placeholder="Product benefit" value="99.9% Uptime">
-              <button onclick="removeBenefit(this)">Remove</button>
-            </div>
-          </div>
-          
-          <div class="button-row">
-            <button onclick="addBenefit()">Add Benefit</button>
-            <button onclick="generateProduct()">Generate HTML</button>
-            <button onclick="clearProduct()">Clear Fields</button>
-          </div>
-        </div>
+ <div id="tab3" class="tab-content">
+  <h2>Product Widget</h2>
+  <div>
+    <label for="product-name">Product Name:</label>
+    <input type="text" id="product-name" value="Sophos XGS 136 Firewall">
+    
+    <label for="product-layout">Layout Style:</label>
+    <select id="product-layout">
+      <option value="right">Image Right</option>
+      <option value="left">Image Left</option>
+    </select>
+    
+    <label for="product-paragraph-count">Number of Paragraphs:</label>
+    <select id="product-paragraph-count">
+      <option value="1">1 Paragraph</option>
+      <option value="2">2 Paragraphs</option>
+      <option value="3">3 Paragraphs</option>
+    </select>
+    
+    <label for="product-feature-count">Number of Features:</label>
+    <select id="product-feature-count">
+      <option value="3">3 Features</option>
+      <option value="4">4 Features</option>
+      <option value="5">5 Features</option>
+    </select>
+    
+    <div class="image-upload-section">
+      <label for="product-image-upload">Upload Product Image:</label>
+      <input type="file" id="product-image-upload" accept="image/*">
+      <div id="product-image-preview" class="image-preview">No image uploaded</div>
+    </div>
+    
+    <div class="button-row">
+      <button onclick="generateProduct()">Generate Product Widget</button>
+      <button onclick="clearProduct()">Clear Fields</button>
+    </div>
+  </div>
+  
+  <div class="output">
+    <h3>Preview:</h3>
+    <div id="product-preview" class="preview-box"></div>
+    
+    <h3>HTML Output:</h3>
+    <div class="copy-container">
+      <button onclick="copyProductHTML()">Copy HTML</button>
+    </div>
+    <textarea id="product-output" rows="10"></textarea>
+  </div>
+</div>
         
         <div class="output">
           <h3>Preview:</h3>
@@ -196,6 +210,176 @@
     let featureBackgroundColor = "#f8f9fa";  // Default light gray
 
     // Backend API functions
+        // Function to fetch product information
+async function fetchProductInfo(productName) {
+  try {
+    console.log('Fetching product info for:', productName);
+    // Use a CORS proxy to search for product information
+    const searchUrl = `https://corsproxy.io/?${encodeURIComponent(`https://www.google.com/search?q=${encodeURIComponent(productName)}+review+specs`)}`;
+    
+    const response = await fetch(searchUrl);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch product information');
+    }
+    
+    const htmlContent = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, 'text/html');
+    
+    // Extract product information from search results
+    const paragraphs = [];
+    const features = [];
+    
+    // Look for description paragraphs in search results
+    const allParagraphs = doc.querySelectorAll('p, div > span');
+    for (let p of allParagraphs) {
+      const text = p.textContent.trim();
+      if (text.length > 60 && !text.includes('cookies') && !text.includes('JavaScript')) {
+        // Check if it looks like a product description
+        if (text.includes(productName.split(' ')[0]) || 
+            text.toLowerCase().includes('features') || 
+            text.toLowerCase().includes('performance') ||
+            text.toLowerCase().includes('specs') ||
+            text.toLowerCase().includes('designed')) {
+          paragraphs.push(text);
+          if (paragraphs.length >= 5) break; // Collect up to 5 potential paragraphs
+        }
+      }
+    }
+    
+    // Look for bullet points/features
+    const listItems = doc.querySelectorAll('li');
+    for (let li of listItems) {
+      const text = li.textContent.trim();
+      if (text.length > 20 && text.length < 200) {
+        features.push(text);
+        if (features.length >= 10) break; // Collect up to 10 potential features
+      }
+    }
+    
+    // Look for images if we don't have one uploaded
+    let imageUrl = '';
+    const images = doc.querySelectorAll('img');
+    for (let img of images) {
+      const src = img.getAttribute('src');
+      const alt = img.getAttribute('alt') || '';
+      if (src && src.includes('http') && (alt.includes(productName.split(' ')[0]) || alt.includes('product'))) {
+        if (src.includes('.jpg') || src.includes('.png') || src.includes('.jpeg')) {
+          imageUrl = src;
+          break;
+        }
+      }
+    }
+    
+    console.log(`Found ${paragraphs.length} paragraphs, ${features.length} features, and image: ${imageUrl ? 'yes' : 'no'}`);
+    
+    return {
+      name: productName,
+      paragraphs: paragraphs.length > 0 ? paragraphs : ['This product offers exceptional quality and performance for your business needs.'],
+      features: features.length > 0 ? features : ['High performance', 'Reliable design', 'Cost-effective solution'],
+      imageUrl
+    };
+  } catch (error) {
+    console.error('Error fetching product info:', error);
+    return {
+      name: productName,
+      paragraphs: ['This product offers exceptional quality and performance for your business needs.'],
+      features: ['High performance', 'Reliable design', 'Cost-effective solution'],
+      imageUrl: ''
+    };
+  }
+}
+
+// Generate product widget
+async function generateProduct() {
+  const name = document.getElementById('product-name').value;
+  const layout = document.getElementById('product-layout').value;
+  const paragraphCount = parseInt(document.getElementById('product-paragraph-count').value);
+  const featureCount = parseInt(document.getElementById('product-feature-count').value);
+  
+  // Show loading indicator
+  document.getElementById('product-preview').innerHTML = '<div style="text-align: center; padding: 20px;">Loading product information... please wait</div>';
+  
+  try {
+    // Fetch product information
+    const productInfo = await fetchProductInfo(name);
+    
+    // Generate paragraphs content
+    let descriptionsHtml = '';
+    
+    for (let i = 0; i < Math.min(paragraphCount, productInfo.paragraphs.length); i++) {
+      descriptionsHtml += `<p>${productInfo.paragraphs[i]}</p>`;
+    }
+    
+    // Generate features list
+    let featuresHtml = '';
+    if (productInfo.features.length > 0) {
+      featuresHtml = '<h3 style="margin-top: 20px;">Key Features</h3><ul>';
+      
+      for (let i = 0; i < Math.min(featureCount, productInfo.features.length); i++) {
+        featuresHtml += `<li style="margin-bottom: 8px;">${productInfo.features[i]}</li>`;
+      }
+      
+      featuresHtml += '</ul>';
+    }
+    
+    // Create image HTML - either use the uploaded image, found image, or placeholder
+    let imageHtml;
+    if (productImageData) {
+      // User uploaded image takes precedence
+      imageHtml = `<img src="${productImageData}" alt="${name}" style="max-width: 100%; display: block;">`;
+    } else if (productInfo.imageUrl) {
+      // Use found image
+      imageHtml = `<img src="${productInfo.imageUrl}" alt="${name}" style="max-width: 100%; display: block;">`;
+    } else {
+      // Fall back to placeholder
+      imageHtml = `<div style="background: #f0f0f0; height: 240px; display: flex; align-items: center; justify-content: center;">Product Image</div>`;
+    }
+    
+    // Create the HTML with fetched data
+    const html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
+    <table style="width: 100%; border-collapse: collapse; border: none;">
+      <tr style="border: none;">
+        ${layout === 'left' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
+        <td style="padding: 20px; border: none;">
+          <h2 style="margin-top: 0;">${name}</h2>
+          ${descriptionsHtml}
+          ${featuresHtml}
+        </td>
+        ${layout === 'right' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
+      </tr>
+    </table>
+  </div>`;
+    
+    document.getElementById('product-output').value = html;
+    document.getElementById('product-preview').innerHTML = html;
+  } catch (error) {
+    console.error('Error generating product widget:', error);
+    document.getElementById('product-preview').innerHTML = "An error occurred while generating the product widget. Please try again.";
+  }
+}
+
+// Clear product form
+function clearProduct() {
+  document.getElementById('product-name').value = 'Sophos XGS 136 Firewall';
+  document.getElementById('product-layout').value = 'right';
+  document.getElementById('product-paragraph-count').value = '1';
+  document.getElementById('product-feature-count').value = '3';
+  document.getElementById('product-output').value = '';
+  document.getElementById('product-preview').innerHTML = '';
+  document.getElementById('product-image-preview').innerHTML = 'No image uploaded';
+  productImageData = null;
+  document.getElementById('product-image-upload').value = ''; // Reset file input
+}
+
+// Copy product HTML to clipboard
+function copyProductHTML() {
+  const textarea = document.getElementById('product-output');
+  textarea.select();
+  document.execCommand('copy');
+  alert('HTML copied to clipboard!');
+}
 async function fetchWebPageData(url) {
   try {
     console.log('Fetching URL:', url);
