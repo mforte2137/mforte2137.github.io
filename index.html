@@ -190,22 +190,46 @@
     let featureBackgroundColor = "#f8f9fa";  // Default light gray
 
     // Backend API functions
-    async function fetchWebPageData(url) {
-      try {
-        // The API URL will be relative when deployed to Vercel
-        const apiUrl = `/api/fetch-url?url=${encodeURIComponent(url)}`;
-        const response = await fetch(apiUrl);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch URL data');
-        }
-        
-        return await response.json();
-      } catch (error) {
-        console.error('Error fetching web page data:', error);
-        return null;
-      }
+async function fetchWebPageData(url) {
+  try {
+    // Use a public CORS proxy
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    console.log('Fetching via proxy:', proxyUrl);
+    
+    const response = await fetch(proxyUrl);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch URL data');
     }
+    
+    const data = await response.json();
+    console.log('Response received:', data);
+    
+    // Basic extraction of title and description
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(data.contents, 'text/html');
+    
+    const title = doc.querySelector('title')?.textContent || '';
+    const description = doc.querySelector('meta[name="description"]')?.getAttribute('content') || 
+                       doc.querySelector('meta[property="og:description"]')?.getAttribute('content') || 
+                       'No description available';
+    
+    // Find an image if available
+    const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content');
+    const imageUrl = ogImage || '';
+    
+    console.log('Extracted data:', { title, description, imageUrl });
+    
+    return {
+      title,
+      description,
+      imageUrl
+    };
+  } catch (error) {
+    console.error('Error fetching web page data:', error);
+    return null;
+  }
+}
 
     // Function to fetch images via the backend proxy
     function getProxiedImageUrl(originalUrl) {
@@ -334,11 +358,11 @@
       if (websiteImageData) {
         // User uploaded image takes precedence
         imageHtml = `<img src="${websiteImageData}" alt="${title}" style="max-width: 100%; display: block;">`;
-      } else if (webData?.imageUrl) {
-        // Use image from metadata, proxied through our API
-        const proxiedUrl = getProxiedImageUrl(webData.imageUrl);
-        imageHtml = `<img src="${proxiedUrl}" alt="${title}" style="max-width: 100%; display: block;">`;
-      } else {
+// Replace this section in the generateWebsite function
+} else if (webData?.imageUrl) {
+  // Direct use of image URL since we're not using our API proxy anymore
+  imageHtml = `<img src="${webData.imageUrl}" alt="${title}" style="max-width: 100%; display: block;">`;
+} else {
         // Fall back to placeholder
         imageHtml = `<div style="background: #f0f0f0; height: 200px; display: flex; align-items: center; justify-content: center;">Image Placeholder</div>`;
       }
