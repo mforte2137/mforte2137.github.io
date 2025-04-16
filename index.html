@@ -495,59 +495,59 @@
     };
     
     // Backend API functions
-    async function fetchWebPageData(url) {
-      try {
-        console.log('Fetching URL:', url);
-        // Use a public CORS proxy
-        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-        console.log('Using proxy URL:', proxyUrl);
-        
-        const response = await fetch(proxyUrl);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch URL data');
-        }
-        
-        const htmlContent = await response.text();
-        
-        // Basic extraction of title and description
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlContent, 'text/html');
-        
-        const title = doc.querySelector('title')?.textContent || '';
-        const metaDescription = doc.querySelector('meta[name="description"]')?.getAttribute('content') || 
-                              doc.querySelector('meta[property="og:description"]')?.getAttribute('content') || 
-                              'No description available';
-        
-        // Extract paragraphs from the body
-        const paragraphs = [];
-        const pElements = doc.querySelectorAll('p');
-        console.log('Found', pElements.length, 'paragraph elements');
-        
-        pElements.forEach(p => {
-          const text = p.textContent.trim();
-          if (text.length > 30) { // Only include meaningful paragraphs
-            paragraphs.push(text);
-          }
-        });
-        
-        console.log('Filtered to', paragraphs.length, 'meaningful paragraphs');
-        
-        // Find an image if available
-        const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content');
-        const imageUrl = ogImage || '';
-        
-        return {
-          title,
-          description: metaDescription,
-          paragraphs,
-          imageUrl
-        };
-      } catch (error) {
-        console.error('Error fetching web page data:', error);
-        return null;
-      }
+async function fetchWebPageData(url) {
+  try {
+    console.log('Fetching URL:', url);
+    // Try a different CORS proxy
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+    console.log('Using proxy URL:', proxyUrl);
+    
+    const response = await fetch(proxyUrl);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch URL data');
     }
+    
+    const htmlContent = await response.text();
+    
+    // Basic extraction of title and description
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, 'text/html');
+    
+    const title = doc.querySelector('title')?.textContent || '';
+    const metaDescription = doc.querySelector('meta[name="description"]')?.getAttribute('content') || 
+                          doc.querySelector('meta[property="og:description"]')?.getAttribute('content') || 
+                          'No description available';
+    
+    // Extract paragraphs from the body
+    const paragraphs = [];
+    const pElements = doc.querySelectorAll('p');
+    console.log('Found', pElements.length, 'paragraph elements');
+    
+    pElements.forEach(p => {
+      const text = p.textContent.trim();
+      if (text.length > 30) { // Only include meaningful paragraphs
+        paragraphs.push(text);
+      }
+    });
+    
+    console.log('Filtered to', paragraphs.length, 'meaningful paragraphs');
+    
+    // Find an image if available
+    const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content');
+    const imageUrl = ogImage || '';
+    
+    return {
+      title,
+      description: metaDescription,
+      paragraphs,
+      imageUrl
+    };
+  } catch (error) {
+    console.error('Error fetching web page data:', error);
+    return null;
+  }
+}
 
     // Function to fetch images via the backend proxy
     function getProxiedImageUrl(originalUrl) {
