@@ -385,8 +385,8 @@
           <textarea id="product-output" rows="10"></textarea>
         </div>
       </div>
-      <div id="tab5" class="tab-content">
-  <h2>PDF Processor</h2>
+<div id="tab5" class="tab-content">
+  <h2>Cover Page Creator</h2>
   <div>
     <label for="pdf-upload">Upload PDF:</label>
     <input type="file" id="pdf-upload" accept="application/pdf">
@@ -402,7 +402,7 @@
     <input type="number" id="pdf-page" value="1" min="1" max="999">
     
     <div class="button-row">
-      <button onclick="processPDFFile()">Process PDF</button>
+      <button onclick="processPDFFile()">Create Cover Page</button>
       <button onclick="clearPDF()" class="clear-btn">Clear</button>
     </div>
   </div>
@@ -410,11 +410,11 @@
   <div class="output">
     <h3>Preview:</h3>
     <div id="pdf-preview" class="preview-box" style="min-height: 300px; display: flex; align-items: center; justify-content: center;">
-      <p>PDF preview will appear here</p>
+      <p>Cover page preview will appear here</p>
     </div>
     
     <div id="pdf-download" style="display: none; margin-top: 20px; text-align: center;">
-      <button onclick="downloadProcessedPDF()">Download Processed Image</button>
+      <button onclick="downloadProcessedPDF()">Download Cover Page</button>
     </div>
   </div>
 </div>
@@ -1184,208 +1184,110 @@ async function processPDFFile() {
   }
 }
 
-// Function to build text blocks from PDF.js text content
-function buildTextBlocks(textContent, viewport) {
-  // Group nearby text items into blocks
-  const items = textContent.items;
-  const blocks = [];
-  const margin = 5; // Margin to expand blocks slightly
-  
-  // First pass: create initial blocks from individual items
-  for (const item of items) {
-    // Transform PDF coordinates to canvas coordinates
-    const tx = pdfjsLib.Util.transform(
-      viewport.transform,
-      [1, 0, 0, 1, item.transform[4], item.transform[5]]
-    );
-    
-    // Calculate text dimensions
-    const fontHeight = Math.sqrt((item.transform[2] * item.transform[2]) + 
-                               (item.transform[3] * item.transform[3]));
-    const width = item.width * viewport.scale;
-    const height = fontHeight * viewport.scale;
-    
-    // Create block with margin
-    blocks.push({
-      x0: tx[4] - margin,
-      y0: tx[5] - height - margin,
-      x1: tx[4] + width + margin,
-      y1: tx[5] + margin,
-      text: item.str
-    });
-  }
-  
-  // Second pass: merge overlapping blocks
-  // This is a simplified approach - a more complex approach would cluster by position
-  const mergedBlocks = [];
-  
-  while (blocks.length > 0) {
-    let currentBlock = blocks.shift();
-    let merged = true;
-    
-    // Keep merging until no more overlaps
-    while (merged) {
-      merged = false;
-      
-      for (let i = 0; i < blocks.length; i++) {
-        const block = blocks[i];
-        
-        // Check if blocks overlap
-        if (!(currentBlock.x1 < block.x0 || 
-              currentBlock.x0 > block.x1 || 
-              currentBlock.y1 < block.y0 || 
-              currentBlock.y0 > block.y1)) {
-          
-          // Merge blocks
-          currentBlock = {
-            x0: Math.min(currentBlock.x0, block.x0),
-            y0: Math.min(currentBlock.y0, block.y0),
-            x1: Math.max(currentBlock.x1, block.x1),
-            y1: Math.max(currentBlock.y1, block.y1),
-            text: currentBlock.text + ' ' + block.text
-          };
-          
-          // Remove the merged block
-          blocks.splice(i, 1);
-          i--;
-          merged = true;
-        }
-      }
-    }
-    
-    mergedBlocks.push(currentBlock);
-  }
-  
-  return mergedBlocks;
-}
+// Add PDF tab button to the tab container during initialization
+document.addEventListener('DOMContentLoaded', function() {
+  const tabContainer = document.querySelector('.tab-container');
+  const pdfTabButton = document.createElement('button');
+  pdfTabButton.className = 'tab-button';
+  pdfTabButton.onclick = function(event) { openTab(event, 'tab5'); };
+  pdfTabButton.textContent = 'Cover Page Creator';
+  tabContainer.appendChild(pdfTabButton);
+});
 
-// Function to replace text blocks with background color
-async function replaceTextWithBackground(context, textBlocks, canvasWidth, canvasHeight) {
-  // Process each text block
-  for (const block of textBlocks) {
-    // Ensure coordinates are within canvas bounds
-    const x0 = Math.max(0, Math.min(Math.floor(block.x0), canvasWidth - 1));
-    const y0 = Math.max(0, Math.min(Math.floor(block.y0), canvasHeight - 1));
-    const x1 = Math.max(0, Math.min(Math.ceil(block.x1), canvasWidth - 1));
-    const y1 = Math.max(0, Math.min(Math.ceil(block.y1), canvasHeight - 1));
-    
-    // If block dimensions are invalid, skip
-    if (x1 <= x0 || y1 <= y0) continue;
-    
-    // Detect background color
-    const backgroundColor = detectBackgroundColor(context, x0, y0, x1, y1, canvasWidth, canvasHeight);
-    
-    // Fill the block with the detected background color
-    context.fillStyle = backgroundColor;
-    context.fillRect(x0, y0, x1 - x0, y1 - y0);
-  }
-}
+// Global variable for processed image data
+let processedImageData = null;
 
-// Function to detect background color from edges
-function detectBackgroundColor(context, x0, y0, x1, y1, canvasWidth, canvasHeight) {
-  // Collect edge pixels
-  const edgePixels = [];
-  const imageData = context.getImageData(0, 0, canvasWidth, canvasHeight);
-  const data = imageData.data;
+// Process PDF file using the serverless function
+async function processPDFFile() {
+  const fileInput = document.getElementById('pdf-upload');
+  const file = fileInput.files[0];
   
-  // Function to get pixel at x,y and return as RGB string
-  const getPixel = (x, y) => {
-    const i = (y * canvasWidth + x) * 4;
-    return `rgb(${data[i]}, ${data[i+1]}, ${data[i+2]})`;
-  };
-  
-  // Sample edge pixels (similar to your Python implementation)
-  // Top and bottom edges
-  if (y0 > 0 && y1 < canvasHeight) {
-    for (let x = x0; x < x1; x++) {
-      if (y0 > 0) edgePixels.push(getPixel(x, y0 - 1));
-      if (y1 < canvasHeight) edgePixels.push(getPixel(x, y1));
-    }
+  if (!file) {
+    alert('Please select a PDF file first.');
+    return;
   }
   
-  // Left and right edges
-  if (x0 > 0 && x1 < canvasWidth) {
-    for (let y = y0; y < y1; y++) {
-      if (x0 > 0) edgePixels.push(getPixel(x0 - 1, y));
-      if (x1 < canvasWidth) edgePixels.push(getPixel(x1, y));
-    }
-  }
+  const pageNum = parseInt(document.getElementById('pdf-page').value) || 1;
+  const dpi = parseInt(document.getElementById('pdf-dpi').value) || 300;
   
-  // Count occurrences of each color
-  const colorCount = {};
-  edgePixels.forEach(color => {
-    colorCount[color] = (colorCount[color] || 0) + 1;
-  });
+  // Show loading indicator
+  document.getElementById('pdf-preview').innerHTML = 
+    '<p style="text-align: center;">Processing PDF... This may take a moment.</p>' +
+    '<div style="display: flex; justify-content: center; margin-top: 20px;">' +
+    '<div style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; animation: spin 2s linear infinite;"></div>' +
+    '</div>';
+  document.getElementById('pdf-download').style.display = 'none';
   
-  // Find most common color
-  let maxCount = 0;
-  let backgroundColor = 'rgb(255, 255, 255)'; // Default white
-  
-  for (const color in colorCount) {
-    if (colorCount[color] > maxCount) {
-      maxCount = colorCount[color];
-      backgroundColor = color;
-    }
-  }
-  
-  // If no edge pixels found or not enough unique colors, 
-  // sample from within the block as fallback
-  if (edgePixels.length === 0 || Object.keys(colorCount).length < 3) {
-    // Sample a subset of block pixels to avoid performance issues with large blocks
-    const sampleRate = Math.max(1, Math.floor((x1 - x0) * (y1 - y0) / 1000));
-    const blockPixels = [];
+  try {
+    // Convert the PDF to base64
+    const reader = new FileReader();
     
-    for (let y = y0; y < y1; y += sampleRate) {
-      for (let x = x0; x < x1; x += sampleRate) {
-        blockPixels.push(getPixel(x, y));
-      }
-    }
-    
-    const blockColorCount = {};
-    blockPixels.forEach(color => {
-      blockColorCount[color] = (blockColorCount[color] || 0) + 1;
+    // Create a promise to handle the FileReader asynchronously
+    const readFileAsDataURL = new Promise((resolve, reject) => {
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
     });
     
-    // Find most common color in block
-    let blockMaxCount = 0;
-    let blockBackgroundColor = backgroundColor; // Start with edge detection result
+    // Wait for the file to be read
+    const pdfBase64 = await readFileAsDataURL;
     
-    for (const color in blockColorCount) {
-      if (blockColorCount[color] > blockMaxCount) {
-        blockMaxCount = blockColorCount[color];
-        blockBackgroundColor = color;
-      }
+    // Call the serverless function
+    const response = await fetch('/api/pdf-processor', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        pdf: pdfBase64,
+        page: pageNum,
+        dpi: dpi
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
     }
     
-    // If block sampling found a better color, use it
-    if (blockMaxCount > 0) {
-      backgroundColor = blockBackgroundColor;
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error);
     }
+    
+    // Display the processed image
+    processedImageData = data.image;
+    document.getElementById('pdf-preview').innerHTML = 
+      `<img src="${processedImageData}" style="max-width: 100%; max-height: 500px;">`;
+    document.getElementById('pdf-download').style.display = 'block';
+    
+  } catch (error) {
+    console.error('Error processing PDF:', error);
+    document.getElementById('pdf-preview').innerHTML = 
+      `<p style="color: red;">Error processing PDF: ${error.message}</p>`;
   }
-  
-  return backgroundColor;
 }
 
-// Function to download the processed image
+// Download the processed image
 function downloadProcessedPDF() {
   if (!processedImageData) {
-    alert('No processed image available. Please process a PDF first.');
+    alert('No cover page available. Please process a PDF first.');
     return;
   }
   
   const link = document.createElement('a');
   link.href = processedImageData;
-  link.download = 'processed_page.png';
+  link.download = 'cover_page.png';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 }
 
-// Function to clear the PDF processor
+// Clear the PDF processor
 function clearPDF() {
   document.getElementById('pdf-upload').value = '';
   document.getElementById('pdf-page').value = '1';
-  document.getElementById('pdf-preview').innerHTML = '<p>PDF preview will appear here</p>';
+  document.getElementById('pdf-preview').innerHTML = '<p>Cover page preview will appear here</p>';
   document.getElementById('pdf-download').style.display = 'none';
   processedImageData = null;
 }
