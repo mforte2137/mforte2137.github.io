@@ -535,7 +535,8 @@ async function fetchWebPageData(url) {
     const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
     console.log('Using proxy URL:', proxyUrl);
     
-    const response = await fetch(proxyUrl, {
+// Use the absolute path to the function
+const response = await fetch('/.netlify/functions/pdf-processor', {
       mode: 'no-cors' // Add this line to use no-cors mode
     });
     
