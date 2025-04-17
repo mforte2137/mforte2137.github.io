@@ -1102,6 +1102,101 @@ function clearPDF() {
   document.getElementById('pdf-download').style.display = 'none';
   processedImageData = null;
 }
+        // Global variable for processed image data
+let processedImageData = null;
+
+// Process PDF file using the serverless function
+async function processPDFFile() {
+  const fileInput = document.getElementById('pdf-upload');
+  const file = fileInput.files[0];
+  
+  if (!file) {
+    alert('Please select a PDF file first.');
+    return;
+  }
+  
+  const pageNum = parseInt(document.getElementById('pdf-page').value) || 1;
+  const dpi = parseInt(document.getElementById('pdf-dpi').value) || 300;
+  
+  // Show loading indicator
+  document.getElementById('pdf-preview').innerHTML = 
+    '<p style="text-align: center;">Processing PDF... This may take a moment.</p>' +
+    '<div style="display: flex; justify-content: center; margin-top: 20px;">' +
+    '<div style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; animation: spin 2s linear infinite;"></div>' +
+    '</div>';
+  document.getElementById('pdf-download').style.display = 'none';
+  
+  try {
+    // Convert the PDF to base64
+    const reader = new FileReader();
+    
+    // Create a promise to handle the FileReader asynchronously
+    const readFileAsDataURL = new Promise((resolve, reject) => {
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+    
+    // Wait for the file to be read
+    const pdfBase64 = await readFileAsDataURL;
+    
+    // Call the serverless function
+    const response = await fetch('/.netlify/functions/pdf-processor', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        pdf: pdfBase64,
+        page: pageNum,
+        dpi: dpi
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    // Display the processed image
+    processedImageData = data.image;
+    document.getElementById('pdf-preview').innerHTML = 
+      `<img src="${processedImageData}" style="max-width: 100%; max-height: 500px;">`;
+    document.getElementById('pdf-download').style.display = 'block';
+    
+  } catch (error) {
+    console.error('Error processing PDF:', error);
+    document.getElementById('pdf-preview').innerHTML = 
+      `<p style="color: red;">Error processing PDF: ${error.message}</p>`;
+  }
+}
+
+function downloadProcessedPDF() {
+  if (!processedImageData) {
+    alert('No cover page available. Please process a PDF first.');
+    return;
+  }
+  
+  const link = document.createElement('a');
+  link.href = processedImageData;
+  link.download = 'cover_page.png';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function clearPDF() {
+  document.getElementById('pdf-upload').value = '';
+  document.getElementById('pdf-page').value = '1';
+  document.getElementById('pdf-preview').innerHTML = '<p>Cover page preview will appear here</p>';
+  document.getElementById('pdf-download').style.display = 'none';
+  processedImageData = null;
+}
     </script>
 </body>
 </html>
