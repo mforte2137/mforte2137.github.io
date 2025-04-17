@@ -1073,37 +1073,6 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log("DOM loaded, event listeners initialized");
   console.log("Product templates available:", Object.keys(productTemplates));
 });
-        // Global variable for processed image data
-let processedImageData = null;
-
-// PDF processing functions
-  {
-  alert("The PDF processing feature is coming soon! This feature will allow you to automatically remove text from PDFs while preserving images and backgrounds.");
-  
-  // For now, just show a placeholder message
-  document.getElementById('pdf-preview').innerHTML = 
-    `<div style="text-align: center; padding: 20px;">
-      <p>This feature is under development. For now, consider using a manual approach:</p>
-      <ol style="text-align: left; display: inline-block;">
-        <li>Convert your PDF to images</li>
-        <li>Use an image editor to remove text</li>
-        <li>Preserve the background colors</li>
-      </ol>
-    </div>`;
-}
-
-function downloadProcessedPDF() {
-  alert('This feature is coming soon!');
-}
-
-function clearPDF() {
-  document.getElementById('pdf-upload').value = '';
-  document.getElementById('pdf-page').value = '1';
-  document.getElementById('pdf-preview').innerHTML = '<p>Cover page preview will appear here</p>';
-  document.getElementById('pdf-download').style.display = 'none';
-  processedImageData = null;
-}
-        // Global variable for processed image data
 
 // Process PDF file using the serverless function
 async function processPDFFile() {
