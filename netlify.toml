@@ -5,6 +5,6 @@
 [functions]
   directory = "netlify/functions"
 
-[functions."pdf_processor"]
-  runtime = "python3.1"
+[functions."processor"]
+  runtime = "python3.8"
 
