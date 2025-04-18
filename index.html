@@ -497,6 +497,61 @@ function copyPasteHTML() {
   document.execCommand('copy');
   alert('HTML copied to clipboard!');
 }
+function processPDFFile() {
+  const fileInput = document.getElementById('pdf-upload');
+  const file = fileInput.files[0];
+
+  if (!file) {
+    alert('Please select a PDF file first.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+
+  reader.onload = async function () {
+    try {
+      const base64Data = reader.result.split(',')[1];
+
+      const response = await fetch('/.netlify/functions/pdf_processor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: file.name,
+          file: base64Data
+        })
+      });
+
+      console.log("Response status:", response.status);
+
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
+        throw new Error(result.error || 'PDF processing failed.');
+      }
+
+      processedImageData = `data:image/png;base64,${result.image}`;
+      document.getElementById('pdf-preview').innerHTML =
+        `<img src="${processedImageData}" style="max-width: 100%; max-height: 500px;">`;
+      document.getElementById('pdf-download').style.display = 'block';
+    } catch (err) {
+      document.getElementById('pdf-preview').innerHTML =
+        `<p style="color: red;">Error processing PDF: ${err.message}</p>`;
+    }
+  };
+
+  reader.onerror = function () {
+    document.getElementById('pdf-preview').innerHTML =
+      `<p style="color: red;">Error reading PDF: ${reader.error}</p>`;
+  };
+}
+function clearPDF() {
+  document.getElementById('pdf-upload').value = '';
+  document.getElementById('pdf-page').value = '1';
+  document.getElementById('pdf-preview').innerHTML = '<p>Cover page preview will appear here</p>';
+  document.getElementById('pdf-download').style.display = 'none';
+  processedImageData = null;
+}
 
 </script>
 </body>
