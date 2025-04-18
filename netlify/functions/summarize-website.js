@@ -41,10 +41,20 @@ exports.handler = async function(event, context) {
         summary: aiResponse.choices[0].message.content
       })
     };
-  } catch (error) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error.message })
-    };
-  }
-};
+catch (error) {
+  console.error('Function error:', error);
+  return {
+    statusCode: 500,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    },
+    body: JSON.stringify({ 
+      error: error.message,
+      stack: error.stack,
+      // If there's an axios error response, include that info
+      responseStatus: error.response ? error.response.status : null,
+      responseData: error.response ? error.response.data : null
+    })
+  };
+}
