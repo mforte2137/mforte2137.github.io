@@ -1,254 +1,633 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Widget Creator Tool</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
-    .container { border: 1px solid #ddd; border-radius: 5px; padding: 20px; }
-    h1 { text-align: center; color: #333; }
-    .tab-container { display: flex; border-bottom: 1px solid #ccc; margin-bottom: 20px; flex-wrap: wrap; }
-    .tab-button { background-color: #f1f1f1; border: 1px solid #ccc; border-bottom: none; border-radius: 5px 5px 0 0; padding: 10px 20px; cursor: pointer; font-weight: bold; margin-right: 5px; margin-bottom: 5px; }
-    .tab-button.active { background-color: white; border-bottom: 2px solid white; color: #4CAF50; }
-    .tab-content { display: none; padding: 20px; border: 1px solid #ddd; border-radius: 0 0 5px 5px; }
-    .tab-content.active { display: block; }
-    label { display: block; margin-top: 15px; font-weight: bold; }
-    input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-    .button-row { display: flex; gap: 10px; margin: 20px 0; }
-    button { background-color: #4CAF50; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
-    button:hover { background-color: #45a049; }
-    .clear-btn { background-color: #6c757d; }
-    .clear-btn:hover { background-color: #5a6268; }
-    .output { margin-top: 30px; }
-    .preview-box { border: 1px solid #ddd; border-radius: 4px; padding: 15px; min-height: 150px; margin-bottom: 20px; text-align: center; }
-    #pdf-preview img { max-width: 100%; max-height: 500px; }
-    .image-preview { max-width: 100%; min-height: 100px; margin-top: 10px; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #666; text-align: center; padding: 10px; }
-    .image-preview img { max-width: 100%; max-height: 200px; display: block; margin: 0 auto; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget Creator Tool</title>
+    <style>
+        /* Basic styling */
+        body {
+          font-family: Arial, sans-serif;
+          max-width: 900px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        .container {
+          border: 1px solid #ddd;
+          border-radius: 5px;
+          padding: 20px;
+        }
+        h1 {
+          text-align: center;
+          color: #333;
+        }
+        /* Tab styling */
+        .tab-container {
+          display: flex;
+          border-bottom: 1px solid #ccc;
+          margin-bottom: 20px;
+          flex-wrap: wrap;
+        }
+        .tab-button {
+          background-color: #f1f1f1;
+          border: 1px solid #ccc;
+          border-bottom: none;
+          border-radius: 5px 5px 0 0;
+          padding: 10px 20px;
+          cursor: pointer;
+          font-weight: bold;
+          margin-right: 5px;
+          margin-bottom: 5px;
+        }
+        .tab-button.active {
+          background-color: white;
+          border-bottom: 2px solid white;
+          color: #4CAF50;
+        }
+        .tab-content {
+          display: none;
+          padding: 20px;
+          border: 1px solid #ddd;
+          border-radius: 0 0 5px 5px;
+        }
+        .tab-content.active {
+          display: block;
+        }
+        /* Form styling */
+        label {
+          display: block;
+          margin-top: 15px;
+          font-weight: bold;
+        }
+        input, select, textarea {
+          width: 100%;
+          padding: 8px;
+          margin-top: 5px;
+          margin-bottom: 15px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          box-sizing: border-box;
+        }
+        .button-row {
+          display: flex;
+          gap: 10px;
+          margin: 20px 0;
+        }
+        button {
+          background-color: #4CAF50;
+          color: white;
+          border: none;
+          padding: 10px 15px;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+        button:hover {
+          background-color: #45a049;
+        }
+        .clear-btn {
+          background-color: #6c757d;
+        }
+        .clear-btn:hover {
+          background-color: #5a6268;
+        }
+        /* Output styling */
+        .output {
+          margin-top: 30px;
+        }
+        .preview-box {
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          padding: 15px;
+          min-height: 150px;
+          margin-bottom: 20px;
+        }
+        .copy-container {
+          text-align: right;
+          margin-bottom: 5px;
+        }
+        /* Feature and benefit items */
+        .feature-item, .benefit-item {
+          border: 1px solid #ddd;
+          padding: 15px;
+          margin-bottom: 10px;
+          border-radius: 4px;
+          position: relative;
+        }
+        .feature-item button, .benefit-item button {
+          background-color: #dc3545;
+          position: absolute;
+          right: 10px;
+          top: 10px;
+          width: auto;
+        }
+        .feature-item button:hover, .benefit-item button:hover {
+          background-color: #c82333;
+        }
+        /* Image upload section */
+        .image-upload-section {
+          margin: 15px 0;
+          border: 1px solid #ddd;
+          padding: 15px;
+          border-radius: 4px;
+        }
+        .image-preview {
+          max-width: 100%;
+          min-height: 100px;
+          margin-top: 10px;
+          background-color: #f0f0f0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #666;
+          text-align: center;
+          padding: 10px;
+        }
+        .image-preview img {
+          max-width: 100%;
+          max-height: 200px;
+          display: block;
+          margin: 0 auto;
+        }
+        /* Paste widget specific styles */
+        .paste-container {
+          margin: 15px 0;
+        }
+        #paste-area {
+          width: 100%;
+          min-height: 150px;
+          padding: 15px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-family: Arial, sans-serif;
+          line-height: 1.5;
+          white-space: pre-wrap;
+        }
+        /* Style for bullets in preview */
+        .formatted-list {
+          padding-left: 30px;
+          margin: 15px 0;
+        }
+        .formatted-list li {
+          margin-bottom: 10px;
+          position: relative;
+        }
+        .formatted-list-item {
+          list-style-type: disc;
+          margin-bottom: 10px;
+          padding-left: 5px;
+        }
+        /* Color picker styling */
+        .color-picker {
+          margin: 15px 0;
+          padding: 15px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+        }
+        .color-input-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 10px;
+        }
+        .color-input {
+          flex: 1;
+        }
+        .color-button {
+          background-color: #4CAF50;
+          color: white;
+          border: none;
+          padding: 8px 15px;
+          border-radius: 4px;
+          cursor: pointer;
+          width: auto;
+        }
+        .color-presets {
+          display: flex;
+          gap: 10px;
+          margin-top: 10px;
+        }
+        .color-preset-button {
+          width: 30px;
+          height: 30px;
+          border-radius: 4px;
+          border: 1px solid #ddd;
+          cursor: pointer;
+        }
+        /* Override for color input field */
+        .color-input-row input[type="text"] {
+          margin-bottom: 0;
+        @keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Widget Creator Tool</h1>
-    <div class="tab-container">
-      <button class="tab-button active" onclick="openTab(event, 'tab1')">Website Widget</button>
-      <button class="tab-button" onclick="openTab(event, 'tab2')">Feature Widget</button>
-      <button class="tab-button" onclick="openTab(event, 'tab3')">Product Widget</button>
-      <button class="tab-button" onclick="openTab(event, 'tab4')">Paste Widget</button>
-      <button class="tab-button" onclick="openTab(event, 'tab5')">Cover Page Creator</button>
-    </div>
-    <div id="tab1" class="tab-content active">
-      <h2>Website Widget</h2>
-      <label for="url-input">Enter URL:</label>
-      <input type="text" id="url-input" value="https://example.com/services">
-      <label for="layout-select">Image Position:</label>
-      <select id="layout-select">
-        <option value="right">Right</option>
-        <option value="left">Left</option>
-      </select>
-      <label for="paragraph-count">Number of Paragraphs:</label>
-      <select id="paragraph-count">
-        <option value="1">1 Paragraph</option>
-        <option value="2">2 Paragraphs</option>
-        <option value="3">3 Paragraphs</option>
-      </select>
-      <div class="image-upload-section">
-        <label for="website-image-upload">Upload Image:</label>
-        <input type="file" id="website-image-upload" accept="image/*">
-        <div id="website-image-preview" class="image-preview">No image uploaded</div>
-      </div>
-      <div class="button-row">
-        <button onclick="generateWebsite()">Generate HTML</button>
-        <button onclick="clearWebsite()">Clear Fields</button>
-      </div>
-      <div class="output">
-        <h3>Preview:</h3>
-        <div id="website-preview" class="preview-box"></div>
-        <h3>HTML Output:</h3>
-        <div class="copy-container">
-          <button onclick="copyWebsiteHTML()">Copy HTML</button>
+    <div class="container">
+      <h1>Widget Creator Tool</h1>
+      
+     <div class="tab-container">
+  <button class="tab-button active" onclick="openTab(event, 'tab1')">Website Widget</button>
+  <button class="tab-button" onclick="openTab(event, 'tab2')">Feature Widget</button>
+  <button class="tab-button" onclick="openTab(event, 'tab3')">Product Widget</button>
+  <button class="tab-button" onclick="openTab(event, 'tab4')">Paste Widget</button>
+  <button class="tab-button" onclick="openTab(event, 'tab5')">Cover Page Creator</button>
+</div>
+      
+      <div id="tab1" class="tab-content active">
+        <h2>Website Widget</h2>
+        <div>
+          <label for="url-input">Enter URL:</label>
+          <input type="text" id="url-input" value="https://example.com/services">
+          
+          <label for="layout-select">Image Position:</label>
+          <select id="layout-select">
+            <option value="right">Right</option>
+            <option value="left">Left</option>
+          </select>
+          
+          <label for="paragraph-count">Number of Paragraphs:</label>
+          <select id="paragraph-count">
+            <option value="1">1 Paragraph</option>
+            <option value="2">2 Paragraphs</option>
+            <option value="3">3 Paragraphs</option>
+          </select>
+          
+          <div class="image-upload-section">
+            <label for="website-image-upload">Upload Image:</label>
+            <input type="file" id="website-image-upload" accept="image/*">
+            <div id="website-image-preview" class="image-preview">No image uploaded</div>
+          </div>
+          
+          <div class="button-row">
+            <button onclick="generateWebsite()">Generate HTML</button>
+            <button onclick="clearWebsite()">Clear Fields</button>
+          </div>
         </div>
-        <textarea id="website-output" rows="10"></textarea>
+        
+        <div class="output">
+          <h3>Preview:</h3>
+          <div id="website-preview" class="preview-box"></div>
+          
+          <h3>HTML Output:</h3>
+          <div class="copy-container">
+            <button onclick="copyWebsiteHTML()">Copy HTML</button>
+          </div>
+          <textarea id="website-output" rows="10"></textarea>
+        </div>
       </div>
-    </div>
-<div id="tab2" class="tab-content">
-  <h2>Feature Widget</h2>
-  <label for="feature-title">Widget Title:</label>
-  <input type="text" id="feature-title" value="Key Features">
-  <label for="feature-layout">Layout Style:</label>
-  <select id="feature-layout">
-    <option value="list">List</option>
-    <option value="grid">Grid</option>
-  </select>
-  <div id="feature-items">
-    <div class="feature-item">
-      <input type="text" placeholder="Feature title" value="24/7 Support">
-      <input type="text" placeholder="Feature description" value="Round-the-clock technical support">
-      <button onclick="removeFeature(this)">Remove</button>
-    </div>
-  </div>
-  <div class="button-row">
-    <button onclick="addFeature()">Add Feature</button>
-    <button onclick="generateFeature()">Generate HTML</button>
-    <button onclick="clearFeature()" class="clear-btn">Clear Fields</button>
-  </div>
-  <div class="output">
-    <h3>Preview:</h3>
-    <div id="feature-preview" class="preview-box"></div>
-    <h3>HTML Output:</h3>
-    <div class="copy-container">
-      <button onclick="copyFeatureHTML()">Copy HTML</button>
-    </div>
-    <textarea id="feature-output" rows="10"></textarea>
-  </div>
-</div>
-<div id="tab3" class="tab-content">
-  <h2>Product Widget</h2>
-  <label for="product-name">Product Name:</label>
-  <input type="text" id="product-name" value="Sophos XGS 136 Firewall">
-  <label for="product-type">Product Type:</label>
-  <select id="product-type">
-    <option value="firewall">Firewall/Security</option>
-    <option value="server">Server</option>
-    <option value="storage">Storage</option>
-    <option value="network">Network Device</option>
-    <option value="software">Software</option>
-  </select>
-  <label for="product-layout">Layout Style:</label>
-  <select id="product-layout">
-    <option value="right">Image Right</option>
-    <option value="left">Image Left</option>
-  </select>
-  <label for="product-paragraph-count">Number of Paragraphs:</label>
-  <select id="product-paragraph-count">
-    <option value="1">1 Paragraph</option>
-    <option value="2">2 Paragraphs</option>
-    <option value="3">3 Paragraphs</option>
-  </select>
-  <label for="product-feature-count">Number of Features:</label>
-  <select id="product-feature-count">
-    <option value="3">3 Features</option>
-    <option value="4">4 Features</option>
-    <option value="5">5 Features</option>
-  </select>
-  <div class="image-upload-section">
-    <label for="product-image-upload">Upload Product Image:</label>
-    <input type="file" id="product-image-upload" accept="image/*">
-    <div id="product-image-preview" class="image-preview">No image uploaded</div>
-  </div>
-  <div class="button-row">
-    <button onclick="generateProduct()">Generate Product Widget</button>
-    <button onclick="clearProduct()" class="clear-btn">Clear Fields</button>
-  </div>
-  <div class="output">
-    <h3>Preview:</h3>
-    <div id="product-preview" class="preview-box"></div>
-    <h3>HTML Output:</h3>
-    <div class="copy-container">
-      <button onclick="copyProductHTML()">Copy HTML</button>
-    </div>
-    <textarea id="product-output" rows="10"></textarea>
-  </div>
-</div>
-<div id="tab4" class="tab-content">
-  <h2>Paste Widget</h2>
-  <label for="paste-area">Paste Content from Word Document:</label>
-  <textarea id="paste-area" placeholder="Paste your Word document content here..."></textarea>
-  <div class="button-row">
-    <button onclick="cleanPastedContent()">Clean & Format HTML</button>
-    <button onclick="clearPasteArea()" class="clear-btn">Clear Content</button>
-  </div>
-  <div class="output">
-    <h3>Preview:</h3>
-    <div id="paste-preview" class="preview-box"></div>
-    <h3>HTML Output:</h3>
-    <div class="copy-container">
-      <button onclick="copyPasteHTML()">Copy HTML</button>
-    </div>
-    <textarea id="paste-output" rows="10"></textarea>
-  </div>
-</div>
+      
+      <div id="tab2" class="tab-content">
+        <h2>Feature Widget</h2>
+        <div>
+          <label for="feature-title">Widget Title:</label>
+          <input type="text" id="feature-title" value="Key Features">
+          
+          <label for="feature-layout">Layout Style:</label>
+          <select id="feature-layout">
+            <option value="list">List</option>
+            <option value="grid">Grid</option>
+          </select>
+          
+          <!-- Color Picker Section -->
+          <div class="color-picker">
+            <label for="background-color">Background Color:</label>
+            <div class="color-input-row">
+              <input type="text" id="background-color" class="color-input" value="#f8f9fa" placeholder="#f8f9fa">
+              <button onclick="updateBackgroundColor()" class="color-button">Apply Color</button>
+            </div>
+            <div class="color-presets">
+              <div class="color-preset-button" style="background-color: #f8f9fa;" onclick="setBackgroundColor('#f8f9fa')" title="Default (Light Gray)"></div>
+              <div class="color-preset-button" style="background-color: #e2f4ff;" onclick="setBackgroundColor('#e2f4ff')" title="Light Blue"></div>
+              <div class="color-preset-button" style="background-color: #f0e5ff;" onclick="setBackgroundColor('#f0e5ff')" title="Light Purple"></div>
+              <div class="color-preset-button" style="background-color: #fff0e5;" onclick="setBackgroundColor('#fff0e5')" title="Light Orange"></div>
+            </div>
+          </div>
+          
+          <div id="feature-items">
+            <div class="feature-item">
+              <input type="text" placeholder="Feature title" value="24/7 Support">
+              <input type="text" placeholder="Feature description" value="Round-the-clock technical support">
+              <button onclick="removeFeature(this)">Remove</button>
+            </div>
+          </div>
+          
+          <div class="button-row">
+            <button onclick="addFeature()">Add Feature</button>
+            <button onclick="generateFeature()">Generate HTML</button>
+            <button onclick="clearFeature()">Clear Fields</button>
+          </div>
+        </div>
+        
+        <div class="output">
+          <h3>Preview:</h3>
+          <div id="feature-preview" class="preview-box"></div>
+          
+          <h3>HTML Output:</h3>
+          <div class="copy-container">
+            <button onclick="copyFeatureHTML()">Copy HTML</button>
+          </div>
+          <textarea id="feature-output" rows="10"></textarea>
+        </div>
+      </div>
+      
+      <div id="tab3" class="tab-content">
+        <h2>Product Widget</h2>
+        <div>
+          <label for="product-name">Product Name:</label>
+          <input type="text" id="product-name" value="Sophos XGS 136 Firewall">
+          
+          <label for="product-type">Product Type:</label>
+          <select id="product-type">
+            <option value="firewall">Firewall/Security</option>
+            <option value="server">Server</option>
+            <option value="storage">Storage</option>
+            <option value="network">Network Device</option>
+            <option value="software">Software</option>
+          </select>
+          
+          <label for="product-layout">Layout Style:</label>
+          <select id="product-layout">
+            <option value="right">Image Right</option>
+            <option value="left">Image Left</option>
+          </select>
+          
+          <label for="product-paragraph-count">Number of Paragraphs:</label>
+          <select id="product-paragraph-count">
+            <option value="1">1 Paragraph</option>
+            <option value="2">2 Paragraphs</option>
+            <option value="3">3 Paragraphs</option>
+          </select>
+          
+          <label for="product-feature-count">Number of Features:</label>
+          <select id="product-feature-count">
+            <option value="3">3 Features</option>
+            <option value="4">4 Features</option>
+            <option value="5">5 Features</option>
+          </select>
+          
+          <div class="image-upload-section">
+            <label for="product-image-upload">Upload Product Image:</label>
+            <input type="file" id="product-image-upload" accept="image/*">
+            <div id="product-image-preview" class="image-preview">No image uploaded</div>
+          </div>
+          
+          <div class="button-row">
+            <button onclick="generateProduct()">Generate Product Widget</button>
+            <button onclick="clearProduct()">Clear Fields</button>
+          </div>
+        </div>
+        
+        <div class="output">
+          <h3>Preview:</h3>
+          <div id="product-preview" class="preview-box"></div>
+          
+          <h3>HTML Output:</h3>
+          <div class="copy-container">
+            <button onclick="copyProductHTML()">Copy HTML</button>
+          </div>
+          <textarea id="product-output" rows="10"></textarea>
+        </div>
+      </div>
 <div id="tab5" class="tab-content">
   <h2>Cover Page Creator</h2>
-  <label for="pdf-upload">Upload PDF:</label>
-  <input type="file" id="pdf-upload" accept="application/pdf">
-  <label for="pdf-dpi">Image Quality:</label>
-  <select id="pdf-dpi">
-    <option value="150">Low (150 DPI)</option>
-    <option value="300" selected>Medium (300 DPI)</option>
-    <option value="600">High (600 DPI)</option>
-  </select>
-  <label for="pdf-page">Page to Process:</label>
-  <input type="number" id="pdf-page" value="1" min="1" max="999">
-  <div class="button-row">
-    <button onclick="processPDFFile()">Create Cover Page</button>
-    <button onclick="clearPDF()" class="clear-btn">Clear</button>
+  <div>
+    <label for="pdf-upload">Upload PDF:</label>
+    <input type="file" id="pdf-upload" accept="application/pdf">
+    
+    <label for="pdf-dpi">Image Quality:</label>
+    <select id="pdf-dpi">
+      <option value="150">Low (150 DPI)</option>
+      <option value="300" selected>Medium (300 DPI)</option>
+      <option value="600">High (600 DPI)</option>
+    </select>
+    
+    <label for="pdf-page">Page to Process:</label>
+    <input type="number" id="pdf-page" value="1" min="1" max="999">
+    
+    <div class="button-row">
+      <button onclick="processPDFFile()">Create Cover Page</button>
+      <button onclick="clearPDF()" class="clear-btn">Clear</button>
+    </div>
   </div>
+  
   <div class="output">
     <h3>Preview:</h3>
-    <div id="pdf-preview" class="preview-box">
+    <div id="pdf-preview" class="preview-box" style="min-height: 300px; display: flex; align-items: center; justify-content: center;">
       <p>Cover page preview will appear here</p>
     </div>
-    <div id="pdf-download" style="display: none; text-align: center;">
+    
+    <div id="pdf-download" style="display: none; margin-top: 20px; text-align: center;">
       <button onclick="downloadProcessedPDF()">Download Cover Page</button>
     </div>
   </div>
 </div>
-<script>
+      <div id="tab4" class="tab-content">
+        <h2>Paste Widget</h2>
+        <div>
+          <label for="paste-area">Paste Content from Word Document:</label>
+          <div class="paste-container">
+            <textarea id="paste-area" placeholder="Paste your Word document content here..."></textarea>
+          </div>
+          
+          <div class="button-row">
+            <button onclick="cleanPastedContent()">Clean & Format HTML</button>
+            <button onclick="clearPasteArea()" class="clear-btn">Clear Content</button>
+          </div>
+        </div>
+        
+        <div class="output">
+          <h3>Preview:</h3>
+          <div id="paste-preview" class="preview-box"></div>
+          
+          <h3>HTML Output:</h3>
+          <div class="copy-container">
+            <button onclick="copyPasteHTML()">Copy HTML</button>
+          </div>
+          <textarea id="paste-output" rows="10"></textarea>
+        </div>
+      </div>
+    </div>
+<div id="tab5" class="tab-content">
+  <h2>Cover Page Creator</h2>
+  <div>
+    <label for="pdf-upload">Upload PDF:</label>
+    <input type="file" id="pdf-upload" accept="application/pdf">
+    
+    <label for="pdf-dpi">Image Quality:</label>
+    <select id="pdf-dpi">
+      <option value="150">Low (150 DPI)</option>
+      <option value="300" selected>Medium (300 DPI)</option>
+      <option value="600">High (600 DPI)</option>
+    </select>
+    
+    <label for="pdf-page">Page to Process:</label>
+    <input type="number" id="pdf-page" value="1" min="1" max="999">
+    
+    <div class="button-row">
+      <button onclick="processPDFFile()">Create Cover Page</button>
+      <button onclick="clearPDF()" class="clear-btn">Clear</button>
+    </div>
+  </div>
+  
+  <div class="output">
+    <h3>Preview:</h3>
+    <div id="pdf-preview" class="preview-box" style="min-height: 300px; display: flex; align-items: center; justify-content: center;">
+      <p>Cover page preview will appear here</p>
+    </div>
+    
+    <div id="pdf-download" style="display: none; margin-top: 20px; text-align: center;">
+      <button onclick="downloadProcessedPDF()">Download Cover Page</button>
+    </div>
+  </div>
+</div>
+    <!-- Embedded JavaScript -->
+    <script>
+// Global variables for images and colors
 let websiteImageData = null;
 let productImageData = null;
-let processedImageData = null;
+let featureBackgroundColor = "#f8f9fa";  // Default light gray
 
+// Tab functionality
 function openTab(evt, tabName) {
+  // Hide all tab content
   const tabContents = document.getElementsByClassName("tab-content");
-  for (let content of tabContents) {
-    content.classList.remove("active");
+  for (let i = 0; i < tabContents.length; i++) {
+    tabContents[i].classList.remove("active");
   }
+  
+  // Remove active class from all tab buttons
   const tabButtons = document.getElementsByClassName("tab-button");
-  for (let button of tabButtons) {
-    button.classList.remove("active");
+  for (let i = 0; i < tabButtons.length; i++) {
+    tabButtons[i].classList.remove("active");
   }
+  
+  // Show the selected tab and add active class to the button
   document.getElementById(tabName).classList.add("active");
   evt.currentTarget.classList.add("active");
 }
 
-function generateWebsite() {
+// Color picker functions
+function updateBackgroundColor() {
+  const colorInput = document.getElementById('background-color');
+  const colorValue = colorInput.value.trim();
+  
+  // Basic hex color validation
+  if (/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(colorValue)) {
+    featureBackgroundColor = colorValue;
+    generateFeature(); // Regenerate preview with new color
+  } else {
+    alert('Please enter a valid hex color code (e.g., #f8f9fa)');
+  }
+}
+
+function setBackgroundColor(color) {
+  document.getElementById('background-color').value = color;
+  featureBackgroundColor = color;
+  generateFeature(); // Regenerate preview with new color
+}
+
+// Backend API functions
+async function fetchWebPageData(url) {
+  try {
+    console.log('Fetching URL:', url);
+    // Use a CORS proxy
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+    console.log('Using proxy URL:', proxyUrl);
+    
+// Use the absolute path to the function
+const response = await fetch('/.netlify/functions/pdf-processor', {
+      mode: 'no-cors' // Add this line to use no-cors mode
+    });
+    
+    // When using no-cors, we can't access the content directly
+    // but we can still show a success message
+    return {
+      title: url.split('/').pop() || 'Web Page',
+      description: 'Basic content has been loaded.',
+      paragraphs: [
+        'The content for this webpage has been loaded, but details cannot be displayed due to browser security restrictions.',
+        'You can customize this content as needed for your specific use case.',
+        'Consider visiting the original website for the complete information.'
+      ],
+      imageUrl: ''
+    };
+  } catch (error) {
+    console.error('Error fetching web page data:', error);
+    return null;
+  }
+}
+
+// Website Widget functions
+async function generateWebsite() {
   const url = document.getElementById('url-input').value;
   const layout = document.getElementById('layout-select').value;
   const paragraphCount = parseInt(document.getElementById('paragraph-count').value);
-
-  let paragraphs = [
-    "This is paragraph 1 from the website.",
-    "This is paragraph 2 with more details.",
-    "This is paragraph 3 providing additional information."
-  ];
-
-  let contentHtml = '';
-  for (let i = 0; i < paragraphCount; i++) {
-    contentHtml += `<p>${paragraphs[i]}</p>`;
-  }
-
-  let imageHtml = websiteImageData
-    ? `<img src="${websiteImageData}" alt="Website Image" style="max-width: 100%;">`
-    : `<div style="background: #f0f0f0; height: 200px; display: flex; align-items: center; justify-content: center;">Image Placeholder</div>`;
-
-  const html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
-    <table style="width: 100%; border-collapse: collapse;">
-      <tr>
-        ${layout === 'left' ? `<td style="width: 30%; padding: 20px;">${imageHtml}</td>` : ''}
-        <td style="padding: 20px;">
-          <h2>Website Content</h2>
+  
+  // Show loading indicator
+  document.getElementById('website-preview').innerHTML = '<div style="text-align: center; padding: 20px;">Loading website content... please wait</div>';
+  document.getElementById('website-output').value = ''; // Clear the output while loading
+  
+  try {
+    // Fetch data about the URL
+    const webData = await fetchWebPageData(url);
+    
+    if (!webData) {
+      document.getElementById('website-preview').innerHTML = "Failed to fetch website data. Please try another URL.";
+      return;
+    }
+    
+    let title = webData.title || url.replace('https://', '').replace('http://', '').split('/').pop() || 'Web Page';
+    title = title.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    
+    // Generate paragraphs content
+    let contentHtml = '';
+    
+    if (webData.paragraphs && webData.paragraphs.length > 0) {
+      // Use extracted paragraphs
+      const numParagraphs = Math.min(paragraphCount, webData.paragraphs.length);
+      
+      for (let i = 0; i < numParagraphs; i++) {
+        contentHtml += `<p>${webData.paragraphs[i]}</p>`;
+      }
+    } else {
+      // Fallback to description
+      contentHtml = `<p>${webData.description}</p>`;
+    }
+    
+    // Create image HTML - either use the fetched image, uploaded image, or placeholder
+    let imageHtml;
+    if (websiteImageData) {
+      // User uploaded image takes precedence
+      imageHtml = `<img src="${websiteImageData}" alt="${title}" style="max-width: 100%; display: block;">`;
+    } else if (webData.imageUrl) {
+      // Direct use of image URL
+      imageHtml = `<img src="${webData.imageUrl}" alt="${title}" style="max-width: 100%; display: block;">`;
+    } else {
+      // Fall back to placeholder
+      imageHtml = `<div style="background: #f0f0f0; height: 200px; display: flex; align-items: center; justify-content: center;">Image Placeholder</div>`;
+    }
+    
+    // Create the HTML with fetched data
+    const html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
+    <table style="width: 100%; border-collapse: collapse; border: none;">
+      <tr style="border: none;">
+        ${layout === 'left' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
+        <td style="padding: 20px; border: none;">
+          <h2 style="margin-top: 0;">${title}</h2>
           ${contentHtml}
         </td>
-        ${layout === 'right' ? `<td style="width: 30%; padding: 20px;">${imageHtml}</td>` : ''}
+        ${layout === 'right' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
       </tr>
     </table>
   </div>`;
-
-  document.getElementById('website-output').value = html;
-  document.getElementById('website-preview').innerHTML = html;
+    
+    document.getElementById('website-output').value = html;
+    document.getElementById('website-preview').innerHTML = html;
+  } catch (error) {
+    console.error('Error generating website:', error);
+    document.getElementById('website-preview').innerHTML = "An error occurred while generating the widget. Please try again.";
+  }
 }
 
 function clearWebsite() {
@@ -259,7 +638,7 @@ function clearWebsite() {
   document.getElementById('website-preview').innerHTML = '';
   document.getElementById('website-image-preview').innerHTML = 'No image uploaded';
   websiteImageData = null;
-  document.getElementById('website-image-upload').value = '';
+  document.getElementById('website-image-upload').value = ''; // Reset file input
 }
 
 function copyWebsiteHTML() {
@@ -269,21 +648,7 @@ function copyWebsiteHTML() {
   alert('HTML copied to clipboard!');
 }
 
-document.getElementById('website-image-upload').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (!file || !file.type.match('image.*')) {
-    alert('Please select a valid image file.');
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = function(event) {
-    websiteImageData = event.target.result;
-    document.getElementById('website-image-preview').innerHTML = `<img src="${websiteImageData}" alt="Website Image">`;
-  };
-  reader.readAsDataURL(file);
-});
-
-
+// Feature Widget functions
 function addFeature() {
   const container = document.getElementById('feature-items');
   const newFeature = document.createElement('div');
@@ -303,46 +668,52 @@ function removeFeature(button) {
 function generateFeature() {
   const title = document.getElementById('feature-title').value;
   const layout = document.getElementById('feature-layout').value;
-  const featureItems = document.querySelectorAll('#feature-items .feature-item');
-
-  let features = [];
+  
+  const features = [];
+  const featureItems = document.querySelectorAll('.feature-item');
+  
   featureItems.forEach(item => {
     const inputs = item.querySelectorAll('input');
-    if (inputs.length === 2) {
-      features.push({ title: inputs[0].value, description: inputs[1].value });
-    }
-  });
-
-  let html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
-    <h2 style="text-align: center; margin-bottom: 20px;">${title}</h2>
-  `;
-
-  if (layout === 'grid') {
-    html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">';
-    features.forEach(f => {
-      html += `
-        <div style="background: #f9f9f9; padding: 20px; border-radius: 5px; text-align: center;">
-          <h3 style="margin-top: 0;">${f.title}</h3>
-          <p>${f.description}</p>
-        </div>`;
+    features.push({
+      title: inputs[0].value,
+      description: inputs[1].value
     });
-    html += '</div>';
+  });
+  
+  let featuresHTML = '';
+  
+  if (layout === 'grid') {
+    featuresHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">';
+    features.forEach(feature => {
+      featuresHTML += `
+        <div style="background: ${featureBackgroundColor}; padding: 20px; border-radius: 5px; text-align: center;">
+          <h3 style="margin-top: 0;">${feature.title}</h3>
+          <p>${feature.description}</p>
+        </div>
+      `;
+    });
+    featuresHTML += '</div>';
   } else {
-    html += '<div>';
-    features.forEach(f => {
-      html += `
-        <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 10px; display: flex;">
+    featuresHTML = '<div>';
+    features.forEach(feature => {
+      featuresHTML += `
+        <div style="background: ${featureBackgroundColor}; padding: 15px; border-radius: 5px; margin-bottom: 10px; display: flex;">
           <div style="margin-right: 15px; color: green; font-weight: bold;">✓</div>
           <div>
-            <h3 style="margin-top: 0;">${f.title}</h3>
-            <p>${f.description}</p>
+            <h3 style="margin-top: 0;">${feature.title}</h3>
+            <p>${feature.description}</p>
           </div>
-        </div>`;
+        </div>
+      `;
     });
-    html += '</div>';
+    featuresHTML += '</div>';
   }
-
-  html += '</div>';
+  
+  const html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
+  <h2 style="text-align: center; margin-bottom: 20px;">${title}</h2>
+  ${featuresHTML}
+</div>`;
+  
   document.getElementById('feature-output').value = html;
   document.getElementById('feature-preview').innerHTML = html;
 }
@@ -350,12 +721,15 @@ function generateFeature() {
 function clearFeature() {
   document.getElementById('feature-title').value = 'Key Features';
   document.getElementById('feature-layout').value = 'list';
+  document.getElementById('background-color').value = '#f8f9fa';
+  featureBackgroundColor = '#f8f9fa';  // Reset to default
   document.getElementById('feature-items').innerHTML = `
     <div class="feature-item">
       <input type="text" placeholder="Feature title" value="24/7 Support">
       <input type="text" placeholder="Feature description" value="Round-the-clock technical support">
       <button onclick="removeFeature(this)">Remove</button>
-    </div>`;
+    </div>
+  `;
   document.getElementById('feature-output').value = '';
   document.getElementById('feature-preview').innerHTML = '';
 }
@@ -367,55 +741,183 @@ function copyFeatureHTML() {
   alert('HTML copied to clipboard!');
 }
 
-
+// Product Widget functions
+// Product templates for different product types
+const productTemplates = {
+  firewall: {
+    paragraphs: [
+      "This high-performance firewall delivers robust network protection with advanced threat prevention capabilities. Designed for modern businesses, it offers comprehensive security against evolving cyber threats.",
+      "With next-generation firewall technology, it combines intrusion prevention, malware detection, and deep packet inspection. The intuitive management interface simplifies configuration and monitoring while providing detailed reporting.",
+      "Perfect for organizations needing reliable security without compromising performance, this solution scales to meet growing network demands while maintaining consistent protection across all traffic."
+    ],
+    features: [
+      "Advanced threat protection with real-time security intelligence",
+      "High-speed inspection of encrypted traffic",
+      "Centralized management and reporting dashboard",
+      "Automated security updates and patches",
+      "Seamless integration with existing network infrastructure"
+    ]
+  },
+  server: {
+    paragraphs: [
+      "This enterprise-grade server delivers exceptional performance for demanding business applications. With powerful processing capabilities and reliable operation, it forms the backbone of modern IT infrastructure.",
+      "Engineered with redundant components and advanced cooling technology, it ensures maximum uptime for critical workloads. The expandable architecture accommodates growing storage and processing needs without requiring complete replacement.",
+      "Optimized for both virtualization and application hosting, this server balances computing power with energy efficiency to reduce operational costs while meeting performance requirements."
+    ],
+    features: [
+      "High-performance multi-core processors for demanding workloads",
+      "Expandable memory and storage options for future growth",
+      "Hot-swappable components for maintenance without downtime",
+      "Integrated security features including secure boot and TPM",
+      "Comprehensive remote management capabilities"
+    ]
+  },
+  storage: {
+    paragraphs: [
+      "This versatile storage solution offers high-capacity data management with exceptional reliability and performance. Designed for enterprise environments, it provides secure and accessible storage for critical business information.",
+      "With advanced data protection features including encryption, snapshots, and replication, it safeguards valuable information against loss or unauthorized access. The scalable architecture allows for seamless capacity expansion as data requirements grow.",
+      "Optimized for both structured and unstructured data, this solution supports multiple access protocols and integration with existing systems, making it ideal for diverse storage needs."
+    ],
+    features: [
+      "High-density storage design with extensive scalability",
+      "Multiple RAID configurations for optimized performance and protection",
+      "Automated tiering for cost-effective data management",
+      "Comprehensive backup and disaster recovery capabilities",
+      "Intuitive management interface with detailed monitoring"
+    ]
+  },
+  network: {
+    paragraphs: [
+      "This high-performance networking device delivers reliable connectivity with advanced management capabilities. Designed for modern network infrastructures, it supports growing bandwidth demands while maintaining consistent performance.",
+      "With support for the latest networking standards and protocols, it ensures seamless integration with existing equipment while providing a path for future upgrades. The robust quality of service features prioritize critical traffic to maintain optimal application performance.",
+      "Engineered for enterprise environments, this solution combines security, reliability, and performance in a cost-effective package that reduces total ownership costs."
+    ],
+    features: [
+      "High-speed ports with support for multiple connection types",
+      "Advanced QoS features for traffic prioritization",
+      "Comprehensive security features including access control and threat detection",
+      "Centralized management and configuration",
+      "Energy-efficient design with redundant power options"
+    ]
+  },
+  software: {
+    paragraphs: [
+      "This innovative software solution streamlines operations and enhances productivity across your organization. With an intuitive interface and powerful functionality, it addresses common challenges while adapting to specific business needs.",
+      "Designed with user experience in mind, it reduces the learning curve and improves adoption rates compared to traditional solutions. The comprehensive feature set eliminates the need for multiple specialized tools, centralizing operations in one platform.",
+      "Regular updates ensure continued compatibility with evolving technologies and security standards, protecting your investment and maintaining optimal performance over time."
+    ],
+    features: [
+      "Intuitive user interface with minimal training requirements",
+      "Comprehensive reporting and analytics capabilities",
+      "Customizable workflows to match business processes",
+      "Secure multi-user access with role-based permissions",
+      "Seamless integration with existing business systems"
+    ]
+  }
+};
 
 function generateProduct() {
-  const name = document.getElementById('product-name').value;
-  const type = document.getElementById('product-type').value;
-  const layout = document.getElementById('product-layout').value;
-  const paragraphCount = parseInt(document.getElementById('product-paragraph-count').value);
-  const featureCount = parseInt(document.getElementById('product-feature-count').value);
-
-  const paragraphs = Array.from({ length: paragraphCount }, (_, i) => `This is paragraph ${i + 1} about the product.`);
-  const features = Array.from({ length: featureCount }, (_, i) => `Feature ${i + 1}`);
-
-  let descriptionsHtml = paragraphs.map(p => `<p>${p}</p>`).join('');
-  let featuresHtml = '<h3 style="margin-top: 20px;">Key Features</h3><ul>' +
-    features.map(f => `<li style="margin-bottom: 8px;">${f}</li>`).join('') + '</ul>';
-
-  let imageHtml = productImageData
-    ? `<img src="${productImageData}" alt="${name}" style="max-width: 100%; display: block;">`
-    : `<div style="background: #f0f0f0; height: 240px; display: flex; align-items: center; justify-content: center;">Product Image</div>`;
-
-  const html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
-    <table style="width: 100%; border-collapse: collapse;">
-      <tr>
-        ${layout === 'left' ? `<td style="width: 30%; padding: 20px;">${imageHtml}</td>` : ''}
-        <td style="padding: 20px;">
+  try {
+    const name = document.getElementById('product-name').value;
+    const type = document.getElementById('product-type').value;
+    const layout = document.getElementById('product-layout').value;
+    const paragraphCount = parseInt(document.getElementById('product-paragraph-count').value);
+    const featureCount = parseInt(document.getElementById('product-feature-count').value);
+    
+    console.log("Generating product:", name, "Type:", type);
+    
+    // Get template data
+    const template = productTemplates[type];
+    
+    if (!template) {
+      console.error("Template not found for type:", type);
+      document.getElementById('product-preview').innerHTML = "Error: Product template not found.";
+      return;
+    }
+    
+    // Generate paragraphs content
+    let descriptionsHtml = '';
+    for (let i = 0; i < Math.min(paragraphCount, template.paragraphs.length); i++) {
+      descriptionsHtml += `<p>${template.paragraphs[i]}</p>`;
+    }
+    
+    // Generate features list
+    let featuresHtml = '<h3 style="margin-top: 20px;">Key Features</h3><ul>';
+    for (let i = 0; i < Math.min(featureCount, template.features.length); i++) {
+      featuresHtml += `<li style="margin-bottom: 8px;">${template.features[i]}</li>`;
+    }
+    featuresHtml += '</ul>';
+    
+    // Create image HTML - use the uploaded image or placeholder
+    let imageHtml;
+    if (productImageData) {
+      imageHtml = `<img src="${productImageData}" alt="${name}" style="max-width: 100%; display: block;">`;
+    } else {
+      imageHtml = `<div style="background: #f0f0f0; height: 240px; display: flex; align-items: center; justify-content: center;">Product Image</div>`;
+    }
+    
+    // Create the HTML with the templated data
+    const html = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto;">
+    <table style="width: 100%; border-collapse: collapse; border: none;">
+      <tr style="border: none;">
+        ${layout === 'left' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
+        <td style="padding: 20px; border: none;">
           <h2 style="margin-top: 0;">${name}</h2>
           ${descriptionsHtml}
           ${featuresHtml}
         </td>
-        ${layout === 'right' ? `<td style="width: 30%; padding: 20px;">${imageHtml}</td>` : ''}
+        ${layout === 'right' ? `<td style="width: 30%; padding: 20px; border: none;">${imageHtml}</td>` : ''}
       </tr>
     </table>
   </div>`;
-
-  document.getElementById('product-output').value = html;
-  document.getElementById('product-preview').innerHTML = html;
+    
+    document.getElementById('product-output').value = html;
+    document.getElementById('product-preview').innerHTML = html;
+  } catch (error) {
+    console.error("Error generating product:", error);
+    document.getElementById('product-preview').innerHTML = "An error occurred while generating the product.";
+  }
 }
 
 function clearProduct() {
-  document.getElementById('product-name').value = 'Sophos XGS 136 Firewall';
-  document.getElementById('product-type').value = 'firewall';
-  document.getElementById('product-layout').value = 'right';
-  document.getElementById('product-paragraph-count').value = '1';
-  document.getElementById('product-feature-count').value = '3';
-  document.getElementById('product-output').value = '';
-  document.getElementById('product-preview').innerHTML = '';
-  document.getElementById('product-image-preview').innerHTML = 'No image uploaded';
-  productImageData = null;
-  document.getElementById('product-image-upload').value = '';
+  try {
+    document.getElementById('product-name').value = 'Sophos XGS 136 Firewall';
+    
+    if (document.getElementById('product-type')) {
+      document.getElementById('product-type').value = 'firewall';
+    }
+    
+    document.getElementById('product-layout').value = 'right';
+    
+    if (document.getElementById('product-paragraph-count')) {
+      document.getElementById('product-paragraph-count').value = '1';
+    }
+    
+    if (document.getElementById('product-feature-count')) {
+      document.getElementById('product-feature-count').value = '3';
+    }
+    
+    document.getElementById('product-output').value = '';
+    
+    const previewElement = document.getElementById('product-preview');
+    if (previewElement) {
+      previewElement.innerHTML = '';
+    }
+    
+    const imagePreviewElement = document.getElementById('product-image-preview');
+    if (imagePreviewElement) {
+      imagePreviewElement.innerHTML = 'No image uploaded';
+    }
+    
+    productImageData = null;
+    
+    const fileInput = document.getElementById('product-image-upload');
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  } catch (error) {
+    console.error("Error clearing product:", error);
+  }
 }
 
 function copyProductHTML() {
@@ -425,62 +927,78 @@ function copyProductHTML() {
   alert('HTML copied to clipboard!');
 }
 
-document.getElementById('product-image-upload').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (!file || !file.type.match('image.*')) {
-    alert('Please select a valid image file.');
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = function(event) {
-    productImageData = event.target.result;
-    document.getElementById('product-image-preview').innerHTML = `<img src="${productImageData}" alt="Product Image">`;
-  };
-  reader.readAsDataURL(file);
-});
+// Paste Widget functions
 function cleanPastedContent() {
   const pasteArea = document.getElementById('paste-area');
   const content = pasteArea.value;
-
+  
   if (!content.trim()) {
     alert('Please paste some content first.');
     return;
   }
-
-  const lines = content.split('\n');
+  
+  // Split into lines and process
+  let lines = content.split('\n');
   let cleanedHTML = '';
   let inList = false;
-
-  lines.forEach(line => {
-    line = line.trim();
+  
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
+    
+    // Skip empty lines
     if (!line) {
       if (inList) {
         cleanedHTML += '</ul>\n';
         inList = false;
       }
-      return;
+      continue;
     }
-
-    if (/^([\u2022\*\-\d\)]+)\s+/.test(line)) {
-      line = line.replace(/^([\u2022\*\-\d\)]+)\s+/, '');
+    
+    // More aggressive bullet detection - look for indentation, special characters,
+    // or lines that begin with a number followed by a period or parenthesis
+    // This handles a wide variety of bullet styles from Word
+    if (line.match(/^[\s\t]*[•\-\*o◦→⇒⊕⊗⊙⊚⊛⊝⊞⊟□■]+.+/) || // Bullets with any character
+        line.match(/^\s+.+/) || // Indented lines
+        line.match(/^\d+[\.\)]\s+.+/)) { // Numbered lists: "1. " or "1) "
+      
+      // Strip out the bullet characters, numbers, and excess whitespace
+      line = line.replace(/^[\s\t]*[•\-\*o◦→⇒⊕⊗⊙⊚⊛⊝⊞⊟□■]+\s*/, '');
+      line = line.replace(/^\s+/, '');
+      line = line.replace(/^\d+[\.\)]\s+/, '');
+      
       if (!inList) {
-        cleanedHTML += '<ul>\n';
+        cleanedHTML += '<ul style="list-style-type: disc; padding-left: 30px; margin: 15px 0;">\n';
         inList = true;
       }
-      cleanedHTML += `  <li>${line}</li>\n`;
+      
+      cleanedHTML += `  <li style="margin-bottom: 8px;">${line}</li>\n`;
     } else {
+      // Not a bullet point
       if (inList) {
         cleanedHTML += '</ul>\n';
         inList = false;
       }
-      cleanedHTML += `<p>${line}</p>\n`;
+      
+      // Check for headings (assume lines with few words and ending with colon might be headings)
+      if (line.length < 50 && line.match(/[a-zA-Z]{2,}:$/)) {
+        cleanedHTML += `<h3 style="margin-top: 15px; margin-bottom: 10px;">${line}</h3>\n`;
+      } else {
+        cleanedHTML += `<p style="margin-bottom: 10px;">${line}</p>\n`;
+      }
     }
-  });
-
-  if (inList) cleanedHTML += '</ul>\n';
-
-  const formattedHTML = `<div style="font-family: Arial; max-width: 900px; margin: 0 auto; line-height: 1.5;">\n${cleanedHTML}</div>`;
-
+  }
+  
+  // Close any open list
+  if (inList) {
+    cleanedHTML += '</ul>\n';
+  }
+  
+  // Wrap everything in a container with inline styles
+  const formattedHTML = `<div style="font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; line-height: 1.5;">
+  ${cleanedHTML}
+</div>`;
+  
+  // Set output and preview
   document.getElementById('paste-output').value = formattedHTML;
   document.getElementById('paste-preview').innerHTML = formattedHTML;
 }
@@ -497,54 +1015,160 @@ function copyPasteHTML() {
   document.execCommand('copy');
   alert('HTML copied to clipboard!');
 }
-function processPDFFile() {
-  const fileInput = document.getElementById('pdf-upload');
-  const file = fileInput.files[0];
 
-  if (!file) {
-    alert('Please select a PDF file first.');
+// Initialize event listeners for file uploads
+document.addEventListener('DOMContentLoaded', function() {
+  // Website image upload
+  document.getElementById('website-image-upload').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (!file.type.match('image.*')) {
+      alert('Please select an image file (JPG, PNG, etc.)');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      websiteImageData = e.target.result; // This is the base64 data
+      
+      // Show preview
+      const preview = document.getElementById('website-image-preview');
+      preview.innerHTML = `<img src="${websiteImageData}" alt="Website Image">`;
+      
+      // If we already generated a preview, update it
+      if (document.getElementById('website-output').value) {
+        generateWebsite();
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Product image upload
+  document.getElementById('product-image-upload').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (!file.type.match('image.*')) {
+      alert('Please select an image file (JPG, PNG, etc.)');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      productImageData = e.target.result; // This is the base64 data
+      
+      // Show preview
+      const preview = document.getElementById('product-image-preview');
+      preview.innerHTML = `<img src="${productImageData}" alt="Product Image">`;
+      
+      // If we already generated a preview, update it
+      if (document.getElementById('product-output').value) {
+        generateProduct();
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  
+  console.log("DOM loaded, event listeners initialized");
+  console.log("Product templates available:", Object.keys(productTemplates));
+});
+
+// Process PDF file using the serverless function
+async function processPDFFile() {
+  try {
+    const fileInput = document.getElementById('pdf-upload');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+      alert('Please select a PDF file first.');
+      return;
+    }
+    
+    const pageNum = parseInt(document.getElementById('pdf-page').value) || 1;
+    const dpi = parseInt(document.getElementById('pdf-dpi').value) || 300;
+    
+    // Show loading indicator
+    document.getElementById('pdf-preview').innerHTML = 
+      '<p style="text-align: center;">Processing PDF... This may take a moment.</p>' +
+      '<div style="display: flex; justify-content: center; margin-top: 20px;">' +
+      '<div style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; animation: spin 2s linear infinite;"></div>' +
+      '</div>';
+    document.getElementById('pdf-download').style.display = 'none';
+    
+    // Convert the PDF to base64 using a safer approach
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    
+    reader.onload = async function() {
+      try {
+        const pdfBase64 = reader.result;
+        
+        console.log("Calling serverless function...");
+        // Call the serverless function
+        const response = await fetch('/.netlify/functions/pdf-processor', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            pdf: pdfBase64,
+            page: pageNum,
+            dpi: dpi
+          }),
+        });
+        
+        console.log("Response status:", response.status);
+        
+        if (!response.ok) {
+          throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        
+        // Display the processed image
+        processedImageData = data.image;
+        document.getElementById('pdf-preview').innerHTML = 
+          `<img src="${processedImageData}" style="max-width: 100%; max-height: 500px;">`;
+        document.getElementById('pdf-download').style.display = 'block';
+      } catch (error) {
+        console.error('Error in PDF processing:', error);
+        document.getElementById('pdf-preview').innerHTML = 
+          `<p style="color: red;">Error processing PDF: ${error.message}</p>`;
+      }
+    };
+    
+    reader.onerror = function() {
+      console.error('Error reading file:', reader.error);
+      document.getElementById('pdf-preview').innerHTML = 
+        `<p style="color: red;">Error reading file: ${reader.error}</p>`;
+    };
+    
+  } catch (error) {
+    console.error('Error in PDF processing setup:', error);
+    document.getElementById('pdf-preview').innerHTML = 
+      `<p style="color: red;">Error setting up PDF processing: ${error.message}</p>`;
+  }
+}
+
+function downloadProcessedPDF() {
+  if (!processedImageData) {
+    alert('No cover page available. Please process a PDF first.');
     return;
   }
-
-  const reader = new FileReader();
-  reader.readAsDataURL(file);
-
-  reader.onload = async function () {
-    try {
-      const base64Data = reader.result.split(',')[1];
-
-      const response = await fetch('/.netlify/functions/pdf_processor', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          filename: file.name,
-          file: base64Data
-        })
-      });
-
-      console.log("Response status:", response.status);
-
-      const result = await response.json();
-
-      if (!response.ok || result.error) {
-        throw new Error(result.error || 'PDF processing failed.');
-      }
-
-      processedImageData = `data:image/png;base64,${result.image}`;
-      document.getElementById('pdf-preview').innerHTML =
-        `<img src="${processedImageData}" style="max-width: 100%; max-height: 500px;">`;
-      document.getElementById('pdf-download').style.display = 'block';
-    } catch (err) {
-      document.getElementById('pdf-preview').innerHTML =
-        `<p style="color: red;">Error processing PDF: ${err.message}</p>`;
-    }
-  };
-
-  reader.onerror = function () {
-    document.getElementById('pdf-preview').innerHTML =
-      `<p style="color: red;">Error reading PDF: ${reader.error}</p>`;
-  };
+  
+  const link = document.createElement('a');
+  link.href = processedImageData;
+  link.download = 'cover_page.png';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
+
 function clearPDF() {
   document.getElementById('pdf-upload').value = '';
   document.getElementById('pdf-page').value = '1';
@@ -552,7 +1176,6 @@ function clearPDF() {
   document.getElementById('pdf-download').style.display = 'none';
   processedImageData = null;
 }
-
-</script>
+    </script>
 </body>
 </html>
