@@ -3,5 +3,11 @@ import json
 def handler(event, context):
     return {
         "statusCode": 200,
-        "body": json.dumps({"message": "PDF processor is working!"})
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "body": json.dumps({
+            "message": "PDF processor is working!"
+        })
     }
+
