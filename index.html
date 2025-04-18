@@ -1348,88 +1348,57 @@
                 reader.readAsDataURL(file);
             }
             
-            // Fetch website content
-            async function fetchWebsiteContent() {
-                const url = urlInput.value.trim();
-                
-                if (!url) {
-                    showWidgetStatus('Please enter a valid URL.', 'error');
-                    return;
-                }
-                
-                if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                    showWidgetStatus('URL must start with http:// or https://.', 'error');
-                    return;
-                }
-                
-                try {
-                    // Show loading status
-                    showWidgetStatus('Fetching website content...', 'info');
-                    
-                    // Use a CORS proxy or serverless function here
-                    // For the prototype, we'll simulate a response
-                    
-                    /*
-                    NOTE: In a real implementation, you would use a serverless function or backend API:
-                    
-                    const response = await fetch('/api/fetch-website', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ url })
-                    });
-                    
-                    const data = await response.json();
-                    */
-                    
-                    // Simulate a delay to mimic network request
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                    
-                    // Generate example content based on the URL
-                    const domainMatch = url.match(/\/\/([^\/]+)/);
-                    const domain = domainMatch ? domainMatch[1] : 'example.com';
-                    
-                    // Simulate different results based on domain
-                    let data;
-                    
-                    if (url.includes('blackbeltsecure.com')) {
-                        data = {
-                            title: "BlackBelt Security - Penetration Testing Services",
-                            summary: `BlackBelt Security offers comprehensive penetration testing services to help organizations identify and mitigate security vulnerabilities before malicious actors can exploit them. Our certified security professionals use industry-standard methodologies and advanced tools to simulate real-world attacks on your networks, applications, and systems.\n\nOur penetration testing services include network penetration testing, web application testing, mobile application testing, cloud infrastructure testing, and social engineering assessments. Each engagement is customized to meet your specific needs and compliance requirements, providing you with actionable insights to strengthen your security posture.`,
-                            imageUrl: "https://via.placeholder.com/400x300/2c3e50/ffffff?text=BlackBelt+Security"
-                        };
-                    } else if (url.includes('github.com')) {
-                        data = {
-                            title: "GitHub: Where the world builds software",
-                            summary: `GitHub is a code hosting platform for version control and collaboration. It lets you and others work together on projects from anywhere. Millions of developers and companies build, ship, and maintain their software on GitHub — the largest and most advanced development platform in the world.\n\nWith collaborative features like pull requests, issues, and discussions, GitHub makes it easy to build and review code, manage projects, and develop software alongside millions of other developers.`,
-                            imageUrl: "https://via.placeholder.com/400x300/24292e/ffffff?text=GitHub"
-                        };
-                    } else if (url.includes('netlify.com')) {
-                        data = {
-                            title: "Netlify: Develop & deploy the best web experiences in record time",
-                            summary: `Netlify is a web developer platform that multiplies your productivity. With integrated build tooling, global deployment, and serverless functions, you can focus on creating amazing web experiences rather than wasting time on complex setups.\n\nConnect Netlify to your Git provider, add your build settings, then push to deploy. Your site will be built and deployed in seconds, with a CDN that's global, fast, and takes security seriously.`,
-                            imageUrl: "https://via.placeholder.com/400x300/146567/ffffff?text=Netlify"
-                        };
-                    } else {
-                        // Generic response for other URLs
-                        data = {
-                            title: `Content from ${domain}`,
-                            summary: `This is an example summary for ${domain}. In a production environment, this content would be fetched from the actual website using a backend service or serverless function. Due to browser security restrictions (CORS), client-side JavaScript cannot directly fetch content from other domains.\n\nWhen implementing this tool in production, you would need to create a server-side proxy or use a service like Netlify Functions to fetch and parse the website content securely.`,
-                            imageUrl: `https://via.placeholder.com/400x300/3498db/ffffff?text=${domain}`
-                        };
-                    }
-                    
-                    // Update UI with the fetched content
-                    summaryTextarea.value = data.summary;
-                    currentImage = data.imageUrl;
-                    
-                    showWidgetStatus('Content fetched successfully!', 'success');
-                } catch (error) {
-                    console.error('Error fetching website content:', error);
-                    showWidgetStatus('Error fetching website content. This might be due to CORS restrictions or the website blocking requests.', 'error');
-                }
-            }
+ // Fetch website content
+async function fetchWebsiteContent() {
+    const url = urlInput.value.trim();
+    
+    if (!url) {
+        showWidgetStatus('Please enter a valid URL.', 'error');
+        return;
+    }
+    
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        showWidgetStatus('URL must start with http:// or https://.', 'error');
+        return;
+    }
+    
+    try {
+        // Show loading status
+        showWidgetStatus('Fetching website content...', 'info');
+        
+        // Call the summary function
+        const summaryResponse = await fetch('/.netlify/functions/summarize-website', {
+            method: 'POST',
+            body: JSON.stringify({ url })
+        });
+        
+        // Call the image function
+        const imageResponse = await fetch('/.netlify/functions/get-website-images', {
+            method: 'POST',
+            body: JSON.stringify({ url })
+        });
+        
+        if (!summaryResponse.ok) {
+            throw new Error('Error fetching website summary');
+        }
+        
+        if (!imageResponse.ok) {
+            throw new Error('Error fetching website images');
+        }
+        
+        const summaryData = await summaryResponse.json();
+        const imageData = await imageResponse.json();
+        
+        // Update UI with the fetched content
+        summaryTextarea.value = summaryData.summary || "No summary available";
+        currentImage = imageData.mainImage || 'https://via.placeholder.com/400x300/cccccc/666666?text=No+Image';
+        
+        showWidgetStatus('Content fetched successfully!', 'success');
+    } catch (error) {
+        console.error('Error fetching website content:', error);
+        showWidgetStatus('Error fetching website content. The website might be blocking requests.', 'error');
+    }
+}
             
             // Generate widget preview and code
             function generateWidget() {
