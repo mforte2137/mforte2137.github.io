@@ -1,16 +1,14 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
-const { OpenAI } = require('openai');
 
 exports.handler = async function(event, context) {
   try {
-    // Log incoming request
     console.log('Request received');
     
     const { url } = JSON.parse(event.body);
     console.log('Attempting to fetch URL:', url);
     
-    // Fetch webpage with additional headers and a timeout
+    // Fetch webpage
     const response = await axios.get(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -24,29 +22,41 @@ exports.handler = async function(event, context) {
     
     // Extract text content
     const $ = cheerio.load(html);
-    $('script, style').remove(); // Remove scripts and styles
-    const mainContent = $('body').text().replace(/\s+/g, ' ').trim();
     
-    console.log('Content extracted, length:', mainContent.length);
+    // Remove non-content elements
+    $('script, style, nav, footer, header, aside, .menu, .nav, .footer, .header, .sidebar').remove();
     
-    // Use AI to summarize
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
+    // Get the page title
+    const title = $('title').text().trim();
     
-    const aiResponse = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content: "You are a helpful assistant that summarizes webpage content."
-        },
-        {
-          role: "user",
-          content: `Summarize this webpage content in 2-3 paragraphs: ${mainContent.substring(0, 6000)}`
-        }
-      ]
-    });
+    // Try to find main content
+    let mainContent = '';
+    
+    // Check for common content containers
+    const contentSelectors = ['main', 'article', '.content', '#content', '.main-content', '.post-content', '.article'];
+    
+    for (const selector of contentSelectors) {
+      if ($(selector).length > 0) {
+        mainContent = $(selector).text();
+        break;
+      }
+    }
+    
+    // If no specific content found, use body text
+    if (!mainContent) {
+      mainContent = $('body').text();
+    }
+    
+    // Clean the text (remove excess whitespace)
+    mainContent = mainContent.replace(/\s+/g, ' ').trim();
+    
+    // Create a simple summary (first 2-3 sentences, up to ~500 chars)
+    const sentences = mainContent.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    let summary = sentences.slice(0, 5).join('. ').trim() + '.';
+    
+    if (summary.length > 500) {
+      summary = summary.substring(0, 500) + '...';
+    }
     
     return {
       statusCode: 200,
@@ -55,7 +65,9 @@ exports.handler = async function(event, context) {
         'Access-Control-Allow-Headers': 'Content-Type'
       },
       body: JSON.stringify({
-        summary: aiResponse.choices[0].message.content
+        title: title,
+        summary: summary,
+        wordCount: mainContent.split(/\s+/).length
       })
     };
   } catch (error) {
