@@ -33,27 +33,27 @@
             margin-bottom: 20px;
         }
         
-.tab-button {
-    padding: 10px 20px;
-    background-color: #e0e0e0; /* Darker gray for inactive tabs */
-    border: 1px solid #ddd;
-    border-bottom: none;
-    border-radius: 4px 4px 0 0;
-    margin-right: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    color: #333; /* Dark text for better contrast on inactive tabs */
-}
-
-.tab-button:hover {
-    background-color: #d0d0d0; /* Even darker on hover */
-}
-
-.tab-button.active {
-    background-color: #2980b9; /* Keep the blue for active tab */
-    color: white; /* White text for active tab */
-    border-color: #2980b9;
-}
+        .tab-button {
+            padding: 10px 20px;
+            background-color: #e0e0e0; /* Darker gray for inactive tabs */
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            color: #333; /* Dark text for better contrast on inactive tabs */
+        }
+        
+        .tab-button:hover {
+            background-color: #d0d0d0; /* Even darker on hover */
+        }
+        
+        .tab-button.active {
+            background-color: #2980b9; /* Keep the blue for active tab */
+            color: white; /* White text for active tab */
+            border-color: #2980b9;
+        }
         
         .tab-content {
             display: none;
@@ -1618,6 +1618,17 @@
                     summaryTextarea.value = contentData.summary || "No summary available";
                     currentImageUrl = imageData.mainImage || null;
                     
+                    // Convert image to Base64 immediately to avoid CORS issues later
+                    if (currentImageUrl) {
+                        try {
+                            const base64Image = await convertImageToBase64(currentImageUrl);
+                            currentImageUrl = base64Image;
+                        } catch (error) {
+                            console.error('Error converting image to Base64:', error);
+                            // Keep the original URL if conversion fails
+                        }
+                    }
+                    
                     // Store original content in data attributes
                     summaryTextarea.dataset.originalContent = contentData.summary;
                     summaryTextarea.dataset.formattedContent = contentData.formattedContent || formatTextToHtml(contentData.summary);
@@ -1625,8 +1636,8 @@
                     
                     // Update the preview with the fetched data
                     const formattedContent = contentData.formattedContent || formatTextToHtml(contentData.summary);
-                    const position = imagePositionSelect.value;
-                    updateWidgetPreview(currentImageUrl, formattedContent, position);
+                    const position = imagePositionSelect.value
+                    await updateWidgetPreview(currentImageUrl, formattedContent, position);
                     
                     showWidgetStatus('Content fetched successfully!', 'success');
                     widgetPreviewContainer.style.display = 'block';
@@ -1639,8 +1650,77 @@
                     fetchBtn.textContent = 'Fetch Content';
                 }
             }
+            
+            // Convert image URL to Base64
+            function convertImageToBase64(url) {
+                return new Promise((resolve, reject) => {
+                    // Handle if the URL is already a base64 string
+                    if (url.startsWith('data:image')) {
+                        resolve(url);
+                        return;
+                    }
+                    
+                    // Handle if the URL is a blob URL from a file upload
+                    if (url.startsWith('blob:')) {
+                        // We need to fetch the blob and convert it
+                        fetch(url)
+                            .then(response => response.blob())
+                            .then(blob => {
+                                const reader = new FileReader();
+                                reader.onloadend = () => resolve(reader.result);
+                                reader.onerror = reject;
+                                reader.readAsDataURL(blob);
+                            })
+                            .catch(reject);
+                        return;
+                    }
+                    
+                    // For regular URLs, create an image element to load the image
+                    const img = new Image();
+                    img.crossOrigin = 'Anonymous'; // Try to avoid CORS issues
+                    
+                    img.onload = function() {
+                        try {
+                            // Create a canvas and draw the image on it
+                            const canvas = document.createElement('canvas');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0);
+                            
+                            // Convert the canvas to a Base64 data URL
+                            const dataURL = canvas.toDataURL('image/jpeg', 0.8); // Use JPEG for better compression
+                            resolve(dataURL);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+                    
+                    img.onerror = function() {
+                        // If CORS or other issues prevent loading the image,
+                        // try using a proxy or fall back to the original URL
+                        if (url.startsWith('https://images.weserv.nl/')) {
+                            // If already using a proxy, just reject
+                            reject(new Error('Cannot load image even with proxy'));
+                        } else {
+                            // Try with a proxy service
+                            const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
+                            convertImageToBase64(proxyUrl)
+                                .then(resolve)
+                                .catch(() => {
+                                    // If still can't load, reject with the original error
+                                    reject(new Error('Cannot load image'));
+                                });
+                        }
+                    };
+                    
+                    img.src = url;
+                });
+            }
+            
             // Generate widget preview and code
-            function generateWidget() {
+            async function generateWidget() {
                 // Get settings
                 const imagePosition = imagePositionSelect.value;
                 const summaryText = summaryTextarea.value.trim();
@@ -1657,10 +1737,10 @@
                 const formattedContent = summaryTextarea.dataset.formattedContent || formatTextToHtml(summaryText);
                 
                 // Update the widget preview
-                updateWidgetPreview(imageUrl, formattedContent, imagePosition);
+                await updateWidgetPreview(imageUrl, formattedContent, imagePosition);
                 
                 // Generate the widget code for embedding
-                const widgetCode = generateWidgetCode(imageUrl, formattedContent, imagePosition);
+                const widgetCode = await generateWidgetCode(imageUrl, formattedContent, imagePosition);
                 
                 // Show the widget code
                 if (widgetCode) {
@@ -1672,66 +1752,76 @@
             }
             
             // Update the widget preview with the given content and image position
-            function updateWidgetPreview(imageUrl, content, position = 'left') {
+            async function updateWidgetPreview(imageUrl, content, position = 'left') {
                 if (!widgetPreview) return;
                 
-                // Create widget HTML structure based on position
-                let widgetHtml = '';
+                // Convert the image to Base64 if it's a URL
+                let base64Image = '';
+                if (imageUrl) {
+                    try {
+                        base64Image = await convertImageToBase64(imageUrl);
+                    } catch (error) {
+                        console.error('Error converting image to Base64:', error);
+                        showWidgetStatus('Error processing image. Using original URL.', 'error');
+                        base64Image = imageUrl; // Fallback to original URL
+                    }
+                }
                 
-                if (position === 'left' && imageUrl) {
-                    widgetHtml = `
-                        <div class="widget-container">
-                            <div class="widget-image-left">
-                                <img src="${imageUrl}" alt="Website Content" class="widget-image">
-                            </div>
-                            <div class="widget-content-right">
+                // Always create a 2-column x 1-row table layout with centered image
+                let widgetHtml = `
+                    <table style="width:100%; border-collapse:collapse; border:none;">
+                        <tr>
+                `;
+                
+                if (position === 'left') {
+                    widgetHtml += `
+                            <td style="width:30%; vertical-align:middle; text-align:center; padding:10px;">
+                                <img src="${base64Image}" alt="Website Content" style="max-width:100%; height:auto; margin:0 auto; display:block;">
+                            </td>
+                            <td style="width:70%; vertical-align:top; padding:10px;">
                                 ${content}
-                            </div>
-                        </div>
+                            </td>
                     `;
-                } else if (position === 'right' && imageUrl) {
-                    widgetHtml = `
-                        <div class="widget-container">
-                            <div class="widget-content-left">
+                } else if (position === 'right') {
+                    widgetHtml += `
+                            <td style="width:70%; vertical-align:top; padding:10px;">
                                 ${content}
-                            </div>
-                            <div class="widget-image-right">
-                                <img src="${imageUrl}" alt="Website Content" class="widget-image">
-                            </div>
-                        </div>
+                            </td>
+                            <td style="width:30%; vertical-align:middle; text-align:center; padding:10px;">
+                                <img src="${base64Image}" alt="Website Content" style="max-width:100%; height:auto; margin:0 auto; display:block;">
+                            </td>
                     `;
-                } else if (position === 'top' && imageUrl) {
-                    widgetHtml = `
-                        <div class="widget-container vertical">
-                            <div class="widget-image-top">
-                                <img src="${imageUrl}" alt="Website Content" class="widget-image">
-                            </div>
-                            <div class="widget-content-bottom">
-                                ${content}
-                            </div>
-                        </div>
+                } else if (position === 'top' || position === 'bottom') {
+                    // For top/bottom positions, we'll still use a 2-column table but make the image span both columns
+                    const imageHtml = `
+                        <td colspan="2" style="text-align:center; padding:10px;">
+                            <img src="${base64Image}" alt="Website Content" style="max-width:50%; height:auto; margin:0 auto; display:block;">
+                        </td>
                     `;
-                } else if (position === 'bottom' && imageUrl) {
-                    widgetHtml = `
-                        <div class="widget-container vertical">
-                            <div class="widget-content-top">
-                                ${content}
-                            </div>
-                            <div class="widget-image-bottom">
-                                <img src="${imageUrl}" alt="Website Content" class="widget-image">
-                            </div>
-                        </div>
+                    
+                    const contentHtml = `
+                        <td colspan="2" style="padding:10px;">
+                            ${content}
+                        </td>
                     `;
+                    
+                    // Close the first row and add a second row
+                    widgetHtml += position === 'top' 
+                        ? `${imageHtml}</tr><tr>${contentHtml}`
+                        : `${contentHtml}</tr><tr>${imageHtml}`;
                 } else {
-                    // No image or 'none' position - just show content
-                    widgetHtml = `
-                        <div class="widget-container full-width">
-                            <div class="widget-content-full">
+                    // No image - content takes full width
+                    widgetHtml += `
+                            <td colspan="2" style="padding:10px;">
                                 ${content}
-                            </div>
-                        </div>
+                            </td>
                     `;
                 }
+                
+                widgetHtml += `
+                        </tr>
+                    </table>
+                `;
                 
                 // Update the preview area
                 widgetPreview.innerHTML = widgetHtml;
@@ -1791,141 +1881,38 @@
                 return html;
             }
             
-            // Generate embeddable widget code
-            function generateWidgetCode(imageUrl, content, position) {
-                const widgetStyles = `
-<style>
-  .website-widget {
-    font-family: Arial, sans-serif;
-    max-width: 800px;
-    margin: 0 auto;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  .widget-container {
-    display: flex;
-    flex-wrap: wrap;
-  }
-  .widget-container.vertical {
-    flex-direction: column;
-  }
-  .widget-image-left, .widget-image-right {
-    flex: 0 0 40%;
-  }
-  .widget-content-left, .widget-content-right {
-    flex: 0 0 60%;
-    padding: 15px;
-  }
-  .widget-image-top, .widget-image-bottom, .widget-content-top, .widget-content-bottom, .widget-content-full {
-    width: 100%;
-    padding: 15px;
-  }
-  .widget-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-  .full-width {
-    width: 100%;
-  }
-  .widget-content-full {
-    padding: 20px;
-  }
-  .website-widget h3 {
-    color: #333;
-    margin-top: 15px;
-    margin-bottom: 10px;
-  }
-  .website-widget p {
-    color: #555;
-    line-height: 1.5;
-    margin-bottom: 10px;
-  }
-  .website-widget ul {
-    padding-left: 20px;
-    margin-bottom: 15px;
-  }
-  .website-widget li {
-    margin-bottom: 5px;
-    color: #555;
-  }
-  @media (max-width: 768px) {
-    .widget-image-left, .widget-image-right,
-    .widget-content-left, .widget-content-right {
-      flex: 0 0 100%;
-    }
-    .widget-container {
-      flex-direction: column;
-    }
-  }
-</style>`;
-                
-                let widgetHtml = '';
-                
-                if (position === 'left' && imageUrl) {
-                    widgetHtml = `
-<div class="website-widget">
-  <div class="widget-container">
-    <div class="widget-image-left">
-      <img src="${imageUrl}" alt="Website Content" class="widget-image">
-    </div>
-    <div class="widget-content-right">
-      ${content}
-    </div>
-  </div>
-</div>`;
-                } else if (position === 'right' && imageUrl) {
-                    widgetHtml = `
-<div class="website-widget">
-  <div class="widget-container">
-    <div class="widget-content-left">
-      ${content}
-    </div>
-    <div class="widget-image-right">
-      <img src="${imageUrl}" alt="Website Content" class="widget-image">
-    </div>
-  </div>
-</div>`;
-                } else if (position === 'top' && imageUrl) {
-                    widgetHtml = `
-<div class="website-widget">
-  <div class="widget-container vertical">
-    <div class="widget-image-top">
-      <img src="${imageUrl}" alt="Website Content" class="widget-image">
-    </div>
-    <div class="widget-content-bottom">
-      ${content}
-    </div>
-  </div>
-</div>`;
-                } else if (position === 'bottom' && imageUrl) {
-                    widgetHtml = `
-<div class="website-widget">
-  <div class="widget-container vertical">
-    <div class="widget-content-top">
-      ${content}
-    </div>
-    <div class="widget-image-bottom">
-      <img src="${imageUrl}" alt="Website Content" class="widget-image">
-    </div>
-  </div>
-</div>`;
-                } else {
-                    // No image or 'none' position - just show content
-                    widgetHtml = `
-<div class="website-widget">
-  <div class="widget-container full-width">
-    <div class="widget-content-full">
-      ${content}
-    </div>
-  </div>
-</div>`;
+            // Generate embeddable widget code with base64 image
+            async function generateWidgetCode(imageUrl, content, position) {
+                // Convert the image to Base64 if it's a URL
+                let base64Image = '';
+                if (imageUrl) {
+                    try {
+                        base64Image = await convertImageToBase64(imageUrl);
+                    } catch (error) {
+                        console.error('Error converting image to Base64:', error);
+                        base64Image = imageUrl; // Fallback to original URL
+                    }
                 }
                 
-                return widgetStyles + widgetHtml;
+                // Create a simple 2-column x 1-row table with centered image
+                let widgetHtml = `<table style="width:100%; border-collapse:collapse; border:none;">\n  <tr>\n`;
+                
+                if (position === 'left') {
+                    widgetHtml += `    <td style="width:30%; vertical-align:middle; text-align:center; padding:10px;">\n      <img src="${base64Image}" alt="Website Content" style="max-width:100%; height:auto; margin:0 auto; display:block;">\n    </td>\n    <td style="width:70%; vertical-align:top; padding:10px;">\n      ${content}\n    </td>\n`;
+                } else if (position === 'right') {
+                    widgetHtml += `    <td style="width:70%; vertical-align:top; padding:10px;">\n      ${content}\n    </td>\n    <td style="width:30%; vertical-align:middle; text-align:center; padding:10px;">\n      <img src="${base64Image}" alt="Website Content" style="max-width:100%; height:auto; margin:0 auto; display:block;">\n    </td>\n`;
+                } else if (position === 'top') {
+                    widgetHtml += `    <td colspan="2" style="text-align:center; padding:10px;">\n      <img src="${base64Image}" alt="Website Content" style="max-width:50%; height:auto; margin:0 auto; display:block;">\n    </td>\n  </tr>\n  <tr>\n    <td colspan="2" style="padding:10px;">\n      ${content}\n    </td>\n`;
+                } else if (position === 'bottom') {
+                    widgetHtml += `    <td colspan="2" style="padding:10px;">\n      ${content}\n    </td>\n  </tr>\n  <tr>\n    <td colspan="2" style="text-align:center; padding:10px;">\n      <img src="${base64Image}" alt="Website Content" style="max-width:50%; height:auto; margin:0 auto; display:block;">\n    </td>\n`;
+                } else {
+                    // No image - content takes full width
+                    widgetHtml += `    <td colspan="2" style="padding:10px;">\n      ${content}\n    </td>\n`;
+                }
+                
+                widgetHtml += `  </tr>\n</table>`;
+                
+                return widgetHtml;
             }
             
             // Copy widget code to clipboard
