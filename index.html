@@ -1498,335 +1498,456 @@ async function fetchWebsiteContent() {
             }
         }
     </script>
-<!-- Matrix Builder Section -->
-<div style="margin-top: 50px; border-top: 1px solid #ddd; padding-top: 30px;">
-    <h2>Matrix Builder</h2>
-    <p>Create comparison tables and feature matrices for your products and services.</p>
-    
-    <div class="container">
-        <div class="matrix-form">
-            <h3>Table Settings</h3>
-            <div class="options">
-                <div class="option-group">
-                    <label for="matrix-rows">Number of Rows:</label>
-                    <input type="number" id="matrix-rows" min="1" max="20" value="5">
-                </div>
-                
-                <div class="option-group">
-                    <label for="matrix-columns">Number of Columns:</label>
-                    <input type="number" id="matrix-columns" min="2" max="10" value="4">
-                </div>
-                
-                <div class="option-group">
-                    <label for="header-bg-color">Header Background:</label>
-                    <input type="color" id="header-bg-color" value="#96b83b">
-                </div>
-                
-                <div class="option-group">
-                    <label for="header-text-color">Header Text:</label>
-                    <input type="color" id="header-text-color" value="#ffffff">
-                </div>
-                
-                <div class="option-group">
-                    <label for="row-bg-color-1">Row Background 1:</label>
-                    <input type="color" id="row-bg-color-1" value="#f2f2f2">
-                </div>
-                
-                <div class="option-group">
-                    <label for="row-bg-color-2">Row Background 2:</label>
-                    <input type="color" id="row-bg-color-2" value="#ffffff">
-                </div>
-            </div>
-            
-            <button id="update-matrix-btn" class="btn btn-primary">Update Matrix</button>
-            
-            <div id="matrix-editor" style="border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 20px 0; background-color: white;">
-                <div id="matrix-headers" style="display: grid; grid-template-columns: 300px repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-bottom: 15px;">
-                    <!-- Column headers will be generated here -->
-                </div>
-                
-                <div id="matrix-rows-container" style="display: flex; flex-direction: column; gap: 15px;">
-                    <!-- Rows will be generated here -->
-                </div>
-            </div>
-            
-            <div class="button-container">
-                <button id="generate-matrix-btn" class="btn btn-success">Generate Matrix</button>
-                <button id="clear-matrix-btn" class="btn btn-secondary">Clear All</button>
-            </div>
-        </div>
-        
-        <div id="matrix-preview-container" style="display: none;">
-            <h3>Matrix Preview</h3>
-            <div class="matrix-preview" id="matrix-preview"></div>
-            
-            <div style="background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 20px 0;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <h3>HTML Code</h3>
-                    <button id="copy-matrix-code-btn" class="btn btn-primary">Copy Code</button>
-                </div>
-                <div id="matrix-code" style="max-height: 300px; overflow-y: auto; background-color: #fff; padding: 15px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; word-break: break-all;"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
+<!-- Matrix Builder Tab -->
 <script>
-// Matrix Builder JavaScript
 document.addEventListener('DOMContentLoaded', function() {
-    // Cell content options
-    const cellOptions = [
-        { value: 'check', label: 'Checkmark' },
-        { value: 'text', label: 'Text' },
-        { value: 'optional', label: 'Optional' },
-        { value: 'empty', label: 'Empty' }
-    ];
+    // First add Matrix Builder HTML, CSS, and JavaScript
     
-    // DOM Elements
-    const matrixRows = document.getElementById('matrix-rows');
-    const matrixColumns = document.getElementById('matrix-columns');
-    const headerBgColor = document.getElementById('header-bg-color');
-    const headerTextColor = document.getElementById('header-text-color');
-    const rowBgColor1 = document.getElementById('row-bg-color-1');
-    const rowBgColor2 = document.getElementById('row-bg-color-2');
-    const updateMatrixBtn = document.getElementById('update-matrix-btn');
-    const generateMatrixBtn = document.getElementById('generate-matrix-btn');
-    const clearMatrixBtn = document.getElementById('clear-matrix-btn');
-    const matrixHeaders = document.getElementById('matrix-headers');
-    const matrixRowsContainer = document.getElementById('matrix-rows-container');
-    const matrixPreviewContainer = document.getElementById('matrix-preview-container');
-    const matrixPreview = document.getElementById('matrix-preview');
-    const matrixCode = document.getElementById('matrix-code');
-    const copyMatrixCodeBtn = document.getElementById('copy-matrix-code-btn');
-    
-    // Initialize the matrix editor
-    updateMatrixEditor();
-    
-    // Event Listeners
-    updateMatrixBtn.addEventListener('click', updateMatrixEditor);
-    generateMatrixBtn.addEventListener('click', generateMatrix);
-    clearMatrixBtn.addEventListener('click', clearMatrix);
-    copyMatrixCodeBtn.addEventListener('click', copyMatrixCode);
-    
-    // Update the matrix editor based on rows and columns
-    function updateMatrixEditor() {
-        const rows = parseInt(matrixRows.value) || 5;
-        const columns = parseInt(matrixColumns.value) || 4;
+    // Matrix Builder HTML
+    const matrixBuilderHTML = `
+        <p>Create comparison tables and feature matrices for your products and services.</p>
         
-        // Update headers
-        updateHeaders(columns);
-        
-        // Update rows
-        updateMatrixRows(rows, columns);
-    }
-    
-    // Update the column headers
-    function updateHeaders(columns) {
-        matrixHeaders.innerHTML = '';
-        
-        // Add the feature column header
-        const featureHeader = document.createElement('div');
-        featureHeader.style.cssText = 'padding: 5px;';
-        
-        const featureInput = document.createElement('input');
-        featureInput.type = 'text';
-        featureInput.value = 'Feature/Service';
-        featureInput.placeholder = 'Features';
-        featureInput.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;';
-        featureHeader.appendChild(featureInput);
-        
-        matrixHeaders.appendChild(featureHeader);
-        
-        // Add the column headers
-        for (let i = 0; i < columns; i++) {
-            const headerCell = document.createElement('div');
-            headerCell.style.cssText = 'padding: 5px;';
+        <div class="container">
+            <div class="matrix-form">
+                <h3>Table Settings</h3>
+                <div class="options">
+                    <div class="option-group">
+                        <label for="matrix-rows">Number of Rows:</label>
+                        <input type="number" id="matrix-rows" min="1" max="20" value="5">
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="matrix-columns">Number of Columns:</label>
+                        <input type="number" id="matrix-columns" min="2" max="10" value="4">
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="header-bg-color">Header Background:</label>
+                        <input type="color" id="header-bg-color" value="#96b83b">
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="header-text-color">Header Text:</label>
+                        <input type="color" id="header-text-color" value="#ffffff">
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="row-bg-color-1">Row Background 1:</label>
+                        <input type="color" id="row-bg-color-1" value="#f2f2f2">
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="row-bg-color-2">Row Background 2:</label>
+                        <input type="color" id="row-bg-color-2" value="#ffffff">
+                    </div>
+                </div>
+                
+                <button id="update-matrix-btn" class="btn btn-primary">Update Matrix</button>
+                
+                <div id="matrix-editor" class="matrix-editor">
+                    <div id="matrix-headers" class="matrix-headers">
+                        <!-- Column headers will be generated here -->
+                    </div>
+                    
+                    <div id="matrix-rows-container" class="matrix-rows">
+                        <!-- Rows will be generated here -->
+                    </div>
+                </div>
+                
+                <div class="button-container">
+                    <button id="generate-matrix-btn" class="btn btn-success">Generate Matrix</button>
+                    <button id="clear-matrix-btn" class="btn btn-secondary">Clear All</button>
+                </div>
+            </div>
             
-            const headerInput = document.createElement('input');
-            headerInput.type = 'text';
-            headerInput.value = i === 0 ? 'Basic' : i === 1 ? 'Standard' : i === 2 ? 'Premium' : `Plan ${i+1}`;
-            headerInput.placeholder = `Column ${i+1}`;
-            headerInput.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;';
-            headerCell.appendChild(headerInput);
-            
-            matrixHeaders.appendChild(headerCell);
+            <div id="matrix-preview-container" style="display: none;">
+                <h3>Matrix Preview</h3>
+                <div class="matrix-preview" id="matrix-preview"></div>
+                
+                <div class="code-container">
+                    <div class="code-header">
+                        <h3>HTML Code</h3>
+                        <button id="copy-matrix-code-btn" class="btn btn-primary">Copy Code</button>
+                    </div>
+                    <div class="code-content" id="matrix-code"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add CSS for Matrix Builder
+    const style = document.createElement('style');
+    style.textContent = `
+        /* Matrix Builder Styles */
+        .matrix-editor {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background-color: white;
+        }
+        
+        .matrix-headers {
+            display: grid;
+            grid-template-columns: 300px repeat(9, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .matrix-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .matrix-row {
+            display: grid;
+            grid-template-columns: 300px repeat(9, 1fr);
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .cell-type-select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Now create and add the tab elements
+    
+    // 1. Create the Matrix Builder tab button
+    const tabsContainer = document.querySelector('.tabs');
+    if (tabsContainer) {
+        // Look for "Additional Tool" or "future" tab
+        const tabButtons = document.querySelectorAll('.tab-button');
+        let futureTabFound = false;
+        
+        for (const btn of tabButtons) {
+            const dataTab = btn.getAttribute('data-tab');
+            if (dataTab === 'future' || btn.textContent.includes('Additional')) {
+                // Replace this button with our Matrix Builder button
+                btn.setAttribute('data-tab', 'matrix');
+                btn.textContent = 'Matrix Builder';
+                futureTabFound = true;
+                console.log('Replaced existing tab button with Matrix Builder');
+                break;
+            }
+        }
+        
+        // If no future tab found, add a new tab button
+        if (!futureTabFound) {
+            const newButton = document.createElement('button');
+            newButton.className = 'tab-button';
+            newButton.setAttribute('data-tab', 'matrix');
+            newButton.textContent = 'Matrix Builder';
+            tabsContainer.appendChild(newButton);
+            console.log('Added new Matrix Builder tab button');
         }
     }
     
-    // Update the matrix rows
-    function updateMatrixRows(rows, columns) {
-        matrixRowsContainer.innerHTML = '';
+    // 2. Create the Matrix Builder tab content
+    const futureTab = document.getElementById('future');
+    if (futureTab) {
+        // Replace future tab content with Matrix Builder
+        futureTab.id = 'matrix';
+        futureTab.innerHTML = matrixBuilderHTML;
+        console.log('Replaced future tab content with Matrix Builder');
+    } else {
+        // Create new tab content
+        const matrixTab = document.createElement('div');
+        matrixTab.id = 'matrix';
+        matrixTab.className = 'tab-content';
+        matrixTab.innerHTML = matrixBuilderHTML;
         
-        for (let i = 0; i < rows; i++) {
-            const rowDiv = document.createElement('div');
-            rowDiv.style.cssText = 'display: grid; grid-template-columns: 300px repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; align-items: center;';
+        // Find where to insert it - after the last tab content
+        const tabContents = document.querySelectorAll('.tab-content');
+        if (tabContents.length > 0) {
+            const lastTab = tabContents[tabContents.length - 1];
+            lastTab.parentNode.insertBefore(matrixTab, lastTab.nextSibling);
+        } else {
+            // Fallback - append to body
+            document.body.appendChild(matrixTab);
+        }
+        console.log('Created new Matrix Builder tab content');
+    }
+    
+    // Initialize Matrix Builder functionality
+    initMatrixBuilder();
+    
+    // Matrix Builder Functionality
+    function initMatrixBuilder() {
+        console.log('Initializing Matrix Builder...');
+        
+        // DOM Elements
+        const matrixRows = document.getElementById('matrix-rows');
+        const matrixColumns = document.getElementById('matrix-columns');
+        const headerBgColor = document.getElementById('header-bg-color');
+        const headerTextColor = document.getElementById('header-text-color');
+        const rowBgColor1 = document.getElementById('row-bg-color-1');
+        const rowBgColor2 = document.getElementById('row-bg-color-2');
+        const updateMatrixBtn = document.getElementById('update-matrix-btn');
+        const generateMatrixBtn = document.getElementById('generate-matrix-btn');
+        const clearMatrixBtn = document.getElementById('clear-matrix-btn');
+        const matrixHeaders = document.getElementById('matrix-headers');
+        const matrixRowsContainer = document.getElementById('matrix-rows-container');
+        const matrixPreviewContainer = document.getElementById('matrix-preview-container');
+        const matrixPreview = document.getElementById('matrix-preview');
+        const matrixCode = document.getElementById('matrix-code');
+        const copyMatrixCodeBtn = document.getElementById('copy-matrix-code-btn');
+        
+        // Cell content options
+        const cellOptions = [
+            { value: 'check', label: 'Checkmark' },
+            { value: 'text', label: 'Text' },
+            { value: 'optional', label: 'Optional' },
+            { value: 'empty', label: 'Empty' }
+        ];
+        
+        if (!matrixRows || !matrixHeaders) {
+            console.error('Matrix Builder elements not found. DOM structure issue.');
+            return;
+        }
+        
+        // Initialize the matrix editor
+        updateMatrixEditor();
+        
+        // Event Listeners
+        updateMatrixBtn.addEventListener('click', updateMatrixEditor);
+        generateMatrixBtn.addEventListener('click', generateMatrix);
+        clearMatrixBtn.addEventListener('click', clearMatrix);
+        copyMatrixCodeBtn.addEventListener('click', copyMatrixCode);
+        
+        // Update the matrix editor based on rows and columns
+        function updateMatrixEditor() {
+            const rows = parseInt(matrixRows.value) || 5;
+            const columns = parseInt(matrixColumns.value) || 4;
             
-            // Feature name cell
-            const featureCell = document.createElement('div');
+            // Update headers
+            updateHeaders(columns);
+            
+            // Update rows
+            updateMatrixRows(rows, columns);
+            
+            console.log(`Matrix updated: ${rows} rows, ${columns} columns`);
+        }
+        
+        // Update the column headers
+        function updateHeaders(columns) {
+            matrixHeaders.innerHTML = '';
+            
+            // Add the feature column header
+            const featureHeader = document.createElement('div');
+            featureHeader.className = 'header-cell';
             
             const featureInput = document.createElement('input');
             featureInput.type = 'text';
-            featureInput.placeholder = `Feature ${i+1}`;
-            featureInput.value = '';
+            featureInput.value = 'Feature/Service';
+            featureInput.placeholder = 'Features';
             featureInput.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;';
-            featureCell.appendChild(featureInput);
+            featureHeader.appendChild(featureInput);
             
-            rowDiv.appendChild(featureCell);
+            matrixHeaders.appendChild(featureHeader);
             
-            // Add cells for each column
-            for (let j = 0; j < columns; j++) {
-                const cell = document.createElement('div');
-                cell.style.cssText = 'display: flex; justify-content: center;';
+            // Add the column headers
+            for (let i = 0; i < columns; i++) {
+                const headerCell = document.createElement('div');
+                headerCell.className = 'header-cell';
                 
-                const select = document.createElement('select');
-                select.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;';
+                const headerInput = document.createElement('input');
+                headerInput.type = 'text';
+                headerInput.value = i === 0 ? 'Basic' : i === 1 ? 'Standard' : i === 2 ? 'Premium' : `Plan ${i+1}`;
+                headerInput.placeholder = `Column ${i+1}`;
+                headerInput.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;';
+                headerCell.appendChild(headerInput);
                 
-                // Add options to the select
-                cellOptions.forEach(option => {
-                    const optionEl = document.createElement('option');
-                    optionEl.value = option.value;
-                    optionEl.textContent = option.label;
-                    // Default to checkmark for the first two columns
-                    if (option.value === 'check' && j <= 1) {
-                        optionEl.selected = true;
-                    }
-                    // Default to empty for others
-                    if (option.value === 'empty' && j > 1) {
-                        optionEl.selected = true;
-                    }
-                    select.appendChild(optionEl);
-                });
-                
-                cell.appendChild(select);
-                rowDiv.appendChild(cell);
+                matrixHeaders.appendChild(headerCell);
             }
-            
-            matrixRowsContainer.appendChild(rowDiv);
         }
-    }
-    
-    // Generate the matrix preview and HTML code
-    function generateMatrix() {
-        // Get all the current values
-        const rows = parseInt(matrixRows.value) || 5;
-        const columns = parseInt(matrixColumns.value) || 4;
-        const headerBg = headerBgColor.value;
-        const headerText = headerTextColor.value;
-        const rowBg1 = rowBgColor1.value;
-        const rowBg2 = rowBgColor2.value;
         
-        // Get column headers
-        const headerInputs = matrixHeaders.querySelectorAll('input');
-        const headers = Array.from(headerInputs).map(input => input.value.trim() || input.placeholder);
-        
-        // Get row data
-        const rowDivs = matrixRowsContainer.querySelectorAll('div[style*="grid-template-columns"]');
-        const rowData = Array.from(rowDivs).map(row => {
-            const featureInput = row.querySelector('input');
-            const selects = row.querySelectorAll('select');
+        // Update the matrix rows
+        function updateMatrixRows(rows, columns) {
+            matrixRowsContainer.innerHTML = '';
             
-            return {
-                feature: featureInput.value.trim() || featureInput.placeholder,
-                cells: Array.from(selects).map(select => select.value)
-            };
-        });
-        
-        // Generate HTML table
-        let tableHtml = `<table style="width:100%; border-collapse:collapse;">\n`;
-        
-        // Table header
-        tableHtml += `  <tr>\n`;
-        headers.forEach((header, index) => {
-            tableHtml += `    <th style="padding:12px; text-align:${index === 0 ? 'left' : 'center'}; background-color:${headerBg}; color:${headerText};">${header}</th>\n`;
-        });
-        tableHtml += `  </tr>\n`;
-        
-        // Table rows
-        rowData.forEach((row, rowIndex) => {
-            const rowColor = rowIndex % 2 === 0 ? rowBg1 : rowBg2;
-            
-            tableHtml += `  <tr>\n`;
-            tableHtml += `    <td style="padding:12px; text-align:left; background-color:${rowColor};">${row.feature}</td>\n`;
-            
-            row.cells.forEach(cell => {
-                let cellContent = '';
+            for (let i = 0; i < rows; i++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'matrix-row';
                 
-                switch(cell) {
-                    case 'check':
-                        cellContent = `<div style="display:inline-block; width:24px; height:24px; background-color:#8bc34a; border-radius:50%; text-align:center; line-height:24px; color:white;">✓</div>`;
-                        break;
-                    case 'text':
-                        cellContent = 'Yes';
-                        break;
-                    case 'optional':
-                        cellContent = 'Optional';
-                        break;
-                    case 'empty':
-                    default:
-                        cellContent = '';
-                        break;
+                // Feature name cell
+                const featureCell = document.createElement('div');
+                featureCell.className = 'feature-name';
+                
+                const featureInput = document.createElement('input');
+                featureInput.type = 'text';
+                featureInput.placeholder = `Feature ${i+1}`;
+                featureInput.value = '';
+                featureInput.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;';
+                featureCell.appendChild(featureInput);
+                
+                rowDiv.appendChild(featureCell);
+                
+                // Add cells for each column
+                for (let j = 0; j < columns; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell-content';
+                    
+                    const select = document.createElement('select');
+                    select.className = 'cell-type-select';
+                    
+                    // Add options to the select
+                    cellOptions.forEach(option => {
+                        const optionEl = document.createElement('option');
+                        optionEl.value = option.value;
+                        optionEl.textContent = option.label;
+                        // Default to checkmark for the first two columns
+                        if (option.value === 'check' && j <= 1) {
+                            optionEl.selected = true;
+                        }
+                        // Default to empty for others
+                        if (option.value === 'empty' && j > 1) {
+                            optionEl.selected = true;
+                        }
+                        select.appendChild(optionEl);
+                    });
+                    
+                    cell.appendChild(select);
+                    rowDiv.appendChild(cell);
                 }
                 
-                tableHtml += `    <td style="padding:12px; text-align:center; background-color:${rowColor};">${cellContent}</td>\n`;
+                matrixRowsContainer.appendChild(rowDiv);
+            }
+        }
+        
+        // Generate the matrix preview and HTML code
+        function generateMatrix() {
+            // Get all the current values
+            const rows = parseInt(matrixRows.value) || 5;
+            const columns = parseInt(matrixColumns.value) || 4;
+            const headerBg = headerBgColor.value;
+            const headerText = headerTextColor.value;
+            const rowBg1 = rowBgColor1.value;
+            const rowBg2 = rowBgColor2.value;
+            
+            // Get column headers
+            const headerInputs = matrixHeaders.querySelectorAll('input');
+            const headers = Array.from(headerInputs).map(input => input.value.trim() || input.placeholder);
+            
+            // Get row data
+            const rowDivs = matrixRowsContainer.querySelectorAll('.matrix-row');
+            const rowData = Array.from(rowDivs).map(row => {
+                const featureInput = row.querySelector('input');
+                const selects = row.querySelectorAll('select');
+                
+                return {
+                    feature: featureInput.value.trim() || featureInput.placeholder,
+                    cells: Array.from(selects).map(select => select.value)
+                };
             });
             
-            tableHtml += `  </tr>\n`;
-        });
-        
-        tableHtml += `</table>`;
-        
-        // Update the preview
-        matrixPreview.innerHTML = tableHtml;
-        
-        // Update the code
-        matrixCode.textContent = tableHtml;
-        
-        // Show the preview container
-        matrixPreviewContainer.style.display = 'block';
-    }
-    
-    // Clear the matrix editor
-    function clearMatrix() {
-        matrixRows.value = '5';
-        matrixColumns.value = '4';
-        headerBgColor.value = '#96b83b';
-        headerTextColor.value = '#ffffff';
-        rowBgColor1.value = '#f2f2f2';
-        rowBgColor2.value = '#ffffff';
-        
-        updateMatrixEditor();
-        matrixPreviewContainer.style.display = 'none';
-    }
-    
-    // Copy the matrix HTML code
-    function copyMatrixCode() {
-        const codeText = matrixCode.textContent;
-        
-        // Try to use clipboard API
-        navigator.clipboard.writeText(codeText)
-            .then(() => {
-                // Show success message
-                copyMatrixCodeBtn.textContent = 'Copied!';
-                setTimeout(() => {
-                    copyMatrixCodeBtn.textContent = 'Copy Code';
-                }, 2000);
-            })
-            .catch(err => {
-                console.error('Failed to copy: ', err);
-                
-                // Fallback copy method
-                const textarea = document.createElement('textarea');
-                textarea.value = codeText;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                
-                copyMatrixCodeBtn.textContent = 'Copied!';
-                setTimeout(() => {
-                    copyMatrixCodeBtn.textContent = 'Copy Code';
-                }, 2000);
+            // Generate HTML table
+            let tableHtml = `<table style="width:100%; border-collapse:collapse;">\n`;
+            
+            // Table header
+            tableHtml += `  <tr>\n`;
+            headers.forEach((header, index) => {
+                tableHtml += `    <th style="padding:12px; text-align:${index === 0 ? 'left' : 'center'}; background-color:${headerBg}; color:${headerText};">${header}</th>\n`;
             });
+            tableHtml += `  </tr>\n`;
+            
+            // Table rows
+            rowData.forEach((row, rowIndex) => {
+                const rowColor = rowIndex % 2 === 0 ? rowBg1 : rowBg2;
+                
+                tableHtml += `  <tr>\n`;
+                tableHtml += `    <td style="padding:12px; text-align:left; background-color:${rowColor};">${row.feature}</td>\n`;
+                
+                row.cells.forEach(cell => {
+                    let cellContent = '';
+                    
+                    switch(cell) {
+                        case 'check':
+                            cellContent = `<div style="display:inline-block; width:24px; height:24px; background-color:#8bc34a; border-radius:50%; text-align:center; line-height:24px; color:white;">✓</div>`;
+                            break;
+                        case 'text':
+                            cellContent = 'Yes';
+                            break;
+                        case 'optional':
+                            cellContent = 'Optional';
+                            break;
+                        case 'empty':
+                        default:
+                            cellContent = '';
+                            break;
+                    }
+                    
+                    tableHtml += `    <td style="padding:12px; text-align:center; background-color:${rowColor};">${cellContent}</td>\n`;
+                });
+                
+                tableHtml += `  </tr>\n`;
+            });
+            
+            tableHtml += `</table>`;
+            
+            // Update the preview
+            matrixPreview.innerHTML = tableHtml;
+            
+            // Update the code
+            matrixCode.textContent = tableHtml;
+            
+            // Show the preview container
+            matrixPreviewContainer.style.display = 'block';
+            
+            console.log('Matrix generated successfully');
+        }
+        
+        // Clear the matrix editor
+        function clearMatrix() {
+            matrixRows.value = '5';
+            matrixColumns.value = '4';
+            headerBgColor.value = '#96b83b';
+            headerTextColor.value = '#ffffff';
+            rowBgColor1.value = '#f2f2f2';
+            rowBgColor2.value = '#ffffff';
+            
+            updateMatrixEditor();
+            matrixPreviewContainer.style.display = 'none';
+            
+            console.log('Matrix cleared');
+        }
+        
+        // Copy the matrix HTML code
+        function copyMatrixCode() {
+            const codeText = matrixCode.textContent;
+            
+            navigator.clipboard.writeText(codeText)
+                .then(() => {
+                    // Show success message
+                    copyMatrixCodeBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyMatrixCodeBtn.textContent = 'Copy Code';
+                    }, 2000);
+                    
+                    console.log('Matrix code copied to clipboard');
+                })
+                .catch(err => {
+                    console.error('Failed to copy: ', err);
+                    
+                    // Fallback copy method
+                    const textarea = document.createElement('textarea');
+                    textarea.value = codeText;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    
+                    copyMatrixCodeBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyMatrixCodeBtn.textContent = 'Copy Code';
+                    }, 2000);
+                });
+        }
     }
 });
 </script>
