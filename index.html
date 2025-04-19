@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -352,6 +351,140 @@
                 flex-direction: column;
             }
         }
+
+        /* Widget Container Styles */
+        .widget-container {
+            display: flex;
+            flex-wrap: wrap;
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .widget-container.vertical {
+            flex-direction: column;
+        }
+
+        .widget-image-left, .widget-image-right {
+            flex: 0 0 40%;
+            max-height: 300px;
+            overflow: hidden;
+        }
+
+        .widget-content-left, .widget-content-right {
+            flex: 0 0 60%;
+            padding: 20px;
+        }
+
+        .widget-image-top, .widget-image-bottom {
+            width: 100%;
+            max-height: 300px;
+            overflow: hidden;
+        }
+
+        .widget-content-top, .widget-content-bottom, .widget-content-full {
+            width: 100%;
+            padding: 20px;
+        }
+
+        .widget-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Typography inside widget */
+        #widget-preview h3 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        #widget-preview p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        #widget-preview ul {
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        #widget-preview li {
+            margin-bottom: 8px;
+            position: relative;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        /* Widget Code Display */
+        #widget-code {
+            margin-top: 20px;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: monospace;
+            max-height: 200px;
+            overflow: auto;
+            white-space: pre-wrap;
+        }
+
+        .copy-button {
+            background-color: #2e86de;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .copy-button:hover {
+            background-color: #1c71c7;
+        }
+
+        /* Matrix Builder Styles */
+        .matrix-editor {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background-color: white;
+        }
+        
+        .matrix-headers {
+            display: grid;
+            grid-template-columns: 300px repeat(9, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .matrix-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .matrix-row {
+            display: grid;
+            grid-template-columns: 300px repeat(9, 1fr);
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .cell-type-select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -361,6 +494,7 @@
     <div class="tabs">
         <button class="tab-button active" data-tab="extractor">Cover Page Creator</button>
         <button class="tab-button" data-tab="widget">Widget Creator</button>
+        <button class="tab-button" data-tab="matrix">Matrix Builder</button>
     </div>
     
     <!-- PDF Text Extractor Tab -->
@@ -421,13 +555,13 @@
     
     <!-- Widget Creator Tab -->
     <div id="widget" class="tab-content">
-        <p>Create widgets using content from websites or build custom content. Paste HTML code into Salesbuildr. </p>
+        <p>Create widgets using content from websites or build custom content. Paste HTML code into Salesbuildr.</p>
         
         <div class="container">
             <div class="widget-form">
                 <div class="url-container">
                     <input type="url" id="website-url" class="url-input" placeholder="Enter website URL (e.g., https://example.com)">
-                    <button id="fetch-btn">Fetch Content</button>
+                    <button id="fetch-content-btn">Fetch Content</button>
                 </div>
                 
                 <div class="widget-options">
@@ -436,15 +570,18 @@
                         <select id="image-position">
                             <option value="left" selected>Left</option>
                             <option value="right">Right</option>
+                            <option value="top">Top</option>
+                            <option value="bottom">Bottom</option>
                         </select>
                     </div>
                     
                     <div class="option-group">
-                        <label for="paragraph-count">Summary Length:</label>
-                        <select id="paragraph-count">
-                            <option value="1">1 Paragraph</option>
-                            <option value="2" selected>2 Paragraphs</option>
-                            <option value="3">3 Paragraphs</option>
+                        <label for="summary-length">Summary Length:</label>
+                        <select id="summary-length">
+                            <option value="1 Paragraph">1 Paragraph</option>
+                            <option value="2 Paragraphs" selected>2 Paragraphs</option>
+                            <option value="3 Paragraphs">3 Paragraphs</option>
+                            <option value="4 Paragraphs">4 Paragraphs</option>
                         </select>
                     </div>
                     
@@ -461,22 +598,94 @@
                 
                 <div class="button-container">
                     <button id="generate-widget-btn">Generate Widget</button>
-                    <button id="clear-widget-btn">Clear All</button>
+                    <button id="clear-all-btn">Clear All</button>
                 </div>
                 
                 <div id="widget-status" class="status" style="display: none;"></div>
             </div>
             
-            <div id="widget-preview-container" style="display: none;">
+            <div id="widget-preview-container">
                 <h3>Widget Preview</h3>
                 <div class="widget-preview" id="widget-preview"></div>
                 
                 <div class="code-container">
                     <div class="code-header">
                         <h3>HTML Code</h3>
-                        <button id="copy-code-btn">Copy Code</button>
+                        <button id="copy-code-btn" class="copy-button">Copy Code</button>
                     </div>
-                    <div class="code-content" id="widget-code"></div>
+                    <pre class="code-content" id="widget-code"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Matrix Builder Tab -->
+    <div id="matrix" class="tab-content">
+        <p>Create comparison tables and feature matrices for your products and services.</p>
+        
+        <div class="container">
+            <div class="matrix-form">
+                <h3>Table Settings</h3>
+                <div class="options">
+                    <div class="option-group">
+                        <label for="matrix-rows">Number of Rows:</label>
+                        <input type="number" id="matrix-rows" min="1" max="20" value="5">
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="matrix-columns">Number of Columns:</label>
+                        <input type="number" id="matrix-columns" min="2" max="10" value="4">
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="header-bg-color">Header Background:</label>
+                        <input type="color" id="header-bg-color" value="#96b83b">
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="header-text-color">Header Text:</label>
+                        <input type="color" id="header-text-color" value="#ffffff">
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="row-bg-color-1">Row Background 1:</label>
+                        <input type="color" id="row-bg-color-1" value="#f2f2f2">
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="row-bg-color-2">Row Background 2:</label>
+                        <input type="color" id="row-bg-color-2" value="#ffffff">
+                    </div>
+                </div>
+                
+                <button id="update-matrix-btn" class="btn btn-primary">Update Matrix</button>
+                
+                <div id="matrix-editor" class="matrix-editor">
+                    <div id="matrix-headers" class="matrix-headers">
+                        <!-- Column headers will be generated here -->
+                    </div>
+                    
+                    <div id="matrix-rows-container" class="matrix-rows">
+                        <!-- Rows will be generated here -->
+                    </div>
+                </div>
+                
+                <div class="button-container">
+                    <button id="generate-matrix-btn" class="btn btn-success">Generate Matrix</button>
+                    <button id="clear-matrix-btn" class="btn btn-secondary">Clear All</button>
+                </div>
+            </div>
+            
+            <div id="matrix-preview-container" style="display: none;">
+                <h3>Matrix Preview</h3>
+                <div class="matrix-preview" id="matrix-preview"></div>
+                
+                <div class="code-container">
+                    <div class="code-header">
+                        <h3>HTML Code</h3>
+                        <button id="copy-matrix-code-btn" class="btn btn-primary">Copy Code</button>
+                    </div>
+                    <div class="code-content" id="matrix-code"></div>
                 </div>
             </div>
         </div>
@@ -508,6 +717,7 @@
             // Initialize both tools
             initPdfExtractor();
             initWidgetCreator();
+            initMatrixBuilder();
         });
         
         // -------------------------------
@@ -1297,32 +1507,39 @@
         function initWidgetCreator() {
             // DOM Elements
             const urlInput = document.getElementById('website-url');
-            const fetchBtn = document.getElementById('fetch-btn');
+            const fetchBtn = document.getElementById('fetch-content-btn');
             const imagePositionSelect = document.getElementById('image-position');
-            const paragraphCountSelect = document.getElementById('paragraph-count');
+            const summaryLengthSelect = document.getElementById('summary-length');
             const customImageInput = document.getElementById('custom-image');
             const summaryTextarea = document.getElementById('summary-text');
             const generateWidgetBtn = document.getElementById('generate-widget-btn');
-            const clearWidgetBtn = document.getElementById('clear-widget-btn');
+            const clearAllBtn = document.getElementById('clear-all-btn');
             const widgetStatus = document.getElementById('widget-status');
             const widgetPreviewContainer = document.getElementById('widget-preview-container');
             const widgetPreview = document.getElementById('widget-preview');
             const widgetCode = document.getElementById('widget-code');
             const copyCodeBtn = document.getElementById('copy-code-btn');
             
-            // State Variables
-            let currentImage = null;
-            let customImageUrl = null;
+            // Initialize with widget-preview-container hidden
+            if (widgetPreviewContainer) {
+                widgetPreviewContainer.style.display = 'none';
+            }
             
             // Event Listeners
-            fetchBtn.addEventListener('click', fetchWebsiteContent);
-            customImageInput.addEventListener('change', handleCustomImage);
-            generateWidgetBtn.addEventListener('click', generateWidget);
-            clearWidgetBtn.addEventListener('click', clearWidgetForm);
-            copyCodeBtn.addEventListener('click', copyWidgetCode);
+            if (fetchBtn) fetchBtn.addEventListener('click', fetchWebsiteContent);
+            if (customImageInput) customImageInput.addEventListener('change', handleCustomImage);
+            if (generateWidgetBtn) generateWidgetBtn.addEventListener('click', generateWidget);
+            if (clearAllBtn) clearAllBtn.addEventListener('click', clearWidgetForm);
+            if (copyCodeBtn) copyCodeBtn.addEventListener('click', copyWidgetCode);
+            
+            // State variables
+            let currentImageUrl = null;
+            let customImageUrl = null;
             
             // Helper function for showing widget status messages
             function showWidgetStatus(message, type) {
+                if (!widgetStatus) return;
+                
                 widgetStatus.textContent = message;
                 widgetStatus.className = `status ${type}`;
                 widgetStatus.style.display = 'block';
@@ -1349,63 +1566,83 @@
                 reader.readAsDataURL(file);
             }
             
- // Fetch website content
-async function fetchWebsiteContent() {
-    const url = urlInput.value.trim();
-    
-    if (!url) {
-        showWidgetStatus('Please enter a valid URL.', 'error');
-        return;
-    }
-    
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        showWidgetStatus('URL must start with http:// or https://.', 'error');
-        return;
-    }
-    
-    try {
-        // Show loading status
-        showWidgetStatus('Fetching website content...', 'info');
-        
-        // Call the summary function
-        const summaryResponse = await fetch('/.netlify/functions/summarize-website', {
-            method: 'POST',
-            body: JSON.stringify({ url })
-        });
-        
-        // Call the image function
-        const imageResponse = await fetch('/.netlify/functions/get-website-images', {
-            method: 'POST',
-            body: JSON.stringify({ url })
-        });
-        
-        if (!summaryResponse.ok) {
-            throw new Error('Error fetching website summary');
-        }
-        
-        if (!imageResponse.ok) {
-            throw new Error('Error fetching website images');
-        }
-        
-        const summaryData = await summaryResponse.json();
-        const imageData = await imageResponse.json();
-        
-        // Update UI with the fetched content
-        summaryTextarea.value = summaryData.summary || "No summary available";
-        currentImage = imageData.mainImage || 'https://via.placeholder.com/400x300/cccccc/666666?text=No+Image';
-        
-        showWidgetStatus('Content fetched successfully!', 'success');
-    } catch (error) {
-        console.error('Error fetching website content:', error);
-        showWidgetStatus('Error fetching website content. The website might be blocking requests.', 'error');
-    }
-}
-            
+            // Fetch website content
+            async function fetchWebsiteContent() {
+                const url = urlInput.value.trim();
+                
+                if (!url) {
+                    showWidgetStatus('Please enter a valid URL.', 'error');
+                    return;
+                }
+                
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    showWidgetStatus('URL must start with http:// or https://.', 'error');
+                    return;
+                }
+                
+                try {
+                    // Show loading status
+                    showWidgetStatus('Fetching website content...', 'info');
+                    fetchBtn.disabled = true;
+                    fetchBtn.textContent = 'Fetching...';
+                    summaryTextarea.value = 'Loading content...';
+                    
+                    // First get the image from get-website-images
+                    const imageResponse = await fetch('/.netlify/functions/get-website-images', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url })
+                    });
+                    
+                    if (!imageResponse.ok) {
+                        throw new Error('Error fetching website images');
+                    }
+                    
+                    const imageData = await imageResponse.json();
+                    
+                    // Then get the content from summarize-website
+                    const summaryLength = summaryLengthSelect.value;
+                    const contentResponse = await fetch('/.netlify/functions/summarize-website', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url, summaryLength })
+                    });
+                    
+                    if (!contentResponse.ok) {
+                        throw new Error('Error fetching website content');
+                    }
+                    
+                    const contentData = await contentResponse.json();
+                    
+                    // Update UI with the fetched content
+                    summaryTextarea.value = contentData.summary || "No summary available";
+                    currentImageUrl = imageData.mainImage || null;
+                    
+                    // Store original content in data attributes
+                    summaryTextarea.dataset.originalContent = contentData.summary;
+                    summaryTextarea.dataset.formattedContent = contentData.formattedContent || formatTextToHtml(contentData.summary);
+                    summaryTextarea.dataset.imageUrl = currentImageUrl;
+                    
+                    // Update the preview with the fetched data
+                    const formattedContent = contentData.formattedContent || formatTextToHtml(contentData.summary);
+                    const position = imagePositionSelect.value;
+                    updateWidgetPreview(currentImageUrl, formattedContent, position);
+                    
+                    showWidgetStatus('Content fetched successfully!', 'success');
+                    widgetPreviewContainer.style.display = 'block';
+                } catch (error) {
+                    console.error('Error fetching website content:', error);
+                    summaryTextarea.value = 'Error fetching content. Please try again.';
+                    showWidgetStatus('Error fetching website content. The website might be blocking requests.', 'error');
+                } finally {
+                    fetchBtn.disabled = false;
+                    fetchBtn.textContent = 'Fetch Content';
+                }
+            }
             // Generate widget preview and code
             function generateWidget() {
                 // Get settings
                 const imagePosition = imagePositionSelect.value;
-                const paragraphCount = parseInt(paragraphCountSelect.value, 10);
                 const summaryText = summaryTextarea.value.trim();
                 
                 if (!summaryText) {
@@ -1414,565 +1651,622 @@ async function fetchWebsiteContent() {
                 }
                 
                 // Use custom image if uploaded, otherwise use fetched image
-                const imageUrl = customImageUrl || currentImage || 'https://via.placeholder.com/400x300/cccccc/666666?text=No+Image';
+                const imageUrl = customImageUrl || currentImageUrl || 'https://via.placeholder.com/400x300/cccccc/666666?text=No+Image';
                 
-                // Split summary into paragraphs and limit to selected count
-                let paragraphs = summaryText.split('\n\n')
-                    .filter(p => p.trim())
-                    .slice(0, paragraphCount);
+                // Get the formatted content (either from data attribute or format the current text)
+                const formattedContent = summaryTextarea.dataset.formattedContent || formatTextToHtml(summaryText);
                 
-                // If we don't have enough paragraphs, split the text
-                if (paragraphs.length < paragraphCount && summaryText.length > 50) {
-                    paragraphs = [];
-                    const sentences = summaryText.split('. ');
-                    const sentencesPerParagraph = Math.ceil(sentences.length / paragraphCount);
-                    
-                    for (let i = 0; i < paragraphCount; i++) {
-                        const start = i * sentencesPerParagraph;
-                        const end = Math.min(start + sentencesPerParagraph, sentences.length);
-                        if (start < sentences.length) {
-                            const paragraph = sentences.slice(start, end).join('. ');
-                            paragraphs.push(paragraph.endsWith('.') ? paragraph : paragraph + '.');
-                        }
-                    }
+                // Update the widget preview
+                updateWidgetPreview(imageUrl, formattedContent, imagePosition);
+                
+                // Generate the widget code for embedding
+                const widgetCode = generateWidgetCode(imageUrl, formattedContent, imagePosition);
+                
+                // Show the widget code
+                if (widgetCode) {
+                    document.getElementById('widget-code').textContent = widgetCode;
+                    widgetPreviewContainer.style.display = 'block';
                 }
-                
-                // Ensure we have at least one paragraph
-                if (paragraphs.length === 0) {
-                    paragraphs = [summaryText];
-                }
-                
-                // Create HTML for the widget
-                const paragraphsHtml = paragraphs.map(p => `<p>${p}</p>`).join('');
-                
-                let widgetHtml;
-                if (imagePosition === 'left') {
-                    widgetHtml = `<table style="width:100%; border-collapse:collapse;">
-  <tr>
-    <td style="width:30%; vertical-align:top; padding:10px;"><img src="${imageUrl}" alt="Content Image" style="width:100%; height:auto; max-width:300px;"></td>
-    <td style="width:70%; vertical-align:top; padding:10px;">${paragraphsHtml}</td>
-  </tr>
-</table>`;
-                } else {
-                    widgetHtml = `<table style="width:100%; border-collapse:collapse;">
-  <tr>
-    <td style="width:70%; vertical-align:top; padding:10px;">${paragraphsHtml}</td>
-    <td style="width:30%; vertical-align:top; padding:10px;"><img src="${imageUrl}" alt="Content Image" style="width:100%; height:auto; max-width:300px;"></td>
-  </tr>
-</table>`;
-                }
-                
-                // Update preview
-                widgetPreview.innerHTML = widgetHtml;
-                widgetCode.textContent = widgetHtml;
-                
-                // Show preview section
-                widgetPreviewContainer.style.display = 'block';
                 
                 showWidgetStatus('Widget generated successfully!', 'success');
             }
             
+            // Update the widget preview with the given content and image position
+            function updateWidgetPreview(imageUrl, content, position = 'left') {
+                if (!widgetPreview) return;
+                
+                // Create widget HTML structure based on position
+                let widgetHtml = '';
+                
+                if (position === 'left' && imageUrl) {
+                    widgetHtml = `
+                        <div class="widget-container">
+                            <div class="widget-image-left">
+                                <img src="${imageUrl}" alt="Website Content" class="widget-image">
+                            </div>
+                            <div class="widget-content-right">
+                                ${content}
+                            </div>
+                        </div>
+                    `;
+                } else if (position === 'right' && imageUrl) {
+                    widgetHtml = `
+                        <div class="widget-container">
+                            <div class="widget-content-left">
+                                ${content}
+                            </div>
+                            <div class="widget-image-right">
+                                <img src="${imageUrl}" alt="Website Content" class="widget-image">
+                            </div>
+                        </div>
+                    `;
+                } else if (position === 'top' && imageUrl) {
+                    widgetHtml = `
+                        <div class="widget-container vertical">
+                            <div class="widget-image-top">
+                                <img src="${imageUrl}" alt="Website Content" class="widget-image">
+                            </div>
+                            <div class="widget-content-bottom">
+                                ${content}
+                            </div>
+                        </div>
+                    `;
+                } else if (position === 'bottom' && imageUrl) {
+                    widgetHtml = `
+                        <div class="widget-container vertical">
+                            <div class="widget-content-top">
+                                ${content}
+                            </div>
+                            <div class="widget-image-bottom">
+                                <img src="${imageUrl}" alt="Website Content" class="widget-image">
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // No image or 'none' position - just show content
+                    widgetHtml = `
+                        <div class="widget-container full-width">
+                            <div class="widget-content-full">
+                                ${content}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Update the preview area
+                widgetPreview.innerHTML = widgetHtml;
+            }
+            
+            // Format plain text to HTML (detect paragraphs and lists)
+            function formatTextToHtml(text) {
+                if (!text) return '';
+                
+                // Split by new lines to identify paragraphs and lists
+                const lines = text.split('\n');
+                let html = '';
+                let inList = false;
+                
+                lines.forEach(line => {
+                    line = line.trim();
+                    if (!line) {
+                        // Empty line - close any open list
+                        if (inList) {
+                            html += '</ul>';
+                            inList = false;
+                        }
+                        return;
+                    }
+                    
+                    // Check if it's a list item (bullet point)
+                    if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*')) {
+                        if (!inList) {
+                            html += '<ul>';
+                            inList = true;
+                        }
+                        html += `<li>${line.substring(1).trim()}</li>`;
+                    } 
+                    // Check if it's a heading
+                    else if (line.startsWith('Key Features:') || line.startsWith('#')) {
+                        if (inList) {
+                            html += '</ul>';
+                            inList = false;
+                        }
+                        html += `<h3>${line.replace('#', '').trim()}</h3>`;
+                    }
+                    // Regular paragraph
+                    else {
+                        if (inList) {
+                            html += '</ul>';
+                            inList = false;
+                        }
+                        html += `<p>${line}</p>`;
+                    }
+                });
+                
+                // Close any open list
+                if (inList) {
+                    html += '</ul>';
+                }
+                
+                return html;
+            }
+            
+            // Generate embeddable widget code
+            function generateWidgetCode(imageUrl, content, position) {
+                const widgetStyles = `
+<style>
+  .website-widget {
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  .widget-container {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .widget-container.vertical {
+    flex-direction: column;
+  }
+  .widget-image-left, .widget-image-right {
+    flex: 0 0 40%;
+  }
+  .widget-content-left, .widget-content-right {
+    flex: 0 0 60%;
+    padding: 15px;
+  }
+  .widget-image-top, .widget-image-bottom, .widget-content-top, .widget-content-bottom, .widget-content-full {
+    width: 100%;
+    padding: 15px;
+  }
+  .widget-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .full-width {
+    width: 100%;
+  }
+  .widget-content-full {
+    padding: 20px;
+  }
+  .website-widget h3 {
+    color: #333;
+    margin-top: 15px;
+    margin-bottom: 10px;
+  }
+  .website-widget p {
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+  .website-widget ul {
+    padding-left: 20px;
+    margin-bottom: 15px;
+  }
+  .website-widget li {
+    margin-bottom: 5px;
+    color: #555;
+  }
+  @media (max-width: 768px) {
+    .widget-image-left, .widget-image-right,
+    .widget-content-left, .widget-content-right {
+      flex: 0 0 100%;
+    }
+    .widget-container {
+      flex-direction: column;
+    }
+  }
+</style>`;
+                
+                let widgetHtml = '';
+                
+                if (position === 'left' && imageUrl) {
+                    widgetHtml = `
+<div class="website-widget">
+  <div class="widget-container">
+    <div class="widget-image-left">
+      <img src="${imageUrl}" alt="Website Content" class="widget-image">
+    </div>
+    <div class="widget-content-right">
+      ${content}
+    </div>
+  </div>
+</div>`;
+                } else if (position === 'right' && imageUrl) {
+                    widgetHtml = `
+<div class="website-widget">
+  <div class="widget-container">
+    <div class="widget-content-left">
+      ${content}
+    </div>
+    <div class="widget-image-right">
+      <img src="${imageUrl}" alt="Website Content" class="widget-image">
+    </div>
+  </div>
+</div>`;
+                } else if (position === 'top' && imageUrl) {
+                    widgetHtml = `
+<div class="website-widget">
+  <div class="widget-container vertical">
+    <div class="widget-image-top">
+      <img src="${imageUrl}" alt="Website Content" class="widget-image">
+    </div>
+    <div class="widget-content-bottom">
+      ${content}
+    </div>
+  </div>
+</div>`;
+                } else if (position === 'bottom' && imageUrl) {
+                    widgetHtml = `
+<div class="website-widget">
+  <div class="widget-container vertical">
+    <div class="widget-content-top">
+      ${content}
+    </div>
+    <div class="widget-image-bottom">
+      <img src="${imageUrl}" alt="Website Content" class="widget-image">
+    </div>
+  </div>
+</div>`;
+                } else {
+                    // No image or 'none' position - just show content
+                    widgetHtml = `
+<div class="website-widget">
+  <div class="widget-container full-width">
+    <div class="widget-content-full">
+      ${content}
+    </div>
+  </div>
+</div>`;
+                }
+                
+                return widgetStyles + widgetHtml;
+            }
+            
             // Copy widget code to clipboard
             function copyWidgetCode() {
-                const tempTextarea = document.createElement('textarea');
-                tempTextarea.value = widgetCode.textContent;
-                document.body.appendChild(tempTextarea);
-                tempTextarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(tempTextarea);
+                const codeText = document.getElementById('widget-code').textContent;
                 
-                showWidgetStatus('Widget code copied to clipboard!', 'success');
+                navigator.clipboard.writeText(codeText)
+                    .then(() => {
+                        copyCodeBtn.textContent = 'Copied!';
+                        setTimeout(() => {
+                            copyCodeBtn.textContent = 'Copy Code';
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy: ', err);
+                        
+                        // Fallback copy method
+                        const textarea = document.createElement('textarea');
+                        textarea.value = codeText;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                        
+                        copyCodeBtn.textContent = 'Copied!';
+                        setTimeout(() => {
+                            copyCodeBtn.textContent = 'Copy Code';
+                        }, 2000);
+                    });
             }
             
             // Clear widget form
             function clearWidgetForm() {
-                urlInput.value = '';
-                imagePositionSelect.value = 'left';
-                paragraphCountSelect.value = '2';
-                customImageInput.value = '';
-                summaryTextarea.value = '';
-                currentImage = null;
+                if (urlInput) urlInput.value = '';
+                if (summaryTextarea) summaryTextarea.value = '';
+                if (customImageInput) customImageInput.value = '';
+                
+                // Reset data attributes
+                if (summaryTextarea) {
+                    delete summaryTextarea.dataset.originalContent;
+                    delete summaryTextarea.dataset.formattedContent;
+                    delete summaryTextarea.dataset.imageUrl;
+                }
+                
+                // Reset state variables
+                currentImageUrl = null;
                 customImageUrl = null;
-                widgetPreviewContainer.style.display = 'none';
+                
+                // Hide preview container
+                if (widgetPreviewContainer) {
+                    widgetPreviewContainer.style.display = 'none';
+                }
+                
+                // Clear preview
+                if (widgetPreview) {
+                    widgetPreview.innerHTML = '';
+                }
+                
+                // Clear code
+                if (widgetCode) {
+                    widgetCode.textContent = '';
+                }
                 
                 showWidgetStatus('Form cleared.', 'info');
             }
         }
-    </script>
-<!-- Matrix Builder Tab -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // First add Matrix Builder HTML, CSS, and JavaScript
-    
-    // Matrix Builder HTML
-    const matrixBuilderHTML = `
-        <p>Create comparison tables and feature matrices for your products and services.</p>
         
-        <div class="container">
-            <div class="matrix-form">
-                <h3>Table Settings</h3>
-                <div class="options">
-                    <div class="option-group">
-                        <label for="matrix-rows">Number of Rows:</label>
-                        <input type="number" id="matrix-rows" min="1" max="20" value="5">
-                    </div>
-                    
-                    <div class="option-group">
-                        <label for="matrix-columns">Number of Columns:</label>
-                        <input type="number" id="matrix-columns" min="2" max="10" value="4">
-                    </div>
-                    
-                    <div class="option-group">
-                        <label for="header-bg-color">Header Background:</label>
-                        <input type="color" id="header-bg-color" value="#96b83b">
-                    </div>
-                    
-                    <div class="option-group">
-                        <label for="header-text-color">Header Text:</label>
-                        <input type="color" id="header-text-color" value="#ffffff">
-                    </div>
-                    
-                    <div class="option-group">
-                        <label for="row-bg-color-1">Row Background 1:</label>
-                        <input type="color" id="row-bg-color-1" value="#f2f2f2">
-                    </div>
-                    
-                    <div class="option-group">
-                        <label for="row-bg-color-2">Row Background 2:</label>
-                        <input type="color" id="row-bg-color-2" value="#ffffff">
-                    </div>
-                </div>
-                
-                <button id="update-matrix-btn" class="btn btn-primary">Update Matrix</button>
-                
-                <div id="matrix-editor" class="matrix-editor">
-                    <div id="matrix-headers" class="matrix-headers">
-                        <!-- Column headers will be generated here -->
-                    </div>
-                    
-                    <div id="matrix-rows-container" class="matrix-rows">
-                        <!-- Rows will be generated here -->
-                    </div>
-                </div>
-                
-                <div class="button-container">
-                    <button id="generate-matrix-btn" class="btn btn-success">Generate Matrix</button>
-                    <button id="clear-matrix-btn" class="btn btn-secondary">Clear All</button>
-                </div>
-            </div>
+        // -------------------------------
+        // MATRIX BUILDER FUNCTIONALITY
+        // -------------------------------
+        function initMatrixBuilder() {
+            console.log('Initializing Matrix Builder...');
             
-            <div id="matrix-preview-container" style="display: none;">
-                <h3>Matrix Preview</h3>
-                <div class="matrix-preview" id="matrix-preview"></div>
-                
-                <div class="code-container">
-                    <div class="code-header">
-                        <h3>HTML Code</h3>
-                        <button id="copy-matrix-code-btn" class="btn btn-primary">Copy Code</button>
-                    </div>
-                    <div class="code-content" id="matrix-code"></div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Add CSS for Matrix Builder
-    const style = document.createElement('style');
-    style.textContent = `
-        /* Matrix Builder Styles */
-        .matrix-editor {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-            background-color: white;
-        }
-        
-        .matrix-headers {
-            display: grid;
-            grid-template-columns: 300px repeat(9, 1fr);
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .matrix-rows {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        
-        .matrix-row {
-            display: grid;
-            grid-template-columns: 300px repeat(9, 1fr);
-            gap: 10px;
-            align-items: center;
-        }
-        
-        .cell-type-select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-    `;
-    document.head.appendChild(style);
-    // Now create and add the tab elements
-    
-// 1. Create the Matrix Builder tab button
-const tabsContainer = document.querySelector('.tabs');
-if (tabsContainer) {
-    // Look for "Additional Tool" or "future" tab
-    const tabButtons = document.querySelectorAll('.tab-button');
-    let futureTabFound = false;
-    
-    for (const btn of tabButtons) {
-        const dataTab = btn.getAttribute('data-tab');
-        if (dataTab === 'future' || btn.textContent.includes('Additional')) {
-            // Replace this button with our Matrix Builder button
-            btn.setAttribute('data-tab', 'matrix');
-            btn.textContent = 'Matrix Builder';
-            futureTabFound = true;
-            console.log('Replaced existing tab button with Matrix Builder');
-            break;
-        }
-    }
-    
-    // If no future tab found, add a new tab button
-    if (!futureTabFound) {
-        const newButton = document.createElement('button');
-        newButton.className = 'tab-button';
-        newButton.setAttribute('data-tab', 'matrix');
-        newButton.textContent = 'Matrix Builder';
-        tabsContainer.appendChild(newButton);
-        console.log('Added new Matrix Builder tab button');
-    }
-    
-    // Add proper tab switching for all tab buttons
-    const allTabButtons = document.querySelectorAll('.tab-button');
-    allTabButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            // Remove active class from all buttons and contents
-            allTabButtons.forEach(btn => btn.classList.remove('active'));
-            const allTabContents = document.querySelectorAll('.tab-content');
-            allTabContents.forEach(content => content.classList.remove('active'));
+            // DOM Elements
+            const matrixRows = document.getElementById('matrix-rows');
+            const matrixColumns = document.getElementById('matrix-columns');
+            const headerBgColor = document.getElementById('header-bg-color');
+            const headerTextColor = document.getElementById('header-text-color');
+            const rowBgColor1 = document.getElementById('row-bg-color-1');
+            const rowBgColor2 = document.getElementById('row-bg-color-2');
+            const updateMatrixBtn = document.getElementById('update-matrix-btn');
+            const generateMatrixBtn = document.getElementById('generate-matrix-btn');
+            const clearMatrixBtn = document.getElementById('clear-matrix-btn');
+            const matrixHeaders = document.getElementById('matrix-headers');
+            const matrixRowsContainer = document.getElementById('matrix-rows-container');
+            const matrixPreviewContainer = document.getElementById('matrix-preview-container');
+            const matrixPreview = document.getElementById('matrix-preview');
+            const matrixCode = document.getElementById('matrix-code');
+            const copyMatrixCodeBtn = document.getElementById('copy-matrix-code-btn');
             
-            // Add active class to this button
-            this.classList.add('active');
+            // Cell content options
+            const cellOptions = [
+                { value: 'check', label: 'Checkmark' },
+                { value: 'text', label: 'Text' },
+                { value: 'optional', label: 'Optional' },
+                { value: 'empty', label: 'Empty' }
+            ];
             
-            // Add active class to corresponding content
-            const tabId = this.getAttribute('data-tab');
-            const tabContent = document.getElementById(tabId);
-            if (tabContent) {
-                tabContent.classList.add('active');
-                console.log(`Switched to tab: ${tabId}`);
-            } else {
-                console.error(`Tab content not found for: ${tabId}`);
+            if (!matrixRows || !matrixHeaders) {
+                console.error('Matrix Builder elements not found. DOM structure issue.');
+                return;
             }
-        });
-    });
-}
-    // 2. Create the Matrix Builder tab content
-    const futureTab = document.getElementById('future');
-    if (futureTab) {
-        // Replace future tab content with Matrix Builder
-        futureTab.id = 'matrix';
-        futureTab.innerHTML = matrixBuilderHTML;
-        console.log('Replaced future tab content with Matrix Builder');
-    } else {
-        // Create new tab content
-        const matrixTab = document.createElement('div');
-        matrixTab.id = 'matrix';
-        matrixTab.className = 'tab-content';
-        matrixTab.innerHTML = matrixBuilderHTML;
-        
-        // Find where to insert it - after the last tab content
-        const tabContents = document.querySelectorAll('.tab-content');
-        if (tabContents.length > 0) {
-            const lastTab = tabContents[tabContents.length - 1];
-            lastTab.parentNode.insertBefore(matrixTab, lastTab.nextSibling);
-        } else {
-            // Fallback - append to body
-            document.body.appendChild(matrixTab);
-        }
-        console.log('Created new Matrix Builder tab content');
-    }
-    
-    // Initialize Matrix Builder functionality
-    initMatrixBuilder();
-    
-    // Matrix Builder Functionality
-    function initMatrixBuilder() {
-        console.log('Initializing Matrix Builder...');
-        
-        // DOM Elements
-        const matrixRows = document.getElementById('matrix-rows');
-        const matrixColumns = document.getElementById('matrix-columns');
-        const headerBgColor = document.getElementById('header-bg-color');
-        const headerTextColor = document.getElementById('header-text-color');
-        const rowBgColor1 = document.getElementById('row-bg-color-1');
-        const rowBgColor2 = document.getElementById('row-bg-color-2');
-        const updateMatrixBtn = document.getElementById('update-matrix-btn');
-        const generateMatrixBtn = document.getElementById('generate-matrix-btn');
-        const clearMatrixBtn = document.getElementById('clear-matrix-btn');
-        const matrixHeaders = document.getElementById('matrix-headers');
-        const matrixRowsContainer = document.getElementById('matrix-rows-container');
-        const matrixPreviewContainer = document.getElementById('matrix-preview-container');
-        const matrixPreview = document.getElementById('matrix-preview');
-        const matrixCode = document.getElementById('matrix-code');
-        const copyMatrixCodeBtn = document.getElementById('copy-matrix-code-btn');
-        
-        // Cell content options
-        const cellOptions = [
-            { value: 'check', label: 'Checkmark' },
-            { value: 'text', label: 'Text' },
-            { value: 'optional', label: 'Optional' },
-            { value: 'empty', label: 'Empty' }
-        ];
-        
-        if (!matrixRows || !matrixHeaders) {
-            console.error('Matrix Builder elements not found. DOM structure issue.');
-            return;
-        }
-        
-        // Initialize the matrix editor
-        updateMatrixEditor();
-        
-        // Event Listeners
-        updateMatrixBtn.addEventListener('click', updateMatrixEditor);
-        generateMatrixBtn.addEventListener('click', generateMatrix);
-        clearMatrixBtn.addEventListener('click', clearMatrix);
-        copyMatrixCodeBtn.addEventListener('click', copyMatrixCode);
-        
-        // Update the matrix editor based on rows and columns
-        function updateMatrixEditor() {
-            const rows = parseInt(matrixRows.value) || 5;
-            const columns = parseInt(matrixColumns.value) || 4;
             
-            // Update headers
-            updateHeaders(columns);
+            // Initialize the matrix editor
+            updateMatrixEditor();
             
-            // Update rows
-            updateMatrixRows(rows, columns);
+            // Event Listeners
+            updateMatrixBtn.addEventListener('click', updateMatrixEditor);
+            generateMatrixBtn.addEventListener('click', generateMatrix);
+            clearMatrixBtn.addEventListener('click', clearMatrix);
+            copyMatrixCodeBtn.addEventListener('click', copyMatrixCode);
             
-            console.log(`Matrix updated: ${rows} rows, ${columns} columns`);
-        }
-        
-        // Update the column headers
-        function updateHeaders(columns) {
-            matrixHeaders.innerHTML = '';
-            
-            // Add the feature column header
-            const featureHeader = document.createElement('div');
-            featureHeader.className = 'header-cell';
-            
-            const featureInput = document.createElement('input');
-            featureInput.type = 'text';
-            featureInput.value = 'Feature/Service';
-            featureInput.placeholder = 'Features';
-            featureInput.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;';
-            featureHeader.appendChild(featureInput);
-            
-            matrixHeaders.appendChild(featureHeader);
-            
-            // Add the column headers
-            for (let i = 0; i < columns; i++) {
-                const headerCell = document.createElement('div');
-                headerCell.className = 'header-cell';
+            // Update the matrix editor based on rows and columns
+            function updateMatrixEditor() {
+                const rows = parseInt(matrixRows.value) || 5;
+                const columns = parseInt(matrixColumns.value) || 4;
                 
-                const headerInput = document.createElement('input');
-                headerInput.type = 'text';
-                headerInput.value = i === 0 ? 'Basic' : i === 1 ? 'Standard' : i === 2 ? 'Premium' : `Plan ${i+1}`;
-                headerInput.placeholder = `Column ${i+1}`;
-                headerInput.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;';
-                headerCell.appendChild(headerInput);
+                // Update headers
+                updateHeaders(columns);
                 
-                matrixHeaders.appendChild(headerCell);
+                // Update rows
+                updateMatrixRows(rows, columns);
+                
+                console.log(`Matrix updated: ${rows} rows, ${columns} columns`);
             }
-        }
-        
-        // Update the matrix rows
-        function updateMatrixRows(rows, columns) {
-            matrixRowsContainer.innerHTML = '';
             
-            for (let i = 0; i < rows; i++) {
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'matrix-row';
+            // Update the column headers
+            function updateHeaders(columns) {
+                matrixHeaders.innerHTML = '';
                 
-                // Feature name cell
-                const featureCell = document.createElement('div');
-                featureCell.className = 'feature-name';
+                // Add the feature column header
+                const featureHeader = document.createElement('div');
+                featureHeader.className = 'header-cell';
                 
                 const featureInput = document.createElement('input');
                 featureInput.type = 'text';
-                featureInput.placeholder = `Feature ${i+1}`;
-                featureInput.value = '';
+                featureInput.value = 'Feature/Service';
+                featureInput.placeholder = 'Features';
                 featureInput.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;';
-                featureCell.appendChild(featureInput);
+                featureHeader.appendChild(featureInput);
                 
-                rowDiv.appendChild(featureCell);
+                matrixHeaders.appendChild(featureHeader);
                 
-                // Add cells for each column
-                for (let j = 0; j < columns; j++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell-content';
+                // Add the column headers
+                for (let i = 0; i < columns; i++) {
+                    const headerCell = document.createElement('div');
+                    headerCell.className = 'header-cell';
                     
-                    const select = document.createElement('select');
-                    select.className = 'cell-type-select';
+                    const headerInput = document.createElement('input');
+                    headerInput.type = 'text';
+                    headerInput.value = i === 0 ? 'Basic' : i === 1 ? 'Standard' : i === 2 ? 'Premium' : `Plan ${i+1}`;
+                    headerInput.placeholder = `Column ${i+1}`;
+                    headerInput.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;';
+                    headerCell.appendChild(headerInput);
                     
-                    // Add options to the select
-                    cellOptions.forEach(option => {
-                        const optionEl = document.createElement('option');
-                        optionEl.value = option.value;
-                        optionEl.textContent = option.label;
-                        // Default to checkmark for the first two columns
-                        if (option.value === 'check' && j <= 1) {
-                            optionEl.selected = true;
-                        }
-                        // Default to empty for others
-                        if (option.value === 'empty' && j > 1) {
-                            optionEl.selected = true;
-                        }
-                        select.appendChild(optionEl);
-                    });
-                    
-                    cell.appendChild(select);
-                    rowDiv.appendChild(cell);
+                    matrixHeaders.appendChild(headerCell);
                 }
-                
-                matrixRowsContainer.appendChild(rowDiv);
             }
-        }
-        
-        // Generate the matrix preview and HTML code
-        function generateMatrix() {
-            // Get all the current values
-            const rows = parseInt(matrixRows.value) || 5;
-            const columns = parseInt(matrixColumns.value) || 4;
-            const headerBg = headerBgColor.value;
-            const headerText = headerTextColor.value;
-            const rowBg1 = rowBgColor1.value;
-            const rowBg2 = rowBgColor2.value;
             
-            // Get column headers
-            const headerInputs = matrixHeaders.querySelectorAll('input');
-            const headers = Array.from(headerInputs).map(input => input.value.trim() || input.placeholder);
-            
-            // Get row data
-            const rowDivs = matrixRowsContainer.querySelectorAll('.matrix-row');
-            const rowData = Array.from(rowDivs).map(row => {
-                const featureInput = row.querySelector('input');
-                const selects = row.querySelectorAll('select');
+            // Update the matrix rows
+            function updateMatrixRows(rows, columns) {
+                matrixRowsContainer.innerHTML = '';
                 
-                return {
-                    feature: featureInput.value.trim() || featureInput.placeholder,
-                    cells: Array.from(selects).map(select => select.value)
-                };
-            });
-            
-            // Generate HTML table
-            let tableHtml = `<table style="width:100%; border-collapse:collapse;">\n`;
-            
-            // Table header
-            tableHtml += `  <tr>\n`;
-            headers.forEach((header, index) => {
-                tableHtml += `    <th style="padding:12px; text-align:${index === 0 ? 'left' : 'center'}; background-color:${headerBg}; color:${headerText};">${header}</th>\n`;
-            });
-            tableHtml += `  </tr>\n`;
-            
-            // Table rows
-            rowData.forEach((row, rowIndex) => {
-                const rowColor = rowIndex % 2 === 0 ? rowBg1 : rowBg2;
-                
-                tableHtml += `  <tr>\n`;
-                tableHtml += `    <td style="padding:12px; text-align:left; background-color:${rowColor};">${row.feature}</td>\n`;
-                
-                row.cells.forEach(cell => {
-                    let cellContent = '';
+                for (let i = 0; i < rows; i++) {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'matrix-row';
                     
-                    switch(cell) {
-                        case 'check':
-                            cellContent = `<div style="display:inline-block; width:24px; height:24px; background-color:#8bc34a; border-radius:50%; text-align:center; line-height:24px; color:white;">✓</div>`;
-                            break;
-                        case 'text':
-                            cellContent = 'Yes';
-                            break;
-                        case 'optional':
-                            cellContent = 'Optional';
-                            break;
-                        case 'empty':
-                        default:
-                            cellContent = '';
-                            break;
+                    // Feature name cell
+                    const featureCell = document.createElement('div');
+                    featureCell.className = 'feature-name';
+                    
+                    const featureInput = document.createElement('input');
+                    featureInput.type = 'text';
+                    featureInput.placeholder = `Feature ${i+1}`;
+                    featureInput.value = '';
+                    featureInput.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;';
+                    featureCell.appendChild(featureInput);
+                    
+                    rowDiv.appendChild(featureCell);
+                    
+                    // Add cells for each column
+                    for (let j = 0; j < columns; j++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell-content';
+                        
+                        const select = document.createElement('select');
+                        select.className = 'cell-type-select';
+                        
+                        // Add options to the select
+                        cellOptions.forEach(option => {
+                            const optionEl = document.createElement('option');
+                            optionEl.value = option.value;
+                            optionEl.textContent = option.label;
+                            // Default to checkmark for the first two columns
+                            if (option.value === 'check' && j <= 1) {
+                                optionEl.selected = true;
+                            }
+                            // Default to empty for others
+                            if (option.value === 'empty' && j > 1) {
+                                optionEl.selected = true;
+                            }
+                            select.appendChild(optionEl);
+                        });
+                        
+                        cell.appendChild(select);
+                        rowDiv.appendChild(cell);
                     }
                     
-                    tableHtml += `    <td style="padding:12px; text-align:center; background-color:${rowColor};">${cellContent}</td>\n`;
+                    matrixRowsContainer.appendChild(rowDiv);
+                }
+            }
+            
+            // Generate the matrix preview and HTML code
+            function generateMatrix() {
+                // Get all the current values
+                const rows = parseInt(matrixRows.value) || 5;
+                const columns = parseInt(matrixColumns.value) || 4;
+                const headerBg = headerBgColor.value;
+                const headerText = headerTextColor.value;
+                const rowBg1 = rowBgColor1.value;
+                const rowBg2 = rowBgColor2.value;
+                
+                // Get column headers
+                const headerInputs = matrixHeaders.querySelectorAll('input');
+                const headers = Array.from(headerInputs).map(input => input.value.trim() || input.placeholder);
+                
+                // Get row data
+                const rowDivs = matrixRowsContainer.querySelectorAll('.matrix-row');
+                const rowData = Array.from(rowDivs).map(row => {
+                    const featureInput = row.querySelector('input');
+                    const selects = row.querySelectorAll('select');
+                    
+                    return {
+                        feature: featureInput.value.trim() || featureInput.placeholder,
+                        cells: Array.from(selects).map(select => select.value)
+                    };
                 });
                 
-                tableHtml += `  </tr>\n`;
-            });
-            
-            tableHtml += `</table>`;
-            
-            // Update the preview
-            matrixPreview.innerHTML = tableHtml;
-            
-            // Update the code
-            matrixCode.textContent = tableHtml;
-            
-            // Show the preview container
-            matrixPreviewContainer.style.display = 'block';
-            
-            console.log('Matrix generated successfully');
-        }
-        
-        // Clear the matrix editor
-        function clearMatrix() {
-            matrixRows.value = '5';
-            matrixColumns.value = '4';
-            headerBgColor.value = '#96b83b';
-            headerTextColor.value = '#ffffff';
-            rowBgColor1.value = '#f2f2f2';
-            rowBgColor2.value = '#ffffff';
-            
-            updateMatrixEditor();
-            matrixPreviewContainer.style.display = 'none';
-            
-            console.log('Matrix cleared');
-        }
-        
-        // Copy the matrix HTML code
-        function copyMatrixCode() {
-            const codeText = matrixCode.textContent;
-            
-            navigator.clipboard.writeText(codeText)
-                .then(() => {
-                    // Show success message
-                    copyMatrixCodeBtn.textContent = 'Copied!';
-                    setTimeout(() => {
-                        copyMatrixCodeBtn.textContent = 'Copy Code';
-                    }, 2000);
-                    
-                    console.log('Matrix code copied to clipboard');
-                })
-                .catch(err => {
-                    console.error('Failed to copy: ', err);
-                    
-                    // Fallback copy method
-                    const textarea = document.createElement('textarea');
-                    textarea.value = codeText;
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textarea);
-                    
-                    copyMatrixCodeBtn.textContent = 'Copied!';
-                    setTimeout(() => {
-                        copyMatrixCodeBtn.textContent = 'Copy Code';
-                    }, 2000);
+                // Generate HTML table
+                let tableHtml = `<table style="width:100%; border-collapse:collapse;">\n`;
+                
+                // Table header
+                tableHtml += `  <tr>\n`;
+                headers.forEach((header, index) => {
+                    tableHtml += `    <th style="padding:12px; text-align:${index === 0 ? 'left' : 'center'}; background-color:${headerBg}; color:${headerText};">${header}</th>\n`;
                 });
+                tableHtml += `  </tr>\n`;
+                
+                // Table rows
+                rowData.forEach((row, rowIndex) => {
+                    const rowColor = rowIndex % 2 === 0 ? rowBg1 : rowBg2;
+                    
+                    tableHtml += `  <tr>\n`;
+                    tableHtml += `    <td style="padding:12px; text-align:left; background-color:${rowColor};">${row.feature}</td>\n`;
+                    
+                    row.cells.forEach(cell => {
+                        let cellContent = '';
+                        
+                        switch(cell) {
+                            case 'check':
+                                cellContent = `<div style="display:inline-block; width:24px; height:24px; background-color:#8bc34a; border-radius:50%; text-align:center; line-height:24px; color:white;">✓</div>`;
+                                break;
+                            case 'text':
+                                cellContent = 'Yes';
+                                break;
+                            case 'optional':
+                                cellContent = 'Optional';
+                                break;
+                            case 'empty':
+                            default:
+                                cellContent = '';
+                                break;
+                        }
+                        
+                        tableHtml += `    <td style="padding:12px; text-align:center; background-color:${rowColor};">${cellContent}</td>\n`;
+                    });
+                    
+                    tableHtml += `  </tr>\n`;
+                });
+                
+                tableHtml += `</table>`;
+                
+                // Update the preview
+                matrixPreview.innerHTML = tableHtml;
+                
+                // Update the code
+                matrixCode.textContent = tableHtml;
+                
+                // Show the preview container
+                matrixPreviewContainer.style.display = 'block';
+                
+                console.log('Matrix generated successfully');
+            }
+            
+            // Clear the matrix editor
+            function clearMatrix() {
+                matrixRows.value = '5';
+                matrixColumns.value = '4';
+                headerBgColor.value = '#96b83b';
+                headerTextColor.value = '#ffffff';
+                rowBgColor1.value = '#f2f2f2';
+                rowBgColor2.value = '#ffffff';
+                
+                updateMatrixEditor();
+                matrixPreviewContainer.style.display = 'none';
+                
+                console.log('Matrix cleared');
+            }
+            
+            // Copy the matrix HTML code
+            function copyMatrixCode() {
+                const codeText = matrixCode.textContent;
+                
+                navigator.clipboard.writeText(codeText)
+                    .then(() => {
+                        // Show success message
+                        copyMatrixCodeBtn.textContent = 'Copied!';
+                        setTimeout(() => {
+                            copyMatrixCodeBtn.textContent = 'Copy Code';
+                        }, 2000);
+                        
+                        console.log('Matrix code copied to clipboard');
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy: ', err);
+                        
+                        // Fallback copy method
+                        const textarea = document.createElement('textarea');
+                        textarea.value = codeText;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                        
+                        copyMatrixCodeBtn.textContent = 'Copied!';
+                        setTimeout(() => {
+                            copyMatrixCodeBtn.textContent = 'Copy Code';
+                        }, 2000);
+                    });
+            }
         }
-    }
-});
-</script>
+    </script>
 </body>
 </html>
