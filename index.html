@@ -1615,39 +1615,61 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     `;
     document.head.appendChild(style);
-    
     // Now create and add the tab elements
     
-    // 1. Create the Matrix Builder tab button
-    const tabsContainer = document.querySelector('.tabs');
-    if (tabsContainer) {
-        // Look for "Additional Tool" or "future" tab
-        const tabButtons = document.querySelectorAll('.tab-button');
-        let futureTabFound = false;
-        
-        for (const btn of tabButtons) {
-            const dataTab = btn.getAttribute('data-tab');
-            if (dataTab === 'future' || btn.textContent.includes('Additional')) {
-                // Replace this button with our Matrix Builder button
-                btn.setAttribute('data-tab', 'matrix');
-                btn.textContent = 'Matrix Builder';
-                futureTabFound = true;
-                console.log('Replaced existing tab button with Matrix Builder');
-                break;
-            }
-        }
-        
-        // If no future tab found, add a new tab button
-        if (!futureTabFound) {
-            const newButton = document.createElement('button');
-            newButton.className = 'tab-button';
-            newButton.setAttribute('data-tab', 'matrix');
-            newButton.textContent = 'Matrix Builder';
-            tabsContainer.appendChild(newButton);
-            console.log('Added new Matrix Builder tab button');
+// 1. Create the Matrix Builder tab button
+const tabsContainer = document.querySelector('.tabs');
+if (tabsContainer) {
+    // Look for "Additional Tool" or "future" tab
+    const tabButtons = document.querySelectorAll('.tab-button');
+    let futureTabFound = false;
+    
+    for (const btn of tabButtons) {
+        const dataTab = btn.getAttribute('data-tab');
+        if (dataTab === 'future' || btn.textContent.includes('Additional')) {
+            // Replace this button with our Matrix Builder button
+            btn.setAttribute('data-tab', 'matrix');
+            btn.textContent = 'Matrix Builder';
+            futureTabFound = true;
+            console.log('Replaced existing tab button with Matrix Builder');
+            break;
         }
     }
     
+    // If no future tab found, add a new tab button
+    if (!futureTabFound) {
+        const newButton = document.createElement('button');
+        newButton.className = 'tab-button';
+        newButton.setAttribute('data-tab', 'matrix');
+        newButton.textContent = 'Matrix Builder';
+        tabsContainer.appendChild(newButton);
+        console.log('Added new Matrix Builder tab button');
+    }
+    
+    // Add proper tab switching for all tab buttons
+    const allTabButtons = document.querySelectorAll('.tab-button');
+    allTabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons and contents
+            allTabButtons.forEach(btn => btn.classList.remove('active'));
+            const allTabContents = document.querySelectorAll('.tab-content');
+            allTabContents.forEach(content => content.classList.remove('active'));
+            
+            // Add active class to this button
+            this.classList.add('active');
+            
+            // Add active class to corresponding content
+            const tabId = this.getAttribute('data-tab');
+            const tabContent = document.getElementById(tabId);
+            if (tabContent) {
+                tabContent.classList.add('active');
+                console.log(`Switched to tab: ${tabId}`);
+            } else {
+                console.error(`Tab content not found for: ${tabId}`);
+            }
+        });
+    });
+}
     // 2. Create the Matrix Builder tab content
     const futureTab = document.getElementById('future');
     if (futureTab) {
