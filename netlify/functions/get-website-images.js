@@ -31,26 +31,6 @@ exports.handler = async function(event, context) {
     // 1. First try Open Graph images (usually the main featured image)
     let mainImage = $('meta[property="og:image"]').attr('content');
     console.log('OpenGraph image:', mainImage || 'None found');
-
-    // Add this to your get-website-images.js function
-
-if (mainImage) {
-  // Create a proxied version of the image URL
-  const proxiedImage = `https://images.weserv.nl/?url=${encodeURIComponent(mainImage)}`;
-  
-  return {
-    statusCode: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Content-Type'
-    },
-    body: JSON.stringify({
-      mainImage: proxiedImage,
-      originalImage: mainImage,
-      title: pageTitle
-    })
-  };
-}
     
     // 2. If no OG image, look for Twitter card image
     if (!mainImage) {
@@ -141,11 +121,28 @@ if (mainImage) {
       try {
         mainImage = new URL(mainImage, url).href;
         console.log('Final image URL:', mainImage);
+        
+        // Create a proxied version of the image URL
+        const proxiedImage = `https://images.weserv.nl/?url=${encodeURIComponent(mainImage)}`;
+        
+        return {
+          statusCode: 200,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type'
+          },
+          body: JSON.stringify({
+            mainImage: proxiedImage,
+            originalImage: mainImage,
+            title: pageTitle
+          })
+        };
       } catch (e) {
         console.error('Error converting to absolute URL:', e);
       }
     }
     
+    // Return response if no image was found
     return {
       statusCode: 200,
       headers: {
@@ -153,7 +150,8 @@ if (mainImage) {
         'Access-Control-Allow-Headers': 'Content-Type'
       },
       body: JSON.stringify({
-        mainImage: mainImage || null,
+        mainImage: null,
+        originalImage: null,
         title: pageTitle
       })
     };
