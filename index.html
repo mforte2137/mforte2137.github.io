@@ -1285,47 +1285,573 @@
                 statusElement.style.display = 'none';
             }
             
-            // Process PDF function - simplified mock version
-            async function processPdf(pdfData, options = {}) {
-                const results = [];
-                let pdfDoc = null;
+// Set up PDF.js worker
+document.addEventListener('DOMContentLoaded', () => {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    
+    // Initialize tabs
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active class from all buttons and contents
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Add active class to current button and corresponding content
+            button.classList.add('active');
+            const tabId = button.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+    
+    // Initialize all tools
+    initPdfExtractor();
+    initWidgetCreator();
+    initMatrixBuilder();
+    initAIContentGenerator();
+});
+
+// -------------------------------
+// PDF IMAGE EXTRACTOR FUNCTIONALITY
+// -------------------------------
+function initPdfExtractor() {
+    // DOM Elements
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const processBtn = document.getElementById('process-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+    const previewContainer = document.getElementById('preview-container');
+    const statusElement = document.getElementById('status');
+    const logContainer = document.getElementById('log-container');
+    const pageInput = document.getElementById('page-input');
+    const dpiInput = document.getElementById('dpi-input');
+    const resizeInput = document.getElementById('resize-input');
+    
+    // Uploaded files storage
+    let uploadedFiles = [];
+    
+    // Set up logging
+    function logMessage(message, level = 'info') {
+        const entry = document.createElement('p');
+        entry.className = `log-entry ${level}`;
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        logContainer.appendChild(entry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+        
+        // Also log to console
+        switch(level) {
+            case 'error': console.error(message); break;
+            case 'warn': console.warn(message); break;
+            default: console.log(message);
+        }
+    }
+    
+    // Prevent defaults for drag and drop
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    function highlight() {
+        dropzone.classList.add('dragover');
+    }
+    
+    function unhighlight() {
+        dropzone.classList.remove('dragover');
+    }
+    
+    // Setup drag and drop events
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, preventDefaults);
+        document.body.addEventListener(eventName, preventDefaults);
+    });
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, highlight);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, unhighlight);
+    });
+    
+    // Handle file selection
+    dropzone.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    // File input change handler
+    fileInput.addEventListener('change', (e) => {
+        const files = e.target.files;
+        if (files.length === 0) return;
+        
+        // Filter for PDF files
+        const pdfFiles = Array.from(files).filter(file => file.type === 'application/pdf');
+        
+        if (pdfFiles.length === 0) {
+            showStatus('No PDF files were selected.', 'error');
+            return;
+        }
+        
+        // Store the files and enable the process button
+        uploadedFiles = pdfFiles;
+        logMessage(`Selected ${uploadedFiles.length} PDF files`);
+        processBtn.disabled = false;
+        
+        // Clear previous results
+        previewContainer.innerHTML = '';
+        hideStatus();
+    });
+    
+    // Drop handler
+    dropzone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length === 0) return;
+        
+        // Filter for PDF files
+        const pdfFiles = Array.from(files).filter(file => file.type === 'application/pdf');
+        
+        if (pdfFiles.length === 0) {
+            showStatus('No PDF files were selected.', 'error');
+            return;
+        }
+        
+        // Store the files and enable the process button
+        uploadedFiles = pdfFiles;
+        logMessage(`Selected ${uploadedFiles.length} PDF files`);
+        processBtn.disabled = false;
+        
+        // Clear previous results
+        previewContainer.innerHTML = '';
+        hideStatus();
+    });
+    
+    // Process button click handler
+    processBtn.addEventListener('click', async () => {
+        if (uploadedFiles.length === 0) return;
+        
+        // Parse options
+        const dpi = parseInt(dpiInput.value, 10);
+        const resizeToA4 = resizeInput.value === 'true';
+        
+        // Parse page numbers
+        let pageNumbers = [];
+        if (pageInput.value.trim()) {
+            pageNumbers = pageInput.value.split(',')
+                .map(p => parseInt(p.trim(), 10))
+                .filter(p => !isNaN(p) && p > 0);
+        }
+        
+        const options = {
+            dpi,
+            resizeToA4,
+            pageNumbers: pageNumbers.length > 0 ? pageNumbers : null,
+            maskText: true // Enable text masking for cover page creation
+        };
+        
+        logMessage(`Processing ${uploadedFiles.length} files with options: ` + 
+                  `DPI=${options.dpi}, Resize=${options.resizeToA4}, Pages=${options.pageNumbers || 'all'}, MaskText=${options.maskText}`);
+        
+        // Disable the button during processing
+        processBtn.disabled = true;
+        
+        // Show progress
+        progressContainer.style.display = 'block';
+        progressBar.max = uploadedFiles.length;
+        progressBar.value = 0;
+        progressText.textContent = `Processing 0/${uploadedFiles.length} files...`;
+        
+        // Clear previous results
+        previewContainer.innerHTML = '';
+        
+        try {
+            let processedCount = 0;
+            
+            for (let i = 0; i < uploadedFiles.length; i++) {
+                const file = uploadedFiles[i];
+                progressText.textContent = `Processing ${i+1}/${uploadedFiles.length}: ${file.name}`;
                 
                 try {
-                    // Load the PDF document
-                    pdfDoc = await pdfjsLib.getDocument({ data: pdfData }).promise;
-                    logMessage(`PDF loaded with ${pdfDoc.numPages} pages`);
+                    logMessage(`Processing ${file.name}`);
                     
-                    // Determine which pages to process
-                    const pagesToProcess = options.pageNumbers || Array.from(
-                        { length: pdfDoc.numPages }, 
-                        (_, i) => i + 1
-                    );
+                    // Read the file as array buffer
+                    const fileData = await readFileAsArrayBuffer(file);
                     
-                    // Create a simple PNG data (for demo purposes)
-                    // In a real implementation, you would extract images from PDF pages
-                    const dummyPngData = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]); 
+                    // Process the PDF
+                    const processedImages = await processPdf(fileData, options);
                     
-                    // For each page, add a result
-                    for (const pageNum of pagesToProcess) {
-                        if (pageNum < 1 || pageNum > pdfDoc.numPages) {
-                            logMessage(`Page ${pageNum} out of range, skipping`, 'warn');
-                            continue;
-                        }
+                    if (processedImages.length > 0) {
+                        logMessage(`Successfully processed ${file.name}, ${processedImages.length} pages extracted`);
+                        processedCount++;
                         
-                        results.push({
-                            pageNum,
-                            imageData: dummyPngData // In a real implementation, this would be actual PNG data
+                        // Display the results
+                        processedImages.forEach(({ pageNum, imageData }) => {
+                            displayImage(file.name, pageNum, imageData);
                         });
                         
-                        logMessage(`Successfully processed page ${pageNum}`);
+                        // Add a "Download All" button for multiple pages
+                        if (processedImages.length > 1) {
+                            const downloadAllButton = document.createElement('button');
+                            downloadAllButton.textContent = `Download All Pages (${processedImages.length})`;
+                            downloadAllButton.className = 'download-all-button';
+                            
+                            downloadAllButton.addEventListener('click', () => {
+                                try {
+                                    logMessage('Preparing to download all images as ZIP...');
+                                    
+                                    const zip = new JSZip();
+                                    
+                                    // Add each image to the zip
+                                    for (const { pageNum, imageData } of processedImages) {
+                                        const filename = `${file.name.replace('.pdf', '')}_page${pageNum}.png`;
+                                        zip.file(filename, imageData);
+                                    }
+                                    
+                                    // Generate the zip
+                                    zip.generateAsync({ type: 'blob' }).then((zipContent) => {
+                                        // Download the zip
+                                        const a = document.createElement('a');
+                                        a.href = URL.createObjectURL(zipContent);
+                                        a.download = `${file.name.replace('.pdf', '')}_all_pages.zip`;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                        
+                                        logMessage('All pages downloaded as ZIP');
+                                    }).catch(err => {
+                                        logMessage(`Error creating ZIP: ${err.message}`, 'error');
+                                    });
+                                } catch (err) {
+                                    logMessage(`Error creating ZIP: ${err.message}`, 'error');
+                                }
+                            });
+                            
+                            previewContainer.insertAdjacentElement('beforebegin', downloadAllButton);
+                        }
+                    } else {
+                        logMessage(`No images extracted from ${file.name}`, 'warn');
+                    }
+                } catch (err) {
+                    logMessage(`Error processing ${file.name}: ${err.message}`, 'error');
+                }
+                
+                // Update progress bar
+                progressBar.value = i + 1;
+            }
+            
+            progressText.textContent = `Processed ${processedCount}/${uploadedFiles.length} files`;
+            showStatus(`Successfully processed ${processedCount} out of ${uploadedFiles.length} files`, 'success');
+        } catch (err) {
+            logMessage(`Error during processing: ${err.message}`, 'error');
+            showStatus('An error occurred during processing. Check the log for details.', 'error');
+        } finally {
+            processBtn.disabled = false;
+        }
+    });
+    
+    // Clear fields button
+    clearBtn.addEventListener('click', clearFields);
+    
+    // Function to clear all fields and reset the application
+    function clearFields() {
+        // Reset uploaded files
+        uploadedFiles = [];
+        
+        // Reset input fields to defaults
+        pageInput.value = '1';
+        dpiInput.value = '300';
+        resizeInput.value = 'true';
+        
+        // Clear results and status
+        previewContainer.innerHTML = '';
+        hideStatus();
+        
+        // Reset log container (keep only the initial message)
+        logContainer.innerHTML = '<p class="log-entry info">System ready. Upload PDF files to begin.</p>';
+        
+        // Disable process button
+        processBtn.disabled = true;
+        
+        // Hide progress container
+        progressContainer.style.display = 'none';
+        
+        // Remove any download all buttons
+        const downloadAllButtons = document.querySelectorAll('.download-all-button');
+        downloadAllButtons.forEach(button => button.remove());
+        
+        // Clear the file input value
+        fileInput.value = '';
+        
+        logMessage('All fields cleared. Ready for new files.');
+    }
+    
+    // Display an image in the preview container
+    function displayImage(fileName, pageNum, imageData) {
+        // Create blob URL from the image data
+        const blob = new Blob([imageData], { type: 'image/png' });
+        const url = URL.createObjectURL(blob);
+        
+        // Create preview item
+        const item = document.createElement('div');
+        item.className = 'preview-item';
+        
+        // Preview header
+        const header = document.createElement('div');
+        header.className = 'preview-header';
+        
+        const title = document.createElement('h3');
+        title.className = 'preview-title';
+        title.textContent = `${fileName} - Page ${pageNum}`;
+        header.appendChild(title);
+        
+        item.appendChild(header);
+        
+        // Preview image
+        const img = document.createElement('img');
+        img.className = 'preview-image';
+        img.src = url;
+        img.alt = `${fileName} - Page ${pageNum}`;
+        item.appendChild(img);
+        
+        // Preview actions
+        const actions = document.createElement('div');
+        actions.className = 'preview-actions';
+        
+        // PNG Download button
+        const downloadBtn = document.createElement('button');
+        downloadBtn.textContent = 'Download PNG';
+        downloadBtn.addEventListener('click', () => {
+            // Create a download link
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileName.replace('.pdf', '')}_page${pageNum}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+        
+        actions.appendChild(downloadBtn);
+        item.appendChild(actions);
+        
+        // Add to preview container
+        previewContainer.appendChild(item);
+    }
+    
+    // Helper function to read a File as ArrayBuffer
+    function readFileAsArrayBuffer(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(reader.error);
+            reader.readAsArrayBuffer(file);
+        });
+    }
+    
+    // Helper functions for status display
+    function showStatus(message, type) {
+        statusElement.textContent = message;
+        statusElement.className = `status ${type}`;
+        statusElement.style.display = 'block';
+    }
+    
+    function hideStatus() {
+        statusElement.style.display = 'none';
+    }
+    
+    // Process PDF function with text masking for cover page creation
+    async function processPdf(pdfData, options = {}) {
+        const results = [];
+        let pdfDoc = null;
+        
+        try {
+            // Load the PDF document
+            pdfDoc = await pdfjsLib.getDocument({ data: pdfData }).promise;
+            logMessage(`PDF loaded with ${pdfDoc.numPages} pages`);
+            
+            // Determine which pages to process
+            const pagesToProcess = options.pageNumbers || Array.from(
+                { length: pdfDoc.numPages }, 
+                (_, i) => i + 1
+            );
+            
+            // Process each page
+            for (const pageNum of pagesToProcess) {
+                if (pageNum < 1 || pageNum > pdfDoc.numPages) {
+                    logMessage(`Page ${pageNum} out of range, skipping`, 'warn');
+                    continue;
+                }
+                
+                try {
+                    // Get the page
+                    const page = await pdfDoc.getPage(pageNum);
+                    
+                    // Get viewport at desired DPI
+                    const scale = options.dpi / 72; // 72 DPI is the PDF standard
+                    const viewport = page.getViewport({ scale });
+                    
+                    // Create a canvas to render the page
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    
+                    // Set dimensions
+                    if (options.resizeToA4) {
+                        // A4 dimensions at the specified DPI
+                        const a4Width = 8.27 * options.dpi; // A4 width in inches * DPI
+                        const a4Height = 11.69 * options.dpi; // A4 height in inches * DPI
+                        
+                        // Calculate the scaling factor to fit the page to A4
+                        const scaleX = a4Width / viewport.width;
+                        const scaleY = a4Height / viewport.height;
+                        const scale = Math.min(scaleX, scaleY);
+                        
+                        // Set canvas dimensions to A4
+                        canvas.width = a4Width;
+                        canvas.height = a4Height;
+                        
+                        // Fill the canvas with white background
+                        context.fillStyle = 'white';
+                        context.fillRect(0, 0, canvas.width, canvas.height);
+                        
+                        // Calculate centering
+                        const offsetX = (canvas.width - viewport.width * scale) / 2;
+                        const offsetY = (canvas.height - viewport.height * scale) / 2;
+                        
+                        // Get the text content if we need to mask it
+                        let textContent = null;
+                        if (options.maskText) {
+                            textContent = await page.getTextContent();
+                        }
+                        
+                        // Render the page with scaling and centering
+                        const transform = [scale, 0, 0, scale, offsetX, offsetY];
+                        const renderContext = {
+                            canvasContext: context,
+                            transform: transform,
+                            viewport: viewport,
+                            renderInteractiveForms: true
+                        };
+                        
+                        await page.render(renderContext).promise;
+                        
+                        // If text masking is enabled, mask the text areas
+                        if (options.maskText && textContent) {
+                            context.fillStyle = 'white'; // Or background color
+                            
+                            // For each text item, create a rectangle to mask it
+                            for (const item of textContent.items) {
+                                const tx = item.transform;
+                                // Get the text position and size
+                                const fontHeight = Math.sqrt((tx[2] * tx[2]) + (tx[3] * tx[3]));
+                                const x = (tx[4] * scale) + offsetX;
+                                const y = (tx[5] * scale) + offsetY;
+                                const width = item.width * scale;
+                                
+                                // Fill a rectangle over the text
+                                context.fillRect(
+                                    x - 1, 
+                                    y - fontHeight, 
+                                    width + 2, 
+                                    fontHeight + 2
+                                );
+                            }
+                        }
+                    } else {
+                        // Use the original page size
+                        canvas.width = viewport.width;
+                        canvas.height = viewport.height;
+                        
+                        // Fill the canvas with white background
+                        context.fillStyle = 'white';
+                        context.fillRect(0, 0, canvas.width, canvas.height);
+                        
+                        // Get the text content if we need to mask it
+                        let textContent = null;
+                        if (options.maskText) {
+                            textContent = await page.getTextContent();
+                        }
+                        
+                        // Render the page
+                        const renderContext = {
+                            canvasContext: context,
+                            viewport: viewport,
+                            renderInteractiveForms: true
+                        };
+                        
+                        await page.render(renderContext).promise;
+                        
+                        // If text masking is enabled, mask the text areas
+                        if (options.maskText && textContent) {
+                            context.fillStyle = 'white'; // Or background color
+                            
+                            // For each text item, create a rectangle to mask it
+                            for (const item of textContent.items) {
+                                const tx = item.transform;
+                                // Get the text position and size
+                                const fontHeight = Math.sqrt((tx[2] * tx[2]) + (tx[3] * tx[3]));
+                                const x = tx[4];
+                                const y = tx[5];
+                                const width = item.width;
+                                
+                                // Fill a rectangle over the text
+                                context.fillRect(
+                                    x - 1, 
+                                    y - fontHeight, 
+                                    width + 2, 
+                                    fontHeight + 2
+                                );
+                            }
+                        }
                     }
                     
-                    return results;
+                    // Convert canvas to PNG data
+                    const pngData = await canvasToBlob(canvas);
+                    
+                    results.push({
+                        pageNum,
+                        imageData: await blobToArrayBuffer(pngData)
+                    });
+                    
+                    logMessage(`Successfully processed page ${pageNum}`);
                 } catch (err) {
-                    logMessage(`Error processing PDF: ${err.message}`, 'error');
+                    logMessage(`Error processing page ${pageNum}: ${err.message}`, 'error');
                     throw err;
                 }
             }
+            
+            return results;
+        } catch (err) {
+            logMessage(`Error processing PDF: ${err.message}`, 'error');
+            throw err;
+        }
+    }
+    
+    // Helper function to convert canvas to blob
+    function canvasToBlob(canvas) {
+        return new Promise((resolve, reject) => {
+            canvas.toBlob(blob => {
+                if (blob) {
+                    resolve(blob);
+                } else {
+                    reject(new Error('Canvas to Blob conversion failed'));
+                }
+            }, 'image/png');
+        });
+    }
+    
+    // Helper function to convert blob to array buffer
+    function blobToArrayBuffer(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(new Uint8Array(reader.result));
+            reader.onerror = () => reject(reader.error);
+            reader.readAsArrayBuffer(blob);
+        });
+    }
+}
         }
         
         // -------------------------------
