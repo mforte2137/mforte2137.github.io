@@ -3183,28 +3183,29 @@
                 return html;
             }
             
-            // Generate embeddable widget code with base64 image
-            function generateWidgetCode(imageUrl, content, position) {
-                // Create a simple 2-column x 1-row table with centered image
-                let widgetHtml = `<table style="width:100%; border-collapse:collapse; border:none;">\n  <tr>\n`;
-                
-                if (position === 'left') {
-                    widgetHtml += `    <td style="width:30%; vertical-align:middle; text-align:center; padding:10px;">\n      <img src="${imageUrl}" alt="Website Content" style="max-width:100%; height:auto; margin:0 auto; display:block;">\n    </td>\n    <td style="width:70%; vertical-align:top; padding:10px;">\n      ${content}\n    </td>\n`;
-                } else if (position === 'right') {
-                    widgetHtml += `    <td style="width:70%; vertical-align:top; padding:10px;">\n      ${content}\n    </td>\n    <td style="width:30%; vertical-align:middle; text-align:center; padding:10px;">\n      <img src="${imageUrl}" alt="Website Content" style="max-width:100%; height:auto; margin:0 auto; display:block;">\n    </td>\n`;
-                } else if (position === 'top') {
-                    widgetHtml += `    <td colspan="2" style="text-align:center; padding:10px;">\n      <img src="${imageUrl}" alt="Website Content" style="max-width:50%; height:auto; margin:0 auto; display:block;">\n    </td>\n  </tr>\n  <tr>\n    <td colspan="2" style="padding:10px;">\n      ${content}\n    </td>\n`;
-                } else if (position === 'bottom') {
-                    widgetHtml += `    <td colspan="2" style="padding:10px;">\n      ${content}\n    </td>\n  </tr>\n  <tr>\n    <td colspan="2" style="text-align:center; padding:10px;">\n      <img src="${imageUrl}" alt="Website Content" style="max-width:50%; height:auto; margin:0 auto; display:block;">\n    </td>\n`;
-                } else {
-                    // No image - content takes full width
-                    widgetHtml += `    <td colspan="2" style="padding:10px;">\n      ${content}\n    </td>\n`;
-                }
-                
-                widgetHtml += `  </tr>\n</table>`;
-                
-                return widgetHtml;
-            }
+        // Generate embeddable widget code with base64 image
+function generateWidgetCode(imageUrl, content, position) {
+    // Create a simple 2-column x 1-row table with centered image ONLY
+    // No header, no tabs, just the table
+    let widgetHtml = `<table style="width:100%; border-collapse:collapse; border:none;">\n  <tr>\n`;
+    
+    if (position === 'left') {
+        widgetHtml += `    <td style="width:30%; vertical-align:middle; text-align:center; padding:10px;">\n      <img src="${imageUrl}" alt="Content Image" style="max-width:100%; height:auto; margin:0 auto; display:block;">\n    </td>\n    <td style="width:70%; vertical-align:top; padding:10px;">\n      ${content}\n    </td>\n`;
+    } else if (position === 'right') {
+        widgetHtml += `    <td style="width:70%; vertical-align:top; padding:10px;">\n      ${content}\n    </td>\n    <td style="width:30%; vertical-align:middle; text-align:center; padding:10px;">\n      <img src="${imageUrl}" alt="Content Image" style="max-width:100%; height:auto; margin:0 auto; display:block;">\n    </td>\n`;
+    } else if (position === 'top') {
+        widgetHtml += `    <td colspan="2" style="text-align:center; padding:10px;">\n      <img src="${imageUrl}" alt="Content Image" style="max-width:50%; height:auto; margin:0 auto; display:block;">\n    </td>\n  </tr>\n  <tr>\n    <td colspan="2" style="padding:10px;">\n      ${content}\n    </td>\n`;
+    } else if (position === 'bottom') {
+        widgetHtml += `    <td colspan="2" style="padding:10px;">\n      ${content}\n    </td>\n  </tr>\n  <tr>\n    <td colspan="2" style="text-align:center; padding:10px;">\n      <img src="${imageUrl}" alt="Content Image" style="max-width:50%; height:auto; margin:0 auto; display:block;">\n    </td>\n`;
+    } else {
+        // No image - content takes full width
+        widgetHtml += `    <td colspan="2" style="padding:10px;">\n      ${content}\n    </td>\n`;
+    }
+    
+    widgetHtml += `  </tr>\n</table>`;
+    
+    return widgetHtml;
+}
             
             // Copy widget code to clipboard
             function copyWidgetCode() {
