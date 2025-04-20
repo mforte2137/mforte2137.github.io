@@ -846,6 +846,37 @@
     
     <!-- Inline JavaScript -->
     <script>
+        // Define MSP stock images if not already defined
+if (typeof mspStockImages === 'undefined') {
+    // Fallback images array - simple placeholders
+    window.mspStockImages = [
+        { 
+            id: 1, 
+            name: "Cloud Services",
+            base64: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAnElEQVR42u3RAQ0AAAjDMO5fNCCDkC5z0HTVrisFCBABASIgQAQEiIAAAQJEQIAICBABASIgQIAAERAgAgJEQIAICBAgQAQEiIAAERAgAgIECBABASIgQAQEiIAAASIgQAQEiIAAERAgAgIECBABASIgQAQEiIAAASIgQAQEiIAAERAgAgIECBABASIgQAQEiIAAAQJEQIAICBABERAgOy3q5JmSGbI0NAAAAABJRU5ErkJggg=="
+        },
+        { 
+            id: 2, 
+            name: "Network Security",
+            base64: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAnElEQVR42u3RAQ0AAAjDMO5fNCCDkC5z0HTVrisFCBABASIgQAQEiIAAAQJEQIAICBABASIgQIAAERAgAgJEQIAICBAgQAQEiIAAERAgAgIECBABASIgQAQEiIAAASIgQAQEiIAAERAgAgIECBABASIgQAQEiIAAASIgQAQEiIAAERAgAgIECBABASIgQAQEiIAAAQJEQIAICBABERAgOy3q5JmSGbI0NAAAAABJRU5ErkJggg=="
+        },
+        { 
+            id: 3, 
+            name: "IT Support",
+            base64: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAnElEQVR42u3RAQ0AAAjDMO5fNCCDkC5z0HTVrisFCBABASIgQAQEiIAAAQJEQIAICBABASIgQIAAERAgAgJEQIAICBAgQAQEiIAAERAgAgIECBABASIgQAQEiIAAASIgQAQEiIAAERAgAgIECBABASIgQAQEiIAAASIgQAQEiIAAERAgAgIECBABASIgQAQEiIAAAQJEQIAICBABERAgOy3q5JmSGbI0NAAAAABJRU5ErkJggg=="
+        },
+        { 
+            id: 4, 
+            name: "Cybersecurity",
+            base64: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAnElEQVR42u3RAQ0AAAjDMO5fNCCDkC5z0HTVrisFCBABASIgQAQEiIAAAQJEQIAICBABASIgQIAAERAgAgJEQIAICBAgQAQEiIAAERAgAgIECBABASIgQAQEiIAAASIgQAQEiIAAERAgAgIECBABASIgQAQEiIAAASIgQAQEiIAAERAgAgIECBABASIgQAQEiIAAAQJEQIAICBABERAgOy3q5JmSGbI0NAAAAABJRU5ErkJggg=="
+        },
+        { 
+            id: 5, 
+            name: "Data Backup",
+            base64: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAnElEQVR42u3RAQ0AAAjDMO5fNCCDkC5z0HTVrisFCBABASIgQAQEiIAAAQJEQIAICBABASIgQIAAERAgAgJEQIAICBAgQAQEiIAAERAgAgIECBABASIgQAQEiIAAASIgQAQEiIAAERAgAgIECBABASIgQAQEiIAAASIgQAQEiIAAERAgAgIECBABASIgQAQEiIAAAQJEQIAICBABERAgOy3q5JmSGbI0NAAAAABJRU5ErkJggg=="
+        }
+    ];
+}
         // Set up PDF.js worker
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
         
