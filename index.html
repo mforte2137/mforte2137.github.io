@@ -2143,54 +2143,65 @@
                 aiPreviewContainer.style.display = 'block';
             }
             
-            // Add the generated content to the widget creator
-            function addToWidget() {
-                if (!aiContentText.value.trim()) {
-                    showAIStatus('Please generate content first.', 'error');
-                    return;
-                }
-                
-                try {
-                    // Get the content from the textarea in case the user edited it
-                    const content = aiContentText.value;
-                    const formatted = formattedContent || formatTextToHtml(content);
-                    const imageUrl = selectedImageUrl || (mspStockImages && mspStockImages.length > 0 ? mspStockImages[0].base64 : null);
-                    
-                    if (!imageUrl) {
-                        showAIStatus('No image selected or available', 'error');
-                        return;
-                    }
-                    
-                    // Switch to widget tab
-                    const widgetTabBtn = document.querySelector('.tab-button[data-tab="widget"]');
-                    if (widgetTabBtn) {
-                        widgetTabBtn.click();
-                    }
-                    
-                    // Fill the widget creator form with the AI-generated content
-                    // Get the widget creator elements
-                    const summaryTextarea = document.getElementById('summary-text');
-                    
-                    if (summaryTextarea) {
-                        // Update the summary text
-                        summaryTextarea.value = content;
-                        
-                        // Store the formatted content in data attributes
-                        summaryTextarea.dataset.originalContent = content;
-                        summaryTextarea.dataset.formattedContent = formatted;
-                        
-                        // Handle the image
-                        window.aiGeneratedImage = imageUrl;
-                        
-                        showAIStatus('Content added to Widget Creator successfully.', 'success');
-                    } else {
-                        showAIStatus('Widget Creator not found. Please check the integration.', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error adding to widget:', error);
-                    showAIStatus('Error adding to Widget Creator.', 'error');
-                }
+// Add the generated content to the widget creator
+function addToWidget() {
+    if (!aiContentText.value.trim()) {
+        showAIStatus('Please generate content first.', 'error');
+        return;
+    }
+    
+    try {
+        // Get the content from the textarea in case the user edited it
+        const content = aiContentText.value;
+        const formatted = formattedContent || formatTextToHtml(content);
+        
+        // FIXED: Prioritize custom uploaded image over stock image
+        // If a custom image was uploaded, use that instead of selected stock image
+        const imageUrl = customImageBase64 || selectedImageUrl || 
+            (mspStockImages && mspStockImages.length > 0 ? mspStockImages[0].base64 : null);
+        
+        if (!imageUrl) {
+            showAIStatus('No image selected or available', 'error');
+            return;
+        }
+        
+        // Switch to widget tab
+        const widgetTabBtn = document.querySelector('.tab-button[data-tab="widget"]');
+        if (widgetTabBtn) {
+            widgetTabBtn.click();
+        }
+        
+        // Fill the widget creator form with the AI-generated content
+        // Get the widget creator elements
+        const summaryTextarea = document.getElementById('summary-text');
+        
+        if (summaryTextarea) {
+            // Update the summary text
+            summaryTextarea.value = content;
+            
+            // Store the formatted content in data attributes
+            summaryTextarea.dataset.originalContent = content;
+            summaryTextarea.dataset.formattedContent = formatted;
+            
+            // FIXED: Make sure to set the global variable with the correct image
+            window.aiGeneratedImage = imageUrl;
+            
+            // Also update preview right away if possible
+            const widgetPreview = document.getElementById('widget-preview');
+            const imagePosition = document.getElementById('image-position');
+            if (widgetPreview && typeof updateWidgetPreview === 'function' && imagePosition) {
+                updateWidgetPreview(imageUrl, formatted, imagePosition.value);
             }
+            
+            showAIStatus('Content added to Widget Creator successfully.', 'success');
+        } else {
+            showAIStatus('Widget Creator not found. Please check the integration.', 'error');
+        }
+    } catch (error) {
+        console.error('Error adding to widget:', error);
+        showAIStatus('Error adding to Widget Creator.', 'error');
+    }
+}
             
             // Clear all AI content
             function clearAIContent() {
