@@ -1658,20 +1658,6 @@
         // WIDGET CREATOR FUNCTIONALITY
         // -------------------------------
         function initWidgetCreator() {
-// Inside initWidgetCreator function
-// Check for AI-generated content
-if (window.aiGeneratedImage) {
-    // Convert base64 image to an actual file object
-    customImageUrl = window.aiGeneratedImage;
-    window.aiGeneratedImage = null; // Clear after use
-}
-
-// Check if custom image input has an AI image data attribute
-const customImageInput = document.getElementById('custom-image');
-if (customImageInput && customImageInput.dataset.aiImage) {
-    customImageUrl = customImageInput.dataset.aiImage;
-    delete customImageInput.dataset.aiImage; // Clear after use
-}
             // DOM Elements
             const urlInput = document.getElementById('website-url');
             const fetchBtn = document.getElementById('fetch-content-btn');
