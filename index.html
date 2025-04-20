@@ -690,6 +690,91 @@
             </div>
         </div>
     </div>
+    <!-- AI Content Generator Tab -->
+<div id="ai" class="tab-content">
+    <p>Generate content using AI, add images, and build a widget.</p>
+    
+    <div class="container">
+        <div class="widget-form">
+            <div class="options">
+                <div class="option-group">
+                    <label for="content-topic">Topic or Product:</label>
+                    <input type="text" id="content-topic" placeholder="Enter topic (e.g., Cloud Storage Solutions)" style="width: 100%;">
+                </div>
+                
+                <div class="option-group">
+                    <label for="content-tone">Tone:</label>
+                    <select id="content-tone">
+                        <option value="professional">Professional</option>
+                        <option value="casual">Casual</option>
+                        <option value="enthusiastic">Enthusiastic</option>
+                        <option value="informative">Informative</option>
+                    </select>
+                </div>
+                
+                <div class="option-group">
+                    <label for="content-length">Content Length:</label>
+                    <select id="content-length">
+                        <option value="1 Paragraph">1 Paragraph</option>
+                        <option value="2 Paragraphs" selected>2 Paragraphs</option>
+                        <option value="3 Paragraphs">3 Paragraphs</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="button-container">
+                <button id="generate-ai-btn">Generate AI Content</button>
+            </div>
+            
+            <div class="progress-container" id="ai-progress-container" style="display: none;">
+                <p id="ai-progress-text">Generating content...</p>
+                <progress id="ai-progress-bar" value="50" max="100"></progress>
+            </div>
+            
+            <div id="ai-status" class="status" style="display: none;"></div>
+            
+            <div class="image-section" style="margin-top: 20px;">
+                <label>Select Image for Content:</label>
+                <div class="options">
+                    <div class="option-group">
+                        <label for="image-source">Image Source:</label>
+                        <select id="image-source">
+                            <option value="upload">Upload Image</option>
+                            <option value="stock">Stock Images</option>
+                        </select>
+                    </div>
+                    
+                    <div class="option-group" id="upload-image-section">
+                        <label for="ai-custom-image">Upload Image:</label>
+                        <input type="file" id="ai-custom-image" accept="image/*">
+                    </div>
+                    
+                    <div class="option-group" id="stock-image-section" style="display: none;">
+                        <label>Stock Images:</label>
+                        <div class="stock-images-grid" id="stock-images-container">
+                            <!-- Stock images will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-content" style="margin-top: 20px;">
+                <label for="ai-content-text">Generated Content (edit as needed):</label>
+                <textarea id="ai-content-text" rows="8" placeholder="Your AI-generated content will appear here. You can edit it as needed." style="width: 100%;" disabled></textarea>
+            </div>
+            
+            <div class="button-container">
+                <button id="add-to-widget-btn" disabled>Add to Widget Creator</button>
+                <button id="clear-ai-btn">Clear All</button>
+            </div>
+        </div>
+        
+        <div id="ai-preview-container" style="display: none;">
+            <h3>Content Preview</h3>
+            <div class="widget-preview" id="ai-preview"></div>
+        </div>
+    </div>
+</div>
     
     <!-- Inline JavaScript -->
     <script>
