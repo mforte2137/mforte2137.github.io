@@ -73,7 +73,7 @@ A simple web application that generates professional marketing content for MSP s
 
 ## Files
 
-- `index.html` - Main application file
+- `ai.html` - Main application file
 - `netlify/functions/claude-api.js` - Netlify function for the Claude API
 - `netlify/functions/bing-search.js` - Netlify function for Bing Image Search
 - `netlify/functions/fetch-image.js` - Netlify function to fetch and convert images to base64
