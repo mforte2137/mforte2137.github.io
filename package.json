@@ -2,7 +2,7 @@
   "name": "pdf-widget-tools",
   "version": "1.0.0",
   "description": "Generate professional marketing content for MSP services and products using AI.",
-  "main": "index.html",
+  "main": "ai.html",
   "scripts": {
     "start": "netlify dev"
   },
