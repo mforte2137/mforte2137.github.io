@@ -1,4 +1,4 @@
-// Netlify function for Claude AI with variable placeholders
+// Netlify function for Claude AI with variable placeholders - Fixed version
 const axios = require('axios');
 
 exports.handler = async function(event, context) {
@@ -39,7 +39,7 @@ exports.handler = async function(event, context) {
     console.log(`Generating content for: ${topic} with tone: ${tone} and paragraphs: ${paragraphs}`);
     
     // Build the prompt for Claude
-    const prompt = `
+    const userPrompt = `
     Please write ${paragraphs} paragraph(s) of marketing content for a Managed Service Provider (MSP) selling "${topic}". 
     The tone should be ${tone}.
     
@@ -52,7 +52,9 @@ exports.handler = async function(event, context) {
     
     Your response should be just the marketing content, nothing else.`;
 
-    // Call the Claude API
+    console.log("Making request to Claude API...");
+    
+    // Call the Claude API with the most current format
     const response = await axios({
       method: 'post',
       url: 'https://api.anthropic.com/v1/messages',
@@ -62,17 +64,20 @@ exports.handler = async function(event, context) {
         'anthropic-version': '2023-06-01'
       },
       data: {
-        model: 'claude-3-opus-20240229',
+        model: 'claude-3-haiku-20240307',  // Using a more widely available model
         max_tokens: 1000,
         messages: [
           {
             role: 'user',
-            content: prompt
+            content: userPrompt
           }
         ]
-      }
+      },
+      timeout: 30000 // 30-second timeout
     });
 
+    console.log("Received response from Claude API");
+    
     // Extract the generated content
     const generatedContent = response.data.content[0].text;
 
@@ -90,13 +95,14 @@ exports.handler = async function(event, context) {
     // Provide more detailed error information for debugging
     const errorDetails = {
       error: 'Error generating content',
-      details: error.message,
-      code: error.response ? error.response.status : 'unknown',
-      data: error.response ? error.response.data : null
+      message: error.message,
+      status: error.response ? error.response.status : 'unknown',
+      statusText: error.response ? error.response.statusText : '',
+      data: error.response && error.response.data ? error.response.data : null
     };
     
     return {
-      statusCode: 500,
+      statusCode: 502,
       body: JSON.stringify(errorDetails),
       headers: { 'Content-Type': 'application/json' }
     };
