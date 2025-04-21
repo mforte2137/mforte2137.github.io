@@ -1,4 +1,4 @@
-// Netlify function for Bing Image Search
+// Netlify function for Bing Image Search with correct endpoint
 const axios = require('axios');
 
 exports.handler = async function(event, context) {
@@ -38,13 +38,14 @@ exports.handler = async function(event, context) {
 
     // For debugging
     console.log(`Searching Bing for images with query: ${query}`);
-
-    // Call the Bing Image Search API
+    console.log(`Using API endpoint: https://api.cognitive.microsoft.com/bing/v7.0/images/search`);
+    
+    // Call the Bing Image Search API with CORRECT endpoint from Azure documentation
     const response = await axios({
       method: 'get',
-      url: 'https://api.bing.microsoft.com/v7.0/images/search',
+      url: 'https://api.cognitive.microsoft.com/bing/v7.0/images/search',
       headers: {
-        'Ocp-Apim-Subscription-Key': bingApiKey,
+        'Ocp-Apim-Subscription-Key': bingApiKey
       },
       params: {
         q: query,
@@ -72,14 +73,17 @@ exports.handler = async function(event, context) {
   } catch (error) {
     console.error('Bing search error:', error.message);
     
-    // Provide more detailed error information
+    // Provide more detailed error information for debugging
+    const errorDetails = {
+      error: 'Error searching for images',
+      details: error.message,
+      code: error.response ? error.response.status : 'unknown',
+      data: error.response ? error.response.data : null
+    };
+    
     return {
       statusCode: 500,
-      body: JSON.stringify({ 
-        error: 'Error searching for images',
-        details: error.message,
-        stack: error.stack
-      }),
+      body: JSON.stringify(errorDetails),
       headers: { 'Content-Type': 'application/json' }
     };
   }
