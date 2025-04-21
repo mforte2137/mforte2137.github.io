@@ -6,19 +6,21 @@ exports.handler = async function(event, context) {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
-      body: JSON.stringify({ error: 'Method Not Allowed' })
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
+      headers: { 'Content-Type': 'application/json' }
     };
   }
 
   try {
     // Parse the request body
-    const requestBody = JSON.parse(event.body);
+    const requestBody = JSON.parse(event.body || '{}');
     const { query } = requestBody;
 
     if (!query) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Query parameter is required' })
+        body: JSON.stringify({ error: 'Query parameter is required' }),
+        headers: { 'Content-Type': 'application/json' }
       };
     }
 
@@ -26,11 +28,16 @@ exports.handler = async function(event, context) {
     const bingApiKey = process.env.BING_API_KEY;
     
     if (!bingApiKey) {
+      console.error('Bing API key not found in environment variables');
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: 'Bing API key is not configured' })
+        body: JSON.stringify({ error: 'Bing API key is not configured' }),
+        headers: { 'Content-Type': 'application/json' }
       };
     }
+
+    // For debugging
+    console.log(`Searching Bing for images with query: ${query}`);
 
     // Call the Bing Image Search API
     const response = await axios({
@@ -56,21 +63,24 @@ exports.handler = async function(event, context) {
       hostPageUrl: image.hostPageUrl
     }));
 
+    // Return the image data
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        images: images
-      })
+      body: JSON.stringify({ images: images }),
+      headers: { 'Content-Type': 'application/json' }
     };
   } catch (error) {
-    console.error('Bing search error:', error);
+    console.error('Bing search error:', error.message);
     
+    // Provide more detailed error information
     return {
       statusCode: 500,
       body: JSON.stringify({ 
         error: 'Error searching for images',
-        details: error.message 
-      })
+        details: error.message,
+        stack: error.stack
+      }),
+      headers: { 'Content-Type': 'application/json' }
     };
   }
 };
