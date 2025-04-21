@@ -1524,7 +1524,13 @@
             if (widgetPreviewContainer) {
                 widgetPreviewContainer.style.display = 'none';
             }
-            
+            // Add event listener to detect changes in the summary textarea
+if (summaryTextarea) {
+    summaryTextarea.addEventListener('input', function() {
+        // Clear the formatted content from the data attribute when user edits the text
+        delete summaryTextarea.dataset.formattedContent;
+    });
+}
             // Event Listeners
             if (fetchBtn) fetchBtn.addEventListener('click', fetchWebsiteContent);
             if (customImageInput) customImageInput.addEventListener('change', handleCustomImage);
@@ -1735,7 +1741,7 @@ await updateWidgetPreview(currentImageUrl, formattedContent, position);
                 const imageUrl = customImageUrl || currentImageUrl || 'https://via.placeholder.com/400x300/cccccc/666666?text=No+Image';
                 
                 // Get the formatted content (either from data attribute or format the current text)
-                const formattedContent = summaryTextarea.dataset.formattedContent || formatTextToHtml(summaryText);
+                const formattedContent = formatTextToHtml(summaryText);
                 
                 // Update the widget preview
                 await updateWidgetPreview(imageUrl, formattedContent, imagePosition);
