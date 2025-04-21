@@ -1,4 +1,4 @@
-// Netlify function for Bing Image Search with confirmed base URL
+// Netlify function for Bing Image Search using the official endpoint
 const axios = require('axios');
 
 exports.handler = async function(event, context) {
@@ -39,70 +39,40 @@ exports.handler = async function(event, context) {
     // For debugging
     console.log(`Searching Bing for images with query: ${query}`);
     
-    // Confirmed base URL from Azure documentation
-    const baseUrl = 'https://api.cognitive.microsoft.com';
+    // Using the official endpoint from documentation
+    const endpoint = 'https://api.bing.microsoft.com/v7.0/images/search';
+    console.log(`Using official endpoint: ${endpoint}`);
     
-    // Possible path combinations to try
-    const paths = [
-      '/bing/v7.0/images/search',  // Most common path
-      '/bing/v7.0/search/images',  // Alternate structure
-      '/bing/v7.0/images',         // Simplified path
-      '/bing/v5.0/images/search',  // Older API version
-      '/bing/images/search',       // Version-less path
-      '/bing/images'               // Most simplified
-    ];
-
-    let lastError = null;
-    
-    // Try each path until one works
-    for (const path of paths) {
-      try {
-        const fullUrl = baseUrl + path;
-        console.log(`Trying endpoint: ${fullUrl}`);
-        
-        const response = await axios({
-          method: 'get',
-          url: fullUrl,
-          headers: {
-            'Ocp-Apim-Subscription-Key': bingApiKey
-          },
-          params: {
-            q: query,
-            count: 10,
-            safeSearch: 'Moderate',
-            license: 'Any',
-            imageType: 'Photo'
-          },
-          // Set a short timeout to quickly try the next path
-          timeout: 5000
-        });
-        
-        // If we get here, the request was successful
-        console.log(`Success with endpoint: ${fullUrl}`);
-        
-        // Get the top image results
-        const images = response.data.value.map(image => ({
-          url: image.contentUrl,
-          name: image.name,
-          thumbnail: image.thumbnailUrl,
-          hostPageUrl: image.hostPageUrl || ''
-        }));
-    
-        // Return the image data
-        return {
-          statusCode: 200,
-          body: JSON.stringify({ images: images }),
-          headers: { 'Content-Type': 'application/json' }
-        };
-      } catch (error) {
-        console.log(`Error with path ${path}: ${error.message}`);
-        lastError = error;
-        // Continue to the next path
+    // Call the Bing Image Search API
+    const response = await axios({
+      method: 'get',
+      url: endpoint,
+      headers: {
+        'Ocp-Apim-Subscription-Key': bingApiKey
+      },
+      params: {
+        q: query,
+        count: 10,
+        safeSearch: 'Moderate',
+        license: 'Any',
+        imageType: 'Photo'
       }
-    }
+    });
     
-    // If we get here, all paths failed
-    throw lastError || new Error('All endpoints failed');
+    // Get the top image results
+    const images = response.data.value.map(image => ({
+      url: image.contentUrl,
+      name: image.name,
+      thumbnail: image.thumbnailUrl,
+      hostPageUrl: image.hostPageUrl || ''
+    }));
+
+    // Return the image data
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ images: images }),
+      headers: { 'Content-Type': 'application/json' }
+    };
     
   } catch (error) {
     console.error('Bing search error:', error.message);
