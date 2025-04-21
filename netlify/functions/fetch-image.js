@@ -6,31 +6,40 @@ exports.handler = async function(event, context) {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
-      body: JSON.stringify({ error: 'Method Not Allowed' })
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
+      headers: { 'Content-Type': 'application/json' }
     };
   }
 
   try {
     // Parse the request body
-    const requestBody = JSON.parse(event.body);
+    const requestBody = JSON.parse(event.body || '{}');
     const { imageUrl } = requestBody;
 
     if (!imageUrl) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Image URL is required' })
+        body: JSON.stringify({ error: 'Image URL is required' }),
+        headers: { 'Content-Type': 'application/json' }
       };
     }
+
+    console.log(`Fetching image from: ${imageUrl}`);
 
     // Fetch the image
     const response = await axios({
       method: 'get',
       url: imageUrl,
-      responseType: 'arraybuffer'
+      responseType: 'arraybuffer',
+      // Add timeout to prevent hanging requests
+      timeout: 10000,
+      // Handle redirects
+      maxRedirects: 5,
+      validateStatus: status => status < 400
     });
 
     // Get the content type (image/jpeg, image/png, etc.)
-    const contentType = response.headers['content-type'];
+    const contentType = response.headers['content-type'] || 'image/jpeg';
     
     // Convert the image to base64
     const base64Image = Buffer.from(response.data, 'binary').toString('base64');
@@ -40,17 +49,20 @@ exports.handler = async function(event, context) {
       statusCode: 200,
       body: JSON.stringify({
         imageData: dataUri
-      })
+      }),
+      headers: { 'Content-Type': 'application/json' }
     };
   } catch (error) {
-    console.error('Image fetch error:', error);
+    console.error('Image fetch error:', error.message);
     
     return {
       statusCode: 500,
       body: JSON.stringify({ 
         error: 'Error fetching image',
-        details: error.message 
-      })
+        details: error.message,
+        stack: error.stack
+      }),
+      headers: { 'Content-Type': 'application/json' }
     };
   }
 };
