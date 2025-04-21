@@ -194,6 +194,38 @@ transform: scale(1.05);
 border-color: #2980b9;
 }
 
+.image-attribution {
+position: absolute;
+bottom: 0;
+left: 0;
+right: 0;
+background-color: rgba(0, 0, 0, 0.6);
+color: white;
+font-size: 8px;
+padding: 2px 4px;
+text-align: center;
+opacity: 0;
+transition: opacity 0.3s;
+}
+
+.image-attribution a {
+color: white;
+text-decoration: underline;
+}
+
+.image-item:hover .image-attribution {
+opacity: 1;
+}
+
+.search-info {
+background-color: #f8f4e5;
+border-left: 4px solid #f0ad4e;
+padding: 10px;
+margin: 10px 0;
+font-size: 14px;
+border-radius: 0 4px 4px 0;
+}
+
 /* Output Sections - now with Preview above HTML Code */
 .output-container {
 display: flex;
@@ -375,6 +407,9 @@ grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
 
 <div class="option-group" id="search-image-group" style="display: none;">
 <label for="image-search-query">Search for Image:</label>
+<div class="search-info">
+<p><strong>Image Search Tips:</strong> If you need an exact product image, please upload a file. If you'd like a general office image then search for something like "woman with laptop" or "modern office".</p>
+</div>
 <div style="display: flex; gap: 10px;">
 <input type="text" id="image-search-query" placeholder="Enter image search terms" style="flex-grow: 1;">
 <button id="search-images-btn" class="upload-btn">Search</button>
@@ -425,6 +460,7 @@ grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
 let customImageBase64 = null;
 let generatedContent = "";
 let selectedImageUrl = null;
+let imageAttribution = null;
 
 document.addEventListener('DOMContentLoaded', function() {
 // Toggle between upload and search options
@@ -456,6 +492,7 @@ customImage.addEventListener('change', function(e) {
     reader.onload = function(event) {
       customImageBase64 = event.target.result;
       selectedImageUrl = null; // Clear any previously selected search image
+      imageAttribution = null; // Clear any attribution
       updatePreview();
       updateHtmlCode();
     };
@@ -490,8 +527,8 @@ searchImagesBtn.addEventListener('click', async function() {
   imageSearchResults.innerHTML = '<p>Searching...</p>';
 
   try {
-    // Call the Bing Image Search API via Netlify function
-    const response = await fetch('/api/bing-search', {
+    // Call the Image Search API via Netlify function
+    const response = await fetch('/api/image-search', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -517,6 +554,8 @@ searchImagesBtn.addEventListener('click', async function() {
         const imageItem = document.createElement('div');
         imageItem.className = 'image-item';
         imageItem.dataset.url = image.url;
+        imageItem.dataset.photographer = image.photographer || '';
+        imageItem.dataset.photographerUrl = image.photographerUrl || '';
         
         const img = document.createElement('img');
         img.src = image.thumbnail;
@@ -526,7 +565,13 @@ searchImagesBtn.addEventListener('click', async function() {
           this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%22%20height%3D%22100%22%3E%3Crect%20fill%3D%22%23ddd%22%20width%3D%22100%22%20height%3D%22100%22%2F%3E%3Ctext%20fill%3D%22%23666%22%20font-family%3D%22sans-serif%22%20font-size%3D%2210%22%20x%3D%2210%22%20y%3D%2255%22%3EImage%20Error%3C%2Ftext%3E%3C%2Fsvg%3E';
         };
         
+        // Add photographer attribution
+        const attribution = document.createElement('div');
+        attribution.className = 'image-attribution';
+        attribution.innerHTML = `Photo by <a href="${image.photographerUrl}" target="_blank">${image.photographer}</a> on <a href="https://unsplash.com" target="_blank">Unsplash</a>`;
+        
         imageItem.appendChild(img);
+        imageItem.appendChild(attribution);
         imageSearchResults.appendChild(imageItem);
         
         // Add click event to select image
@@ -542,8 +587,12 @@ searchImagesBtn.addEventListener('click', async function() {
           // Save the selected image URL
           selectedImageUrl = this.dataset.url;
           
-          // Fetch and convert the image to base64
-          fetchImageAsBase64(selectedImageUrl);
+          // Fetch and convert the image to base64 with attribution
+          fetchImageAsBase64(
+            selectedImageUrl, 
+            this.dataset.photographer, 
+            this.dataset.photographerUrl
+          );
         });
       });
       
@@ -559,8 +608,15 @@ searchImagesBtn.addEventListener('click', async function() {
 });
 
 // Fetch image and convert to base64 with improved error handling
-async function fetchImageAsBase64(imageUrl) {
+async function fetchImageAsBase64(imageUrl, photographer, photographerUrl) {
   if (!imageUrl) return;
+  
+  // Store attribution information
+  if (photographer && photographerUrl) {
+    imageAttribution = `Photo by <a href="${photographerUrl}" target="_blank">${photographer}</a> on <a href="https://unsplash.com" target="_blank">Unsplash</a>`;
+  } else {
+    imageAttribution = null;
+  }
   
   showStatus('info', 'Loading image...');
   
@@ -593,6 +649,7 @@ async function fetchImageAsBase64(imageUrl) {
     console.error('Failed to load image:', error);
     showStatus('error', 'Failed to load image: ' + error.message);
     customImageBase64 = null;
+    imageAttribution = null;
   }
 }
 
@@ -666,6 +723,7 @@ clearBtn.addEventListener('click', function() {
   generatedContent = '';
   customImageBase64 = null;
   selectedImageUrl = null;
+  imageAttribution = null;
   fileNameDisplay.textContent = 'No file selected';
   document.getElementById('image-source-upload').checked = true;
   document.getElementById('upload-image-group').style.display = 'block';
@@ -728,7 +786,18 @@ function updatePreview() {
 
   // Only create content with image if there's an image
   if (customImageBase64 && generatedContent) {
-    const imageHtml = `<img src="${customImageBase64}" alt="Content Image">`;
+    // Create image element with attribution if present
+    let imageHtml = `<img src="${customImageBase64}" alt="Content Image">`;
+    if (imageAttribution) {
+      imageHtml = `
+        <div style="position: relative;">
+          ${imageHtml}
+          <div style="position: absolute; bottom: 0; left: 0; right: 0; background-color: rgba(0,0,0,0.6); color: white; font-size: 10px; padding: 4px; text-align: center;">
+            ${imageAttribution}
+          </div>
+        </div>
+      `;
+    }
 
     // Format content with paragraphs
     const formattedContent = generatedContent
@@ -745,7 +814,18 @@ function updatePreview() {
     `;
   } else if (customImageBase64) {
     // Only image, no content
-    previewContainer.innerHTML = `<img src="${customImageBase64}" alt="Content Image" style="max-width:100%; height:auto;">`;
+    if (imageAttribution) {
+      previewContainer.innerHTML = `
+        <div style="position: relative;">
+          <img src="${customImageBase64}" alt="Content Image" style="max-width:100%; height:auto;">
+          <div style="position: absolute; bottom: 0; left: 0; right: 0; background-color: rgba(0,0,0,0.6); color: white; font-size: 10px; padding: 4px; text-align: center;">
+            ${imageAttribution}
+          </div>
+        </div>
+      `;
+    } else {
+      previewContainer.innerHTML = `<img src="${customImageBase64}" alt="Content Image" style="max-width:100%; height:auto;">`;
+    }
   } else if (generatedContent) {
     // Only content, no image
     const formattedContent = generatedContent
@@ -811,6 +891,17 @@ img {
 .text-container {
   grid-area: content;
 }
+.image-attribution {
+  font-size: 10px;
+  color: white;
+  background-color: rgba(0,0,0,0.6);
+  padding: 4px;
+  text-align: center;
+}
+.image-attribution a {
+  color: white;
+  text-decoration: underline;
+}
 @media (max-width: 600px) {
   .content-with-image {
     grid-template-columns: 1fr;
@@ -832,7 +923,24 @@ img {
       .map(p => `<p>${p}</p>`)
       .join('\n  ');
 
-    htmlCode += `
+    // Add image with attribution if present
+    if (imageAttribution) {
+      htmlCode += `
+<div class="content-with-image image-${imagePosition}">
+  <div class="image-container">
+    <div style="position: relative;">
+      <img src="${customImageBase64}" alt="${topic} Image">
+      <div class="image-attribution">
+        ${imageAttribution}
+      </div>
+    </div>
+  </div>
+  <div class="text-container">
+    ${formattedContent}
+  </div>
+</div>`;
+    } else {
+      htmlCode += `
 <div class="content-with-image image-${imagePosition}">
   <div class="image-container">
     <img src="${customImageBase64}" alt="${topic} Image">
@@ -841,10 +949,21 @@ img {
     ${formattedContent}
   </div>
 </div>`;
+    }
   } else if (customImageBase64) {
     // Only image
-    htmlCode += `
+    if (imageAttribution) {
+      htmlCode += `
+<div style="position: relative;">
+  <img src="${customImageBase64}" alt="${topic} Image">
+  <div class="image-attribution">
+    ${imageAttribution}
+  </div>
+</div>`;
+    } else {
+      htmlCode += `
 <img src="${customImageBase64}" alt="${topic} Image">`;
+    }
   } else if (generatedContent) {
     // Only content
     const formattedContent = generatedContent
