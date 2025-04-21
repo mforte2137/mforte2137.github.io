@@ -1,76 +1,104 @@
-const fetch = require('node-fetch');
+// Netlify function for Claude AI with variable placeholders
+const axios = require('axios');
 
 exports.handler = async function(event, context) {
   // Only allow POST requests
-  if (event.httpMethod !== "POST") {
-    return { 
-      statusCode: 405, 
-      body: JSON.stringify({ error: "Method Not Allowed" }) 
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
+      headers: { 'Content-Type': 'application/json' }
     };
   }
 
   try {
     // Parse the request body
-    const body = JSON.parse(event.body);
-    const { topic, tone, paragraphs } = body;
-    
-    // Get API key from environment variable
-    const apiKey = process.env.CLAUDE_API_KEY;
-    
-    if (!apiKey) {
+    const requestBody = JSON.parse(event.body);
+    const { topic, tone, paragraphs } = requestBody;
+
+    if (!topic) {
       return {
-        statusCode: 500,
-        body: JSON.stringify({ error: "API key not configured" })
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Topic parameter is required' }),
+        headers: { 'Content-Type': 'application/json' }
       };
     }
 
-    // Create the prompt for Claude
-    const prompt = `Write marketing content for an MSP (Managed Service Provider) about their "${topic}" service or product. 
-The content should be ${paragraphs} paragraphs in length and use a ${tone} tone.
-Focus on the benefits and features of the service.
-Format the content with a blank line between paragraphs.
-Don't include any headings, just the paragraphs.`;
+    // Get the Claude API key from environment variables
+    const claudeApiKey = process.env.CLAUDE_API_KEY;
+    
+    if (!claudeApiKey) {
+      console.error('Claude API key not found in environment variables');
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Claude API key is not configured' }),
+        headers: { 'Content-Type': 'application/json' }
+      };
+    }
+
+    console.log(`Generating content for: ${topic} with tone: ${tone} and paragraphs: ${paragraphs}`);
+    
+    // Build the prompt for Claude
+    const prompt = `
+    Please write ${paragraphs} paragraph(s) of marketing content for a Managed Service Provider (MSP) selling "${topic}". 
+    The tone should be ${tone}.
+    
+    IMPORTANT: 
+    1. Use "{{servicingBranch.name}}" instead of generic terms like "Our Managed Service Provider" or "our company"
+    2. This is a template, so "{{servicingBranch.name}}" should appear exactly like that - don't replace it
+    3. Start with a compelling headline that includes "${topic}" and "{{servicingBranch.name}}"
+    4. Make sure to mention "{{servicingBranch.name}}" at least once in each paragraph
+    5. Do not add any disclaimers or labels indicating this is AI-generated content
+    
+    Your response should be just the marketing content, nothing else.`;
 
     // Call the Claude API
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
+    const response = await axios({
+      method: 'post',
+      url: 'https://api.anthropic.com/v1/messages',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
+        'x-api-key': claudeApiKey,
         'anthropic-version': '2023-06-01'
       },
-      body: JSON.stringify({
-        model: "claude-3-haiku-20240307",
+      data: {
+        model: 'claude-3-opus-20240229',
         max_tokens: 1000,
         messages: [
           {
-            role: "user",
+            role: 'user',
             content: prompt
           }
         ]
-      })
+      }
     });
 
-    const data = await response.json();
-    
-    // Check for errors in the API response
-    if (data.error) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: data.error.message || "API error" })
-      };
-    }
+    // Extract the generated content
+    const generatedContent = response.data.content[0].text;
 
-    // Return the content
+    // Return the generated content
     return {
       statusCode: 200,
-      body: JSON.stringify({ content: data.content[0].text })
+      body: JSON.stringify({
+        content: generatedContent
+      }),
+      headers: { 'Content-Type': 'application/json' }
     };
   } catch (error) {
-    console.log("Error:", error);
+    console.error('Claude API error:', error);
+    
+    // Provide more detailed error information for debugging
+    const errorDetails = {
+      error: 'Error generating content',
+      details: error.message,
+      code: error.response ? error.response.status : 'unknown',
+      data: error.response ? error.response.data : null
+    };
+    
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Failed to call Claude API" })
+      body: JSON.stringify(errorDetails),
+      headers: { 'Content-Type': 'application/json' }
     };
   }
 };
