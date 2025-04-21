@@ -465,7 +465,7 @@ customImage.addEventListener('change', function(e) {
   }
 });
 
-// Handle image search
+// Handle image search with improved error handling
 const searchImagesBtn = document.getElementById('search-images-btn');
 const imageSearchQuery = document.getElementById('image-search-query');
 const imageSearchResults = document.getElementById('image-search-results');
@@ -487,6 +487,7 @@ searchImagesBtn.addEventListener('click', async function() {
 
   showStatus('info', 'Searching for images...');
   searchImagesBtn.disabled = true;
+  imageSearchResults.innerHTML = '<p>Searching...</p>';
 
   try {
     // Call the Bing Image Search API via Netlify function
@@ -500,12 +501,11 @@ searchImagesBtn.addEventListener('click', async function() {
       })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Image search failed');
-    }
-
     const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || data.details || 'Image search failed');
+    }
     
     if (!data.images || data.images.length === 0) {
       imageSearchResults.innerHTML = '<p>No images found. Try different search terms.</p>';
@@ -521,6 +521,10 @@ searchImagesBtn.addEventListener('click', async function() {
         const img = document.createElement('img');
         img.src = image.thumbnail;
         img.alt = image.name;
+        img.onerror = function() {
+          // Replace broken images with a placeholder
+          this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%22%20height%3D%22100%22%3E%3Crect%20fill%3D%22%23ddd%22%20width%3D%22100%22%20height%3D%22100%22%2F%3E%3Ctext%20fill%3D%22%23666%22%20font-family%3D%22sans-serif%22%20font-size%3D%2210%22%20x%3D%2210%22%20y%3D%2255%22%3EImage%20Error%3C%2Ftext%3E%3C%2Fsvg%3E';
+        };
         
         imageItem.appendChild(img);
         imageSearchResults.appendChild(imageItem);
@@ -546,6 +550,7 @@ searchImagesBtn.addEventListener('click', async function() {
       showStatus('success', 'Images found! Click on an image to select it.');
     }
   } catch (error) {
+    console.error('Image search error:', error);
     showStatus('error', 'An error occurred during image search: ' + error.message);
     imageSearchResults.innerHTML = '<p>Error loading images. Please try again.</p>';
   } finally {
@@ -553,7 +558,7 @@ searchImagesBtn.addEventListener('click', async function() {
   }
 });
 
-// Fetch image and convert to base64
+// Fetch image and convert to base64 with improved error handling
 async function fetchImageAsBase64(imageUrl) {
   if (!imageUrl) return;
   
@@ -570,20 +575,22 @@ async function fetchImageAsBase64(imageUrl) {
       })
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to fetch image');
-    }
-
     const data = await response.json();
     
+    if (!response.ok) {
+      throw new Error(data.error || data.details || 'Failed to fetch image');
+    }
+
     if (data.imageData) {
       customImageBase64 = data.imageData;
       updatePreview();
       updateHtmlCode();
       showStatus('success', 'Image loaded successfully!');
+    } else {
+      throw new Error('No image data received');
     }
   } catch (error) {
+    console.error('Failed to load image:', error);
     showStatus('error', 'Failed to load image: ' + error.message);
     customImageBase64 = null;
   }
@@ -873,8 +880,8 @@ async function callClaudeApi(topic, tone, paragraphs) {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'API request failed');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `API request failed with status ${response.status}`);
     }
 
     const data = await response.json();
@@ -883,6 +890,22 @@ async function callClaudeApi(topic, tone, paragraphs) {
     console.error('Claude API error:', error);
     throw error;
   }
+}
+
+// Simulate progress for development (can be removed in production)
+async function simulateProgress(progressBar) {
+  return new Promise((resolve) => {
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 10;
+      progressBar.value = progress;
+
+      if (progress >= 100) {
+        clearInterval(interval);
+        setTimeout(resolve, 500);
+      }
+    }, 200);
+  });
 }
 });
 </script>
