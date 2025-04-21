@@ -480,26 +480,98 @@ imageSourceRadios.forEach(radio => {
   });
 });
 
-// Handle image upload
+// Replace the file upload event listener code in ai.html with this more robust version
+
+// Handle image upload with improved reliability
 const customImage = document.getElementById('custom-image');
 const fileNameDisplay = document.getElementById('file-name-display');
 
-customImage.addEventListener('change', function(e) {
+// Add this function to explicitly reset the file input
+function resetFileInput() {
+  // Create a new file input element
+  const newFileInput = document.createElement('input');
+  newFileInput.type = 'file';
+  newFileInput.id = 'custom-image';
+  newFileInput.accept = 'image/*';
+  
+  // Copy the event listener to the new input
+  newFileInput.addEventListener('change', handleFileUpload);
+  
+  // Replace the old input with the new one
+  const parent = customImage.parentNode;
+  parent.replaceChild(newFileInput, customImage);
+  
+  // Update the reference
+  customImage = newFileInput;
+  
+  // Clear the display text
+  fileNameDisplay.textContent = 'No file selected';
+}
+
+// Separate the file handling logic
+function handleFileUpload(e) {
+  console.log('File input change detected');
   const file = e.target.files[0];
+  
   if (file) {
+    console.log(`File selected: ${file.name}`);
     fileNameDisplay.textContent = file.name;
+    
     const reader = new FileReader();
+    
     reader.onload = function(event) {
+      console.log('File successfully loaded');
       customImageBase64 = event.target.result;
       selectedImageUrl = null; // Clear any previously selected search image
       imageAttribution = null; // Clear any attribution
       updatePreview();
       updateHtmlCode();
     };
+    
+    reader.onerror = function(error) {
+      console.error('Error reading file:', error);
+      showStatus('error', 'Failed to load the image file.');
+      customImageBase64 = null;
+      fileNameDisplay.textContent = 'Error loading file';
+    };
+    
     reader.readAsDataURL(file);
   } else {
+    console.log('No file selected');
     fileNameDisplay.textContent = 'No file selected';
+    customImageBase64 = null;
   }
+}
+
+// Set up the event listener
+customImage.addEventListener('change', handleFileUpload);
+
+// Update the clear button event listener to use the reset function
+clearBtn.addEventListener('click', function() {
+  contentTopic.value = '';
+  contentTone.selectedIndex = 0;
+  contentLength.selectedIndex = 1;
+  aiContentText.value = '';
+  generatedContent = '';
+  customImageBase64 = null;
+  selectedImageUrl = null;
+  imageAttribution = null;
+  
+  // Use the improved reset method
+  resetFileInput();
+  
+  document.getElementById('image-source-upload').checked = true;
+  document.getElementById('upload-image-group').style.display = 'block';
+  document.getElementById('search-image-group').style.display = 'none';
+  document.getElementById('image-left').checked = true;
+  imageSearchQuery.value = '';
+  imageSearchResults.innerHTML = '';
+
+  // Clear preview and HTML
+  document.getElementById('content-preview').innerHTML = '';
+  document.getElementById('html-code').textContent = '';
+
+  showStatus('info', 'All fields cleared.');
 });
 
 // Handle image search with improved error handling
