@@ -1,1 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salesbuildr Widget Template Tools</title>
+    
+    <!-- External Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/cover-page-creator.css">
+    <link rel="stylesheet" href="styles/widget-creator.css">
+    <link rel="stylesheet" href="styles/matrix-builder.css">
+    <link rel="stylesheet" href="styles/ai-generator.css">
+</head>
+<body>
+    <h1>Salesbuildr Widget Template Tools</h1>
+    
+    <!-- Tab Navigation -->
+    <div class="tabs">
+        <button class="tab-button active" data-tab="extractor">Cover Page Creator</button>
+        <button class="tab-button" data-tab="widget">Widget Creator</button>
+        <button class="tab-button" data-tab="matrix">Matrix Builder</button>
+        <button class="tab-button" data-tab="ai-generator">AI Content Generator</button>
+    </div>
+    
+    <!-- PDF Text Extractor Tab -->
+    <div id="extractor" class="tab-content active">
+        <p>Create Salesbuildr Cover Pages from PDF files.</p>
+        
+        <div class="container">
+            <div id="dropzone" class="dropzone">
+                <h2>Drag & Drop PDF Files Here</h2>
+                <p>Or click to select files</p>
+                <input type="file" id="file-input" style="display: none;" accept=".pdf" multiple>
+            </div>
+            
+            <div class="options">
+                <div class="option-group">
+                    <label for="page-input">Page Numbers (comma-separated):</label>
+                    <input type="text" id="page-input" placeholder="e.g., 1,2,5" value="1">
+                    <small>Leave blank for all pages</small>
+                </div>
+                
+                <div class="option-group">
+                    <label for="dpi-input">DPI Resolution:</label>
+                    <select id="dpi-input">
+                        <option value="150">150 DPI (Fast)</option>
+                        <option value="300" selected>300 DPI (Balanced)</option>
+                        <option value="600">600 DPI (High Quality)</option>
+                    </select>
+                </div>
+                
+                <div class="option-group">
+                    <label for="resize-input">Output Format:</label>
+                    <select id="resize-input">
+                        <option value="true" selected>Resize to A4</option>
+                        <option value="false">Original Size</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="button-container">
+                <button id="process-btn" disabled>Process PDFs</button>
+                <button id="clear-btn">Clear Fields</button>
+            </div>
+            
+            <div class="progress-container" id="progress-container">
+                <p id="progress-text">Processing 0/0 files...</p>
+                <progress id="progress-bar" value="0" max="100"></progress>
+            </div>
+            
+            <div id="status" class="status" style="display: none;"></div>
+            
+            <div id="log-container" class="log-container">
+                <p class="log-entry info">System ready. Upload PDF files to begin.</p>
+            </div>
+            
+            <div id="preview-container" class="preview-container"></div>
+        </div>
+    </div>
+    
+    <!-- Widget Creator Tab -->
+    <div id="widget" class="tab-content">
+        <p>Create widgets using content from your own website or manufacturers' product pages to build widgets. Paste HTML code into Salesbuildr.</p>
+        
+        <div class="container">
+            <div class="widget-form">
+                <div class="url-container">
+                    <input type="url" id="website-url" class="url-input" placeholder="Enter website URL (e.g., https://example.com)">
+                    <button id="fetch-content-btn">Fetch Content</button>
+                </div>
+                
+                <div class="widget-options">
+                    <div class="option-group">
+                        <label for="image-position">Image Position:</label>
+                        <select id="image-position">
+                            <option value="left" selected>Left</option>
+                            <option value="right">Right</option>
+                            <option value="top">Top</option>
+                            <option value="bottom">Bottom</option>
+                        </select>
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="summary-length">Summary Length:</label>
+                        <select id="summary-length">
+                            <option value="1 Paragraph">1 Paragraph</option>
+                            <option value="2 Paragraphs" selected>2 Paragraphs</option>
+                            <option value="3 Paragraphs">3 Paragraphs</option>
+                            <option value="4 Paragraphs">4 Paragraphs</option>
+                        </select>
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="custom-image">Custom Image (optional):</label>
+                        <input type="file" id="custom-image" accept="image/*">
+                    </div>
+                </div>
+                
+                <div class="text-content">
+                    <label for="summary-text">Summary Text (edit as needed):</label>
+                    <textarea id="summary-text" rows="6" placeholder="Your content summary will appear here. You can edit it as needed." style="width: 100%;"></textarea>
+                </div>
+                
+                <div class="button-container">
+                    <button id="generate-widget-btn">Generate Widget</button>
+                    <button id="clear-all-btn">Clear All</button>
+                </div>
+                
+                <div id="widget-status" class="status" style="display: none;"></div>
+            </div>
+            
+            <div id="widget-preview-container">
+                <h3>Widget Preview</h3>
+                <div class="widget-preview" id="widget-preview"></div>
+                
+                <div class="code-container">
+                    <div class="code-header">
+                        <h3>HTML Code</h3>
+                        <button id="copy-code-btn" class="copy-button">Copy Code</button>
+                    </div>
+                    <pre class="code-content" id="widget-code"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Matrix Builder Tab -->
+    <div id="matrix" class="tab-content">
+        <p>Create comparison tables and feature matrices for your products and services. Match table colors to you branding!</p>
+        
+        <div class="container">
+            <div class="matrix-form">
+                <h3>Table Settings</h3>
+                <div class="options">
+                    <div class="option-group">
+                        <label for="matrix-rows">Number of Rows:</label>
+                        <input type="number" id="matrix-rows" min="1" max="20" value="5">
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="matrix-columns">Number of Columns:</label>
+                        <input type="number" id="matrix-columns" min="2" max="10" value="4">
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="header-bg-color">Header Background:</label>
+                        <input type="color" id="header-bg-color" value="#96b83b">
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="header-text-color">Header Text:</label>
+                        <input type="color" id="header-text-color" value="#ffffff">
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="row-bg-color-1">Row Background 1:</label>
+                        <input type="color" id="row-bg-color-1" value="#f2f2f2">
+                    </div>
+                    
+                    <div class="option-group">
+                        <label for="row-bg-color-2">Row Background 2:</label>
+                        <input type="color" id="row-bg-color-2" value="#ffffff">
+                    </div>
+                </div>
+                
+                <button id="update-matrix-btn" class="btn btn-primary">Update Matrix</button>
+                
+                <div id="matrix-editor" class="matrix-editor">
+                    <div id="matrix-headers" class="matrix-headers">
+                        <!-- Column headers will be generated here -->
+                    </div>
+                    
+                    <div id="matrix-rows-container" class="matrix-rows">
+                        <!-- Rows will be generated here -->
+                    </div>
+                </div>
+                
+                <div class="button-container">
+                    <button id="generate-matrix-btn" class="btn btn-success">Generate Matrix</button>
+                    <button id="clear-matrix-btn" class="btn btn-secondary">Clear All</button>
+                </div>
+            </div>
+            
+            <div id="matrix-preview-container" style="display: none;">
+                <h3>Matrix Preview</h3>
+                <div class="matrix-preview" id="matrix-preview"></div>
+                
+                <div class="code-container">
+                    <div class="code-header">
+                        <h3>HTML Code</h3>
+                        <button id="copy-matrix-code-btn" class="btn btn-primary">Copy Code</button>
+                    </div>
+                    <div class="code-content" id="matrix-code"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- AI Content Generator Tab -->
+    <div id="ai-generator" class="tab-content">
+        <p>Generate professional marketing content for MSP services and products using AI.</p>
 
+        <div class="container">
+            <div class="options">
+                <div class="option-group">
+                    <label for="content-topic">MSP Service or Product:</label>
+                    <input type="text" id="content-topic" placeholder="Enter topic (e.g., Microsoft 365 Business Premium)" style="width: 100%;">
+                </div>
+
+                <div class="option-group">
+                    <label for="content-tone">Tone:</label>
+                    <select id="content-tone">
+                        <option value="professional">Professional</option>
+                        <option value="casual">Casual</option>
+                        <option value="enthusiastic">Enthusiastic</option>
+                        <option value="informative">Informative</option>
+                    </select>
+                </div>
+
+                <div class="option-group">
+                    <label for="content-length">Content Length:</label>
+                    <select id="content-length">
+                        <option value="1">1 Paragraph</option>
+                        <option value="2" selected>2 Paragraphs</option>
+                        <option value="3">3 Paragraphs</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="button-container">
+                <button id="generate-ai-btn">Generate AI Content</button>
+                <button id="clear-ai-btn">Clear All Fields</button>
+            </div>
+
+            <div id="ai-status" class="status"></div>
+
+            <div class="progress-container" id="ai-progress-container">
+                <p id="ai-progress-text">Generating content...</p>
+                <progress id="ai-progress-bar" value="50" max="100"></progress>
+            </div>
+
+            <div class="image-section">
+                <h3>Add Image for Content</h3>
+                <div class="options">
+                    <div class="option-group">
+                        <label for="image-source">Image Source:</label>
+                        <div class="radio-options">
+                            <div class="radio-option">
+                                <input type="radio" id="image-source-upload" name="image-source" value="upload" checked>
+                                <label for="image-source-upload">Upload</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" id="image-source-search" name="image-source" value="search">
+                                <label for="image-source-search">Search</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="option-group" id="upload-image-group">
+                        <label for="custom-image-ai">Upload Image:</label>
+                        <div class="upload-btn-wrapper">
+                            <button class="upload-btn">Choose File</button>
+                            <input type="file" id="custom-image-ai" accept="image/*">
+                        </div>
+                        <small id="file-name-display">No file selected</small>
+                    </div>
+
+                    <div class="option-group" id="search-image-group" style="display: none;">
+                        <label for="image-search-query">Search for Image:</label>
+                        <div class="search-info">
+                            <p><strong>Image Search Tips:</strong> If you need an exact product image, please upload a file. If you'd like a general office image then search for something like "woman with laptop" or "modern office".</p>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="image-search-query" placeholder="Enter image search terms" style="flex-grow: 1;">
+                            <button id="search-images-btn" class="upload-btn">Search</button>
+                        </div>
+                        <div id="image-search-results" class="image-gallery"></div>
+                    </div>
+
+                    <div class="option-group">
+                        <label>Image Position:</label>
+                        <div class="radio-options">
+                            <div class="radio-option">
+                                <input type="radio" id="image-left" name="image-position" value="left" checked>
+                                <label for="image-left">Left</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" id="image-right" name="image-position" value="right">
+                                <label for="image-right">Right</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-content">
+                <h3>Generated Content</h3>
+                <p>Edit the generated content as needed:</p>
+                <textarea id="ai-content-text" rows="10" placeholder="Generated MSP marketing content will appear here..." style="width: 100%;"></textarea>
+            </div>
+
+            <!-- Output with Preview above HTML Code -->
+            <div class="output-container">
+                <div class="preview-section">
+                    <h3>Content Preview</h3>
+                    <div class="preview-container" id="content-preview"></div>
+                </div>
+
+                <div class="html-output-section">
+                    <div class="code-header">
+                        <h3>HTML Code</h3>
+                        <button id="copy-html-btn" class="copy-button">Copy Code</button>
+                    </div>
+                    <pre class="code-content" id="html-code"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript Files -->
+    <script src="scripts/main.js"></script>
+    <script src="scripts/cover-page-creator.js"></script>
+    <script src="scripts/widget-creator.js"></script>
+    <script src="scripts/matrix-builder.js"></script>
+    <script src="scripts/ai-generator.js"></script>
+</body>
+</html>
