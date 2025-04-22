@@ -364,8 +364,8 @@ function initAiGenerator() {
         return 'left'; // Default position
     }
 
+    // Update the preview using a table-based approach similar to widget-creator.js
     function updatePreview() {
-        // FINAL FIX - Completely rewritten to avoid 3-column issue
         // Format the content paragraphs
         let formattedContent = '';
         if (generatedContent) {
@@ -374,12 +374,12 @@ function initAiGenerator() {
             formattedContent = paragraphs.map(p => `<p>${p}</p>`).join('');
         }
         
-        // If we have an image and content
+        // If we have both image and content
         if (customImageBase64 && generatedContent) {
             const imagePosition = getImagePosition();
             
             // Create image HTML with attribution if present
-            let imageHtml = `<img src="${customImageBase64}" alt="Content Image" style="max-width:100%; height:auto; display:block;">`;
+            let imageHtml = `<img src="${customImageBase64}" alt="Content Image" style="max-width:100%; height:auto; margin:0 auto; display:block;">`;
             if (imageAttribution) {
                 imageHtml = `
                 <div style="position: relative;">
@@ -390,30 +390,37 @@ function initAiGenerator() {
                 </div>`;
             }
             
-            // Create a two-column div-based layout
+            // Create a table-based layout just like in widget-creator.js
+            let tableHtml = `
+            <table style="width:100%; border-collapse:collapse; border:none;">
+                <tr>`;
+            
             if (imagePosition === 'left') {
-                contentPreview.innerHTML = `
-                <div style="display: flex; width: 100%; flex-wrap: wrap;">
-                    <div style="flex: 0 0 40%; padding: 10px; box-sizing: border-box;">
+                tableHtml += `
+                    <td style="width:40%; vertical-align:top; text-align:center; padding:10px;">
                         ${imageHtml}
-                    </div>
-                    <div style="flex: 0 0 60%; padding: 10px; box-sizing: border-box;">
+                    </td>
+                    <td style="width:60%; vertical-align:top; padding:10px;">
                         ${formattedContent}
-                    </div>
-                </div>`;
-            } else { // right image
-                contentPreview.innerHTML = `
-                <div style="display: flex; width: 100%; flex-wrap: wrap;">
-                    <div style="flex: 0 0 60%; padding: 10px; box-sizing: border-box;">
+                    </td>`;
+            } else { // right
+                tableHtml += `
+                    <td style="width:60%; vertical-align:top; padding:10px;">
                         ${formattedContent}
-                    </div>
-                    <div style="flex: 0 0 40%; padding: 10px; box-sizing: border-box;">
+                    </td>
+                    <td style="width:40%; vertical-align:top; text-align:center; padding:10px;">
                         ${imageHtml}
-                    </div>
-                </div>`;
+                    </td>`;
             }
-        } else if (customImageBase64) {
-            // Only image, no content
+            
+            tableHtml += `
+                </tr>
+            </table>`;
+            
+            contentPreview.innerHTML = tableHtml;
+        } 
+        // Only image, no content
+        else if (customImageBase64) {
             let imageHtml = `<img src="${customImageBase64}" alt="Content Image" style="max-width:100%; height:auto;">`;
             if (imageAttribution) {
                 imageHtml = `
@@ -425,19 +432,25 @@ function initAiGenerator() {
                 </div>`;
             }
             contentPreview.innerHTML = imageHtml;
-            
-        } else if (generatedContent) {
-            // Only content, no image - use a single full-width div
+        } 
+        // Only content, no image - still use table for consistency
+        else if (generatedContent) {
             contentPreview.innerHTML = `
-            <div style="width: 100%; padding: 10px; box-sizing: border-box;">
-                ${formattedContent}
-            </div>`;
-        } else {
-            // Nothing to display
+            <table style="width:100%; border-collapse:collapse; border:none;">
+                <tr>
+                    <td style="width:100%; vertical-align:top; padding:10px;">
+                        ${formattedContent}
+                    </td>
+                </tr>
+            </table>`;
+        } 
+        // Nothing to display
+        else {
             contentPreview.innerHTML = '';
         }
     }
 
+    // Generate HTML code for the content
     function updateHtmlCode() {
         const imagePosition = getImagePosition();
         const topic = contentTopic.value.trim() || 'MSP Service';
@@ -470,20 +483,13 @@ img {
   max-width: 100%;
   height: auto;
 }
-.flex-container {
-  display: flex;
+table {
   width: 100%;
-  flex-wrap: wrap;
+  border-collapse: collapse;
 }
-.image-column {
-  flex: 0 0 40%;
+td {
+  vertical-align: top;
   padding: 10px;
-  box-sizing: border-box;
-}
-.content-column {
-  flex: 0 0 60%;
-  padding: 10px;
-  box-sizing: border-box;
 }
 .image-attribution {
   font-size: 10px;
@@ -497,8 +503,13 @@ img {
   text-decoration: underline;
 }
 @media (max-width: 600px) {
-  .image-column, .content-column {
-    flex: 0 0 100%;
+  table, tbody, tr, td {
+    display: block;
+    width: 100% !important;
+  }
+  td {
+    text-align: center !important;
+    padding: 10px 0;
   }
 }
 </style>
@@ -519,43 +530,47 @@ img {
             if (imageAttribution) {
                 imageHtml = `
 <div style="position: relative;">
-  <img src="${customImageBase64}" alt="${topic} Image">
+  <img src="${customImageBase64}" alt="${topic} Image" style="margin: 0 auto; display: block;">
   <div class="image-attribution">
     ${imageAttribution}
   </div>
 </div>`;
             } else {
                 imageHtml = `
-<img src="${customImageBase64}" alt="${topic} Image">`;
+<img src="${customImageBase64}" alt="${topic} Image" style="margin: 0 auto; display: block;">`;
             }
 
-            // Create flex-based layout with image on left or right
+            // Create table-based layout with image on left or right
             if (imagePosition === 'left') {
                 htmlCodeContent += `
-<div class="flex-container">
-  <div class="image-column">
-    ${imageHtml}
-  </div>
-  <div class="content-column">
-    ${formattedContent}
-  </div>
-</div>`;
+<table>
+  <tr>
+    <td style="width: 40%; text-align: center;">
+      ${imageHtml}
+    </td>
+    <td style="width: 60%;">
+      ${formattedContent}
+    </td>
+  </tr>
+</table>`;
             } else {
                 htmlCodeContent += `
-<div class="flex-container">
-  <div class="content-column">
-    ${formattedContent}
-  </div>
-  <div class="image-column">
-    ${imageHtml}
-  </div>
-</div>`;
+<table>
+  <tr>
+    <td style="width: 60%;">
+      ${formattedContent}
+    </td>
+    <td style="width: 40%; text-align: center;">
+      ${imageHtml}
+    </td>
+  </tr>
+</table>`;
             }
         } else if (customImageBase64) {
             // Only image
             if (imageAttribution) {
                 htmlCodeContent += `
-<div style="position: relative;">
+<div style="position: relative; text-align: center;">
   <img src="${customImageBase64}" alt="${topic} Image">
   <div class="image-attribution">
     ${imageAttribution}
@@ -563,14 +578,20 @@ img {
 </div>`;
             } else {
                 htmlCodeContent += `
-<img src="${customImageBase64}" alt="${topic} Image">`;
+<div style="text-align: center;">
+  <img src="${customImageBase64}" alt="${topic} Image">
+</div>`;
             }
         } else if (generatedContent) {
-            // Only content
+            // Only content - still use a table for consistency
             htmlCodeContent += `
-<div style="width: 100%; padding: 10px; box-sizing: border-box;">
-  ${formattedContent}
-</div>`;
+<table>
+  <tr>
+    <td style="width: 100%;">
+      ${formattedContent}
+    </td>
+  </tr>
+</table>`;
         }
 
         // Close the HTML
