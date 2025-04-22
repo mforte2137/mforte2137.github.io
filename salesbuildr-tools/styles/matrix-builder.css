@@ -1,1 +1,62 @@
+/* Matrix Builder Styles */
 
+/* Matrix Editor Styles */
+.matrix-editor {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    background-color: white;
+}
+
+.matrix-headers {
+    display: grid;
+    grid-template-columns: 300px repeat(9, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.matrix-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.matrix-row {
+    display: grid;
+    grid-template-columns: 300px repeat(9, 1fr);
+    gap: 10px;
+    align-items: center;
+}
+
+.cell-type-select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Matrix Preview Styles */
+.matrix-preview {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    background-color: white;
+    overflow-x: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .matrix-headers, .matrix-row {
+        grid-template-columns: 200px repeat(auto-fit, minmax(80px, 1fr));
+        font-size: 0.9em;
+    }
+}
+
+@media (max-width: 480px) {
+    .matrix-headers, .matrix-row {
+        grid-template-columns: 150px repeat(auto-fit, minmax(60px, 1fr));
+        font-size: 0.8em;
+    }
+}
