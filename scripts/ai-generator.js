@@ -365,16 +365,7 @@ function initAiGenerator() {
     }
 
     function updatePreview() {
-        // Format the content as paragraphs
-        let formattedContent = '';
-        if (generatedContent) {
-            formattedContent = generatedContent
-                .split('\n\n')
-                .map(p => `<p>${p}</p>`)
-                .join('');
-        }
-        
-        // CORRECTED: Create a proper two-column layout with image and content
+        // COMPLETELY REWRITTEN: Use simple HTML table with only 2 columns
         if (customImageBase64 && generatedContent) {
             const imagePosition = getImagePosition();
             
@@ -390,36 +381,30 @@ function initAiGenerator() {
                 </div>`;
             }
             
-            // Create table with image on left or right
-            let tableHtml = '';
+            // Format content as a single HTML block
+            const formattedContent = generatedContent
+                .split('\n\n')
+                .map(p => `<p>${p}</p>`)
+                .join('');
+            
+            // Simple two-column table layout
             if (imagePosition === 'left') {
-                tableHtml = `
-                <table style="width:100%; border-collapse:collapse; border:none;">
-                    <tr>
-                        <td style="width:40%; vertical-align:top; padding:10px;">
-                            ${imageHtml}
-                        </td>
-                        <td style="width:60%; vertical-align:top; padding:10px;">
-                            ${formattedContent}
-                        </td>
-                    </tr>
-                </table>`;
-            } else {
-                tableHtml = `
-                <table style="width:100%; border-collapse:collapse; border:none;">
-                    <tr>
-                        <td style="width:60%; vertical-align:top; padding:10px;">
-                            ${formattedContent}
-                        </td>
-                        <td style="width:40%; vertical-align:top; padding:10px;">
-                            ${imageHtml}
-                        </td>
-                    </tr>
-                </table>`;
+                contentPreview.innerHTML = `
+                <div style="display: table; width: 100%; table-layout: fixed; border-collapse: collapse;">
+                    <div style="display: table-row;">
+                        <div style="display: table-cell; width: 40%; padding: 10px; vertical-align: top;">${imageHtml}</div>
+                        <div style="display: table-cell; width: 60%; padding: 10px; vertical-align: top;">${formattedContent}</div>
+                    </div>
+                </div>`;
+            } else { // right image
+                contentPreview.innerHTML = `
+                <div style="display: table; width: 100%; table-layout: fixed; border-collapse: collapse;">
+                    <div style="display: table-row;">
+                        <div style="display: table-cell; width: 60%; padding: 10px; vertical-align: top;">${formattedContent}</div>
+                        <div style="display: table-cell; width: 40%; padding: 10px; vertical-align: top;">${imageHtml}</div>
+                    </div>
+                </div>`;
             }
-            
-            contentPreview.innerHTML = tableHtml;
-            
         } else if (customImageBase64) {
             // Only image, no content
             let imageHtml = `<img src="${customImageBase64}" alt="Content Image" style="max-width:100%; height:auto;">`;
@@ -435,9 +420,13 @@ function initAiGenerator() {
             contentPreview.innerHTML = imageHtml;
             
         } else if (generatedContent) {
-            // Only content, no image
-            contentPreview.innerHTML = formattedContent;
+            // Only content, no image - format paragraphs
+            const formattedContent = generatedContent
+                .split('\n\n')
+                .map(p => `<p>${p}</p>`)
+                .join('');
             
+            contentPreview.innerHTML = formattedContent;
         } else {
             // Nothing to display
             contentPreview.innerHTML = '';
@@ -476,13 +465,19 @@ img {
   max-width: 100%;
   height: auto;
 }
-table {
+.table-container {
+  display: table;
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
 }
-td {
-  vertical-align: top;
+.table-row {
+  display: table-row;
+}
+.table-cell {
+  display: table-cell;
   padding: 10px;
+  vertical-align: top;
 }
 .image-attribution {
   font-size: 10px;
@@ -496,12 +491,13 @@ td {
   text-decoration: underline;
 }
 @media (max-width: 600px) {
-  table, tr, td {
+  .table-row, .table-cell {
     display: block;
     width: 100%;
   }
-  td {
+  .table-cell {
     margin-bottom: 20px;
+    padding: 0;
   }
 }
 </style>
@@ -509,15 +505,15 @@ td {
 <body>
 <h1>${topic}</h1>`;
 
-        // Format the paragraphs
+        // Format content as paragraphs
         const formattedContent = generatedContent
             .split('\n\n')
             .map(p => `<p>${p}</p>`)
             .join('\n  ');
 
-        // Add the content with image
+        // Add content with image if both exist
         if (customImageBase64 && generatedContent) {
-            // Create the image HTML with attribution if present
+            // Create image HTML with attribution
             let imageHtml = '';
             if (imageAttribution) {
                 imageHtml = `
@@ -532,31 +528,31 @@ td {
 <img src="${customImageBase64}" alt="${topic} Image">`;
             }
 
-            // Create table-based layout with image on left or right
+            // Create a table-like layout with CSS
             if (imagePosition === 'left') {
                 htmlCodeContent += `
-<table>
-  <tr>
-    <td style="width: 40%;">
+<div class="table-container">
+  <div class="table-row">
+    <div class="table-cell" style="width: 40%;">
       ${imageHtml}
-    </td>
-    <td style="width: 60%;">
+    </div>
+    <div class="table-cell" style="width: 60%;">
       ${formattedContent}
-    </td>
-  </tr>
-</table>`;
-            } else {
+    </div>
+  </div>
+</div>`;
+            } else { // right image
                 htmlCodeContent += `
-<table>
-  <tr>
-    <td style="width: 60%;">
+<div class="table-container">
+  <div class="table-row">
+    <div class="table-cell" style="width: 60%;">
       ${formattedContent}
-    </td>
-    <td style="width: 40%;">
+    </div>
+    <div class="table-cell" style="width: 40%;">
       ${imageHtml}
-    </td>
-  </tr>
-</table>`;
+    </div>
+  </div>
+</div>`;
             }
         } else if (customImageBase64) {
             // Only image
