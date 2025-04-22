@@ -365,7 +365,16 @@ function initAiGenerator() {
     }
 
     function updatePreview() {
-        // COMPLETELY REWRITTEN: Use simple HTML table with only 2 columns
+        // FINAL FIX - Completely rewritten to avoid 3-column issue
+        // Format the content paragraphs
+        let formattedContent = '';
+        if (generatedContent) {
+            // Process paragraphs individually
+            const paragraphs = generatedContent.split('\n\n');
+            formattedContent = paragraphs.map(p => `<p>${p}</p>`).join('');
+        }
+        
+        // If we have an image and content
         if (customImageBase64 && generatedContent) {
             const imagePosition = getImagePosition();
             
@@ -381,27 +390,25 @@ function initAiGenerator() {
                 </div>`;
             }
             
-            // Format content as a single HTML block
-            const formattedContent = generatedContent
-                .split('\n\n')
-                .map(p => `<p>${p}</p>`)
-                .join('');
-            
-            // Simple two-column table layout
+            // Create a two-column div-based layout
             if (imagePosition === 'left') {
                 contentPreview.innerHTML = `
-                <div style="display: table; width: 100%; table-layout: fixed; border-collapse: collapse;">
-                    <div style="display: table-row;">
-                        <div style="display: table-cell; width: 40%; padding: 10px; vertical-align: top;">${imageHtml}</div>
-                        <div style="display: table-cell; width: 60%; padding: 10px; vertical-align: top;">${formattedContent}</div>
+                <div style="display: flex; width: 100%; flex-wrap: wrap;">
+                    <div style="flex: 0 0 40%; padding: 10px; box-sizing: border-box;">
+                        ${imageHtml}
+                    </div>
+                    <div style="flex: 0 0 60%; padding: 10px; box-sizing: border-box;">
+                        ${formattedContent}
                     </div>
                 </div>`;
             } else { // right image
                 contentPreview.innerHTML = `
-                <div style="display: table; width: 100%; table-layout: fixed; border-collapse: collapse;">
-                    <div style="display: table-row;">
-                        <div style="display: table-cell; width: 60%; padding: 10px; vertical-align: top;">${formattedContent}</div>
-                        <div style="display: table-cell; width: 40%; padding: 10px; vertical-align: top;">${imageHtml}</div>
+                <div style="display: flex; width: 100%; flex-wrap: wrap;">
+                    <div style="flex: 0 0 60%; padding: 10px; box-sizing: border-box;">
+                        ${formattedContent}
+                    </div>
+                    <div style="flex: 0 0 40%; padding: 10px; box-sizing: border-box;">
+                        ${imageHtml}
                     </div>
                 </div>`;
             }
@@ -420,13 +427,11 @@ function initAiGenerator() {
             contentPreview.innerHTML = imageHtml;
             
         } else if (generatedContent) {
-            // Only content, no image - format paragraphs
-            const formattedContent = generatedContent
-                .split('\n\n')
-                .map(p => `<p>${p}</p>`)
-                .join('');
-            
-            contentPreview.innerHTML = formattedContent;
+            // Only content, no image - use a single full-width div
+            contentPreview.innerHTML = `
+            <div style="width: 100%; padding: 10px; box-sizing: border-box;">
+                ${formattedContent}
+            </div>`;
         } else {
             // Nothing to display
             contentPreview.innerHTML = '';
@@ -465,19 +470,20 @@ img {
   max-width: 100%;
   height: auto;
 }
-.table-container {
-  display: table;
+.flex-container {
+  display: flex;
   width: 100%;
-  table-layout: fixed;
-  border-collapse: collapse;
+  flex-wrap: wrap;
 }
-.table-row {
-  display: table-row;
-}
-.table-cell {
-  display: table-cell;
+.image-column {
+  flex: 0 0 40%;
   padding: 10px;
-  vertical-align: top;
+  box-sizing: border-box;
+}
+.content-column {
+  flex: 0 0 60%;
+  padding: 10px;
+  box-sizing: border-box;
 }
 .image-attribution {
   font-size: 10px;
@@ -491,13 +497,8 @@ img {
   text-decoration: underline;
 }
 @media (max-width: 600px) {
-  .table-row, .table-cell {
-    display: block;
-    width: 100%;
-  }
-  .table-cell {
-    margin-bottom: 20px;
-    padding: 0;
+  .image-column, .content-column {
+    flex: 0 0 100%;
   }
 }
 </style>
@@ -505,15 +506,15 @@ img {
 <body>
 <h1>${topic}</h1>`;
 
-        // Format content as paragraphs
+        // Format the paragraphs
         const formattedContent = generatedContent
             .split('\n\n')
             .map(p => `<p>${p}</p>`)
             .join('\n  ');
 
-        // Add content with image if both exist
+        // Add the content with image
         if (customImageBase64 && generatedContent) {
-            // Create image HTML with attribution
+            // Create the image HTML with attribution if present
             let imageHtml = '';
             if (imageAttribution) {
                 imageHtml = `
@@ -528,29 +529,25 @@ img {
 <img src="${customImageBase64}" alt="${topic} Image">`;
             }
 
-            // Create a table-like layout with CSS
+            // Create flex-based layout with image on left or right
             if (imagePosition === 'left') {
                 htmlCodeContent += `
-<div class="table-container">
-  <div class="table-row">
-    <div class="table-cell" style="width: 40%;">
-      ${imageHtml}
-    </div>
-    <div class="table-cell" style="width: 60%;">
-      ${formattedContent}
-    </div>
+<div class="flex-container">
+  <div class="image-column">
+    ${imageHtml}
+  </div>
+  <div class="content-column">
+    ${formattedContent}
   </div>
 </div>`;
-            } else { // right image
+            } else {
                 htmlCodeContent += `
-<div class="table-container">
-  <div class="table-row">
-    <div class="table-cell" style="width: 60%;">
-      ${formattedContent}
-    </div>
-    <div class="table-cell" style="width: 40%;">
-      ${imageHtml}
-    </div>
+<div class="flex-container">
+  <div class="content-column">
+    ${formattedContent}
+  </div>
+  <div class="image-column">
+    ${imageHtml}
   </div>
 </div>`;
             }
@@ -571,7 +568,9 @@ img {
         } else if (generatedContent) {
             // Only content
             htmlCodeContent += `
-${formattedContent}`;
+<div style="width: 100%; padding: 10px; box-sizing: border-box;">
+  ${formattedContent}
+</div>`;
         }
 
         // Close the HTML
