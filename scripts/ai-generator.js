@@ -365,56 +365,79 @@ function initAiGenerator() {
     }
 
     function updatePreview() {
-        // Only create content with image if there's an image
+        // Format the content as paragraphs
+        let formattedContent = '';
+        if (generatedContent) {
+            formattedContent = generatedContent
+                .split('\n\n')
+                .map(p => `<p>${p}</p>`)
+                .join('');
+        }
+        
+        // CORRECTED: Create a proper two-column layout with image and content
         if (customImageBase64 && generatedContent) {
-            // Create image element with attribution if present
-            let imageHtml = `<img src="${customImageBase64}" alt="Content Image">`;
+            const imagePosition = getImagePosition();
+            
+            // Create image HTML with attribution if present
+            let imageHtml = `<img src="${customImageBase64}" alt="Content Image" style="max-width:100%; height:auto; display:block;">`;
             if (imageAttribution) {
                 imageHtml = `
                 <div style="position: relative;">
                     ${imageHtml}
                     <div style="position: absolute; bottom: 0; left: 0; right: 0; background-color: rgba(0,0,0,0.6); color: white; font-size: 10px; padding: 4px; text-align: center;">
-                    ${imageAttribution}
+                        ${imageAttribution}
                     </div>
-                </div>
-                `;
+                </div>`;
             }
-
-            // Format content with paragraphs
-            const formattedContent = generatedContent
-                .split('\n\n')
-                .map(p => `<p>${p}</p>`)
-                .join('');
-
-            // Create two-column layout with image on selected side
-            contentPreview.innerHTML = `
-            <div class="content-with-image image-${getImagePosition()}">
-                <div class="image-container">${imageHtml}</div>
-                <div class="text-container">${formattedContent}</div>
-            </div>
-            `;
+            
+            // Create table with image on left or right
+            let tableHtml = '';
+            if (imagePosition === 'left') {
+                tableHtml = `
+                <table style="width:100%; border-collapse:collapse; border:none;">
+                    <tr>
+                        <td style="width:40%; vertical-align:top; padding:10px;">
+                            ${imageHtml}
+                        </td>
+                        <td style="width:60%; vertical-align:top; padding:10px;">
+                            ${formattedContent}
+                        </td>
+                    </tr>
+                </table>`;
+            } else {
+                tableHtml = `
+                <table style="width:100%; border-collapse:collapse; border:none;">
+                    <tr>
+                        <td style="width:60%; vertical-align:top; padding:10px;">
+                            ${formattedContent}
+                        </td>
+                        <td style="width:40%; vertical-align:top; padding:10px;">
+                            ${imageHtml}
+                        </td>
+                    </tr>
+                </table>`;
+            }
+            
+            contentPreview.innerHTML = tableHtml;
+            
         } else if (customImageBase64) {
             // Only image, no content
+            let imageHtml = `<img src="${customImageBase64}" alt="Content Image" style="max-width:100%; height:auto;">`;
             if (imageAttribution) {
-                contentPreview.innerHTML = `
+                imageHtml = `
                 <div style="position: relative;">
-                    <img src="${customImageBase64}" alt="Content Image" style="max-width:100%; height:auto;">
+                    ${imageHtml}
                     <div style="position: absolute; bottom: 0; left: 0; right: 0; background-color: rgba(0,0,0,0.6); color: white; font-size: 10px; padding: 4px; text-align: center;">
-                    ${imageAttribution}
+                        ${imageAttribution}
                     </div>
-                </div>
-                `;
-            } else {
-                contentPreview.innerHTML = `<img src="${customImageBase64}" alt="Content Image" style="max-width:100%; height:auto;">`;
+                </div>`;
             }
+            contentPreview.innerHTML = imageHtml;
+            
         } else if (generatedContent) {
             // Only content, no image
-            const formattedContent = generatedContent
-                .split('\n\n')
-                .map(p => `<p>${p}</p>`)
-                .join('');
-
             contentPreview.innerHTML = formattedContent;
+            
         } else {
             // Nothing to display
             contentPreview.innerHTML = '';
@@ -453,23 +476,13 @@ img {
   max-width: 100%;
   height: auto;
 }
-.content-with-image {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  align-items: center;
+table {
+  width: 100%;
+  border-collapse: collapse;
 }
-.content-with-image.image-left {
-  grid-template-areas: "image content";
-}
-.content-with-image.image-right {
-  grid-template-areas: "content image";
-}
-.image-container {
-  grid-area: image;
-}
-.text-container {
-  grid-area: content;
+td {
+  vertical-align: top;
+  padding: 10px;
 }
 .image-attribution {
   font-size: 10px;
@@ -483,11 +496,12 @@ img {
   text-decoration: underline;
 }
 @media (max-width: 600px) {
-  .content-with-image {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "image"
-      "content" !important;
+  table, tr, td {
+    display: block;
+    width: 100%;
+  }
+  td {
+    margin-bottom: 20px;
   }
 }
 </style>
@@ -495,40 +509,54 @@ img {
 <body>
 <h1>${topic}</h1>`;
 
-        // Format content and add it to HTML
-        if (customImageBase64 && generatedContent) {
-            // Both image and content - create two-column layout
-            const formattedContent = generatedContent
-                .split('\n\n')
-                .map(p => `<p>${p}</p>`)
-                .join('\n  ');
+        // Format the paragraphs
+        const formattedContent = generatedContent
+            .split('\n\n')
+            .map(p => `<p>${p}</p>`)
+            .join('\n  ');
 
-            // Add image with attribution if present
+        // Add the content with image
+        if (customImageBase64 && generatedContent) {
+            // Create the image HTML with attribution if present
+            let imageHtml = '';
             if (imageAttribution) {
-                htmlCodeContent += `
-<div class="content-with-image image-${imagePosition}">
-  <div class="image-container">
-    <div style="position: relative;">
-      <img src="${customImageBase64}" alt="${topic} Image">
-      <div class="image-attribution">
-        ${imageAttribution}
-      </div>
-    </div>
-  </div>
-  <div class="text-container">
-    ${formattedContent}
+                imageHtml = `
+<div style="position: relative;">
+  <img src="${customImageBase64}" alt="${topic} Image">
+  <div class="image-attribution">
+    ${imageAttribution}
   </div>
 </div>`;
             } else {
+                imageHtml = `
+<img src="${customImageBase64}" alt="${topic} Image">`;
+            }
+
+            // Create table-based layout with image on left or right
+            if (imagePosition === 'left') {
                 htmlCodeContent += `
-<div class="content-with-image image-${imagePosition}">
-  <div class="image-container">
-    <img src="${customImageBase64}" alt="${topic} Image">
-  </div>
-  <div class="text-container">
-    ${formattedContent}
-  </div>
-</div>`;
+<table>
+  <tr>
+    <td style="width: 40%;">
+      ${imageHtml}
+    </td>
+    <td style="width: 60%;">
+      ${formattedContent}
+    </td>
+  </tr>
+</table>`;
+            } else {
+                htmlCodeContent += `
+<table>
+  <tr>
+    <td style="width: 60%;">
+      ${formattedContent}
+    </td>
+    <td style="width: 40%;">
+      ${imageHtml}
+    </td>
+  </tr>
+</table>`;
             }
         } else if (customImageBase64) {
             // Only image
@@ -546,11 +574,6 @@ img {
             }
         } else if (generatedContent) {
             // Only content
-            const formattedContent = generatedContent
-                .split('\n\n')
-                .map(p => `<p>${p}</p>`)
-                .join('\n');
-
             htmlCodeContent += `
 ${formattedContent}`;
         }
