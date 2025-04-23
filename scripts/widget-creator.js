@@ -1,6 +1,7 @@
 /**
  * Widget Creator JavaScript
  * Handles widget creation and content extraction from websites
+ * Improved version with better scraping success rate
  */
 
 function initWidgetCreator() {
@@ -39,14 +40,32 @@ function initWidgetCreator() {
     if (clearAllBtn) clearAllBtn.addEventListener('click', clearWidgetForm);
     if (copyCodeBtn) copyCodeBtn.addEventListener('click', copyWidgetCode);
     
+    // Added feature to extract domain from URL
+    if (urlInput) {
+        urlInput.addEventListener('blur', function() {
+            const url = urlInput.value.trim();
+            if (url) {
+                try {
+                    const domain = new URL(url).hostname;
+                    console.log('Domain extracted:', domain);
+                } catch (error) {
+                    // Invalid URL, do nothing
+                }
+            }
+        });
+    }
+    
     // State variables
     let currentImageUrl = null;
     let customImageUrl = null;
+    let fetchAttempts = 0;
+    const MAX_ATTEMPTS = 2; // Maximum number of retry attempts
     
     // Helper function for showing widget status messages
     function showWidgetStatus(message, type) {
         if (!widgetStatus) return;
         
+        console.log(`Widget Status: [${type}] ${message}`);
         widgetStatus.textContent = message;
         widgetStatus.className = `status ${type}`;
         widgetStatus.style.display = 'block';
@@ -73,85 +92,115 @@ function initWidgetCreator() {
         reader.readAsDataURL(file);
     }
     
+    // Normalize URL to ensure it's valid
+    function normalizeUrl(url) {
+        // Trim whitespace
+        url = url.trim();
+        
+        // Ensure URL has protocol
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            url = 'https://' + url;
+        }
+        
+        // Try to create a URL object to validate
+        try {
+            const urlObj = new URL(url);
+            return urlObj.toString();
+        } catch (e) {
+            throw new Error('Invalid URL format');
+        }
+    }
+    
+    // Extract domain from URL
+    function extractDomain(url) {
+        try {
+            const urlObj = new URL(url);
+            return urlObj.hostname;
+        } catch (e) {
+            return null;
+        }
+    }
+    
+    // Preload parameters based on website domain
+    function getOptimizedParams(url) {
+        const domain = extractDomain(url);
+        if (!domain) return {};
+        
+        // Domain-specific optimizations
+        const optimizations = {
+            // Tech sites often have article content
+            'techcrunch.com': { renderJs: true, premiumProxy: true, waitFor: 3000 },
+            'theverge.com': { renderJs: true, premiumProxy: true, waitFor: 3000 },
+            'wired.com': { renderJs: true, premiumProxy: true, waitFor: 3000 },
+            
+            // E-commerce sites
+            'amazon.com': { renderJs: true, premiumProxy: true, waitFor: 5000, javascriptEnabled: true },
+            'bestbuy.com': { renderJs: true, premiumProxy: true, waitFor: 5000 },
+            'walmart.com': { renderJs: true, premiumProxy: true, waitFor: 5000 },
+            
+            // Social media
+            'twitter.com': { renderJs: true, premiumProxy: true, waitFor: 5000 },
+            'linkedin.com': { renderJs: true, premiumProxy: true, waitFor: 5000 },
+            
+            // MSP and tech vendor sites
+            'microsoft.com': { renderJs: true, waitFor: 3000 },
+            'dell.com': { renderJs: true, waitFor: 3000 },
+            'hp.com': { renderJs: true, waitFor: 3000 },
+            'cisco.com': { renderJs: true, waitFor: 3000 },
+            'ibm.com': { renderJs: true, waitFor: 3000 },
+            
+            // Default parameters for other domains
+            'default': { renderJs: true, waitFor: 2000 }
+        };
+        
+        // Check for partial domain matches (e.g., subdomain.example.com should match example.com)
+        for (const [key, value] of Object.entries(optimizations)) {
+            if (domain.includes(key)) {
+                console.log(`Using optimized parameters for ${domain}`);
+                return value;
+            }
+        }
+        
+        return optimizations.default;
+    }
+    
     // Fetch website content
     async function fetchWebsiteContent() {
-        const url = urlInput.value.trim();
+        let url = urlInput.value.trim();
         
         if (!url) {
             showWidgetStatus('Please enter a valid URL.', 'error');
             return;
         }
         
-        if (!url.startsWith('http://') && !url.startsWith('https://')) {
-            showWidgetStatus('URL must start with http:// or https://.', 'error');
+        try {
+            // Normalize the URL
+            url = normalizeUrl(url);
+        } catch (error) {
+            showWidgetStatus('Please enter a valid URL.', 'error');
             return;
         }
         
         try {
+            // Reset attempt counter
+            fetchAttempts = 0;
+            
             // Show loading status
             showWidgetStatus('Fetching website content...', 'info');
             fetchBtn.disabled = true;
             fetchBtn.textContent = 'Fetching...';
             summaryTextarea.value = 'Loading content...';
             
-            // First get the image from get-website-images
-            const imageResponse = await fetch('/.netlify/functions/get-website-images', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url })
-            });
+            // Get optimized parameters for this domain
+            const optimizedParams = getOptimizedParams(url);
+            console.log('Using optimized parameters:', optimizedParams);
             
-            if (!imageResponse.ok) {
-                throw new Error('Error fetching website images');
-            }
+            // Try fetching content with improved error handling and retries
+            await fetchContentWithRetry(url, optimizedParams);
             
-            const imageData = await imageResponse.json();
-            
-            // Then get the content from summarize-website
-            const summaryLength = summaryLengthSelect.value;
-            const contentResponse = await fetch('/.netlify/functions/summarize-website', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url, summaryLength })
-            });
-            
-            if (!contentResponse.ok) {
-                throw new Error('Error fetching website content');
-            }
-            
-            const contentData = await contentResponse.json();
-            
-            // Update UI with the fetched content
-            summaryTextarea.value = contentData.summary || "No summary available";
-            currentImageUrl = imageData.mainImage || null;
-            
-            // Convert image to Base64 immediately to avoid CORS issues later
-            if (currentImageUrl) {
-                try {
-                    const base64Image = await convertImageToBase64(currentImageUrl);
-                    currentImageUrl = base64Image;
-                } catch (error) {
-                    console.error('Error converting image to Base64:', error);
-                    // Keep the original URL if conversion fails
-                }
-            }
-            
-            // Store original content in data attributes
-            summaryTextarea.dataset.originalContent = contentData.summary;
-            summaryTextarea.dataset.formattedContent = contentData.formattedContent || formatTextToHtml(contentData.summary);
-            summaryTextarea.dataset.imageUrl = currentImageUrl;
-            
-            // Update the preview with the fetched data
-            const formattedContent = contentData.formattedContent || formatTextToHtml(contentData.summary);
-            const position = imagePositionSelect.value;
-            
-            await updateWidgetPreview(currentImageUrl, formattedContent, position);
-            
-            showWidgetStatus('Content fetched successfully!', 'success');
-            widgetPreviewContainer.style.display = 'block';
         } catch (error) {
             console.error('Error fetching website content:', error);
-            summaryTextarea.value = 'Error fetching content. Please try again.';
+            summaryTextarea.value = 'Error fetching content. Please try again or enter content manually.';
             showWidgetStatus('Error fetching website content. The website might be blocking requests.', 'error');
         } finally {
             fetchBtn.disabled = false;
@@ -159,9 +208,213 @@ function initWidgetCreator() {
         }
     }
     
-    // Convert image URL to Base64
-    function convertImageToBase64(url) {
-        return new Promise((resolve, reject) => {
+    // Fetch content with automatic retry logic
+    async function fetchContentWithRetry(url, optimizedParams) {
+        while (fetchAttempts < MAX_ATTEMPTS) {
+            try {
+                // Increment attempt counter
+                fetchAttempts++;
+                
+                if (fetchAttempts > 1) {
+                    showWidgetStatus(`Retry attempt ${fetchAttempts}/${MAX_ATTEMPTS}...`, 'info');
+                    
+                    // Adjust parameters for retry attempts
+                    optimizedParams.renderJs = true; // Always enable JS rendering on retries
+                    optimizedParams.waitFor = optimizedParams.waitFor ? optimizedParams.waitFor + 2000 : 5000; // Increase wait time
+                    optimizedParams.premiumProxy = true; // Use premium proxy on retries
+                }
+                
+                // First get the image from get-website-images
+                const imageResponse = await fetch('/.netlify/functions/get-website-images', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        url,
+                        ...optimizedParams
+                    })
+                });
+                
+                // Check if we got a successful response
+                if (!imageResponse.ok) {
+                    const errorData = await imageResponse.json().catch(() => ({}));
+                    throw new Error(errorData.error || `Failed to fetch images: ${imageResponse.status}`);
+                }
+                
+                const imageData = await imageResponse.json();
+                
+                // Then get the content from summarize-website
+                const summaryLength = summaryLengthSelect.value;
+                const contentResponse = await fetch('/.netlify/functions/summarize-website', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        url, 
+                        summaryLength,
+                        ...optimizedParams
+                    })
+                });
+                
+                // Check if we got a successful response
+                if (!contentResponse.ok) {
+                    const errorData = await contentResponse.json().catch(() => ({}));
+                    throw new Error(errorData.error || `Failed to fetch content: ${contentResponse.status}`);
+                }
+                
+                const contentData = await contentResponse.json();
+                
+                // If no content was found, try a fallback approach
+                if (!contentData.summary || contentData.summary.trim() === '') {
+                    throw new Error('No content extracted from website');
+                }
+                
+                // Update UI with the fetched content
+                summaryTextarea.value = contentData.summary || "No summary available";
+                currentImageUrl = imageData.mainImage || null;
+                
+                // If we got an image but no content or vice versa, wait a bit and try again
+                if ((!currentImageUrl && contentData.summary) || (currentImageUrl && !contentData.summary)) {
+                    console.log('Partial data received - got', 
+                        currentImageUrl ? 'image' : 'no image', 
+                        contentData.summary ? 'content' : 'no content');
+                        
+                    if (fetchAttempts < MAX_ATTEMPTS) {
+                        // Try once more with adjusted parameters
+                        continue;
+                    }
+                }
+                
+                // Convert image to Base64 immediately to avoid CORS issues later
+                if (currentImageUrl) {
+                    try {
+                        const base64Image = await convertImageToBase64(currentImageUrl);
+                        currentImageUrl = base64Image;
+                    } catch (error) {
+                        console.error('Error converting image to Base64:', error);
+                        // Keep the original URL if conversion fails
+                    }
+                }
+                
+                // Store original content in data attributes
+                summaryTextarea.dataset.originalContent = contentData.summary;
+                summaryTextarea.dataset.formattedContent = contentData.formattedContent || formatTextToHtml(contentData.summary);
+                summaryTextarea.dataset.imageUrl = currentImageUrl;
+                
+                // Update the preview with the fetched data
+                const formattedContent = contentData.formattedContent || formatTextToHtml(contentData.summary);
+                const position = imagePositionSelect.value;
+                
+                await updateWidgetPreview(currentImageUrl, formattedContent, position);
+                
+                showWidgetStatus('Content fetched successfully!', 'success');
+                widgetPreviewContainer.style.display = 'block';
+                
+                // If we reached here, we succeeded
+                return;
+                
+            } catch (error) {
+                console.error(`Attempt ${fetchAttempts}/${MAX_ATTEMPTS} failed:`, error);
+                
+                if (fetchAttempts >= MAX_ATTEMPTS) {
+                    // If we've exhausted our attempts, try a different approach: direct meta tags
+                    try {
+                        console.log('Trying fallback method: Direct meta tag extraction');
+                        showWidgetStatus('Trying alternative method...', 'info');
+                        
+                        // Call a dedicated fallback function that uses a different approach
+                        const fallbackData = await fetchWithFallbackMethod(url);
+                        
+                        if (fallbackData.success) {
+                            // Update with fallback data
+                            summaryTextarea.value = fallbackData.summary || "Limited content available. Please edit as needed.";
+                            currentImageUrl = fallbackData.image || null;
+                            
+                            // Convert image if available
+                            if (currentImageUrl) {
+                                try {
+                                    const base64Image = await convertImageToBase64(currentImageUrl);
+                                    currentImageUrl = base64Image;
+                                } catch (error) {
+                                    console.error('Error converting fallback image to Base64:', error);
+                                }
+                            }
+                            
+                            // Store in data attributes
+                            summaryTextarea.dataset.originalContent = fallbackData.summary;
+                            const formattedContent = formatTextToHtml(fallbackData.summary);
+                            summaryTextarea.dataset.formattedContent = formattedContent;
+                            summaryTextarea.dataset.imageUrl = currentImageUrl;
+                            
+                            // Update preview
+                            const position = imagePositionSelect.value;
+                            await updateWidgetPreview(currentImageUrl, formattedContent, position);
+                            
+                            showWidgetStatus('Limited content extracted. You may need to edit it.', 'warning');
+                            widgetPreviewContainer.style.display = 'block';
+                            return;
+                        } else {
+                            throw new Error('Fallback method also failed');
+                        }
+                    } catch (fallbackError) {
+                        console.error('Fallback method failed:', fallbackError);
+                        throw new Error('All extraction methods failed. Please enter content manually.');
+                    }
+                }
+                
+                // If we're not at max attempts yet, we'll retry in the next loop iteration
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait before retrying
+            }
+        }
+    }
+    
+    // Fallback method for extracting content directly
+    async function fetchWithFallbackMethod(url) {
+        // This function represents a different approach to extract content
+        // It could use a different API endpoint or a simpler extraction technique
+        
+        try {
+            // Try to fetch basic metadata directly
+            const response = await fetch('/.netlify/functions/fallback-extractor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Fallback API failed: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            // Check if we got useful data
+            if (data && (data.title || data.description || data.image)) {
+                // Construct a summary from the metadata
+                let summary = '';
+                
+                if (data.title) {
+                    summary += data.title + '\n\n';
+                }
+                
+                if (data.description) {
+                    summary += data.description;
+                }
+                
+                return {
+                    success: true,
+                    summary: summary,
+                    image: data.image || null
+                };
+            } else {
+                throw new Error('No useful data from fallback method');
+            }
+        } catch (error) {
+            console.error('Fallback extraction failed:', error);
+            return { success: false };
+        }
+    }
+    
+    // Convert image URL to Base64 with improved error handling
+    async function convertImageToBase64(url) {
+        return new Promise(async (resolve, reject) => {
             // Handle if the URL is already a base64 string
             if (url.startsWith('data:image')) {
                 resolve(url);
@@ -170,24 +423,53 @@ function initWidgetCreator() {
             
             // Handle if the URL is a blob URL from a file upload
             if (url.startsWith('blob:')) {
-                // We need to fetch the blob and convert it
-                fetch(url)
-                    .then(response => response.blob())
-                    .then(blob => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result);
-                        reader.onerror = reject;
-                        reader.readAsDataURL(blob);
-                    })
-                    .catch(reject);
+                try {
+                    const response = await fetch(url);
+                    const blob = await response.blob();
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                } catch (error) {
+                    reject(error);
+                }
                 return;
+            }
+            
+            // Try to use the server-side fetch-image API first (more reliable for CORS)
+            try {
+                const response = await fetch('/.netlify/functions/fetch-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imageUrl: url })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.imageData) {
+                        resolve(data.imageData);
+                        return;
+                    }
+                }
+                // If server-side fetch fails, continue with client-side approach
+                console.log('Server-side image fetch failed, trying client-side approach');
+            } catch (error) {
+                console.warn('Server-side image fetch failed:', error);
+                // Continue with client-side approach
             }
             
             // For regular URLs, create an image element to load the image
             const img = new Image();
             img.crossOrigin = 'Anonymous'; // Try to avoid CORS issues
             
+            // Set a timeout to avoid hanging
+            const timeoutId = setTimeout(() => {
+                img.src = ''; // Cancel the image load
+                reject(new Error('Image loading timed out'));
+            }, 10000);
+            
             img.onload = function() {
+                clearTimeout(timeoutId);
                 try {
                     // Create a canvas and draw the image on it
                     const canvas = document.createElement('canvas');
@@ -206,23 +488,46 @@ function initWidgetCreator() {
             };
             
             img.onerror = function() {
+                clearTimeout(timeoutId);
+                
                 // If CORS or other issues prevent loading the image,
                 // try using a proxy or fall back to the original URL
-                if (url.startsWith('https://images.weserv.nl/')) {
+                if (url.includes('images.weserv.nl') || url.includes('cors-anywhere') || url.includes('api.allorigins.win')) {
                     // If already using a proxy, just reject
                     reject(new Error('Cannot load image even with proxy'));
                 } else {
-                    // Try with a proxy service
-                    const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
-                    convertImageToBase64(proxyUrl)
-                        .then(resolve)
-                        .catch(() => {
-                            // If still can't load, reject with the original error
-                            reject(new Error('Cannot load image'));
-                        });
+                    // Try with different proxy services
+                    const proxyUrls = [
+                        `https://images.weserv.nl/?url=${encodeURIComponent(url)}`,
+                        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                        `https://cors-anywhere.herokuapp.com/${url}`
+                    ];
+                    
+                    // Try the first proxy
+                    tryLoadWithProxy(proxyUrls, 0);
                 }
             };
             
+            // Helper function to try loading with different proxies
+            function tryLoadWithProxy(proxyUrls, index) {
+                if (index >= proxyUrls.length) {
+                    // We've tried all proxies, use a placeholder instead
+                    console.warn('All proxy attempts failed, using placeholder image');
+                    resolve('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2VlZWVlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM5OTk5OTkiPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+');
+                    return;
+                }
+                
+                // Try loading with current proxy
+                console.log(`Trying proxy ${index + 1}/${proxyUrls.length}: ${proxyUrls[index]}`);
+                convertImageToBase64(proxyUrls[index])
+                    .then(resolve)
+                    .catch(() => {
+                        // Try the next proxy
+                        tryLoadWithProxy(proxyUrls, index + 1);
+                    });
+            }
+            
+            // Start loading the image
             img.src = url;
         });
     }
@@ -242,7 +547,7 @@ function initWidgetCreator() {
         const imageUrl = customImageUrl || currentImageUrl || 'https://via.placeholder.com/400x300/cccccc/666666?text=No+Image';
         
         // Get the formatted content (either from data attribute or format the current text)
-        const formattedContent = formatTextToHtml(summaryText);
+        const formattedContent = summaryTextarea.dataset.formattedContent || formatTextToHtml(summaryText);
         
         // Update the widget preview
         await updateWidgetPreview(imageUrl, formattedContent, imagePosition);
@@ -251,7 +556,7 @@ function initWidgetCreator() {
         const widgetCode = await generateWidgetCode(imageUrl, formattedContent, imagePosition);
         
         // Show the widget code
-        if (widgetCode) {
+        if (document.getElementById('widget-code') && widgetCode) {
             document.getElementById('widget-code').textContent = widgetCode;
             widgetPreviewContainer.style.display = 'block';
         }
@@ -270,8 +575,10 @@ function initWidgetCreator() {
                 base64Image = await convertImageToBase64(imageUrl);
             } catch (error) {
                 console.error('Error converting image to Base64:', error);
-                showWidgetStatus('Error processing image. Using original URL.', 'error');
-                base64Image = imageUrl; // Fallback to original URL
+                showWidgetStatus('Error processing image. Using original URL or placeholder.', 'error');
+                
+                // Use placeholder if conversion fails
+                base64Image = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2VlZWVlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM5OTk5OTkiPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+';
             }
         }
         
@@ -335,7 +642,7 @@ function initWidgetCreator() {
         widgetPreview.innerHTML = widgetHtml;
     }
     
-    // Format plain text to HTML (detect paragraphs and lists)
+    // Format plain text to HTML with improved detection for paragraphs, lists, and headings
     function formatTextToHtml(text) {
         if (!text) return '';
         
@@ -356,20 +663,41 @@ function initWidgetCreator() {
             }
             
             // Check if it's a list item (bullet point)
-            if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*')) {
+            if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*') || 
+                line.match(/^\d+\.\s/)) { // Numbered lists like "1. Item"
                 if (!inList) {
                     html += '<ul>';
                     inList = true;
                 }
-                html += `<li>${line.substring(1).trim()}</li>`;
+                // Clean up the bullet point or number
+                let cleanedLine = line;
+                if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*')) {
+                    cleanedLine = line.substring(1).trim();
+                } else if (line.match(/^\d+\.\s/)) {
+                    cleanedLine = line.replace(/^\d+\.\s/, '').trim();
+                }
+                html += `<li>${cleanedLine}</li>`;
             } 
-            // Check if it's a heading
-            else if (line.startsWith('Key Features:') || line.startsWith('#')) {
+            // Check if it's a heading - look for common heading patterns
+            else if (line.startsWith('#') || 
+                     line.toUpperCase() === line && line.length < 50 || // All caps short line
+                     line.match(/^(Features|Benefits|Overview|Key Points|Specifications|Details|Summary):/i) ||
+                     line.startsWith('Key Features:')) {
                 if (inList) {
                     html += '</ul>';
                     inList = false;
                 }
-                html += `<h3>${line.replace('#', '').trim()}</h3>`;
+                
+                // Clean up the heading text
+                let headingText = line;
+                if (line.startsWith('#')) {
+                    headingText = line.replace(/^#+\s*/, ''); // Remove # characters
+                }
+                if (line.match(/^(Features|Benefits|Overview|Key Points|Specifications|Details|Summary):/i)) {
+                    headingText = line; // Keep the colon for these common headings
+                }
+                
+                html += `<h3>${headingText.trim()}</h3>`;
             }
             // Regular paragraph
             else {
@@ -398,12 +726,13 @@ function initWidgetCreator() {
                 base64Image = await convertImageToBase64(imageUrl);
             } catch (error) {
                 console.error('Error converting image to Base64:', error);
-                base64Image = imageUrl; // Fallback to original URL
+                // Use placeholder if conversion fails
+                base64Image = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2VlZWVlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIGZpbGw9IiM5OTk5OTkiPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+';
             }
         }
         
-        // Create a simple 2-column x 1-row table with centered image
-        let widgetHtml = `<table style="width:100%; border-collapse:collapse; border:none;">\n  <tr>\n`;
+        // Create responsive table layout
+        let widgetHtml = `<table style="width:100%; border-collapse:collapse; border:none; font-family:Arial, sans-serif;">\n  <tr>\n`;
         
         if (position === 'left') {
             widgetHtml += `    <td style="width:30%; vertical-align:middle; text-align:center; padding:10px;">\n      <img src="${base64Image}" alt="Website Content" style="max-width:100%; height:auto; margin:0 auto; display:block;">\n    </td>\n    <td style="width:70%; vertical-align:top; padding:10px;">\n      ${content}\n    </td>\n`;
@@ -418,21 +747,31 @@ function initWidgetCreator() {
             widgetHtml += `    <td colspan="2" style="padding:10px;">\n      ${content}\n    </td>\n`;
         }
         
-        widgetHtml += `  </tr>\n</table>`;
+        widgetHtml += `  </tr>\n</table>\n\n<!-- Add this style for responsive tables -->\n<style>\n@media (max-width: 600px) {\n  table, tbody, tr, td {\n    display: block;\n    width: 100% !important;\n  }\n  td {\n    padding: 10px 0;\n    text-align: center;\n  }\n}\n</style>`;
         
         return widgetHtml;
     }
     
     // Copy widget code to clipboard
     function copyWidgetCode() {
-        const codeText = document.getElementById('widget-code').textContent;
+        const codeElement = document.getElementById('widget-code');
+        if (!codeElement) return;
+        
+        const codeText = codeElement.textContent;
+        if (!codeText) {
+            showWidgetStatus('No code to copy', 'error');
+            return;
+        }
         
         navigator.clipboard.writeText(codeText)
             .then(() => {
-                copyCodeBtn.textContent = 'Copied!';
-                setTimeout(() => {
-                    copyCodeBtn.textContent = 'Copy Code';
-                }, 2000);
+                if (copyCodeBtn) {
+                    copyCodeBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyCodeBtn.textContent = 'Copy Code';
+                    }, 2000);
+                }
+                showWidgetStatus('Code copied to clipboard!', 'success');
             })
             .catch(err => {
                 console.error('Failed to copy: ', err);
@@ -445,10 +784,13 @@ function initWidgetCreator() {
                 document.execCommand('copy');
                 document.body.removeChild(textarea);
                 
-                copyCodeBtn.textContent = 'Copied!';
-                setTimeout(() => {
-                    copyCodeBtn.textContent = 'Copy Code';
-                }, 2000);
+                if (copyCodeBtn) {
+                    copyCodeBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyCodeBtn.textContent = 'Copy Code';
+                    }, 2000);
+                }
+                showWidgetStatus('Code copied to clipboard!', 'success');
             });
     }
     
@@ -468,6 +810,7 @@ function initWidgetCreator() {
         // Reset state variables
         currentImageUrl = null;
         customImageUrl = null;
+        fetchAttempts = 0;
         
         // Hide preview container
         if (widgetPreviewContainer) {
@@ -490,3 +833,17 @@ function initWidgetCreator() {
 
 // Initialize the widget creator when the DOM is loaded
 document.addEventListener('DOMContentLoaded', initWidgetCreator);
+
+// Also initialize when the tab is clicked
+document.addEventListener('DOMContentLoaded', function() {
+    const widgetTabButton = document.querySelector('.tab-button[data-tab="widget"]');
+    if (widgetTabButton) {
+        widgetTabButton.addEventListener('click', function() {
+            console.log('Widget Creator tab clicked, reinitializing');
+            setTimeout(initWidgetCreator, 100); // Small delay to ensure DOM is updated after tab switch
+        });
+    }
+});
+
+// For debugging - output a message to help troubleshoot
+console.log('Widget Creator script loaded');
