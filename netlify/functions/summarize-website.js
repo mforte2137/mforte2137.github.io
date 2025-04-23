@@ -298,7 +298,7 @@ async function fetchWithFallbackMethod(url, summaryLength) {
   }
 }
 
-// Function to extract and format content - your existing implementation
+// Function to extract and format content - improved with strict paragraph count
 function extractAndFormatContent($, url, summaryLength) {
   // Array to store paragraph content
   const paragraphs = [];
@@ -453,16 +453,28 @@ function extractAndFormatContent($, url, summaryLength) {
     paragraphCount = 4;
   }
   
-  // Limit to requested paragraph count
+  // Limit to requested paragraph count - STRICTLY ENFORCE
   const selectedParagraphs = paragraphs.slice(0, paragraphCount);
   
   // Create plain text version (for editing)
   let plainText = selectedParagraphs.join('\n\n');
   
-  // Add features/benefits to plain text if we have any
-  if (features.length > 0) {
+  // Only add features for 3-4 paragraph summaries, and make it part of the paragraph count
+  let includeFeatures = false;
+  let featureCount = 0;
+  
+  // For 1-2 paragraph options, don't include features
+  // For 3-4 paragraph options, include them but count toward paragraph limit
+  if (summaryLength === "3 Paragraphs" || summaryLength === "4 Paragraphs") {
+    includeFeatures = features.length > 0;
+    // Calculate how many features to show (1 feature ≈ 1 paragraph)
+    featureCount = Math.min(features.length, paragraphCount - selectedParagraphs.length);
+  }
+  
+  // Add features/benefits to plain text if appropriate
+  if (includeFeatures && featureCount > 0) {
     plainText += '\n\nKey Features:\n';
-    features.slice(0, 6).forEach(feature => {
+    features.slice(0, featureCount).forEach(feature => {
       plainText += `• ${feature}\n`;
     });
   }
@@ -473,10 +485,10 @@ function extractAndFormatContent($, url, summaryLength) {
   if (selectedParagraphs.length > 0) {
     formattedContent = selectedParagraphs.map(p => `<p>${p}</p>`).join('');
     
-    // Add features as a bulleted list if we have them
-    if (features.length > 0) {
+    // Add features as a bulleted list if applicable
+    if (includeFeatures && featureCount > 0) {
       formattedContent += '<h3>Key Features:</h3><ul>';
-      features.slice(0, 6).forEach(feature => {
+      features.slice(0, featureCount).forEach(feature => {
         formattedContent += `<li>${feature}</li>`;
       });
       formattedContent += '</ul>';
@@ -486,6 +498,6 @@ function extractAndFormatContent($, url, summaryLength) {
   return {
     plainText: plainText,
     formattedContent: formattedContent,
-    features: features.slice(0, 6)
+    features: features.slice(0, 6) // Still return all features for reference
   };
 }
