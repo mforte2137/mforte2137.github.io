@@ -3,49 +3,149 @@ const cheerio = require('cheerio');
 
 exports.handler = async function(event, context) {
   try {
-    const { url, summaryLength = "2 Paragraphs" } = JSON.parse(event.body);
+    // Parse request body with enhanced parameters
+    const requestBody = JSON.parse(event.body);
+    const { 
+      url, 
+      summaryLength = "2 Paragraphs", 
+      renderJs = true, 
+      waitFor, 
+      premiumProxy, 
+      javascriptEnabled 
+    } = requestBody;
+    
     console.log('Fetching website content from:', url);
     
-    // Use ScrapingBee to fetch the page
-    const apiKey = process.env.SCRAPING_BEE_API_KEY;
-    const scrapingBeeUrl = `https://app.scrapingbee.com/api/v1/?api_key=${apiKey}&url=${encodeURIComponent(url)}&render_js=true`;
+    if (!url) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'URL is required' }),
+      };
+    }
+
+    // Get domain-specific optimized parameters
+    const optimizedParams = getOptimizedParams(url);
+    console.log('Using optimized parameters for domain:', optimizedParams);
     
-    console.log('Making request to ScrapingBee...');
-    const response = await axios.get(scrapingBeeUrl, {
-      responseType: 'arraybuffer'
-    });
+    // Retry mechanism
+    const MAX_ATTEMPTS = 2;
+    let attempts = 0;
+    let error;
     
-    // Convert binary response to text
-    const html = new TextDecoder().decode(response.data);
-    console.log('Response received from ScrapingBee');
+    while (attempts < MAX_ATTEMPTS) {
+      attempts++;
+      try {
+        // Adjust parameters for retry attempts
+        let currentParams = { ...optimizedParams };
+        if (attempts > 1) {
+          console.log(`Retry attempt ${attempts}/${MAX_ATTEMPTS}`);
+          // Increase wait time for retry attempts
+          currentParams.waitFor = currentParams.waitFor ? currentParams.waitFor + 2000 : 5000;
+          currentParams.renderJs = true;
+          currentParams.premiumProxy = true;
+        }
+        
+        // Use user provided parameters if present
+        const finalParams = {
+          renderJs: renderJs !== undefined ? renderJs : currentParams.renderJs,
+          waitFor: waitFor || currentParams.waitFor,
+          premiumProxy: premiumProxy !== undefined ? premiumProxy : currentParams.premiumProxy,
+          javascriptEnabled: javascriptEnabled !== undefined ? javascriptEnabled : currentParams.javascriptEnabled
+        };
+        
+        // Use ScrapingBee to fetch the page
+        const apiKey = process.env.SCRAPING_BEE_API_KEY;
+        let scrapingBeeUrl = `https://app.scrapingbee.com/api/v1/?api_key=${apiKey}&url=${encodeURIComponent(url)}`;
+        
+        // Add parameters to the ScrapingBee URL
+        if (finalParams.renderJs) {
+          scrapingBeeUrl += '&render_js=true';
+        }
+        
+        if (finalParams.waitFor) {
+          scrapingBeeUrl += `&wait=${finalParams.waitFor}`;
+        } else {
+          scrapingBeeUrl += '&wait=2000'; // Default wait time
+        }
+        
+        if (finalParams.premiumProxy) {
+          scrapingBeeUrl += '&premium_proxy=true';
+        }
+        
+        if (finalParams.javascriptEnabled) {
+          scrapingBeeUrl += '&js_scenario={"instructions":[{"wait_for":3000}]}';
+        }
+        
+        // Additional parameters to improve success rate
+        scrapingBeeUrl += '&stealth_proxy=true'; // Use stealth mode
+        scrapingBeeUrl += '&country_code=us'; // US IP address
+        
+        console.log('Making request to ScrapingBee...');
+        const response = await axios.get(scrapingBeeUrl, {
+          responseType: 'arraybuffer',
+          timeout: 30000 // 30 second timeout
+        });
+        
+        // Convert binary response to text
+        const html = new TextDecoder().decode(response.data);
+        console.log('Response received from ScrapingBee');
+        
+        // Process the response
+        const $ = cheerio.load(html);
+        
+        // Remove non-content elements
+        $('script, style, nav, footer, header, aside, .menu, .nav, .footer, .header, .sidebar').remove();
+        
+        // Get the page title
+        const pageTitle = $('title').text().trim();
+        
+        // Extract content from the page
+        const extractionResult = extractAndFormatContent($, url, summaryLength);
+        
+        console.log(`Extracted summary and formatted content for: ${pageTitle}`);
+        
+        // Return the successful result
+        return {
+          statusCode: 200,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type'
+          },
+          body: JSON.stringify({
+            summary: extractionResult.plainText,
+            formattedContent: extractionResult.formattedContent,
+            features: extractionResult.features,
+            title: pageTitle
+          })
+        };
+      } catch (err) {
+        console.error(`Attempt ${attempts} failed:`, err.message);
+        error = err;
+        // Continue to next attempt
+      }
+    }
     
-    // Use Cheerio to parse the HTML
-    const $ = cheerio.load(html);
-    
-    // Remove non-content elements
-    $('script, style, nav, footer, header, aside, .menu, .nav, .footer, .header, .sidebar').remove();
-    
-    // Get the page title
-    const pageTitle = $('title').text().trim();
-    
-    // Extract content from the page
-    const extractionResult = extractAndFormatContent($, url, summaryLength);
-    
-    console.log(`Extracted summary and formatted content for: ${pageTitle}`);
-    
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      },
-      body: JSON.stringify({
-        summary: extractionResult.plainText,
-        formattedContent: extractionResult.formattedContent,
-        features: extractionResult.features,
-        title: pageTitle
-      })
-    };
+    // If all attempts failed, try fallback method
+    console.log('All ScrapingBee attempts failed, trying fallback method');
+    try {
+      const fallbackResult = await fetchWithFallbackMethod(url, summaryLength);
+      
+      return {
+        statusCode: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        },
+        body: JSON.stringify({
+          ...fallbackResult,
+          _note: 'Content extracted using fallback method'
+        })
+      };
+    } catch (fallbackError) {
+      console.error('Fallback method also failed:', fallbackError);
+      // Return the original error
+      throw error;
+    }
   } catch (error) {
     console.error('Function error:', error);
     
@@ -84,7 +184,121 @@ exports.handler = async function(event, context) {
   }
 };
 
-// Function to extract and format content
+// Get optimized parameters based on domain
+function getOptimizedParams(url) {
+  try {
+    const domain = new URL(url).hostname;
+    
+    // Domain-specific optimizations
+    const optimizations = {
+      // Tech sites
+      'techcrunch.com': { renderJs: true, premiumProxy: true, waitFor: 3000 },
+      'theverge.com': { renderJs: true, premiumProxy: true, waitFor: 3000 },
+      'wired.com': { renderJs: true, premiumProxy: true, waitFor: 3000 },
+      
+      // E-commerce sites
+      'amazon.com': { renderJs: true, premiumProxy: true, waitFor: 5000, javascriptEnabled: true },
+      'bestbuy.com': { renderJs: true, premiumProxy: true, waitFor: 5000 },
+      'walmart.com': { renderJs: true, premiumProxy: true, waitFor: 5000 },
+      
+      // MSP and tech vendor sites
+      'microsoft.com': { renderJs: true, waitFor: 3000 },
+      'dell.com': { renderJs: true, waitFor: 3000 },
+      'hp.com': { renderJs: true, waitFor: 3000 },
+      'cisco.com': { renderJs: true, waitFor: 3000 },
+      'ibm.com': { renderJs: true, waitFor: 3000 },
+      'fortinet.com': { renderJs: true, waitFor: 3000 },
+      'sonicwall.com': { renderJs: true, waitFor: 3000 },
+      'watchguard.com': { renderJs: true, waitFor: 3000 },
+      'barracuda.com': { renderJs: true, waitFor: 3000 },
+      'sophos.com': { renderJs: true, waitFor: 3000 },
+      'paloaltonetworks.com': { renderJs: true, waitFor: 3000 },
+      'checkpoint.com': { renderJs: true, waitFor: 3000 },
+      
+      // Default parameters
+      'default': { renderJs: true, waitFor: 2000 }
+    };
+    
+    // Check for partial domain matches
+    for (const [key, value] of Object.entries(optimizations)) {
+      if (domain.includes(key)) {
+        return value;
+      }
+    }
+    
+    return optimizations.default;
+  } catch (error) {
+    console.error('Error getting optimized parameters:', error);
+    return { renderJs: true, waitFor: 2000 };
+  }
+}
+
+// Fallback method using direct HTTP request
+async function fetchWithFallbackMethod(url, summaryLength) {
+  console.log('Using fallback method for:', url);
+  
+  try {
+    // Make a direct request without ScrapingBee
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5'
+      },
+      timeout: 10000 // 10 second timeout
+    });
+    
+    // Parse the HTML
+    const html = response.data;
+    const $ = cheerio.load(html);
+    
+    // Remove non-content elements
+    $('script, style, nav, footer, header, aside, .menu, .nav, .footer, .header, .sidebar').remove();
+    
+    // Get the page title
+    const pageTitle = $('title').text().trim();
+    
+    // Extract content from the page
+    const extractionResult = extractAndFormatContent($, url, summaryLength);
+    
+    return {
+      summary: extractionResult.plainText,
+      formattedContent: extractionResult.formattedContent,
+      features: extractionResult.features,
+      title: pageTitle
+    };
+  } catch (error) {
+    console.error('Fallback extraction failed:', error);
+    
+    // Try a second fallback using just meta tags
+    try {
+      const metaResponse = await axios.get(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        },
+        timeout: 5000 // Shorter timeout for this attempt
+      });
+      
+      const $ = cheerio.load(metaResponse.data);
+      const title = $('title').text().trim();
+      const description = $('meta[name="description"]').attr('content') || 
+                         $('meta[property="og:description"]').attr('content') || 
+                         'No description available';
+      
+      // Create a minimal response with just the meta information
+      return {
+        summary: description,
+        formattedContent: `<p>${description}</p>`,
+        features: [],
+        title: title || 'Unknown Title'
+      };
+    } catch (metaError) {
+      throw new Error('All extraction methods failed');
+    }
+  }
+}
+
+// Function to extract and format content - your existing implementation
 function extractAndFormatContent($, url, summaryLength) {
   // Array to store paragraph content
   const paragraphs = [];
