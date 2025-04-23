@@ -4,8 +4,8 @@
  */
 
 function initAiGenerator() {
-    // Define all necessary DOM elements
-    const contentPreview = document.getElementById('content-preview');
+    // Define all necessary DOM elements - using let instead of const for elements that might be replaced
+    let contentPreview = document.getElementById('content-preview');
     const customImage = document.getElementById('custom-image-ai');
     const fileNameDisplay = document.getElementById('file-name-display');
     const contentTopic = document.getElementById('content-topic');
@@ -25,9 +25,34 @@ function initAiGenerator() {
     const uploadImageGroup = document.getElementById('upload-image-group');
     const searchImageGroup = document.getElementById('search-image-group');
     const imagePositionRadios = document.querySelectorAll('input[name="image-position"]');
+    const previewWrapper = document.getElementById('ai-preview-wrapper');
+
+    // Debug check to verify elements are found correctly
+    const requiredElements = [
+        { name: 'contentPreview', element: contentPreview },
+        { name: 'customImage', element: customImage },
+        { name: 'fileNameDisplay', element: fileNameDisplay },
+        { name: 'contentTopic', element: contentTopic },
+        { name: 'contentTone', element: contentTone },
+        { name: 'aiContentText', element: aiContentText },
+        { name: 'statusDiv', element: statusDiv },
+        { name: 'generateBtn', element: generateBtn },
+        { name: 'clearBtn', element: clearBtn },
+        { name: 'copyHtmlBtn', element: copyHtmlBtn },
+        { name: 'htmlCode', element: htmlCode },
+        { name: 'previewWrapper', element: previewWrapper }
+    ];
+
+    // Check if required elements exist
+    let missingElements = requiredElements.filter(item => !item.element);
+    if (missingElements.length > 0) {
+        console.error('Missing required elements:', missingElements.map(item => item.name).join(', '));
+        return; // Exit initialization if critical elements are missing
+    }
 
     // Return if we're not on the AI Generator tab
     if (!contentTopic || !contentTone) {
+        console.log('Not on AI Generator tab, skipping initialization');
         return;
     }
 
@@ -42,157 +67,158 @@ function initAiGenerator() {
         progressContainer.style.display = 'none';
     }
 
-    // THIS IS CRITICAL: Create a completely controlled preview container
+    // Ensure the preview container is properly set up
     if (contentPreview) {
-        // Replace the original container with our controlled version
-        const originalParent = contentPreview.parentNode;
-        const newContainer = document.createElement('div');
-        newContainer.id = 'content-preview-wrapper';
-        newContainer.style.cssText = 'width: 100%; background: white; padding: 20px; border-radius: 4px;';
-        originalParent.replaceChild(newContainer, contentPreview);
+        console.log('Content preview found, ensuring proper setup');
         
-        // Create a new controlled preview element
-        const newPreview = document.createElement('div');
-        newPreview.id = 'content-preview';
-        newPreview.style.cssText = 'width: 100%; display: block; box-sizing: border-box;';
-        newContainer.appendChild(newPreview);
-        
-        // Update reference to the new element
-        contentPreview = newPreview;
+        // Make sure the container is empty and ready for content
+        while (contentPreview.firstChild) {
+            contentPreview.removeChild(contentPreview.firstChild);
+        }
+    } else {
+        console.error('Content preview element not found');
     }
 
     // Toggle between upload and search options
-    imageSourceRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            if (this.value === 'upload') {
-                uploadImageGroup.style.display = 'block';
-                searchImageGroup.style.display = 'none';
-            } else {
-                uploadImageGroup.style.display = 'none';
-                searchImageGroup.style.display = 'block';
-            }
+    if (imageSourceRadios && imageSourceRadios.length > 0) {
+        imageSourceRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'upload') {
+                    if (uploadImageGroup) uploadImageGroup.style.display = 'block';
+                    if (searchImageGroup) searchImageGroup.style.display = 'none';
+                } else {
+                    if (uploadImageGroup) uploadImageGroup.style.display = 'none';
+                    if (searchImageGroup) searchImageGroup.style.display = 'block';
+                }
+            });
         });
-    });
+    }
 
     // Handle image upload
-    customImage.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            fileNameDisplay.textContent = file.name;
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                customImageBase64 = event.target.result;
-                selectedImageUrl = null;
-                imageAttribution = null;
-                updatePreview();
-                updateHtmlCode();
-            };
-            reader.readAsDataURL(file);
-        } else {
-            fileNameDisplay.textContent = 'No file selected';
-        }
-    });
+    if (customImage) {
+        customImage.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (fileNameDisplay) fileNameDisplay.textContent = file.name;
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    customImageBase64 = event.target.result;
+                    selectedImageUrl = null;
+                    imageAttribution = null;
+                    updatePreview();
+                    updateHtmlCode();
+                };
+                reader.readAsDataURL(file);
+            } else {
+                if (fileNameDisplay) fileNameDisplay.textContent = 'No file selected';
+            }
+        });
+    }
 
     // Handle image search with improved error handling
-    searchImagesBtn.addEventListener('click', async function() {
-        const query = imageSearchQuery.value.trim();
-        if (!query) {
-            showStatus('error', 'Please enter search terms for the image search.');
-            return;
-        }
-
-        // Use the content topic if no specific search query is entered
-        const searchTerm = query || contentTopic.value.trim();
-        
-        if (!searchTerm) {
-            showStatus('error', 'Please enter a search term or specify an MSP service/product.');
-            return;
-        }
-
-        showStatus('info', 'Searching for images...');
-        searchImagesBtn.disabled = true;
-        imageSearchResults.innerHTML = '<p>Searching...</p>';
-
-        try {
-            // Call the Image Search API via Netlify function
-            const response = await fetch('/api/image-search', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    query: searchTerm
-                })
-            });
-
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.error || data.details || 'Image search failed');
+    if (searchImagesBtn) {
+        searchImagesBtn.addEventListener('click', async function() {
+            const query = imageSearchQuery ? imageSearchQuery.value.trim() : '';
+            if (!query) {
+                showStatus('error', 'Please enter search terms for the image search.');
+                return;
             }
+
+            // Use the content topic if no specific search query is entered
+            const searchTerm = query || (contentTopic ? contentTopic.value.trim() : '');
             
-            if (!data.images || data.images.length === 0) {
-                imageSearchResults.innerHTML = '<p>No images found. Try different search terms.</p>';
-                showStatus('info', 'No images found for your search terms.');
-            } else {
-                // Display image results
-                imageSearchResults.innerHTML = '';
-                data.images.forEach((image, index) => {
-                    const imageItem = document.createElement('div');
-                    imageItem.className = 'image-item';
-                    imageItem.dataset.url = image.url;
-                    imageItem.dataset.photographer = image.photographer || '';
-                    imageItem.dataset.photographerUrl = image.photographerUrl || '';
-                    
-                    const img = document.createElement('img');
-                    img.src = image.thumbnail;
-                    img.alt = image.name;
-                    img.onerror = function() {
-                        // Replace broken images with a placeholder
-                        this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%22%20height%3D%22100%22%3E%3Crect%20fill%3D%22%23ddd%22%20width%3D%22100%22%20height%3D%22100%22%2F%3E%3Ctext%20fill%3D%22%23666%22%20font-family%3D%22sans-serif%22%20font-size%3D%2210%22%20x%3D%2210%22%20y%3D%2255%22%3EImage%20Error%3C%2Ftext%3E%3C%2Fsvg%3E';
-                    };
-                    
-                    // Add photographer attribution
-                    const attribution = document.createElement('div');
-                    attribution.className = 'image-attribution';
-                    attribution.innerHTML = `Photo by <a href="${image.photographerUrl}" target="_blank">${image.photographer}</a> on <a href="https://unsplash.com" target="_blank">Unsplash</a>`;
-                    
-                    imageItem.appendChild(img);
-                    imageItem.appendChild(attribution);
-                    imageSearchResults.appendChild(imageItem);
-                    
-                    // Add click event to select image
-                    imageItem.addEventListener('click', function() {
-                        // Remove selected class from all images
-                        document.querySelectorAll('.image-item').forEach(item => {
-                            item.classList.remove('selected');
-                        });
-                        
-                        // Add selected class to clicked image
-                        this.classList.add('selected');
-                        
-                        // Save the selected image URL
-                        selectedImageUrl = this.dataset.url;
-                        
-                        // Fetch and convert the image to base64 with attribution
-                        fetchImageAsBase64(
-                            selectedImageUrl, 
-                            this.dataset.photographer, 
-                            this.dataset.photographerUrl
-                        );
-                    });
+            if (!searchTerm) {
+                showStatus('error', 'Please enter a search term or specify an MSP service/product.');
+                return;
+            }
+
+            showStatus('info', 'Searching for images...');
+            searchImagesBtn.disabled = true;
+            if (imageSearchResults) imageSearchResults.innerHTML = '<p>Searching...</p>';
+
+            try {
+                // Call the Image Search API via Netlify function
+                const response = await fetch('/api/image-search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: searchTerm
+                    })
                 });
+
+                const data = await response.json();
                 
-                showStatus('success', 'Images found! Click on an image to select it.');
+                if (!response.ok) {
+                    throw new Error(data.error || data.details || 'Image search failed');
+                }
+                
+                if (!data.images || data.images.length === 0) {
+                    if (imageSearchResults) imageSearchResults.innerHTML = '<p>No images found. Try different search terms.</p>';
+                    showStatus('info', 'No images found for your search terms.');
+                } else {
+                    // Display image results
+                    if (imageSearchResults) {
+                        imageSearchResults.innerHTML = '';
+                        data.images.forEach((image, index) => {
+                            const imageItem = document.createElement('div');
+                            imageItem.className = 'image-item';
+                            imageItem.dataset.url = image.url;
+                            imageItem.dataset.photographer = image.photographer || '';
+                            imageItem.dataset.photographerUrl = image.photographerUrl || '';
+                            
+                            const img = document.createElement('img');
+                            img.src = image.thumbnail;
+                            img.alt = image.name;
+                            img.onerror = function() {
+                                // Replace broken images with a placeholder
+                                this.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%22%20height%3D%22100%22%3E%3Crect%20fill%3D%22%23ddd%22%20width%3D%22100%22%20height%3D%22100%22%2F%3E%3Ctext%20fill%3D%22%23666%22%20font-family%3D%22sans-serif%22%20font-size%3D%2210%22%20x%3D%2210%22%20y%3D%2255%22%3EImage%20Error%3C%2Ftext%3E%3C%2Fsvg%3E';
+                            };
+                            
+                            // Add photographer attribution
+                            const attribution = document.createElement('div');
+                            attribution.className = 'image-attribution';
+                            attribution.innerHTML = `Photo by <a href="${image.photographerUrl}" target="_blank">${image.photographer}</a> on <a href="https://unsplash.com" target="_blank">Unsplash</a>`;
+                            
+                            imageItem.appendChild(img);
+                            imageItem.appendChild(attribution);
+                            imageSearchResults.appendChild(imageItem);
+                            
+                            // Add click event to select image
+                            imageItem.addEventListener('click', function() {
+                                // Remove selected class from all images
+                                document.querySelectorAll('.image-item').forEach(item => {
+                                    item.classList.remove('selected');
+                                });
+                                
+                                // Add selected class to clicked image
+                                this.classList.add('selected');
+                                
+                                // Save the selected image URL
+                                selectedImageUrl = this.dataset.url;
+                                
+                                // Fetch and convert the image to base64 with attribution
+                                fetchImageAsBase64(
+                                    selectedImageUrl, 
+                                    this.dataset.photographer, 
+                                    this.dataset.photographerUrl
+                                );
+                            });
+                        });
+                    }
+                    
+                    showStatus('success', 'Images found! Click on an image to select it.');
+                }
+            } catch (error) {
+                console.error('Image search error:', error);
+                showStatus('error', 'An error occurred during image search: ' + error.message);
+                if (imageSearchResults) imageSearchResults.innerHTML = '<p>Error loading images. Please try again.</p>';
+            } finally {
+                searchImagesBtn.disabled = false;
             }
-        } catch (error) {
-            console.error('Image search error:', error);
-            showStatus('error', 'An error occurred during image search: ' + error.message);
-            imageSearchResults.innerHTML = '<p>Error loading images. Please try again.</p>';
-        } finally {
-            searchImagesBtn.disabled = false;
-        }
-    });
+        });
+    }
 
     // Fetch image and convert to base64
     async function fetchImageAsBase64(imageUrl, photographer, photographerUrl) {
@@ -241,128 +267,163 @@ function initAiGenerator() {
     }
 
     // Handle image position change
-    imagePositionRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            updatePreview();
-            updateHtmlCode();
+    if (imagePositionRadios && imagePositionRadios.length > 0) {
+        imagePositionRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                updatePreview();
+                updateHtmlCode();
+            });
         });
-    });
+    }
 
     // Generate AI content
-    generateBtn.addEventListener('click', async function() {
-        const topic = contentTopic.value.trim();
-        const tone = contentTone.value;
-        const paragraphs = parseInt(contentLength.value);
+    if (generateBtn) {
+        generateBtn.addEventListener('click', async function() {
+            console.log('Generate AI Content button clicked');
+            
+            const topic = contentTopic ? contentTopic.value.trim() : '';
+            const tone = contentTone ? contentTone.value : 'professional';
+            const paragraphs = contentLength ? parseInt(contentLength.value) : 2;
 
-        if (!topic) {
-            showStatus('error', 'Please enter an MSP service or product to generate content about.');
-            return;
-        }
-
-        // Show progress
-        showStatus('info', 'Generating content for ' + topic + '...');
-        progressContainer.style.display = 'block';
-        generateBtn.disabled = true;
-
-        try {
-            // Use the Netlify function to call Claude API
-            const response = await fetch('/api/claude-api', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    topic,
-                    tone,
-                    paragraphs
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || `API request failed with status ${response.status}`);
+            if (!topic) {
+                showStatus('error', 'Please enter an MSP service or product to generate content about.');
+                return;
             }
 
-            const data = await response.json();
-            generatedContent = data.content;
+            // Show progress
+            showStatus('info', 'Generating content for ' + topic + '...');
+            if (progressContainer) progressContainer.style.display = 'block';
+            generateBtn.disabled = true;
 
-            aiContentText.value = generatedContent;
-            aiContentText.disabled = false;
+            try {
+                console.log('Calling AI API with:', { topic, tone, paragraphs });
+                
+                // Use the Netlify function to call Claude API
+                const response = await fetch('/api/claude-api', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        topic,
+                        tone,
+                        paragraphs
+                    })
+                });
 
-            showStatus('success', 'Content generated successfully!');
-            
-            // If no image is selected yet, automatically search for one
-            if (!customImageBase64 && document.getElementById('image-source-search').checked) {
-                imageSearchQuery.value = topic;
-                searchImagesBtn.click();
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `API request failed with status ${response.status}`);
+                }
+
+                const data = await response.json();
+                generatedContent = data.content;
+
+                if (aiContentText) {
+                    aiContentText.value = generatedContent;
+                    aiContentText.disabled = false;
+                }
+
+                showStatus('success', 'Content generated successfully!');
+                
+                // If no image is selected yet, automatically search for one
+                if (!customImageBase64 && document.getElementById('image-source-search') && document.getElementById('image-source-search').checked) {
+                    if (imageSearchQuery) {
+                        imageSearchQuery.value = topic;
+                        if (searchImagesBtn) searchImagesBtn.click();
+                    }
+                }
+                
+                updatePreview();
+                updateHtmlCode();
+            } catch (error) {
+                console.error('Error generating content:', error);
+                showStatus('error', 'An error occurred: ' + error.message);
+            } finally {
+                if (progressContainer) progressContainer.style.display = 'none';
+                generateBtn.disabled = false;
             }
-            
-            updatePreview();
-            updateHtmlCode();
-        } catch (error) {
-            showStatus('error', 'An error occurred: ' + error.message);
-        } finally {
-            progressContainer.style.display = 'none';
-            generateBtn.disabled = false;
-        }
-    });
+        });
+    }
 
     // Clear all fields
-    clearBtn.addEventListener('click', function() {
-        contentTopic.value = '';
-        contentTone.selectedIndex = 0;
-        contentLength.selectedIndex = 1;
-        aiContentText.value = '';
-        generatedContent = '';
-        customImageBase64 = null;
-        selectedImageUrl = null;
-        imageAttribution = null;
-        fileNameDisplay.textContent = 'No file selected';
-        document.getElementById('image-source-upload').checked = true;
-        uploadImageGroup.style.display = 'block';
-        searchImageGroup.style.display = 'none';
-        document.getElementById('image-left').checked = true;
-        imageSearchQuery.value = '';
-        imageSearchResults.innerHTML = '';
-        customImage.value = ''; // Clear the file input
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            if (contentTopic) contentTopic.value = '';
+            if (contentTone) contentTone.selectedIndex = 0;
+            if (contentLength) contentLength.selectedIndex = 1;
+            if (aiContentText) aiContentText.value = '';
+            generatedContent = '';
+            customImageBase64 = null;
+            selectedImageUrl = null;
+            imageAttribution = null;
+            if (fileNameDisplay) fileNameDisplay.textContent = 'No file selected';
+            
+            const uploadRadio = document.getElementById('image-source-upload');
+            if (uploadRadio) uploadRadio.checked = true;
+            
+            if (uploadImageGroup) uploadImageGroup.style.display = 'block';
+            if (searchImageGroup) searchImageGroup.style.display = 'none';
+            
+            const leftPositionRadio = document.getElementById('image-left');
+            if (leftPositionRadio) leftPositionRadio.checked = true;
+            
+            if (imageSearchQuery) imageSearchQuery.value = '';
+            if (imageSearchResults) imageSearchResults.innerHTML = '';
+            if (customImage) customImage.value = ''; // Clear the file input
 
-        // Clear preview and HTML
-        contentPreview.innerHTML = '';
-        htmlCode.textContent = '';
+            // Clear preview and HTML
+            if (contentPreview) contentPreview.innerHTML = '';
+            if (htmlCode) htmlCode.textContent = '';
 
-        showStatus('info', 'All fields cleared.');
-    });
+            showStatus('info', 'All fields cleared.');
+        });
+    }
 
     // Update content when edited
-    aiContentText.addEventListener('input', function() {
-        generatedContent = this.value;
-        updatePreview();
-        updateHtmlCode();
-    });
+    if (aiContentText) {
+        aiContentText.addEventListener('input', function() {
+            generatedContent = this.value;
+            updatePreview();
+            updateHtmlCode();
+        });
+    }
 
     // Copy HTML code
-    copyHtmlBtn.addEventListener('click', function() {
-        navigator.clipboard.writeText(htmlCode.textContent)
-        .then(() => {
-            showStatus('success', 'HTML code copied to clipboard!');
-        })
-        .catch(err => {
-            showStatus('error', 'Failed to copy code: ' + err);
+    if (copyHtmlBtn) {
+        copyHtmlBtn.addEventListener('click', function() {
+            if (!htmlCode || !htmlCode.textContent) {
+                showStatus('error', 'No HTML code to copy.');
+                return;
+            }
             
-            // Fallback method
-            const textarea = document.createElement('textarea');
-            textarea.value = htmlCode.textContent;
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-            
-            showStatus('success', 'HTML code copied to clipboard!');
+            navigator.clipboard.writeText(htmlCode.textContent)
+            .then(() => {
+                showStatus('success', 'HTML code copied to clipboard!');
+            })
+            .catch(err => {
+                console.error('Clipboard error:', err);
+                showStatus('error', 'Failed to copy code: ' + err);
+                
+                // Fallback method
+                const textarea = document.createElement('textarea');
+                textarea.value = htmlCode.textContent;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                
+                showStatus('success', 'HTML code copied to clipboard!');
+            });
         });
-    });
+    }
 
     // Helper functions
     function showStatus(type, message) {
+        console.log(`Status: [${type}] ${message}`);
+        
+        if (!statusDiv) return;
+        
         statusDiv.textContent = message;
         statusDiv.className = 'status ' + type;
         statusDiv.style.display = 'block';
@@ -374,6 +435,8 @@ function initAiGenerator() {
     }
 
     function getImagePosition() {
+        if (!imagePositionRadios || imagePositionRadios.length === 0) return 'left';
+        
         for (const radio of imagePositionRadios) {
             if (radio.checked) {
                 return radio.value;
@@ -384,6 +447,17 @@ function initAiGenerator() {
 
     // DIRECT DOM MANIPULATION PREVIEW
     function updatePreview() {
+        console.log('Updating preview with:', {
+            hasImage: !!customImageBase64,
+            hasContent: !!generatedContent,
+            imagePosition: getImagePosition()
+        });
+        
+        if (!contentPreview) {
+            console.error('Cannot update preview: content preview element not found');
+            return;
+        }
+        
         // First clear any existing content
         while (contentPreview.firstChild) {
             contentPreview.removeChild(contentPreview.firstChild);
@@ -440,6 +514,8 @@ function initAiGenerator() {
             const paragraphs = generatedContent.split('\n\n');
             
             paragraphs.forEach(text => {
+                if (!text.trim()) return; // Skip empty paragraphs
+                
                 const p = document.createElement('p');
                 p.textContent = text;
                 p.style.cssText = 'margin: 0 0 15px 0;';
@@ -496,6 +572,8 @@ function initAiGenerator() {
             const paragraphs = generatedContent.split('\n\n');
             
             paragraphs.forEach(text => {
+                if (!text.trim()) return; // Skip empty paragraphs
+                
                 const p = document.createElement('p');
                 p.textContent = text;
                 p.style.cssText = 'margin: 0 0 15px 0;';
@@ -511,8 +589,15 @@ function initAiGenerator() {
 
     // Update HTML code
     function updateHtmlCode() {
+        console.log('Updating HTML code');
+        
+        if (!htmlCode) {
+            console.error('Cannot update HTML code: HTML code element not found');
+            return;
+        }
+        
         const imagePosition = getImagePosition();
-        const topic = contentTopic.value.trim() || 'MSP Service';
+        const topic = contentTopic ? contentTopic.value.trim() : 'MSP Service';
 
         let htmlCodeContent = '';
 
@@ -582,6 +667,7 @@ td {
             // Both image and content - create two-column layout
             const formattedContent = generatedContent
                 .split('\n\n')
+                .filter(p => p.trim())
                 .map(p => `<p>${p}</p>`)
                 .join('\n  ');
 
@@ -645,6 +731,7 @@ td {
             // Only content - use a single column table for consistency
             const formattedContent = generatedContent
                 .split('\n\n')
+                .filter(p => p.trim())
                 .map(p => `<p>${p}</p>`)
                 .join('\n  ');
 
@@ -665,7 +752,27 @@ td {
 
         htmlCode.textContent = htmlCodeContent;
     }
+    
+    // Log successful initialization
+    console.log('AI Generator successfully initialized');
 }
 
 // Initialize the AI generator when the DOM is loaded
-document.addEventListener('DOMContentLoaded', initAiGenerator);
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing AI Generator');
+    initAiGenerator();
+});
+
+// Also initialize when the tab is clicked
+document.addEventListener('DOMContentLoaded', function() {
+    const aiTabButton = document.querySelector('.tab-button[data-tab="ai-generator"]');
+    if (aiTabButton) {
+        aiTabButton.addEventListener('click', function() {
+            console.log('AI Generator tab clicked, reinitializing');
+            setTimeout(initAiGenerator, 100); // Small delay to ensure DOM is updated after tab switch
+        });
+    }
+});
+
+// For debugging - output a message to help troubleshoot
+console.log('AI Generator script loaded');
