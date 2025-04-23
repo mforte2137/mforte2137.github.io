@@ -1,18 +1,15 @@
 /* AI Generator Styles */
-
 /* Radio button styles */
 .radio-options {
     display: flex;
     gap: 15px;
     margin-top: 10px;
 }
-
 .radio-option {
     display: flex;
     align-items: center;
     gap: 5px;
 }
-
 /* Upload button styles */
 .upload-btn-wrapper {
     position: relative;
@@ -20,7 +17,6 @@
     display: inline-block;
     margin-top: 10px;
 }
-
 .upload-btn {
     border: 2px solid #2980b9;
     color: white;
@@ -30,7 +26,6 @@
     font-size: 14px;
     cursor: pointer;
 }
-
 .upload-btn-wrapper input[type=file] {
     font-size: 100px;
     position: absolute;
@@ -39,7 +34,6 @@
     opacity: 0;
     cursor: pointer;
 }
-
 /* Image Gallery Styles */
 .image-gallery {
     display: grid;
@@ -47,7 +41,6 @@
     gap: 10px;
     margin-top: 15px;
 }
-
 .image-item {
     border: 2px solid transparent;
     border-radius: 4px;
@@ -56,22 +49,18 @@
     overflow: hidden;
     height: 100px;
 }
-
 .image-item img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     transition: transform 0.3s;
 }
-
 .image-item:hover img {
     transform: scale(1.05);
 }
-
 .image-item.selected {
     border-color: #2980b9;
 }
-
 .image-attribution {
     position: absolute;
     bottom: 0;
@@ -85,16 +74,13 @@
     opacity: 0;
     transition: opacity 0.3s;
 }
-
 .image-attribution a {
     color: white;
     text-decoration: underline;
 }
-
 .image-item:hover .image-attribution {
     opacity: 1;
 }
-
 .search-info {
     background-color: #f8f4e5;
     border-left: 4px solid #f0ad4e;
@@ -103,7 +89,6 @@
     font-size: 14px;
     border-radius: 0 4px 4px 0;
 }
-
 /* Output Sections - Preview above HTML Code */
 .output-container {
     display: flex;
@@ -111,7 +96,6 @@
     gap: 20px;
     margin-top: 20px;
 }
-
 /* Preview / Output Sections */
 .preview-section, .html-output-section {
     background-color: #f5f5f5;
@@ -119,15 +103,25 @@
     padding: 20px;
     border: none;
 }
-
-.preview-container {
-    background-color: white;
-    border: none;
+/* The preview wrapper provides isolation from parent styles */
+#ai-preview-wrapper {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    background: white;
     border-radius: 4px;
     padding: 20px;
-    margin-top: 10px;
+    margin: 0;
+    border: 1px solid #ddd;
 }
-
+/* Ensure the content preview container doesn't inherit unwanted styles */
+#content-preview {
+    width: 100%;
+    display: block;
+    margin: 0;
+    padding: 0;
+    min-height: 100px;
+}
 /* Content layout with image left or right */
 .content-with-image {
     display: grid;
@@ -135,29 +129,76 @@
     gap: 20px;
     align-items: center;
 }
-
 .content-with-image.image-left {
     grid-template-areas: "image content";
 }
-
 .content-with-image.image-right {
     grid-template-areas: "content image";
 }
-
 .content-with-image .image-container {
     grid-area: image;
     text-align: center;
 }
-
 .content-with-image .text-container {
     grid-area: content;
 }
-
 .content-with-image img {
     max-width: 100%;
     height: auto;
 }
-
+/* Status messages */
+.status {
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+    display: none;
+}
+.status.success {
+    background-color: #d4edda;
+    border-left: 4px solid #28a745;
+    color: #155724;
+}
+.status.error {
+    background-color: #f8d7da;
+    border-left: 4px solid #dc3545;
+    color: #721c24;
+}
+.status.info {
+    background-color: #d1ecf1;
+    border-left: 4px solid #17a2b8;
+    color: #0c5460;
+}
+/* Progress container styling */
+.progress-container {
+    margin: 15px 0;
+    display: none;
+}
+.progress-container progress {
+    width: 100%;
+    height: 15px;
+}
+/* Code container styling */
+.code-container {
+    margin-top: 20px;
+}
+.code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.code-content {
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-family: monospace;
+    font-size: 14px;
+    line-height: 1.5;
+}
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .content-with-image {
