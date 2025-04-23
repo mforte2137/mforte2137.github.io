@@ -69,32 +69,55 @@ function initPdfExtractor() {
         dropzone.addEventListener(eventName, unhighlight);
     });
     
-    // Handle file selection
-    dropzone.addEventListener('click', () => {
-        fileInput.click();
-    });
+// Handle file selection
+dropzone.addEventListener('click', () => {
+    fileInput.click();
+});
+
+// File input change handler
+fileInput.addEventListener('change', function(e) {
+    const files = this.files;
+    if (!files || files.length === 0) return;
     
-    // File input change handler - Fixed promise chain
-    fileInput.addEventListener('change', (e) => {
-        const files = e.target.files;
-        if (files.length === 0) return;
-        
-        // Filter for PDF files
-        const pdfFiles = Array.from(files).filter(file => file.type === 'application/pdf');
-        
-        if (pdfFiles.length === 0) {
-            showStatus('No PDF files were selected.', 'error');
-            return;
-        }
-        
-        // Store the files and enable the process button
-        uploadedFiles = pdfFiles;
-        logMessage(`Selected ${uploadedFiles.length} PDF files`);
-        processBtn.disabled = false;
-        
-        // Clear previous results
-        previewContainer.innerHTML = '';
-        hideStatus();
+    // Filter for PDF files
+    const pdfFiles = Array.from(files).filter(file => file.type === 'application/pdf');
+    
+    if (pdfFiles.length === 0) {
+        showStatus('No PDF files were selected.', 'error');
+        return;
+    }
+    
+    // Store the files and enable the process button
+    uploadedFiles = pdfFiles;
+    logMessage(`Selected ${uploadedFiles.length} PDF files`);
+    processBtn.disabled = false;
+    
+    // Clear previous results
+    previewContainer.innerHTML = '';
+    hideStatus();
+});
+
+// Drop handler
+dropzone.addEventListener('drop', function(e) {
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+    
+    // Filter for PDF files
+    const pdfFiles = Array.from(files).filter(file => file.type === 'application/pdf');
+    
+    if (pdfFiles.length === 0) {
+        showStatus('No PDF files were selected.', 'error');
+        return;
+    }
+    
+    // Store the files and enable the process button
+    uploadedFiles = pdfFiles;
+    logMessage(`Selected ${uploadedFiles.length} PDF files`);
+    processBtn.disabled = false;
+    
+    // Clear previous results
+    previewContainer.innerHTML = '';
+    hideStatus();
     });
     
     // Drop handler - Fixed promise chain
