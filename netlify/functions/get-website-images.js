@@ -54,7 +54,7 @@ exports.handler = async function(event, context) {
         };
         
         // Call ScrapingBee with the optimized parameters
-        const result = await fetchContentFromScrapingBee(url, finalParams);
+        const result = await fetchContentFromScrapingBee(url, finalParams, summaryLength);
         
         // If successful, return the result
         return {
@@ -75,7 +75,7 @@ exports.handler = async function(event, context) {
     // If all attempts failed, try fallback method
     console.log('All ScrapingBee attempts failed, trying fallback method');
     try {
-      const fallbackResult = await fetchWithFallbackMethod(url);
+      const fallbackResult = await fetchWithFallbackMethod(url, summaryLength);
       return {
         statusCode: 200,
         headers: {
@@ -141,6 +141,13 @@ function getOptimizedParams(url) {
       'hp.com': { renderJs: true, waitFor: 3000 },
       'cisco.com': { renderJs: true, waitFor: 3000 },
       'ibm.com': { renderJs: true, waitFor: 3000 },
+      'fortinet.com': { renderJs: true, waitFor: 3000 },
+      'sonicwall.com': { renderJs: true, waitFor: 3000 },
+      'watchguard.com': { renderJs: true, waitFor: 3000 },
+      'barracuda.com': { renderJs: true, waitFor: 3000 },
+      'sophos.com': { renderJs: true, waitFor: 3000 },
+      'paloaltonetworks.com': { renderJs: true, waitFor: 3000 },
+      'checkpoint.com': { renderJs: true, waitFor: 3000 },
       
       // Default parameters
       'default': { renderJs: true, waitFor: 2000 }
@@ -161,7 +168,7 @@ function getOptimizedParams(url) {
 }
 
 // Fetch content using ScrapingBee
-async function fetchContentFromScrapingBee(url, params) {
+async function fetchContentFromScrapingBee(url, params, summaryLength) {
   // ScrapingBee API key from environment variables
   const apiKey = process.env.SCRAPING_BEE_API_KEY || process.env.SCRAPINGBEE_API_KEY;
   
@@ -216,7 +223,7 @@ async function fetchContentFromScrapingBee(url, params) {
   let mainImage = findMainImage($, url);
   
   // Extract and process the main content
-  const contentResult = extractContent($, url, params.summaryLength || "2 Paragraphs");
+  const contentResult = extractContent($, url, summaryLength);
   
   // Ensure the image URL is absolute
   if (mainImage) {
@@ -252,7 +259,7 @@ async function fetchContentFromScrapingBee(url, params) {
 }
 
 // Fallback method using direct HTTP request
-async function fetchWithFallbackMethod(url) {
+async function fetchWithFallbackMethod(url, summaryLength) {
   console.log('Using fallback method for:', url);
   
   try {
@@ -281,7 +288,7 @@ async function fetchWithFallbackMethod(url) {
     const mainImage = findMainImage($, url);
     
     // Extract some basic content
-    const contentResult = extractContent($, url, "2 Paragraphs");
+    const contentResult = extractContent($, url, summaryLength);
     
     return {
       mainImage: mainImage ? new URL(mainImage, url).href : null,
@@ -297,7 +304,7 @@ async function fetchWithFallbackMethod(url) {
   }
 }
 
-// Helper function to find the main image (using your existing logic)
+// Helper function to find the main image
 function findMainImage($, url) {
   // 1. First try Open Graph images (usually the main featured image)
   let mainImage = $('meta[property="og:image"]').attr('content');
@@ -396,7 +403,7 @@ function findMainImage($, url) {
   return mainImage;
 }
 
-// Helper function to extract and process content (using your existing logic)
+// Helper function to extract and process content (updated to strictly enforce paragraph count)
 function extractContent($, url, summaryLength) {
   let content = '';
   let paragraphs = [];
@@ -503,26 +510,40 @@ function extractContent($, url, summaryLength) {
     paragraphCount = 4;
   }
   
-  // Build the content string (limit to specified paragraph count)
-  content = paragraphs.slice(0, paragraphCount).join('\n\n');
+  // Strictly enforce paragraph count
+  const contentParagraphs = paragraphs.slice(0, paragraphCount);
   
-  // Format features for display
+  // Build the content string (limit to specified paragraph count)
+  content = contentParagraphs.join('\n\n');
+  
+  // Determine if we should include features based on paragraph count
+  let includeFeatures = false;
+  let featureCount = 0;
+  
+  // For 1-2 paragraph options, don't include features
+  // For 3-4 paragraph options, include them but count toward paragraph limit
+  if (summaryLength === "3 Paragraphs" || summaryLength === "4 Paragraphs") {
+    includeFeatures = features.length > 0;
+    // Calculate how many features to show (consider remaining paragraph count)
+    featureCount = Math.min(features.length, paragraphCount - contentParagraphs.length);
+  }
+  
+  // Add features only if we have room in our paragraph count
   let formattedFeatures = '';
-  if (features.length > 0) {
-    formattedFeatures = '\n\nKey Features:\n' + features.slice(0, 6).map(feature => `• ${feature}`).join('\n');
+  if (includeFeatures && featureCount > 0) {
+    formattedFeatures = '\n\nKey Features:\n' + features.slice(0, featureCount).map(feature => `• ${feature}`).join('\n');
   }
   
   // Create a nicely formatted HTML version
   let formattedContent = '';
-  const contentParagraphs = paragraphs.slice(0, paragraphCount);
   
   if (contentParagraphs.length > 0) {
     formattedContent = contentParagraphs.map(p => `<p>${p}</p>`).join('');
     
-    // Add features as a bulleted list if we have them
-    if (features.length > 0) {
+    // Add features as a bulleted list if we have room
+    if (includeFeatures && featureCount > 0) {
       formattedContent += '<h3>Key Features:</h3><ul>';
-      features.slice(0, 6).forEach(feature => {
+      features.slice(0, featureCount).forEach(feature => {
         formattedContent += `<li>${feature}</li>`;
       });
       formattedContent += '</ul>';
@@ -532,6 +553,6 @@ function extractContent($, url, summaryLength) {
   return {
     content: content + formattedFeatures,
     formattedContent: formattedContent,
-    features: features.slice(0, 6)
+    features: features.slice(0, 6) // Keep full list of features for reference
   };
 }
