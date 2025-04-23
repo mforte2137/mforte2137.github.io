@@ -222,128 +222,129 @@
         </div>
     </div>
     
-    <!-- AI Content Generator Tab -->
-    <div id="ai-generator" class="tab-content">
-        <p>Generate professional marketing content for MSP services and products using AI.</p>
+<!-- AI Content Generator Tab -->
+<div id="ai-generator" class="tab-content">
+    <p>Generate professional marketing content for MSP services and products using AI.</p>
 
-        <div class="container">
+    <div class="container">
+        <div class="options">
+            <div class="option-group">
+                <label for="content-topic">MSP Service or Product:</label>
+                <input type="text" id="content-topic" placeholder="Enter topic (e.g., Microsoft 365 Business Premium)" style="width: 100%;">
+            </div>
+
+            <div class="option-group">
+                <label for="content-tone">Tone:</label>
+                <select id="content-tone">
+                    <option value="professional">Professional</option>
+                    <option value="casual">Casual</option>
+                    <option value="enthusiastic">Enthusiastic</option>
+                    <option value="informative">Informative</option>
+                </select>
+            </div>
+
+            <div class="option-group">
+                <label for="content-length">Content Length:</label>
+                <select id="content-length">
+                    <option value="1">1 Paragraph</option>
+                    <option value="2" selected>2 Paragraphs</option>
+                    <option value="3">3 Paragraphs</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="button-container">
+            <button id="generate-ai-btn">Generate AI Content</button>
+            <button id="clear-ai-btn">Clear All Fields</button>
+        </div>
+
+        <div id="ai-status" class="status"></div>
+
+        <div class="progress-container" id="ai-progress-container">
+            <p id="ai-progress-text">Generating content...</p>
+            <progress id="ai-progress-bar" value="50" max="100"></progress>
+        </div>
+
+        <div class="image-section">
+            <h3>Add Image for Content</h3>
             <div class="options">
                 <div class="option-group">
-                    <label for="content-topic">MSP Service or Product:</label>
-                    <input type="text" id="content-topic" placeholder="Enter topic (e.g., Microsoft 365 Business Premium)" style="width: 100%;">
+                    <label for="image-source">Image Source:</label>
+                    <div class="radio-options">
+                        <div class="radio-option">
+                            <input type="radio" id="image-source-upload" name="image-source" value="upload" checked>
+                            <label for="image-source-upload">Upload</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="image-source-search" name="image-source" value="search">
+                            <label for="image-source-search">Search</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="option-group" id="upload-image-group">
+                    <label for="custom-image-ai">Upload Image:</label>
+                    <div class="upload-btn-wrapper">
+                        <button class="upload-btn">Choose File</button>
+                        <input type="file" id="custom-image-ai" accept="image/*">
+                    </div>
+                    <small id="file-name-display">No file selected</small>
+                </div>
+
+                <div class="option-group" id="search-image-group" style="display: none;">
+                    <label for="image-search-query">Search for Image:</label>
+                    <div class="search-info">
+                        <p><strong>Image Search Tips:</strong> If you need an exact product image, please upload a file. If you'd like a general office image then search for something like "woman with laptop" or "modern office".</p>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="image-search-query" placeholder="Enter image search terms" style="flex-grow: 1;">
+                        <button id="search-images-btn" class="upload-btn">Search</button>
+                    </div>
+                    <div id="image-search-results" class="image-gallery"></div>
                 </div>
 
                 <div class="option-group">
-                    <label for="content-tone">Tone:</label>
-                    <select id="content-tone">
-                        <option value="professional">Professional</option>
-                        <option value="casual">Casual</option>
-                        <option value="enthusiastic">Enthusiastic</option>
-                        <option value="informative">Informative</option>
-                    </select>
-                </div>
-
-                <div class="option-group">
-                    <label for="content-length">Content Length:</label>
-                    <select id="content-length">
-                        <option value="1">1 Paragraph</option>
-                        <option value="2" selected>2 Paragraphs</option>
-                        <option value="3">3 Paragraphs</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="button-container">
-                <button id="generate-ai-btn">Generate AI Content</button>
-                <button id="clear-ai-btn">Clear All Fields</button>
-            </div>
-
-            <div id="ai-status" class="status"></div>
-
-            <div class="progress-container" id="ai-progress-container">
-                <p id="ai-progress-text">Generating content...</p>
-                <progress id="ai-progress-bar" value="50" max="100"></progress>
-            </div>
-
-            <div class="image-section">
-                <h3>Add Image for Content</h3>
-                <div class="options">
-                    <div class="option-group">
-                        <label for="image-source">Image Source:</label>
-                        <div class="radio-options">
-                            <div class="radio-option">
-                                <input type="radio" id="image-source-upload" name="image-source" value="upload" checked>
-                                <label for="image-source-upload">Upload</label>
-                            </div>
-                            <div class="radio-option">
-                                <input type="radio" id="image-source-search" name="image-source" value="search">
-                                <label for="image-source-search">Search</label>
-                            </div>
+                    <label>Image Position:</label>
+                    <div class="radio-options">
+                        <div class="radio-option">
+                            <input type="radio" id="image-left" name="image-position" value="left" checked>
+                            <label for="image-left">Left</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="image-right" name="image-position" value="right">
+                            <label for="image-right">Right</label>
                         </div>
                     </div>
-
-                    <div class="option-group" id="upload-image-group">
-                        <label for="custom-image-ai">Upload Image:</label>
-                        <div class="upload-btn-wrapper">
-                            <button class="upload-btn">Choose File</button>
-                            <input type="file" id="custom-image-ai" accept="image/*">
-                        </div>
-                        <small id="file-name-display">No file selected</small>
-                    </div>
-
-                    <div class="option-group" id="search-image-group" style="display: none;">
-                        <label for="image-search-query">Search for Image:</label>
-                        <div class="search-info">
-                            <p><strong>Image Search Tips:</strong> If you need an exact product image, please upload a file. If you'd like a general office image then search for something like "woman with laptop" or "modern office".</p>
-                        </div>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="text" id="image-search-query" placeholder="Enter image search terms" style="flex-grow: 1;">
-                            <button id="search-images-btn" class="upload-btn">Search</button>
-                        </div>
-                        <div id="image-search-results" class="image-gallery"></div>
-                    </div>
-
-                    <div class="option-group">
-                        <label>Image Position:</label>
-                        <div class="radio-options">
-                            <div class="radio-option">
-                                <input type="radio" id="image-left" name="image-position" value="left" checked>
-                                <label for="image-left">Left</label>
-                            </div>
-                            <div class="radio-option">
-                                <input type="radio" id="image-right" name="image-position" value="right">
-                                <label for="image-right">Right</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="text-content">
-                <h3>Generated Content</h3>
-                <p>Edit the generated content as needed:</p>
-                <textarea id="ai-content-text" rows="10" placeholder="Generated MSP marketing content will appear here..." style="width: 100%;"></textarea>
-            </div>
-
-            <!-- Output with Preview above HTML Code -->
-            <div class="output-container">
-               <div class="preview-section">
-    <h3>Content Preview</h3>
-    <div id="ai-preview-wrapper" style="width: 100%; max-width: 100%; box-sizing: border-box; background: white; border-radius: 4px; padding: 20px;">
-        <div id="content-preview" style="width: 100%; display: block; margin: 0; padding: 0;"></div>
-    </div>
-</div>
-
-                <div class="html-output-section">
-                    <div class="code-header">
-                        <h3>HTML Code</h3>
-                        <button id="copy-html-btn" class="copy-button">Copy Code</button>
-                    </div>
-                    <pre class="code-content" id="html-code"></pre>
                 </div>
             </div>
         </div>
+
+        <div class="text-content">
+            <h3>Generated Content</h3>
+            <p>Edit the generated content as needed:</p>
+            <textarea id="ai-content-text" rows="10" placeholder="Generated MSP marketing content will appear here..." style="width: 100%;"></textarea>
+        </div>
+
+        <!-- Output with Preview above HTML Code -->
+        <div class="output-container">
+            <div class="preview-section">
+                <h3>Content Preview</h3>
+                <!-- This wrapper provides isolation from parent CSS -->
+                <div id="ai-preview-wrapper">
+                    <div id="content-preview"></div>
+                </div>
+            </div>
+
+            <div class="html-output-section">
+                <div class="code-header">
+                    <h3>HTML Code</h3>
+                    <button id="copy-html-btn" class="copy-button">Copy Code</button>
+                </div>
+                <pre class="code-content" id="html-code"></pre>
+            </div>
+        </div>
     </div>
+</div>
     
     <!-- JavaScript Files -->
     <script src="scripts/main.js"></script>
