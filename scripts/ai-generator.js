@@ -1,52 +1,64 @@
 /**
  * AI Content Generator JavaScript
- * Handles generation of marketing content for MSP services and products
+ * Completely isolated from external CSS/styles
  */
 
 function initAiGenerator() {
-    // Initialize state variables
+    // Define all necessary DOM elements
+    const contentPreview = document.getElementById('content-preview');
+    const customImage = document.getElementById('custom-image-ai');
+    const fileNameDisplay = document.getElementById('file-name-display');
+    const contentTopic = document.getElementById('content-topic');
+    const contentTone = document.getElementById('content-tone');
+    const contentLength = document.getElementById('content-length');
+    const aiContentText = document.getElementById('ai-content-text');
+    const statusDiv = document.getElementById('ai-status');
+    const progressContainer = document.getElementById('ai-progress-container');
+    const generateBtn = document.getElementById('generate-ai-btn');
+    const clearBtn = document.getElementById('clear-ai-btn');
+    const copyHtmlBtn = document.getElementById('copy-html-btn');
+    const htmlCode = document.getElementById('html-code');
+    const searchImagesBtn = document.getElementById('search-images-btn');
+    const imageSearchQuery = document.getElementById('image-search-query');
+    const imageSearchResults = document.getElementById('image-search-results');
+    const imageSourceRadios = document.querySelectorAll('input[name="image-source"]');
+    const uploadImageGroup = document.getElementById('upload-image-group');
+    const searchImageGroup = document.getElementById('search-image-group');
+    const imagePositionRadios = document.querySelectorAll('input[name="image-position"]');
+
+    // Return if we're not on the AI Generator tab
+    if (!contentTopic || !contentTone) {
+        return;
+    }
+
+    // State variables
     let customImageBase64 = null;
     let generatedContent = "";
     let selectedImageUrl = null;
     let imageAttribution = null;
 
-    // DOM Element References
-    const imageSourceRadios = document.querySelectorAll('input[name="image-source"]');
-    const uploadImageGroup = document.getElementById('upload-image-group');
-    const searchImageGroup = document.getElementById('search-image-group');
-    const customImage = document.getElementById('custom-image-ai');
-    const fileNameDisplay = document.getElementById('file-name-display');
-    const searchImagesBtn = document.getElementById('search-images-btn');
-    const imageSearchQuery = document.getElementById('image-search-query');
-    const imageSearchResults = document.getElementById('image-search-results');
-    const imagePositionRadios = document.querySelectorAll('input[name="image-position"]');
-    const generateBtn = document.getElementById('generate-ai-btn');
-    const clearBtn = document.getElementById('clear-ai-btn');
-    const contentTopic = document.getElementById('content-topic');
-    const contentTone = document.getElementById('content-tone');
-    const contentLength = document.getElementById('content-length');
-    const statusDiv = document.getElementById('ai-status');
-    const progressContainer = document.getElementById('ai-progress-container');
-    const progressBar = document.getElementById('ai-progress-bar');
-    const aiContentText = document.getElementById('ai-content-text');
-    const copyHtmlBtn = document.getElementById('copy-html-btn');
-    const contentPreview = document.getElementById('content-preview');
-    const htmlCode = document.getElementById('html-code');
-
-    // Check if elements exist - return if we're not on the AI generator tab
-    if (!contentTopic || !contentTone) {
-        return;
-    }
-
-    // Ensure preview container has proper width
-    if (contentPreview) {
-        contentPreview.style.width = "100%";
-        contentPreview.style.maxWidth = "100%";
-    }
-
-    // Hide progress container initially
+    // Initialize - ensure preview area is ready
     if (progressContainer) {
         progressContainer.style.display = 'none';
+    }
+
+    // THIS IS CRITICAL: Create a completely controlled preview container
+    if (contentPreview) {
+        // Replace the original container with our controlled version
+        const originalParent = contentPreview.parentNode;
+        const newContainer = document.createElement('div');
+        newContainer.id = 'content-preview-wrapper';
+        newContainer.style.cssText = 'width: 100%; background: white; padding: 20px; border-radius: 4px;';
+        originalParent.replaceChild(newContainer, contentPreview);
+        
+        // Create a new controlled preview element
+        const newPreview = document.createElement('div');
+        newPreview.id = 'content-preview';
+        newPreview.style.cssText = 'width: 100%; display: block; box-sizing: border-box;';
+        newContainer.appendChild(newPreview);
+        
+        // Update reference to the new element
+        contentPreview = newPreview;
     }
 
     // Toggle between upload and search options
@@ -70,8 +82,8 @@ function initAiGenerator() {
             const reader = new FileReader();
             reader.onload = function(event) {
                 customImageBase64 = event.target.result;
-                selectedImageUrl = null; // Clear any previously selected search image
-                imageAttribution = null; // Clear any attribution
+                selectedImageUrl = null;
+                imageAttribution = null;
                 updatePreview();
                 updateHtmlCode();
             };
@@ -182,7 +194,7 @@ function initAiGenerator() {
         }
     });
 
-    // Fetch image and convert to base64 with improved error handling
+    // Fetch image and convert to base64
     async function fetchImageAsBase64(imageUrl, photographer, photographerUrl) {
         if (!imageUrl) return;
         
@@ -307,8 +319,8 @@ function initAiGenerator() {
         imageAttribution = null;
         fileNameDisplay.textContent = 'No file selected';
         document.getElementById('image-source-upload').checked = true;
-        document.getElementById('upload-image-group').style.display = 'block';
-        document.getElementById('search-image-group').style.display = 'none';
+        uploadImageGroup.style.display = 'block';
+        searchImageGroup.style.display = 'none';
         document.getElementById('image-left').checked = true;
         imageSearchQuery.value = '';
         imageSearchResults.innerHTML = '';
@@ -370,115 +382,134 @@ function initAiGenerator() {
         return 'left'; // Default position
     }
 
-    // Modified to address width issues specifically
+    // DIRECT DOM MANIPULATION PREVIEW
     function updatePreview() {
-        // Ensure content preview takes full width
-        if (contentPreview) {
-            contentPreview.style.width = "100%";
-            contentPreview.style.maxWidth = "none";
-            contentPreview.style.padding = "0";
-            contentPreview.style.margin = "0";
+        // First clear any existing content
+        while (contentPreview.firstChild) {
+            contentPreview.removeChild(contentPreview.firstChild);
         }
         
         // Only create content with image if there's an image
         if (customImageBase64 && generatedContent) {
-            // Format content with paragraphs
-            const formattedContent = generatedContent
-                .split('\n\n')
-                .map(p => `<p>${p}</p>`)
-                .join('');
-                
-            // Create image element with attribution if present
-            let imageHtml = `<img src="${customImageBase64}" alt="Content Image" style="max-width:100%; height:auto; margin:0 auto; display:block;">`;
-            if (imageAttribution) {
-                imageHtml = `
-                <div style="position: relative;">
-                    ${imageHtml}
-                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background-color: rgba(0,0,0,0.6); color: white; font-size: 10px; padding: 4px; text-align: center;">
-                    ${imageAttribution}
-                    </div>
-                </div>
-                `;
-            }
-
-            // Create table layout - with explicit width instructions
-            let tableHtml = `
-                <table style="width:100% !important; border-collapse:collapse; border:none; margin:0; padding:0; table-layout:fixed;">
-                    <tr>
-            `;
+            // Create table element with controlled styles
+            const table = document.createElement('table');
+            table.style.cssText = 'width: 100%; border-collapse: collapse; border: none; margin: 0; padding: 0;';
+            
+            const tbody = document.createElement('tbody');
+            const tr = document.createElement('tr');
+            
+            // Create the cells based on image position
+            const imageCell = document.createElement('td');
+            const contentCell = document.createElement('td');
             
             if (getImagePosition() === 'left') {
-                tableHtml += `
-                        <td style="width:40% !important; vertical-align:top; text-align:center; padding:10px;">
-                            ${imageHtml}
-                        </td>
-                        <td style="width:60% !important; vertical-align:top; padding:10px;">
-                            ${formattedContent}
-                        </td>
-                `;
+                imageCell.style.cssText = 'width: 40%; padding: 10px; vertical-align: top; text-align: center;';
+                contentCell.style.cssText = 'width: 60%; padding: 10px; vertical-align: top;';
+                tr.appendChild(imageCell);
+                tr.appendChild(contentCell);
             } else {
-                tableHtml += `
-                        <td style="width:60% !important; vertical-align:top; padding:10px;">
-                            ${formattedContent}
-                        </td>
-                        <td style="width:40% !important; vertical-align:top; text-align:center; padding:10px;">
-                            ${imageHtml}
-                        </td>
-                `;
+                contentCell.style.cssText = 'width: 60%; padding: 10px; vertical-align: top;';
+                imageCell.style.cssText = 'width: 40%; padding: 10px; vertical-align: top; text-align: center;';
+                tr.appendChild(contentCell);
+                tr.appendChild(imageCell);
             }
             
-            tableHtml += `
-                    </tr>
-                </table>
-            `;
+            // Create and add the image with attribution if needed
+            const img = document.createElement('img');
+            img.src = customImageBase64;
+            img.alt = 'Content Image';
+            img.style.cssText = 'max-width: 100%; height: auto; margin: 0 auto; display: block;';
             
-            contentPreview.innerHTML = tableHtml;
+            if (imageAttribution) {
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText = 'position: relative;';
+                
+                wrapper.appendChild(img);
+                
+                const attribution = document.createElement('div');
+                attribution.style.cssText = 'position: absolute; bottom: 0; left: 0; right: 0; background-color: rgba(0,0,0,0.6); color: white; font-size: 10px; padding: 4px; text-align: center;';
+                attribution.innerHTML = imageAttribution;
+                
+                wrapper.appendChild(attribution);
+                imageCell.appendChild(wrapper);
+            } else {
+                imageCell.appendChild(img);
+            }
+            
+            // Add the content paragraphs
+            const paragraphs = generatedContent.split('\n\n');
+            
+            paragraphs.forEach(text => {
+                const p = document.createElement('p');
+                p.textContent = text;
+                p.style.cssText = 'margin: 0 0 15px 0;';
+                contentCell.appendChild(p);
+            });
+            
+            // Assemble and add the table
+            tbody.appendChild(tr);
+            table.appendChild(tbody);
+            contentPreview.appendChild(table);
         } else if (customImageBase64) {
             // Only image, no content
             if (imageAttribution) {
-                contentPreview.innerHTML = `
-                <div style="position: relative; width:100%; text-align:center;">
-                    <img src="${customImageBase64}" alt="Content Image" style="max-width:100%; height:auto;">
-                    <div style="position: absolute; bottom: 0; left: 0; right: 0; background-color: rgba(0,0,0,0.6); color: white; font-size: 10px; padding: 4px; text-align: center;">
-                    ${imageAttribution}
-                    </div>
-                </div>
-                `;
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText = 'position: relative; width: 100%; text-align: center;';
+                
+                const img = document.createElement('img');
+                img.src = customImageBase64;
+                img.alt = 'Content Image';
+                img.style.cssText = 'max-width: 100%; height: auto;';
+                
+                wrapper.appendChild(img);
+                
+                const attribution = document.createElement('div');
+                attribution.style.cssText = 'position: absolute; bottom: 0; left: 0; right: 0; background-color: rgba(0,0,0,0.6); color: white; font-size: 10px; padding: 4px; text-align: center;';
+                attribution.innerHTML = imageAttribution;
+                
+                wrapper.appendChild(attribution);
+                contentPreview.appendChild(wrapper);
             } else {
-                contentPreview.innerHTML = `<div style="width:100%; text-align:center;"><img src="${customImageBase64}" alt="Content Image" style="max-width:100%; height:auto;"></div>`;
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText = 'width: 100%; text-align: center;';
+                
+                const img = document.createElement('img');
+                img.src = customImageBase64;
+                img.alt = 'Content Image';
+                img.style.cssText = 'max-width: 100%; height: auto;';
+                
+                wrapper.appendChild(img);
+                contentPreview.appendChild(wrapper);
             }
         } else if (generatedContent) {
-            // Only content, no image - use a full-width table
-            const formattedContent = generatedContent
-                .split('\n\n')
-                .map(p => `<p>${p}</p>`)
-                .join('');
-
-            contentPreview.innerHTML = `
-            <table style="width:100% !important; border-collapse:collapse; border:none; margin:0; padding:0; table-layout:fixed;">
-                <tr>
-                    <td style="width:100% !important; padding:10px; vertical-align:top;">
-                        ${formattedContent}
-                    </td>
-                </tr>
-            </table>
-            `;
-        } else {
-            // Nothing to display
-            contentPreview.innerHTML = '';
-        }
-
-        // Force table to take full width after rendering
-        setTimeout(() => {
-            const tables = contentPreview.querySelectorAll('table');
-            tables.forEach(table => {
-                table.style.width = "100%";
-                table.style.tableLayout = "fixed";
+            // Only content, no image - create a single-cell table
+            const table = document.createElement('table');
+            table.style.cssText = 'width: 100%; border-collapse: collapse; border: none; margin: 0; padding: 0;';
+            
+            const tbody = document.createElement('tbody');
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            
+            td.style.cssText = 'width: 100%; padding: 10px; vertical-align: top;';
+            
+            // Add the content paragraphs
+            const paragraphs = generatedContent.split('\n\n');
+            
+            paragraphs.forEach(text => {
+                const p = document.createElement('p');
+                p.textContent = text;
+                p.style.cssText = 'margin: 0 0 15px 0;';
+                td.appendChild(p);
             });
-        }, 0);
+            
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+            table.appendChild(tbody);
+            contentPreview.appendChild(table);
+        }
     }
 
-    // Generate HTML code for the content using table-based approach
+    // Update HTML code
     function updateHtmlCode() {
         const imagePosition = getImagePosition();
         const topic = contentTopic.value.trim() || 'MSP Service';
