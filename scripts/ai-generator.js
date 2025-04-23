@@ -38,6 +38,12 @@ function initAiGenerator() {
         return;
     }
 
+    // Ensure preview container has proper width
+    if (contentPreview) {
+        contentPreview.style.width = "100%";
+        contentPreview.style.maxWidth = "100%";
+    }
+
     // Hide progress container initially
     if (progressContainer) {
         progressContainer.style.display = 'none';
@@ -364,8 +370,16 @@ function initAiGenerator() {
         return 'left'; // Default position
     }
 
-    // UPDATED: Now using the table-based approach from Widget Creator
+    // Modified to address width issues specifically
     function updatePreview() {
+        // Ensure content preview takes full width
+        if (contentPreview) {
+            contentPreview.style.width = "100%";
+            contentPreview.style.maxWidth = "none";
+            contentPreview.style.padding = "0";
+            contentPreview.style.margin = "0";
+        }
+        
         // Only create content with image if there's an image
         if (customImageBase64 && generatedContent) {
             // Format content with paragraphs
@@ -387,27 +401,27 @@ function initAiGenerator() {
                 `;
             }
 
-            // Create table layout
+            // Create table layout - with explicit width instructions
             let tableHtml = `
-                <table style="width:100%; border-collapse:collapse; border:none;">
+                <table style="width:100% !important; border-collapse:collapse; border:none; margin:0; padding:0; table-layout:fixed;">
                     <tr>
             `;
             
             if (getImagePosition() === 'left') {
                 tableHtml += `
-                        <td style="width:40%; vertical-align:top; text-align:center; padding:10px;">
+                        <td style="width:40% !important; vertical-align:top; text-align:center; padding:10px;">
                             ${imageHtml}
                         </td>
-                        <td style="width:60%; vertical-align:top; padding:10px;">
+                        <td style="width:60% !important; vertical-align:top; padding:10px;">
                             ${formattedContent}
                         </td>
                 `;
             } else {
                 tableHtml += `
-                        <td style="width:60%; vertical-align:top; padding:10px;">
+                        <td style="width:60% !important; vertical-align:top; padding:10px;">
                             ${formattedContent}
                         </td>
-                        <td style="width:40%; vertical-align:top; text-align:center; padding:10px;">
+                        <td style="width:40% !important; vertical-align:top; text-align:center; padding:10px;">
                             ${imageHtml}
                         </td>
                 `;
@@ -423,7 +437,7 @@ function initAiGenerator() {
             // Only image, no content
             if (imageAttribution) {
                 contentPreview.innerHTML = `
-                <div style="position: relative;">
+                <div style="position: relative; width:100%; text-align:center;">
                     <img src="${customImageBase64}" alt="Content Image" style="max-width:100%; height:auto;">
                     <div style="position: absolute; bottom: 0; left: 0; right: 0; background-color: rgba(0,0,0,0.6); color: white; font-size: 10px; padding: 4px; text-align: center;">
                     ${imageAttribution}
@@ -431,20 +445,19 @@ function initAiGenerator() {
                 </div>
                 `;
             } else {
-                contentPreview.innerHTML = `<img src="${customImageBase64}" alt="Content Image" style="max-width:100%; height:auto;">`;
+                contentPreview.innerHTML = `<div style="width:100%; text-align:center;"><img src="${customImageBase64}" alt="Content Image" style="max-width:100%; height:auto;"></div>`;
             }
         } else if (generatedContent) {
-            // Only content, no image
-            // Use a single-column table for consistency
+            // Only content, no image - use a full-width table
             const formattedContent = generatedContent
                 .split('\n\n')
                 .map(p => `<p>${p}</p>`)
                 .join('');
 
             contentPreview.innerHTML = `
-            <table style="width:100%; border-collapse:collapse; border:none;">
+            <table style="width:100% !important; border-collapse:collapse; border:none; margin:0; padding:0; table-layout:fixed;">
                 <tr>
-                    <td style="width:100%; padding:10px; vertical-align:top;">
+                    <td style="width:100% !important; padding:10px; vertical-align:top;">
                         ${formattedContent}
                     </td>
                 </tr>
@@ -454,6 +467,15 @@ function initAiGenerator() {
             // Nothing to display
             contentPreview.innerHTML = '';
         }
+
+        // Force table to take full width after rendering
+        setTimeout(() => {
+            const tables = contentPreview.querySelectorAll('table');
+            tables.forEach(table => {
+                table.style.width = "100%";
+                table.style.tableLayout = "fixed";
+            });
+        }, 0);
     }
 
     // Generate HTML code for the content using table-based approach
@@ -493,6 +515,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   border: none;
+  table-layout: fixed;
 }
 td {
   vertical-align: top;
@@ -534,11 +557,11 @@ td {
             // Add image with attribution if present
             if (imageAttribution) {
                 htmlCodeContent += `
-<table>
+<table style="width:100%; table-layout:fixed;">
   <tr>
     <td style="width: ${imagePosition === 'left' ? '40%' : '60%'};">
       ${imagePosition === 'left' ? `
-      <div style="position: relative;">
+      <div style="position: relative; text-align:center;">
         <img src="${customImageBase64}" alt="${topic} Image">
         <div class="image-attribution">
           ${imageAttribution}
@@ -547,7 +570,7 @@ td {
     </td>
     <td style="width: ${imagePosition === 'left' ? '60%' : '40%'};">
       ${imagePosition === 'left' ? formattedContent : `
-      <div style="position: relative;">
+      <div style="position: relative; text-align:center;">
         <img src="${customImageBase64}" alt="${topic} Image">
         <div class="image-attribution">
           ${imageAttribution}
@@ -558,13 +581,13 @@ td {
 </table>`;
             } else {
                 htmlCodeContent += `
-<table>
+<table style="width:100%; table-layout:fixed;">
   <tr>
-    <td style="width: ${imagePosition === 'left' ? '40%' : '60%'};">
+    <td style="width: ${imagePosition === 'left' ? '40%' : '60%'}; text-align:${imagePosition === 'left' ? 'center' : 'left'};">
       ${imagePosition === 'left' ? `
       <img src="${customImageBase64}" alt="${topic} Image">` : formattedContent}
     </td>
-    <td style="width: ${imagePosition === 'left' ? '60%' : '40%'};">
+    <td style="width: ${imagePosition === 'left' ? '60%' : '40%'}; text-align:${imagePosition === 'left' ? 'left' : 'center'};">
       ${imagePosition === 'left' ? formattedContent : `
       <img src="${customImageBase64}" alt="${topic} Image">`}
     </td>
@@ -575,7 +598,7 @@ td {
             // Only image
             if (imageAttribution) {
                 htmlCodeContent += `
-<div style="position: relative; text-align: center;">
+<div style="position: relative; text-align: center; width:100%;">
   <img src="${customImageBase64}" alt="${topic} Image">
   <div class="image-attribution">
     ${imageAttribution}
@@ -583,7 +606,7 @@ td {
 </div>`;
             } else {
                 htmlCodeContent += `
-<div style="text-align: center;">
+<div style="text-align: center; width:100%;">
   <img src="${customImageBase64}" alt="${topic} Image">
 </div>`;
             }
@@ -595,7 +618,7 @@ td {
                 .join('\n  ');
 
             htmlCodeContent += `
-<table>
+<table style="width:100%; table-layout:fixed;">
   <tr>
     <td style="width: 100%;">
       ${formattedContent}
