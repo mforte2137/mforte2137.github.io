@@ -1,4 +1,518 @@
-  // Render the PDF page to the canvas
+/**
+ * Cover Page Creator JavaScript
+ * Handles PDF processing and image extraction functionality
+ */
+
+// Set up PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+function initPdfExtractor() {
+    // DOM Elements
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const processBtn = document.getElementById('process-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+    const previewContainer = document.getElementById('preview-container');
+    const statusElement = document.getElementById('status');
+    const logContainer = document.getElementById('log-container');
+    const pageInput = document.getElementById('page-input');
+    const dpiInput = document.getElementById('dpi-input');
+    const resizeInput = document.getElementById('resize-input');
+    
+    // Uploaded files storage
+    let uploadedFiles = [];
+    
+    // Set up logging
+    function logMessage(message, level = 'info') {
+        const entry = document.createElement('p');
+        entry.className = `log-entry ${level}`;
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        logContainer.appendChild(entry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+        
+        // Also log to console
+        switch(level) {
+            case 'error': console.error(message); break;
+            case 'warn': console.warn(message); break;
+            default: console.log(message);
+        }
+    }
+    
+    // Prevent defaults for drag and drop
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    function highlight() {
+        dropzone.classList.add('dragover');
+    }
+    
+    function unhighlight() {
+        dropzone.classList.remove('dragover');
+    }
+    
+    // Setup drag and drop events
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, preventDefaults);
+        document.body.addEventListener(eventName, preventDefaults);
+    });
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, highlight);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, unhighlight);
+    });
+    
+    // Handle file selection
+    dropzone.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    // File input change handler
+    fileInput.addEventListener('change', (e) => {
+        const files = e.target.files;
+        if (files.length === 0) return;
+        
+        // Filter for PDF files
+        const pdfFiles = Array.from(files).filter(file => file.type === 'application/pdf');
+        
+        if (pdfFiles.length === 0) {
+            showStatus('No PDF files were selected.', 'error');
+            return;
+        }
+        
+        // Store the files and enable the process button
+        uploadedFiles = pdfFiles;
+        logMessage(`Selected ${uploadedFiles.length} PDF files`);
+        processBtn.disabled = false;
+        
+        // Clear previous results
+        previewContainer.innerHTML = '';
+        hideStatus();
+    });
+    
+    // Drop handler
+    dropzone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length === 0) return;
+        
+        // Filter for PDF files
+        const pdfFiles = Array.from(files).filter(file => file.type === 'application/pdf');
+        
+        if (pdfFiles.length === 0) {
+            showStatus('No PDF files were selected.', 'error');
+            return;
+        }
+        
+        // Store the files and enable the process button
+        uploadedFiles = pdfFiles;
+        logMessage(`Selected ${uploadedFiles.length} PDF files`);
+        processBtn.disabled = false;
+        
+        // Clear previous results
+        previewContainer.innerHTML = '';
+        hideStatus();
+    });
+    
+    // Process button click handler
+    processBtn.addEventListener('click', async () => {
+        if (uploadedFiles.length === 0) return;
+        
+        // Parse options
+        const dpi = parseInt(dpiInput.value, 10);
+        const resizeToA4 = resizeInput.value === 'true';
+        
+        // Parse page numbers
+        let pageNumbers = [];
+        if (pageInput.value.trim()) {
+            pageNumbers = pageInput.value.split(',')
+                .map(p => parseInt(p.trim(), 10))
+                .filter(p => !isNaN(p) && p > 0);
+        }
+        
+        const options = {
+            dpi,
+            resizeToA4,
+            pageNumbers: pageNumbers.length > 0 ? pageNumbers : null
+        };
+        
+        logMessage(`Processing ${uploadedFiles.length} files with options: ` + 
+                  `DPI=${options.dpi}, Resize=${options.resizeToA4}, Pages=${options.pageNumbers || 'all'}`);
+        
+        // Disable the button during processing
+        processBtn.disabled = true;
+        
+        // Show progress
+        progressContainer.style.display = 'block';
+        progressBar.max = uploadedFiles.length;
+        progressBar.value = 0;
+        progressText.textContent = `Processing 0/${uploadedFiles.length} files...`;
+        
+        // Clear previous results
+        previewContainer.innerHTML = '';
+        
+        try {
+            let processedCount = 0;
+            
+            for (let i = 0; i < uploadedFiles.length; i++) {
+                const file = uploadedFiles[i];
+                progressText.textContent = `Processing ${i+1}/${uploadedFiles.length}: ${file.name}`;
+                
+                try {
+                    logMessage(`Processing ${file.name}`);
+                    
+                    // Read the file as array buffer
+                    const fileData = await readFileAsArrayBuffer(file);
+                    
+                    // Process the PDF
+                    const processedImages = await processPdf(fileData, options);
+                    
+                    if (processedImages.length > 0) {
+                        logMessage(`Successfully processed ${file.name}, ${processedImages.length} pages extracted`);
+                        processedCount++;
+                        
+                        // Display the results
+                        processedImages.forEach(({ pageNum, imageData }) => {
+                            displayImage(file.name, pageNum, imageData);
+                        });
+                        
+                        // Add a "Download All" button for multiple pages
+                        if (processedImages.length > 1) {
+                            const downloadAllButton = document.createElement('button');
+                            downloadAllButton.textContent = `Download All Pages (${processedImages.length})`;
+                            downloadAllButton.className = 'download-all-button';
+                            
+                            downloadAllButton.addEventListener('click', () => {
+                                try {
+                                    logMessage('Preparing to download all images as ZIP...');
+                                    
+                                    const zip = new JSZip();
+                                    
+                                    // Add each image to the zip
+                                    for (const { pageNum, imageData } of processedImages) {
+                                        const filename = `${file.name.replace('.pdf', '')}_page${pageNum}.png`;
+                                        zip.file(filename, imageData);
+                                    }
+                                    
+                                    // Generate the zip
+                                    zip.generateAsync({ type: 'blob' }).then((zipContent) => {
+                                        // Download the zip
+                                        const a = document.createElement('a');
+                                        a.href = URL.createObjectURL(zipContent);
+                                        a.download = `${file.name.replace('.pdf', '')}_all_pages.zip`;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                        
+                                        logMessage('All pages downloaded as ZIP');
+                                    }).catch(err => {
+                                        logMessage(`Error creating ZIP: ${err.message}`, 'error');
+                                    });
+                                } catch (err) {
+                                    logMessage(`Error creating ZIP: ${err.message}`, 'error');
+                                }
+                            });
+                            
+                            previewContainer.insertAdjacentElement('beforebegin', downloadAllButton);
+                        }
+                    } else {
+                        logMessage(`No images extracted from ${file.name}`, 'warn');
+                    }
+                } catch (err) {
+                    logMessage(`Error processing ${file.name}: ${err.message}`, 'error');
+                }
+                
+                // Update progress bar
+                progressBar.value = i + 1;
+            }
+            
+            progressText.textContent = `Processed ${processedCount}/${uploadedFiles.length} files`;
+            showStatus(`Successfully processed ${processedCount} out of ${uploadedFiles.length} files`, 'success');
+        } catch (err) {
+            logMessage(`Error during processing: ${err.message}`, 'error');
+            showStatus('An error occurred during processing. Check the log for details.', 'error');
+        } finally {
+            processBtn.disabled = false;
+        }
+    });
+    
+    // Clear fields button
+    clearBtn.addEventListener('click', clearFields);
+    
+    // Function to clear all fields and reset the application
+    function clearFields() {
+        // Reset uploaded files
+        uploadedFiles = [];
+        
+        // Reset input fields to defaults
+        pageInput.value = '1';
+        dpiInput.value = '300';
+        resizeInput.value = 'true';
+        
+        // Clear results and status
+        previewContainer.innerHTML = '';
+        hideStatus();
+        
+        // Reset log container (keep only the initial message)
+        logContainer.innerHTML = '<p class="log-entry info">System ready. Upload PDF files to begin.</p>';
+        
+        // Disable process button
+        processBtn.disabled = true;
+        
+        // Hide progress container
+        progressContainer.style.display = 'none';
+        
+        // Remove any download all buttons
+        const downloadAllButtons = document.querySelectorAll('.download-all-button');
+        downloadAllButtons.forEach(button => button.remove());
+        
+        // Clear the file input value
+        fileInput.value = '';
+        
+        logMessage('All fields cleared. Ready for new files.');
+    }
+    
+    // Display an image in the preview container
+    function displayImage(fileName, pageNum, imageData) {
+        // Create blob URL from the image data
+        const blob = new Blob([imageData], { type: 'image/png' });
+        const url = URL.createObjectURL(blob);
+        
+        // Create preview item
+        const item = document.createElement('div');
+        item.className = 'preview-item';
+        
+        // Preview header
+        const header = document.createElement('div');
+        header.className = 'preview-header';
+        
+        const title = document.createElement('h3');
+        title.className = 'preview-title';
+        title.textContent = `${fileName} - Page ${pageNum}`;
+        header.appendChild(title);
+        
+        item.appendChild(header);
+        
+        // Preview image
+        const img = document.createElement('img');
+        img.className = 'preview-image';
+        img.src = url;
+        img.alt = `${fileName} - Page ${pageNum}`;
+        item.appendChild(img);
+        
+        // Preview actions
+        const actions = document.createElement('div');
+        actions.className = 'preview-actions';
+        
+        // PNG Download button
+        const downloadBtn = document.createElement('button');
+        downloadBtn.textContent = 'Download PNG';
+        downloadBtn.addEventListener('click', () => {
+            // Create a download link
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileName.replace('.pdf', '')}_page${pageNum}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+        
+        actions.appendChild(downloadBtn);
+        item.appendChild(actions);
+        
+        // Add to preview container
+        previewContainer.appendChild(item);
+    }
+    
+    // Helper function to read a File as ArrayBuffer
+    function readFileAsArrayBuffer(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(reader.error);
+            reader.readAsArrayBuffer(file);
+        });
+    }
+    
+    // Helper functions for status display
+    function showStatus(message, type) {
+        statusElement.textContent = message;
+        statusElement.className = `status ${type}`;
+        statusElement.style.display = 'block';
+    }
+    
+    function hideStatus() {
+        statusElement.style.display = 'none';
+    }
+    
+    /**
+     * Determines the dominant background color in a region
+     * @param {ImageData} imageData - Canvas image data
+     * @param {number} x0 - Left boundary
+     * @param {number} y0 - Top boundary
+     * @param {number} x1 - Right boundary
+     * @param {number} y1 - Bottom boundary
+     * @returns {Object} - Background color {r, g, b}
+     */
+    function determineDominantBackgroundColor(imageData, x0, y0, x1, y1) {
+        const { width, data } = imageData;
+        
+        // Sample points around the edges of the text area
+        // Focus on corners and edges which are more likely to be background
+        const samples = [];
+        const sampleSize = 5; // Number of pixels to sample in each corner
+        
+        // Sample top-left corner
+        for (let dy = 0; dy < sampleSize; dy++) {
+            for (let dx = 0; dx < sampleSize; dx++) {
+                const y = y0 + dy;
+                const x = x0 + dx;
+                if (y < y1 && x < x1) {
+                    const idx = (y * width + x) * 4;
+                    samples.push({
+                        r: data[idx],
+                        g: data[idx + 1],
+                        b: data[idx + 2],
+                        brightness: (data[idx] + data[idx + 1] + data[idx + 2]) / 3
+                    });
+                }
+            }
+        }
+        
+        // Sample top-right corner
+        for (let dy = 0; dy < sampleSize; dy++) {
+            for (let dx = 0; dx < sampleSize; dx++) {
+                const y = y0 + dy;
+                const x = x1 - 1 - dx;
+                if (y < y1 && x >= x0) {
+                    const idx = (y * width + x) * 4;
+                    samples.push({
+                        r: data[idx],
+                        g: data[idx + 1],
+                        b: data[idx + 2],
+                        brightness: (data[idx] + data[idx + 1] + data[idx + 2]) / 3
+                    });
+                }
+            }
+        }
+        
+        // Sample bottom-left corner
+        for (let dy = 0; dy < sampleSize; dy++) {
+            for (let dx = 0; dx < sampleSize; dx++) {
+                const y = y1 - 1 - dy;
+                const x = x0 + dx;
+                if (y >= y0 && x < x1) {
+                    const idx = (y * width + x) * 4;
+                    samples.push({
+                        r: data[idx],
+                        g: data[idx + 1],
+                        b: data[idx + 2],
+                        brightness: (data[idx] + data[idx + 1] + data[idx + 2]) / 3
+                    });
+                }
+            }
+        }
+        
+        // Sample bottom-right corner
+        for (let dy = 0; dy < sampleSize; dy++) {
+            for (let dx = 0; dx < sampleSize; dx++) {
+                const y = y1 - 1 - dy;
+                const x = x1 - 1 - dx;
+                if (y >= y0 && x >= x0) {
+                    const idx = (y * width + x) * 4;
+                    samples.push({
+                        r: data[idx],
+                        g: data[idx + 1],
+                        b: data[idx + 2],
+                        brightness: (data[idx] + data[idx + 1] + data[idx + 2]) / 3
+                    });
+                }
+            }
+        }
+        
+        // Filter out likely text pixels (darker) and keep background pixels (lighter)
+        const backgroundSamples = samples.filter(sample => sample.brightness > 180);
+        
+        if (backgroundSamples.length > 0) {
+            // Calculate the average color from background samples
+            const sum = backgroundSamples.reduce((acc, sample) => {
+                acc.r += sample.r;
+                acc.g += sample.g;
+                acc.b += sample.b;
+                return acc;
+            }, { r: 0, g: 0, b: 0 });
+            
+            return {
+                r: Math.round(sum.r / backgroundSamples.length),
+                g: Math.round(sum.g / backgroundSamples.length),
+                b: Math.round(sum.b / backgroundSamples.length)
+            };
+        }
+        
+        // If we couldn't find good background samples, return white as fallback
+        return { r: 255, g: 255, b: 255 };
+    }
+    
+    // Process PDF function
+    async function processPdf(pdfData, options = {}) {
+        const {
+            pageNumbers = null, // null means all pages
+            dpi = 300,
+            resizeToA4 = true
+        } = options;
+        
+        const results = [];
+        let pdfDoc = null;
+        
+        try {
+            // Load the PDF document
+            pdfDoc = await pdfjsLib.getDocument({ data: pdfData }).promise;
+            logMessage(`PDF loaded with ${pdfDoc.numPages} pages`);
+            
+            // Determine which pages to process
+            const pagesToProcess = pageNumbers || Array.from(
+                { length: pdfDoc.numPages }, 
+                (_, i) => i + 1
+            );
+            
+            // A4 dimensions in pixels at specified DPI (210mm × 297mm)
+            const A4_WIDTH_MM = 210;
+            const A4_HEIGHT_MM = 297;
+            const MM_TO_INCHES = 1 / 25.4;
+            const widthInches = A4_WIDTH_MM * MM_TO_INCHES;
+            const heightInches = A4_HEIGHT_MM * MM_TO_INCHES;
+            const widthPx = Math.round(widthInches * dpi);
+            const heightPx = Math.round(heightInches * dpi);
+            
+            // Process requested pages
+            for (const pageNum of pagesToProcess) {
+                if (pageNum < 1 || pageNum > pdfDoc.numPages) {
+                    logMessage(`Page ${pageNum} out of range, skipping`, 'warn');
+                    continue;
+                }
+                
+                try {
+                    // Get the page
+                    const page = await pdfDoc.getPage(pageNum);
+                    
+                    // Calculate scale to match desired DPI
+                    // PDF uses 72 DPI as default
+                    const scale = dpi / 72;
+                    const viewport = page.getViewport({ scale });
+                    
+                    // Create canvas for rendering
+                    const canvas = document.createElement('canvas');
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Render the PDF page to the canvas
                     await page.render({
                         canvasContext: ctx,
                         viewport
@@ -660,5 +1174,6 @@
 
 // Initialize the PDF extractor when the DOM is loaded
 document.addEventListener('DOMContentLoaded', initPdfExtractor);
+
 
 
