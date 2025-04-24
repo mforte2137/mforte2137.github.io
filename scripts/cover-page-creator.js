@@ -256,7 +256,6 @@ function initPdfExtractor() {
             processBtn.disabled = false;
         }
     });
-    
     // Clear fields button
     clearBtn.addEventListener('click', clearFields);
     
@@ -537,7 +536,6 @@ function initPdfExtractor() {
         // If at least 5% of sampled pixels are red, consider it a banner
         return (redPixelCount.count / redPixelCount.total) > 0.05;
     }
-    
     /**
      * Determines the dominant background color in a region
      * @param {ImageData} imageData - Canvas image data
@@ -901,15 +899,7 @@ function initPdfExtractor() {
         };
     }
     
-    /**
-     * Check if masking an area would cover non-white/graphics areas
-     * @param {ImageData} imageData - Canvas image data
-     * @param {number} x0 - Left boundary
-     * @param {number} y0 - Top boundary
-     * @param {number} x1 - Right boundary
-     * @param {number} y1 - Bottom boundary
-     * @returns {boolean} - True if masking would cover graphics
-     */
+    // Missing function implementations
     function wouldMaskOverGraphics(imageData, x0, y0, x1, y1) {
         const { width, data } = imageData;
         
@@ -928,7 +918,6 @@ function initPdfExtractor() {
                 const b = data[idx + 2];
                 
                 // Check if pixel is not white or very light gray
-                // A more sophisticated check can be used if needed
                 if (r < 240 || g < 240 || b < 240) {
                     nonWhiteCount++;
                 }
@@ -941,19 +930,9 @@ function initPdfExtractor() {
         return totalSamples > 0 && (nonWhiteCount / totalSamples) > 0.15;
     }
     
-    /**
-     * Refine the text mask area to only cover actual text pixels
-     * @param {ImageData} imageData - Canvas image data
-     * @param {number} x0 - Left boundary
-     * @param {number} y0 - Top boundary
-     * @param {number} x1 - Right boundary
-     * @param {number} y1 - Bottom boundary
-     * @param {Uint8ClampedArray} data - Image data array
-     */
     function refineTextMaskArea(imageData, x0, y0, x1, y1, data) {
         const { width } = imageData;
         
-        // Use pixel-by-pixel analysis to handle text that crosses different backgrounds
         for (let y = y0; y < y1; y++) {
             for (let x = x0; x < x1; x++) {
                 const idx = (y * width + x) * 4;
@@ -961,18 +940,12 @@ function initPdfExtractor() {
                 const g = data[idx + 1];
                 const b = data[idx + 2];
                 
-                // Detect text pixels (usually darker than background)
                 const brightness = (r + g + b) / 3;
                 
                 if (brightness < 180) { // Likely text pixel
-                    // For each text pixel, we need to determine if it's on a 
-                    // colored background or white background
-                    
-                    // Sample in a wider area to determine local background color
-                    const radius = 8; // Larger radius to better detect background
+                    const radius = 8; 
                     const localBgColor = sampleLocalBackgroundColor(imageData, x, y, radius);
                     
-                    // Replace text pixel with sampled background color
                     data[idx] = localBgColor.r;
                     data[idx + 1] = localBgColor.g;
                     data[idx + 2] = localBgColor.b;
@@ -981,26 +954,13 @@ function initPdfExtractor() {
         }
     }
     
-    /**
-     * Sample the local background color around a text pixel
-     * This is especially important for text that crosses background boundaries
-     * @param {ImageData} imageData - Canvas image data
-     * @param {number} x - Current X coordinate
-     * @param {number} y - Current Y coordinate
-     * @param {number} radius - Sampling radius
-     * @returns {Object} - Background color {r, g, b}
-     */
     function sampleLocalBackgroundColor(imageData, x, y, radius) {
         const { width, height, data } = imageData;
-        
-        // Collect samples in rings around the pixel
         const samples = [];
         
-        // Start with nearby samples
         for (let r = 3; r <= radius; r += 2) {
             const samplePoints = [];
             
-            // Sample in a circle around the pixel
             for (let angle = 0; angle < 360; angle += 45) {
                 const radians = angle * Math.PI / 180;
                 const dx = Math.round(r * Math.cos(radians));
@@ -1009,13 +969,11 @@ function initPdfExtractor() {
                 const sx = x + dx;
                 const sy = y + dy;
                 
-                // Make sure the sample is within image bounds
                 if (sx >= 0 && sx < width && sy >= 0 && sy < height) {
                     samplePoints.push({ x: sx, y: sy });
                 }
             }
             
-            // Check each sample point
             for (const point of samplePoints) {
                 const idx = (point.y * width + point.x) * 4;
                 const r = data[idx];
@@ -1023,31 +981,22 @@ function initPdfExtractor() {
                 const b = data[idx + 2];
                 const brightness = (r + g + b) / 3;
                 
-                // Skip likely text pixels (dark)
                 if (brightness > 180) {
                     samples.push({ r, g, b, brightness });
                 }
             }
             
-            // If we've found enough samples, we can stop
             if (samples.length >= 5) break;
         }
         
         if (samples.length === 0) {
-            // Fallback to white if no good samples found
             return { r: 255, g: 255, b: 255 };
         }
         
-        // Analyze the samples to detect if we're near a background color boundary
-        // (like text that crosses from white background to colored area)
-        
-        // First, check if we have significant color variation in samples
-        // This would indicate the text is near a color boundary
         let colorfulSamples = [];
         let whiteSamples = [];
         
         for (const sample of samples) {
-            // Check if this is a colorful pixel (not white/gray)
             const max = Math.max(sample.r, sample.g, sample.b);
             const min = Math.min(sample.r, sample.g, sample.b);
             const colorfulness = max - min;
@@ -1059,13 +1008,7 @@ function initPdfExtractor() {
             }
         }
         
-        // If we have both colorful and white samples, we're likely at a boundary
         if (colorfulSamples.length > 0 && whiteSamples.length > 0) {
-            // Determine which side of the boundary we're on
-            // We want to choose the color that's closest to the current pixel
-            
-            // For simplicity, we can check which samples are closer (smaller radius)
-            // The first samples in our array come from smaller radius
             for (let i = 0; i < Math.min(3, samples.length); i++) {
                 const sample = samples[i];
                 const max = Math.max(sample.r, sample.g, sample.b);
@@ -1073,24 +1016,16 @@ function initPdfExtractor() {
                 const colorfulness = max - min;
                 
                 if (colorfulness > 30 && sample.brightness < 240) {
-                    // We're closer to a colorful area, use average of colorful samples
                     return averageColors(colorfulSamples);
                 } else if (sample.brightness > 230) {
-                    // We're closer to a white area, use average of white samples
                     return averageColors(whiteSamples);
                 }
             }
         }
         
-        // If no clear boundary detected, use average of all samples
         return averageColors(samples);
     }
     
-    /**
-     * Calculate the average color from samples
-     * @param {Array} samples - Array of color samples {r, g, b}
-     * @returns {Object} - Average color {r, g, b}
-     */
     function averageColors(samples) {
         if (samples.length === 0) return { r: 255, g: 255, b: 255 };
         
@@ -1108,14 +1043,6 @@ function initPdfExtractor() {
         };
     }
     
-    /**
-     * Mask specific areas in template documents with more precision
-     * @param {ImageData} imageData - Canvas image data
-     * @param {Array} protectedAreas - Areas to protect
-     * @param {Uint8ClampedArray} data - Image data array
-     * @param {number} width - Image width
-     * @param {number} height - Image height
-     */
     function maskTemplateSpecificAreas(imageData, protectedAreas, data, width, height) {
         // Template-specific areas to mask
         const areasToMask = [
@@ -1155,7 +1082,6 @@ function initPdfExtractor() {
             let overlapsProtected = false;
             
             for (const protected of protectedAreas) {
-                // Check for overlap
                 if (!(area.x1 < protected.x0 || area.x0 > protected.x1 || 
                       area.y1 < protected.y0 || area.y0 > protected.y1)) {
                     overlapsProtected = true;
@@ -1163,33 +1089,25 @@ function initPdfExtractor() {
                 }
             }
             
-            // Skip if overlaps with protected area
             if (overlapsProtected) continue;
             
-            // Use adaptive masking to preserve graphics
             const usePreciseMasking = wouldMaskOverGraphics(
                 imageData, area.x0, area.y0, area.x1, area.y1);
                 
             if (usePreciseMasking) {
-                // Process the area more carefully
                 for (let y = area.y0; y < area.y1; y++) {
                     for (let x = area.x0; x < area.x1; x++) {
                         const idx = (y * width + x) * 4;
-                        
-                        // Check if this is likely text (darker than surroundings)
                         const r = data[idx];
                         const g = data[idx + 1];
                         const b = data[idx + 2];
                         
                         const brightness = (r + g + b) / 3;
                         
-                        // Only replace likely text pixels
                         if (brightness < 180) {
-                            // Sample background color
                             const bgColor = sampleBackgroundColor(
                                 imageData, x, y, area.x0, area.y0, area.x1, area.y1);
                                 
-                            // Replace text with background color
                             data[idx] = bgColor.r;
                             data[idx + 1] = bgColor.g;
                             data[idx + 2] = bgColor.b;
@@ -1197,54 +1115,38 @@ function initPdfExtractor() {
                     }
                 }
             } else {
-                // Standard white fill for areas without graphics
                 for (let y = area.y0; y < area.y1; y++) {
                     for (let x = area.x0; x < area.x1; x++) {
                         const idx = (y * width + x) * 4;
-                        data[idx] = 255;     // R
-                        data[idx + 1] = 255; // G
-                        data[idx + 2] = 255; // B
+                        data[idx] = 255;
+                        data[idx + 1] = 255;
+                        data[idx + 2] = 255;
                     }
                 }
             }
         }
     }
     
-    /**
-     * Sample the surrounding area to determine background color
-     * @param {ImageData} imageData - Canvas image data
-     * @param {number} x - Current X coordinate
-     * @param {number} y - Current Y coordinate
-     * @param {number} boundsX0 - Left boundary
-     * @param {number} boundsY0 - Top boundary
-     * @param {number} boundsX1 - Right boundary
-     * @param {number} boundsY1 - Bottom boundary
-     * @returns {Object} - Background color {r, g, b}
-     */
     function sampleBackgroundColor(imageData, x, y, boundsX0, boundsY0, boundsX1, boundsY1) {
         const { width, data } = imageData;
         
-        // Define sampling offsets (pixels away from current position)
         const offsets = [
             {dx: -5, dy: 0}, {dx: 5, dy: 0}, {dx: 0, dy: -5}, {dx: 0, dy: 5},
             {dx: -5, dy: -5}, {dx: 5, dy: 5}, {dx: -5, dy: 5}, {dx: 5, dy: -5}
         ];
         
-        // Collect color samples
         const samples = [];
         
         for (const {dx, dy} of offsets) {
             const sx = x + dx;
             const sy = y + dy;
             
-            // Ensure sample is within bounds
             if (sx >= boundsX0 && sx < boundsX1 && sy >= boundsY0 && sy < boundsY1) {
                 const idx = (sy * width + sx) * 4;
                 const r = data[idx];
                 const g = data[idx + 1];
                 const b = data[idx + 2];
                 
-                // Add sample if it's likely background (brighter)
                 const brightness = (r + g + b) / 3;
                 if (brightness > 200) {
                     samples.push({r, g, b});
@@ -1252,7 +1154,6 @@ function initPdfExtractor() {
             }
         }
         
-        // If we have samples, calculate the average color
         if (samples.length > 0) {
             const avg = samples.reduce((acc, {r, g, b}) => {
                 acc.r += r;
@@ -1268,39 +1169,28 @@ function initPdfExtractor() {
             };
         }
         
-        // Default to white if no good samples
         return {r: 255, g: 255, b: 255};
     }
     
-    /**
-     * Detect colored text regions that might be missed by PDF.js text extraction
-     * @param {ImageData} imageData - Canvas image data
-     * @returns {Array} - Array of potential text regions
-     */
+    // Complete the remaining function implementations
     function detectColoredTextRegions(imageData) {
         const { width, height, data } = imageData;
         const regions = [];
         
-        // Create a temporary canvas for analysis
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = width;
         tempCanvas.height = height;
         const tempCtx = tempCanvas.getContext('2d');
         const tempImageData = tempCtx.createImageData(width, height);
         
-        // Copy image data to temporary canvas
         for (let i = 0; i < data.length; i++) {
             tempImageData.data[i] = data[i];
         }
         
-        // Apply edge detection to find text-like contours
         applyEdgeDetection(tempImageData);
         tempCtx.putImageData(tempImageData, 0, 0);
         
-        // Scan for horizontal clusters of edges (likely text)
         const visited = new Uint8Array(width * height);
-        
-        // Scan with wider spacing for efficiency
         const scanStep = 5;
         
         for (let y = 0; y < height; y += scanStep) {
@@ -1312,24 +1202,16 @@ function initPdfExtractor() {
                 const idx = (y * width + x) * 4;
                 const brightness = (tempImageData.data[idx] + tempImageData.data[idx + 1] + tempImageData.data[idx + 2]) / 3;
                 
-                // Check if this is an edge pixel (part of potential text)
                 if (brightness < 200 && !visited[y * width + x]) {
-                    // If we're not already in a line, mark the start
                     if (!isInLine) {
                         lineStart = x;
                         isInLine = true;
-                        
-                        // Estimate the height of this text line
                         lineHeight = estimateTextLineHeight(tempImageData, x, y, width, height);
                     }
                     
-                    // Mark as visited
                     visited[y * width + x] = 1;
                 } else if (isInLine && (brightness >= 200 || x - lineStart > 50)) {
-                    // End of line detected
-                    // Only consider lines that are reasonably long (likely text, not noise)
                     if (x - lineStart > 20) {
-                        // Add padding around the region
                         const padding = Math.max(5, Math.floor(lineHeight * 0.5));
                         
                         regions.push({
@@ -1344,46 +1226,32 @@ function initPdfExtractor() {
                 }
             }
             
-            // Handle line that extends to the right edge
-            if (isInLine) {
-                if (width - lineStart > 20) {
-                    const padding = Math.max(5, Math.floor(lineHeight * 0.5));
-                    
-                    regions.push({
-                        x0: Math.max(0, lineStart - padding),
-                        y0: Math.max(0, y - padding),
-                        x1: width - 1,
-                        y1: Math.min(height - 1, y + lineHeight + padding)
-                    });
-                }
+            if (isInLine && width - lineStart > 20) {
+                const padding = Math.max(5, Math.floor(lineHeight * 0.5));
+                
+                regions.push({
+                    x0: Math.max(0, lineStart - padding),
+                    y0: Math.max(0, y - padding),
+                    x1: width - 1,
+                    y1: Math.min(height - 1, y + lineHeight + padding)
+                });
             }
         }
         
-        // Merge overlapping regions
         return mergeOverlappingRegions(regions);
     }
     
-    /**
-     * Apply simple edge detection to highlight text-like features
-     * @param {ImageData} imageData - Image data to process
-     */
     function applyEdgeDetection(imageData) {
         const { width, height, data } = imageData;
-        
-        // Create a copy of the image data
         const original = new Uint8ClampedArray(data);
         
-        // Simple edge detection - look for significant color changes
         for (let y = 1; y < height - 1; y++) {
             for (let x = 1; x < width - 1; x++) {
                 const idx = (y * width + x) * 4;
-                
-                // Sample current pixel
                 const r = original[idx];
                 const g = original[idx + 1];
                 const b = original[idx + 2];
                 
-                // Sample neighboring pixels
                 const idxRight = (y * width + (x + 1)) * 4;
                 const idxDown = ((y + 1) * width + x) * 4;
                 
@@ -1395,42 +1263,28 @@ function initPdfExtractor() {
                 const gDown = original[idxDown + 1];
                 const bDown = original[idxDown + 2];
                 
-                // Calculate differences
                 const diffRight = Math.abs(r - rRight) + Math.abs(g - gRight) + Math.abs(b - bRight);
                 const diffDown = Math.abs(r - rDown) + Math.abs(g - gDown) + Math.abs(b - bDown);
                 
-                // If there's a significant change in either direction, mark as edge
                 if (diffRight > 40 || diffDown > 40) {
-                    data[idx] = 0;     // R
-                    data[idx + 1] = 0; // G
-                    data[idx + 2] = 0; // B
+                    data[idx] = 0;
+                    data[idx + 1] = 0;
+                    data[idx + 2] = 0;
                 } else {
-                    data[idx] = 255;     // R
-                    data[idx + 1] = 255; // G
-                    data[idx + 2] = 255; // B
+                    data[idx] = 255;
+                    data[idx + 1] = 255;
+                    data[idx + 2] = 255;
                 }
             }
         }
     }
     
-    /**
-     * Estimate the height of a text line
-     * @param {ImageData} imageData - Image data
-     * @param {number} startX - X coordinate to start from
-     * @param {number} startY - Y coordinate to start from
-     * @param {number} width - Image width
-     * @param {number} height - Image height
-     * @returns {number} - Estimated line height
-     */
     function estimateTextLineHeight(imageData, startX, startY, width, height) {
         const { data } = imageData;
-        
-        // Search downward for the bottom of the line
         let bottomFound = false;
         let lineBottom = startY;
         
         for (let y = startY + 1; y < Math.min(height - 1, startY + 50) && !bottomFound; y++) {
-            // Check a few pixels at this y level
             let hasEdge = false;
             
             for (let dx = -5; dx <= 5; dx++) {
@@ -1448,20 +1302,15 @@ function initPdfExtractor() {
             
             if (hasEdge) {
                 lineBottom = y;
-            } else {
-                // If we've gone a few rows without finding edges, consider it the bottom
-                if (y > lineBottom + 5) {
-                    bottomFound = true;
-                }
+            } else if (y > lineBottom + 5) {
+                bottomFound = true;
             }
         }
         
-        // Search upward for the top of the line
         let topFound = false;
         let lineTop = startY;
         
         for (let y = startY - 1; y >= Math.max(0, startY - 50) && !topFound; y--) {
-            // Check a few pixels at this y level
             let hasEdge = false;
             
             for (let dx = -5; dx <= 5; dx++) {
@@ -1479,27 +1328,17 @@ function initPdfExtractor() {
             
             if (hasEdge) {
                 lineTop = y;
-            } else {
-                // If we've gone a few rows without finding edges, consider it the top
-                if (y < lineTop - 5) {
-                    topFound = true;
-                }
+            } else if (y < lineTop - 5) {
+                topFound = true;
             }
         }
         
-        // Return the estimated line height
         return lineBottom - lineTop + 1;
     }
     
-    /**
-     * Merge overlapping regions
-     * @param {Array} regions - Array of regions {x0, y0, x1, y1}
-     * @returns {Array} - Merged regions
-     */
     function mergeOverlappingRegions(regions) {
         if (regions.length <= 1) return regions;
         
-        // Make a copy to avoid modifying the original array while iterating
         const result = [...regions];
         let mergeHappened;
         
@@ -1511,17 +1350,14 @@ function initPdfExtractor() {
                     const regionA = result[i];
                     const regionB = result[j];
                     
-                    // Check for overlap
                     if (!(regionA.x1 < regionB.x0 || regionA.x0 > regionB.x1 || 
                           regionA.y1 < regionB.y0 || regionA.y0 > regionB.y1)) {
                         
-                        // Merge the regions
                         regionA.x0 = Math.min(regionA.x0, regionB.x0);
                         regionA.y0 = Math.min(regionA.y0, regionB.y0);
                         regionA.x1 = Math.max(regionA.x1, regionB.x1);
                         regionA.y1 = Math.max(regionA.y1, regionB.y1);
                         
-                        // Remove region B
                         result.splice(j, 1);
                         
                         mergeHappened = true;
@@ -1536,29 +1372,17 @@ function initPdfExtractor() {
         return result;
     }
     
-    /**
-     * Add detected colored text regions to the PDF.js text content
-     * @param {Object} textContent - PDF.js text content
-     * @param {Array} regions - Detected text regions
-     * @param {Object} viewport - PDF.js viewport
-     * @param {number} scale - Scale factor
-     */
     function addColoredTextRegionsToTextContent(textContent, regions, viewport, scale) {
-        // Check if regions might overlap with existing text items
         for (const region of regions) {
             let overlapsExisting = false;
             
-            // Check against existing text items
             for (const item of textContent.items) {
                 const transform = item.transform;
                 const fontSize = Math.abs(transform[3]);
                 
-                // PDF coordinates start from bottom-left with y-axis pointing up
-                // Canvas coordinates start from top-left with y-axis pointing down
                 const itemX = transform[4] * scale;
                 const itemY = viewport.height - (transform[5] * scale);
                 
-                // Estimate text bounding box
                 const padding = fontSize * scale * 0.5;
                 const textWidth = (item.width || fontSize * item.str.length * 0.6) * scale;
                 
@@ -1567,7 +1391,6 @@ function initPdfExtractor() {
                 const textX1 = itemX + textWidth + padding;
                 const textY1 = itemY + padding;
                 
-                // Check for overlap
                 if (!(region.x1 < textX0 || region.x0 > textX1 || 
                       region.y1 < textY0 || region.y0 > textY1)) {
                     overlapsExisting = true;
@@ -1575,21 +1398,14 @@ function initPdfExtractor() {
                 }
             }
             
-            // If it doesn't overlap with existing items, add it as a new text item
             if (!overlapsExisting) {
-                // Create a synthetic text item for the region
-                // Note: We don't know the actual text content, but we're just
-                // interested in the region for masking purposes
-                
-                // Convert from canvas to PDF coordinates
                 const y = viewport.height - (region.y0 + (region.y1 - region.y0) / 2);
                 const x = region.x0 + (region.x1 - region.x0) / 2;
                 
-                // Estimate font size based on region height
                 const fontSize = (region.y1 - region.y0) / 2 / scale;
                 
                 textContent.items.push({
-                    str: "~COLORED_TEXT~", // Placeholder text
+                    str: "~COLORED_TEXT~",
                     dir: "ltr",
                     width: (region.x1 - region.x0) / scale,
                     height: (region.y1 - region.y0) / scale,
@@ -1598,8 +1414,88 @@ function initPdfExtractor() {
                         x / scale, 
                         y / scale
                     ],
-                    fontName: "g_d0_f1" // Placeholder font name
+                    fontName: "g_d0_f1"
                 });
             }
         }
     }
+    
+    function performAdditionalTextRemoval(imageData) {
+        const { width, height, data } = imageData;
+        
+        // Create a copy of the image data for analysis
+        const tempData = new Uint8ClampedArray(data);
+        
+        // Parameters for local contrast analysis
+        const windowSize = 7;
+        const halfWindow = Math.floor(windowSize / 2);
+        const threshold = 30;
+        
+        // Scan the image for local contrast variations (likely text)
+        for (let y = halfWindow; y < height - halfWindow; y++) {
+            for (let x = halfWindow; x < width - halfWindow; x++) {
+                const centerIdx = (y * width + x) * 4;
+                const centerPixel = {
+                    r: tempData[centerIdx],
+                    g: tempData[centerIdx + 1],
+                    b: tempData[centerIdx + 2]
+                };
+                const centerBrightness = (centerPixel.r + centerPixel.g + centerPixel.b) / 3;
+                
+                if (centerBrightness > 230) continue;
+                
+                let hasHighContrast = false;
+                let localBackgroundColor = null;
+                
+                // Sample the window to find contrast
+                for (let wy = -halfWindow; wy <= halfWindow && !hasHighContrast; wy++) {
+                    for (let wx = -halfWindow; wx <= halfWindow && !hasHighContrast; wx++) {
+                        if (wx === 0 && wy === 0) continue;
+                        
+                        const nx = x + wx;
+                        const ny = y + wy;
+                        
+                        const neighborIdx = (ny * width + nx) * 4;
+                        const neighborPixel = {
+                            r: tempData[neighborIdx],
+                            g: tempData[neighborIdx + 1],
+                            b: tempData[neighborIdx + 2]
+                        };
+                        
+                        const neighborBrightness = (neighborPixel.r + neighborPixel.g + neighborPixel.b) / 3;
+                        
+                        if (Math.abs(centerBrightness - neighborBrightness) > threshold) {
+                            hasHighContrast = true;
+                            
+                            if (neighborBrightness > centerBrightness) {
+                                localBackgroundColor = neighborPixel;
+                            }
+                        } else if (neighborBrightness > 230 && !localBackgroundColor) {
+                            localBackgroundColor = neighborPixel;
+                        }
+                    }
+                }
+                
+                if (hasHighContrast && localBackgroundColor) {
+                    data[centerIdx] = localBackgroundColor.r;
+                    data[centerIdx + 1] = localBackgroundColor.g;
+                    data[centerIdx + 2] = localBackgroundColor.b;
+                }
+            }
+        }
+    }
+    
+    // Initialize the PDF extractor
+    logMessage('PDF Extractor initialized');
+    logMessage('System ready. Upload PDF files to begin.');
+}
+
+// Initialize the module when the DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        console.log('Initializing PDF Extractor...');
+        initPdfExtractor();
+    } catch (err) {
+        console.error('Error initializing PDF Extractor:', err);
+    }
+});
