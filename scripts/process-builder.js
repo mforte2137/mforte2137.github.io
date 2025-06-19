@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const prompt = buildProcessPrompt(service, serviceType, audience, numSteps);
         
         try {
-            // Call your existing Claude API endpoint
+// Call your existing Claude API endpoint
             const response = await fetch('/api/claude-api', {
                 method: 'POST',
                 headers: {
@@ -115,14 +115,21 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (!response.ok) {
+                console.log('🔴 AI API FAILED - Using fallback content. Status:', response.status);
                 throw new Error(`API request failed with status ${response.status}`);
             }
 
             const data = await response.json();
+            console.log('✅ AI API SUCCESS - Raw response:', data);
+            console.log('📝 Generated content length:', data.content ? data.content.length : 'No content');
             
             // Parse the response to extract steps
-            return parseProcessSteps(data.content, numSteps);
+            const parsedSteps = parseProcessSteps(data.content, numSteps);
+            console.log('🔧 Parsed steps count:', parsedSteps.length);
+            
+            return parsedSteps;
         } catch (error) {
+            console.log('🟡 FALLBACK CONTENT USED due to error:', error.message);
             console.error('Claude API error:', error);
             // Fallback to hardcoded examples
             return generateFallbackSteps(service, serviceType, numSteps);
