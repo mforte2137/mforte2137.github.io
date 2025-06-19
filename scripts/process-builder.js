@@ -182,41 +182,41 @@ Focus on ${serviceType} best practices. Make each description compelling and sho
         return steps;
     }
 
-    // Generate fallback steps if AI fails
-    function generateFallbackSteps(service, serviceType, numSteps) {
-        const fallbackSteps = {
-            'migration': [
-                { title: 'Assessment', description: 'Evaluate current system setup and data requirements.' },
-                { title: 'Planning', description: 'Develop a tailored migration strategy and timeline.' },
-                { title: 'Preparation', description: 'Set up target environment and configure security settings.' },
-                { title: 'Data Migration', description: 'Transfer emails, files, and user accounts securely.' },
-                { title: 'Testing', description: 'Verify all systems are functioning correctly.' },
-                { title: 'Training', description: 'Provide user training on new platform features.' },
-                { title: 'Go-Live', description: 'Complete the transition and provide ongoing support.' }
-            ],
-            'security': [
-                { title: 'Discovery', description: 'Assess current security posture and identify vulnerabilities.' },
-                { title: 'Risk Analysis', description: 'Evaluate threats and prioritize security improvements.' },
-                { title: 'Strategy', description: 'Develop comprehensive security implementation plan.' },
-                { title: 'Implementation', description: 'Deploy security solutions and configure protections.' },
-                { title: 'Testing', description: 'Validate security measures and conduct penetration testing.' },
-                { title: 'Training', description: 'Educate staff on security best practices and protocols.' },
-                { title: 'Monitoring', description: 'Establish ongoing security monitoring and maintenance.' }
-            ],
-            'infrastructure': [
-                { title: 'Assessment', description: 'Evaluate current infrastructure and performance requirements.' },
-                { title: 'Design', description: 'Create optimized infrastructure architecture plan.' },
-                { title: 'Procurement', description: 'Source and acquire necessary hardware and software.' },
-                { title: 'Implementation', description: 'Install and configure new infrastructure components.' },
-                { title: 'Migration', description: 'Transfer services to new infrastructure safely.' },
-                { title: 'Testing', description: 'Verify performance and reliability of new systems.' },
-                { title: 'Optimization', description: 'Fine-tune performance and establish monitoring.' }
-            ]
-        };
-        
-        const defaultSteps = fallbackSteps[serviceType] || fallbackSteps['migration'];
-        return defaultSteps.slice(0, numSteps);
-    }
+// Generate fallback steps if AI fails
+function generateFallbackSteps(service, serviceType, numSteps) {
+    const fallbackSteps = {
+        'migration': [
+            { title: 'Assessment', description: 'We conduct a comprehensive evaluation of your current system architecture, data volumes, and user requirements. This thorough analysis ensures we understand all dependencies and potential challenges before migration begins. Our detailed assessment becomes the foundation for a successful, risk-free transition.' },
+            { title: 'Planning', description: 'Our team develops a customized migration strategy with detailed timelines, resource allocation, and risk mitigation plans. We coordinate with your stakeholders to minimize business disruption and ensure all requirements are met. This strategic planning phase is crucial for delivering a seamless migration experience.' },
+            { title: 'Preparation', description: 'We configure your target environment with optimal security settings, user policies, and integration requirements. Our technical specialists ensure all systems are properly provisioned and tested before any data moves. This preparation phase eliminates surprises and ensures your new environment is ready for immediate productivity.' },
+            { title: 'Data Migration', description: 'Using enterprise-grade tools and proven methodologies, we securely transfer your emails, files, and user accounts with zero data loss. Our migration process includes real-time monitoring and validation to ensure data integrity throughout the transfer. We handle all technical complexities while keeping your team informed of progress.' },
+            { title: 'Testing', description: 'We perform comprehensive testing of all migrated systems, user access, and integrations to verify everything functions perfectly. Our quality assurance process includes user acceptance testing and performance validation to ensure your team can work seamlessly. This thorough testing phase guarantees a smooth go-live experience.' },
+            { title: 'Training', description: 'We provide customized training sessions tailored to your team\'s roles and the new platform features they\'ll use daily. Our training includes hands-on workshops, documentation, and ongoing support resources to maximize user adoption. Proper training ensures your investment delivers immediate productivity gains.' },
+            { title: 'Go-Live', description: 'We orchestrate the final transition with minimal downtime and provide dedicated support during the critical first days. Our team monitors system performance and user activity to quickly address any issues that arise. This white-glove go-live support ensures your business operations continue without interruption.' }
+        ],
+        'security': [
+            { title: 'Discovery', description: 'We perform a comprehensive security audit of your current infrastructure, identifying vulnerabilities, compliance gaps, and potential threat vectors. Our certified security experts use industry-standard tools and methodologies to create a complete picture of your security posture. This discovery phase provides the critical intelligence needed to build an effective security strategy.' },
+            { title: 'Risk Analysis', description: 'Our team evaluates identified threats against your business operations, prioritizing risks based on potential impact and likelihood of occurrence. We assess your industry-specific compliance requirements and regulatory obligations to ensure comprehensive coverage. This analysis creates a roadmap for implementing the most critical security improvements first.' },
+            { title: 'Strategy', description: 'We develop a comprehensive security implementation plan that balances protection with operational efficiency and budget considerations. Our strategy includes technology recommendations, policy development, and staff training requirements tailored to your business needs. This strategic approach ensures security investments deliver maximum protection and ROI.' },
+            { title: 'Implementation', description: 'Our certified technicians deploy and configure security solutions using industry best practices and your organization\'s specific requirements. We implement layered security controls including firewalls, endpoint protection, and access management systems with minimal business disruption. Each implementation phase includes thorough testing and validation before proceeding.' },
+            { title: 'Testing', description: 'We conduct rigorous security testing including vulnerability assessments and simulated attack scenarios to validate the effectiveness of implemented controls. Our testing methodology includes both automated scanning and manual penetration testing by certified ethical hackers. This comprehensive testing ensures your security measures can withstand real-world threats.' },
+            { title: 'Training', description: 'We deliver customized security awareness training that empowers your staff to recognize and respond appropriately to security threats. Our training programs include phishing simulations, incident response procedures, and ongoing security best practices relevant to your industry. Well-trained employees become your strongest defense against cyber threats.' },
+            { title: 'Monitoring', description: 'We establish 24/7 security monitoring and incident response capabilities to detect and respond to threats in real-time. Our security operations center provides continuous threat intelligence and proactive threat hunting to stay ahead of emerging risks. This ongoing monitoring ensures your security posture remains strong against evolving threats.' }
+        ],
+        'infrastructure': [
+            { title: 'Assessment', description: 'We conduct a thorough evaluation of your current infrastructure performance, capacity, and future growth requirements. Our technical assessment identifies bottlenecks, single points of failure, and opportunities for improvement that align with your business objectives. This comprehensive analysis ensures our recommendations deliver both immediate and long-term value.' },
+            { title: 'Design', description: 'Our infrastructure architects create a detailed design that optimizes performance, reliability, and scalability while staying within your budget parameters. We incorporate industry best practices, redundancy planning, and future expansion capabilities into every design decision. This strategic design approach ensures your infrastructure investment supports business growth for years to come.' },
+            { title: 'Procurement', description: 'We leverage our vendor relationships and technical expertise to source the optimal hardware and software solutions for your specific requirements. Our procurement process includes competitive pricing, warranty optimization, and compatibility validation to ensure you receive maximum value. We handle all vendor coordination and technical specifications so you can focus on your business.' },
+            { title: 'Implementation', description: 'Our certified technicians install and configure your new infrastructure components using proven methodologies and rigorous testing procedures. We coordinate installations to minimize business disruption and ensure seamless integration with your existing systems. Every implementation phase includes comprehensive documentation and knowledge transfer to your team.' },
+            { title: 'Migration', description: 'We carefully transfer your services and data to the new infrastructure using advanced migration tools and proven procedures that eliminate downtime. Our migration process includes comprehensive testing and rollback procedures to ensure business continuity throughout the transition. We handle all technical complexities while keeping your operations running smoothly.' },
+            { title: 'Testing', description: 'We perform extensive performance and reliability testing to verify your new infrastructure meets all specifications and performance requirements. Our testing includes stress testing, failover validation, and user acceptance testing to ensure everything works perfectly under real-world conditions. This thorough validation process guarantees your infrastructure will support your business demands.' },
+            { title: 'Optimization', description: 'We fine-tune your infrastructure performance and establish comprehensive monitoring systems to ensure optimal operation and proactive issue resolution. Our optimization includes performance baseline establishment, alert configuration, and maintenance scheduling to maximize system reliability. This ongoing optimization ensures your infrastructure investment continues delivering peak performance.' }
+        ]
+    };
+    
+    const defaultSteps = fallbackSteps[serviceType] || fallbackSteps['migration'];
+    return defaultSteps.slice(0, numSteps);
+}
 
     // Display steps editor
     function displayStepsEditor(steps) {
