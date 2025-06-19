@@ -339,29 +339,42 @@ h2 {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
+  border: none;
 }
 .process-table td {
-  padding: 15px;
+  padding: 20px 15px;
   vertical-align: top;
+  border: none;
   border-bottom: 1px solid #f0f0f0;
 }
+.process-table tr:last-child td {
+  border-bottom: none;
+}
 .icon-cell {
-  width: 60px;
+  width: 80px;
   text-align: center;
+  padding-right: 25px;
 }
 .icon-cell img {
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
+  display: block;
+  margin: 0 auto;
+}
+.content-cell {
+  padding-left: 10px;
 }
 .content-cell h3 {
-  margin: 0 0 8px 0;
+  margin: 0 0 10px 0;
   font-size: 18px;
   color: #333;
+  font-weight: bold;
 }
 .content-cell p {
   margin: 0;
   color: #666;
   font-size: 14px;
+  line-height: 1.5;
 }
 </style>
 </head>
