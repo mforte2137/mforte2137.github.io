@@ -308,7 +308,7 @@ function generateFallbackSteps(service, serviceType, numSteps) {
         // Create dynamic checkmark icon with brand color
         const dynamicCheckmark = checkmarkIconBase64.replace('#96b83b', color);
         
-        let htmlCode = `<!DOCTYPE html>
+let htmlCode = `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -336,15 +336,25 @@ h2 {
   color: #666;
 }
 .process-step {
-  display: flex;
-  align-items: flex-start;
+  display: table;
+  width: 100%;
   margin-bottom: 30px;
+  table-layout: fixed;
 }
 .step-icon {
+  display: table-cell;
+  width: 60px;
+  vertical-align: top;
+  padding-right: 20px;
+}
+.step-icon img {
   width: 40px;
   height: 40px;
-  margin-right: 20px;
-  flex-shrink: 0;
+  display: block;
+}
+.step-content {
+  display: table-cell;
+  vertical-align: top;
 }
 .step-content h3 {
   margin: 0 0 8px 0;
@@ -358,11 +368,18 @@ h2 {
 }
 @media (max-width: 600px) {
   .process-step {
-    flex-direction: column;
+    display: block;
     text-align: center;
   }
   .step-icon {
-    margin: 0 auto 10px auto;
+    display: block;
+    width: auto;
+    text-align: center;
+    padding-right: 0;
+    padding-bottom: 10px;
+  }
+  .step-content {
+    display: block;
   }
 }
 </style>
