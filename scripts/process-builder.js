@@ -140,7 +140,9 @@ document.addEventListener('DOMContentLoaded', function() {
 function buildProcessPrompt(service, serviceType, audience, numSteps) {
     return `Generate a professional ${numSteps}-step process overview for "${service}" targeting ${audience}. 
 
-Create exactly ${numSteps} logical steps that demonstrate methodology and build confidence. Each step should:
+First, create a compelling title that captures the essence of this process (replace "Every Step Of The Process Managed" with something specific to this service).
+
+Then create exactly ${numSteps} logical steps that demonstrate methodology and build confidence. Each step should:
 - Have a clear, actionable title (2-4 words)
 - Include a robust 2-3 sentence description that:
   * Explains what happens in this step
@@ -149,6 +151,8 @@ Create exactly ${numSteps} logical steps that demonstrate methodology and build 
   * Builds trust and justifies the investment
 
 Format as:
+Title: [Your compelling title for this specific process]
+
 Step 1: [Title] - [2-3 sentence detailed description explaining the value and process]
 Step 2: [Title] - [2-3 sentence detailed description explaining the value and process]
 ...
