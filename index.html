@@ -346,7 +346,96 @@
         </div>
     </div>
 </div>
-    
+  <!-- Process Builder Tab -->
+<div id="process-builder" class="tab-content">
+    <p>Generate professional step-by-step process overviews for MSP services. Perfect for showing methodology and building client confidence.</p>
+
+    <div class="container">
+        <div class="options">
+            <div class="option-group">
+                <label for="service-type">MSP Service Type:</label>
+                <select id="service-type">
+                    <option value="">Select a service...</option>
+                    <option value="migration">Migration Services (G Suite to M365, Server Migration, etc.)</option>
+                    <option value="security">Security Services (Assessment, Compliance, Penetration Testing)</option>
+                    <option value="infrastructure">Infrastructure Projects (Firewall, Network, Server Upgrades)</option>
+                    <option value="communication">Communication Systems (VoIP, Teams Implementation)</option>
+                    <option value="backup">Backup & Recovery (Disaster Recovery, Backup Systems)</option>
+                    <option value="compliance">Compliance Projects (HIPAA, SOX, PCI-DSS)</option>
+                    <option value="custom">Custom Service (Describe Your Own)</option>
+                </select>
+            </div>
+
+            <div class="option-group">
+                <label for="specific-service">Specific Service:</label>
+                <input type="text" id="specific-service" placeholder="e.g., G Suite to Microsoft 365 Migration" style="width: 100%;">
+                <small>Be specific about what service you're providing</small>
+            </div>
+
+            <div class="option-group">
+                <label for="target-audience">Target Audience:</label>
+                <select id="target-audience">
+                    <option value="executives">Business Executives</option>
+                    <option value="it-managers">IT Managers</option>
+                    <option value="decision-makers">Decision Makers</option>
+                    <option value="technical-staff">Technical Staff</option>
+                </select>
+            </div>
+
+            <div class="option-group">
+                <label for="process-steps">Number of Steps:</label>
+                <select id="process-steps">
+                    <option value="5">5 Steps</option>
+                    <option value="6">6 Steps</option>
+                    <option value="7" selected>7 Steps</option>
+                    <option value="8">8 Steps</option>
+                    <option value="9">9 Steps</option>
+                    <option value="10">10 Steps</option>
+                </select>
+            </div>
+
+            <div class="option-group">
+                <label for="brand-color">Brand Color:</label>
+                <input type="color" id="brand-color" value="#96b83b">
+                <small>Color for checkmarks and accents</small>
+            </div>
+        </div>
+
+        <div class="button-container">
+            <button id="generate-process-btn">Generate Process Steps</button>
+            <button id="clear-process-btn">Clear All Fields</button>
+        </div>
+
+        <div id="process-status" class="status"></div>
+
+        <div class="progress-container" id="process-progress-container">
+            <p id="process-progress-text">Generating process steps...</p>
+            <progress id="process-progress-bar" value="50" max="100"></progress>
+        </div>
+
+        <div class="text-content" id="process-content-section" style="display: none;">
+            <h3>Generated Process Steps</h3>
+            <p>Edit the generated steps as needed:</p>
+            <div id="process-steps-editor"></div>
+        </div>
+
+        <!-- Output with Preview above HTML Code -->
+        <div class="output-container" id="process-output-container" style="display: none;">
+            <div class="preview-section">
+                <h3>Process Preview</h3>
+                <div id="process-preview"></div>
+            </div>
+
+            <div class="html-output-section">
+                <div class="code-header">
+                    <h3>HTML Code</h3>
+                    <button id="copy-process-html-btn" class="copy-button">Copy Code</button>
+                </div>
+                <pre class="code-content" id="process-html-code"></pre>
+            </div>
+        </div>
+    </div>
+</div>  
     <!-- JavaScript Files -->
     <script src="scripts/main.js"></script>
     <script src="scripts/cover-page-creator.js"></script>
