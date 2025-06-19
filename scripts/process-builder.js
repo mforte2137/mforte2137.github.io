@@ -335,52 +335,33 @@ h2 {
   font-size: 16px;
   color: #666;
 }
-.process-step {
-  display: table;
+.process-table {
   width: 100%;
-  margin-bottom: 30px;
-  table-layout: fixed;
+  border-collapse: collapse;
+  margin-top: 20px;
 }
-.step-icon {
-  display: table-cell;
-  width: 60px;
+.process-table td {
+  padding: 15px;
   vertical-align: top;
-  padding-right: 20px;
+  border-bottom: 1px solid #f0f0f0;
 }
-.step-icon img {
+.icon-cell {
+  width: 60px;
+  text-align: center;
+}
+.icon-cell img {
   width: 40px;
   height: 40px;
-  display: block;
 }
-.step-content {
-  display: table-cell;
-  vertical-align: top;
-}
-.step-content h3 {
+.content-cell h3 {
   margin: 0 0 8px 0;
   font-size: 18px;
   color: #333;
 }
-.step-content p {
+.content-cell p {
   margin: 0;
   color: #666;
   font-size: 14px;
-}
-@media (max-width: 600px) {
-  .process-step {
-    display: block;
-    text-align: center;
-  }
-  .step-icon {
-    display: block;
-    width: auto;
-    text-align: center;
-    padding-right: 0;
-    padding-bottom: 10px;
-  }
-  .step-content {
-    display: block;
-  }
 }
 </style>
 </head>
@@ -388,23 +369,24 @@ h2 {
 <h2>Every Step Of The Process Managed</h2>
 <p class="intro">We're excited to offer you a transformative ${serviceName.toLowerCase()} solution to enhance your organization's capabilities. Our structured approach ensures a smooth transition and optimal results.</p>
 
-`;
+<table class="process-table">`;
 
-generatedProcessData.forEach((step, index) => {
-            htmlCode += `<div class="process-step">
-  <div class="step-icon">
-    <img src="${dynamicCheckmark}" alt="Step ${index + 1}">
-  </div>
-  <div class="step-content">
-    <h3>${step.title}</h3>
-    <p>${step.description}</p>
-  </div>
-</div>
-
-`;
+        generatedProcessData.forEach((step, index) => {
+            htmlCode += `
+  <tr>
+    <td class="icon-cell">
+      <img src="${dynamicCheckmark}" alt="Step ${index + 1}">
+    </td>
+    <td class="content-cell">
+      <h3>${step.title}</h3>
+      <p>${step.description}</p>
+    </td>
+  </tr>`;
         });
 
-        htmlCode += `</body>
+        htmlCode += `
+</table>
+</body>
 </html>`;
 
         processHtmlCode.textContent = htmlCode;
