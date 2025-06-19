@@ -129,23 +129,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Build AI prompt for process generation
-    function buildProcessPrompt(service, serviceType, audience, numSteps) {
-        return `Generate a professional ${numSteps}-step process overview for "${service}" targeting ${audience}. 
+// Build AI prompt for process generation
+function buildProcessPrompt(service, serviceType, audience, numSteps) {
+    return `Generate a professional ${numSteps}-step process overview for "${service}" targeting ${audience}. 
 
 Create exactly ${numSteps} logical steps that demonstrate methodology and build confidence. Each step should:
 - Have a clear, actionable title (2-4 words)
-- Include a compelling description that justifies the investment
-- Show expertise and professionalism
-- Build trust with the client
+- Include a robust 2-3 sentence description that:
+  * Explains what happens in this step
+  * Highlights the value and benefits to the client
+  * Shows expertise and professionalism
+  * Builds trust and justifies the investment
 
 Format as:
-Step 1: [Title] - [Description]
-Step 2: [Title] - [Description]
+Step 1: [Title] - [2-3 sentence detailed description explaining the value and process]
+Step 2: [Title] - [2-3 sentence detailed description explaining the value and process]
 ...
 
-Focus on ${serviceType} best practices. Make each step sound essential and valuable.`;
-    }
+Focus on ${serviceType} best practices. Make each description compelling and show why this step is essential for success. Use professional language that builds confidence in your expertise.`;
+}
 
     // Parse AI response into structured steps
     function parseProcessSteps(content, expectedSteps) {
