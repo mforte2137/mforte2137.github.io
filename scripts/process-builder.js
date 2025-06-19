@@ -298,7 +298,7 @@ function generateFallbackSteps(service, serviceType, numSteps) {
         processPreview.innerHTML = previewHtml;
     }
 
-    // Update HTML code
+// Update HTML code
     function updateHtmlCode() {
         if (!generatedProcessData) return;
         
@@ -308,7 +308,7 @@ function generateFallbackSteps(service, serviceType, numSteps) {
         // Create dynamic checkmark icon with brand color
         const dynamicCheckmark = checkmarkIconBase64.replace('#96b83b', color);
         
-let htmlCode = `<!DOCTYPE html>
+        let htmlCode = `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
