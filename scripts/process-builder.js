@@ -314,88 +314,30 @@ function generateFallbackSteps(service, serviceType, numSteps) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${serviceName} - Process Overview</title>
-<style>
-body {
-  font-family: Arial, sans-serif;
-  line-height: 1.6;
-  color: #333;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-}
-h2 {
-  color: #2c3e50;
-  text-align: center;
-  margin-bottom: 30px;
-  font-size: 28px;
-}
-.intro {
-  text-align: center;
-  margin-bottom: 40px;
-  font-size: 16px;
-  color: #666;
-}
-.process-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-  border: none;
-}
-.process-table td {
-  padding: 20px 15px;
-  vertical-align: top;
-  border: none;
-  border-bottom: 1px solid #f0f0f0;
-}
-.process-table tr:last-child td {
-  border-bottom: none;
-}
-.icon-cell {
-  width: 100px;
-  text-align: center;
-  padding-right: 30px;
-}
-.icon-cell img {
-  width: 50px;
-  height: 50px;
-  display: block;
-  margin: 0 auto;
-}
-.content-cell {
-  padding-left: 10px;
-}
-.content-cell h3 {
-  margin: 0 0 10px 0;
-  font-size: 18px;
-  color: #333;
-  font-weight: bold;
-}
-.content-cell p {
-  margin: 0;
-  color: #666;
-  font-size: 14px;
-  line-height: 1.5;
-}
-</style>
 </head>
-<body>
-<h2>Every Step Of The Process Managed</h2>
-<p class="intro">We're excited to offer you a transformative ${serviceName.toLowerCase()} solution to enhance your organization's capabilities. Our structured approach ensures a smooth transition and optimal results.</p>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px;">
 
-<table class="process-table">`;
+<h2 style="color: #2c3e50; text-align: center; margin-bottom: 30px; font-size: 28px;">Every Step Of The Process Managed</h2>
+
+<p style="text-align: center; margin-bottom: 40px; font-size: 16px; color: #666;">We're excited to offer you a transformative ${serviceName.toLowerCase()} solution to enhance your organization's capabilities. Our structured approach ensures a smooth transition and optimal results.</p>
+
+<table style="width: 100%; border-collapse: collapse; margin-top: 20px; border: none;">`;
 
         generatedProcessData.forEach((step, index) => {
             htmlCode += `
   <tr>
-    <td class="icon-cell">
-      <img src="${dynamicCheckmark}" alt="Step ${index + 1}">
+    <td style="width: 15%; text-align: center; padding: 20px 30px 20px 15px; vertical-align: top; border: none; border-bottom: 1px solid #f0f0f0;">
+      <img src="${dynamicCheckmark}" alt="Step ${index + 1}" style="width: 50px; height: 50px; display: block; margin: 0 auto;">
     </td>
-    <td class="content-cell">
-      <h3>${step.title}</h3>
-      <p>${step.description}</p>
+    <td style="width: 85%; padding: 20px 15px 20px 10px; vertical-align: top; border: none; border-bottom: 1px solid #f0f0f0;">
+      <h3 style="margin: 0 0 10px 0; font-size: 18px; color: #333; font-weight: bold;">${step.title}</h3>
+      <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.5;">${step.description}</p>
     </td>
   </tr>`;
         });
+
+        // Remove border from last row
+        htmlCode = htmlCode.replace(/border-bottom: 1px solid #f0f0f0;(?=[^<]*<\/tr>\s*$)/g, 'border-bottom: none;');
 
         htmlCode += `
 </table>
