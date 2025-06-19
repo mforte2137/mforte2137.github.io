@@ -424,11 +424,21 @@ h2 {
         showStatus('info', 'All fields cleared.');
     });
 
-    // Copy HTML code
+ // Copy HTML code
     copyBtn.addEventListener('click', function() {
         navigator.clipboard.writeText(processHtmlCode.textContent)
         .then(() => {
             showStatus('success', 'HTML code copied to clipboard!');
+            
+            // Also change button text temporarily
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = 'Copied!';
+            copyBtn.style.backgroundColor = '#28a745';
+            
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+                copyBtn.style.backgroundColor = '#2e86de';
+            }, 2000);
         })
         .catch(err => {
             showStatus('error', 'Failed to copy code: ' + err);
@@ -442,6 +452,16 @@ h2 {
             document.body.removeChild(textarea);
             
             showStatus('success', 'HTML code copied to clipboard!');
+            
+            // Change button text for fallback too
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = 'Copied!';
+            copyBtn.style.backgroundColor = '#28a745';
+            
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+                copyBtn.style.backgroundColor = '#2e86de';
+            }, 2000);
         });
     });
 
