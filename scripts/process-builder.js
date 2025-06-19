@@ -48,14 +48,27 @@ document.addEventListener('DOMContentLoaded', function() {
         specificService.placeholder = placeholders[serviceTypeValue] || 'e.g., Describe your MSP service';
     }
 
-    // Generate process steps
+// Generate process steps
     generateBtn.addEventListener('click', async function() {
         const service = specificService.value.trim();
         const serviceTypeValue = serviceType.value;
         const audience = targetAudience.value;
         const numSteps = parseInt(processSteps.value);
 
-        if (!service) {
+        // Auto-capitalize common acronyms
+        const processedService = service
+            .replace(/\bhipaa\b/gi, 'HIPAA')
+            .replace(/\bpci\b/gi, 'PCI')
+            .replace(/\bsox\b/gi, 'SOX')
+            .replace(/\bm365\b/gi, 'M365')
+            .replace(/\bmsp\b/gi, 'MSP')
+            .replace(/\bvoip\b/gi, 'VoIP')
+            .replace(/\baws\b/gi, 'AWS')
+            .replace(/\bazure\b/gi, 'Azure')
+            .replace(/\bg suite\b/gi, 'G Suite')
+            .replace(/\bgsuite\b/gi, 'G Suite');
+
+        if (!processedService) {
             showStatus('error', 'Please enter a specific service description.');
             return;
         }
@@ -66,13 +79,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Show progress
-        showStatus('info', 'Generating process steps for ' + service + '...');
+        showStatus('info', 'Generating process steps for ' + processedService + '...');
         progressContainer.style.display = 'block';
         generateBtn.disabled = true;
 
         try {
             // Generate AI content for process steps
-            const processData = await generateProcessSteps(service, serviceTypeValue, audience, numSteps);
+            const processData = await generateProcessSteps(processedService, serviceTypeValue, audience, numSteps);
             
             if (processData && processData.length > 0) {
                 generatedProcessData = processData;
