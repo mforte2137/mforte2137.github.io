@@ -390,9 +390,11 @@ h2 {
 
 `;
 
-        generatedProcessData.forEach((step, index) => {
+generatedProcessData.forEach((step, index) => {
             htmlCode += `<div class="process-step">
-  <img src="${dynamicCheckmark}" alt="Step ${index + 1}" class="step-icon">
+  <div class="step-icon">
+    <img src="${dynamicCheckmark}" alt="Step ${index + 1}">
+  </div>
   <div class="step-content">
     <h3>${step.title}</h3>
     <p>${step.description}</p>
