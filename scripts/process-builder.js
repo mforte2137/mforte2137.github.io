@@ -351,9 +351,9 @@ h2 {
   border-bottom: none;
 }
 .icon-cell {
-  width: 80px;
+  width: 100px;
   text-align: center;
-  padding-right: 25px;
+  padding-right: 30px;
 }
 .icon-cell img {
   width: 50px;
