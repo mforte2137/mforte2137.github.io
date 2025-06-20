@@ -67,6 +67,8 @@ document.addEventListener('DOMContentLoaded', function() {
             .replace(/\bazure\b/gi, 'Azure')
             .replace(/\bg suite\b/gi, 'G Suite')
             .replace(/\bgsuite\b/gi, 'G Suite');
+        // Store the processed service name globally so other functions can use it
+window.processedServiceName = processedService;
 
         if (!processedService) {
             showStatus('error', 'Please enter a specific service description.');
@@ -324,7 +326,7 @@ function generateFallbackSteps(service, serviceType, numSteps) {
         if (!generatedProcessData) return;
           console.log('🖼️ PREVIEW - Custom title:', window.customProcessTitle);
         
-        const serviceName = specificService.value || 'MSP Service';
+        const serviceName = window.processedServiceName || specificService.value || 'MSP Service';
         const color = brandColor.value;
         
         // Create dynamic checkmark icon with brand color
@@ -361,7 +363,7 @@ function generateFallbackSteps(service, serviceType, numSteps) {
     function updateHtmlCode() {
         if (!generatedProcessData) return;
         
-        const serviceName = specificService.value || 'MSP Service';
+        const serviceName = window.processedServiceName || specificService.value || 'MSP Service';
         const color = brandColor.value;
         
         // Create dynamic checkmark icon with brand color
