@@ -1,7 +1,12 @@
 /* SOW Creator Specific Styles */
+
+/* SOW Section Styling */
 .sow-section {
     background: #f9f9f9;
     border-radius: 8px;
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
 }
 
 .sow-section textarea {
@@ -9,13 +14,20 @@
     font-size: 14px;
     line-height: 1.5;
     padding: 10px;
+    width: 100%;
+    min-height: 150px;
+    border: none;
+    resize: vertical;
+    font-family: inherit;
 }
 
 .sow-section textarea:focus {
     outline: 2px solid #96b83b;
     outline-offset: -2px;
+    border-radius: 4px;
 }
 
+/* SOW Preview Styling */
 #sow-preview {
     background: white;
     border: 1px solid #ddd;
@@ -23,26 +35,251 @@
     padding: 20px;
     margin-bottom: 20px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-height: 600px;
+    overflow-y: auto;
 }
 
+/* Progress Container */
 #sow-progress-container {
     margin: 20px 0;
+    text-align: center;
 }
 
+#sow-progress-container progress {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+}
+
+#sow-progress-text {
+    margin-bottom: 10px;
+    color: #666;
+    font-weight: 500;
+}
+
+/* Status Messages */
+#sow-status {
+    padding: 12px;
+    border-radius: 6px;
+    margin: 15px 0;
+    font-weight: 500;
+}
+
+#sow-status.info {
+    background-color: #e7f3ff;
+    color: #0066cc;
+    border: 1px solid #b3d9ff;
+}
+
+#sow-status.success {
+    background-color: #e8f5e8;
+    color: #2d7d2d;
+    border: 1px solid #a3d9a3;
+}
+
+#sow-status.error {
+    background-color: #ffe6e6;
+    color: #cc0000;
+    border: 1px solid #ffb3b3;
+}
+
+/* SOW Content Section */
+#sow-content-section {
+    margin-top: 30px;
+}
+
+#sow-content-section h3 {
+    color: #96b83b;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+/* SOW Editor Styling */
+#sow-editor {
+    margin-top: 20px;
+}
+
+/* Output Container */
+#sow-output-container {
+    margin-top: 40px;
+    border-top: 2px solid #e0e0e0;
+    padding-top: 30px;
+}
+
+.preview-section {
+    margin-bottom: 30px;
+}
+
+.preview-section h3 {
+    color: #96b83b;
+    margin-bottom: 15px;
+}
+
+/* HTML Output Section */
+.html-output-section .code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 10px 15px;
+    background: #f5f5f5;
+    border-radius: 6px 6px 0 0;
+    border: 1px solid #ddd;
+    border-bottom: none;
+}
+
+.html-output-section .code-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.html-output-section .copy-button {
+    background: #96b83b;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.html-output-section .copy-button:hover {
+    background: #7a9631;
+}
+
+.html-output-section .code-content {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    padding: 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+    margin: 0;
+}
+
+/* Animation for progress bar */
 @keyframes pulse {
     0% { opacity: 1; }
     50% { opacity: 0.5; }
     100% { opacity: 1; }
 }
 
-/* Responsive adjustments for SOW */
+/* Form Styling Enhancements */
+#sow-creator .option-group {
+    margin-bottom: 20px;
+}
+
+#sow-creator .option-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+#sow-creator .option-group small {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 12px;
+}
+
+#sow-creator select,
+#sow-creator input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+#sow-creator select:focus,
+#sow-creator input[type="text"]:focus {
+    outline: none;
+    border-color: #96b83b;
+    box-shadow: 0 0 0 2px rgba(150, 184, 59, 0.2);
+}
+
+/* Button Styling */
+#sow-creator .button-container {
+    margin: 30px 0;
+    text-align: center;
+}
+
+#sow-creator .button-container button {
+    background: #96b83b;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    margin: 0 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+#sow-creator .button-container button:hover {
+    background: #7a9631;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+#sow-creator #clear-sow-btn {
+    background: #666;
+}
+
+#sow-creator #clear-sow-btn:hover {
+    background: #555;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
+    .sow-section {
+        padding: 10px;
+    }
+    
     .sow-section textarea {
         min-height: 120px;
         font-size: 13px;
+        padding: 8px;
     }
     
     #sow-preview {
         padding: 15px;
+    }
+    
+    .html-output-section .code-content {
+        font-size: 11px;
+        padding: 10px;
+    }
+    
+    #sow-creator .button-container button {
+        display: block;
+        width: 100%;
+        margin: 10px 0;
+    }
+    
+    .html-output-section .code-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    #sow-creator select,
+    #sow-creator input[type="text"] {
+        font-size: 16px; /* Prevents zoom on iOS */
     }
 }
