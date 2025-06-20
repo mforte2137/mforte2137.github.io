@@ -354,7 +354,7 @@ function generateFallbackSteps(service, serviceType, numSteps) {
     ${window.customProcessTitle || 'Every Step Of The Process Managed'}
 </h2>
                 <p style="text-align: center; margin-bottom: 40px; font-size: 16px; color: #666;">
-                    We're excited to offer you a transformative ${serviceName.toLowerCase()} solution to enhance your 
+                    We're excited to offer you a transformative ${serviceName} solution to enhance your 
                     organization's capabilities. Our structured approach ensures a smooth transition and optimal results.
                 </p>
         `;
@@ -396,7 +396,7 @@ function generateFallbackSteps(service, serviceType, numSteps) {
 
 <h2 style="color: #2c3e50; text-align: center; margin-bottom: 30px; font-size: 28px;">Every Step Of The Process Managed</h2>
 
-<p style="text-align: center; margin-bottom: 40px; font-size: 16px; color: #666;">We're excited to offer you a transformative ${serviceName.toLowerCase()} solution to enhance your organization's capabilities. Our structured approach ensures a smooth transition and optimal results.</p>
+<p style="text-align: center; margin-bottom: 40px; font-size: 16px; color: #666;">We're excited to offer you a transformative ${serviceName} solution to enhance your organization's capabilities. Our structured approach ensures a smooth transition and optimal results.</p>
 
 <table style="width: 100%; border-collapse: collapse; margin-top: 20px; border: none;">`;
 
