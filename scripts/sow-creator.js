@@ -345,13 +345,38 @@ function displaySOWEditor(content) {
         lines.forEach(line => {
             const trimmedLine = line.trim();
             
-           if (trimmedLine.match(/^\d+\.\s+[A-Z]/) || 
+if (trimmedLine.match(/^\d+\.\s+[A-Z]/) || 
     trimmedLine === 'Executive Summary' || 
     trimmedLine === 'Scope of Work' || 
     trimmedLine === 'Deliverables' || 
     trimmedLine === 'Project Timeline' || 
     trimmedLine === 'Investment & Pricing' || 
     trimmedLine === 'Terms & Conditions') {
+    // Section header
+    if (currentSection) {
+        html += '</div>';
+    }
+    currentSection = trimmedLine;
+    
+    // Check if this is a numbered item with description
+    if (trimmedLine.match(/^\d+\.\s+[A-Z]/)) {
+        // Split numbered header from description
+        const colonIndex = trimmedLine.indexOf(':');
+        if (colonIndex > -1) {
+            const headerPart = trimmedLine.substring(0, colonIndex + 1);
+            const descriptionPart = trimmedLine.substring(colonIndex + 1).trim();
+            html += `<div style="margin-bottom: 30px;">
+                <h3 style="color: #333; font-size: 18px; margin: 20px 0 10px 0; font-weight: 600;">${headerPart}</h3>
+                <p style="margin: 10px 0; text-align: justify;">${descriptionPart}</p>`;
+        } else {
+            html += `<div style="margin-bottom: 30px;">
+                <h3 style="color: #333; font-size: 18px; margin: 20px 0 10px 0; font-weight: 600;">${trimmedLine}</h3>`;
+        }
+    } else {
+        // Main section header
+        html += `<div style="margin-bottom: 30px;">
+            <h2 style="color: #96b83b; font-size: 22px; margin: 0 0 15px 0; padding: 10px 0; border-bottom: 2px solid #e0e0e0; font-weight: 700;">${trimmedLine}</h2>`;
+    }
     // Section header
                 if (currentSection) {
                     html += '</div>';
