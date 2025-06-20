@@ -184,13 +184,22 @@ Focus on ${serviceType} best practices. Make each description compelling and sho
         const lines = content.split('\n').filter(line => line.trim());
         console.log('🔍 SPLIT LINES:', lines);
         
-        // Extract title first
+   // Extract title first  
         let customTitle = null;
-        const titleMatch = content.match(/^Title:\s*(.+)$/im);
-        if (titleMatch) {
-            customTitle = titleMatch[1].trim();
-            console.log('🎯 Found custom title:', customTitle);
-        } else {
+        const lines = content.split('\n').filter(line => line.trim());
+        console.log('🔍 FIRST 3 LINES:', lines.slice(0, 3));
+        
+        // The title should be the second line (index 1)
+        if (lines.length >= 2) {
+            const potentialTitle = lines[1].trim();
+            // Make sure it's not a step line
+            if (!potentialTitle.startsWith('Step ') && potentialTitle.length > 0) {
+                customTitle = potentialTitle;
+                console.log('🎯 Found custom title:', customTitle);
+            }
+        }
+        
+        if (!customTitle) {
             console.log('❌ No title found in content');
         }
         
