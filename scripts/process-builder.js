@@ -394,7 +394,7 @@ function generateFallbackSteps(service, serviceType, numSteps) {
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px;">
 
-<h2 style="color: #2c3e50; text-align: center; margin-bottom: 30px; font-size: 28px;">Every Step Of The Process Managed</h2>
+<h2 style="color: #2c3e50; text-align: center; margin-bottom: 30px; font-size: 28px;">${window.customProcessTitle || 'Every Step Of The Process Managed'}</h2>
 
 <p style="text-align: center; margin-bottom: 40px; font-size: 16px; color: #666;">We're excited to offer you a transformative ${serviceName} solution to enhance your organization's capabilities. Our structured approach ensures a smooth transition and optimal results.</p>
 
