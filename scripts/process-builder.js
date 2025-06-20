@@ -312,9 +312,9 @@ function generateFallbackSteps(service, serviceType, numSteps) {
         
         let previewHtml = `
             <div style="max-width: 800px; font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                <h2 style="color: #2c3e50; text-align: center; margin-bottom: 30px; font-size: 28px;">
-                    Every Step Of The Process Managed
-                </h2>
+               <h2 style="color: #2c3e50; text-align: center; margin-bottom: 30px; font-size: 28px;">
+    ${window.customProcessTitle || 'Every Step Of The Process Managed'}
+</h2>
                 <p style="text-align: center; margin-bottom: 40px; font-size: 16px; color: #666;">
                     We're excited to offer you a transformative ${serviceName.toLowerCase()} solution to enhance your 
                     organization's capabilities. Our structured approach ensures a smooth transition and optimal results.
