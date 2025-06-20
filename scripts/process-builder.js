@@ -173,10 +173,18 @@ Step 2: [Title] - [2-3 sentence detailed description explaining the value and pr
 Focus on ${serviceType} best practices. Make each description compelling and show why this step is essential for success. Use professional language that builds confidence in your expertise.`;
 }
 
-    // Parse AI response into structured steps
+ // Parse AI response into structured steps
     function parseProcessSteps(content, expectedSteps) {
         const steps = [];
         const lines = content.split('\n').filter(line => line.trim());
+        
+        // Extract title first
+        let customTitle = null;
+        const titleMatch = content.match(/^Title:\s*(.+)$/im);
+        if (titleMatch) {
+            customTitle = titleMatch[1].trim();
+            console.log('🎯 Found custom title:', customTitle);
+        }
         
         let stepCount = 0;
         for (let line of lines) {
@@ -196,6 +204,13 @@ Focus on ${serviceType} best practices. Make each description compelling and sho
                     });
                 }
             }
+        }
+        
+        console.log('📋 Parsed steps:', steps);
+        
+        // Store the custom title globally so we can use it in the preview/HTML
+        if (customTitle) {
+            window.customProcessTitle = customTitle;
         }
         
         // If parsing failed, generate fallback
