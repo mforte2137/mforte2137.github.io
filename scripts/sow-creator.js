@@ -280,10 +280,16 @@ Use professional business language appropriate for ${clientType.replace('-', ' '
         }
     }
 
-    // Display editable SOW content
-    function displaySOWEditor(content) {
-        // Split content into sections for easier editing
-        const sections = content.split(/(?=\d+\.\s+[A-Z])/);
+// Display editable SOW content
+function displaySOWEditor(content) {
+    // Remove the prompt text that might be included
+    let cleanContent = content;
+    
+    // Remove any text that looks like our prompt
+    cleanContent = cleanContent.replace(/Create a professional Statement of Work.*?Focus on value proposition and risk mitigation\./s, '');
+    
+    // Split content into sections for easier editing
+    const sections = cleanContent.split(/(?=\d+\.\s+[A-Z])/);
         
         sowEditor.innerHTML = '';
         
