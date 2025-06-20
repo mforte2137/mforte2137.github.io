@@ -285,8 +285,15 @@ function displaySOWEditor(content) {
     // Remove the prompt text that might be included
     let cleanContent = content;
     
-    // Remove any text that looks like our prompt
-    cleanContent = cleanContent.replace(/Create a professional Statement of Work.*?Focus on value proposition and risk mitigation\./s, '');
+    // Remove any line that starts with "Create a professional Statement of Work"
+    const lines = cleanContent.split('\n');
+    const filteredLines = lines.filter(line => {
+        const trimmed = line.trim();
+        return !trimmed.startsWith('Create a professional Statement of Work') &&
+               !trimmed.startsWith('Generate a comprehensive SOW') &&
+               trimmed.length > 0;
+    });
+    cleanContent = filteredLines.join('\n');
     
     // Split content into sections for easier editing
     const sections = cleanContent.split(/(?=\d+\.\s+[A-Z])/);
