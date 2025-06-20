@@ -328,11 +328,22 @@ function displaySOWEditor(content) {
 
     // Generate SOW HTML
     function generateSOWHTML(content) {
-        const lines = content.split('\n').filter(line => {
+const lines = content.split('\n').filter(line => {
     const trimmed = line.trim();
     return trimmed.length > 0 && 
            !trimmed.startsWith('Create a professional Statement of Work') &&
            !trimmed.startsWith('Generate a comprehensive SOW');
+});
+
+// Remove duplicate lines
+const uniqueLines = [];
+const seenLines = new Set();
+lines.forEach(line => {
+    const trimmed = line.trim();
+    if (!seenLines.has(trimmed)) {
+        seenLines.add(trimmed);
+        uniqueLines.push(line);
+    }
 });
         let html = `<div style="max-width: 800px; margin: 0 auto; padding: 40px 30px; background: #ffffff; font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333;">
     <div style="text-align: center; margin-bottom: 40px; border-bottom: 3px solid #96b83b; padding-bottom: 20px;">
@@ -342,7 +353,7 @@ function displaySOWEditor(content) {
 
         let currentSection = '';
         
-        lines.forEach(line => {
+        uniqueLines.forEach(line => {
             const trimmedLine = line.trim();
             
 if (trimmedLine.match(/^\d+\.\s+[A-Z]/) || 
