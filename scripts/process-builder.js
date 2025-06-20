@@ -186,7 +186,6 @@ Focus on ${serviceType} best practices. Make each description compelling and sho
         
    // Extract title first  
         let customTitle = null;
-        const lines = content.split('\n').filter(line => line.trim());
         console.log('🔍 FIRST 3 LINES:', lines.slice(0, 3));
         
         // The title should be the second line (index 1)
