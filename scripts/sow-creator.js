@@ -337,7 +337,7 @@ function displaySOWEditor(content) {
         let html = `<div style="max-width: 800px; margin: 0 auto; padding: 40px 30px; background: #ffffff; font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333;">
     <div style="text-align: center; margin-bottom: 40px; border-bottom: 3px solid #96b83b; padding-bottom: 20px;">
         <h1 style="color: #96b83b; font-size: 28px; margin: 0 0 10px 0; font-weight: 600;">STATEMENT OF WORK</h1>
-        <p style="color: #666; font-size: 16px; margin: 0;">${specificServiceInput.value}</p>
+        <p style="color: #333; font-size: 20px; margin: 0; font-weight: 600;">${specificServiceInput.value}</p>
     </div>`;
 
         let currentSection = '';
