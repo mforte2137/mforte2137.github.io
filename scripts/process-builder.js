@@ -216,10 +216,13 @@ Focus on ${serviceType} best practices. Make each description compelling and sho
         
         console.log('📋 Parsed steps:', steps);
         
-        // Store the custom title globally so we can use it in the preview/HTML
-        if (customTitle) {
-            window.customProcessTitle = customTitle;
-        }
+     // Store the custom title globally so we can use it in the preview/HTML
+if (customTitle) {
+    window.customProcessTitle = customTitle;
+    console.log('💾 STORED CUSTOM TITLE:', window.customProcessTitle);
+} else {
+    console.log('❌ NO TITLE TO STORE');
+}
         
         // If parsing failed, generate fallback
         if (steps.length === 0) {
@@ -311,6 +314,7 @@ function generateFallbackSteps(service, serviceType, numSteps) {
     // Update preview
     function updatePreview() {
         if (!generatedProcessData) return;
+          console.log('🖼️ PREVIEW - Custom title:', window.customProcessTitle);
         
         const serviceName = specificService.value || 'MSP Service';
         const color = brandColor.value;
