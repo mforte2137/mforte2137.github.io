@@ -192,9 +192,6 @@ Focus on ${serviceType} best practices. Make each description compelling and sho
             console.log('❌ No title found in content');
         }
         
-        // ... rest of your function
-    }
-        
         let stepCount = 0;
         for (let line of lines) {
             if (line.match(/^Step \d+:/i) || line.match(/^\d+\./)) {
