@@ -178,17 +178,33 @@ Focus on ${serviceType} best practices. Make each description compelling and sho
 }
 
 // Parse AI response into structured steps
-    function parseProcessSteps(content, expectedSteps) {
-        console.log('🔍 RAW AI CONTENT:', content);
-        console.log('🔍 CONTENT TYPE:', typeof content);
-        
-        const steps = [];
-        const lines = content.split('\n').filter(line => line.trim());
-        console.log('🔍 SPLIT LINES:', lines);
-        
-   // Extract title first  
-        let customTitle = null;
-        console.log('🔍 FIRST 3 LINES:', lines.slice(0, 3));
+function parseProcessSteps(content, expectedSteps) {
+    console.log('🔍 RAW AI CONTENT:', content);
+    console.log('🔍 CONTENT TYPE:', typeof content);
+    
+    // Apply capitalization to the entire AI content
+    content = content
+        .replace(/\bhipaa\b/gi, 'HIPAA')
+        .replace(/\bpci\b/gi, 'PCI')
+        .replace(/\bsox\b/gi, 'SOX')
+        .replace(/\bm365\b/gi, 'M365')
+        .replace(/\bmsp\b/gi, 'MSP')
+        .replace(/\bvoip\b/gi, 'VoIP')
+        .replace(/\baws\b/gi, 'AWS')
+        .replace(/\bazure\b/gi, 'Azure')
+        .replace(/\bg suite\b/gi, 'G Suite')
+        .replace(/\bgsuite\b/gi, 'G Suite')
+        .replace(/\bmicrosoft 365\b/gi, 'Microsoft 365');
+
+    console.log('✨ Content after capitalization:', content.substring(0, 200));
+    
+    const steps = [];
+    const lines = content.split('\n').filter(line => line.trim());
+    console.log('🔍 SPLIT LINES:', lines);
+    
+    // Extract title first  
+    let customTitle = null;
+    console.log('🔍 FIRST 3 LINES:', lines.slice(0, 3));
         
         // The title should be the second line (index 1)
         if (lines.length >= 2) {
