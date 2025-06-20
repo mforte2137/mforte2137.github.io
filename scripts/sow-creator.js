@@ -335,13 +335,22 @@ const lines = content.split('\n').filter(line => {
            !trimmed.startsWith('Generate a comprehensive SOW');
 });
 
-// Remove duplicate lines
+// More aggressive deduplication - remove lines that are very similar
 const uniqueLines = [];
-const seenLines = new Set();
+const seenContent = new Set();
+
 lines.forEach(line => {
     const trimmed = line.trim();
-    if (!seenLines.has(trimmed)) {
-        seenLines.add(trimmed);
+    
+    // Create a normalized version for comparison (remove extra spaces, punctuation variations)
+    const normalized = trimmed.toLowerCase()
+        .replace(/[^\w\s]/g, '') // Remove punctuation
+        .replace(/\s+/g, ' ') // Normalize spaces
+        .trim();
+    
+    // Skip if we've seen this content before
+    if (!seenContent.has(normalized) && normalized.length > 10) {
+        seenContent.add(normalized);
         uniqueLines.push(line);
     }
 });
