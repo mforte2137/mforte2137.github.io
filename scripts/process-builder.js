@@ -114,16 +114,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const prompt = buildProcessPrompt(service, serviceType, audience, numSteps);
         
         try {
-// Call your existing Claude API endpoint
+// Call your existing Claude API endpoint with the correct format
             const response = await fetch('/api/claude-api', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    topic: service,
-                    customPrompt: prompt,
-                    maxTokens: 1500
+                    topic: prompt, // Send our detailed prompt as the topic
+                    tone: 'professional',
+                    paragraphs: numSteps
                 })
             });
 
