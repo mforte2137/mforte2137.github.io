@@ -21,14 +21,16 @@
 <body>
     <h1>Salesbuildr Widget Template Tools</h1>
     
-  <!-- Tab Navigation -->
+<!-- Tab Navigation -->
 <div class="tabs">
     <button class="tab-button" data-tab="extractor" style="display: none;">Cover Page Creator</button>
     <button class="tab-button active" data-tab="widget">Widget Creator</button>
     <button class="tab-button" data-tab="matrix">Matrix Builder</button>
     <button class="tab-button" data-tab="ai-generator">AI Content Generator</button>
     <button class="tab-button" data-tab="process-builder">Process Builder</button>
+    <button class="tab-button" data-tab="sow-creator">SOW Creator</button>
 </div>
+
     
     <!-- PDF Text Extractor Tab -->
     <div id="extractor" class="tab-content">
@@ -436,13 +438,120 @@
             </div>
         </div>
     </div>
-</div>  
+</div> 
+<!-- SOW Creator Tab -->
+<div id="sow-creator" class="tab-content">
+    <p>Generate professional Statements of Work (SOW) with Executive Summaries for common MSP projects and services.</p>
+
+    <div class="container">
+        <div class="options">
+            <div class="option-group">
+                <label for="sow-service-type">MSP Service Type:</label>
+                <select id="sow-service-type">
+                    <option value="">Select a service...</option>
+                    <option value="migration">Migration Services (G Suite to M365, Server Migration, etc.)</option>
+                    <option value="security">Security Services (Assessment, Compliance, Penetration Testing)</option>
+                    <option value="infrastructure">Infrastructure Projects (Firewall, Network, Server Upgrades)</option>
+                    <option value="communication">Communication Systems (VoIP, Teams Implementation)</option>
+                    <option value="backup">Backup & Recovery (Disaster Recovery, Backup Systems)</option>
+                    <option value="compliance">Compliance Projects (HIPAA, SOX, PCI-DSS)</option>
+                    <option value="custom">Custom Service (Describe Your Own)</option>
+                </select>
+            </div>
+
+            <div class="option-group">
+                <label for="sow-specific-service">Specific Service/Project:</label>
+                <input type="text" id="sow-specific-service" placeholder="e.g., G Suite to Microsoft 365 Migration" style="width: 100%;">
+                <small>Be specific about the project or service you're providing</small>
+            </div>
+
+            <div class="option-group">
+                <label for="sow-client-type">Client Type:</label>
+                <select id="sow-client-type">
+                    <option value="small-business">Small Business (10-50 employees)</option>
+                    <option value="medium-business">Medium Business (50-200 employees)</option>
+                    <option value="enterprise">Enterprise (200+ employees)</option>
+                    <option value="healthcare">Healthcare Organization</option>
+                    <option value="financial">Financial Services</option>
+                    <option value="nonprofit">Non-Profit Organization</option>
+                </select>
+            </div>
+
+            <div class="option-group">
+                <label for="sow-duration">Project Duration:</label>
+                <select id="sow-duration">
+                    <option value="1-2 weeks">1-2 weeks</option>
+                    <option value="3-4 weeks">3-4 weeks</option>
+                    <option value="1-2 months">1-2 months</option>
+                    <option value="3-6 months">3-6 months</option>
+                    <option value="6+ months">6+ months</option>
+                </select>
+            </div>
+
+            <div class="option-group">
+                <label for="sow-budget-range">Budget Range (Optional):</label>
+                <select id="sow-budget-range">
+                    <option value="">Not specified</option>
+                    <option value="under-10k">Under $10,000</option>
+                    <option value="10k-25k">$10,000 - $25,000</option>
+                    <option value="25k-50k">$25,000 - $50,000</option>
+                    <option value="50k-100k">$50,000 - $100,000</option>
+                    <option value="over-100k">Over $100,000</option>
+                </select>
+            </div>
+
+            <div class="option-group">
+                <label for="sow-complexity">Project Complexity:</label>
+                <select id="sow-complexity">
+                    <option value="standard">Standard Implementation</option>
+                    <option value="complex">Complex/Custom Requirements</option>
+                    <option value="enterprise">Enterprise-Level Project</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="button-container">
+            <button id="generate-sow-btn">Generate SOW</button>
+            <button id="clear-sow-btn">Clear All Fields</button>
+        </div>
+
+        <div id="sow-status" class="status"></div>
+
+        <div class="progress-container" id="sow-progress-container">
+            <p id="sow-progress-text">Generating Statement of Work...</p>
+            <progress id="sow-progress-bar" value="50" max="100"></progress>
+        </div>
+
+        <div class="text-content" id="sow-content-section" style="display: none;">
+            <h3>Generated Statement of Work</h3>
+            <p>Edit the generated SOW as needed:</p>
+            <div id="sow-editor"></div>
+        </div>
+
+        <!-- Output with Preview above HTML Code -->
+        <div class="output-container" id="sow-output-container" style="display: none;">
+            <div class="preview-section">
+                <h3>SOW Preview</h3>
+                <div id="sow-preview"></div>
+            </div>
+
+            <div class="html-output-section">
+                <div class="code-header">
+                    <h3>HTML Code</h3>
+                    <button id="copy-sow-html-btn" class="copy-button">Copy Code</button>
+                </div>
+                <pre class="code-content" id="sow-html-code"></pre>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- JavaScript Files -->
-    <script src="scripts/main.js"></script>
-    <script src="scripts/cover-page-creator.js"></script>
-    <script src="scripts/widget-creator.js"></script>
-    <script src="scripts/matrix-builder.js"></script>
-    <script src="scripts/ai-generator.js"></script>
-    <script src="scripts/process-builder.js"></script>
+<script src="scripts/main.js"></script>
+<script src="scripts/cover-page-creator.js"></script>
+<script src="scripts/widget-creator.js"></script>
+<script src="scripts/matrix-builder.js"></script>
+<script src="scripts/ai-generator.js"></script>
+<script src="scripts/process-builder.js"></script>
+<script src="scripts/sow-creator.js"></script>
 </body>
 </html>
