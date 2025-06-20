@@ -345,8 +345,14 @@ function displaySOWEditor(content) {
         lines.forEach(line => {
             const trimmedLine = line.trim();
             
-            if (trimmedLine.match(/^\d+\.\s+[A-Z]/)) {
-                // Section header
+           if (trimmedLine.match(/^\d+\.\s+[A-Z]/) || 
+    trimmedLine === 'Executive Summary' || 
+    trimmedLine === 'Scope of Work' || 
+    trimmedLine === 'Deliverables' || 
+    trimmedLine === 'Project Timeline' || 
+    trimmedLine === 'Investment & Pricing' || 
+    trimmedLine === 'Terms & Conditions') {
+    // Section header
                 if (currentSection) {
                     html += '</div>';
                 }
