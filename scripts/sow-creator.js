@@ -352,7 +352,7 @@ function displaySOWEditor(content) {
                 }
                 currentSection = trimmedLine;
                 html += `<div style="margin-bottom: 30px;">
-                    <h2 style="color: #96b83b; font-size: 20px; margin: 0 0 15px 0; padding: 10px 0; border-bottom: 2px solid #e0e0e0; font-weight: 600;">${trimmedLine}</h2>`;
+                    <h2 style="color: #96b83b; font-size: 22px; margin: 0 0 15px 0; padding: 10px 0; border-bottom: 2px solid #e0e0e0; font-weight: 700;">${trimmedLine}</h2>`;
             } else if (trimmedLine.startsWith('•') || trimmedLine.startsWith('-') || trimmedLine.startsWith('*')) {
                 // Bullet point
                 const bulletContent = trimmedLine.substring(1).trim();
