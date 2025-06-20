@@ -1,1 +1,48 @@
+/* SOW Creator Specific Styles */
+.sow-section {
+    background: #f9f9f9;
+    border-radius: 8px;
+}
 
+.sow-section textarea {
+    background: transparent;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 10px;
+}
+
+.sow-section textarea:focus {
+    outline: 2px solid #96b83b;
+    outline-offset: -2px;
+}
+
+#sow-preview {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#sow-progress-container {
+    margin: 20px 0;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* Responsive adjustments for SOW */
+@media (max-width: 768px) {
+    .sow-section textarea {
+        min-height: 120px;
+        font-size: 13px;
+    }
+    
+    #sow-preview {
+        padding: 15px;
+    }
+}
