@@ -338,10 +338,8 @@ function displaySOWEditor(content) {
         generateSOWHTML(combinedContent);
     }
 
-    // Generate SOW HTML
-// Generate SOW HTML
+// Generate SOW HTML (Table-based for TinyMCE compatibility)
 function generateSOWHTML(content) {
-    // Simple approach - just remove the prompt line and split properly
     const lines = content.split('\n');
     
     // Find where "Executive Summary" first appears and start from there
@@ -356,15 +354,14 @@ function generateSOWHTML(content) {
     // Use only the content from Executive Summary onwards
     const cleanLines = startIndex >= 0 ? lines.slice(startIndex) : lines;
     
-    let html = `<div style="max-width: 800px; margin: 0 auto; padding: 40px 30px; background: #ffffff; font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333;">
-    <div style="text-align: center; margin-bottom: 40px; border-bottom: 3px solid #96b83b; padding-bottom: 20px;">
-        <h1 style="color: #96b83b; font-size: 28px; margin: 0 0 10px 0; font-weight: 600;">STATEMENT OF WORK</h1>
-        <p style="color: #333; font-size: 20px; margin: 0; font-weight: 600;">${specificServiceInput.value}</p>
-    </div>`;
+    let html = `<h2 style="color: #2c3e50; text-align: center; margin-bottom: 30px; font-size: 28px;">STATEMENT OF WORK</h2>
+<p style="text-align: center; margin-bottom: 40px; font-size: 16px; color: #666;">${specificServiceInput.value}</p>
+<table style="width: 100%; border-collapse: collapse; margin-top: 20px; border: none;">`;
 
     let currentSection = '';
+    let sectionContent = '';
     
-    cleanLines.forEach(line => {
+    cleanLines.forEach((line, index) => {
         const trimmedLine = line.trim();
         
         if (trimmedLine === 'Executive Summary' || 
@@ -374,13 +371,22 @@ function generateSOWHTML(content) {
             trimmedLine === 'Investment & Pricing' || 
             trimmedLine === 'Terms & Conditions') {
             
-            // Main section header
-            if (currentSection) {
-                html += '</div>';
+            // Add previous section to table if exists
+            if (currentSection && sectionContent) {
+                html += `
+  <tr>
+    <td style="width: 25%; padding: 20px 15px; vertical-align: top; border: none; border-bottom: 1px solid #f0f0f0;">
+      <h3 style="margin: 0; font-size: 18px; color: #333; font-weight: bold;">${currentSection}</h3>
+    </td>
+    <td style="width: 75%; padding: 20px 15px; vertical-align: top; border: none; border-bottom: 1px solid #f0f0f0;">
+      ${sectionContent}
+    </td>
+  </tr>`;
             }
+            
+            // Start new section
             currentSection = trimmedLine;
-            html += `<div style="margin-bottom: 30px;">
-                <h2 style="color: #96b83b; font-size: 22px; margin: 0 0 15px 0; padding: 10px 0; border-bottom: 2px solid #e0e0e0; font-weight: 700;">${trimmedLine}</h2>`;
+            sectionContent = '';
             
         } else if (trimmedLine.match(/^\d+\.\s+[A-Z]/)) {
             // Numbered header
@@ -388,37 +394,43 @@ function generateSOWHTML(content) {
             if (colonIndex > -1) {
                 const headerPart = trimmedLine.substring(0, colonIndex + 1);
                 const descriptionPart = trimmedLine.substring(colonIndex + 1).trim();
-                html += `<h3 style="color: #333; font-size: 18px; margin: 20px 0 10px 0; font-weight: 600;">${headerPart}</h3>`;
+                sectionContent += `<h4 style="margin: 15px 0 8px 0; font-size: 16px; color: #333; font-weight: bold;">${headerPart}</h4>`;
                 if (descriptionPart) {
-                    html += `<p style="margin: 10px 0; text-align: justify;">${descriptionPart}</p>`;
+                    sectionContent += `<p style="margin: 0 0 10px 0; color: #666; font-size: 14px; line-height: 1.5;">${descriptionPart}</p>`;
                 }
             } else {
-                html += `<h3 style="color: #333; font-size: 18px; margin: 20px 0 10px 0; font-weight: 600;">${trimmedLine}</h3>`;
+                sectionContent += `<h4 style="margin: 15px 0 8px 0; font-size: 16px; color: #333; font-weight: bold;">${trimmedLine}</h4>`;
             }
             
         } else if (trimmedLine.startsWith('•') || trimmedLine.startsWith('-') || trimmedLine.startsWith('*')) {
-            // Bullet point
+            // Bullet points
             const bulletContent = trimmedLine.substring(1).trim();
-            html += `<div style="margin: 8px 0; padding-left: 20px; position: relative;">
-                <span style="position: absolute; left: 0; color: #96b83b; font-weight: bold;">•</span>
-                ${bulletContent}
-            </div>`;
+            sectionContent += `<p style="margin: 3px 0; color: #666; font-size: 14px; line-height: 1.5;">• ${bulletContent}</p>`;
             
         } else if (trimmedLine.length > 0) {
-            // Regular paragraph
-            html += `<p style="margin: 15px 0; text-align: justify;">${trimmedLine}</p>`;
+            // Regular paragraphs
+            sectionContent += `<p style="margin: 10px 0; color: #666; font-size: 14px; line-height: 1.5;">${trimmedLine}</p>`;
         }
     });
     
-    if (currentSection) {
-        html += '</div>';
+    // Add final section
+    if (currentSection && sectionContent) {
+        html += `
+  <tr>
+    <td style="width: 25%; padding: 20px 15px; vertical-align: top; border: none; border-bottom: 1px solid #f0f0f0;">
+      <h3 style="margin: 0; font-size: 18px; color: #333; font-weight: bold;">${currentSection}</h3>
+    </td>
+    <td style="width: 75%; padding: 20px 15px; vertical-align: top; border: none; border-bottom: 1px solid #f0f0f0;">
+      ${sectionContent}
+    </td>
+  </tr>`;
     }
     
+    // Remove border from last row and close table
+    html = html.replace(/border-bottom: 1px solid #f0f0f0;(?=[^<]*<\/tr>\s*$)/g, 'border-bottom: none;');
     html += `
-    <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e0e0e0; text-align: center;">
-        <p style="color: #666; font-size: 14px; margin: 0;">This Statement of Work is valid for 30 days from the date of issue.</p>
-    </div>
-</div>`;
+</table>
+<p style="text-align: center; margin-top: 40px; font-size: 12px; color: #999;">This Statement of Work is valid for 30 days from the date of issue.</p>`;
 
     // Update preview and code
     sowPreview.innerHTML = html;
