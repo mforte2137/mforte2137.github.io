@@ -336,14 +336,30 @@ const lines = content.split('\n').filter(line => {
     const trimmed = line.trim();
     return trimmed.length > 0 && 
            !trimmed.startsWith('Create a professional Statement of Work') &&
-           !trimmed.startsWith('Generate a comprehensive SOW');
+           !trimmed.startsWith('Generate a comprehensive SOW') &&
+           !trimmed.includes('This is a migration project involving') &&
+           !trimmed.includes('The client is a small business') &&
+           !trimmed.includes('The project duration is estimated') &&
+           !trimmed.includes('Use professional business language') &&
+           !trimmed.includes('Focus on value proposition');
 });
 
-// Simple deduplication - remove exact duplicates
+// Find where the actual SOW content starts (after "Executive Summary")
+let sowStartIndex = -1;
+lines.forEach((line, index) => {
+    if (line.trim() === 'Executive Summary' && sowStartIndex === -1) {
+        sowStartIndex = index;
+    }
+});
+
+// Only use content from the SOW start onwards
+const cleanLines = sowStartIndex >= 0 ? lines.slice(sowStartIndex) : lines;
+
+// Simple deduplication
 const uniqueLines = [];
 const seen = new Set();
 
-lines.forEach(line => {
+cleanLines.forEach(line => {
     const trimmed = line.trim();
     if (!seen.has(trimmed)) {
         seen.add(trimmed);
