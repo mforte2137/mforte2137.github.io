@@ -355,120 +355,93 @@ function displaySOWEditor(content) {
     }
 
     // Generate SOW HTML
-    function generateSOWHTML(content) {
-const lines = content.split('\n').filter(line => {
-    const trimmed = line.trim();
-    return trimmed.length > 0 && 
-           !trimmed.startsWith('Create a professional Statement of Work') &&
-           !trimmed.startsWith('Generate a comprehensive SOW') &&
-           !trimmed.includes('This is a migration project involving') &&
-           !trimmed.includes('The client is a small business') &&
-           !trimmed.includes('The project duration is estimated') &&
-           !trimmed.includes('Use professional business language') &&
-           !trimmed.includes('Focus on value proposition');
-});
-
-// Find where the actual SOW content starts (after "Executive Summary")
-let sowStartIndex = -1;
-lines.forEach((line, index) => {
-    if (line.trim() === 'Executive Summary' && sowStartIndex === -1) {
-        sowStartIndex = index;
+// Generate SOW HTML
+function generateSOWHTML(content) {
+    // Simple approach - just remove the prompt line and split properly
+    const lines = content.split('\n');
+    
+    // Find where "Executive Summary" first appears and start from there
+    let startIndex = -1;
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].trim() === 'Executive Summary') {
+            startIndex = i;
+            break;
+        }
     }
-});
-
-// Only use content from the SOW start onwards
-const cleanLines = sowStartIndex >= 0 ? lines.slice(sowStartIndex) : lines;
-
-// Simple deduplication
-const uniqueLines = [];
-const seen = new Set();
-
-cleanLines.forEach(line => {
-    const trimmed = line.trim();
-    if (!seen.has(trimmed)) {
-        seen.add(trimmed);
-        uniqueLines.push(line);
-    }
-});
-        let html = `<div style="max-width: 800px; margin: 0 auto; padding: 40px 30px; background: #ffffff; font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333;">
+    
+    // Use only the content from Executive Summary onwards
+    const cleanLines = startIndex >= 0 ? lines.slice(startIndex) : lines;
+    
+    let html = `<div style="max-width: 800px; margin: 0 auto; padding: 40px 30px; background: #ffffff; font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333;">
     <div style="text-align: center; margin-bottom: 40px; border-bottom: 3px solid #96b83b; padding-bottom: 20px;">
         <h1 style="color: #96b83b; font-size: 28px; margin: 0 0 10px 0; font-weight: 600;">STATEMENT OF WORK</h1>
         <p style="color: #333; font-size: 20px; margin: 0; font-weight: 600;">${specificServiceInput.value}</p>
     </div>`;
 
-        let currentSection = '';
+    let currentSection = '';
+    
+    cleanLines.forEach(line => {
+        const trimmedLine = line.trim();
         
-        uniqueLines.forEach(line => {
-            const trimmedLine = line.trim();
+        if (trimmedLine === 'Executive Summary' || 
+            trimmedLine === 'Scope of Work' || 
+            trimmedLine === 'Deliverables' || 
+            trimmedLine === 'Project Timeline' || 
+            trimmedLine === 'Investment & Pricing' || 
+            trimmedLine === 'Terms & Conditions') {
             
-if (trimmedLine.match(/^\d+\.\s+[A-Z]/) || 
-    trimmedLine === 'Executive Summary' || 
-    trimmedLine === 'Scope of Work' || 
-    trimmedLine === 'Deliverables' || 
-    trimmedLine === 'Project Timeline' || 
-    trimmedLine === 'Investment & Pricing' || 
-    trimmedLine === 'Terms & Conditions') {
-    // Section header
+            // Main section header
+            if (currentSection) {
+                html += '</div>';
+            }
+            currentSection = trimmedLine;
+            html += `<div style="margin-bottom: 30px;">
+                <h2 style="color: #96b83b; font-size: 22px; margin: 0 0 15px 0; padding: 10px 0; border-bottom: 2px solid #e0e0e0; font-weight: 700;">${trimmedLine}</h2>`;
+            
+        } else if (trimmedLine.match(/^\d+\.\s+[A-Z]/)) {
+            // Numbered header
+            const colonIndex = trimmedLine.indexOf(':');
+            if (colonIndex > -1) {
+                const headerPart = trimmedLine.substring(0, colonIndex + 1);
+                const descriptionPart = trimmedLine.substring(colonIndex + 1).trim();
+                html += `<h3 style="color: #333; font-size: 18px; margin: 20px 0 10px 0; font-weight: 600;">${headerPart}</h3>`;
+                if (descriptionPart) {
+                    html += `<p style="margin: 10px 0; text-align: justify;">${descriptionPart}</p>`;
+                }
+            } else {
+                html += `<h3 style="color: #333; font-size: 18px; margin: 20px 0 10px 0; font-weight: 600;">${trimmedLine}</h3>`;
+            }
+            
+        } else if (trimmedLine.startsWith('•') || trimmedLine.startsWith('-') || trimmedLine.startsWith('*')) {
+            // Bullet point
+            const bulletContent = trimmedLine.substring(1).trim();
+            html += `<div style="margin: 8px 0; padding-left: 20px; position: relative;">
+                <span style="position: absolute; left: 0; color: #96b83b; font-weight: bold;">•</span>
+                ${bulletContent}
+            </div>`;
+            
+        } else if (trimmedLine.length > 0) {
+            // Regular paragraph
+            html += `<p style="margin: 15px 0; text-align: justify;">${trimmedLine}</p>`;
+        }
+    });
+    
     if (currentSection) {
         html += '</div>';
     }
-    currentSection = trimmedLine;
     
-    // Check if this is a numbered item with description
-    if (trimmedLine.match(/^\d+\.\s+[A-Z]/)) {
-        // Split numbered header from description
-        const colonIndex = trimmedLine.indexOf(':');
-        if (colonIndex > -1) {
-            const headerPart = trimmedLine.substring(0, colonIndex + 1);
-            const descriptionPart = trimmedLine.substring(colonIndex + 1).trim();
-            html += `<div style="margin-bottom: 30px;">
-                <h3 style="color: #333; font-size: 18px; margin: 20px 0 10px 0; font-weight: 600;">${headerPart}</h3>
-                <p style="margin: 10px 0; text-align: justify;">${descriptionPart}</p>`;
-        } else {
-            html += `<div style="margin-bottom: 30px;">
-                <h3 style="color: #333; font-size: 18px; margin: 20px 0 10px 0; font-weight: 600;">${trimmedLine}</h3>`;
-        }
-    } else {
-        // Main section header
-        html += `<div style="margin-bottom: 30px;">
-            <h2 style="color: #96b83b; font-size: 22px; margin: 0 0 15px 0; padding: 10px 0; border-bottom: 2px solid #e0e0e0; font-weight: 700;">${trimmedLine}</h2>`;
-    }
-    // Section header
-                if (currentSection) {
-                    html += '</div>';
-                }
-                currentSection = trimmedLine;
-                html += `<div style="margin-bottom: 30px;">
-                    <h2 style="color: #96b83b; font-size: 22px; margin: 0 0 15px 0; padding: 10px 0; border-bottom: 2px solid #e0e0e0; font-weight: 700;">${trimmedLine}</h2>`;
-            } else if (trimmedLine.startsWith('•') || trimmedLine.startsWith('-') || trimmedLine.startsWith('*')) {
-                // Bullet point
-                const bulletContent = trimmedLine.substring(1).trim();
-                html += `<div style="margin: 8px 0; padding-left: 20px; position: relative;">
-                    <span style="position: absolute; left: 0; color: #96b83b; font-weight: bold;">•</span>
-                    ${bulletContent}
-                </div>`;
-            } else if (trimmedLine.length > 0) {
-                // Regular paragraph
-                html += `<p style="margin: 15px 0; text-align: justify;">${trimmedLine}</p>`;
-            }
-        });
-        
-        if (currentSection) {
-            html += '</div>';
-        }
-        
-        html += `
+    html += `
     <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e0e0e0; text-align: center;">
         <p style="color: #666; font-size: 14px; margin: 0;">This Statement of Work is valid for 30 days from the date of issue.</p>
     </div>
 </div>`;
 
-        // Update preview and code
-        sowPreview.innerHTML = html;
-        sowHtmlCode.textContent = html;
-        
-        outputContainer.style.display = 'block';
-    }
+    // Update preview and code
+    sowPreview.innerHTML = html;
+    sowHtmlCode.textContent = html;
+    
+    outputContainer.style.display = 'block';
+}
 
     // Copy HTML to clipboard
     function copySOWHTML() {
