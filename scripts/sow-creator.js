@@ -90,17 +90,35 @@ document.addEventListener('DOMContentLoaded', function() {
         'vms': 'VMs'
     };
 
-    function capitalizeText(text) {
-        let result = text;
-        
-        // Apply auto-capitalization
-        for (const [lowercase, capitalized] of Object.entries(autoCapitalize)) {
-            const regex = new RegExp(`\\b${lowercase}\\b`, 'gi');
-            result = result.replace(regex, capitalized);
-        }
-        
-        return result;
+function capitalizeText(text) {
+    let result = text;
+    
+    // Apply auto-capitalization
+    for (const [lowercase, capitalized] of Object.entries(autoCapitalize)) {
+        const regex = new RegExp(`\\b${lowercase}\\b`, 'gi');
+        result = result.replace(regex, capitalized);
     }
+    
+    return result;
+}
+
+function replaceCompanyReferences(text) {
+    let result = text;
+    
+    // Replace various company references with {{company.name}}
+    // Handle possessive forms properly
+    result = result.replace(/\byour organization's\b/gi, "{{company.name}}'s");
+    result = result.replace(/\byour company's\b/gi, "{{company.name}}'s");
+    result = result.replace(/\byour business's\b/gi, "{{company.name}}'s");
+    result = result.replace(/\byour organization\b/gi, '{{company.name}}');
+    result = result.replace(/\byour company\b/gi, '{{company.name}}');
+    result = result.replace(/\byour business\b/gi, '{{company.name}}');
+    result = result.replace(/\byour small business\b/gi, '{{company.name}}');
+    result = result.replace(/\byour medium business\b/gi, '{{company.name}}');
+    result = result.replace(/\byour enterprise\b/gi, '{{company.name}}');
+    
+    return result;
+}
 
     // Elements
     const generateBtn = document.getElementById('generate-sow-btn');
@@ -270,6 +288,9 @@ console.log('Content split by lines:', generatedContent.split('\n'));
 
 // Apply auto-capitalization
 generatedContent = capitalizeText(generatedContent);
+
+// Replace company references with Salesbuildr variable
+generatedContent = replaceCompanyReferences(generatedContent);
 
 displaySOWEditor(generatedContent);
 generateSOWHTML(generatedContent);
