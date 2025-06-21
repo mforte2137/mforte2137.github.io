@@ -286,42 +286,66 @@ generateSOWHTML(generatedContent);
 
 // Display editable SOW content
 function displaySOWEditor(content) {
-    // Remove the prompt text that might be included
-    let cleanContent = content;
-    
-    // Remove any line that starts with "Create a professional Statement of Work"
-    const lines = cleanContent.split('\n');
-    const filteredLines = lines.filter(line => {
+    // Apply the same filtering as generateSOWHTML
+    const lines = content.split('\n').filter(line => {
         const trimmed = line.trim();
-        return !trimmed.startsWith('Create a professional Statement of Work') &&
+        return trimmed.length > 0 && 
+               !trimmed.startsWith('Create a professional Statement of Work') &&
                !trimmed.startsWith('Generate a comprehensive SOW') &&
-               trimmed.length > 0;
+               !trimmed.includes('This is a migration project involving') &&
+               !trimmed.includes('The client is a small business') &&
+               !trimmed.includes('The project duration is estimated') &&
+               !trimmed.includes('Use professional business language') &&
+               !trimmed.includes('Focus on value proposition');
     });
-    cleanContent = filteredLines.join('\n');
+
+    // Find where the actual SOW content starts
+    let sowStartIndex = -1;
+    lines.forEach((line, index) => {
+        if (line.trim() === 'Executive Summary' && sowStartIndex === -1) {
+            sowStartIndex = index;
+        }
+    });
+
+    // Only use content from the SOW start onwards
+    const cleanLines = sowStartIndex >= 0 ? lines.slice(sowStartIndex) : lines;
+
+    // Remove duplicates
+    const uniqueLines = [];
+    const seen = new Set();
+    cleanLines.forEach(line => {
+        const trimmed = line.trim();
+        if (!seen.has(trimmed)) {
+            seen.add(trimmed);
+            uniqueLines.push(line);
+        }
+    });
+
+    const cleanContent = uniqueLines.join('\n');
     
     // Split content into sections for easier editing
     const sections = cleanContent.split(/(?=\d+\.\s+[A-Z])/);
-        
-        sowEditor.innerHTML = '';
-        
-        sections.forEach((section, index) => {
-            if (section.trim()) {
-                const sectionDiv = document.createElement('div');
-                sectionDiv.className = 'sow-section';
-                sectionDiv.style.cssText = 'margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px;';
-                
-                const textarea = document.createElement('textarea');
-                textarea.value = section.trim();
-                textarea.style.cssText = 'width: 100%; min-height: 150px; border: none; resize: vertical; font-family: inherit;';
-                textarea.addEventListener('input', updateSOWHTML);
-                
-                sectionDiv.appendChild(textarea);
-                sowEditor.appendChild(sectionDiv);
-            }
-        });
-        
-        contentSection.style.display = 'block';
-    }
+    
+    sowEditor.innerHTML = '';
+    
+    sections.forEach((section, index) => {
+        if (section.trim()) {
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = 'sow-section';
+            sectionDiv.style.cssText = 'margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px;';
+            
+            const textarea = document.createElement('textarea');
+            textarea.value = section.trim();
+            textarea.style.cssText = 'width: 100%; min-height: 150px; border: none; resize: vertical; font-family: inherit;';
+            textarea.addEventListener('input', updateSOWHTML);
+            
+            sectionDiv.appendChild(textarea);
+            sowEditor.appendChild(sectionDiv);
+        }
+    });
+    
+    contentSection.style.display = 'block';
+}
 
     // Update SOW HTML when content changes
     function updateSOWHTML() {
