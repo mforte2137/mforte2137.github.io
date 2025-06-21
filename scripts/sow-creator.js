@@ -263,12 +263,16 @@ Use professional business language appropriate for ${clientType.replace('-', ' '
             }
 
             let generatedContent = data.content || '';
-            
-            // Apply auto-capitalization
-            generatedContent = capitalizeText(generatedContent);
-            
-            displaySOWEditor(generatedContent);
-            generateSOWHTML(generatedContent);
+
+// DEBUG: Let's see what the AI is actually returning
+console.log('Raw AI Content:', generatedContent);
+console.log('Content split by lines:', generatedContent.split('\n'));
+
+// Apply auto-capitalization
+generatedContent = capitalizeText(generatedContent);
+
+displaySOWEditor(generatedContent);
+generateSOWHTML(generatedContent);
             
             hideProgress();
             showStatus('SOW generated successfully!', 'success');
