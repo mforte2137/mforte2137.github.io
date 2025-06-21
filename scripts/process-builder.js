@@ -55,18 +55,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const audience = targetAudience.value;
         const numSteps = parseInt(processSteps.value);
 
-        // Auto-capitalize common acronyms
-        const processedService = service
-            .replace(/\bhipaa\b/gi, 'HIPAA')
-            .replace(/\bpci\b/gi, 'PCI')
-            .replace(/\bsox\b/gi, 'SOX')
-            .replace(/\bm365\b/gi, 'M365')
-            .replace(/\bmsp\b/gi, 'MSP')
-            .replace(/\bvoip\b/gi, 'VoIP')
-            .replace(/\baws\b/gi, 'AWS')
-            .replace(/\bazure\b/gi, 'Azure')
-            .replace(/\bg suite\b/gi, 'G Suite')
-            .replace(/\bgsuite\b/gi, 'G Suite');
+// Auto-capitalize common acronyms
+let processedService = service
+    .replace(/\bhipaa\b/gi, 'HIPAA')
+    .replace(/\bpci\b/gi, 'PCI')
+    .replace(/\bsox\b/gi, 'SOX')
+    .replace(/\bm365\b/gi, 'M365')
+    .replace(/\bmsp\b/gi, 'MSP')
+    .replace(/\bvoip\b/gi, 'VoIP')
+    .replace(/\baws\b/gi, 'AWS')
+    .replace(/\bazure\b/gi, 'Azure')
+    .replace(/\bg suite\b/gi, 'G Suite')
+    .replace(/\bgsuite\b/gi, 'G Suite');
+
+// Replace company references with Salesbuildr variable
+processedService = processedService
+    .replace(/\byour organization's\b/gi, "{{company.name}}'s")
+    .replace(/\byour company's\b/gi, "{{company.name}}'s")
+    .replace(/\byour business's\b/gi, "{{company.name}}'s")
+    .replace(/\byour organization\b/gi, '{{company.name}}')
+    .replace(/\byour company\b/gi, '{{company.name}}')
+    .replace(/\byour business\b/gi, '{{company.name}}')
+    .replace(/\byour small business\b/gi, '{{company.name}}')
+    .replace(/\byour medium business\b/gi, '{{company.name}}')
+    .replace(/\byour enterprise\b/gi, '{{company.name}}');
         // Store the processed service name globally so other functions can use it
 window.processedServiceName = processedService;
 
