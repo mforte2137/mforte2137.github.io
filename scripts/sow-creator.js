@@ -286,63 +286,47 @@ generateSOWHTML(generatedContent);
 
 // Display editable SOW content
 function displaySOWEditor(content) {
-    // Apply the same filtering as generateSOWHTML
-    const lines = content.split('\n').filter(line => {
-        const trimmed = line.trim();
-        return trimmed.length > 0 && 
-               !trimmed.startsWith('Create a professional Statement of Work') &&
-               !trimmed.startsWith('Generate a comprehensive SOW') &&
-               !trimmed.includes('This is a migration project involving') &&
-               !trimmed.includes('The client is a small business') &&
-               !trimmed.includes('The project duration is estimated') &&
-               !trimmed.includes('Use professional business language') &&
-               !trimmed.includes('Focus on value proposition');
-    });
-
-    // Find where the actual SOW content starts
-    let sowStartIndex = -1;
-    lines.forEach((line, index) => {
-        if (line.trim() === 'Executive Summary' && sowStartIndex === -1) {
-            sowStartIndex = index;
-        }
-    });
-
-    // Only use content from the SOW start onwards
-    const cleanLines = sowStartIndex >= 0 ? lines.slice(sowStartIndex) : lines;
-
-    // Remove duplicates
-    const uniqueLines = [];
-    const seen = new Set();
-    cleanLines.forEach(line => {
-        const trimmed = line.trim();
-        if (!seen.has(trimmed)) {
-            seen.add(trimmed);
-            uniqueLines.push(line);
-        }
-    });
-
-    const cleanContent = uniqueLines.join('\n');
+    // Use the same simple approach as generateSOWHTML
+    const lines = content.split('\n');
     
-    // Split content into sections for easier editing
-    const sections = cleanContent.split(/(?=\d+\.\s+[A-Z])/);
+    // Find where "Executive Summary" first appears and start from there
+    let startIndex = -1;
+    for (let i = 0; i < lines.length; i++) {
+        if (lines[i].trim() === 'Executive Summary') {
+            startIndex = i;
+            break;
+        }
+    }
+    
+    // Use only the content from Executive Summary onwards
+    const cleanLines = startIndex >= 0 ? lines.slice(startIndex) : lines;
+    const cleanContent = cleanLines.join('\n');
+    
+    // Split into sections based on main headers, not numbered items
+    const sections = cleanContent.split(/(Executive Summary|Scope of Work|Deliverables|Project Timeline|Investment & Pricing|Terms & Conditions)/);
     
     sowEditor.innerHTML = '';
     
-    sections.forEach((section, index) => {
-        if (section.trim()) {
+    // Process sections in pairs (header + content)
+    for (let i = 1; i < sections.length; i += 2) {
+        const header = sections[i];
+        const content = sections[i + 1] || '';
+        const combined = header + content;
+        
+        if (combined.trim()) {
             const sectionDiv = document.createElement('div');
             sectionDiv.className = 'sow-section';
             sectionDiv.style.cssText = 'margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px;';
             
             const textarea = document.createElement('textarea');
-            textarea.value = section.trim();
+            textarea.value = combined.trim();
             textarea.style.cssText = 'width: 100%; min-height: 150px; border: none; resize: vertical; font-family: inherit;';
             textarea.addEventListener('input', updateSOWHTML);
             
             sectionDiv.appendChild(textarea);
             sowEditor.appendChild(sectionDiv);
         }
-    });
+    }
     
     contentSection.style.display = 'block';
 }
