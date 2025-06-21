@@ -439,16 +439,29 @@ function generateSOWHTML(content) {
     outputContainer.style.display = 'block';
 }
 
-    // Copy HTML to clipboard
-    function copySOWHTML() {
-        const html = sowHtmlCode.textContent;
-        navigator.clipboard.writeText(html).then(() => {
-            showStatus('HTML code copied to clipboard!', 'success');
-        }).catch(err => {
-            console.error('Failed to copy: ', err);
-            showStatus('Failed to copy HTML code', 'error');
-        });
-    }
+// Copy HTML to clipboard
+function copySOWHTML() {
+    const html = sowHtmlCode.textContent;
+    navigator.clipboard.writeText(html).then(() => {
+        // Store original button text
+        const originalText = copyBtn.textContent;
+        
+        // Change button to show "Copied!"
+        copyBtn.textContent = 'Copied!';
+        copyBtn.style.backgroundColor = '#28a745'; // Green color
+        
+        // Reset button after 2 seconds
+        setTimeout(() => {
+            copyBtn.textContent = originalText;
+            copyBtn.style.backgroundColor = '#96b83b'; // Original color
+        }, 2000);
+        
+        showStatus('HTML code copied to clipboard!', 'success');
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        showStatus('Failed to copy HTML code', 'error');
+    });
+}
 
     // Clear all fields
     function clearSOWFields() {
