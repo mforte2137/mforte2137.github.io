@@ -20,7 +20,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Base64 encoded checkmark icon (green circle with white checkmark)
     const checkmarkIconBase64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM5NmI4M2IiLz4KPHBhdGggZD0iTTEyIDIwTDE4IDI2TDI4IDE2IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K';
-
+// Replace company references with Salesbuildr variable
+function replaceCompanyReferences(text) {
+    let result = text;
+    
+    // Replace various company references with {{company.name}}
+    result = result.replace(/\byour organization's\b/gi, "{{company.name}}'s");
+    result = result.replace(/\byour company's\b/gi, "{{company.name}}'s");
+    result = result.replace(/\byour business's\b/gi, "{{company.name}}'s");
+    result = result.replace(/\byour organization\b/gi, '{{company.name}}');
+    result = result.replace(/\byour company\b/gi, '{{company.name}}');
+    result = result.replace(/\byour business\b/gi, '{{company.name}}');
+    result = result.replace(/\byour small business\b/gi, '{{company.name}}');
+    result = result.replace(/\byour medium business\b/gi, '{{company.name}}');
+    result = result.replace(/\byour enterprise\b/gi, '{{company.name}}');
+    
+    return result;
+}
     // Store generated process data
     let generatedProcessData = null;
 
@@ -101,11 +117,17 @@ window.processedServiceName = processedService;
             // Generate AI content for process steps
             const processData = await generateProcessSteps(processedService, serviceTypeValue, audience, numSteps);
             
-            if (processData && processData.length > 0) {
-                generatedProcessData = processData;
-                displayStepsEditor(processData);
-                updatePreview();
-                updateHtmlCode();
+          if (processData && processData.length > 0) {
+    // Apply company reference replacement to generated content
+    const processedData = processData.map(step => ({
+        title: replaceCompanyReferences(step.title),
+        description: replaceCompanyReferences(step.description)
+    }));
+    
+    generatedProcessData = processedData;
+    displayStepsEditor(processedData);
+    updatePreview();
+    updateHtmlCode();
                 
                 contentSection.style.display = 'block';
                 outputContainer.style.display = 'block';
