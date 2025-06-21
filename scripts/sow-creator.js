@@ -221,7 +221,7 @@ Generate a comprehensive SOW with these sections:
 
 4. Project Timeline (phases of work with estimated timeframes)
 
-5. Investment & Pricing (placeholder section noting that detailed pricing will be provided separately)
+5. Investment & Pricing (section referencing that detailed pricing and line items are included in the pricing section of this proposal)
 
 6. Terms & Conditions (standard MSP project terms including change management, client responsibilities, and project assumptions)
 
