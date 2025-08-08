@@ -1,1 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salesbuildr Support KB</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            background: #f8fafc;
+            color: #334155;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .category-filter {
+            padding: 10px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        .form-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-section h2 {
+            margin-bottom: 25px;
+            color: #1e293b;
+            font-size: 1.5rem;
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .reference-section {
+            border: 2px solid #f1f5f9;
+            border-radius: 8px;
+            padding: 20px;
+            background: #f8fafc;
+        }
+
+        .reference-section h3 {
+            margin-bottom: 15px;
+            color: #475569;
+            font-size: 1.1rem;
+        }
+
+        .file-upload {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .file-upload.dragover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .knowledge-base {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .kb-header {
+            padding: 25px 30px;
+            border-bottom: 2px solid #f1f5f9;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .kb-header h2 {
+            color: #1e293b;
+            font-size: 1.5rem;
+        }
+
+        .kb-item {
+            padding: 25px 30px;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background-color 0.3s;
+        }
+
+        .kb-item:hover {
+            background: #f8fafc;
+        }
+
+        .kb-item:last-child {
+            border-bottom: none;
+        }
+
+        .kb-title {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .kb-category {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .kb-description {
+            color: #64748b;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .kb-solution {
+            background: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .kb-solution strong {
+            color: #0369a1;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .kb-references {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .reference-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #475569;
+            font-size: 0.85rem;
+            transition: background-color 0.3s;
+        }
+
+        .reference-link:hover {
+            background: #e2e8f0;
+        }
+
+        .kb-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .github-setup {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .github-setup h3 {
+            color: #92400e;
+            margin-bottom: 15px;
+        }
+
+        .github-setup p {
+            color: #78350f;
+            margin-bottom: 10px;
+        }
+
+        .setup-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-controls {
+                justify-content: center;
+            }
+
+            .kb-references {
+                flex-direction: column;
+            }
+
+            .container {
+                padding: 10px;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success-message {
+            background: #dcfce7;
+            border: 2px solid #16a34a;
+            color: #15803d;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message {
+            background: #fecaca;
+            border: 2px solid #ef4444;
+            color: #dc2626;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛠️ Salesbuildr Support KB</h1>
+            <p>Knowledge Base for Support Team Solutions</p>
+        </div>
+
+        <div id="personalMode" class="github-setup" style="background: #dcfce7; border-color: #16a34a;">
+            <h3>📝 Personal Mode Active</h3>
+            <p>Your knowledge base is stored locally in your browser. Perfect for testing and personal use!</p>
+            <p style="margin-top: 10px;"><strong>Ready to share with your team?</strong> <button class="btn btn-secondary btn-small" onclick="showTeamSetup()" style="margin-left: 10px;">Enable Team Sharing</button></p>
+        </div>
+
+        <div id="githubSetup" class="github-setup" style="display: none;">
+            <h3>🚀 Enable Team Sharing</h3>
+            <p>Configure GitHub to share knowledge base entries across your team:</p>
+            <div class="setup-grid">
+                <div class="form-group">
+                    <label>GitHub Repository (owner/repo)</label>
+                    <input type="text" id="githubRepo" placeholder="yourusername/your-repo-name">
+                </div>
+                <div class="form-group">
+                    <label>GitHub Personal Access Token</label>
+                    <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx">
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="btn btn-primary" onclick="saveGitHubConfig()">Enable Team Sharing</button>
+                <button class="btn btn-secondary" onclick="hideTeamSetup()">Stay in Personal Mode</button>
+            </div>
+            <p style="margin-top: 15px; font-size: 0.9rem;"><strong>Note:</strong> Your token needs "Contents" permission to read/write repository files.</p>
+        </div>
+
+        <div class="success-message" id="successMessage"></div>
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalIssues">0</div>
+                <div class="stat-label">Total Issues</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalCategories">9</div>
+                <div class="stat-label">Categories</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="recentlyAdded">0</div>
+                <div class="stat-label">Added This Week</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Search issues, solutions, or references..." onkeyup="searchKB()">
+            </div>
+            <div class="filter-controls">
+                <select class="category-filter" id="categoryFilter" onchange="filterByCategory()">
+                    <option value="">All Categories</option>
+                    <option value="Quotes">Quotes</option>
+                    <option value="Templates">Templates</option>
+                    <option value="Widgets">Widgets</option>
+                    <option value="Opportunities">Opportunities</option>
+                    <option value="Contacts">Contacts</option>
+                    <option value="Companies">Companies</option>
+                    <option value="Integrations">Integrations</option>
+                    <option value="Email">Email</option>
+                    <option value="Branding">Branding</option>
+                </select>
+                <button class="btn btn-primary" onclick="showAddForm()">+ Add Issue</button>
+                <button class="btn btn-secondary" onclick="exportData()">Export</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Import</button>
+                <input type="file" id="importFile" style="display: none" accept=".json" onchange="importData(event)">
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="addForm" class="form-section" style="display: none;">
+                <h2>Add New Issue & Solution</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Issue Title *</label>
+                        <input type="text" id="issueTitle" placeholder="Brief description of the issue">
+                    </div>
+                    <div class="form-group">
+                        <label>Category *</label>
+                        <select id="issueCategory">
+                            <option value="">Select Category</option>
+                            <option value="Quotes">Quotes</option>
+                            <option value="Templates">Templates</option>
+                            <option value="Widgets">Widgets</option>
+                            <option value="Opportunities">Opportunities</option>
+                            <option value="Contacts">Contacts</option>
+                            <option value="Companies">Companies</option>
+                            <option value="Integrations">Integrations</option>
+                            <option value="Email">Email</option>
+                            <option value="Branding">Branding</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Issue Description</label>
+                        <textarea id="issueDescription" placeholder="Detailed description of the problem..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Solution *</label>
+                        <textarea id="issueSolution" placeholder="Step-by-step solution..."></textarea>
+                    </div>
+                    
+                    <div class="reference-section">
+                        <h3>📎 References</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Jira Ticket Link</label>
+                                <input type="url" id="jiraLink" placeholder="https://yourcompany.atlassian.net/browse/TICKET-123">
+                            </div>
+                            <div class="form-group">
+                                <label>Intercom Chat ID</label>
+                                <input type="text" id="intercomId" placeholder="12345678">
+                            </div>
+                            <div class="form-group">
+                                <label>Loom Video URL</label>
+                                <input type="url" id="loomUrl" placeholder="https://www.loom.com/share/xxxxxxxx">
+                            </div>
+                            <div class="form-group">
+                                <label>Additional Reference</label>
+                                <input type="text" id="additionalRef" placeholder="Any other reference link or ID">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Screenshot Upload</label>
+                        <div class="file-upload" id="fileUpload">
+                            <p>📷 Click or drag to upload screenshot</p>
+                            <input type="file" id="screenshotFile" style="display: none" accept="image/*" multiple>
+                        </div>
+                        <div id="uploadedFiles"></div>
+                    </div>
+
+                    <div style="display: flex; gap: 15px; margin-top: 20px;">
+                        <button class="btn btn-primary" onclick="saveIssue()">
+                            <span id="saveButtonText">Save Issue</span>
+                            <div class="loading" id="saveLoading" style="display: none; margin-left: 10px;"></div>
+                        </button>
+                        <button class="btn btn-secondary" onclick="hideAddForm()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="knowledge-base">
+                <div class="kb-header">
+                    <h2>Knowledge Base</h2>
+                    <button class="btn btn-secondary btn-small" onclick="syncWithGitHub()">
+                        <span id="syncButtonText">🔄 Sync</span>
+                        <div class="loading" id="syncLoading" style="display: none; margin-left: 5px;"></div>
+                    </button>
+                </div>
+                <div id="kbContent">
+                    <div class="empty-state">
+                        <h3>No issues yet</h3>
+                        <p>Add your first support issue and solution to get started!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let knowledgeBase = [];
+        let editingId = null;
+        let githubConfig = {
+            repo: '',
+            token: '',
+            configured: false
+        };
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadGitHubConfig();
+            loadLocalData();
+            setupFileUpload();
+            updateStats();
+            renderKB();
+            
+            // Only sync with GitHub if configured
+            if (githubConfig.configured) {
+                syncWithGitHub();
+            }
+        });
+
+        // GitHub Configuration
+        function loadGitHubConfig() {
+            const stored = localStorage.getItem('githubConfig');
+            if (stored) {
+                githubConfig = JSON.parse(stored);
+                if (githubConfig.configured) {
+                    document.getElementById('personalMode').style.display = 'none';
+                    document.getElementById('githubSetup').style.display = 'none';
+                    document.getElementById('githubRepo').value = githubConfig.repo;
+                }
+            }
+        }
+
+        function showTeamSetup() {
+            document.getElementById('personalMode').style.display = 'none';
+            document.getElementById('githubSetup').style.display = 'block';
+        }
+
+        function hideTeamSetup() {
+            document.getElementById('personalMode').style.display = 'block';
+            document.getElementById('githubSetup').style.display = 'none';
+        }
+
+        function saveGitHubConfig() {
+            const repo = document.getElementById('githubRepo').value.trim();
+            const token = document.getElementById('githubToken').value.trim();
+            
+            if (!repo || !token) {
+                showError('Please fill in both repository and token fields.');
+                return;
+            }
+            
+            if (!repo.includes('/') || repo.split('/').length !== 2) {
+                showError('Repository format should be: owner/repo-name');
+                return;
+            }
+            
+            githubConfig = { repo, token, configured: true };
+            localStorage.setItem('githubConfig', JSON.stringify(githubConfig));
+            document.getElementById('personalMode').style.display = 'none';
+            document.getElementById('githubSetup').style.display = 'none';
+            showSuccess('Team sharing enabled! Now syncing your existing data...');
+            
+            syncWithGitHub();
+        }
+
+        // GitHub API functions
+        async function syncWithGitHub() {
+            if (!githubConfig.configured) return;
+            
+            const syncButton = document.getElementById('syncButtonText');
+            const syncLoading = document.getElementById('syncLoading');
+            
+            syncButton.style.display = 'none';
+            syncLoading.style.display = 'inline-block';
+            
+            try {
+                // First, try to fetch existing data
+                const response = await fetch(`https://api.github.com/repos/${githubConfig.repo}/contents/knowledge-base.json`, {
+                    headers: {
+                        'Authorization': `token ${githubConfig.token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const content = JSON.parse(atob(data.content));
+                    knowledgeBase = content.issues || [];
+                    localStorage.setItem('knowledgeBase', JSON.stringify(knowledgeBase));
+                    showSuccess('Synced successfully with GitHub!');
+                } else if (response.status === 404) {
+                    // File doesn't exist yet, create it with current data
+                    await saveToGitHub();
+                } else {
+                    throw new Error(`GitHub API error: ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Sync error:', error);
+                showError('Failed to sync with GitHub. Check your configuration.');
+            }
+            
+            syncButton.style.display = 'inline';
+            syncLoading.style.display = 'none';
+            updateStats();
+            renderKB();
+        }
+
+        async function saveToGitHub() {
+            if (!githubConfig.configured) return;
+            
+            try {
+                const content = {
+                    issues: knowledgeBase,
+                    lastUpdated: new Date().toISOString(),
+                    version: "1.0"
+                };
+                
+                // Get current file SHA if it exists
+                let sha = null;
+                try {
+                    const existingFile = await fetch(`https://api.github.com/repos/${githubConfig.repo}/contents/knowledge-base.json`, {
+                        headers: {
+                            'Authorization': `token ${githubConfig.token}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+                    if (existingFile.ok) {
+                        const data = await existingFile.json();
+                        sha = data.sha;
+                    }
+                } catch (e) {
+                    // File doesn't exist, which is fine
+                }
+                
+                const body = {
+                    message: `Update knowledge base - ${new Date().toLocaleString()}`,
+                    content: btoa(JSON.stringify(content, null, 2))
+                };
+                
+                if (sha) body.sha = sha;
+                
+                const response = await fetch(`https://api.github.com/repos/${githubConfig.repo}/contents/knowledge-base.json`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${githubConfig.token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    body: JSON.stringify(body)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`GitHub API error: ${response.status}`);
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Save to GitHub error:', error);
+                throw error;
+            }
+        }
+
+        // Local storage functions
+        function loadLocalData() {
+            const stored = localStorage.getItem('knowledgeBase');
+            if (stored) {
+                knowledgeBase = JSON.parse(stored);
+            }
+        }
+
+        function saveLocalData() {
+            localStorage.setItem('knowledgeBase', JSON.stringify(knowledgeBase));
+        }
+
+        // UI functions
+        function showAddForm() {
+            document.getElementById('addForm').style.display = 'block';
+            document.getElementById('issueTitle').focus();
+            editingId = null;
+            clearForm();
+        }
+
+        function hideAddForm() {
+            document.getElementById('addForm').style.display = 'none';
+            editingId = null;
+            clearForm();
+        }
+
+        function clearForm() {
+            document.getElementById('issueTitle').value = '';
+            document.getElementById('issueCategory').value = '';
+            document.getElementById('issueDescription').value = '';
+            document.getElementById('issueSolution').value = '';
+            document.getElementById('jiraLink').value = '';
+            document.getElementById('intercomId').value = '';
+            document.getElementById('loomUrl').value = '';
+            document.getElementById('additionalRef').value = '';
+            document.getElementById('uploadedFiles').innerHTML = '';
+        }
+
+        function showSuccess(message) {
+            const el = document.getElementById('successMessage');
+            el.textContent = message;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        function showError(message) {
+            const el = document.getElementById('errorMessage');
+            el.textContent = message;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 8000);
+        }
+
+        // File upload handling
+        function setupFileUpload() {
+            const fileUpload = document.getElementById('fileUpload');
+            const fileInput = document.getElementById('screenshotFile');
+            
+            fileUpload.onclick = () => fileInput.click();
+            
+            fileUpload.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileUpload.classList.add('dragover');
+            });
+            
+            fileUpload.addEventListener('dragleave', () => {
+                fileUpload.classList.remove('dragover');
+            });
+            
+            fileUpload.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileUpload.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            });
+            
+            fileInput.onchange = (e) => handleFiles(e.target.files);
+        }
+
+        function handleFiles(files) {
+            const container = document.getElementById('uploadedFiles');
+            
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const div = document.createElement('div');
+                        div.style.marginTop = '10px';
+                        div.innerHTML = `
+                            <img src="${e.target.result}" style="max-width: 200px; max-height: 200px; border-radius: 8px; margin-right: 10px;">
+                            <span>${file.name}</span>
+                            <button onclick="this.parentElement.remove()" style="margin-left: 10px; padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Remove</button>
+                        `;
+                        container.appendChild(div);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // Save issue function
+        async function saveIssue() {
+            const title = document.getElementById('issueTitle').value.trim();
+            const category = document.getElementById('issueCategory').value;
+            const description = document.getElementById('issueDescription').value.trim();
+            const solution = document.getElementById('issueSolution').value.trim();
+            const jiraLink = document.getElementById('jiraLink').value.trim();
+            const intercomId = document.getElementById('intercomId').value.trim();
+            const loomUrl = document.getElementById('loomUrl').value.trim();
+            const additionalRef = document.getElementById('additionalRef').value.trim();
+            
+            if (!title || !category || !solution) {
+                showError('Please fill in all required fields (Title, Category, Solution).');
+                return;
+            }
+            
+            const saveButton = document.getElementById('saveButtonText');
+            const saveLoading = document.getElementById('saveLoading');
+            
+            saveButton.style.display = 'none';
+            saveLoading.style.display = 'inline-block';
+            
+            try {
+                // Get uploaded images
+                const images = [];
+                const uploadedFiles = document.getElementById('uploadedFiles');
+                const imgElements = uploadedFiles.querySelectorAll('img');
+                imgElements.forEach(img => {
+                    images.push({
+                        name: img.nextElementSibling.textContent,
+                        data: img.src
+                    });
+                });
+                
+                const issue = {
+                    id: editingId || Date.now().toString(),
+                    title,
+                    category,
+                    description,
+                    solution,
+                    references: {
+                        jira: jiraLink,
+                        intercom: intercomId,
+                        loom: loomUrl,
+                        additional: additionalRef
+                    },
+                    images,
+                    createdAt: editingId ? knowledgeBase.find(i => i.id === editingId)?.createdAt || new Date().toISOString() : new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                if (editingId) {
+                    const index = knowledgeBase.findIndex(i => i.id === editingId);
+                    knowledgeBase[index] = issue;
+                } else {
+                    knowledgeBase.unshift(issue);
+                }
+                
+                saveLocalData();
+                
+                if (githubConfig.configured) {
+                    await saveToGitHub();
+                    showSuccess('Issue saved and synced to GitHub!');
+                } else {
+                    showSuccess('Issue saved! Ready to add more solutions.');
+                }
+                
+                hideAddForm();
+                updateStats();
+                renderKB();
+                
+            } catch (error) {
+                console.error('Save error:', error);
+                showError('Failed to save issue. Please try again.');
+            }
+            
+            saveButton.style.display = 'inline';
+            saveLoading.style.display = 'none';
+        }
+
+        // Edit issue function
+        function editIssue(id) {
+            const issue = knowledgeBase.find(i => i.id === id);
+            if (!issue) return;
+            
+            editingId = id;
+            document.getElementById('issueTitle').value = issue.title;
+            document.getElementById('issueCategory').value = issue.category;
+            document.getElementById('issueDescription').value = issue.description;
+            document.getElementById('issueSolution').value = issue.solution;
+            document.getElementById('jiraLink').value = issue.references?.jira || '';
+            document.getElementById('intercomId').value = issue.references?.intercom || '';
+            document.getElementById('loomUrl').value = issue.references?.loom || '';
+            document.getElementById('additionalRef').value = issue.references?.additional || '';
+            
+            // Handle images
+            const container = document.getElementById('uploadedFiles');
+            container.innerHTML = '';
+            if (issue.images) {
+                issue.images.forEach(img => {
+                    const div = document.createElement('div');
+                    div.style.marginTop = '10px';
+                    div.innerHTML = `
+                        <img src="${img.data}" style="max-width: 200px; max-height: 200px; border-radius: 8px; margin-right: 10px;">
+                        <span>${img.name}</span>
+                        <button onclick="this.parentElement.remove()" style="margin-left: 10px; padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Remove</button>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+            
+            document.getElementById('addForm').style.display = 'block';
+            document.getElementById('issueTitle').focus();
+        }
+
+        // Delete issue function
+        async function deleteIssue(id) {
+            if (!confirm('Are you sure you want to delete this issue?')) return;
+            
+            knowledgeBase = knowledgeBase.filter(i => i.id !== id);
+            saveLocalData();
+            
+            if (githubConfig.configured) {
+                try {
+                    await saveToGitHub();
+                    showSuccess('Issue deleted and synced to GitHub!');
+                } catch (error) {
+                    showError('Issue deleted locally but failed to sync to GitHub.');
+                }
+            } else {
+                showSuccess('Issue deleted!');
+            }
+            
+            updateStats();
+            renderKB();
+        }
+
+        // Search and filter functions
+        function searchKB() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const category = document.getElementById('categoryFilter').value;
+            
+            const filtered = knowledgeBase.filter(issue => {
+                const matchesSearch = query === '' || 
+                    issue.title.toLowerCase().includes(query) ||
+                    issue.description.toLowerCase().includes(query) ||
+                    issue.solution.toLowerCase().includes(query) ||
+                    Object.values(issue.references || {}).some(ref => ref.toLowerCase().includes(query));
+                
+                const matchesCategory = category === '' || issue.category === category;
+                
+                return matchesSearch && matchesCategory;
+            });
+            
+            renderKB(filtered);
+        }
+
+        function filterByCategory() {
+            searchKB();
+        }
+
+        // Render functions
+        function renderKB(issues = knowledgeBase) {
+            const container = document.getElementById('kbContent');
+            
+            if (issues.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>${knowledgeBase.length === 0 ? 'No issues yet' : 'No matching issues found'}</h3>
+                        <p>${knowledgeBase.length === 0 ? 'Add your first support issue and solution to get started!' : 'Try adjusting your search or filter criteria.'}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = issues.map(issue => {
+                const references = [];
+                if (issue.references?.jira) references.push(`<a href="${issue.references.jira}" class="reference-link" target="_blank">🎫 Jira Ticket</a>`);
+                if (issue.references?.intercom) references.push(`<a href="https://app.intercom.com/a/conversations/${issue.references.intercom}" class="reference-link" target="_blank">💬 Chat ${issue.references.intercom}</a>`);
+                if (issue.references?.loom) references.push(`<a href="${issue.references.loom}" class="reference-link" target="_blank">🎥 Loom Video</a>`);
+                if (issue.references?.additional) references.push(`<span class="reference-link">🔗 ${issue.references.additional}</span>`);
+                
+                const images = issue.images ? issue.images.map(img => 
+                    `<img src="${img.data}" alt="${img.name}" style="max-width: 200px; margin: 10px 10px 0 0; border-radius: 8px; cursor: pointer;" onclick="window.open('${img.data}', '_blank')">`
+                ).join('') : '';
+                
+                return `
+                    <div class="kb-item">
+                        <div class="kb-category">${issue.category}</div>
+                        <div class="kb-title">${issue.title}</div>
+                        ${issue.description ? `<div class="kb-description">${issue.description}</div>` : ''}
+                        <div class="kb-solution">
+                            <strong>Solution:</strong>
+                            <div>${issue.solution.replace(/\n/g, '<br>')}</div>
+                        </div>
+                        ${images ? `<div style="margin-top: 15px;">${images}</div>` : ''}
+                        ${references.length > 0 ? `<div class="kb-references">${references.join('')}</div>` : ''}
+                        <div class="kb-actions">
+                            <button class="btn btn-secondary btn-small" onclick="editIssue('${issue.id}')">Edit</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteIssue('${issue.id}')">Delete</button>
+                            <span style="color: #64748b; font-size: 0.8rem; margin-left: 10px;">
+                                ${issue.updatedAt !== issue.createdAt ? 'Updated' : 'Created'}: ${new Date(issue.updatedAt || issue.createdAt).toLocaleDateString()}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateStats() {
+            document.getElementById('totalIssues').textContent = knowledgeBase.length;
+            
+            const categories = new Set(knowledgeBase.map(i => i.category)).size;
+            document.getElementById('totalCategories').textContent = Math.max(categories, 9);
+            
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            const recentCount = knowledgeBase.filter(i => new Date(i.createdAt) > weekAgo).length;
+            document.getElementById('recentlyAdded').textContent = recentCount;
+        }
+
+        // Import/Export functions
+        function exportData() {
+            const data = {
+                knowledgeBase: knowledgeBase,
+                exportedAt: new Date().toISOString(),
+                version: "1.0"
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `salesbuildr-kb-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.knowledgeBase && Array.isArray(data.knowledgeBase)) {
+                        knowledgeBase = data.knowledgeBase;
+                        saveLocalData();
+                        updateStats();
+                        renderKB();
+                        showSuccess(`Imported ${knowledgeBase.length} issues successfully!`);
+                        
+                        if (githubConfig.configured) {
+                            saveToGitHub().then(() => {
+                                showSuccess('Data imported and synced to GitHub!');
+                            }).catch(() => {
+                                showError('Data imported but failed to sync to GitHub.');
+                            });
+                        }
+                    } else {
+                        showError('Invalid file format. Please export from this app and try again.');
+                    }
+                } catch (error) {
+                    showError('Failed to parse imported file. Please check the file format.');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+    </script>
+</body>
+</html>
