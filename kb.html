@@ -568,8 +568,8 @@
                         <textarea id="issueDescription" placeholder="Detailed description of the problem..."></textarea>
                     </div>
                     <div class="form-group">
-                        <label>Solution *</label>
-                        <textarea id="issueSolution" placeholder="Step-by-step solution..."></textarea>
+                        <label>Solution</label>
+                        <textarea id="issueSolution" placeholder="Step-by-step solution (can be added later)..."></textarea>
                     </div>
                     
                     <div class="reference-section">
@@ -907,8 +907,8 @@
             const loomUrl = document.getElementById('loomUrl').value.trim();
             const additionalRef = document.getElementById('additionalRef').value.trim();
             
-            if (!title || !category || !solution) {
-                showError('Please fill in all required fields (Title, Category, Solution).');
+            if (!title || !category) {
+                showError('Please fill in Title and Category (Solution can be added later).');
                 return;
             }
             
@@ -1041,9 +1041,15 @@
             const filtered = knowledgeBase.filter(issue => {
                 const matchesSearch = query === '' || 
                     issue.title.toLowerCase().includes(query) ||
-                    issue.description.toLowerCase().includes(query) ||
-                    issue.solution.toLowerCase().includes(query) ||
-                    Object.values(issue.references || {}).some(ref => ref.toLowerCase().includes(query));
+                    (issue.description && issue.description.toLowerCase().includes(query)) ||
+                    (issue.solution && issue.solution.toLowerCase().includes(query)) ||
+                    Object.values(issue.references || {}).some(ref => ref && ref.toLowerCase().includes(query)) ||
+                    // Fuzzy search - match partial words
+                    query.split(' ').every(word => 
+                        issue.title.toLowerCase().includes(word) ||
+                        (issue.description && issue.description.toLowerCase().includes(word)) ||
+                        (issue.solution && issue.solution.toLowerCase().includes(word))
+                    );
                 
                 const matchesCategory = category === '' || issue.category === category;
                 
@@ -1087,10 +1093,17 @@
                         <div class="kb-category">${issue.category}</div>
                         <div class="kb-title">${issue.title}</div>
                         ${issue.description ? `<div class="kb-description">${issue.description}</div>` : ''}
-                        <div class="kb-solution">
-                            <strong>Solution:</strong>
-                            <div>${issue.solution.replace(/\n/g, '<br>')}</div>
-                        </div>
+                        ${issue.solution ? `
+                            <div class="kb-solution">
+                                <strong>Solution:</strong>
+                                <div>${issue.solution.replace(/\n/g, '<br>')}</div>
+                            </div>
+                        ` : `
+                            <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 15px 0; border-radius: 0 8px 8px 0;">
+                                <strong style="color: #92400e;">⏳ Solution Pending</strong>
+                                <div style="color: #78350f;">This issue is recorded but doesn't have a solution yet.</div>
+                            </div>
+                        `}
                         ${images ? `<div style="margin-top: 15px;">${images}</div>` : ''}
                         ${references.length > 0 ? `<div class="kb-references">${references.join('')}</div>` : ''}
                         <div class="kb-actions">
