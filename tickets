@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salesbuildr Support Ticket Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .main-content {
+            padding: 40px;
+        }
+        
+        .session-info {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 5px solid #4CAF50;
+        }
+        
+        .session-info h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .session-date {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .session-controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+        
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .category-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .category-card:hover {
+            border-color: #4CAF50;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(76, 175, 80, 0.2);
+        }
+        
+        .category-card.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #45a049;
+        }
+        
+        .category-name {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .category-count {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        
+        .category-card.active .category-count {
+            color: white;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .control-btn {
+            width: 35px;
+            height: 35px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-add {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-subtract {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .control-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .report-section {
+            margin-top: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+        
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+        
+        .weekly-trends {
+            margin-top: 40px;
+            padding: 30px;
+            background: white;
+            border-radius: 15px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .trend-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .trend-item:last-child {
+            border-bottom: none;
+        }
+        
+        .total-summary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .total-count {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .category-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 15px;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Salesbuildr Support Tracker</h1>
+            <p>Track ticket categories and generate handoff reports</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="session-info">
+                <h3>Current Session</h3>
+                <div class="session-date" id="sessionDate"></div>
+                <div class="session-controls">
+                    <button class="btn btn-primary" onclick="startNewSession()">New Session</button>
+                    <button class="btn btn-secondary" onclick="generateReport()">Generate Report</button>
+                    <button class="btn btn-secondary" onclick="exportPDF()">Export PDF</button>
+                    <button class="btn btn-danger" onclick="clearAllData()">Clear All Data</button>
+                </div>
+            </div>
+            
+            <div class="total-summary">
+                <div class="total-count" id="totalCount">0</div>
+                <div>Total Tickets Today</div>
+            </div>
+            
+            <div class="category-grid" id="categoryGrid"></div>
+            
+            <div class="report-section" id="reportSection">
+                <div class="report-header">
+                    <h3>Daily Report</h3>
+                    <select id="chartType" onchange="updateChart()">
+                        <option value="pie">Pie Chart</option>
+                        <option value="bar">Bar Chart</option>
+                        <option value="doughnut">Doughnut Chart</option>
+                    </select>
+                </div>
+                <div class="chart-container">
+                    <canvas id="reportChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="weekly-trends">
+                <h3>Weekly Trends</h3>
+                <div id="weeklyData"></div>
+                <button class="btn btn-primary" onclick="showWeeklyChart()" style="margin-top: 20px;">View Weekly Chart</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const categories = [
+            'Quotes', 'Opportunities', 'Integrations', 'Templates', 
+            'Products', 'Categories', 'How to Questions', 'Bugs', 
+            'Email', 'Companies', 'Contacts', 'Platform', 'Users'
+        ];
+        
+        let currentSession = {};
+        let weeklyData = {};
+        let chart = null;
+        
+        // Initialize the app
+        function init() {
+            loadData();
+            updateSessionDate();
+            renderCategories();
+            generateReport();
+            updateWeeklyTrends();
+        }
+        
+        function updateSessionDate() {
+            const today = new Date().toLocaleDateString();
+            document.getElementById('sessionDate').textContent = `Session Date: ${today}`;
+        }
+        
+        function renderCategories() {
+            const grid = document.getElementById('categoryGrid');
+            grid.innerHTML = '';
+            
+            categories.forEach(category => {
+                const count = currentSession[category] || 0;
+                const card = document.createElement('div');
+                card.className = 'category-card';
+                card.innerHTML = `
+                    <div class="category-name">${category}</div>
+                    <div class="category-count">${count}</div>
+                    <div class="controls">
+                        <button class="control-btn btn-add" onclick="incrementCategory('${category}')">+</button>
+                        <button class="control-btn btn-subtract" onclick="decrementCategory('${category}')" ${count === 0 ? 'disabled' : ''}>-</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            
+            updateTotalCount();
+        }
+        
+        function incrementCategory(category) {
+            currentSession[category] = (currentSession[category] || 0) + 1;
+            saveData();
+            renderCategories();
+            generateReport();
+        }
+        
+        function decrementCategory(category) {
+            if (currentSession[category] > 0) {
+                currentSession[category]--;
+                saveData();
+                renderCategories();
+                generateReport();
+            }
+        }
+        
+        function updateTotalCount() {
+            const total = Object.values(currentSession).reduce((sum, count) => sum + (count || 0), 0);
+            document.getElementById('totalCount').textContent = total;
+        }
+        
+        function startNewSession() {
+            if (Object.values(currentSession).some(count => count > 0)) {
+                if (confirm('This will save current session data and start a new session. Continue?')) {
+                    saveToWeeklyData();
+                    currentSession = {};
+                    saveData();
+                    renderCategories();
+                    generateReport();
+                    updateWeeklyTrends();
+                }
+            } else {
+                currentSession = {};
+                renderCategories();
+                generateReport();
+            }
+        }
+        
+        function saveToWeeklyData() {
+            const today = new Date().toISOString().split('T')[0];
+            weeklyData[today] = { ...currentSession };
+            localStorage.setItem('salesbuildr_weekly_data', JSON.stringify(weeklyData));
+        }
+        
+        function generateReport() {
+            const data = Object.entries(currentSession).filter(([, count]) => count > 0);
+            
+            if (data.length === 0) {
+                if (chart) {
+                    chart.destroy();
+                    chart = null;
+                }
+                return;
+            }
+            
+            const labels = data.map(([category]) => category);
+            const values = data.map(([, count]) => count);
+            const colors = [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384',
+                '#36A2EB', '#FFCE56', '#9966FF'
+            ];
+            
+            updateChart(labels, values, colors);
+        }
+        
+        function updateChart(labels = null, values = null, colors = null) {
+            const ctx = document.getElementById('reportChart').getContext('2d');
+            const chartType = document.getElementById('chartType').value;
+            
+            if (!labels || !values) {
+                const data = Object.entries(currentSession).filter(([, count]) => count > 0);
+                if (data.length === 0) return;
+                
+                labels = data.map(([category]) => category);
+                values = data.map(([, count]) => count);
+                colors = [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                    '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384',
+                    '#36A2EB', '#FFCE56', '#9966FF'
+                ];
+            }
+            
+            if (chart) {
+                chart.destroy();
+            }
+            
+            const config = {
+                type: chartType,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: chartType === 'bar' ? 'top' : 'right',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return `${context.label}: ${context.parsed} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    scales: chartType === 'bar' ? {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    } : {}
+                }
+            };
+            
+            chart = new Chart(ctx, config);
+        }
+        
+        function updateWeeklyTrends() {
+            const weeklyDiv = document.getElementById('weeklyData');
+            const sortedDates = Object.keys(weeklyData).sort().slice(-7); // Last 7 days
+            
+            if (sortedDates.length === 0) {
+                weeklyDiv.innerHTML = '<p>No weekly data available yet.</p>';
+                return;
+            }
+            
+            let html = '';
+            sortedDates.forEach(date => {
+                const data = weeklyData[date];
+                const total = Object.values(data).reduce((sum, count) => sum + (count || 0), 0);
+                const topCategory = Object.entries(data).reduce((max, [cat, count]) => 
+                    count > (max[1] || 0) ? [cat, count] : max, ['None', 0]);
+                
+                html += `
+                    <div class="trend-item">
+                        <div>
+                            <strong>${new Date(date).toLocaleDateString()}</strong><br>
+                            <small>Top: ${topCategory[0]} (${topCategory[1]} tickets)</small>
+                        </div>
+                        <div style="font-size: 1.5em; font-weight: bold; color: #4CAF50;">
+                            ${total}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            weeklyDiv.innerHTML = html;
+        }
+        
+        function showWeeklyChart() {
+            const sortedDates = Object.keys(weeklyData).sort().slice(-7);
+            if (sortedDates.length === 0) {
+                alert('No weekly data available yet.');
+                return;
+            }
+            
+            const labels = sortedDates.map(date => new Date(date).toLocaleDateString());
+            const totals = sortedDates.map(date => 
+                Object.values(weeklyData[date]).reduce((sum, count) => sum + (count || 0), 0)
+            );
+            
+            if (chart) {
+                chart.destroy();
+            }
+            
+            const ctx = document.getElementById('reportChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Daily Ticket Count',
+                        data: totals,
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            
+            // Add title
+            pdf.setFontSize(20);
+            pdf.text('Salesbuildr Support Report', 20, 30);
+            
+            // Add date
+            pdf.setFontSize(12);
+            pdf.text(`Date: ${new Date().toLocaleDateString()}`, 20, 45);
+            
+            // Add summary
+            const total = Object.values(currentSession).reduce((sum, count) => sum + (count || 0), 0);
+            pdf.text(`Total Tickets: ${total}`, 20, 60);
+            
+            // Add category breakdown
+            let y = 80;
+            pdf.text('Category Breakdown:', 20, y);
+            y += 15;
+            
+            Object.entries(currentSession).forEach(([category, count]) => {
+                if (count > 0) {
+                    pdf.text(`${category}: ${count}`, 30, y);
+                    y += 12;
+                }
+            });
+            
+            pdf.save(`salesbuildr-report-${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+        
+        function clearAllData() {
+            if (confirm('This will clear ALL data including weekly trends. Are you sure?')) {
+                currentSession = {};
+                weeklyData = {};
+                localStorage.removeItem('salesbuildr_session_data');
+                localStorage.removeItem('salesbuildr_weekly_data');
+                renderCategories();
+                generateReport();
+                updateWeeklyTrends();
+            }
+        }
+        
+        function saveData() {
+            localStorage.setItem('salesbuildr_session_data', JSON.stringify(currentSession));
+        }
+        
+        function loadData() {
+            const sessionData = localStorage.getItem('salesbuildr_session_data');
+            const weeklyDataStored = localStorage.getItem('salesbuildr_weekly_data');
+            
+            if (sessionData) {
+                currentSession = JSON.parse(sessionData);
+            }
+            
+            if (weeklyDataStored) {
+                weeklyData = JSON.parse(weeklyDataStored);
+            }
+        }
+        
+        // Initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
