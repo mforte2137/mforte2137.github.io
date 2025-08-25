@@ -169,6 +169,7 @@
             display: flex;
             gap: 10px;
             margin-top: 15px;
+            justify-content: center;
         }
         
         .control-btn {
@@ -194,6 +195,11 @@
         
         .control-btn:hover {
             transform: scale(1.1);
+        }
+        
+        .control-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
         }
         
         .report-section {
@@ -253,6 +259,43 @@
             margin-bottom: 10px;
         }
         
+        .notes-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 5px solid #4CAF50;
+        }
+        
+        .notes-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .notes-field {
+            width: 100%;
+            height: 100px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+        }
+        
+        .notes-display {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .notes-display h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
         .hidden {
             display: none;
         }
@@ -301,6 +344,12 @@
                 <div>Total Tickets Today</div>
             </div>
             
+            <div class="notes-section">
+                <h3>Session Notes</h3>
+                <textarea id="sessionNotes" class="notes-field" 
+                    placeholder="Add your observations about today's support session... (e.g., common issues, trends noticed, escalations, etc.)"></textarea>
+            </div>
+            
             <div class="category-grid" id="categoryGrid"></div>
             
             <div class="report-section" id="reportSection">
@@ -314,6 +363,10 @@
                 </div>
                 <div class="chart-container">
                     <canvas id="reportChart"></canvas>
+                </div>
+                <div class="notes-display" id="notesDisplay">
+                    <h4>Session Notes:</h4>
+                    <div id="notesContent" style="color: #666; font-style: italic;">No notes added yet.</div>
                 </div>
             </div>
             
@@ -333,21 +386,46 @@
         ];
         
         let currentSession = {};
+        let sessionNotes = '';
         let weeklyData = {};
         let chart = null;
         
-        // Initialize the app
         function init() {
             loadData();
             updateSessionDate();
             renderCategories();
             generateReport();
             updateWeeklyTrends();
+            setupNotesListener();
         }
         
         function updateSessionDate() {
             const today = new Date().toLocaleDateString();
-            document.getElementById('sessionDate').textContent = `Session Date: ${today}`;
+            document.getElementById('sessionDate').textContent = 'Session Date: ' + today;
+        }
+        
+        function setupNotesListener() {
+            const notesField = document.getElementById('sessionNotes');
+            notesField.value = sessionNotes;
+            notesField.addEventListener('input', function() {
+                sessionNotes = this.value;
+                saveData();
+                updateNotesDisplay();
+            });
+            updateNotesDisplay();
+        }
+        
+        function updateNotesDisplay() {
+            const notesContent = document.getElementById('notesContent');
+            if (sessionNotes.trim()) {
+                notesContent.textContent = sessionNotes;
+                notesContent.style.fontStyle = 'normal';
+                notesContent.style.color = '#333';
+            } else {
+                notesContent.textContent = 'No notes added yet.';
+                notesContent.style.fontStyle = 'italic';
+                notesContent.style.color = '#666';
+            }
         }
         
         function renderCategories() {
@@ -358,14 +436,12 @@
                 const count = currentSession[category] || 0;
                 const card = document.createElement('div');
                 card.className = 'category-card';
-                card.innerHTML = `
-                    <div class="category-name">${category}</div>
-                    <div class="category-count">${count}</div>
-                    <div class="controls">
-                        <button class="control-btn btn-add" onclick="incrementCategory('${category}')">+</button>
-                        <button class="control-btn btn-subtract" onclick="decrementCategory('${category}')" ${count === 0 ? 'disabled' : ''}>-</button>
-                    </div>
-                `;
+                card.innerHTML = '<div class="category-name">' + category + '</div>' +
+                    '<div class="category-count">' + count + '</div>' +
+                    '<div class="controls">' +
+                    '<button class="control-btn btn-add" onclick="incrementCategory(\'' + category + '\')">+</button>' +
+                    '<button class="control-btn btn-subtract" onclick="decrementCategory(\'' + category + '\')"' + (count === 0 ? ' disabled' : '') + '>-</button>' +
+                    '</div>';
                 grid.appendChild(card);
             });
             
@@ -394,30 +470,40 @@
         }
         
         function startNewSession() {
-            if (Object.values(currentSession).some(count => count > 0)) {
+            const hasData = Object.values(currentSession).some(count => count > 0) || sessionNotes.trim();
+            if (hasData) {
                 if (confirm('This will save current session data and start a new session. Continue?')) {
                     saveToWeeklyData();
                     currentSession = {};
+                    sessionNotes = '';
+                    document.getElementById('sessionNotes').value = '';
                     saveData();
                     renderCategories();
                     generateReport();
                     updateWeeklyTrends();
+                    updateNotesDisplay();
                 }
             } else {
                 currentSession = {};
+                sessionNotes = '';
+                document.getElementById('sessionNotes').value = '';
                 renderCategories();
                 generateReport();
+                updateNotesDisplay();
             }
         }
         
         function saveToWeeklyData() {
             const today = new Date().toISOString().split('T')[0];
-            weeklyData[today] = { ...currentSession };
+            weeklyData[today] = { 
+                counts: Object.assign({}, currentSession),
+                notes: sessionNotes 
+            };
             localStorage.setItem('salesbuildr_weekly_data', JSON.stringify(weeklyData));
         }
         
         function generateReport() {
-            const data = Object.entries(currentSession).filter(([, count]) => count > 0);
+            const data = Object.entries(currentSession).filter(entry => entry[1] > 0);
             
             if (data.length === 0) {
                 if (chart) {
@@ -427,8 +513,8 @@
                 return;
             }
             
-            const labels = data.map(([category]) => category);
-            const values = data.map(([, count]) => count);
+            const labels = data.map(entry => entry[0]);
+            const values = data.map(entry => entry[1]);
             const colors = [
                 '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
                 '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384',
@@ -438,16 +524,16 @@
             updateChart(labels, values, colors);
         }
         
-        function updateChart(labels = null, values = null, colors = null) {
+        function updateChart(labels, values, colors) {
             const ctx = document.getElementById('reportChart').getContext('2d');
             const chartType = document.getElementById('chartType').value;
             
             if (!labels || !values) {
-                const data = Object.entries(currentSession).filter(([, count]) => count > 0);
+                const data = Object.entries(currentSession).filter(entry => entry[1] > 0);
                 if (data.length === 0) return;
                 
-                labels = data.map(([category]) => category);
-                values = data.map(([, count]) => count);
+                labels = data.map(entry => entry[0]);
+                values = data.map(entry => entry[1]);
                 colors = [
                     '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
                     '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384',
@@ -486,7 +572,7 @@
                                 label: function(context) {
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                                     const percentage = ((context.parsed / total) * 100).toFixed(1);
-                                    return `${context.label}: ${context.parsed} (${percentage}%)`;
+                                    return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
                                 }
                             }
                         }
@@ -507,7 +593,7 @@
         
         function updateWeeklyTrends() {
             const weeklyDiv = document.getElementById('weeklyData');
-            const sortedDates = Object.keys(weeklyData).sort().slice(-7); // Last 7 days
+            const sortedDates = Object.keys(weeklyData).sort().slice(-7);
             
             if (sortedDates.length === 0) {
                 weeklyDiv.innerHTML = '<p>No weekly data available yet.</p>';
@@ -517,21 +603,22 @@
             let html = '';
             sortedDates.forEach(date => {
                 const data = weeklyData[date];
-                const total = Object.values(data).reduce((sum, count) => sum + (count || 0), 0);
-                const topCategory = Object.entries(data).reduce((max, [cat, count]) => 
-                    count > (max[1] || 0) ? [cat, count] : max, ['None', 0]);
+                const counts = data.counts || data;
+                const notes = data.notes || '';
+                const total = Object.values(counts).reduce((sum, count) => sum + (count || 0), 0);
+                const topCategory = Object.entries(counts).reduce((max, entry) => 
+                    entry[1] > (max[1] || 0) ? entry : max, ['None', 0]);
                 
-                html += `
-                    <div class="trend-item">
-                        <div>
-                            <strong>${new Date(date).toLocaleDateString()}</strong><br>
-                            <small>Top: ${topCategory[0]} (${topCategory[1]} tickets)</small>
-                        </div>
-                        <div style="font-size: 1.5em; font-weight: bold; color: #4CAF50;">
-                            ${total}
-                        </div>
-                    </div>
-                `;
+                html += '<div class="trend-item">' +
+                    '<div>' +
+                    '<strong>' + new Date(date).toLocaleDateString() + '</strong><br>' +
+                    '<small>Top: ' + topCategory[0] + ' (' + topCategory[1] + ' tickets)</small>' +
+                    (notes ? '<br><small style="color: #666;">Notes: ' + notes.substring(0, 50) + (notes.length > 50 ? '...' : '') + '</small>' : '') +
+                    '</div>' +
+                    '<div style="font-size: 1.5em; font-weight: bold; color: #4CAF50;">' +
+                    total +
+                    '</div>' +
+                    '</div>';
             });
             
             weeklyDiv.innerHTML = html;
@@ -545,9 +632,11 @@
             }
             
             const labels = sortedDates.map(date => new Date(date).toLocaleDateString());
-            const totals = sortedDates.map(date => 
-                Object.values(weeklyData[date]).reduce((sum, count) => sum + (count || 0), 0)
-            );
+            const totals = sortedDates.map(date => {
+                const data = weeklyData[date];
+                const counts = data.counts || data;
+                return Object.values(counts).reduce((sum, count) => sum + (count || 0), 0);
+            });
             
             if (chart) {
                 chart.destroy();
@@ -589,50 +678,62 @@
         }
         
         function exportPDF() {
-            const { jsPDF } = window.jspdf;
+            const jsPDF = window.jspdf.jsPDF;
             const pdf = new jsPDF();
             
-            // Add title
             pdf.setFontSize(20);
             pdf.text('Salesbuildr Support Report', 20, 30);
             
-            // Add date
             pdf.setFontSize(12);
-            pdf.text(`Date: ${new Date().toLocaleDateString()}`, 20, 45);
+            pdf.text('Date: ' + new Date().toLocaleDateString(), 20, 45);
             
-            // Add summary
             const total = Object.values(currentSession).reduce((sum, count) => sum + (count || 0), 0);
-            pdf.text(`Total Tickets: ${total}`, 20, 60);
+            pdf.text('Total Tickets: ' + total, 20, 60);
             
-            // Add category breakdown
             let y = 80;
             pdf.text('Category Breakdown:', 20, y);
             y += 15;
             
-            Object.entries(currentSession).forEach(([category, count]) => {
-                if (count > 0) {
-                    pdf.text(`${category}: ${count}`, 30, y);
+            Object.entries(currentSession).forEach(entry => {
+                if (entry[1] > 0) {
+                    pdf.text(entry[0] + ': ' + entry[1], 30, y);
                     y += 12;
                 }
             });
             
-            pdf.save(`salesbuildr-report-${new Date().toISOString().split('T')[0]}.pdf`);
+            if (sessionNotes.trim()) {
+                y += 10;
+                pdf.text('Session Notes:', 20, y);
+                y += 15;
+                
+                const splitNotes = pdf.splitTextToSize(sessionNotes, 170);
+                pdf.text(splitNotes, 30, y);
+            }
+            
+            pdf.save('salesbuildr-report-' + new Date().toISOString().split('T')[0] + '.pdf');
         }
         
         function clearAllData() {
             if (confirm('This will clear ALL data including weekly trends. Are you sure?')) {
                 currentSession = {};
+                sessionNotes = '';
                 weeklyData = {};
+                document.getElementById('sessionNotes').value = '';
                 localStorage.removeItem('salesbuildr_session_data');
                 localStorage.removeItem('salesbuildr_weekly_data');
                 renderCategories();
                 generateReport();
                 updateWeeklyTrends();
+                updateNotesDisplay();
             }
         }
         
         function saveData() {
-            localStorage.setItem('salesbuildr_session_data', JSON.stringify(currentSession));
+            const data = {
+                session: currentSession,
+                notes: sessionNotes
+            };
+            localStorage.setItem('salesbuildr_session_data', JSON.stringify(data));
         }
         
         function loadData() {
@@ -640,7 +741,14 @@
             const weeklyDataStored = localStorage.getItem('salesbuildr_weekly_data');
             
             if (sessionData) {
-                currentSession = JSON.parse(sessionData);
+                const data = JSON.parse(sessionData);
+                if (data.session) {
+                    currentSession = data.session;
+                    sessionNotes = data.notes || '';
+                } else {
+                    currentSession = data;
+                    sessionNotes = '';
+                }
             }
             
             if (weeklyDataStored) {
@@ -648,7 +756,6 @@
             }
         }
         
-        // Initialize the app when the page loads
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
