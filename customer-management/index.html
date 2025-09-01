@@ -1,1 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="customers.css">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col">
+    <header class="bg-blue-600 text-white p-4 shadow-md">
+        <h1 class="text-2xl font-bold">Customer Management</h1>
+    </header>
 
+    <div class="flex flex-col flex-grow overflow-hidden">
+        <!-- Search and Add Section -->
+        <div class="p-4 flex items-center justify-between bg-white shadow">
+            <div class="relative flex-grow max-w-xl">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <i data-feather="search" class="h-5 w-5 text-gray-400"></i>
+                </div>
+                <input
+                    type="text"
+                    id="search-input"
+                    placeholder="Search companies..."
+                    class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+            </div>
+            <div class="flex ml-4">
+                <div class="dropdown relative mr-2">
+                    <button
+                        id="data-options-btn"
+                        class="px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center hover:bg-blue-600 transition"
+                    >
+                        <i data-feather="database" class="h-5 w-5 mr-1"></i>
+                        Data Options
+                    </button>
+                    <div id="last-saved-info" class="text-xs text-gray-600 absolute top-full right-0 mt-1 hidden"></div>
+                    <div id="data-dropdown" class="dropdown-menu absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg hidden z-50">
+                        <div class="py-1">
+                            <a href="#" id="save-to-file" class="block px-4 py-2 text-gray-800 hover:bg-blue-100">
+                                <i data-feather="save" class="h-4 w-4 inline mr-1"></i> Save Data to File
+                            </a>
+                            <a href="#" id="export-data" class="block px-4 py-2 text-gray-800 hover:bg-blue-100">
+                                <i data-feather="download" class="h-4 w-4 inline mr-1"></i> Export Data (Backup)
+                            </a>
+                            <a href="#" id="import-data" class="block px-4 py-2 text-gray-800 hover:bg-blue-100">
+                                <i data-feather="upload" class="h-4 w-4 inline mr-1"></i> Import Data
+                            </a>
+                            <input type="file" id="import-file" class="hidden" accept=".json">
+                        </div>
+                    </div>
+                </div>
+                <button
+                    id="create-company-btn"
+                    class="px-4 py-2 bg-green-500 text-white rounded-lg flex items-center hover:bg-green-600 transition"
+                >
+                    <i data-feather="plus" class="h-5 w-5 mr-1"></i>
+                    Create New Company
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Area with Company List, Details, and Tasks -->
+        <div class="flex flex-grow overflow-hidden">
+            <!-- Company List -->
+            <div class="w-64 bg-white shadow-md overflow-y-auto">
+                <ul id="company-list"></ul>
+                <div id="no-companies" class="p-4 text-gray-500 text-center hidden">No companies found</div>
+            </div>
+
+            <!-- Company Details and Notes -->
+            <div class="flex-grow flex overflow-hidden" id="main-content-area">
+                <!-- Default state when no company is selected -->
+                <div id="no-selection" class="flex-grow flex items-center justify-center bg-gray-50">
+                    <div class="text-center p-6">
+                        <div class="text-gray-400 mb-4">
+                            <i data-feather="search" class="h-12 w-12 mx-auto"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-700 mb-1">No Company Selected</h3>
+                        <p class="text-gray-500 mb-4">Search for a company or create a new one to get started</p>
+                        <button
+                            class="px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center mx-auto hover:bg-blue-600 transition create-company-btn"
+                        >
+                            <i data-feather="plus" class="h-5 w-5 mr-1"></i>
+                            Create New Company
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Add Company Form -->
+                <div id="add-company-form" class="flex-grow p-6 overflow-y-auto hidden">
+                    <div class="max-w-3xl mx-auto bg-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-semibold">Create New Company</h2>
+                            <button class="text-gray-400 hover:text-gray-600" id="close-add-form">
+                                <i data-feather="x" class="h-6 w-6"></i>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                                <input
+                                    type="text"
+                                    id="new-company-name"
+                                    class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Contact</label>
+                                <input
+                                    type="text"
+                                    id="new-company-contact"
+                                    class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input
+                                    type="email"
+                                    id="new-company-email"
+                                    class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Portal URL</label>
+                                <input
+                                    type="url"
+                                    id="new-company-portal"
+                                    class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Website URL</label>
+                                <input
+                                    type="url"
+                                    id="new-company-website"
+                                    class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                                <select
+                                    id="new-company-country"
+                                    class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="USA">USA</option>
+                                    <option value="Canada">Canada</option>
+                                    <option value="New Zealand">New Zealand</option>
+                                    <option value="Australia">Australia</option>
+                                    <option value="UK">UK</option>
+                                    <option value="Netherlands">Netherlands</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">PSA</label>
+                                <select
+                                    id="new-company-psa"
+                                    class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="Autotask">Autotask</option>
+                                    <option value="Connectwise">Connectwise</option>
+                                    <option value="Halo">Halo</option>
+                                    <option value="Standalone">Standalone</option>
+                                    <option value="Dynamics">Dynamics</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Plan</label>
+                                <select
+                                    id="new-company-plan"
+                                    class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="Standard">Standard</option>
+                                    <option value="Advanced">Advanced</option>
+                                    <option value="Premium">Premium</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">First Onboarding</label>
+                                <input
+                                    type="date"
+                                    id="new-company-first-onboarding"
+                                    class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Second Onboarding</label>
+                                <input
+                                    type="date"
+                                    id="new-company-second-onboarding"
+                                    class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                            </div>
+
+                            <div class="col-span-2 mt-2">
+                                <h3 class="text-sm font-medium text-gray-700 mb-2">Features</h3>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <label class="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            id="new-company-cover-page"
+                                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                        >
+                                        <span class="text-sm text-gray-700">Cover Page</span>
+                                    </label>
+
+                                    <label class="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            id="new-company-widgets"
+                                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                        >
+                                        <span class="text-sm text-gray-700">Widgets</span>
+                                    </label>
+
+                                    <label class="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            id="new-company-hardware"
+                                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                        >
+                                        <span class="text-sm text-gray-700">Hardware Template</span>
+                                    </label>
+
+                                    <label class="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            id="new-company-msp"
+                                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                        >
+                                        <span class="text-sm text-gray-700">MSP Template</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex justify-end">
+                            <button
+                                class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg mr-2 hover:bg-gray-400 transition"
+                                id="cancel-add-company"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                class="px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center hover:bg-blue-600 transition"
+                                id="save-new-company"
+                            >
+                                <i data-feather="save" class="h-5 w-5 mr-1"></i>
+                                Save Company
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Company Details View -->
+                <div id="company-details" class="flex-grow flex overflow-hidden hidden">
+                    <!-- Company Information (Left Side) -->
+                    <div class="w-1/3 p-6 overflow-y-auto border-r">
+                        <div class="mb-4 flex justify-between items-center">
+                            <h2 class="text-xl font-semibold" id="company-name-title"></h2>
+                            <div class="flex">
+                                <button
+                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-full"
+                                    id="edit-company-button"
+                                >
+                                    <i data-feather="edit" class="h-5 w-5"></i>
+                                </button>
+                                <button
+                                    class="p-2 text-red-600 hover:bg-red-50 rounded-full ml-2"
+                                    id="delete-company-button"
+                                >
+                                    <i data-feather="trash-2" class="h-5 w-5"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Company Info Display -->
+                        <div class="bg-white rounded-lg shadow p-4" id="company-info-display">
+                            <dl class="grid grid-cols-2 gap-x-4 gap-y-2">
+                                <div class="col-span-2 pb-2 mb-2 border-b">
+                                    <dt class="text-sm font-medium text-gray-500">Contact</dt>
+                                    <dd class="mt-1" id="company-contact"></dd>
+                                </div>
+
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">Email</dt>
+                                    <dd class="mt-1 break-words">
+                                        <a href="#" id="company-email" class="text-blue-600 hover:underline"></a>
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">Country</dt>
+                                    <dd class="mt-1" id="company-country"></dd>
+                                </div>
+
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">PSA</dt>
+                                    <dd class="mt-1" id="company-psa"></dd>
+                                </div>
+
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">Plan</dt>
+                                    <dd class="mt-1">
+                                        <span id="company-plan" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"></span>
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">Portal URL</dt>
+                                    <dd class="mt-1 break-words">
+                                        <a href="#" id="company-portal" target="_blank" class="text-blue-600 hover:underline"></a>
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">Website</dt>
+                                    <dd class="mt-1 break-words">
+                                        <a href="#" id="company-website" target="_blank" class="text-blue-600 hover:underline"></a>
+                                    </dd>
+                                </div>
+
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">First Onboarding</dt>
+                                    <dd class="mt-1" id="company-first-onboarding"></dd>
+                                </div>
+
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500">Second Onboarding</dt>
+                                    <dd class="mt-1" id="company-second-onboarding"></dd>
+                                </div>
+
+                                <div class="col-span-2 mt-4">
+                                    <dt class="text-sm font-medium text-gray-500 mb-2">Features</dt>
+                                    <dd class="mt-1 grid grid-cols-2 gap-y-2">
+                                        <div class="flex items-center">
+                                            <div id="company-cover-page" class="h-4 w-4 rounded"></div>
+                                            <span class="ml-2 text-sm">Cover Page</span>
+                                        </div>
+
+                                        <div class="flex items-center">
+                                            <div id="company-widgets" class="h-4 w-4 rounded"></div>
+                                            <span class="ml-2 text-sm">Widgets</span>
+                                        </div>
+
+                                        <div class="flex items-center">
+                                            <div id="company-hardware" class="h-4 w-4 rounded"></div>
+                                            <span class="ml-2 text-sm">Hardware Template</span>
+                                        </div>
+
+                                        <div class="flex items-center">
+                                            <div id="company-msp" class="h-4 w-4 rounded"></div>
+                                            <span class="ml-2 text-sm">MSP Template</span>
+                                        </div>
+                                    </dd>
+                                </div>
+                            </dl>
+                        </div>
+
+                        <!-- Edit Company Form -->
+                        <div class="bg-white rounded-lg shadow p-4 hidden" id="edit-company-form">
+                            <div class="grid grid-cols-1 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                                    <input
+                                        type="text"
+                                        id="edit-company-name"
+                                        class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Contact</label>
+                                    <input
+                                        type="text"
+                                        id="edit-company-contact"
+                                        class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <input
+                                        type="email"
+                                        id="edit-company-email"
+                                        class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Portal URL</label>
+                                    <input
+                                        type="url"
+                                        id="edit-company-portal"
+                                        class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Website URL</label>
+                                    <input
+                                        type="url"
+                                        id="edit-company-website"
+                                        class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                                    <select
+                                        id="edit-company-country"
+                                        class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="USA">USA</option>
+                                        <option value="Canada">Canada</option>
+                                        <option value="New Zealand">New Zealand</option>
+                                        <option value="Australia">Australia</option>
+                                        <option value="UK">UK</option>
+                                        <option value="Netherlands">Netherlands</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">PSA</label>
+                                    <select
+                                        id="edit-company-psa"
+                                        class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="Autotask">Autotask</option>
+                                        <option value="Connectwise">Connectwise</option>
+                                        <option value="Halo">Halo</option>
+                                        <option value="Standalone">Standalone</option>
+                                        <option value="Dynamics">Dynamics</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Plan</label>
+                                    <select
+                                        id="edit-company-plan"
+                                        class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="Standard">Standard</option>
+                                        <option value="Advanced">Advanced</option>
+                                        <option value="Premium">Premium</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">First Onboarding</label>
+                                    <input
+                                        type="date"
+                                        id="edit-company-first-onboarding"
+                                        class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Second Onboarding</label>
+                                    <input
+                                        type="date"
+                                        id="edit-company-second-onboarding"
+                                        class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                </div>
+
+                                <div class="mt-2">
+                                    <h3 class="text-sm font-medium text-gray-700 mb-2">Features</h3>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <label class="flex items-center space-x-2">
+                                            <input
+                                                type="checkbox"
+                                                id="edit-company-cover-page"
+                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                            >
+                                            <span class="text-sm text-gray-700">Cover Page</span>
+                                        </label>
+
+                                        <label class="flex items-center space-x-2">
+                                            <input
+                                                type="checkbox"
+                                                id="edit-company-widgets"
+                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                            >
+                                            <span class="text-sm text-gray-700">Widgets</span>
+                                        </label>
+
+                                        <label class="flex items-center space-x-2">
+                                            <input
+                                                type="checkbox"
+                                                id="edit-company-hardware"
+                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                            >
+                                            <span class="text-sm text-gray-700">Hardware Template</span>
+                                        </label>
+
+                                        <label class="flex items-center space-x-2">
+                                            <input
+                                                type="checkbox"
+                                                id="edit-company-msp"
+                                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                            >
+                                            <span class="text-sm text-gray-700">MSP Template</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 flex justify-end">
+                                <button
+                                    class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg mr-2 hover:bg-gray-400 transition"
+                                    id="cancel-edit-company"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    class="px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center hover:bg-blue-600 transition"
+                                    id="save-company-changes"
+                                >
+                                    <i data-feather="save" class="h-5 w-5 mr-1"></i>
+                                    Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes Section (Middle) -->
+                    <div class="w-1/3 p-6 overflow-y-auto bg-gray-50 border-r">
+                        <h2 class="text-xl font-semibold mb-4">Notes</h2>
+
+                        <!-- Add Note -->
+                        <div class="mb-6">
+                            <textarea
+                                id="new-note-content"
+                                class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                rows="4"
+                                placeholder="Add a new note..."
+                            ></textarea>
+                            <div class="mt-2 flex justify-between">
+                                <div>
+                                    <button
+                                        id="add-task-from-note"
+                                        class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition flex items-center"
+                                    >
+                                        <i data-feather="list" class="h-4 w-4 mr-1"></i>
+                                        Create Task
+                                    </button>
+                                    <button
+                                        id="cancel-edit-note"
+                                        class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition ml-2 hidden"
+                                    >
+                                        Cancel Edit
+                                    </button>
+                                </div>
+                                <button
+                                    id="add-note-button"
+                                    class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                                >
+                                    Add Note
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Notes List -->
+                        <div class="space-y-4" id="notes-list">
+                            <!-- Notes will be added here dynamically -->
+                            <div id="no-notes" class="text-center text-gray-500 py-6">No notes yet</div>
+                        </div>
+                    </div>
+
+                    <!-- Tasks Section (Right Side) - Always visible -->
+                    <div class="w-1/3 p-6 overflow-y-auto bg-blue-50" id="tasks-section">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-semibold">Tasks</h2>
+                            <button
+                                id="add-task-button"
+                                class="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition flex items-center text-sm"
+                            >
+                                <i data-feather="plus" class="h-4 w-4 mr-1"></i>
+                                New Task
+                            </button>
+                        </div>
+
+                        <!-- Add Task Form -->
+                        <div class="mb-6 bg-white p-4 rounded-lg shadow hidden" id="add-task-form">
+                            <div class="mb-3">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Task Description</label>
+                                <textarea
+                                    id="new-task-description"
+                                    class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    rows="2"
+                                    placeholder="Describe the task..."
+                                ></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Associated Company</label>
+                                <select
+                                    id="new-task-company"
+                                    class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="">None (General Task)</option>
+                                    <!-- Companies will be populated dynamically -->
+                                </select>
+                            </div>
+                            <div class="flex justify-end">
+                                <button
+                                    class="px-3 py-1 bg-gray-300 text-gray-700 rounded-lg mr-2 hover:bg-gray-400 transition text-sm"
+                                    id="cancel-add-task"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    class="px-3 py-1 bg-blue-500 text-white rounded-lg flex items-center hover:bg-blue-600 transition text-sm"
+                                    id="save-new-task"
+                                >
+                                    <i data-feather="save" class="h-4 w-4 mr-1"></i>
+                                    Save Task
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tasks Filter -->
+                        <div class="mb-4 flex">
+                            <button
+                                id="filter-all-tasks"
+                                class="px-3 py-1 bg-blue-500 text-white rounded-l-lg text-sm"
+                            >
+                                All
+                            </button>
+                            <button
+                                id="filter-active-tasks"
+                                class="px-3 py-1 bg-white text-gray-700 text-sm border-t border-b"
+                            >
+                                Active
+                            </button>
+                            <button
+                                id="filter-completed-tasks"
+                                class="px-3 py-1 bg-white text-gray-700 rounded-r-lg text-sm"
+                            >
+                                Completed
+                            </button>
+                        </div>
+
+                        <!-- Tasks List -->
+                        <div class="space-y-3" id="tasks-list">
+                            <!-- Tasks will be added here dynamically -->
+                            <div id="no-tasks" class="text-center text-gray-500 py-6">No tasks yet</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="customers.js"></script>
+    <script>
+        // Initialize Feather icons and ensure all elements are loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM fully loaded");
+            feather.replace();
+        });
+    </script>
+</body>
+</html>
