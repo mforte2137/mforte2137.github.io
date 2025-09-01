@@ -132,13 +132,13 @@ function loadTasks() {
 // Save companies to localStorage
 function saveCompanies() {
     localStorage.setItem('customerManagementCompanies', JSON.stringify(companies));
-    console.log("Companies saved to localStorage:", companies);
+    console.log("Companies saved to localStorage");
 }
 
 // Save tasks to localStorage
 function saveTasks() {
     localStorage.setItem('customerManagementTasks', JSON.stringify(tasks));
-    console.log("Tasks saved to localStorage:", tasks);
+    console.log("Tasks saved to localStorage");
 }
 
 // Set up event listeners
@@ -202,7 +202,7 @@ function setupEventListeners() {
     const addNoteBtn = document.getElementById('add-note-button');
     if (addNoteBtn) {
         addNoteBtn.onclick = function() {
-            console.log("Add/Update note button clicked via direct handler");
+            console.log("Add/Update note button clicked");
             addNote();
             return false;
         };
@@ -281,7 +281,7 @@ function setupEventListeners() {
         }
     });
     
-    // Export/Import data - FIXED: Direct handlers
+    // Export/Import data - Direct handlers
     const exportDataBtn = document.getElementById('export-data');
     if (exportDataBtn) {
         exportDataBtn.onclick = function(e) {
@@ -324,6 +324,7 @@ function setupEventListeners() {
 // Filter companies by status
 function filterCompaniesByStatus(status) {
     currentStatusFilter = status;
+    console.log("Filtering companies by status:", status);
     
     // Update filter button styles
     const filterButtons = [
@@ -338,45 +339,29 @@ function filterCompaniesByStatus(status) {
         const element = document.getElementById(button.id);
         if (element) {
             if (button.status === status) {
-                element.className = 'px-3 py-1 text-xs bg-blue-500 text-white rounded mr-1 mb-1';
+                element.className = 'status-filter-btn active';
             } else {
-                element.className = 'px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded mr-1 mb-1 hover:bg-gray-300';
+                element.className = 'status-filter-btn inactive';
             }
         }
     });
     
     // Re-render the company list with filter applied
-    renderCompanyList(document.getElementById('search-input').value);
+    const searchTerm = document.getElementById('search-input') ? document.getElementById('search-input').value : '';
+    renderCompanyList(searchTerm);
 }
 
 // Get status badge class and text
 function getStatusInfo(status) {
     const statusMap = {
-        'onboarding': { class: 'bg-yellow-100 text-yellow-800', text: 'Onboarding' },
-        'active': { class: 'bg-green-100 text-green-800', text: 'Active' },
-        'pre-sales': { class: 'bg-blue-100 text-blue-800', text: 'Pre-Sales' },
-        'churned': { class: 'bg-red-100 text-red-800', text: 'Churned' }
+        'onboarding': { class: 'status-onboarding', text: 'Onboarding' },
+        'active': { class: 'status-active', text: 'Active' },
+        'pre-sales': { class: 'status-pre-sales', text: 'Pre-Sales' },
+        'churned': { class: 'status-churned', text: 'Churned' }
     };
     
-    return statusMap[status] || { class: 'bg-gray-100 text-gray-800', text: 'Unknown' };
+    return statusMap[status] || { class: 'status-active', text: 'Active' };
 }
-
-// Toggle data dropdown visibility - Global function for direct HTML calls
-window.toggleDataDropdown = function() {
-    console.log("Global toggleDataDropdown called");
-    const dropdown = document.getElementById('data-dropdown');
-    if (dropdown) {
-        if (dropdown.classList.contains('show')) {
-            dropdown.classList.remove('show');
-        } else {
-            dropdown.classList.add('show');
-        }
-        console.log("Dropdown toggled:", dropdown.classList.contains('show'));
-    } else {
-        console.error("Data dropdown not found by global function");
-    }
-    return false; // Prevent default
-};
 
 // Helper function to safely attach event listeners
 function attachListener(elementId, eventType, handler) {
@@ -593,7 +578,7 @@ function saveCompanyChanges() {
     updateCompanyDetails(company);
     hideEditCompanyForm();
     
-    // Update any tasks associated with this company (to reflect name changes)
+    // Update any tasks associated with this company
     renderTasksList();
     
     showNotification(`Company "${company.name}" updated successfully`);
@@ -865,6 +850,8 @@ function renderCompanyList(searchTerm = '') {
         );
     }
     
+    console.log(`Rendering ${filteredCompanies.length} companies (filter: ${currentStatusFilter})`);
+    
     // Show appropriate message if no companies
     if (filteredCompanies.length === 0) {
         companyList.classList.add('hidden');
@@ -880,24 +867,29 @@ function renderCompanyList(searchTerm = '') {
         
         // Create list items
         filteredCompanies.forEach(company => {
-            const statusInfo = getStatusInfo(company.status);
+            const statusInfo = getStatusInfo(company.status || 'active');
             
             const li = document.createElement('li');
             li.className = `company-list-item ${company.id === selectedCompanyId ? 'selected' : ''}`;
             li.innerHTML = `
-                <div class="flex justify-between items-start">
-                    <div class="flex-grow">
-                        <div class="font-medium">${company.name}</div>
-                        <div class="text-sm text-gray-600">${company.contact}</div>
+                <div class="company-item-content">
+                    <div class="company-item-main">
+                        <div class="company-item-name">${company.name}</div>
+                        <div class="company-item-contact">${company.contact}</div>
                     </div>
-                    <div class="ml-2">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.class}">
+                    <div class="company-item-status">
+                        <span class="status-badge ${statusInfo.class}">
                             ${statusInfo.text}
                         </span>
                     </div>
                 </div>
             `;
-            li.addEventListener('click', () => selectCompany(company.id));
+            
+            li.addEventListener('click', () => {
+                console.log(`Clicked on company: ${company.name} (ID: ${company.id})`);
+                selectCompany(company.id);
+            });
+            
             companyList.appendChild(li);
         });
     }
@@ -1102,37 +1094,47 @@ function renderNotes(company) {
     }
 }
 
-// FIXED: Select a company - This was the bug!
+// CRITICAL FIX: Select a company - This was the main bug!
 function selectCompany(companyId) {
-    console.log("Selecting company with ID:", companyId);
+    console.log("=== SELECTING COMPANY ===");
+    console.log("Company ID:", companyId);
+    
     selectedCompanyId = companyId;
     
     // Update UI - re-render the company list to show selection
-    renderCompanyList(document.getElementById('search-input').value);
+    const searchTerm = document.getElementById('search-input') ? document.getElementById('search-input').value : '';
+    renderCompanyList(searchTerm);
     
     // Get the selected company and verify it exists
     const company = getSelectedCompany();
     if (company) {
-        console.log("Found selected company:", company.name);
+        console.log("SUCCESS: Found selected company:", company.name);
+        console.log("Company data:", company);
         showCompanyDetails();
         updateCompanyDetails(company);
         renderNotes(company);
     } else {
-        console.error("Could not find company with ID:", companyId);
+        console.error("ERROR: Could not find company with ID:", companyId);
+        console.log("Available companies:", companies.map(c => ({ id: c.id, name: c.name })));
     }
+    console.log("=== END SELECT COMPANY ===");
 }
 
-// FIXED: Get the selected company - Added better error checking
+// CRITICAL FIX: Get the selected company - Added better error checking
 function getSelectedCompany() {
     if (!selectedCompanyId) {
         console.log("No company selected");
         return null;
     }
     
+    console.log("Looking for company with ID:", selectedCompanyId);
+    console.log("Available companies:", companies.map(c => ({ id: c.id, name: c.name })));
+    
     const company = companies.find(company => company.id === selectedCompanyId);
     if (!company) {
         console.error("Selected company ID", selectedCompanyId, "not found in companies array");
-        console.log("Available companies:", companies.map(c => ({ id: c.id, name: c.name })));
+    } else {
+        console.log("Found company:", company.name);
     }
     
     return company;
@@ -1157,20 +1159,27 @@ function hideAllMainContentViews() {
     document.getElementById('company-details').classList.add('hidden');
 }
 
-// FIXED: Update company details in the UI - Added debugging and status field
+// CRITICAL FIX: Update company details - This displays the correct data
 function updateCompanyDetails(company) {
-    console.log("Updating company details for:", company.name);
+    console.log("=== UPDATING COMPANY DETAILS ===");
+    console.log("Updating details for company:", company.name);
     
     // Update company name in title
     const titleElement = document.getElementById('company-name-title');
     if (titleElement) {
         titleElement.textContent = company.name;
+        console.log("✓ Updated title to:", company.name);
+    } else {
+        console.error("✗ Title element not found");
     }
     
     // Update contact
     const contactElement = document.getElementById('company-contact');
     if (contactElement) {
         contactElement.textContent = company.contact;
+        console.log("✓ Updated contact to:", company.contact);
+    } else {
+        console.error("✗ Contact element not found");
     }
     
     // Update email
@@ -1178,6 +1187,9 @@ function updateCompanyDetails(company) {
     if (emailElement) {
         emailElement.textContent = company.email;
         emailElement.href = `mailto:${company.email}`;
+        console.log("✓ Updated email to:", company.email);
+    } else {
+        console.error("✗ Email element not found");
     }
     
     // Update portal URL
@@ -1185,6 +1197,7 @@ function updateCompanyDetails(company) {
     if (portalElement) {
         portalElement.textContent = company.portalUrl || 'Not provided';
         portalElement.href = company.portalUrl || '#';
+        console.log("✓ Updated portal URL");
     }
     
     // Update website URL
@@ -1192,26 +1205,30 @@ function updateCompanyDetails(company) {
     if (websiteElement) {
         websiteElement.textContent = company.websiteUrl || 'Not provided';
         websiteElement.href = company.websiteUrl || '#';
+        console.log("✓ Updated website URL");
     }
     
     // Country field
     const countryElement = document.getElementById('company-country');
     if (countryElement) {
         countryElement.textContent = company.country || 'Not specified';
+        console.log("✓ Updated country to:", company.country);
     }
     
     // PSA field
     const psaElement = document.getElementById('company-psa');
     if (psaElement) {
         psaElement.textContent = company.psa || 'Not specified';
+        console.log("✓ Updated PSA to:", company.psa);
     }
     
     // Status badge
     const statusElement = document.getElementById('company-status');
     if (statusElement) {
-        const statusInfo = getStatusInfo(company.status);
+        const statusInfo = getStatusInfo(company.status || 'active');
         statusElement.textContent = statusInfo.text;
         statusElement.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.class}`;
+        console.log("✓ Updated status to:", statusInfo.text);
     }
     
     // Plan badge
@@ -1226,6 +1243,7 @@ function updateCompanyDetails(company) {
         } else {
             planElement.classList.add('plan-standard');
         }
+        console.log("✓ Updated plan to:", company.plan);
     }
     
     // Onboarding dates
@@ -1266,7 +1284,7 @@ function updateCompanyDetails(company) {
             `h-4 w-4 rounded ${company.mspTemplate ? 'checkbox-active' : 'checkbox-inactive'}`;
     }
     
-    console.log("Company details updated successfully");
+    console.log("=== COMPANY DETAILS UPDATE COMPLETE ===");
 }
 
 // Export data to a JSON file
