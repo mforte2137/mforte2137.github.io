@@ -3,6 +3,7 @@ let companies = [];
 let selectedCompanyId = null;
 let tasks = [];
 let currentTaskFilter = 'all'; // 'all', 'active', 'completed'
+let currentStatusFilter = 'all'; // 'all', 'onboarding', 'active', 'pre-sales', 'churned'
 
 // Initialize the app
 function init() {
@@ -32,6 +33,14 @@ function loadCompanies() {
     const storedCompanies = localStorage.getItem('customerManagementCompanies');
     if (storedCompanies) {
         companies = JSON.parse(storedCompanies);
+        
+        // Add status field to existing companies if they don't have it
+        companies.forEach(company => {
+            if (!company.status) {
+                company.status = 'active'; // Default to active for existing companies
+            }
+        });
+        
         console.log("Loaded companies from storage:", companies);
     } else {
         // Initialize with sample data
@@ -46,6 +55,7 @@ function loadCompanies() {
                 country: "USA",
                 psa: "Connectwise",
                 plan: "Premium",
+                status: "active",
                 firstOnboarding: "2024-04-15",
                 secondOnboarding: "2024-04-22",
                 coverPage: true,
@@ -68,6 +78,7 @@ function loadCompanies() {
                 country: "New Zealand",
                 psa: "Autotask",
                 plan: "Standard",
+                status: "onboarding",
                 firstOnboarding: "2024-04-18",
                 secondOnboarding: "",
                 coverPage: false,
@@ -144,6 +155,13 @@ function setupEventListeners() {
     } else {
         console.error("Search input element not found");
     }
+    
+    // Status filter buttons
+    attachListener('filter-all-companies', 'click', function() { filterCompaniesByStatus('all'); });
+    attachListener('filter-onboarding', 'click', function() { filterCompaniesByStatus('onboarding'); });
+    attachListener('filter-active', 'click', function() { filterCompaniesByStatus('active'); });
+    attachListener('filter-pre-sales', 'click', function() { filterCompaniesByStatus('pre-sales'); });
+    attachListener('filter-churned', 'click', function() { filterCompaniesByStatus('churned'); });
     
     // Create company buttons - primary button in the header
     const createCompanyBtn = document.getElementById('create-company-btn');
@@ -303,6 +321,46 @@ function setupEventListeners() {
     console.log("Event listeners setup complete");
 }
 
+// Filter companies by status
+function filterCompaniesByStatus(status) {
+    currentStatusFilter = status;
+    
+    // Update filter button styles
+    const filterButtons = [
+        { id: 'filter-all-companies', status: 'all' },
+        { id: 'filter-onboarding', status: 'onboarding' },
+        { id: 'filter-active', status: 'active' },
+        { id: 'filter-pre-sales', status: 'pre-sales' },
+        { id: 'filter-churned', status: 'churned' }
+    ];
+    
+    filterButtons.forEach(button => {
+        const element = document.getElementById(button.id);
+        if (element) {
+            if (button.status === status) {
+                element.className = 'px-3 py-1 text-xs bg-blue-500 text-white rounded mr-1 mb-1';
+            } else {
+                element.className = 'px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded mr-1 mb-1 hover:bg-gray-300';
+            }
+        }
+    });
+    
+    // Re-render the company list with filter applied
+    renderCompanyList(document.getElementById('search-input').value);
+}
+
+// Get status badge class and text
+function getStatusInfo(status) {
+    const statusMap = {
+        'onboarding': { class: 'bg-yellow-100 text-yellow-800', text: 'Onboarding' },
+        'active': { class: 'bg-green-100 text-green-800', text: 'Active' },
+        'pre-sales': { class: 'bg-blue-100 text-blue-800', text: 'Pre-Sales' },
+        'churned': { class: 'bg-red-100 text-red-800', text: 'Churned' }
+    };
+    
+    return statusMap[status] || { class: 'bg-gray-100 text-gray-800', text: 'Unknown' };
+}
+
 // Toggle data dropdown visibility - Global function for direct HTML calls
 window.toggleDataDropdown = function() {
     console.log("Global toggleDataDropdown called");
@@ -327,7 +385,7 @@ function attachListener(elementId, eventType, handler) {
         element.addEventListener(eventType, handler);
         console.log(`Listener attached to ${elementId}`);
     } else {
-        console.error(`Element ${elementId} not found`);
+        console.log(`Element ${elementId} not found (may not exist yet)`);
     }
 }
 
@@ -358,6 +416,7 @@ function hideAddCompanyForm() {
     document.getElementById('new-company-country').value = 'USA';
     document.getElementById('new-company-psa').value = 'Autotask';
     document.getElementById('new-company-plan').value = 'Standard';
+    document.getElementById('new-company-status').value = 'pre-sales';
     document.getElementById('new-company-first-onboarding').value = '';
     document.getElementById('new-company-second-onboarding').value = '';
     document.getElementById('new-company-cover-page').checked = false;
@@ -410,6 +469,7 @@ function saveNewCompany() {
         country: document.getElementById('new-company-country').value,
         psa: document.getElementById('new-company-psa').value,
         plan: document.getElementById('new-company-plan').value,
+        status: document.getElementById('new-company-status').value,
         firstOnboarding: document.getElementById('new-company-first-onboarding').value,
         secondOnboarding: document.getElementById('new-company-second-onboarding').value,
         coverPage: document.getElementById('new-company-cover-page').checked,
@@ -484,6 +544,7 @@ function showEditCompanyForm() {
     document.getElementById('edit-company-country').value = company.country || 'USA';
     document.getElementById('edit-company-psa').value = company.psa || 'Autotask';
     document.getElementById('edit-company-plan').value = company.plan;
+    document.getElementById('edit-company-status').value = company.status || 'active';
     document.getElementById('edit-company-first-onboarding').value = company.firstOnboarding;
     document.getElementById('edit-company-second-onboarding').value = company.secondOnboarding;
     document.getElementById('edit-company-cover-page').checked = company.coverPage;
@@ -512,6 +573,7 @@ function saveCompanyChanges() {
     company.country = document.getElementById('edit-company-country').value;
     company.psa = document.getElementById('edit-company-psa').value;
     company.plan = document.getElementById('edit-company-plan').value;
+    company.status = document.getElementById('edit-company-status').value;
     company.firstOnboarding = document.getElementById('edit-company-first-onboarding').value;
     company.secondOnboarding = document.getElementById('edit-company-second-onboarding').value;
     company.coverPage = document.getElementById('edit-company-cover-page').checked;
@@ -791,26 +853,49 @@ function renderCompanyList(searchTerm = '') {
     // Clear the list
     companyList.innerHTML = '';
     
-    // Filter companies based on search term
-    const filteredCompanies = companies.filter(company => 
+    // Filter companies based on search term and status
+    let filteredCompanies = companies.filter(company => 
         company.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+    
+    // Apply status filter if not "all"
+    if (currentStatusFilter !== 'all') {
+        filteredCompanies = filteredCompanies.filter(company => 
+            company.status === currentStatusFilter
+        );
+    }
     
     // Show appropriate message if no companies
     if (filteredCompanies.length === 0) {
         companyList.classList.add('hidden');
         noCompaniesElement.classList.remove('hidden');
+        if (currentStatusFilter !== 'all') {
+            noCompaniesElement.textContent = `No ${currentStatusFilter} companies found`;
+        } else {
+            noCompaniesElement.textContent = 'No companies found';
+        }
     } else {
         companyList.classList.remove('hidden');
         noCompaniesElement.classList.add('hidden');
         
         // Create list items
         filteredCompanies.forEach(company => {
+            const statusInfo = getStatusInfo(company.status);
+            
             const li = document.createElement('li');
             li.className = `company-list-item ${company.id === selectedCompanyId ? 'selected' : ''}`;
             li.innerHTML = `
-                <div class="font-medium">${company.name}</div>
-                <div class="text-sm text-gray-600">${company.contact}</div>
+                <div class="flex justify-between items-start">
+                    <div class="flex-grow">
+                        <div class="font-medium">${company.name}</div>
+                        <div class="text-sm text-gray-600">${company.contact}</div>
+                    </div>
+                    <div class="ml-2">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.class}">
+                            ${statusInfo.text}
+                        </span>
+                    </div>
+                </div>
             `;
             li.addEventListener('click', () => selectCompany(company.id));
             companyList.appendChild(li);
@@ -862,15 +947,21 @@ function renderTasksList() {
             const taskDate = new Date(task.date);
             const formattedDate = taskDate.toLocaleString();
             
-            // Determine company class for styling
+            // Determine company class for styling based on status
             let companyClass = 'none';
             if (company) {
-                if (company.plan === 'Premium') {
+                if (company.status === 'active' && company.plan === 'Premium') {
                     companyClass = 'premium';
-                } else if (company.plan === 'Advanced') {
+                } else if (company.status === 'active' && company.plan === 'Advanced') {
                     companyClass = 'advanced';
-                } else if (company.plan === 'Standard') {
+                } else if (company.status === 'active' && company.plan === 'Standard') {
                     companyClass = 'standard';
+                } else if (company.status === 'onboarding') {
+                    companyClass = 'advanced'; // Yellow-ish for onboarding
+                } else if (company.status === 'pre-sales') {
+                    companyClass = 'standard'; // Blue-ish for pre-sales
+                } else if (company.status === 'churned') {
+                    companyClass = 'none'; // Gray for churned
                 }
             }
             
@@ -879,7 +970,7 @@ function renderTasksList() {
                 <div class="task-content">
                     <div class="task-description">${task.description}</div>
                     ${company ? 
-                        `<div class="task-company ${companyClass}" data-company-id="${company.id}">${company.name}</div>` : 
+                        `<div class="task-company ${companyClass}" data-company-id="${company.id}">${company.name} (${getStatusInfo(company.status).text})</div>` : 
                         `<div class="task-company none">General</div>`
                     }
                     <div class="task-date">${formattedDate}</div>
@@ -1066,7 +1157,7 @@ function hideAllMainContentViews() {
     document.getElementById('company-details').classList.add('hidden');
 }
 
-// FIXED: Update company details in the UI - Added debugging
+// FIXED: Update company details in the UI - Added debugging and status field
 function updateCompanyDetails(company) {
     console.log("Updating company details for:", company.name);
     
@@ -1113,6 +1204,14 @@ function updateCompanyDetails(company) {
     const psaElement = document.getElementById('company-psa');
     if (psaElement) {
         psaElement.textContent = company.psa || 'Not specified';
+    }
+    
+    // Status badge
+    const statusElement = document.getElementById('company-status');
+    if (statusElement) {
+        const statusInfo = getStatusInfo(company.status);
+        statusElement.textContent = statusInfo.text;
+        statusElement.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.class}`;
     }
     
     // Plan badge
@@ -1238,6 +1337,13 @@ function importData(event) {
             if (confirm(`This will import ${importedData.companies.length} companies and ${importedData.tasks?.length || 0} tasks and replace your current data. Continue?`)) {
                 companies = importedData.companies;
                 
+                // Add status field to imported companies if they don't have it
+                companies.forEach(company => {
+                    if (!company.status) {
+                        company.status = 'active'; // Default to active for imported companies
+                    }
+                });
+                
                 // Import tasks if available
                 if (importedData.tasks && Array.isArray(importedData.tasks)) {
                     tasks = importedData.tasks;
@@ -1245,11 +1351,15 @@ function importData(event) {
                 
                 // Reset selected company since IDs might have changed
                 selectedCompanyId = null;
+                currentStatusFilter = 'all'; // Reset filter
                 
                 saveCompanies();
                 saveTasks();
                 renderCompanyList();
                 renderTasksList();
+                
+                // Reset status filter buttons
+                filterCompaniesByStatus('all');
                 
                 // If there were companies, select the first one
                 if (companies.length > 0) {
