@@ -1,1 +1,239 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
 
+.company-list-item {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: pointer;
+}
+
+.company-list-item:hover {
+    background-color: #eff6ff;
+}
+
+.company-list-item.selected {
+    background-color: #dbeafe;
+}
+
+.checkbox-active {
+    background-color: #3b82f6;
+}
+
+.checkbox-inactive {
+    background-color: #d1d5db;
+}
+
+.plan-standard {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.plan-advanced {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.plan-premium {
+    background-color: #ede9fe;
+    color: #5b21b6;
+}
+
+.note-timestamp {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.note-content {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Task styles */
+.task-item {
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.task-item:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.task-item.completed {
+    background-color: #f9fafb;
+    border-left: 3px solid #10b981;
+}
+
+.task-checkbox {
+    flex-shrink: 0;
+    height: 1.25rem;
+    width: 1.25rem;
+    border-radius: 0.25rem;
+    margin-right: 0.75rem;
+    cursor: pointer;
+    border: 2px solid #d1d5db;
+    position: relative;
+}
+
+.task-checkbox.checked {
+    background-color: #10b981;
+    border-color: #10b981;
+}
+
+.task-checkbox.checked:after {
+    content: '';
+    position: absolute;
+    left: 0.375rem;
+    top: 0.125rem;
+    width: 0.375rem;
+    height: 0.75rem;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.task-content {
+    flex-grow: 1;
+    margin-right: 0.5rem;
+}
+
+.task-description {
+    margin-bottom: 0.25rem;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.task-item.completed .task-description {
+    text-decoration: line-through;
+    color: #9ca3af;
+}
+
+.task-company {
+    font-size: 0.75rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    display: inline-block;
+    margin-top: 0.25rem;
+}
+
+.task-company.standard {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.task-company.advanced {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.task-company.premium {
+    background-color: #ede9fe;
+    color: #5b21b6;
+}
+
+.task-company.none {
+    background-color: #f3f4f6;
+    color: #4b5563;
+}
+
+.task-date {
+    font-size: 0.7rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+.task-actions {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-button {
+    background-color: #fff;
+    border: 1px solid #e5e7eb;
+    color: #6b7280;
+}
+
+.filter-button.active {
+    background-color: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+/* Dropdown menu styles */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 1000;
+    display: none;
+    min-width: 10rem;
+    padding: 0.5rem 0;
+    margin: 0.125rem 0 0;
+    font-size: 1rem;
+    text-align: left;
+    list-style: none;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 0.25rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
+}
+
+.show {
+    display: block !important;
+}
+
+/* Notification styles */
+#notification-container {
+    pointer-events: auto;
+    transition: all 0.3s ease;
+}
+
+#notification-container > div {
+    animation: slideIn 0.3s ease forwards;
+}
+
+@keyframes slideIn {
+    0% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Data save reminder */
+#storage-reminder {
+    max-width: 400px;
+    animation: fadeIn 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Last saved indicator */
+#last-saved-info {
+    white-space: nowrap;
+}
