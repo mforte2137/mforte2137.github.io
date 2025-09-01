@@ -51,6 +51,11 @@ html, body {
     word-break: break-word;
 }
 
+.note-edited {
+    font-style: italic;
+    color: #9ca3af;
+}
+
 /* Task styles */
 .task-item {
     background-color: white;
@@ -236,4 +241,139 @@ html, body {
 /* Last saved indicator */
 #last-saved-info {
     white-space: nowrap;
+}
+
+/* NEW STATUS FILTERING STYLES */
+
+/* Fix for company sidebar width and status display */
+.company-list-container {
+    width: 320px;
+}
+
+.status-filter-section {
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+    background-color: #f9fafb;
+}
+
+.status-filter-title {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #6b7280;
+    margin-bottom: 8px;
+}
+
+.status-filter-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.status-filter-btn {
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.status-filter-btn.active {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.status-filter-btn.inactive {
+    background-color: #e5e7eb;
+    color: #4b5563;
+}
+
+.status-filter-btn.inactive:hover {
+    background-color: #d1d5db;
+}
+
+.main-layout {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.content-area {
+    flex-grow: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* Company list item improvements for status display */
+.company-list-item {
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.company-list-item:hover {
+    background-color: #eff6ff;
+}
+
+.company-list-item.selected {
+    background-color: #dbeafe;
+    border-left: 3px solid #3b82f6;
+}
+
+.company-item-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.company-item-main {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.company-item-name {
+    font-weight: 500;
+    color: #1f2937;
+    margin-bottom: 2px;
+}
+
+.company-item-contact {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.company-item-status {
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+/* Status badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-onboarding {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.status-active {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-pre-sales {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.status-churned {
+    background-color: #fee2e2;
+    color: #991b1b;
 }
