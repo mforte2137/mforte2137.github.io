@@ -32,6 +32,7 @@ function loadCompanies() {
     const storedCompanies = localStorage.getItem('customerManagementCompanies');
     if (storedCompanies) {
         companies = JSON.parse(storedCompanies);
+        console.log("Loaded companies from storage:", companies);
     } else {
         // Initialize with sample data
         companies = [
@@ -179,17 +180,27 @@ function setupEventListeners() {
     // Delete company
     attachListener('delete-company-button', 'click', confirmDeleteCompany);
     
-    // Notes - FIXED: Direct onclick handler for add note button
+    // Notes - Add and cancel edit buttons
     const addNoteBtn = document.getElementById('add-note-button');
     if (addNoteBtn) {
         addNoteBtn.onclick = function() {
-            console.log("Add note button clicked via direct handler");
+            console.log("Add/Update note button clicked via direct handler");
             addNote();
             return false;
         };
         console.log("Add note button direct handler attached");
     } else {
         console.error("Add note button not found");
+    }
+    
+    // Cancel note edit button
+    const cancelEditNoteBtn = document.getElementById('cancel-edit-note');
+    if (cancelEditNoteBtn) {
+        cancelEditNoteBtn.onclick = function() {
+            console.log("Cancel edit note button clicked");
+            cancelNoteEdit();
+            return false;
+        };
     }
     
     // Create task from note
@@ -593,26 +604,96 @@ function addNote() {
         company.notes = [];
     }
     
-    const note = {
-        id: Date.now(),
-        content: noteContent,
-        date: new Date().toISOString()
-    };
+    // Check if we're editing an existing note
+    const editingNoteId = document.getElementById('new-note-content').getAttribute('data-editing-note-id');
     
-    console.log("Adding note to company:", note);
+    if (editingNoteId) {
+        // We're editing an existing note
+        const noteId = parseInt(editingNoteId);
+        const noteIndex = company.notes.findIndex(note => note.id === noteId);
+        
+        if (noteIndex !== -1) {
+            // Update the note content
+            company.notes[noteIndex].content = noteContent;
+            company.notes[noteIndex].edited = true;
+            company.notes[noteIndex].editDate = new Date().toISOString();
+            
+            // Save the changes
+            saveCompanies();
+            
+            // Update UI
+            renderNotes(company);
+            
+            // Reset note editing state
+            document.getElementById('new-note-content').value = '';
+            document.getElementById('new-note-content').removeAttribute('data-editing-note-id');
+            document.getElementById('add-note-button').textContent = 'Add Note';
+            document.getElementById('cancel-edit-note').classList.add('hidden');
+            
+            // Show confirmation
+            showNotification("Note updated successfully");
+        }
+    } else {
+        // We're adding a new note
+        const note = {
+            id: Date.now(),
+            content: noteContent,
+            date: new Date().toISOString()
+        };
+        
+        console.log("Adding note to company:", note);
+        
+        // Add to the company's notes
+        company.notes.unshift(note); // Add at the beginning
+        saveCompanies();
+        
+        // Update UI
+        renderNotes(company);
+        
+        // Clear the textarea
+        document.getElementById('new-note-content').value = '';
+        
+        // Show confirmation
+        showNotification("Note added successfully");
+    }
+}
+
+// Edit a note
+function editNote(noteId) {
+    const company = getSelectedCompany();
+    if (!company) return;
     
-    // Add to the company's notes
-    company.notes.unshift(note); // Add at the beginning
-    saveCompanies();
+    // Find the note
+    const note = company.notes.find(note => note.id === noteId);
+    if (!note) return;
     
-    // Update UI
-    renderNotes(company);
+    // Fill the textarea with the note content
+    const noteTextarea = document.getElementById('new-note-content');
+    noteTextarea.value = note.content;
+    noteTextarea.setAttribute('data-editing-note-id', noteId);
+    noteTextarea.focus();
     
+    // Change the button text
+    document.getElementById('add-note-button').textContent = 'Update Note';
+    
+    // Show the cancel edit button
+    document.getElementById('cancel-edit-note').classList.remove('hidden');
+    
+    // Scroll to the textarea
+    noteTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Cancel note editing
+function cancelNoteEdit() {
     // Clear the textarea
     document.getElementById('new-note-content').value = '';
+    document.getElementById('new-note-content').removeAttribute('data-editing-note-id');
     
-    // Show confirmation
-    showNotification("Note added successfully");
+    // Reset the button text
+    document.getElementById('add-note-button').textContent = 'Add Note';
+    
+    // Hide the cancel edit button
+    document.getElementById('cancel-edit-note').classList.add('hidden');
 }
 
 // Delete a note
@@ -626,6 +707,12 @@ function deleteNote(noteId) {
     
     // Update UI
     renderNotes(company);
+    
+    // If we were editing this note, cancel the edit
+    const editingNoteId = document.getElementById('new-note-content').getAttribute('data-editing-note-id');
+    if (editingNoteId && parseInt(editingNoteId) === noteId) {
+        cancelNoteEdit();
+    }
 }
 
 // Toggle task completion
@@ -835,97 +922,6 @@ function renderTasksList() {
     }
 }
 
-// Select a company
-function selectCompany(companyId) {
-    selectedCompanyId = companyId;
-    
-    // Update UI
-    renderCompanyList(document.getElementById('search-input').value);
-    
-    const company = getSelectedCompany();
-    if (company) {
-        showCompanyDetails();
-        updateCompanyDetails(company);
-        renderNotes(company);
-    }
-}
-
-// Get the selected company
-function getSelectedCompany() {
-    return companies.find(company => company.id === selectedCompanyId);
-}
-
-// Show company details view
-function showCompanyDetails() {
-    hideAllMainContentViews();
-    document.getElementById('company-details').classList.remove('hidden');
-}
-
-// Show no selection view
-function showNoSelectionView() {
-    hideAllMainContentViews();
-    document.getElementById('no-selection').classList.remove('hidden');
-}
-
-// Hide all main content views
-function hideAllMainContentViews() {
-    document.getElementById('no-selection').classList.add('hidden');
-    document.getElementById('add-company-form').classList.add('hidden');
-    document.getElementById('company-details').classList.add('hidden');
-}
-
-// Update company details in the UI
-function updateCompanyDetails(company) {
-    document.getElementById('company-name-title').textContent = company.name;
-    document.getElementById('company-contact').textContent = company.contact;
-    
-    const emailElement = document.getElementById('company-email');
-    emailElement.textContent = company.email;
-    emailElement.href = `mailto:${company.email}`;
-    
-    const portalElement = document.getElementById('company-portal');
-    portalElement.textContent = company.portalUrl;
-    portalElement.href = company.portalUrl;
-    
-    const websiteElement = document.getElementById('company-website');
-    websiteElement.textContent = company.websiteUrl;
-    websiteElement.href = company.websiteUrl;
-    
-    // Country field
-    document.getElementById('company-country').textContent = company.country || 'Not specified';
-    
-    // PSA field
-    document.getElementById('company-psa').textContent = company.psa || 'Not specified';
-    
-    // Plan badge
-    const planElement = document.getElementById('company-plan');
-    planElement.textContent = company.plan;
-    planElement.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium';
-    if (company.plan === 'Premium') {
-        planElement.classList.add('plan-premium');
-    } else if (company.plan === 'Advanced') {
-        planElement.classList.add('plan-advanced');
-    } else {
-        planElement.classList.add('plan-standard');
-    }
-    
-    // Onboarding dates
-    document.getElementById('company-first-onboarding').textContent = 
-        company.firstOnboarding ? new Date(company.firstOnboarding).toLocaleDateString() : 'Not scheduled';
-    document.getElementById('company-second-onboarding').textContent = 
-        company.secondOnboarding ? new Date(company.secondOnboarding).toLocaleDateString() : 'Not scheduled';
-    
-    // Feature checkboxes
-    document.getElementById('company-cover-page').className = 
-        `h-4 w-4 rounded ${company.coverPage ? 'checkbox-active' : 'checkbox-inactive'}`;
-    document.getElementById('company-widgets').className = 
-        `h-4 w-4 rounded ${company.widgets ? 'checkbox-active' : 'checkbox-inactive'}`;
-    document.getElementById('company-hardware').className = 
-        `h-4 w-4 rounded ${company.hardwareTemplate ? 'checkbox-active' : 'checkbox-inactive'}`;
-    document.getElementById('company-msp').className = 
-        `h-4 w-4 rounded ${company.mspTemplate ? 'checkbox-active' : 'checkbox-inactive'}`;
-}
-
 // Render notes for a company
 function renderNotes(company) {
     console.log("Rendering notes for company:", company.name);
@@ -965,12 +961,28 @@ function renderNotes(company) {
             const noteDate = new Date(note.date);
             const formattedDate = noteDate.toLocaleString();
             
+            // Create edited indicator if the note has been edited
+            let editedInfo = '';
+            if (note.edited) {
+                const editDate = new Date(note.editDate);
+                const formattedEditDate = editDate.toLocaleString();
+                editedInfo = `<span class="text-xs text-gray-500 ml-2">(Edited: ${formattedEditDate})</span>`;
+            }
+            
             noteElement.innerHTML = `
                 <div class="flex justify-between items-start">
-                    <div class="note-timestamp">${formattedDate}</div>
-                    <button class="text-red-500 hover:text-red-700 delete-note" data-note-id="${note.id}">
-                        <i data-feather="trash" class="h-4 w-4"></i>
-                    </button>
+                    <div class="note-timestamp">
+                        ${formattedDate}
+                        ${editedInfo}
+                    </div>
+                    <div class="flex">
+                        <button class="text-blue-500 hover:text-blue-700 edit-note mr-2" data-note-id="${note.id}">
+                            <i data-feather="edit-2" class="h-4 w-4"></i>
+                        </button>
+                        <button class="text-red-500 hover:text-red-700 delete-note" data-note-id="${note.id}">
+                            <i data-feather="trash" class="h-4 w-4"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="mt-2 note-content">${note.content}</div>
             `;
@@ -981,6 +993,14 @@ function renderNotes(company) {
         // Update Feather icons
         feather.replace();
         
+        // Add edit event listeners
+        document.querySelectorAll('.edit-note').forEach(button => {
+            button.addEventListener('click', function() {
+                const noteId = parseInt(this.getAttribute('data-note-id'));
+                editNote(noteId);
+            });
+        });
+        
         // Add delete event listeners
         document.querySelectorAll('.delete-note').forEach(button => {
             button.addEventListener('click', function() {
@@ -989,6 +1009,165 @@ function renderNotes(company) {
             });
         });
     }
+}
+
+// FIXED: Select a company - This was the bug!
+function selectCompany(companyId) {
+    console.log("Selecting company with ID:", companyId);
+    selectedCompanyId = companyId;
+    
+    // Update UI - re-render the company list to show selection
+    renderCompanyList(document.getElementById('search-input').value);
+    
+    // Get the selected company and verify it exists
+    const company = getSelectedCompany();
+    if (company) {
+        console.log("Found selected company:", company.name);
+        showCompanyDetails();
+        updateCompanyDetails(company);
+        renderNotes(company);
+    } else {
+        console.error("Could not find company with ID:", companyId);
+    }
+}
+
+// FIXED: Get the selected company - Added better error checking
+function getSelectedCompany() {
+    if (!selectedCompanyId) {
+        console.log("No company selected");
+        return null;
+    }
+    
+    const company = companies.find(company => company.id === selectedCompanyId);
+    if (!company) {
+        console.error("Selected company ID", selectedCompanyId, "not found in companies array");
+        console.log("Available companies:", companies.map(c => ({ id: c.id, name: c.name })));
+    }
+    
+    return company;
+}
+
+// Show company details view
+function showCompanyDetails() {
+    hideAllMainContentViews();
+    document.getElementById('company-details').classList.remove('hidden');
+}
+
+// Show no selection view
+function showNoSelectionView() {
+    hideAllMainContentViews();
+    document.getElementById('no-selection').classList.remove('hidden');
+}
+
+// Hide all main content views
+function hideAllMainContentViews() {
+    document.getElementById('no-selection').classList.add('hidden');
+    document.getElementById('add-company-form').classList.add('hidden');
+    document.getElementById('company-details').classList.add('hidden');
+}
+
+// FIXED: Update company details in the UI - Added debugging
+function updateCompanyDetails(company) {
+    console.log("Updating company details for:", company.name);
+    
+    // Update company name in title
+    const titleElement = document.getElementById('company-name-title');
+    if (titleElement) {
+        titleElement.textContent = company.name;
+    }
+    
+    // Update contact
+    const contactElement = document.getElementById('company-contact');
+    if (contactElement) {
+        contactElement.textContent = company.contact;
+    }
+    
+    // Update email
+    const emailElement = document.getElementById('company-email');
+    if (emailElement) {
+        emailElement.textContent = company.email;
+        emailElement.href = `mailto:${company.email}`;
+    }
+    
+    // Update portal URL
+    const portalElement = document.getElementById('company-portal');
+    if (portalElement) {
+        portalElement.textContent = company.portalUrl || 'Not provided';
+        portalElement.href = company.portalUrl || '#';
+    }
+    
+    // Update website URL
+    const websiteElement = document.getElementById('company-website');
+    if (websiteElement) {
+        websiteElement.textContent = company.websiteUrl || 'Not provided';
+        websiteElement.href = company.websiteUrl || '#';
+    }
+    
+    // Country field
+    const countryElement = document.getElementById('company-country');
+    if (countryElement) {
+        countryElement.textContent = company.country || 'Not specified';
+    }
+    
+    // PSA field
+    const psaElement = document.getElementById('company-psa');
+    if (psaElement) {
+        psaElement.textContent = company.psa || 'Not specified';
+    }
+    
+    // Plan badge
+    const planElement = document.getElementById('company-plan');
+    if (planElement) {
+        planElement.textContent = company.plan;
+        planElement.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium';
+        if (company.plan === 'Premium') {
+            planElement.classList.add('plan-premium');
+        } else if (company.plan === 'Advanced') {
+            planElement.classList.add('plan-advanced');
+        } else {
+            planElement.classList.add('plan-standard');
+        }
+    }
+    
+    // Onboarding dates
+    const firstOnboardingElement = document.getElementById('company-first-onboarding');
+    if (firstOnboardingElement) {
+        firstOnboardingElement.textContent = 
+            company.firstOnboarding ? new Date(company.firstOnboarding).toLocaleDateString() : 'Not scheduled';
+    }
+    
+    const secondOnboardingElement = document.getElementById('company-second-onboarding');
+    if (secondOnboardingElement) {
+        secondOnboardingElement.textContent = 
+            company.secondOnboarding ? new Date(company.secondOnboarding).toLocaleDateString() : 'Not scheduled';
+    }
+    
+    // Feature checkboxes
+    const coverPageElement = document.getElementById('company-cover-page');
+    if (coverPageElement) {
+        coverPageElement.className = 
+            `h-4 w-4 rounded ${company.coverPage ? 'checkbox-active' : 'checkbox-inactive'}`;
+    }
+    
+    const widgetsElement = document.getElementById('company-widgets');
+    if (widgetsElement) {
+        widgetsElement.className = 
+            `h-4 w-4 rounded ${company.widgets ? 'checkbox-active' : 'checkbox-inactive'}`;
+    }
+    
+    const hardwareElement = document.getElementById('company-hardware');
+    if (hardwareElement) {
+        hardwareElement.className = 
+            `h-4 w-4 rounded ${company.hardwareTemplate ? 'checkbox-active' : 'checkbox-inactive'}`;
+    }
+    
+    const mspElement = document.getElementById('company-msp');
+    if (mspElement) {
+        mspElement.className = 
+            `h-4 w-4 rounded ${company.mspTemplate ? 'checkbox-active' : 'checkbox-inactive'}`;
+    }
+    
+    console.log("Company details updated successfully");
 }
 
 // Export data to a JSON file
@@ -1064,6 +1243,9 @@ function importData(event) {
                     tasks = importedData.tasks;
                 }
                 
+                // Reset selected company since IDs might have changed
+                selectedCompanyId = null;
+                
                 saveCompanies();
                 saveTasks();
                 renderCompanyList();
@@ -1073,7 +1255,6 @@ function importData(event) {
                 if (companies.length > 0) {
                     selectCompany(companies[0].id);
                 } else {
-                    selectedCompanyId = null;
                     showNoSelectionView();
                 }
                 
