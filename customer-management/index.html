@@ -6,6 +6,111 @@
     <title>Customer Management</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="customers.css">
+    <style>
+        /* Fix for company sidebar width and status display */
+        .company-list-container {
+            width: 320px;
+        }
+
+        .status-filter-section {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+        }
+
+        .status-filter-title {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .status-filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .status-filter-btn {
+            padding: 4px 12px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .status-filter-btn.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .status-filter-btn.inactive {
+            background-color: #e5e7eb;
+            color: #4b5563;
+        }
+
+        .status-filter-btn.inactive:hover {
+            background-color: #d1d5db;
+        }
+
+        .main-layout {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        .content-area {
+            flex-grow: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .company-item-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .company-item-main {
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        .company-item-status {
+            margin-left: 8px;
+            flex-shrink: 0;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-onboarding {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-active {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-pre-sales {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-churned {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 </head>
 <body class="bg-gray-100 h-screen flex flex-col">
@@ -63,18 +168,18 @@
         </div>
 
         <!-- Main Area with Company List, Details, and Tasks -->
-        <div class="flex flex-grow overflow-hidden">
+        <div class="main-layout">
             <!-- Company List -->
-            <div class="w-64 bg-white shadow-md overflow-y-auto">
+            <div class="company-list-container bg-white shadow-md overflow-y-auto">
                 <!-- Status Filter Buttons -->
-                <div class="p-3 border-b bg-gray-50">
-                    <div class="text-xs font-medium text-gray-500 mb-2">Filter by Status</div>
-                    <div class="flex flex-wrap">
-                        <button id="filter-all-companies" class="px-3 py-1 text-xs bg-blue-500 text-white rounded mr-1 mb-1">All</button>
-                        <button id="filter-onboarding" class="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded mr-1 mb-1 hover:bg-gray-300">Onboarding</button>
-                        <button id="filter-active" class="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded mr-1 mb-1 hover:bg-gray-300">Active</button>
-                        <button id="filter-pre-sales" class="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded mr-1 mb-1 hover:bg-gray-300">Pre-Sales</button>
-                        <button id="filter-churned" class="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded mr-1 mb-1 hover:bg-gray-300">Churned</button>
+                <div class="status-filter-section">
+                    <div class="status-filter-title">Filter by Status</div>
+                    <div class="status-filter-buttons">
+                        <button id="filter-all-companies" class="status-filter-btn active">All</button>
+                        <button id="filter-onboarding" class="status-filter-btn inactive">Onboarding</button>
+                        <button id="filter-active" class="status-filter-btn inactive">Active</button>
+                        <button id="filter-pre-sales" class="status-filter-btn inactive">Pre-Sales</button>
+                        <button id="filter-churned" class="status-filter-btn inactive">Churned</button>
                     </div>
                 </div>
                 
@@ -83,7 +188,7 @@
             </div>
 
             <!-- Company Details and Notes -->
-            <div class="flex-grow flex overflow-hidden" id="main-content-area">
+            <div class="content-area" id="main-content-area">
                 <!-- Default state when no company is selected -->
                 <div id="no-selection" class="flex-grow flex items-center justify-center bg-gray-50">
                     <div class="text-center p-6">
