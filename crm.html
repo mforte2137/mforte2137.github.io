@@ -21,6 +21,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
     }
     header h1 {
       margin: 0;
@@ -34,6 +36,7 @@
       display: flex;
       gap: 0.5rem;
       align-items: center;
+      flex-wrap: wrap;
     }
     button, input[type="submit"] {
       border: none;
@@ -104,6 +107,10 @@
     }
     .pill.week {
       background: #dbebff;
+      color: #1d4ed8;
+    }
+    .pill.primary {
+      background: #dbeafe;
       color: #1d4ed8;
     }
     .customer-list {
@@ -182,6 +189,11 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.75rem;
     }
+    @media (max-width: 600px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
     .muted {
       font-size: 0.8rem;
       color: #6b7280;
@@ -230,9 +242,6 @@
     .mt-2 {
       margin-top: 0.75rem;
     }
-    .gap-top {
-      margin-top: 0.75rem;
-    }
     .tagline {
       font-size: 0.8rem;
       color: #4b5563;
@@ -247,6 +256,161 @@
     .badge-count {
       font-size: 0.75rem;
       color: #9ca3af;
+    }
+    .search-row {
+      margin-bottom: 0.75rem;
+    }
+    .search-row input {
+      width: 100%;
+      padding: 0.35rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      font-size: 0.8rem;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 0.25rem;
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .tab-button {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.8rem;
+      border-radius: 999px 999px 0 0;
+      border: none;
+      background: transparent;
+      color: #4b5563;
+      cursor: pointer;
+    }
+    .tab-button.active {
+      background: #eef2ff;
+      color: #1d4ed8;
+      font-weight: 500;
+    }
+    .tab-panel {
+      display: none;
+    }
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* Contacts list */
+    .contacts-list {
+      border-radius: 0.5rem;
+      border: 1px solid #e5e7eb;
+      padding: 0.5rem;
+      background: #f9fafb;
+      max-height: 180px;
+      overflow-y: auto;
+      font-size: 0.8rem;
+    }
+    .contact-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.3rem 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .contact-item:last-child {
+      border-bottom: none;
+    }
+    .contact-main {
+      flex: 1;
+    }
+    .contact-name {
+      font-weight: 600;
+    }
+    .contact-email {
+      color: #6b7280;
+      font-size: 0.75rem;
+    }
+    .contact-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
+    }
+    .contact-actions label {
+      margin: 0;
+      font-size: 0.75rem;
+    }
+    .contact-actions button {
+      padding: 0.15rem 0.5rem;
+      font-size: 0.7rem;
+      border-radius: 999px;
+      background: #f97373;
+    }
+
+    /* Calendar */
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .calendar-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .calendar-nav button {
+      padding: 0.2rem 0.6rem;
+      font-size: 0.8rem;
+      background: #e5e7eb;
+      color: #374151;
+      border-radius: 999px;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 4px;
+      font-size: 0.75rem;
+    }
+    .calendar-cell {
+      border-radius: 0.4rem;
+      padding: 0.25rem;
+      min-height: 65px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+    .calendar-cell-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: #6b7280;
+      margin-bottom: 0.1rem;
+    }
+    .calendar-cell.today {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 1px #2563eb;
+    }
+    .calendar-day-name {
+      text-align: center;
+      font-weight: 600;
+      color: #6b7280;
+      padding: 0.25rem 0;
+    }
+    .calendar-entry {
+      background: #e5edff;
+      border-radius: 999px;
+      padding: 0.05rem 0.3rem;
+      margin-bottom: 0.05rem;
+      font-size: 0.7rem;
+      cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .calendar-empty-note {
+      font-size: 0.8rem;
+      color: #6b7280;
+      margin-top: 0.5rem;
     }
   </style>
 </head>
@@ -272,7 +436,17 @@
         <span>Dashboard</span>
         <span class="badge-count" id="customer-count"></span>
       </h2>
-      <p class="tagline">Shows customers whose <strong>next monthly check-in</strong> is due.</p>
+      <p class="tagline">
+        Shows customers whose <strong>next monthly check-in</strong> is due.
+      </p>
+
+      <div class="search-row">
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Search for company..."
+        />
+      </div>
 
       <div>
         <h3>Due now / overdue</h3>
@@ -291,91 +465,134 @@
         <ul class="customer-list" id="list-later"></ul>
         <div id="empty-later" class="muted">Everyone is already covered.</div>
       </div>
+
+      <div id="search-empty" class="muted" style="display:none; margin-top:0.5rem;">
+        No customers match that search.
+      </div>
     </section>
 
-    <!-- Right column: Details + new customer -->
-    <section class="card" id="detail-card">
-      <h2>
-        <span>Customer details</span>
-        <button id="delete-customer-btn" class="danger" style="display:none;">Delete</button>
-      </h2>
-      <div id="no-customer" class="empty-state">
-        Select a customer on the left, or add a new one below.
+    <!-- Right column: Tabs (Details / Add / Calendar) -->
+    <section class="card" id="right-card">
+      <div class="tabs">
+        <button class="tab-button active" data-tab="details">Customer details</button>
+        <button class="tab-button" data-tab="add">Add new customer</button>
+        <button class="tab-button" data-tab="calendar">Calendar</button>
       </div>
 
-      <div id="customer-detail" style="display:none;">
-        <div class="section-inline">
-          <div>
-            <div class="muted">Customer</div>
-            <div id="detail-customer-name" style="font-weight:600;"></div>
-            <div class="muted" id="detail-contact-line"></div>
-          </div>
-          <div>
-            <div class="muted">Next contact date</div>
-            <div>
-              <span id="detail-next-date" class="pill"></span>
-            </div>
-          </div>
+      <!-- Details tab -->
+      <div class="tab-panel active" id="tab-details">
+        <h2>
+          <span>Customer details</span>
+          <button id="delete-customer-btn" class="danger" style="display:none;">Delete</button>
+        </h2>
+        <div id="no-customer" class="empty-state">
+          Select a customer on the left, or add a new one in the "Add new customer" tab.
         </div>
 
-        <div class="mt-2">
-          <h3>Quick actions</h3>
-          <div class="section-inline">
-            <button id="mark-contacted-btn">✔ Mark contacted today</button>
-            <small id="detail-last-contact"></small>
-          </div>
-        </div>
-
-        <div class="mt-2">
-          <h3>Log a contact</h3>
-          <form id="log-contact-form">
-            <div class="form-row">
-              <div>
-                <label for="log-date">Date of contact</label>
-                <input type="date" id="log-date" required />
-              </div>
-              <div>
-                <label for="log-action-type">What did you do?</label>
-                <select id="log-action-type">
-                  <option value="Call">Call</option>
-                  <option value="Email">Email</option>
-                  <option value="Meeting">Meeting</option>
-                  <option value="Demo">Demo</option>
-                  <option value="Loom">Loom / Mojo video</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-            </div>
-
-            <label for="log-issue">Issue area (if they need help with something)</label>
-            <input type="text" id="log-issue" placeholder="Onboarding, quoting, templates, etc." />
-
-            <label for="log-notes">What was discussed?</label>
-            <textarea id="log-notes" placeholder="Notes from the conversation..." required></textarea>
-
-            <label for="log-url">Mojo / Loom / meeting URL</label>
-            <input type="text" id="log-url" placeholder="https://..." />
-
-            <label for="log-attachment-note">Attachment note</label>
-            <input type="text" id="log-attachment-note" placeholder="e.g. Sample quote, screenshot, etc." />
-
+        <div id="customer-detail" style="display:none;">
+          <form id="edit-customer-form">
+            <label for="edit-customer-name">Company name</label>
+            <input type="text" id="edit-customer-name" required />
             <div class="mt-1 section-inline">
-              <small class="muted">
-                Files aren’t uploaded to a server, but you can note what they sent and paste links.
-              </small>
-              <input type="submit" value="Save contact" />
+              <small class="muted">Edit the company name and click save.</small>
+              <input type="submit" value="Save changes" />
             </div>
           </form>
-        </div>
 
-        <div class="mt-2">
-          <h3>Contact history</h3>
-          <div id="history-list" class="contact-history"></div>
+          <div class="mt-2 section-inline">
+            <div>
+              <div class="muted">Primary contact</div>
+              <div id="detail-contact-line" style="font-weight:500;"></div>
+            </div>
+            <div>
+              <div class="muted">Next contact date</div>
+              <div>
+                <span id="detail-next-date" class="pill"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-2">
+            <h3>Contacts</h3>
+            <div id="contacts-list" class="contacts-list"></div>
+            <form id="add-contact-form" class="mt-1">
+              <div class="form-row">
+                <div>
+                  <label for="add-contact-name">Name</label>
+                  <input type="text" id="add-contact-name" placeholder="New contact name" />
+                </div>
+                <div>
+                  <label for="add-contact-email">Email</label>
+                  <input type="email" id="add-contact-email" placeholder="contact@example.com" />
+                </div>
+              </div>
+              <div class="mt-1 section-inline">
+                <small class="muted">Add alternates you may want to CC.</small>
+                <input type="submit" value="Add contact" />
+              </div>
+            </form>
+          </div>
+
+          <div class="mt-2">
+            <h3>Quick actions</h3>
+            <div class="section-inline">
+              <button id="mark-contacted-btn">✔ Mark contacted today</button>
+              <small id="detail-last-contact"></small>
+            </div>
+          </div>
+
+          <div class="mt-2">
+            <h3>Log a contact</h3>
+            <form id="log-contact-form">
+              <div class="form-row">
+                <div>
+                  <label for="log-date">Date of contact</label>
+                  <input type="date" id="log-date" required />
+                </div>
+                <div>
+                  <label for="log-action-type">What did you do?</label>
+                  <select id="log-action-type">
+                    <option value="Call">Call</option>
+                    <option value="Email">Email</option>
+                    <option value="Meeting">Meeting</option>
+                    <option value="Demo">Demo</option>
+                    <option value="Loom">Loom / Mojo video</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <label for="log-issue">Issue area (if they need help with something)</label>
+              <input type="text" id="log-issue" placeholder="Onboarding, quoting, templates, etc." />
+
+              <label for="log-notes">What was discussed?</label>
+              <textarea id="log-notes" placeholder="Notes from the conversation..." required></textarea>
+
+              <label for="log-url">Mojo / Loom / meeting URL</label>
+              <input type="text" id="log-url" placeholder="https://..." />
+
+              <label for="log-attachment-note">Attachment note</label>
+              <input type="text" id="log-attachment-note" placeholder="e.g. Sample quote, screenshot, etc." />
+
+              <div class="mt-1 section-inline">
+                <small class="muted">
+                  Files aren’t uploaded to a server, but you can note what they sent and paste links.
+                </small>
+                <input type="submit" value="Save contact" />
+              </div>
+            </form>
+          </div>
+
+          <div class="mt-2">
+            <h3>Contact history</h3>
+            <div id="history-list" class="contact-history"></div>
+          </div>
         </div>
       </div>
 
-      <div class="mt-2">
-        <h3>Add new customer</h3>
+      <!-- Add customer tab -->
+      <div class="tab-panel" id="tab-add">
+        <h2>Add new customer</h2>
         <form id="new-customer-form">
           <div class="form-row">
             <div>
@@ -383,13 +600,13 @@
               <input type="text" id="new-customer-name" required />
             </div>
             <div>
-              <label for="new-contact-name">Contact person</label>
+              <label for="new-contact-name">Primary contact name</label>
               <input type="text" id="new-contact-name" required />
             </div>
           </div>
           <div class="form-row">
             <div>
-              <label for="new-contact-email">Contact email</label>
+              <label for="new-contact-email">Primary contact email</label>
               <input type="email" id="new-contact-email" required />
             </div>
             <div>
@@ -426,6 +643,25 @@
           </div>
         </form>
       </div>
+
+      <!-- Calendar tab -->
+      <div class="tab-panel" id="tab-calendar">
+        <h2>Calendar view</h2>
+        <p class="muted">
+          See who is due for a follow-up on each day. Click a name to open that customer.
+        </p>
+        <div class="calendar-header">
+          <div class="calendar-title" id="calendar-month-label">Month</div>
+          <div class="calendar-nav">
+            <button id="calendar-prev">&lt;</button>
+            <button id="calendar-next">&gt;</button>
+          </div>
+        </div>
+        <div class="calendar-grid" id="calendar-grid"></div>
+        <div class="calendar-empty-note" id="calendar-empty-note">
+          Customers with a next contact date this month will appear in the calendar.
+        </div>
+      </div>
     </section>
   </main>
 
@@ -436,13 +672,58 @@
     /** @type {Array} */
     let customers = [];
     let activeCustomerId = null;
+    let searchQuery = "";
+    let calendarCurrent = new Date();
+    calendarCurrent.setDate(1);
+
+    function createId(prefix = "c") {
+      return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+    }
+
+    function normalizeCustomers(list) {
+      if (!Array.isArray(list)) return [];
+      return list.map((c) => {
+        // Ensure history array
+        if (!Array.isArray(c.history)) {
+          c.history = [];
+        }
+
+        // If contacts not yet introduced, migrate from old contactName/contactEmail
+        if (!Array.isArray(c.contacts) || c.contacts.length === 0) {
+          const contacts = [];
+          if (c.contactName || c.contactEmail) {
+            contacts.push({
+              id: createId("ct"),
+              name: c.contactName || "",
+              email: c.contactEmail || "",
+              isPrimary: true,
+            });
+          }
+          c.contacts = contacts;
+        }
+
+        // Ensure exactly one primary if any contacts exist
+        if (c.contacts.length > 0) {
+          let hasPrimary = c.contacts.some((ct) => ct.isPrimary);
+          if (!hasPrimary) {
+            c.contacts[0].isPrimary = true;
+          }
+        }
+
+        // Clean up old fields (optional)
+        delete c.contactName;
+        delete c.contactEmail;
+
+        return c;
+      });
+    }
 
     function loadCustomers() {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return [];
       try {
         const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : [];
+        return normalizeCustomers(parsed);
       } catch (e) {
         console.error("Failed to parse stored customers", e);
         return [];
@@ -452,10 +733,6 @@
     function saveCustomers() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
       renderAll();
-    }
-
-    function createId(prefix = "c") {
-      return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
     }
 
     // ===== Date helpers =====
@@ -469,7 +746,6 @@
     }
 
     function parseIso(dateStr) {
-      // safe parsing of YYYY-MM-DD as UTC-like
       const [y, m, d] = dateStr.split("-").map(Number);
       return new Date(y, m - 1, d);
     }
@@ -488,7 +764,6 @@
 
       // Handle end-of-month (e.g., Jan 31 + 1 month)
       if (d.getDate() < originalDay) {
-        // go to last day of previous month
         d.setDate(0);
       }
 
@@ -505,7 +780,6 @@
     function getThisWeekRange() {
       const today = new Date();
       const todayIdx = today.getDay(); // 0 Sun .. 6 Sat
-      // We want Monday as start
       const distanceToMonday = (todayIdx + 6) % 7; // 0 if Monday
       const monday = new Date(today);
       monday.setDate(today.getDate() - distanceToMonday);
@@ -519,7 +793,6 @@
     }
 
     function compareDates(a, b) {
-      // compares YYYY-MM-DD strings lexicographically
       if (!a || !b) return 0;
       if (a < b) return -1;
       if (a > b) return 1;
@@ -527,9 +800,13 @@
     }
 
     // ===== Business logic =====
+    function getPrimaryContact(customer) {
+      if (!customer.contacts || customer.contacts.length === 0) return null;
+      return customer.contacts.find((c) => c.isPrimary) || customer.contacts[0];
+    }
+
     function getLastContactDate(customer) {
       if (!customer.history || customer.history.length === 0) return null;
-      // assume history is in chronological order, but sort just in case
       const sorted = [...customer.history].sort((a, b) => (a.date > b.date ? 1 : -1));
       return sorted[sorted.length - 1].date;
     }
@@ -556,7 +833,7 @@
 
     function getDueLabelAndClass(customer) {
       const next = getNextContactDate(customer);
-      if (!next) return { label: "No contact yet", cls: "" };
+      if (!next) return { label: "No contact yet", cls: "pill" };
       const { today } = getThisWeekRange();
       const cmp = compareDates(next, today);
       if (cmp < 0) return { label: "Overdue", cls: "pill overdue" };
@@ -571,6 +848,8 @@
       const listOverdue = document.getElementById("list-overdue");
       const listWeek = document.getElementById("list-week");
       const listLater = document.getElementById("list-later");
+      const searchEmpty = document.getElementById("search-empty");
+
       listOverdue.innerHTML = "";
       listWeek.innerHTML = "";
       listLater.innerHTML = "";
@@ -579,7 +858,15 @@
       let countWeek = 0;
       let countLater = 0;
 
-      const sortedCustomers = [...customers].sort((a, b) => {
+      const q = (searchQuery || "").toLowerCase().trim();
+      let filtered = [...customers];
+      if (q) {
+        filtered = filtered.filter((c) =>
+          (c.customerName || "").toLowerCase().includes(q)
+        );
+      }
+
+      const sortedCustomers = filtered.sort((a, b) => {
         const an = getNextContactDate(a) || "9999-12-31";
         const bn = getNextContactDate(b) || "9999-12-31";
         return an.localeCompare(bn);
@@ -589,6 +876,7 @@
         const next = getNextContactDate(c);
         const bucket = classifyCustomerByDueDate(c);
         const { label, cls } = getDueLabelAndClass(c);
+        const primary = getPrimaryContact(c);
 
         const li = document.createElement("li");
         li.dataset.id = c.id;
@@ -601,7 +889,9 @@
         const meta = document.createElement("div");
         meta.className = "customer-meta";
         const contactSpan = document.createElement("span");
-        contactSpan.textContent = c.contactName || "No contact";
+        contactSpan.textContent = primary
+          ? primary.name || primary.email || "Contact"
+          : "No contact";
         const nextSpan = document.createElement("span");
         nextSpan.textContent = next ? formatDisplayDate(next) : "No next date";
         const tagSpan = document.createElement("span");
@@ -619,6 +909,7 @@
 
         li.addEventListener("click", () => {
           activeCustomerId = c.id;
+          setActiveTab("details");
           renderAll();
         });
 
@@ -634,12 +925,91 @@
         }
       });
 
-      document.getElementById("empty-overdue").style.display = countOverdue ? "none" : "block";
-      document.getElementById("empty-week").style.display = countWeek ? "none" : "block";
-      document.getElementById("empty-later").style.display = countLater ? "none" : "block";
+      const searching = !!q;
+      document.getElementById("empty-overdue").style.display =
+        countOverdue || searching ? "none" : "block";
+      document.getElementById("empty-week").style.display =
+        countWeek || searching ? "none" : "block";
+      document.getElementById("empty-later").style.display =
+        countLater || searching ? "none" : "block";
+
+      searchEmpty.style.display = searching && sortedCustomers.length === 0 ? "block" : "none";
+
       document.getElementById("customer-count").textContent = customers.length
         ? customers.length + " customers"
         : "No customers yet";
+    }
+
+    function renderContacts(customer) {
+      const container = document.getElementById("contacts-list");
+      container.innerHTML = "";
+
+      if (!customer.contacts || customer.contacts.length === 0) {
+        container.innerHTML = '<div class="muted">No contacts yet. Add at least one.</div>';
+        return;
+      }
+
+      customer.contacts.forEach((ct) => {
+        const item = document.createElement("div");
+        item.className = "contact-item";
+
+        const main = document.createElement("div");
+        main.className = "contact-main";
+        const nameDiv = document.createElement("div");
+        nameDiv.className = "contact-name";
+        nameDiv.textContent = ct.name || "(No name)";
+        const emailDiv = document.createElement("div");
+        emailDiv.className = "contact-email";
+        emailDiv.textContent = ct.email || "";
+        main.appendChild(nameDiv);
+        main.appendChild(emailDiv);
+        if (ct.isPrimary) {
+          const primaryPill = document.createElement("span");
+          primaryPill.className = "pill primary";
+          primaryPill.textContent = "Primary";
+          main.appendChild(primaryPill);
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "contact-actions";
+        const primaryLabel = document.createElement("label");
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = "primary-contact";
+        radio.value = ct.id;
+        radio.checked = !!ct.isPrimary;
+        primaryLabel.appendChild(radio);
+        primaryLabel.appendChild(document.createTextNode(" Primary"));
+
+        radio.addEventListener("change", () => {
+          customer.contacts.forEach((c) => {
+            c.isPrimary = c.id === ct.id;
+          });
+          saveCustomers();
+        });
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.textContent = "Remove";
+        removeBtn.addEventListener("click", () => {
+          const ok = confirm("Remove this contact?");
+          if (!ok) return;
+          customer.contacts = customer.contacts.filter((c) => c.id !== ct.id);
+          // Ensure a primary remains if any contact exists
+          if (customer.contacts.length > 0 && !customer.contacts.some((c) => c.isPrimary)) {
+            customer.contacts[0].isPrimary = true;
+          }
+          saveCustomers();
+        });
+
+        actions.appendChild(primaryLabel);
+        actions.appendChild(removeBtn);
+
+        item.appendChild(main);
+        item.appendChild(actions);
+
+        container.appendChild(item);
+      });
     }
 
     function renderDetail() {
@@ -659,11 +1029,12 @@
       noCustomer.style.display = "none";
       deleteBtn.style.display = "inline-flex";
 
-      document.getElementById("detail-customer-name").textContent = customer.customerName;
+      document.getElementById("edit-customer-name").value = customer.customerName || "";
 
-      const contactLine = customer.contactName
-        ? customer.contactName + (customer.contactEmail ? " · " + customer.contactEmail : "")
-        : customer.contactEmail || "No contact info";
+      const primary = getPrimaryContact(customer);
+      const contactLine = primary
+        ? (primary.name || "") + (primary.email ? " · " + primary.email : "")
+        : "No contact info";
       document.getElementById("detail-contact-line").textContent = contactLine;
 
       const next = getNextContactDate(customer);
@@ -678,6 +1049,9 @@
 
       // Set default date in log form to today
       document.getElementById("log-date").value = toIsoDate(new Date());
+
+      // Contacts
+      renderContacts(customer);
 
       // Render history
       const historyList = document.getElementById("history-list");
@@ -733,9 +1107,114 @@
       }
     }
 
+    function renderCalendar() {
+      const grid = document.getElementById("calendar-grid");
+      const label = document.getElementById("calendar-month-label");
+      const emptyNote = document.getElementById("calendar-empty-note");
+      if (!grid || !label) return;
+
+      const year = calendarCurrent.getFullYear();
+      const month = calendarCurrent.getMonth(); // 0-based
+      label.textContent = calendarCurrent.toLocaleDateString(undefined, {
+        month: "long",
+        year: "numeric",
+      });
+
+      grid.innerHTML = "";
+      const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+      // Day name headers
+      dayNames.forEach((name) => {
+        const div = document.createElement("div");
+        div.className = "calendar-day-name";
+        div.textContent = name;
+        grid.appendChild(div);
+      });
+
+      const firstDay = new Date(year, month, 1);
+      const startWeekday = firstDay.getDay(); // 0-6
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const todayIso = toIsoDate(new Date());
+
+      // Leading empty cells
+      for (let i = 0; i < startWeekday; i++) {
+        const cell = document.createElement("div");
+        cell.className = "calendar-cell";
+        grid.appendChild(cell);
+      }
+
+      let hasEntries = false;
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const cellDate = new Date(year, month, day);
+        const cellIso = toIsoDate(cellDate);
+
+        const cell = document.createElement("div");
+        cell.className = "calendar-cell";
+        if (cellIso === todayIso) {
+          cell.classList.add("today");
+        }
+
+        const header = document.createElement("div");
+        header.className = "calendar-cell-header";
+        const dayNumber = document.createElement("span");
+        dayNumber.textContent = day;
+        const weekday = document.createElement("span");
+        weekday.textContent = dayNames[cellDate.getDay()];
+        header.appendChild(dayNumber);
+        header.appendChild(weekday);
+        cell.appendChild(header);
+
+        const dueCustomers = customers.filter(
+          (c) => getNextContactDate(c) === cellIso
+        );
+
+        if (dueCustomers.length > 0) {
+          hasEntries = true;
+        }
+
+        dueCustomers.forEach((c) => {
+          const entry = document.createElement("div");
+          entry.className = "calendar-entry";
+          entry.textContent = c.customerName;
+          entry.title = c.customerName;
+          entry.addEventListener("click", () => {
+            activeCustomerId = c.id;
+            setActiveTab("details");
+            renderAll();
+          });
+          cell.appendChild(entry);
+        });
+
+        grid.appendChild(cell);
+      }
+
+      emptyNote.style.display = hasEntries ? "none" : "block";
+    }
+
     function renderAll() {
       renderDashboard();
       renderDetail();
+      renderCalendar();
+    }
+
+    // ===== Tabs =====
+    function setActiveTab(tabName) {
+      document.querySelectorAll(".tab-button").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.tab === tabName);
+      });
+      document.querySelectorAll(".tab-panel").forEach((panel) => {
+        panel.classList.toggle("active", panel.id === "tab-" + tabName);
+      });
+    }
+
+    function setupTabs() {
+      document.querySelectorAll(".tab-button").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const tab = btn.dataset.tab;
+          setActiveTab(tab);
+        });
+      });
     }
 
     // ===== Event handlers =====
@@ -754,7 +1233,7 @@
         const attachmentNote = document.getElementById("new-attachment-note").value.trim();
 
         if (!customerName || !contactName || !contactEmail || !contactDate || !notes) {
-          alert("Please fill in customer name, contact name, email, first contact date and notes.");
+          alert("Please fill in customer name, primary contact name, email, first contact date and notes.");
           return;
         }
 
@@ -772,9 +1251,15 @@
         const newCustomer = {
           id: customerId,
           customerName,
-          contactName,
-          contactEmail,
           createdAt: toIsoDate(new Date()),
+          contacts: [
+            {
+              id: createId("ct"),
+              name: contactName,
+              email: contactEmail,
+              isPrimary: true,
+            },
+          ],
           history: [historyEntry],
         };
 
@@ -782,9 +1267,9 @@
         activeCustomerId = customerId;
         saveCustomers();
 
-        // Reset form (keep date to avoid retyping if adding many)
         form.reset();
         document.getElementById("new-contact-date").value = contactDate;
+        setActiveTab("details");
       });
     }
 
@@ -820,7 +1305,6 @@
         if (!Array.isArray(customer.history)) customer.history = [];
         customer.history.push(entry);
 
-        // Clear some fields but leave date
         document.getElementById("log-issue").value = "";
         document.getElementById("log-notes").value = "";
         document.getElementById("log-url").value = "";
@@ -898,7 +1382,7 @@
               "Importing a backup will replace your current data. Continue?"
             );
             if (!ok) return;
-            customers = data;
+            customers = normalizeCustomers(data);
             activeCustomerId = customers.length ? customers[0].id : null;
             saveCustomers();
             importInput.value = "";
@@ -911,17 +1395,87 @@
       });
     }
 
+    function setupSearch() {
+      const input = document.getElementById("search-input");
+      input.addEventListener("input", () => {
+        searchQuery = input.value || "";
+        renderDashboard();
+      });
+    }
+
+    function setupCalendarNav() {
+      document.getElementById("calendar-prev").addEventListener("click", () => {
+        calendarCurrent.setMonth(calendarCurrent.getMonth() - 1);
+        renderCalendar();
+      });
+      document.getElementById("calendar-next").addEventListener("click", () => {
+        calendarCurrent.setMonth(calendarCurrent.getMonth() + 1);
+        renderCalendar();
+      });
+    }
+
+    function setupEditCustomerForm() {
+      const form = document.getElementById("edit-customer-form");
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const customer = customers.find((c) => c.id === activeCustomerId);
+        if (!customer) return;
+        const name = document.getElementById("edit-customer-name").value.trim();
+        if (!name) {
+          alert("Company name cannot be empty.");
+          return;
+        }
+        customer.customerName = name;
+        saveCustomers();
+      });
+    }
+
+    function setupAddContactForm() {
+      const form = document.getElementById("add-contact-form");
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const customer = customers.find((c) => c.id === activeCustomerId);
+        if (!customer) return;
+        const name = document.getElementById("add-contact-name").value.trim();
+        const email = document.getElementById("add-contact-email").value.trim();
+        if (!name && !email) {
+          alert("Please enter at least a name or an email for the contact.");
+          return;
+        }
+        const contact = {
+          id: createId("ct"),
+          name,
+          email,
+          isPrimary: !customer.contacts || customer.contacts.length === 0,
+        };
+        if (!Array.isArray(customer.contacts)) {
+          customer.contacts = [];
+        }
+        customer.contacts.push(contact);
+        document.getElementById("add-contact-name").value = "";
+        document.getElementById("add-contact-email").value = "";
+        saveCustomers();
+      });
+    }
+
     // ===== Init =====
     document.addEventListener("DOMContentLoaded", () => {
       customers = loadCustomers();
       if (customers.length) {
         activeCustomerId = customers[0].id;
       }
+
+      setupTabs();
       setupNewCustomerForm();
       setupLogContactForm();
       setupMarkContactedButton();
       setupDeleteCustomerButton();
       setupBackupButtons();
+      setupSearch();
+      setupCalendarNav();
+      setupEditCustomerForm();
+      setupAddContactForm();
+
       renderAll();
     });
   </script>
