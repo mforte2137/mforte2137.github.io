@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Salesbuildr Customer Follow-up Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+    }
+    header {
+      background: #111827;
+      color: #f9fafb;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+    header .sub {
+      font-size: 0.8rem;
+      color: #9ca3af;
+    }
+    header .actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    button, input[type="submit"] {
+      border: none;
+      border-radius: 999px;
+      padding: 0.4rem 0.9rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    button.secondary {
+      background: #374151;
+    }
+    button.danger {
+      background: #b91c1c;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+    main {
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      gap: 1rem;
+      padding: 1rem;
+    }
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+    }
+    .card h2 {
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card h3 {
+      margin: 1rem 0 0.5rem;
+      font-size: 0.9rem;
+    }
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 0.1rem 0.6rem;
+      font-size: 0.7rem;
+      background: #e5e7eb;
+      color: #374151;
+    }
+    .pill.overdue {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+    .pill.today {
+      background: #d1fae5;
+      color: #047857;
+    }
+    .pill.week {
+      background: #dbebff;
+      color: #1d4ed8;
+    }
+    .customer-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+    .customer-list li {
+      border-radius: 0.5rem;
+      padding: 0.6rem 0.7rem;
+      margin-bottom: 0.4rem;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.1s, border-color 0.1s;
+    }
+    .customer-list li:hover {
+      background: #f3f4ff;
+    }
+    .customer-list li.active {
+      border-color: #2563eb;
+      background: #e5edff;
+    }
+    .customer-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.1rem;
+    }
+    .customer-meta {
+      font-size: 0.75rem;
+      color: #6b7280;
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .customer-meta span {
+      white-space: nowrap;
+    }
+    .section-inline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .section-inline small {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+    form label {
+      display: block;
+      font-size: 0.8rem;
+      margin: 0.4rem 0 0.1rem;
+      color: #4b5563;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="date"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 0.4rem 0.5rem;
+      border-radius: 0.4rem;
+      border: 1px solid #d1d5db;
+      font-size: 0.85rem;
+      font-family: inherit;
+    }
+    textarea {
+      min-height: 60px;
+      resize: vertical;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+    .muted {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+    .contact-history {
+      margin-top: 0.5rem;
+      max-height: 220px;
+      overflow-y: auto;
+      border-radius: 0.5rem;
+      border: 1px solid #e5e7eb;
+      padding: 0.5rem;
+      background: #f9fafb;
+    }
+    .history-item {
+      padding: 0.45rem 0.4rem;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 0.8rem;
+    }
+    .history-item:last-child {
+      border-bottom: none;
+    }
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.25rem;
+    }
+    .history-header strong {
+      font-size: 0.8rem;
+    }
+    .history-body {
+      margin-top: 0.2rem;
+      white-space: pre-wrap;
+    }
+    .history-meta {
+      margin-top: 0.2rem;
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+    .history-link a {
+      word-break: break-all;
+      font-size: 0.75rem;
+    }
+    .mt-1 {
+      margin-top: 0.5rem;
+    }
+    .mt-2 {
+      margin-top: 0.75rem;
+    }
+    .gap-top {
+      margin-top: 0.75rem;
+    }
+    .tagline {
+      font-size: 0.8rem;
+      color: #4b5563;
+      margin: 0.25rem 0 0.5rem;
+    }
+    .empty-state {
+      font-size: 0.85rem;
+      color: #6b7280;
+      text-align: center;
+      padding: 1.5rem 0.5rem;
+    }
+    .badge-count {
+      font-size: 0.75rem;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Salesbuildr Follow-up Tracker</h1>
+      <div class="sub">Simple CRM to know who to call each week.</div>
+    </div>
+    <div class="actions">
+      <button id="export-btn" class="secondary">⬇ Export backup</button>
+      <label for="import-input" style="font-size:0.8rem; cursor:pointer;">
+        <span style="padding:0.25rem 0.7rem;border-radius:999px;border:1px solid #4b5563;">⬆ Import</span>
+        <input id="import-input" type="file" accept="application/json" style="display:none;">
+      </label>
+    </div>
+  </header>
+
+  <main>
+    <!-- Left column: Dashboard + list -->
+    <section class="card" id="dashboard-card">
+      <h2>
+        <span>Dashboard</span>
+        <span class="badge-count" id="customer-count"></span>
+      </h2>
+      <p class="tagline">Shows customers whose <strong>next monthly check-in</strong> is due.</p>
+
+      <div>
+        <h3>Due now / overdue</h3>
+        <ul class="customer-list" id="list-overdue"></ul>
+        <div id="empty-overdue" class="muted">No one is overdue. 🎉</div>
+      </div>
+
+      <div class="mt-2">
+        <h3>This week</h3>
+        <ul class="customer-list" id="list-week"></ul>
+        <div id="empty-week" class="muted">No one due this week yet.</div>
+      </div>
+
+      <div class="mt-2">
+        <h3>Later</h3>
+        <ul class="customer-list" id="list-later"></ul>
+        <div id="empty-later" class="muted">Everyone is already covered.</div>
+      </div>
+    </section>
+
+    <!-- Right column: Details + new customer -->
+    <section class="card" id="detail-card">
+      <h2>
+        <span>Customer details</span>
+        <button id="delete-customer-btn" class="danger" style="display:none;">Delete</button>
+      </h2>
+      <div id="no-customer" class="empty-state">
+        Select a customer on the left, or add a new one below.
+      </div>
+
+      <div id="customer-detail" style="display:none;">
+        <div class="section-inline">
+          <div>
+            <div class="muted">Customer</div>
+            <div id="detail-customer-name" style="font-weight:600;"></div>
+            <div class="muted" id="detail-contact-line"></div>
+          </div>
+          <div>
+            <div class="muted">Next contact date</div>
+            <div>
+              <span id="detail-next-date" class="pill"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-2">
+          <h3>Quick actions</h3>
+          <div class="section-inline">
+            <button id="mark-contacted-btn">✔ Mark contacted today</button>
+            <small id="detail-last-contact"></small>
+          </div>
+        </div>
+
+        <div class="mt-2">
+          <h3>Log a contact</h3>
+          <form id="log-contact-form">
+            <div class="form-row">
+              <div>
+                <label for="log-date">Date of contact</label>
+                <input type="date" id="log-date" required />
+              </div>
+              <div>
+                <label for="log-action-type">What did you do?</label>
+                <select id="log-action-type">
+                  <option value="Call">Call</option>
+                  <option value="Email">Email</option>
+                  <option value="Meeting">Meeting</option>
+                  <option value="Demo">Demo</option>
+                  <option value="Loom">Loom / Mojo video</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <label for="log-issue">Issue area (if they need help with something)</label>
+            <input type="text" id="log-issue" placeholder="Onboarding, quoting, templates, etc." />
+
+            <label for="log-notes">What was discussed?</label>
+            <textarea id="log-notes" placeholder="Notes from the conversation..." required></textarea>
+
+            <label for="log-url">Mojo / Loom / meeting URL</label>
+            <input type="text" id="log-url" placeholder="https://..." />
+
+            <label for="log-attachment-note">Attachment note</label>
+            <input type="text" id="log-attachment-note" placeholder="e.g. Sample quote, screenshot, etc." />
+
+            <div class="mt-1 section-inline">
+              <small class="muted">
+                Files aren’t uploaded to a server, but you can note what they sent and paste links.
+              </small>
+              <input type="submit" value="Save contact" />
+            </div>
+          </form>
+        </div>
+
+        <div class="mt-2">
+          <h3>Contact history</h3>
+          <div id="history-list" class="contact-history"></div>
+        </div>
+      </div>
+
+      <div class="mt-2">
+        <h3>Add new customer</h3>
+        <form id="new-customer-form">
+          <div class="form-row">
+            <div>
+              <label for="new-customer-name">Customer name</label>
+              <input type="text" id="new-customer-name" required />
+            </div>
+            <div>
+              <label for="new-contact-name">Contact person</label>
+              <input type="text" id="new-contact-name" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div>
+              <label for="new-contact-email">Contact email</label>
+              <input type="email" id="new-contact-email" required />
+            </div>
+            <div>
+              <label for="new-contact-date">First contact date</label>
+              <input type="date" id="new-contact-date" required />
+            </div>
+          </div>
+
+          <label for="new-notes">What was discussed? (initial contact)</label>
+          <textarea id="new-notes" required></textarea>
+
+          <label for="new-issue">Issue area (if any)</label>
+          <input type="text" id="new-issue" placeholder="Optional" />
+
+          <label for="new-action-type">What did you do?</label>
+          <select id="new-action-type">
+            <option value="Call">Call</option>
+            <option value="Email">Email</option>
+            <option value="Meeting">Meeting</option>
+            <option value="Demo">Demo</option>
+            <option value="Loom">Loom / Mojo video</option>
+            <option value="Other">Other</option>
+          </select>
+
+          <label for="new-url">Mojo / Loom / meeting URL</label>
+          <input type="text" id="new-url" placeholder="https://..." />
+
+          <label for="new-attachment-note">Attachment note</label>
+          <input type="text" id="new-attachment-note" placeholder="e.g. Sample quote, screenshot, etc." />
+
+          <div class="mt-1 section-inline">
+            <small class="muted">New customers get a monthly follow-up starting from this first contact date.</small>
+            <input type="submit" value="Add customer" />
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ===== Data & storage =====
+    const STORAGE_KEY = "salesbuildr_followup_customers_v1";
+
+    /** @type {Array} */
+    let customers = [];
+    let activeCustomerId = null;
+
+    function loadCustomers() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.error("Failed to parse stored customers", e);
+        return [];
+      }
+    }
+
+    function saveCustomers() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
+      renderAll();
+    }
+
+    function createId(prefix = "c") {
+      return prefix + "_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+    }
+
+    // ===== Date helpers =====
+    function toIsoDate(date) {
+      if (typeof date === "string") return date;
+      const d = new Date(date);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return y + "-" + m + "-" + day;
+    }
+
+    function parseIso(dateStr) {
+      // safe parsing of YYYY-MM-DD as UTC-like
+      const [y, m, d] = dateStr.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    function formatDisplayDate(dateStr) {
+      if (!dateStr) return "—";
+      const d = parseIso(dateStr);
+      return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    }
+
+    function addOneMonthWeekday(dateStr) {
+      if (!dateStr) return null;
+      const d = parseIso(dateStr);
+      const originalDay = d.getDate();
+      d.setMonth(d.getMonth() + 1);
+
+      // Handle end-of-month (e.g., Jan 31 + 1 month)
+      if (d.getDate() < originalDay) {
+        // go to last day of previous month
+        d.setDate(0);
+      }
+
+      // Move weekends to Monday
+      const day = d.getDay(); // 0 = Sun, 6 = Sat
+      if (day === 6) {
+        d.setDate(d.getDate() + 2); // Saturday -> Monday
+      } else if (day === 0) {
+        d.setDate(d.getDate() + 1); // Sunday -> Monday
+      }
+      return toIsoDate(d);
+    }
+
+    function getThisWeekRange() {
+      const today = new Date();
+      const todayIdx = today.getDay(); // 0 Sun .. 6 Sat
+      // We want Monday as start
+      const distanceToMonday = (todayIdx + 6) % 7; // 0 if Monday
+      const monday = new Date(today);
+      monday.setDate(today.getDate() - distanceToMonday);
+      const friday = new Date(monday);
+      friday.setDate(monday.getDate() + 4);
+      return {
+        monday: toIsoDate(monday),
+        friday: toIsoDate(friday),
+        today: toIsoDate(today),
+      };
+    }
+
+    function compareDates(a, b) {
+      // compares YYYY-MM-DD strings lexicographically
+      if (!a || !b) return 0;
+      if (a < b) return -1;
+      if (a > b) return 1;
+      return 0;
+    }
+
+    // ===== Business logic =====
+    function getLastContactDate(customer) {
+      if (!customer.history || customer.history.length === 0) return null;
+      // assume history is in chronological order, but sort just in case
+      const sorted = [...customer.history].sort((a, b) => (a.date > b.date ? 1 : -1));
+      return sorted[sorted.length - 1].date;
+    }
+
+    function getNextContactDate(customer) {
+      const last = getLastContactDate(customer);
+      if (!last) return null;
+      return addOneMonthWeekday(last);
+    }
+
+    function classifyCustomerByDueDate(customer) {
+      const next = getNextContactDate(customer);
+      if (!next) return "later";
+      const { monday, friday, today } = getThisWeekRange();
+
+      if (compareDates(next, today) <= 0) {
+        return "overdue"; // includes today
+      }
+      if (compareDates(next, today) > 0 && compareDates(next, friday) <= 0) {
+        return "week";
+      }
+      return "later";
+    }
+
+    function getDueLabelAndClass(customer) {
+      const next = getNextContactDate(customer);
+      if (!next) return { label: "No contact yet", cls: "" };
+      const { today } = getThisWeekRange();
+      const cmp = compareDates(next, today);
+      if (cmp < 0) return { label: "Overdue", cls: "pill overdue" };
+      if (cmp === 0) return { label: "Today", cls: "pill today" };
+      const bucket = classifyCustomerByDueDate(customer);
+      if (bucket === "week") return { label: "This week", cls: "pill week" };
+      return { label: "Later", cls: "pill" };
+    }
+
+    // ===== Rendering =====
+    function renderDashboard() {
+      const listOverdue = document.getElementById("list-overdue");
+      const listWeek = document.getElementById("list-week");
+      const listLater = document.getElementById("list-later");
+      listOverdue.innerHTML = "";
+      listWeek.innerHTML = "";
+      listLater.innerHTML = "";
+
+      let countOverdue = 0;
+      let countWeek = 0;
+      let countLater = 0;
+
+      const sortedCustomers = [...customers].sort((a, b) => {
+        const an = getNextContactDate(a) || "9999-12-31";
+        const bn = getNextContactDate(b) || "9999-12-31";
+        return an.localeCompare(bn);
+      });
+
+      sortedCustomers.forEach((c) => {
+        const next = getNextContactDate(c);
+        const bucket = classifyCustomerByDueDate(c);
+        const { label, cls } = getDueLabelAndClass(c);
+
+        const li = document.createElement("li");
+        li.dataset.id = c.id;
+        if (c.id === activeCustomerId) li.classList.add("active");
+
+        const title = document.createElement("div");
+        title.className = "customer-title";
+        title.textContent = c.customerName;
+
+        const meta = document.createElement("div");
+        meta.className = "customer-meta";
+        const contactSpan = document.createElement("span");
+        contactSpan.textContent = c.contactName || "No contact";
+        const nextSpan = document.createElement("span");
+        nextSpan.textContent = next ? formatDisplayDate(next) : "No next date";
+        const tagSpan = document.createElement("span");
+        const pill = document.createElement("span");
+        pill.className = cls;
+        pill.textContent = label;
+        tagSpan.appendChild(pill);
+
+        meta.appendChild(contactSpan);
+        meta.appendChild(nextSpan);
+        meta.appendChild(tagSpan);
+
+        li.appendChild(title);
+        li.appendChild(meta);
+
+        li.addEventListener("click", () => {
+          activeCustomerId = c.id;
+          renderAll();
+        });
+
+        if (bucket === "overdue") {
+          listOverdue.appendChild(li);
+          countOverdue++;
+        } else if (bucket === "week") {
+          listWeek.appendChild(li);
+          countWeek++;
+        } else {
+          listLater.appendChild(li);
+          countLater++;
+        }
+      });
+
+      document.getElementById("empty-overdue").style.display = countOverdue ? "none" : "block";
+      document.getElementById("empty-week").style.display = countWeek ? "none" : "block";
+      document.getElementById("empty-later").style.display = countLater ? "none" : "block";
+      document.getElementById("customer-count").textContent = customers.length
+        ? customers.length + " customers"
+        : "No customers yet";
+    }
+
+    function renderDetail() {
+      const detailWrapper = document.getElementById("customer-detail");
+      const noCustomer = document.getElementById("no-customer");
+      const deleteBtn = document.getElementById("delete-customer-btn");
+
+      const customer = customers.find((c) => c.id === activeCustomerId);
+      if (!customer) {
+        detailWrapper.style.display = "none";
+        noCustomer.style.display = "block";
+        deleteBtn.style.display = "none";
+        return;
+      }
+
+      detailWrapper.style.display = "block";
+      noCustomer.style.display = "none";
+      deleteBtn.style.display = "inline-flex";
+
+      document.getElementById("detail-customer-name").textContent = customer.customerName;
+
+      const contactLine = customer.contactName
+        ? customer.contactName + (customer.contactEmail ? " · " + customer.contactEmail : "")
+        : customer.contactEmail || "No contact info";
+      document.getElementById("detail-contact-line").textContent = contactLine;
+
+      const next = getNextContactDate(customer);
+      const nextSpan = document.getElementById("detail-next-date");
+      const { label, cls } = getDueLabelAndClass(customer);
+      nextSpan.textContent = next ? formatDisplayDate(next) + " · " + label : "No next date";
+      nextSpan.className = cls || "pill";
+
+      const last = getLastContactDate(customer);
+      const lastEl = document.getElementById("detail-last-contact");
+      lastEl.textContent = last ? "Last contact: " + formatDisplayDate(last) : "No contact logged yet.";
+
+      // Set default date in log form to today
+      document.getElementById("log-date").value = toIsoDate(new Date());
+
+      // Render history
+      const historyList = document.getElementById("history-list");
+      historyList.innerHTML = "";
+      if (!customer.history || customer.history.length === 0) {
+        historyList.innerHTML = '<div class="muted">No contacts logged yet.</div>';
+      } else {
+        const sorted = [...customer.history].sort((a, b) =>
+          a.date < b.date ? 1 : a.date > b.date ? -1 : 0
+        );
+        sorted.forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "history-item";
+
+          const header = document.createElement("div");
+          header.className = "history-header";
+          const left = document.createElement("div");
+          left.innerHTML = "<strong>" + formatDisplayDate(item.date) + "</strong>";
+          const right = document.createElement("div");
+          right.innerHTML =
+            '<span class="pill">' + (item.actionType || "Contact") + "</span>";
+          header.appendChild(left);
+          header.appendChild(right);
+
+          const body = document.createElement("div");
+          body.className = "history-body";
+          body.textContent = item.notes || "";
+
+          const meta = document.createElement("div");
+          meta.className = "history-meta";
+          const parts = [];
+          if (item.issueArea) parts.push("Issue: " + item.issueArea);
+          if (item.attachmentNote) parts.push("Attachment: " + item.attachmentNote);
+          meta.textContent = parts.join(" · ");
+
+          const linkDiv = document.createElement("div");
+          linkDiv.className = "history-link";
+          if (item.meetingUrl) {
+            const a = document.createElement("a");
+            a.href = item.meetingUrl;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            a.textContent = item.meetingUrl;
+            linkDiv.appendChild(a);
+          }
+
+          div.appendChild(header);
+          div.appendChild(body);
+          if (parts.length) div.appendChild(meta);
+          if (item.meetingUrl) div.appendChild(linkDiv);
+          historyList.appendChild(div);
+        });
+      }
+    }
+
+    function renderAll() {
+      renderDashboard();
+      renderDetail();
+    }
+
+    // ===== Event handlers =====
+    function setupNewCustomerForm() {
+      const form = document.getElementById("new-customer-form");
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const customerName = document.getElementById("new-customer-name").value.trim();
+        const contactName = document.getElementById("new-contact-name").value.trim();
+        const contactEmail = document.getElementById("new-contact-email").value.trim();
+        const contactDate = document.getElementById("new-contact-date").value;
+        const notes = document.getElementById("new-notes").value.trim();
+        const issue = document.getElementById("new-issue").value.trim();
+        const actionType = document.getElementById("new-action-type").value;
+        const url = document.getElementById("new-url").value.trim();
+        const attachmentNote = document.getElementById("new-attachment-note").value.trim();
+
+        if (!customerName || !contactName || !contactEmail || !contactDate || !notes) {
+          alert("Please fill in customer name, contact name, email, first contact date and notes.");
+          return;
+        }
+
+        const customerId = createId("c");
+        const historyEntry = {
+          id: createId("h"),
+          date: contactDate,
+          notes,
+          issueArea: issue || "",
+          actionType,
+          meetingUrl: url || "",
+          attachmentNote: attachmentNote || "",
+        };
+
+        const newCustomer = {
+          id: customerId,
+          customerName,
+          contactName,
+          contactEmail,
+          createdAt: toIsoDate(new Date()),
+          history: [historyEntry],
+        };
+
+        customers.push(newCustomer);
+        activeCustomerId = customerId;
+        saveCustomers();
+
+        // Reset form (keep date to avoid retyping if adding many)
+        form.reset();
+        document.getElementById("new-contact-date").value = contactDate;
+      });
+    }
+
+    function setupLogContactForm() {
+      const form = document.getElementById("log-contact-form");
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const customer = customers.find((c) => c.id === activeCustomerId);
+        if (!customer) return;
+
+        const date = document.getElementById("log-date").value;
+        const actionType = document.getElementById("log-action-type").value;
+        const issue = document.getElementById("log-issue").value.trim();
+        const notes = document.getElementById("log-notes").value.trim();
+        const url = document.getElementById("log-url").value.trim();
+        const attachmentNote = document.getElementById("log-attachment-note").value.trim();
+
+        if (!date || !notes) {
+          alert("Please add a date and some notes.");
+          return;
+        }
+
+        const entry = {
+          id: createId("h"),
+          date,
+          notes,
+          issueArea: issue || "",
+          actionType,
+          meetingUrl: url || "",
+          attachmentNote: attachmentNote || "",
+        };
+
+        if (!Array.isArray(customer.history)) customer.history = [];
+        customer.history.push(entry);
+
+        // Clear some fields but leave date
+        document.getElementById("log-issue").value = "";
+        document.getElementById("log-notes").value = "";
+        document.getElementById("log-url").value = "";
+        document.getElementById("log-attachment-note").value = "";
+
+        saveCustomers();
+      });
+    }
+
+    function setupMarkContactedButton() {
+      const btn = document.getElementById("mark-contacted-btn");
+      btn.addEventListener("click", () => {
+        const customer = customers.find((c) => c.id === activeCustomerId);
+        if (!customer) return;
+        const today = toIsoDate(new Date());
+        const entry = {
+          id: createId("h"),
+          date: today,
+          notes: "Quick check-in logged from dashboard.",
+          issueArea: "",
+          actionType: "Check-in",
+          meetingUrl: "",
+          attachmentNote: "",
+        };
+        if (!Array.isArray(customer.history)) customer.history = [];
+        customer.history.push(entry);
+        saveCustomers();
+      });
+    }
+
+    function setupDeleteCustomerButton() {
+      const btn = document.getElementById("delete-customer-btn");
+      btn.addEventListener("click", () => {
+        const customer = customers.find((c) => c.id === activeCustomerId);
+        if (!customer) return;
+        const ok = confirm("Delete customer '" + customer.customerName + "'? This cannot be undone.");
+        if (!ok) return;
+        customers = customers.filter((c) => c.id !== customer.id);
+        activeCustomerId = customers.length ? customers[0].id : null;
+        saveCustomers();
+      });
+    }
+
+    function setupBackupButtons() {
+      const exportBtn = document.getElementById("export-btn");
+      const importInput = document.getElementById("import-input");
+
+      exportBtn.addEventListener("click", () => {
+        const blob = new Blob([JSON.stringify(customers, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        const stamp = new Date().toISOString().slice(0, 10);
+        a.download = "salesbuildr-followup-backup-" + stamp + ".json";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+
+      importInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          try {
+            const data = JSON.parse(evt.target.result);
+            if (!Array.isArray(data)) {
+              alert("Invalid backup file.");
+              return;
+            }
+            const ok = confirm(
+              "Importing a backup will replace your current data. Continue?"
+            );
+            if (!ok) return;
+            customers = data;
+            activeCustomerId = customers.length ? customers[0].id : null;
+            saveCustomers();
+            importInput.value = "";
+          } catch (err) {
+            console.error(err);
+            alert("Failed to read backup file.");
+          }
+        };
+        reader.readAsText(file);
+      });
+    }
+
+    // ===== Init =====
+    document.addEventListener("DOMContentLoaded", () => {
+      customers = loadCustomers();
+      if (customers.length) {
+        activeCustomerId = customers[0].id;
+      }
+      setupNewCustomerForm();
+      setupLogContactForm();
+      setupMarkContactedButton();
+      setupDeleteCustomerButton();
+      setupBackupButtons();
+      renderAll();
+    });
+  </script>
+</body>
+</html>
