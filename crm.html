@@ -71,6 +71,8 @@
       padding: 4px;
       box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
       margin-bottom: 18px;
+      flex-wrap: wrap;
+      gap: 4px;
     }
 
     .tab-btn {
@@ -515,6 +517,50 @@
       color: var(--accent);
       text-decoration: none;
     }
+
+    /* Overview tab */
+    .overview-item {
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      padding: 6px 8px;
+      margin-bottom: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      background: #f9fafb;
+    }
+
+    .overview-item.selected {
+      border-color: var(--accent);
+      background: #eff6ff;
+      box-shadow: 0 0 0 1px var(--accent-soft);
+    }
+
+    .overview-item .muted {
+      font-size: 11px;
+    }
+
+    /* Tasks tab */
+    .task-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .task-filter-btn {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      cursor: pointer;
+    }
+
+    .task-filter-btn.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
   </style>
 </head>
 <body>
@@ -534,8 +580,14 @@
     <button class="tab-btn" data-tab="customers">
       <span class="dot"></span> Customers
     </button>
+    <button class="tab-btn" data-tab="overview">
+      <span class="dot"></span> Overview
+    </button>
     <button class="tab-btn" data-tab="calendar">
       <span class="dot"></span> Calendar
+    </button>
+    <button class="tab-btn" data-tab="tasks">
+      <span class="dot"></span> Tasks
     </button>
   </nav>
 
@@ -592,7 +644,7 @@
           <div class="divider"></div>
 
           <div id="interactionPanel">
-            <p class="muted">Pick a customer from the list of due contacts or the calendar to log new notes.</p>
+            <p class="muted">Pick a customer from the list of due contacts, Overview, or the calendar to log new notes.</p>
           </div>
         </div>
       </div>
@@ -690,6 +742,34 @@
       </div>
     </section>
 
+    <!-- OVERVIEW TAB -->
+    <section id="overview" class="tab-content">
+      <div class="grid-2">
+        <!-- Left: search + customer list -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Customer search</h3>
+            <small>Find a customer and see their history.</small>
+          </div>
+          <label for="overviewSearchInput">Search by company name</label>
+          <input type="text" id="overviewSearchInput" placeholder="Type to filter…" />
+          <div class="divider"></div>
+          <div id="overviewCustomerList"></div>
+        </div>
+
+        <!-- Right: overview / history -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Overview</h3>
+            <small>Quick refresher of meetings & notes.</small>
+          </div>
+          <div id="overviewDetails" class="muted">
+            Select a customer on the left to see their history.
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- CALENDAR TAB -->
     <section id="calendar" class="tab-content">
       <div class="calendar-wrapper">
@@ -725,32 +805,115 @@
         </div>
       </div>
     </section>
+
+    <!-- TASKS TAB -->
+    <section id="tasks" class="tab-content">
+      <div class="grid-2">
+        <!-- Left: add/edit task -->
+        <div class="card">
+          <div class="card-header">
+            <h3>New task</h3>
+            <small>Follow-ups from meetings.</small>
+          </div>
+          <form id="taskForm">
+            <label for="taskCustomerSelect">Customer</label>
+            <select id="taskCustomerSelect">
+              <option value="">Select a customer…</option>
+            </select>
+
+            <label for="taskDescription">What do you need to do?</label>
+            <textarea id="taskDescription" placeholder="Research, gather updates, record Loom, etc."></textarea>
+
+            <label for="taskDueDate">Due date</label>
+            <input type="date" id="taskDueDate" />
+
+            <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-primary" type="submit">Add task</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Right: task list -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Task list</h3>
+            <small>Keep an eye on open actions.</small>
+          </div>
+          <div class="task-filters">
+            <button type="button" class="task-filter-btn active" data-filter="open">Open</button>
+            <button type="button" class="task-filter-btn" data-filter="completed">Completed</button>
+            <button type="button" class="task-filter-btn" data-filter="all">All</button>
+          </div>
+          <div class="stats-row" id="taskStats"></div>
+          <div class="divider"></div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+              <tr>
+                <th>Company</th>
+                <th>Task</th>
+                <th>Due</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+              </thead>
+              <tbody id="taskTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 </div>
 
 <script>
   (function () {
-    const STORAGE_KEY = 'salesbuildr_crm_v2';
+    const STORAGE_KEY = 'salesbuildr_crm_v3';
 
     let customers = [];
+    let tasks = [];
     let currentCalendarMonth;
     let currentCalendarYear;
+    let selectedOverviewCustomerId = null;
+    let taskFilter = 'open';
 
-    function loadCustomers() {
+    /* -------- Storage & dates -------- */
+
+    function loadState() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) {
           customers = [];
+          tasks = [];
         } else {
-          customers = JSON.parse(raw);
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            // Old shape: just customers
+            customers = parsed;
+            tasks = [];
+          } else {
+            customers = parsed.customers || [];
+            tasks = parsed.tasks || [];
+          }
         }
       } catch (e) {
         customers = [];
+        tasks = [];
       }
     }
 
-    function saveCustomers() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
+    function syncTaskCompanyNames() {
+      tasks.forEach(t => {
+        if (t.customerId) {
+          const c = customers.find(c => c.id === t.customerId);
+          if (c) t.companyName = c.companyName;
+        }
+      });
+    }
+
+    function saveState() {
+      syncTaskCompanyNames();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ customers, tasks }));
       renderAll();
     }
 
@@ -808,6 +971,7 @@
     }
 
     /* -------- Customers tab: basics form + list -------- */
+
     function getSelectedPlans() {
       const badges = document.querySelectorAll('.plan-badge.selected');
       return Array.from(badges).map(b => b.dataset.plan);
@@ -903,7 +1067,7 @@
         } else {
           customers.push(updatedCustomer);
         }
-        saveCustomers();
+        saveState();
         clearCustomerForm();
       });
 
@@ -973,7 +1137,6 @@
           const customer = customers.find(c => c.id === id);
           if (customer) {
             populateCustomerForm(customer);
-            // Jump to Customers tab
             document.querySelector('.tab-btn[data-tab="customers"]').click();
           }
         });
@@ -985,13 +1148,13 @@
           const select = document.getElementById('scheduleCustomerSelect');
           select.value = id;
           handleScheduleCustomerChange();
-          // Jump to Dashboard tab
           document.querySelector('.tab-btn[data-tab="dashboard"]').click();
         });
       });
     }
 
     /* -------- Dashboard: due list, stats, schedule & interaction panel -------- */
+
     function getDueCustomers() {
       const todayStr = getTodayStr();
       return customers.filter(c => {
@@ -1136,15 +1299,13 @@
         let next = document.getElementById('nextContactInput').value;
 
         if (!next) {
-          // If no date chosen, default from today.
           next = computeNextContactDate(new Date(), freq);
         }
 
         customer.schedule = customer.schedule || {};
         customer.schedule.frequency = freq;
         customer.schedule.nextContactDate = next;
-        // keep lastContactDate as is
-        saveCustomers();
+        saveState();
       });
     }
 
@@ -1174,20 +1335,18 @@
       container.querySelectorAll('button[data-index]').forEach(btn => {
         btn.addEventListener('click', () => {
           const idx = Number(btn.dataset.index);
-          const interactions = (customer.interactions || []).slice().sort((a, b) => b.date.localeCompare(a.date));
-          const sorted = interactions;
-          const target = sorted[idx];
+          const interactionsSorted = (customer.interactions || []).slice().sort((a, b) => b.date.localeCompare(a.date));
+          const target = interactionsSorted[idx];
           if (!target) return;
 
           const newText = prompt('Edit note from ' + target.date, target.notes);
           if (newText === null) return;
 
-          // We need to update in original order array
           const originalIndex = customer.interactions.findIndex(i => i.date === target.date && i.notes === target.notes);
           if (originalIndex >= 0) {
             customer.interactions[originalIndex].notes = newText.trim();
-            saveCustomers();
-            openInteractionPanel(customer.id, target.date); // re-open panel for that date
+            saveState();
+            openInteractionPanel(customer.id, target.date);
           }
         });
       });
@@ -1284,13 +1443,16 @@
         customer.schedule.nextContactDate = computeNextContactDate(parseDate(dateStr), customer.schedule.frequency || 'monthly');
 
         textArea.value = '';
-        saveCustomers();
-        // Re-open to show updated last interaction immediately.
+        saveState();
         openInteractionPanel(customer.id, dateStr);
       });
+
+      // Jump to dashboard to show panel if it isn't visible
+      document.querySelector('.tab-btn[data-tab="dashboard"]').click();
     }
 
     /* -------- Calendar -------- */
+
     function setupCalendarNav() {
       const today = new Date();
       currentCalendarMonth = today.getMonth();
@@ -1441,13 +1603,299 @@
         btn.addEventListener('click', () => {
           const id = btn.dataset.id;
           openInteractionPanel(id, dateStr);
-          // Jump user to Dashboard (interaction panel lives there)
-          document.querySelector('.tab-btn[data-tab="dashboard"]').click();
         });
       });
     }
 
+    /* -------- Overview tab -------- */
+
+    function renderOverviewCustomerList() {
+      const listEl = document.getElementById('overviewCustomerList');
+      const searchInput = document.getElementById('overviewSearchInput');
+      if (!listEl || !searchInput) return;
+
+      const term = searchInput.value.trim().toLowerCase();
+      listEl.innerHTML = '';
+
+      const filtered = customers
+        .slice()
+        .sort((a, b) => a.companyName.localeCompare(b.companyName))
+        .filter(c => !term || c.companyName.toLowerCase().includes(term));
+
+      if (!filtered.length) {
+        listEl.innerHTML = '<p class="muted">No customers match this search.</p>';
+        return;
+      }
+
+      filtered.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'overview-item';
+        if (c.id === selectedOverviewCustomerId) {
+          div.classList.add('selected');
+        }
+        const latest = (c.interactions || []).slice().sort((a, b) => b.date.localeCompare(a.date))[0];
+
+        div.innerHTML = `
+          <div><strong>${c.companyName}</strong></div>
+          <div class="muted">
+            ${latest ? `Last meeting: ${latest.date}` : 'No meetings logged'}
+          </div>
+        `;
+        div.addEventListener('click', () => {
+          selectedOverviewCustomerId = c.id;
+          renderOverviewCustomerList();
+          renderOverviewDetails();
+        });
+        listEl.appendChild(div);
+      });
+    }
+
+    function renderOverviewDetails() {
+      const container = document.getElementById('overviewDetails');
+      if (!container) return;
+
+      if (!customers.length) {
+        container.innerHTML = '<p class="muted">No customers yet. Add some in the Customers tab.</p>';
+        return;
+      }
+
+      if (!selectedOverviewCustomerId) {
+        selectedOverviewCustomerId = customers[0].id;
+      }
+
+      const customer = customers.find(c => c.id === selectedOverviewCustomerId);
+      if (!customer) {
+        container.innerHTML = '<p class="muted">Select a customer on the left to see their history.</p>';
+        return;
+      }
+
+      const plansHtml = customer.plans && customer.plans.length
+        ? customer.plans.map(p => `<span class="tag tag-accent">${p}</span>`).join(' ')
+        : '<span class="muted">No plans recorded</span>';
+
+      const interactions = (customer.interactions || []).slice().sort((a, b) => b.date.localeCompare(a.date));
+
+      const historyHtml = interactions.length
+        ? interactions.map(i => `
+          <div class="history-item">
+            <div class="history-item-header">
+              <span>${i.date}</span>
+            </div>
+            <div>${i.notes.replace(/\n/g, '<br>')}</div>
+          </div>
+        `).join('')
+        : '<p class="muted">No meetings logged yet. Log your first notes from the Dashboard.</p>';
+
+      container.innerHTML = `
+        <div style="margin-bottom:8px;">
+          <div><strong>${customer.companyName}</strong></div>
+          <div class="muted" style="font-size:11px;">
+            ${customer.primaryContactName || ''}${customer.primaryContactEmail ? ' · ' + customer.primaryContactEmail : ''}
+            ${customer.additionalContactName || customer.additionalContactEmail ? '<br>Alt: ' + (customer.additionalContactName || '') + (customer.additionalContactEmail ? ' · ' + customer.additionalContactEmail : '') : ''}
+            ${customer.tenantUrl ? `<br><a class="text-link" href="${customer.tenantUrl}" target="_blank">Tenant portal</a>` : ''}
+          </div>
+          <div style="margin-top:4px;">${plansHtml}</div>
+          ${customer.notes ? `<div class="divider"></div><div class="muted" style="font-size:12px;">${customer.notes.replace(/\n/g, '<br>')}</div>` : ''}
+        </div>
+        <div class="divider"></div>
+        <div>
+          <strong style="font-size:13px;">Meeting timeline</strong>
+          <div class="history-list" style="margin-top:4px; max-height:220px;">
+            ${historyHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    function setupOverviewTab() {
+      const input = document.getElementById('overviewSearchInput');
+      if (input) {
+        input.addEventListener('input', renderOverviewCustomerList);
+      }
+    }
+
+    function renderOverviewTab() {
+      renderOverviewCustomerList();
+      renderOverviewDetails();
+    }
+
+    /* -------- Tasks tab -------- */
+
+    function setupTasksTab() {
+      const form = document.getElementById('taskForm');
+      if (form) {
+        form.addEventListener('submit', e => {
+          e.preventDefault();
+          const customerSelect = document.getElementById('taskCustomerSelect');
+          const descEl = document.getElementById('taskDescription');
+          const dueEl = document.getElementById('taskDueDate');
+
+          const customerId = customerSelect.value || null;
+          const description = (descEl.value || '').trim();
+          const dueDate = dueEl.value || null;
+
+          if (!description) {
+            alert('Please enter a task description.');
+            return;
+          }
+
+          let companyName = 'General';
+          if (customerId) {
+            const c = customers.find(c => c.id === customerId);
+            if (c) companyName = c.companyName;
+          }
+
+          const task = {
+            id: Date.now().toString(),
+            customerId,
+            companyName,
+            description,
+            dueDate,
+            completed: false,
+            createdAt: getTodayStr(),
+            completedAt: null
+          };
+
+          tasks.push(task);
+          descEl.value = '';
+          dueEl.value = '';
+          saveState();
+        });
+      }
+
+      document.querySelectorAll('.task-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          taskFilter = btn.dataset.filter;
+          document.querySelectorAll('.task-filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          renderTasksTab();
+        });
+      });
+    }
+
+    function renderTaskCustomerOptions() {
+      const select = document.getElementById('taskCustomerSelect');
+      if (!select) return;
+      const current = select.value;
+
+      select.innerHTML = '<option value="">Select a customer…</option>';
+      customers
+        .slice()
+        .sort((a, b) => a.companyName.localeCompare(b.companyName))
+        .forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = c.companyName;
+          select.appendChild(opt);
+        });
+
+      if (current && customers.some(c => c.id === current)) {
+        select.value = current;
+      }
+    }
+
+    function renderTaskStats() {
+      const container = document.getElementById('taskStats');
+      if (!container) return;
+
+      const total = tasks.length;
+      const open = tasks.filter(t => !t.completed).length;
+      const completed = total - open;
+
+      container.innerHTML = `
+        <span class="stat-chip"><strong>${total}</strong> total</span>
+        <span class="stat-chip"><strong>${open}</strong> open</span>
+        <span class="stat-chip"><strong>${completed}</strong> completed</span>
+      `;
+    }
+
+    function renderTaskList() {
+      const tbody = document.getElementById('taskTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      let filtered = tasks.slice();
+      if (taskFilter === 'open') filtered = filtered.filter(t => !t.completed);
+      if (taskFilter === 'completed') filtered = filtered.filter(t => t.completed);
+
+      filtered.sort((a, b) => {
+        const aDue = a.dueDate || '9999-12-31';
+        const bDue = b.dueDate || '9999-12-31';
+        if (aDue === bDue) return a.createdAt.localeCompare(b.createdAt);
+        return aDue.localeCompare(bDue);
+      });
+
+      if (!filtered.length) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 5;
+        cell.className = 'muted';
+        cell.textContent = 'No tasks in this view.';
+        row.appendChild(cell);
+        tbody.appendChild(row);
+        return;
+      }
+
+      const todayStr = getTodayStr();
+
+      filtered.forEach(t => {
+        const tr = document.createElement('tr');
+        const isOverdue = t.dueDate && !t.completed && t.dueDate < todayStr;
+
+        tr.innerHTML = `
+          <td>${t.companyName || 'General'}</td>
+          <td>${t.description.replace(/\n/g, '<br>')}</td>
+          <td>
+            ${t.dueDate
+              ? `<span class="pill-status ${isOverdue ? 'due' : 'ok'}">${t.dueDate}</span>`
+              : '<span class="muted">No due date</span>'}
+          </td>
+          <td>
+            <span class="pill-status ${t.completed ? 'ok' : ''}">
+              ${t.completed ? 'Completed' : 'Open'}
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-ghost btn-sm" type="button" data-action="toggle" data-id="${t.id}">
+              ${t.completed ? 'Reopen' : 'Complete'}
+            </button>
+            <button class="btn btn-ghost btn-sm" type="button" data-action="delete" data-id="${t.id}">
+              Delete
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll('button[data-action="toggle"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          const t = tasks.find(t => t.id === id);
+          if (!t) return;
+          t.completed = !t.completed;
+          t.completedAt = t.completed ? getTodayStr() : null;
+          saveState();
+        });
+      });
+
+      tbody.querySelectorAll('button[data-action="delete"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          if (!confirm('Delete this task?')) return;
+          tasks = tasks.filter(t => t.id !== id);
+          saveState();
+        });
+      });
+    }
+
+    function renderTasksTab() {
+      renderTaskCustomerOptions();
+      renderTaskStats();
+      renderTaskList();
+    }
+
     /* -------- Render all -------- */
+
     function renderAll() {
       renderCustomerList();
       renderDashboardStats();
@@ -1455,15 +1903,20 @@
       renderScheduleSelectOptions();
       handleScheduleCustomerChange();
       renderCalendar();
+      renderOverviewTab();
+      renderTasksTab();
     }
 
     /* -------- Init -------- */
+
     document.addEventListener('DOMContentLoaded', () => {
       setupTabs();
       setupCustomerForm();
       setupSchedulePanel();
       setupCalendarNav();
-      loadCustomers();
+      setupOverviewTab();
+      setupTasksTab();
+      loadState();
       renderAll();
     });
   })();
