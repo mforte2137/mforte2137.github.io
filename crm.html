@@ -561,6 +561,72 @@
       background: var(--accent-soft);
       color: var(--accent);
     }
+
+    /* Contacts editor (inline) */
+    .contacts-list {
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      padding: 6px;
+      max-height: 180px;
+      overflow-y: auto;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 4px 0;
+      border-bottom: 1px dashed #e5e7eb;
+    }
+
+    .contact-item:last-child {
+      border-bottom: none;
+    }
+
+    .contact-main {
+      flex: 1;
+    }
+
+    .contact-main-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 4px;
+      margin-bottom: 2px;
+    }
+
+    .contact-main-row input {
+      font-size: 11px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      background: #fff;
+    }
+
+    .contact-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .contact-actions label {
+      margin: 0;
+      font-size: 11px;
+      font-weight: 400;
+    }
+
+    .contact-actions button {
+      padding: 2px 6px;
+      font-size: 11px;
+      border-radius: 999px;
+      background: #fee2e2;
+      color: var(--danger);
+      border: 1px solid #fecaca;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -676,19 +742,40 @@
               </div>
             </div>
 
-            <div class="field-row field-row-2">
+            <!-- Contacts editor -->
+            <label style="margin-top:10px;">Additional contacts</label>
+            <p class="muted">Use this list to manage extra contacts and CCs. One will be marked as primary.</p>
+            <div id="contactsList" class="contacts-list">
+              <p class="muted" style="margin:0;">Save the customer first to add contacts.</p>
+            </div>
+            <div class="field-row field-row-2" style="margin-top:6px;">
               <div>
-                <label for="altContactName">Additional contact name</label>
-                <input type="text" id="altContactName" />
+                <label for="addContactName">New contact name</label>
+                <input type="text" id="addContactName" />
               </div>
               <div>
-                <label for="altContactEmail">Additional contact email</label>
-                <input type="email" id="altContactEmail" />
+                <label for="addContactEmail">New contact email</label>
+                <input type="email" id="addContactEmail" />
               </div>
+            </div>
+            <div style="margin-top:6px;">
+              <button class="btn btn-secondary btn-sm" type="button" id="addContactBtn">
+                Add contact
+              </button>
             </div>
 
             <label for="tenantUrl">URL to tenant portal</label>
             <input type="url" id="tenantUrl" placeholder="https://…" />
+
+            <label for="psaSelect">PSA</label>
+            <select id="psaSelect">
+              <option value="">– Select PSA –</option>
+              <option value="Autotask">Autotask</option>
+              <option value="ConnectWise">ConnectWise</option>
+              <option value="Halo">Halo</option>
+              <option value="API">API</option>
+            </select>
+            <p class="muted">Each tenant integrates with a single PSA.</p>
 
             <label>Plan selection</label>
             <div class="plans-container" id="plansContainer">
@@ -729,7 +816,7 @@
               <tr>
                 <th>Company</th>
                 <th>Primary contact</th>
-                <th>Plans</th>
+                <th>Plans / PSA</th>
                 <th>Next contact</th>
                 <th></th>
               </tr>
@@ -877,6 +964,59 @@
     let selectedOverviewCustomerId = null;
     let taskFilter = 'open';
 
+    /* -------- Helpers for contacts & PSA -------- */
+
+    function createId(prefix) {
+      return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+    }
+
+    function getPrimaryContact(customer) {
+      if (!customer || !Array.isArray(customer.contacts)) return null;
+      return customer.contacts.find(c => c.isPrimary) || customer.contacts[0] || null;
+    }
+
+    function normalizeCustomersArray(list) {
+      if (!Array.isArray(list)) return [];
+
+      return list.map(c => {
+        // contacts array from legacy fields
+        if (!Array.isArray(c.contacts) || !c.contacts.length) {
+          const contacts = [];
+          if (c.primaryContactName || c.primaryContactEmail) {
+            contacts.push({
+              id: createId('ct'),
+              name: c.primaryContactName || '',
+              email: c.primaryContactEmail || '',
+              isPrimary: true
+            });
+          }
+          if (c.additionalContactName || c.additionalContactEmail) {
+            contacts.push({
+              id: createId('ct'),
+              name: c.additionalContactName || '',
+              email: c.additionalContactEmail || '',
+              isPrimary: contacts.length === 0 // if no primary yet
+            });
+          }
+          c.contacts = contacts;
+        }
+
+        // ensure one primary if contacts exist
+        if (Array.isArray(c.contacts) && c.contacts.length) {
+          if (!c.contacts.some(ct => ct.isPrimary)) {
+            c.contacts[0].isPrimary = true;
+          }
+        }
+
+        // PSA default
+        if (typeof c.psa !== 'string') {
+          c.psa = '';
+        }
+
+        return c;
+      });
+    }
+
     /* -------- Storage & dates -------- */
 
     function loadState() {
@@ -888,7 +1028,6 @@
         } else {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed)) {
-            // Old shape: just customers
             customers = parsed;
             tasks = [];
           } else {
@@ -900,6 +1039,7 @@
         customers = [];
         tasks = [];
       }
+      customers = normalizeCustomersArray(customers);
     }
 
     function syncTaskCompanyNames() {
@@ -970,7 +1110,7 @@
       });
     }
 
-    /* -------- Customers tab: basics form + list -------- */
+    /* -------- Customers tab: basics form + list + contacts editor -------- */
 
     function getSelectedPlans() {
       const badges = document.querySelectorAll('.plan-badge.selected');
@@ -987,30 +1127,154 @@
       });
     }
 
+    function clearContactsEditor() {
+      const list = document.getElementById('contactsList');
+      if (list) {
+        list.innerHTML = '<p class="muted" style="margin:0;">Save the customer first to add contacts.</p>';
+      }
+    }
+
     function clearCustomerForm() {
       document.getElementById('customerId').value = '';
       document.getElementById('companyName').value = '';
       document.getElementById('primaryContactName').value = '';
       document.getElementById('primaryContactEmail').value = '';
-      document.getElementById('altContactName').value = '';
-      document.getElementById('altContactEmail').value = '';
       document.getElementById('tenantUrl').value = '';
+      document.getElementById('psaSelect').value = '';
       document.getElementById('customerNotes').value = '';
+      document.getElementById('addContactName').value = '';
+      document.getElementById('addContactEmail').value = '';
       setSelectedPlans([]);
+      clearContactsEditor();
       document.getElementById('saveCustomerBtn').textContent = 'Save customer';
+    }
+
+    function populateContactsEditor(customer) {
+      const container = document.getElementById('contactsList');
+      if (!container) return;
+
+      if (!customer || !Array.isArray(customer.contacts)) {
+        clearContactsEditor();
+        return;
+      }
+
+      const contacts = customer.contacts;
+      if (!contacts.length) {
+        container.innerHTML = '<p class="muted" style="margin:0;">No additional contacts yet. Add them below.</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      contacts.forEach(ct => {
+        const item = document.createElement('div');
+        item.className = 'contact-item';
+
+        const main = document.createElement('div');
+        main.className = 'contact-main';
+
+        const row = document.createElement('div');
+        row.className = 'contact-main-row';
+
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.placeholder = 'Name';
+        nameInput.value = ct.name || '';
+        nameInput.addEventListener('change', () => {
+          ct.name = nameInput.value.trim();
+          // keep primary fields in sync
+          const primary = getPrimaryContact(customer);
+          if (primary && primary.id === ct.id) {
+            document.getElementById('primaryContactName').value = ct.name || '';
+          }
+          saveState();
+        });
+
+        const emailInput = document.createElement('input');
+        emailInput.type = 'email';
+        emailInput.placeholder = 'Email';
+        emailInput.value = ct.email || '';
+        emailInput.addEventListener('change', () => {
+          ct.email = emailInput.value.trim();
+          const primary = getPrimaryContact(customer);
+          if (primary && primary.id === ct.id) {
+            document.getElementById('primaryContactEmail').value = ct.email || '';
+          }
+          saveState();
+        });
+
+        row.appendChild(nameInput);
+        row.appendChild(emailInput);
+        main.appendChild(row);
+
+        if (ct.isPrimary) {
+          const pill = document.createElement('span');
+          pill.className = 'pill';
+          pill.textContent = 'Primary';
+          pill.style.fontSize = '10px';
+          main.appendChild(pill);
+        }
+
+        const actions = document.createElement('div');
+        actions.className = 'contact-actions';
+
+        const label = document.createElement('label');
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'primary-contact';
+        radio.checked = !!ct.isPrimary;
+        radio.addEventListener('change', () => {
+          customer.contacts.forEach(c => {
+            c.isPrimary = c.id === ct.id;
+          });
+          // sync primary fields
+          document.getElementById('primaryContactName').value = ct.name || '';
+          document.getElementById('primaryContactEmail').value = ct.email || '';
+          saveState();
+          populateContactsEditor(customer);
+        });
+        label.appendChild(radio);
+        label.appendChild(document.createTextNode(' Primary'));
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.textContent = 'Remove';
+        removeBtn.addEventListener('click', () => {
+          if (!confirm('Remove this contact?')) return;
+          customer.contacts = customer.contacts.filter(c => c.id !== ct.id);
+          if (customer.contacts.length && !customer.contacts.some(c => c.isPrimary)) {
+            customer.contacts[0].isPrimary = true;
+          }
+          const primary = getPrimaryContact(customer);
+          document.getElementById('primaryContactName').value = primary ? (primary.name || '') : '';
+          document.getElementById('primaryContactEmail').value = primary ? (primary.email || '') : '';
+          saveState();
+          populateContactsEditor(customer);
+        });
+
+        actions.appendChild(label);
+        actions.appendChild(removeBtn);
+
+        item.appendChild(main);
+        item.appendChild(actions);
+        container.appendChild(item);
+      });
     }
 
     function populateCustomerForm(customer) {
       document.getElementById('customerId').value = customer.id;
       document.getElementById('companyName').value = customer.companyName || '';
-      document.getElementById('primaryContactName').value = customer.primaryContactName || '';
-      document.getElementById('primaryContactEmail').value = customer.primaryContactEmail || '';
-      document.getElementById('altContactName').value = customer.additionalContactName || '';
-      document.getElementById('altContactEmail').value = customer.additionalContactEmail || '';
+      const primary = getPrimaryContact(customer);
+      document.getElementById('primaryContactName').value = primary ? (primary.name || '') : '';
+      document.getElementById('primaryContactEmail').value = primary ? (primary.email || '') : '';
       document.getElementById('tenantUrl').value = customer.tenantUrl || '';
+      document.getElementById('psaSelect').value = customer.psa || '';
       document.getElementById('customerNotes').value = customer.notes || '';
       setSelectedPlans(customer.plans || []);
       document.getElementById('saveCustomerBtn').textContent = 'Update customer';
+
+      populateContactsEditor(customer);
+      document.getElementById('addContactName').value = '';
+      document.getElementById('addContactEmail').value = '';
     }
 
     function setupCustomerForm() {
@@ -1032,11 +1296,10 @@
         }
         const primaryContactName = document.getElementById('primaryContactName').value.trim();
         const primaryContactEmail = document.getElementById('primaryContactEmail').value.trim();
-        const altContactName = document.getElementById('altContactName').value.trim();
-        const altContactEmail = document.getElementById('altContactEmail').value.trim();
         const tenantUrl = document.getElementById('tenantUrl').value.trim();
         const notes = document.getElementById('customerNotes').value.trim();
         const plans = getSelectedPlans();
+        const psa = document.getElementById('psaSelect').value || '';
 
         const existingIndex = customers.findIndex(c => c.id === id);
         let existing = existingIndex >= 0 ? customers[existingIndex] : null;
@@ -1047,19 +1310,35 @@
           nextContactDate: null
         };
         const interactions = existing && existing.interactions ? existing.interactions : [];
+        let contacts = existing && Array.isArray(existing.contacts) ? existing.contacts.slice() : [];
+
+        // update/create primary contact inside contacts[]
+        if (primaryContactName || primaryContactEmail) {
+          let primary = contacts.find(c => c.isPrimary);
+          if (!primary) {
+            primary = {
+              id: createId('ct'),
+              name: primaryContactName,
+              email: primaryContactEmail,
+              isPrimary: true
+            };
+            contacts.unshift(primary);
+          } else {
+            primary.name = primaryContactName;
+            primary.email = primaryContactEmail;
+          }
+        }
 
         const updatedCustomer = {
           id,
           companyName,
-          primaryContactName,
-          primaryContactEmail,
-          additionalContactName: altContactName,
-          additionalContactEmail: altContactEmail,
           tenantUrl,
           plans,
           notes,
           schedule,
-          interactions
+          interactions,
+          contacts,
+          psa
         };
 
         if (existingIndex >= 0) {
@@ -1073,6 +1352,43 @@
 
       document.getElementById('clearCustomerBtn').addEventListener('click', function () {
         clearCustomerForm();
+      });
+
+      // Add contact button
+      document.getElementById('addContactBtn').addEventListener('click', () => {
+        const currentId = document.getElementById('customerId').value;
+        if (!currentId) {
+          alert('Save the customer first before adding contacts.');
+          return;
+        }
+        const customer = customers.find(c => c.id === currentId);
+        if (!customer) return;
+
+        const name = document.getElementById('addContactName').value.trim();
+        const email = document.getElementById('addContactEmail').value.trim();
+        if (!name && !email) {
+          alert('Enter at least a name or an email.');
+          return;
+        }
+
+        customer.contacts = customer.contacts || [];
+        const isPrimary = !customer.contacts.length;
+        customer.contacts.push({
+          id: createId('ct'),
+          name,
+          email,
+          isPrimary
+        });
+
+        if (isPrimary) {
+          document.getElementById('primaryContactName').value = name;
+          document.getElementById('primaryContactEmail').value = email;
+        }
+
+        document.getElementById('addContactName').value = '';
+        document.getElementById('addContactEmail').value = '';
+        saveState();
+        populateContactsEditor(customer);
       });
     }
 
@@ -1103,6 +1419,15 @@
           const nextLabel = nextContact || 'Not scheduled';
 
           const isDue = nextContact && nextContact <= todayStr;
+          const primary = getPrimaryContact(c);
+
+          const plansHtml = c.plans && c.plans.length
+            ? c.plans.map(p => `<span class="tag tag-accent">${p}</span>`).join(' ')
+            : '<span class="muted">No plans</span>';
+
+          const psaHtml = c.psa
+            ? `<span class="tag">PSA: ${c.psa}</span>`
+            : '';
 
           tr.innerHTML = `
             <td>
@@ -1110,13 +1435,12 @@
               ${c.tenantUrl ? `<br><a class="text-link" href="${c.tenantUrl}" target="_blank">Tenant portal</a>` : ''}
             </td>
             <td>
-              ${c.primaryContactName || '-'}
-              ${c.primaryContactEmail ? `<br><span class="muted">${c.primaryContactEmail}</span>` : ''}
+              ${primary ? (primary.name || '-') : '-'}
+              ${primary && primary.email ? `<br><span class="muted">${primary.email}</span>` : ''}
             </td>
             <td>
-              ${c.plans && c.plans.length
-                ? c.plans.map(p => `<span class="tag tag-accent">${p}</span>`).join(' ')
-                : '<span class="muted">None</span>'}
+              ${plansHtml}
+              ${psaHtml}
             </td>
             <td>
               <span class="pill-status ${isDue ? 'due' : 'ok'}">
@@ -1205,11 +1529,13 @@
         const schedule = c.schedule || {};
         const next = schedule.nextContactDate;
         const label = next === todayStr ? 'Today' : `Due ${next}`;
+        const primary = getPrimaryContact(c);
         li.innerHTML = `
           <strong>${c.companyName}</strong>
           <br>
           <span class="muted">${label} · ${schedule.frequency || 'monthly'}</span>
           <br>
+          ${primary ? `<span class="muted">${primary.name || ''}${primary && primary.email ? ' · ' + primary.email : ''}</span><br>` : ''}
           <button class="btn btn-primary btn-sm" type="button" data-id="${c.id}" data-action="logContact">Log contact</button>
         `;
         ul.appendChild(li);
@@ -1352,6 +1678,25 @@
       });
     }
 
+    function buildContactsHtml(customer) {
+      const primary = getPrimaryContact(customer);
+      const others = (customer.contacts || []).filter(c => !c.isPrimary && (c.name || c.email));
+      let html = '';
+
+      if (primary) {
+        html += (primary.name || '') + (primary.email ? ' · ' + primary.email : '');
+      }
+
+      if (others.length) {
+        const otherText = others
+          .map(o => (o.name || '') + (o.email ? ' · ' + o.email : ''))
+          .join('; ');
+        html += `<br>Others: ${otherText}`;
+      }
+
+      return html || 'No contact info';
+    }
+
     function openInteractionPanel(customerId, dateForInteraction) {
       const interactionPanel = document.getElementById('interactionPanel');
       const customer = customers.find(c => c.id === customerId);
@@ -1378,17 +1723,20 @@
         ? customer.plans.map(p => `<span class="tag tag-accent">${p}</span>`).join(' ')
         : '<span class="muted">No plans recorded</span>';
 
+      const psaHtml = customer.psa
+        ? `<span class="tag">PSA: ${customer.psa}</span>`
+        : '';
+
       const generalNotes = customer.notes || '';
 
       interactionPanel.innerHTML = `
         <div style="margin-bottom:6px;">
           <div><strong>${customer.companyName}</strong></div>
           <div class="muted" style="font-size:11px;">
-            ${customer.primaryContactName || ''}${customer.primaryContactEmail ? ' · ' + customer.primaryContactEmail : ''}
-            ${customer.additionalContactName || customer.additionalContactEmail ? '<br>Alt: ' + (customer.additionalContactName || '') + (customer.additionalContactEmail ? ' · ' + customer.additionalContactEmail : '') : ''}
+            ${buildContactsHtml(customer)}
             ${customer.tenantUrl ? `<br><a class="text-link" href="${customer.tenantUrl}" target="_blank">Tenant portal</a>` : ''}
           </div>
-          <div style="margin-top:4px;">${plansHtml}</div>
+          <div style="margin-top:4px;">${plansHtml} ${psaHtml}</div>
         </div>
         <div class="divider"></div>
         <div>
@@ -1447,7 +1795,6 @@
         openInteractionPanel(customer.id, dateStr);
       });
 
-      // Jump to dashboard to show panel if it isn't visible
       document.querySelector('.tab-btn[data-tab="dashboard"]').click();
     }
 
@@ -1673,6 +2020,10 @@
         ? customer.plans.map(p => `<span class="tag tag-accent">${p}</span>`).join(' ')
         : '<span class="muted">No plans recorded</span>';
 
+      const psaHtml = customer.psa
+        ? `<span class="tag">PSA: ${customer.psa}</span>`
+        : '';
+
       const interactions = (customer.interactions || []).slice().sort((a, b) => b.date.localeCompare(a.date));
 
       const historyHtml = interactions.length
@@ -1690,11 +2041,10 @@
         <div style="margin-bottom:8px;">
           <div><strong>${customer.companyName}</strong></div>
           <div class="muted" style="font-size:11px;">
-            ${customer.primaryContactName || ''}${customer.primaryContactEmail ? ' · ' + customer.primaryContactEmail : ''}
-            ${customer.additionalContactName || customer.additionalContactEmail ? '<br>Alt: ' + (customer.additionalContactName || '') + (customer.additionalContactEmail ? ' · ' + customer.additionalContactEmail : '') : ''}
+            ${buildContactsHtml(customer)}
             ${customer.tenantUrl ? `<br><a class="text-link" href="${customer.tenantUrl}" target="_blank">Tenant portal</a>` : ''}
           </div>
-          <div style="margin-top:4px;">${plansHtml}</div>
+          <div style="margin-top:4px;">${plansHtml} ${psaHtml}</div>
           ${customer.notes ? `<div class="divider"></div><div class="muted" style="font-size:12px;">${customer.notes.replace(/\n/g, '<br>')}</div>` : ''}
         </div>
         <div class="divider"></div>
