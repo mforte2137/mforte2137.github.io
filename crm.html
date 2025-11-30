@@ -687,7 +687,7 @@
     <section id="dashboard" class="tab-content active">
       <div class="grid-2">
         <!-- Left: Due / Overdue contacts -->
-        <div class="card">
+              <div class="card">
           <div class="card-header">
             <h3>Contacts due</h3>
             <small>Today & overdue</small>
@@ -695,7 +695,18 @@
           <div class="stats-row" id="dashboardStats"></div>
           <div class="divider"></div>
           <div id="dueList"></div>
+
+          <!-- Recent interactions snapshot -->
+          <div class="divider"></div>
+          <div>
+            <div class="card-header" style="margin-top:4px; margin-bottom:4px; padding:0; border:none;">
+              <h3 style="font-size:14px;">Recent interactions</h3>
+              <small>Last 5 notes</small>
+            </div>
+            <div id="recentInteractions"></div>
+          </div>
         </div>
+
 
         <!-- Right: Schedule + interaction panel -->
         <div class="card">
@@ -1604,6 +1615,68 @@
         return na.localeCompare(nb);
       });
     }
+    function getRecentInteractions(limit = 5) {
+      const items = [];
+      customers.forEach(c => {
+        (c.interactions || []).forEach(i => {
+          items.push({
+            customerId: c.id,
+            companyName: c.companyName,
+            date: i.date,
+            notes: i.notes || ''
+          });
+        });
+      });
+
+      items.sort((a, b) => b.date.localeCompare(a.date));
+      return items.slice(0, limit);
+    }
+
+    function renderRecentInteractions() {
+      const container = document.getElementById('recentInteractions');
+      if (!container) return;
+
+      const items = getRecentInteractions(5);
+      container.innerHTML = '';
+
+      if (!items.length) {
+        container.innerHTML = '<p class="muted">No interactions logged yet.</p>';
+        return;
+      }
+
+      const ul = document.createElement('ul');
+      ul.className = 'list-compact';
+
+      items.forEach(item => {
+        const snippetRaw = item.notes.length > 80
+          ? item.notes.slice(0, 80) + '…'
+          : item.notes;
+
+        const snippet = snippetRaw.replace(/\n/g, '<br>');
+
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <strong>${item.companyName}</strong>
+          <span class="muted"> · ${item.date}</span><br>
+          <span class="muted">${snippet}</span><br>
+          <button class="btn btn-ghost btn-sm" type="button"
+            data-id="${item.customerId}" data-date="${item.date}">
+            Open
+          </button>
+        `;
+        ul.appendChild(li);
+      });
+
+      container.appendChild(ul);
+
+      container.querySelectorAll('button[data-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id;
+          const date = btn.dataset.date;
+          openInteractionPanel(id, date);
+        });
+      });
+    }
 
     function renderDashboardStats() {
       const container = document.getElementById('dashboardStats');
@@ -2371,16 +2444,18 @@
 
     /* -------- Render all -------- */
 
-    function renderAll() {
+       function renderAll() {
       renderCustomerList();
       renderDashboardStats();
       renderDueList();
+      renderRecentInteractions();
       renderScheduleSelectOptions();
       handleScheduleCustomerChange();
       renderCalendar();
       renderOverviewTab();
       renderTasksTab();
     }
+
 
     /* -------- Init -------- */
 
