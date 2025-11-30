@@ -1684,7 +1684,7 @@
       }
     }
 
-    function handleScheduleCustomerChange() {
+     function handleScheduleCustomerChange() {
       const select = document.getElementById('scheduleCustomerSelect');
       const id = select.value;
       const scheduleDetails = document.getElementById('scheduleDetails');
@@ -1705,6 +1705,7 @@
       const interactions = customer.interactions || [];
       const lastInteraction = interactions.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
 
+      // keep form fields in sync
       freqSelect.value = schedule.frequency || 'monthly';
       nextInput.value = schedule.nextContactDate || '';
 
@@ -1716,11 +1717,21 @@
         ? `Next scheduled contact on ${schedule.nextContactDate}.`
         : 'Not scheduled yet.';
 
+      const plansHtml = customer.plans && customer.plans.length
+        ? customer.plans.map(p => `<span class="tag tag-accent">${p}</span>`).join(' ')
+        : '<span class="muted">No plans recorded</span>';
+
+      const psaHtml = customer.psa
+        ? `<span class="tag">PSA: ${customer.psa}</span>`
+        : '';
+
       scheduleDetails.innerHTML = `
         <div>${nextText}</div>
         <div class="muted" style="margin-top:2px;">${lastText}</div>
+        <div style="margin-top:4px;">${plansHtml} ${psaHtml}</div>
       `;
     }
+
 
     function setupSchedulePanel() {
       const select = document.getElementById('scheduleCustomerSelect');
