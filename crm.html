@@ -627,17 +627,42 @@
       border: 1px solid #fecaca;
       cursor: pointer;
     }
+        .backup-controls {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .backup-controls span {
+      font-size: 11px;
+    }
+
   </style>
 </head>
 <body>
 <div class="app">
-  <header>
+   <header>
     <h1>
       <span class="logo-dot"></span>
       Salesbuildr Customer Follow-up
     </h1>
     <p>Lightweight CRM to keep monthly (or weekly/bi-weekly) contact with your customers.</p>
+
+    <div class="backup-controls">
+      <button class="btn btn-secondary btn-sm" type="button" id="exportDataBtn">
+        Export data
+      </button>
+      <button class="btn btn-ghost btn-sm" type="button" id="importDataBtn">
+        Import data
+      </button>
+      <input type="file" id="importDataInput" accept="application/json" style="display:none;" />
+      <span class="muted" id="backupStatus"></span>
+    </div>
   </header>
+
 
   <nav class="tabs">
     <button class="tab-btn active" data-tab="dashboard">
@@ -1092,6 +1117,95 @@
 
     function getTodayStr() {
       return formatDate(new Date());
+    }
+    /* -------- Backup / export / import -------- */
+
+    function showBackupStatus(message, isError) {
+      const el = document.getElementById('backupStatus');
+      if (!el) return;
+      el.textContent = message;
+      el.style.color = isError ? '#b91c1c' : 'var(--text-muted)';
+      // Clear after a few seconds
+      setTimeout(() => {
+        if (el.textContent === message) {
+          el.textContent = '';
+          el.style.color = 'var(--text-muted)';
+        }
+      }, 4000);
+    }
+
+    function exportData() {
+      try {
+        const payload = { customers, tasks };
+        const json = JSON.stringify(payload, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `salesbuildr-crm-backup-${getTodayStr()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showBackupStatus('Data exported.', false);
+      } catch (e) {
+        console.error(e);
+        showBackupStatus('Export failed.', true);
+      }
+    }
+
+    function importDataFromFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const text = e.target.result;
+          const parsed = JSON.parse(text);
+
+          if (!parsed || typeof parsed !== 'object') {
+            throw new Error('Invalid file format.');
+          }
+
+          const importedCustomers = normalizeCustomersArray(parsed.customers || []);
+          const importedTasks = Array.isArray(parsed.tasks) ? parsed.tasks : [];
+
+          if (!confirm('Importing will replace your current customers and tasks. Continue?')) {
+            return;
+          }
+
+          customers = importedCustomers;
+          tasks = importedTasks;
+          saveState();
+          showBackupStatus('Data imported successfully.', false);
+        } catch (err) {
+          console.error(err);
+          showBackupStatus('Import failed. Check the file.', true);
+        }
+      };
+      reader.onerror = () => {
+        showBackupStatus('Could not read file.', true);
+      };
+      reader.readAsText(file);
+    }
+
+    function setupBackupControls() {
+      const exportBtn = document.getElementById('exportDataBtn');
+      const importBtn = document.getElementById('importDataBtn');
+      const input = document.getElementById('importDataInput');
+
+      if (exportBtn) {
+        exportBtn.addEventListener('click', exportData);
+      }
+
+      if (importBtn && input) {
+        importBtn.addEventListener('click', () => input.click());
+
+        input.addEventListener('change', (e) => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          importDataFromFile(file);
+          input.value = ''; // reset so same file can be chosen again
+        });
+      }
     }
 
     /* -------- Tabs -------- */
@@ -2259,16 +2373,18 @@
 
     /* -------- Init -------- */
 
-    document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener('DOMContentLoaded', () => {
       setupTabs();
       setupCustomerForm();
       setupSchedulePanel();
       setupCalendarNav();
       setupOverviewTab();
       setupTasksTab();
+      setupBackupControls();
       loadState();
       renderAll();
     });
+
   })();
 </script>
 </body>
