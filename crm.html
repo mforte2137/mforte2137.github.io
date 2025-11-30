@@ -715,10 +715,18 @@
             <small>Select a customer to manage cadence</small>
           </div>
 
-          <label for="scheduleCustomerSelect">Customer</label>
-          <select id="scheduleCustomerSelect">
-            <option value="">Select a customer…</option>
-          </select>
+                    <label for="scheduleCustomerSelect">Customer</label>
+          <div class="field-row field-row-2">
+            <div>
+              <input type="text" id="scheduleSearchInput" placeholder="Search by company…" />
+            </div>
+            <div>
+              <select id="scheduleCustomerSelect">
+                <option value="">Select a customer…</option>
+              </select>
+            </div>
+          </div>
+
 
           <div id="scheduleDetails" class="muted" style="margin-top:6px;"></div>
 
@@ -1830,6 +1838,25 @@
         customer.schedule.frequency = freq;
         customer.schedule.nextContactDate = next;
         saveState();
+      });
+    }
+    function setupScheduleSearch() {
+      const input = document.getElementById('scheduleSearchInput');
+      const select = document.getElementById('scheduleCustomerSelect');
+      if (!input || !select) return;
+
+      input.addEventListener('input', () => {
+        const term = input.value.trim().toLowerCase();
+        if (!term) return;
+
+        const match = customers.find(c =>
+          c.companyName && c.companyName.toLowerCase().includes(term)
+        );
+
+        if (match) {
+          select.value = match.id;
+          handleScheduleCustomerChange();
+        }
       });
     }
 
