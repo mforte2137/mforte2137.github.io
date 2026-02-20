@@ -198,18 +198,25 @@
   }
 
   /* --- Bottom two panels: keep them fixed height; scroll inside --- */
-  .output{
-    margin-top: 16px;
-    display:grid;
-    grid-template-columns: 0.9fr 1.1fr; /* preview slightly wider */
-    gap: 12px;
-    align-items: stretch;
-  }
-  .output .card.panel{
-    height: 520px;              /* adjust to taste (e.g., 480/600) */
-    display:flex;
-    flex-direction: column;
-  }
+/* --- Bottom two panels: fixed height, and allow BOTH columns to shrink --- */
+.output{
+  margin-top: 16px;
+  display:grid;
+
+  /* key change: minmax(0, …) allows grid columns to shrink even with long code lines */
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+
+  gap: 12px;
+  align-items: stretch;
+}
+
+/* key change: min-width:0 lets the panel actually shrink inside a grid */
+.output .card.panel{
+  height: 520px;
+  display:flex;
+  flex-direction: column;
+  min-width: 0;
+}
 
   @media (max-width: 980px){
     .output{
@@ -234,35 +241,42 @@
   }
 
   /* Make code box scroll inside panel */
-  pre{
-    margin:0;
-    padding: 12px;
-    border-radius: 12px;
-    border: 1px solid var(--line);
-    background: #0b1220;
-    color: #e5e7eb;
-    overflow:auto;
-    font-family: var(--mono);
-    font-size: 12px;
-    line-height: 1.5;
+pre{
+  margin:0;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #0b1220;
+  color: #e5e7eb;
 
-    flex: 1;
-    min-height: 0;
-  }
+  /* key: keep the long lines inside the box */
+  overflow: auto;
+  white-space: pre;
+
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
 
   /* Make preview scroll inside panel */
-  .previewBox{
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    background: #fff;
-    color: #111;
-    overflow:auto;
+.previewBox{
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: #111;
 
-    flex: 1;
-    min-height: 0;
+  overflow:auto;
 
-    padding: 12px;
-  }
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+
+  padding: 12px;
+}
 
   .toast{
     position: fixed;
