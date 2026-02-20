@@ -1,1 +1,674 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Project Task Calulator → Widget Generator</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:#111a33;
+      --muted:#9fb0d0;
+      --text:#eef2ff;
+      --line:rgba(255,255,255,.12);
+      --accent:#6ea8ff;
+      --accent2:#57d6c4;
+      --danger:#ff6b6b;
+      --ok:#42d27a;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Helvetica Neue", Helvetica, "Apple Color Emoji", "Segoe UI Emoji";
+    }
 
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family:var(--sans);
+      background: radial-gradient(1200px 700px at 20% 0%, #1a2a5a 0%, rgba(26,42,90,0) 65%),
+                  radial-gradient(1200px 700px at 80% 0%, #163d47 0%, rgba(22,61,71,0) 60%),
+                  var(--bg);
+      color:var(--text);
+      padding:24px;
+    }
+
+    .wrap{ max-width:1200px; margin:0 auto; }
+    header{
+      display:flex; flex-wrap:wrap; gap:12px; align-items:end; justify-content:space-between;
+      margin-bottom:16px;
+    }
+    h1{
+      font-size:18px; margin:0;
+      letter-spacing:.2px;
+    }
+    .sub{
+      margin:6px 0 0 0; color:var(--muted); font-size:13px; line-height:1.35;
+      max-width:780px;
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+
+    .toolbar{
+      display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;
+      margin:10px 0 14px 0;
+    }
+    .left, .right{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    label{
+      font-size:12px; color:var(--muted);
+      display:flex; flex-direction:column; gap:6px;
+    }
+    input[type="number"], input[type="text"], textarea{
+      font: 13px var(--sans);
+      padding:9px 10px;
+      border-radius:10px;
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.20);
+      color: var(--text);
+      outline:none;
+    }
+    input[type="number"]{ width:120px; }
+    input[type="text"]{ width:100%; }
+    textarea{ width:100%; min-height:36px; resize:vertical; }
+
+    .btn{
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.18);
+      color:var(--text);
+      padding:9px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-size:13px;
+      transition: transform .05s ease, background .15s ease, border-color .15s ease;
+      user-select:none;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      justify-content:center;
+      white-space:nowrap;
+    }
+    .btn:hover{ background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.2); }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{ background: rgba(110,168,255,.18); border-color: rgba(110,168,255,.55); }
+    .btn.primary:hover{ background: rgba(110,168,255,.25); }
+    .btn.good{ background: rgba(66,210,122,.15); border-color: rgba(66,210,122,.55); }
+    .btn.danger{ background: rgba(255,107,107,.12); border-color: rgba(255,107,107,.55); }
+
+    .grid{
+      width:100%;
+      overflow:auto;
+      border:1px solid var(--line);
+      border-radius:12px;
+    }
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      min-width:980px;
+    }
+    thead th{
+      position:sticky;
+      top:0;
+      background: rgba(10,16,32,.95);
+      backdrop-filter: blur(8px);
+      border-bottom:1px solid var(--line);
+      font-size:12px;
+      color:var(--muted);
+      text-align:left;
+      padding:10px;
+      z-index:1;
+    }
+    tbody td{
+      border-bottom:1px solid rgba(255,255,255,.06);
+      padding:10px;
+      vertical-align:top;
+    }
+    tbody tr:hover td{ background: rgba(255,255,255,.03); }
+    .col-task{ width:22%; min-width:220px; }
+    .col-role{ width:14%; min-width:140px; }
+    .col-hours{ width:120px; }
+    .col-duration{ width:120px; color:var(--muted); font-size:13px; white-space:nowrap; }
+    .col-notes{ width:34%; min-width:280px; }
+    .col-actions{ width:80px; text-align:right; white-space:nowrap; }
+
+    .summary{
+      display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;
+      margin-top:14px;
+      padding-top:14px;
+      border-top:1px solid rgba(255,255,255,.08);
+    }
+    .pill{
+      display:inline-flex; gap:8px; align-items:center;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      padding:10px 12px;
+      border-radius:999px;
+      font-size:13px;
+      color:var(--text);
+    }
+    .pill small{ color:var(--muted); font-size:12px; }
+    .pill b{ font-weight:700; }
+
+    .output{
+      margin-top:16px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width: 980px){
+      .output{ grid-template-columns: 1fr; }
+      input[type="number"]{ width:140px; }
+    }
+
+    .panel h2{
+      margin:0 0 10px 0;
+      font-size:14px;
+      letter-spacing:.2px;
+    }
+    .panel p{ margin:0 0 10px 0; font-size:12px; color:var(--muted); line-height:1.45; }
+    pre{
+      margin:0;
+      padding:12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.25);
+      overflow:auto;
+      font-family:var(--mono);
+      font-size:12px;
+      line-height:1.5;
+      color:#eaf0ff;
+      min-height:220px;
+      max-height:420px;
+    }
+    .previewBox{
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:12px;
+      background:#fff;
+      color:#111;
+      overflow:auto;
+      min-height:220px;
+      padding:12px;
+    }
+
+    .toast{
+      position:fixed;
+      bottom:18px;
+      left:50%;
+      transform:translateX(-50%);
+      background: rgba(0,0,0,.65);
+      border:1px solid rgba(255,255,255,.16);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:999px;
+      font-size:13px;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .2s ease, transform .2s ease;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 25px rgba(0,0,0,.35);
+    }
+    .toast.show{
+      opacity:1;
+      transform:translateX(-50%) translateY(-4px);
+    }
+    .hint{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:8px;
+      line-height:1.45;
+    }
+
+    .muted{ color:var(--muted); }
+    .kbd{
+      font-family:var(--mono);
+      font-size:11px;
+      padding:2px 6px;
+      border-radius:6px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.18);
+      color:var(--text);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Project Tasks → Salesbuildr TinyMCE Widget Generator</h1>
+        <p class="sub">
+          Enter Task / Role / Est Hours / Notes. Duration is calculated using <b>rounded up to next 0.5 day</b> and shown only internally.
+          The generated HTML widget is customer-facing: it shows <b>Task, Role, Notes</b> + <b>Total Effort Hours</b>. Rows with hours = 0 are excluded.
+        </p>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="toolbar">
+        <div class="left">
+          <label>
+            Hours per day
+            <input id="hoursPerDay" type="number" min="1" step="1" value="8" />
+          </label>
+
+          <label>
+            Customer widget title (optional)
+            <input id="widgetTitle" type="text" placeholder="e.g., Project Tasks and Notes" />
+          </label>
+        </div>
+
+        <div class="right">
+          <button class="btn" id="addRowBtn">➕ Add row</button>
+          <button class="btn" id="seedExampleBtn">✨ Load example</button>
+          <button class="btn danger" id="clearBtn">🧹 Clear</button>
+        </div>
+      </div>
+
+      <div class="grid" aria-label="Tasks grid">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-task">Task</th>
+              <th class="col-role">Role</th>
+              <th class="col-hours">Est. Hours</th>
+              <th class="col-duration">Duration</th>
+              <th class="col-notes">Notes</th>
+              <th class="col-actions"></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="summary">
+        <div class="pill">
+          <small>Total Hours (non-zero rows):</small>
+          <b id="totalHours">0</b>
+        </div>
+
+        <div class="pill">
+          <small>Rows included in widget:</small>
+          <b id="includedCount">0</b>
+        </div>
+
+        <div class="right">
+          <button class="btn primary" id="generateBtn">🧩 Generate TinyMCE HTML</button>
+          <button class="btn good" id="copyBtn" disabled>📋 Copy HTML</button>
+        </div>
+      </div>
+
+      <div class="hint">
+        Tip: paste the copied HTML into Salesbuildr’s editor. If formatting changes, we can adjust the inline styles to match your theme.
+        Use <span class="kbd">Tab</span> to move across fields quickly.
+      </div>
+    </div>
+
+    <div class="output">
+      <div class="card panel">
+        <h2>Generated HTML (paste into TinyMCE)</h2>
+        <p>The widget output only shows <b>Task</b>, <b>Role</b>, <b>Notes</b>, plus <b>Total Effort Hours</b>.</p>
+        <pre id="htmlOut" aria-label="Generated HTML"></pre>
+      </div>
+
+      <div class="card panel">
+        <h2>Preview</h2>
+        <p>This is a rough preview. TinyMCE/Salesbuildr may apply its own typography.</p>
+        <div class="previewBox" id="preview" aria-label="Widget preview"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // -----------------------------
+    // Core configuration / helpers
+    // -----------------------------
+    const STORAGE_KEY = "sb_task_widget_v1";
+
+    function showToast(msg){
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      setTimeout(() => el.classList.remove("show"), 1400);
+    }
+
+    function escapeHtml(str){
+      return (str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function num(v){
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    // Always round UP to next 0.5 day, then display "X days" or "X–Y days"
+    function durationRange(hours, hoursPerDay){
+      const h = num(hours);
+      const hpd = Math.max(1, num(hoursPerDay));
+
+      if (h <= 0) return "";
+
+      const rawDays = h / hpd;
+      let rounded = Math.ceil(rawDays * 2) / 2; // up to next half-day
+
+      // Optional: enforce minimum of 1 day if you want to avoid 0–1 days
+      // rounded = Math.max(1, rounded);
+
+      if (rounded % 1 === 0){
+        return `${rounded} day${rounded === 1 ? "" : "s"}`;
+      }
+      const lower = Math.floor(rounded);
+      const upper = lower + 1;
+      return `${lower}\u2013${upper} days`;
+    }
+
+    function roundHoursDisplay(total){
+      // Keep whole hours if integer; otherwise 1 decimal
+      return Number.isInteger(total) ? String(total) : total.toFixed(1);
+    }
+
+    // -----------------------------
+    // State
+    // -----------------------------
+    let rows = [];
+
+    function defaultRow(){
+      return { task:"", role:"", hours:"", notes:"" };
+    }
+
+    function save(){
+      const hoursPerDay = document.getElementById("hoursPerDay").value;
+      const widgetTitle = document.getElementById("widgetTitle").value;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ hoursPerDay, widgetTitle, rows }));
+    }
+
+    function load(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        if (!data || !Array.isArray(data.rows)) return false;
+        rows = data.rows;
+        document.getElementById("hoursPerDay").value = data.hoursPerDay ?? 8;
+        document.getElementById("widgetTitle").value = data.widgetTitle ?? "";
+        return true;
+      }catch{
+        return false;
+      }
+    }
+
+    // -----------------------------
+    // Rendering
+    // -----------------------------
+    function render(){
+      const tbody = document.getElementById("tbody");
+      tbody.innerHTML = "";
+
+      const hpd = document.getElementById("hoursPerDay").value;
+
+      rows.forEach((r, idx) => {
+        const tr = document.createElement("tr");
+
+        // Task
+        const tdTask = document.createElement("td");
+        tdTask.className = "col-task";
+        tdTask.innerHTML = `<input type="text" placeholder="e.g., Azure Network Design & VPN Architecture" value="${escapeHtml(r.task)}" />`;
+        tdTask.querySelector("input").addEventListener("input", (e) => {
+          rows[idx].task = e.target.value;
+          save();
+        });
+
+        // Role
+        const tdRole = document.createElement("td");
+        tdRole.className = "col-role";
+        tdRole.innerHTML = `<input type="text" placeholder="e.g., Engineer" value="${escapeHtml(r.role)}" />`;
+        tdRole.querySelector("input").addEventListener("input", (e) => {
+          rows[idx].role = e.target.value;
+          save();
+        });
+
+        // Hours
+        const tdHours = document.createElement("td");
+        tdHours.className = "col-hours";
+        tdHours.innerHTML = `<input type="number" min="0" step="0.5" placeholder="0" value="${escapeHtml(r.hours)}" />`;
+        tdHours.querySelector("input").addEventListener("input", (e) => {
+          rows[idx].hours = e.target.value;
+          // Update duration + totals live
+          updateTotalsAndDurations();
+          save();
+        });
+
+        // Duration (calculated, internal-only)
+        const tdDur = document.createElement("td");
+        tdDur.className = "col-duration";
+        tdDur.textContent = durationRange(r.hours, hpd);
+
+        // Notes
+        const tdNotes = document.createElement("td");
+        tdNotes.className = "col-notes";
+        tdNotes.innerHTML = `<textarea placeholder="e.g., Address space, subnets, gateway sizing">${escapeHtml(r.notes)}</textarea>`;
+        tdNotes.querySelector("textarea").addEventListener("input", (e) => {
+          rows[idx].notes = e.target.value;
+          save();
+        });
+
+        // Actions
+        const tdActions = document.createElement("td");
+        tdActions.className = "col-actions";
+        const delBtn = document.createElement("button");
+        delBtn.className = "btn danger";
+        delBtn.textContent = "🗑️";
+        delBtn.title = "Delete row";
+        delBtn.addEventListener("click", () => {
+          rows.splice(idx, 1);
+          render();
+          updateTotalsAndDurations();
+          save();
+        });
+        tdActions.appendChild(delBtn);
+
+        tr.appendChild(tdTask);
+        tr.appendChild(tdRole);
+        tr.appendChild(tdHours);
+        tr.appendChild(tdDur);
+        tr.appendChild(tdNotes);
+        tr.appendChild(tdActions);
+        tbody.appendChild(tr);
+      });
+
+      updateTotalsAndDurations();
+    }
+
+    function updateTotalsAndDurations(){
+      const hpd = document.getElementById("hoursPerDay").value;
+
+      // Update duration cells
+      const tbody = document.getElementById("tbody");
+      Array.from(tbody.querySelectorAll("tr")).forEach((tr, idx) => {
+        const durCell = tr.querySelector(".col-duration");
+        if (durCell) durCell.textContent = durationRange(rows[idx]?.hours, hpd);
+      });
+
+      // Totals / included rows (non-zero hours)
+      let total = 0;
+      let included = 0;
+
+      rows.forEach(r => {
+        const h = num(r.hours);
+        if (h > 0){
+          total += h;
+          included += 1;
+        }
+      });
+
+      document.getElementById("totalHours").textContent = roundHoursDisplay(total);
+      document.getElementById("includedCount").textContent = included;
+
+      // Invalidate output when edits happen (optional)
+      // document.getElementById("copyBtn").disabled = true;
+      // document.getElementById("htmlOut").textContent = "";
+      // document.getElementById("preview").innerHTML = "";
+    }
+
+    // -----------------------------
+    // HTML Widget Generation
+    // -----------------------------
+    function generateWidgetHTML(){
+      const title = (document.getElementById("widgetTitle").value || "").trim();
+      const hpd = document.getElementById("hoursPerDay").value;
+
+      const includedRows = rows
+        .map(r => ({
+          task: (r.task || "").trim(),
+          role: (r.role || "").trim(),
+          notes: (r.notes || "").trim(),
+          hours: num(r.hours),
+          duration: durationRange(r.hours, hpd)
+        }))
+        .filter(r => r.hours > 0 && (r.task || r.role || r.notes)); // omit 0 hours, and also avoid blank lines
+
+      const totalHours = includedRows.reduce((sum, r) => sum + r.hours, 0);
+
+      // Customer-facing widget: Task | Role | Notes + Total hours only
+      // Inline styles for TinyMCE consistency
+      const tableRowsHtml = includedRows.map(r => {
+        return `
+          <tr>
+            <td style="padding:8px 10px;border:1px solid #e6e6e6;vertical-align:top;"><strong>${escapeHtml(r.task)}</strong></td>
+            <td style="padding:8px 10px;border:1px solid #e6e6e6;vertical-align:top;white-space:nowrap;">${escapeHtml(r.role)}</td>
+            <td style="padding:8px 10px;border:1px solid #e6e6e6;vertical-align:top;">${escapeHtml(r.notes)}</td>
+          </tr>
+        `.trim();
+      }).join("\n");
+
+      const safeTitle = escapeHtml(title);
+      const totalLabel = `Total Effort Hours: <strong>${escapeHtml(roundHoursDisplay(totalHours))}</strong>`;
+
+      const widgetHtml = `
+<div style="font-family: Arial, Helvetica, sans-serif;">
+  ${safeTitle ? `<h3 style="margin:0 0 10px 0;font-size:18px;">${safeTitle}</h3>` : ``}
+  <table style="width:100%;border-collapse:collapse;font-size:14px;">
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:8px 10px;border:1px solid #e6e6e6;background:#f7f7f7;">Task</th>
+        <th style="text-align:left;padding:8px 10px;border:1px solid #e6e6e6;background:#f7f7f7;">Role</th>
+        <th style="text-align:left;padding:8px 10px;border:1px solid #e6e6e6;background:#f7f7f7;">Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${tableRowsHtml || `
+      <tr>
+        <td colspan="3" style="padding:10px;border:1px solid #e6e6e6;color:#666;">No tasks with hours &gt; 0.</td>
+      </tr>
+      `.trim()}
+    </tbody>
+  </table>
+  <p style="margin:10px 0 0 0;font-size:14px;">${totalLabel}</p>
+</div>
+      `.trim();
+
+      return widgetHtml;
+    }
+
+    // -----------------------------
+    // Buttons / events
+    // -----------------------------
+    document.getElementById("addRowBtn").addEventListener("click", () => {
+      rows.push(defaultRow());
+      render();
+      save();
+    });
+
+    document.getElementById("seedExampleBtn").addEventListener("click", () => {
+      rows = [
+        { task:"Project Kickoff & Planning", role:"PM", hours:"8", notes:"Scope confirmation, schedule, communication plan" },
+        { task:"Azure Network Design & VPN Architecture", role:"Senior Engineer", hours:"8", notes:"Address space, subnets, gateway sizing" },
+        { task:"Create/Configure Azure Virtual Network & VPN Gateway", role:"Senior Engineer", hours:"8", notes:"Includes site-to-site VPN to office(s)" },
+        { task:"Create/Configure Azure Server VMs", role:"Engineer", hours:"48", notes:"VM provisioning, OS config, patching" },
+        { task:"Security & Baseline Configuration", role:"Senior Engineer", hours:"24", notes:"NSGs, firewall rules, access controls" },
+        { task:"Data Migration Planning & Validation", role:"Senior Engineer", hours:"24", notes:"Migration approach and test validation" },
+        { task:"Migrate Data from On-Prem to Azure (standard servers)", role:"Engineer", hours:"48", notes:"File/data migration, integrity checks" },
+        { task:"Update Network & Process Documentation", role:"Engineer", hours:"8", notes:"Diagrams, runbooks, credentials handling" },
+        { task:"Project Management (ongoing)", role:"PM", hours:"48", notes:"Status updates, coordination" },
+        { task:"Travel (up to 1 hour)", role:"Engineer", hours:"0", notes:"Onsite travel allowance" }
+      ];
+      if (!document.getElementById("widgetTitle").value.trim()){
+        document.getElementById("widgetTitle").value = "Project Tasks and Notes";
+      }
+      render();
+      save();
+      showToast("Example loaded");
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      if (!confirm("Clear all rows?")) return;
+      rows = [ defaultRow() ];
+      document.getElementById("htmlOut").textContent = "";
+      document.getElementById("preview").innerHTML = "";
+      document.getElementById("copyBtn").disabled = true;
+      render();
+      save();
+      showToast("Cleared");
+    });
+
+    document.getElementById("hoursPerDay").addEventListener("input", () => {
+      updateTotalsAndDurations();
+      save();
+    });
+
+    document.getElementById("widgetTitle").addEventListener("input", () => {
+      save();
+    });
+
+    document.getElementById("generateBtn").addEventListener("click", () => {
+      const html = generateWidgetHTML();
+      document.getElementById("htmlOut").textContent = html;
+      document.getElementById("preview").innerHTML = html;
+      document.getElementById("copyBtn").disabled = false;
+      showToast("HTML generated");
+      save();
+    });
+
+    document.getElementById("copyBtn").addEventListener("click", async () => {
+      const html = document.getElementById("htmlOut").textContent;
+      if (!html.trim()) return;
+
+      try{
+        await navigator.clipboard.writeText(html);
+        showToast("Copied to clipboard");
+      }catch{
+        // Fallback
+        const ta = document.createElement("textarea");
+        ta.value = html;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        showToast("Copied (fallback)");
+      }
+    });
+
+    // -----------------------------
+    // Init
+    // -----------------------------
+    (function init(){
+      const hasSaved = load();
+      if (!hasSaved){
+        rows = [ defaultRow(), defaultRow() ];
+      }
+      render();
+    })();
+  </script>
+</body>
+</html>
