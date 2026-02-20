@@ -3,85 +3,94 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Project Task Calulator → Widget Generator</title>
+  <title>Project Tasks → Salesbuildr TinyMCE Widget Generator</title>
+
   <style>
     :root{
-      --bg:#0b1020;
-      --card:#111a33;
-      --muted:#9fb0d0;
-      --text:#eef2ff;
-      --line:rgba(255,255,255,.12);
-      --accent:#6ea8ff;
-      --accent2:#57d6c4;
-      --danger:#ff6b6b;
-      --ok:#42d27a;
-      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --bg:#ffffff;
+      --surface:#ffffff;
+      --surface2:#f8fafc;
+      --text:#0f172a;
+      --muted:#475569;
+      --line:rgba(15,23,42,.14);
+      --shadow: 0 10px 26px rgba(15,23,42,.10);
+      --accent:#2563eb;
+      --accent2:#059669;
+      --danger:#dc2626;
+
       --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Helvetica Neue", Helvetica, "Apple Color Emoji", "Segoe UI Emoji";
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
 
     *{ box-sizing:border-box; }
     body{
       margin:0;
       font-family:var(--sans);
-      background: radial-gradient(1200px 700px at 20% 0%, #1a2a5a 0%, rgba(26,42,90,0) 65%),
-                  radial-gradient(1200px 700px at 80% 0%, #163d47 0%, rgba(22,61,71,0) 60%),
-                  var(--bg);
-      color:var(--text);
-      padding:24px;
+      background: var(--bg);
+      color: var(--text);
+      padding: 22px;
     }
 
-    .wrap{ max-width:1200px; margin:0 auto; }
-    header{
-      display:flex; flex-wrap:wrap; gap:12px; align-items:end; justify-content:space-between;
-      margin-bottom:16px;
-    }
-    h1{
-      font-size:18px; margin:0;
-      letter-spacing:.2px;
-    }
+    .wrap{ max-width: 1200px; margin: 0 auto; }
+
+    header{ margin-bottom: 14px; }
+    h1{ margin:0; font-size:18px; letter-spacing:.2px; }
     .sub{
-      margin:6px 0 0 0; color:var(--muted); font-size:13px; line-height:1.35;
-      max-width:780px;
+      margin: 6px 0 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      max-width: 900px;
     }
 
     .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:14px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: var(--shadow);
     }
 
     .toolbar{
-      display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;
-      margin:10px 0 14px 0;
+      display:flex;
+      flex-wrap:wrap;
+      gap: 12px;
+      align-items:end;
+      justify-content:space-between;
+      margin: 10px 0 14px 0;
     }
-    .left, .right{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .left, .right{ display:flex; flex-wrap:wrap; gap: 10px; align-items:end; }
+
     label{
-      font-size:12px; color:var(--muted);
-      display:flex; flex-direction:column; gap:6px;
+      font-size:12px;
+      color: var(--muted);
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width: 220px;
     }
+
     input[type="number"], input[type="text"], textarea{
       font: 13px var(--sans);
-      padding:9px 10px;
-      border-radius:10px;
-      border:1px solid var(--line);
-      background: rgba(0,0,0,.20);
+      padding: 9px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #ffffff;
       color: var(--text);
       outline:none;
     }
-    input[type="number"]{ width:120px; }
-    input[type="text"]{ width:100%; }
-    textarea{ width:100%; min-height:36px; resize:vertical; }
+    input[type="number"]{ width: 140px; }
+    input[type="text"]{ width: 100%; }
+    textarea{ width:100%; min-height: 40px; resize: vertical; }
 
     .btn{
-      border:1px solid var(--line);
-      background: rgba(0,0,0,.18);
-      color:var(--text);
-      padding:9px 12px;
-      border-radius:12px;
+      border: 1px solid var(--line);
+      background: #ffffff;
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: 12px;
       cursor:pointer;
-      font-size:13px;
+      font-size: 13px;
       transition: transform .05s ease, background .15s ease, border-color .15s ease;
       user-select:none;
       display:inline-flex;
@@ -90,146 +99,171 @@
       justify-content:center;
       white-space:nowrap;
     }
-    .btn:hover{ background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.2); }
+    .btn:hover{ background: #f8fafc; border-color: rgba(15,23,42,.22); }
     .btn:active{ transform: translateY(1px); }
-    .btn.primary{ background: rgba(110,168,255,.18); border-color: rgba(110,168,255,.55); }
-    .btn.primary:hover{ background: rgba(110,168,255,.25); }
-    .btn.good{ background: rgba(66,210,122,.15); border-color: rgba(66,210,122,.55); }
-    .btn.danger{ background: rgba(255,107,107,.12); border-color: rgba(255,107,107,.55); }
+
+    .btn.primary{
+      background: rgba(37,99,235,.10);
+      border-color: rgba(37,99,235,.35);
+    }
+    .btn.primary:hover{ background: rgba(37,99,235,.14); }
+
+    .btn.good{
+      background: rgba(5,150,105,.10);
+      border-color: rgba(5,150,105,.35);
+    }
+    .btn.good:hover{ background: rgba(5,150,105,.14); }
+
+    .btn.danger{
+      background: rgba(220,38,38,.08);
+      border-color: rgba(220,38,38,.35);
+    }
+    .btn.danger:hover{ background: rgba(220,38,38,.12); }
 
     .grid{
       width:100%;
       overflow:auto;
-      border:1px solid var(--line);
-      border-radius:12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
     }
     table{
       width:100%;
       border-collapse:separate;
       border-spacing:0;
-      min-width:980px;
+      min-width: 980px;
     }
     thead th{
       position:sticky;
       top:0;
-      background: rgba(10,16,32,.95);
-      backdrop-filter: blur(8px);
-      border-bottom:1px solid var(--line);
-      font-size:12px;
-      color:var(--muted);
+      background: var(--surface2);
+      border-bottom: 1px solid var(--line);
+      font-size: 12px;
+      color: var(--muted);
       text-align:left;
-      padding:10px;
-      z-index:1;
+      padding: 10px;
+      z-index: 1;
     }
     tbody td{
-      border-bottom:1px solid rgba(255,255,255,.06);
-      padding:10px;
-      vertical-align:top;
+      border-bottom: 1px solid rgba(15,23,42,.06);
+      padding: 10px;
+      vertical-align: top;
     }
-    tbody tr:hover td{ background: rgba(255,255,255,.03); }
+    tbody tr:hover td{ background: rgba(15,23,42,.02); }
+
     .col-task{ width:22%; min-width:220px; }
     .col-role{ width:14%; min-width:140px; }
     .col-hours{ width:120px; }
-    .col-duration{ width:120px; color:var(--muted); font-size:13px; white-space:nowrap; }
+    .col-duration{ width:140px; color: var(--muted); font-size: 13px; white-space:nowrap; }
     .col-notes{ width:34%; min-width:280px; }
     .col-actions{ width:80px; text-align:right; white-space:nowrap; }
 
     .summary{
-      display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;
-      margin-top:14px;
-      padding-top:14px;
-      border-top:1px solid rgba(255,255,255,.08);
+      display:flex;
+      flex-wrap:wrap;
+      gap: 10px;
+      align-items:center;
+      justify-content:space-between;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(15,23,42,.10);
     }
     .pill{
-      display:inline-flex; gap:8px; align-items:center;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.18);
-      padding:10px 12px;
-      border-radius:999px;
-      font-size:13px;
-      color:var(--text);
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      border: 1px solid rgba(15,23,42,.12);
+      background: #ffffff;
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      color: var(--text);
     }
-    .pill small{ color:var(--muted); font-size:12px; }
-    .pill b{ font-weight:700; }
+    .pill small{ color: var(--muted); font-size: 12px; }
+    .pill b{ font-weight: 800; }
+
+    .hint{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.45;
+    }
+    .kbd{
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 6px;
+      border: 1px solid rgba(15,23,42,.16);
+      background: #ffffff;
+      color: var(--text);
+    }
 
     .output{
-      margin-top:16px;
+      margin-top: 16px;
       display:grid;
       grid-template-columns: 1fr 1fr;
-      gap:12px;
+      gap: 12px;
     }
     @media (max-width: 980px){
       .output{ grid-template-columns: 1fr; }
-      input[type="number"]{ width:140px; }
+      label{ min-width: 180px; }
     }
 
     .panel h2{
       margin:0 0 10px 0;
-      font-size:14px;
-      letter-spacing:.2px;
+      font-size: 14px;
+      letter-spacing: .2px;
     }
-    .panel p{ margin:0 0 10px 0; font-size:12px; color:var(--muted); line-height:1.45; }
+    .panel p{
+      margin:0 0 10px 0;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
     pre{
       margin:0;
-      padding:12px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.25);
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #0b1220;
+      color: #e5e7eb;
       overflow:auto;
-      font-family:var(--mono);
-      font-size:12px;
-      line-height:1.5;
-      color:#eaf0ff;
-      min-height:220px;
-      max-height:420px;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      min-height: 220px;
+      max-height: 420px;
     }
+
     .previewBox{
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:12px;
-      background:#fff;
-      color:#111;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      color: #111;
       overflow:auto;
-      min-height:220px;
-      padding:12px;
+      min-height: 220px;
+      padding: 12px;
     }
 
     .toast{
-      position:fixed;
-      bottom:18px;
-      left:50%;
-      transform:translateX(-50%);
-      background: rgba(0,0,0,.65);
-      border:1px solid rgba(255,255,255,.16);
-      color:var(--text);
-      padding:10px 12px;
-      border-radius:999px;
-      font-size:13px;
-      opacity:0;
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15,23,42,.92);
+      border: 1px solid rgba(255,255,255,.14);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      opacity: 0;
       pointer-events:none;
       transition: opacity .2s ease, transform .2s ease;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 10px 25px rgba(0,0,0,.35);
+      box-shadow: 0 10px 25px rgba(15,23,42,.20);
     }
     .toast.show{
-      opacity:1;
-      transform:translateX(-50%) translateY(-4px);
-    }
-    .hint{
-      font-size:12px;
-      color:var(--muted);
-      margin-top:8px;
-      line-height:1.45;
-    }
-
-    .muted{ color:var(--muted); }
-    .kbd{
-      font-family:var(--mono);
-      font-size:11px;
-      padding:2px 6px;
-      border-radius:6px;
-      border:1px solid rgba(255,255,255,.16);
-      background: rgba(0,0,0,.18);
-      color:var(--text);
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
     }
   </style>
 </head>
@@ -237,13 +271,12 @@
 <body>
   <div class="wrap">
     <header>
-      <div>
-        <h1>Project Tasks → Salesbuildr TinyMCE Widget Generator</h1>
-        <p class="sub">
-          Enter Task / Role / Est Hours / Notes. Duration is calculated using <b>rounded up to next 0.5 day</b> and shown only internally.
-          The generated HTML widget is customer-facing: it shows <b>Task, Role, Notes</b> + <b>Total Effort Hours</b>. Rows with hours = 0 are excluded.
-        </p>
-      </div>
+      <h1>Project Tasks → Salesbuildr TinyMCE Widget Generator</h1>
+      <p class="sub">
+        This is a lightweight, static (GitHub Pages-friendly) tool. Enter Task / Role / Est Hours / Notes.
+        Duration is calculated using <b>rounded up to next 0.5 day</b> and shown only internally.
+        The generated widget is customer-facing: it shows <b>Task, Role, Notes</b> + <b>Total Effort Hours</b>. Rows with hours = 0 are excluded.
+      </p>
     </header>
 
     <div class="card">
@@ -262,7 +295,7 @@
 
         <div class="right">
           <button class="btn" id="addRowBtn">➕ Add row</button>
-          <button class="btn" id="seedExampleBtn">✨ Load example</button>
+          <button class="btn primary" id="loadAzureBtn">☁️ Load Azure Migration (15)</button>
           <button class="btn danger" id="clearBtn">🧹 Clear</button>
         </div>
       </div>
@@ -274,7 +307,7 @@
               <th class="col-task">Task</th>
               <th class="col-role">Role</th>
               <th class="col-hours">Est. Hours</th>
-              <th class="col-duration">Duration</th>
+              <th class="col-duration">Duration (internal)</th>
               <th class="col-notes">Notes</th>
               <th class="col-actions"></th>
             </tr>
@@ -295,21 +328,20 @@
         </div>
 
         <div class="right">
-          <button class="btn primary" id="generateBtn">🧩 Generate TinyMCE HTML</button>
-          <button class="btn good" id="copyBtn" disabled>📋 Copy HTML</button>
+          <button class="btn good" id="generateBtn">🧩 Generate TinyMCE HTML</button>
+          <button class="btn" id="copyBtn" disabled>📋 Copy HTML</button>
         </div>
       </div>
 
       <div class="hint">
-        Tip: paste the copied HTML into Salesbuildr’s editor. If formatting changes, we can adjust the inline styles to match your theme.
-        Use <span class="kbd">Tab</span> to move across fields quickly.
+        Tip: paste the copied HTML into Salesbuildr’s editor. Use <span class="kbd">Tab</span> to move across fields quickly.
       </div>
     </div>
 
     <div class="output">
       <div class="card panel">
         <h2>Generated HTML (paste into TinyMCE)</h2>
-        <p>The widget output only shows <b>Task</b>, <b>Role</b>, <b>Notes</b>, plus <b>Total Effort Hours</b>.</p>
+        <p>Output only shows <b>Task</b>, <b>Role</b>, <b>Notes</b>, plus <b>Total Effort Hours</b>.</p>
         <pre id="htmlOut" aria-label="Generated HTML"></pre>
       </div>
 
@@ -325,9 +357,9 @@
 
   <script>
     // -----------------------------
-    // Core configuration / helpers
+    // Helpers / configuration
     // -----------------------------
-    const STORAGE_KEY = "sb_task_widget_v1";
+    const STORAGE_KEY = "sb_task_widget_v2_light_azure";
 
     function showToast(msg){
       const el = document.getElementById("toast");
@@ -350,18 +382,14 @@
       return Number.isFinite(n) ? n : 0;
     }
 
-    // Always round UP to next 0.5 day, then display "X days" or "X–Y days"
+    // Always round UP to next 0.5 day, display "X days" or "X–Y days"
     function durationRange(hours, hoursPerDay){
       const h = num(hours);
       const hpd = Math.max(1, num(hoursPerDay));
-
       if (h <= 0) return "";
 
       const rawDays = h / hpd;
-      let rounded = Math.ceil(rawDays * 2) / 2; // up to next half-day
-
-      // Optional: enforce minimum of 1 day if you want to avoid 0–1 days
-      // rounded = Math.max(1, rounded);
+      const rounded = Math.ceil(rawDays * 2) / 2; // up to next half-day
 
       if (rounded % 1 === 0){
         return `${rounded} day${rounded === 1 ? "" : "s"}`;
@@ -372,18 +400,41 @@
     }
 
     function roundHoursDisplay(total){
-      // Keep whole hours if integer; otherwise 1 decimal
       return Number.isInteger(total) ? String(total) : total.toFixed(1);
     }
-
-    // -----------------------------
-    // State
-    // -----------------------------
-    let rows = [];
 
     function defaultRow(){
       return { task:"", role:"", hours:"", notes:"" };
     }
+
+    // -----------------------------
+    // Template: Azure Migration (15 tasks)
+    // Edit these defaults anytime.
+    // -----------------------------
+    function azureMigrationTemplate(){
+      return [
+        { task:"Project Kickoff & Planning", role:"PM", hours:"8", notes:"Scope confirmation, schedule, communication plan" },
+        { task:"Azure Network Design & VPN Architecture", role:"Senior Engineer", hours:"8", notes:"Address space, subnets, gateway sizing" },
+        { task:"Create/Configure Azure Virtual Network & VPN Gateway", role:"Senior Engineer", hours:"8", notes:"Includes site-to-site VPN to office(s)" },
+        { task:"Create/Configure Azure Server VMs", role:"Engineer", hours:"48", notes:"VM provisioning, OS config, patching" },
+        { task:"Security & Baseline Configuration", role:"Senior Engineer", hours:"24", notes:"NSGs, firewall rules, access controls" },
+        { task:"Data Migration Planning & Validation", role:"Senior Engineer", hours:"24", notes:"Migration approach and test validation" },
+        { task:"Migrate Data from On-Prem to Azure (standard servers)", role:"Engineer", hours:"48", notes:"File/data migration, integrity checks" },
+        { task:"Migrate Data from On-Prem to Azure (vendor support)(optional)", role:"Senior Engineer", hours:"36", notes:"File/data migration, integrity checks from vendors" },
+        { task:"Configure Workstations & Printers for New Network", role:"Engineer", hours:"24", notes:"DNS, mappings, printer updates (limited scope)" },
+        { task:"Azure Virtual Desktop (AVD) Validation (if applicable)", role:"Senior Engineer", hours:"24", notes:"User access and performance validation" },
+        { task:"User Acceptance & Environment Validation", role:"PM / Engineer", hours:"12", notes:"Confirmation Azure environment is working" },
+        { task:"Decommission On-Prem VMs", role:"Engineer", hours:"12", notes:"Graceful shutdown, data verification" },
+        { task:"Decommission On-Prem Hosts", role:"Engineer", hours:"4", notes:"Host retirement and cleanup" },
+        { task:"Update Network & Process Documentation", role:"Engineer", hours:"8", notes:"Diagrams, runbooks, credentials handling" },
+        { task:"Project Management (ongoing)", role:"PM", hours:"48", notes:"Status updates, coordination" }
+      ];
+    }
+
+    // -----------------------------
+    // State + persistence
+    // -----------------------------
+    let rows = [];
 
     function save(){
       const hoursPerDay = document.getElementById("hoursPerDay").value;
@@ -397,6 +448,7 @@
         if (!raw) return false;
         const data = JSON.parse(raw);
         if (!data || !Array.isArray(data.rows)) return false;
+
         rows = data.rows;
         document.getElementById("hoursPerDay").value = data.hoursPerDay ?? 8;
         document.getElementById("widgetTitle").value = data.widgetTitle ?? "";
@@ -425,6 +477,7 @@
         tdTask.querySelector("input").addEventListener("input", (e) => {
           rows[idx].task = e.target.value;
           save();
+          autoRefreshOutputIfGenerated();
         });
 
         // Role
@@ -434,6 +487,7 @@
         tdRole.querySelector("input").addEventListener("input", (e) => {
           rows[idx].role = e.target.value;
           save();
+          autoRefreshOutputIfGenerated();
         });
 
         // Hours
@@ -442,12 +496,12 @@
         tdHours.innerHTML = `<input type="number" min="0" step="0.5" placeholder="0" value="${escapeHtml(r.hours)}" />`;
         tdHours.querySelector("input").addEventListener("input", (e) => {
           rows[idx].hours = e.target.value;
-          // Update duration + totals live
           updateTotalsAndDurations();
           save();
+          autoRefreshOutputIfGenerated();
         });
 
-        // Duration (calculated, internal-only)
+        // Duration (internal)
         const tdDur = document.createElement("td");
         tdDur.className = "col-duration";
         tdDur.textContent = durationRange(r.hours, hpd);
@@ -455,10 +509,11 @@
         // Notes
         const tdNotes = document.createElement("td");
         tdNotes.className = "col-notes";
-        tdNotes.innerHTML = `<textarea placeholder="e.g., Address space, subnets, gateway sizing">${escapeHtml(r.notes)}</textarea>`;
+        tdNotes.innerHTML = `<textarea placeholder="Notes shown to customer...">${escapeHtml(r.notes)}</textarea>`;
         tdNotes.querySelector("textarea").addEventListener("input", (e) => {
           rows[idx].notes = e.target.value;
           save();
+          autoRefreshOutputIfGenerated();
         });
 
         // Actions
@@ -473,6 +528,7 @@
           render();
           updateTotalsAndDurations();
           save();
+          autoRefreshOutputIfGenerated();
         });
         tdActions.appendChild(delBtn);
 
@@ -482,6 +538,7 @@
         tr.appendChild(tdDur);
         tr.appendChild(tdNotes);
         tr.appendChild(tdActions);
+
         tbody.appendChild(tr);
       });
 
@@ -498,10 +555,9 @@
         if (durCell) durCell.textContent = durationRange(rows[idx]?.hours, hpd);
       });
 
-      // Totals / included rows (non-zero hours)
+      // Totals / included rows (non-zero)
       let total = 0;
       let included = 0;
-
       rows.forEach(r => {
         const h = num(r.hours);
         if (h > 0){
@@ -512,15 +568,10 @@
 
       document.getElementById("totalHours").textContent = roundHoursDisplay(total);
       document.getElementById("includedCount").textContent = included;
-
-      // Invalidate output when edits happen (optional)
-      // document.getElementById("copyBtn").disabled = true;
-      // document.getElementById("htmlOut").textContent = "";
-      // document.getElementById("preview").innerHTML = "";
     }
 
     // -----------------------------
-    // HTML Widget Generation
+    // Widget HTML generation (customer-facing)
     // -----------------------------
     function generateWidgetHTML(){
       const title = (document.getElementById("widgetTitle").value || "").trim();
@@ -532,26 +583,21 @@
           role: (r.role || "").trim(),
           notes: (r.notes || "").trim(),
           hours: num(r.hours),
-          duration: durationRange(r.hours, hpd)
+          _duration: durationRange(r.hours, hpd) // internal only
         }))
-        .filter(r => r.hours > 0 && (r.task || r.role || r.notes)); // omit 0 hours, and also avoid blank lines
+        .filter(r => r.hours > 0 && (r.task || r.role || r.notes)); // omit 0 and empty
 
       const totalHours = includedRows.reduce((sum, r) => sum + r.hours, 0);
 
-      // Customer-facing widget: Task | Role | Notes + Total hours only
-      // Inline styles for TinyMCE consistency
-      const tableRowsHtml = includedRows.map(r => {
-        return `
-          <tr>
-            <td style="padding:8px 10px;border:1px solid #e6e6e6;vertical-align:top;"><strong>${escapeHtml(r.task)}</strong></td>
-            <td style="padding:8px 10px;border:1px solid #e6e6e6;vertical-align:top;white-space:nowrap;">${escapeHtml(r.role)}</td>
-            <td style="padding:8px 10px;border:1px solid #e6e6e6;vertical-align:top;">${escapeHtml(r.notes)}</td>
-          </tr>
-        `.trim();
-      }).join("\n");
-
       const safeTitle = escapeHtml(title);
       const totalLabel = `Total Effort Hours: <strong>${escapeHtml(roundHoursDisplay(totalHours))}</strong>`;
+
+      const tableRowsHtml = includedRows.map(r => `
+<tr>
+  <td style="padding:8px 10px;border:1px solid #e6e6e6;vertical-align:top;"><strong>${escapeHtml(r.task)}</strong></td>
+  <td style="padding:8px 10px;border:1px solid #e6e6e6;vertical-align:top;white-space:nowrap;">${escapeHtml(r.role)}</td>
+  <td style="padding:8px 10px;border:1px solid #e6e6e6;vertical-align:top;">${escapeHtml(r.notes)}</td>
+</tr>`.trim()).join("\n");
 
       const widgetHtml = `
 <div style="font-family: Arial, Helvetica, sans-serif;">
@@ -566,21 +612,29 @@
     </thead>
     <tbody>
       ${tableRowsHtml || `
-      <tr>
-        <td colspan="3" style="padding:10px;border:1px solid #e6e6e6;color:#666;">No tasks with hours &gt; 0.</td>
-      </tr>
-      `.trim()}
+<tr>
+  <td colspan="3" style="padding:10px;border:1px solid #e6e6e6;color:#666;">No tasks with hours &gt; 0.</td>
+</tr>`.trim()}
     </tbody>
   </table>
   <p style="margin:10px 0 0 0;font-size:14px;">${totalLabel}</p>
-</div>
-      `.trim();
+</div>`.trim();
 
       return widgetHtml;
     }
 
+    function autoRefreshOutputIfGenerated(){
+      // If user has already generated once, keep it in sync as they edit.
+      const htmlOut = document.getElementById("htmlOut");
+      if (htmlOut.textContent.trim()){
+        const html = generateWidgetHTML();
+        htmlOut.textContent = html;
+        document.getElementById("preview").innerHTML = html;
+      }
+    }
+
     // -----------------------------
-    // Buttons / events
+    // Button handlers
     // -----------------------------
     document.getElementById("addRowBtn").addEventListener("click", () => {
       rows.push(defaultRow());
@@ -588,25 +642,20 @@
       save();
     });
 
-    document.getElementById("seedExampleBtn").addEventListener("click", () => {
-      rows = [
-        { task:"Project Kickoff & Planning", role:"PM", hours:"8", notes:"Scope confirmation, schedule, communication plan" },
-        { task:"Azure Network Design & VPN Architecture", role:"Senior Engineer", hours:"8", notes:"Address space, subnets, gateway sizing" },
-        { task:"Create/Configure Azure Virtual Network & VPN Gateway", role:"Senior Engineer", hours:"8", notes:"Includes site-to-site VPN to office(s)" },
-        { task:"Create/Configure Azure Server VMs", role:"Engineer", hours:"48", notes:"VM provisioning, OS config, patching" },
-        { task:"Security & Baseline Configuration", role:"Senior Engineer", hours:"24", notes:"NSGs, firewall rules, access controls" },
-        { task:"Data Migration Planning & Validation", role:"Senior Engineer", hours:"24", notes:"Migration approach and test validation" },
-        { task:"Migrate Data from On-Prem to Azure (standard servers)", role:"Engineer", hours:"48", notes:"File/data migration, integrity checks" },
-        { task:"Update Network & Process Documentation", role:"Engineer", hours:"8", notes:"Diagrams, runbooks, credentials handling" },
-        { task:"Project Management (ongoing)", role:"PM", hours:"48", notes:"Status updates, coordination" },
-        { task:"Travel (up to 1 hour)", role:"Engineer", hours:"0", notes:"Onsite travel allowance" }
-      ];
-      if (!document.getElementById("widgetTitle").value.trim()){
-        document.getElementById("widgetTitle").value = "Project Tasks and Notes";
+    document.getElementById("loadAzureBtn").addEventListener("click", () => {
+      rows = azureMigrationTemplate();
+      const titleEl = document.getElementById("widgetTitle");
+      if (!titleEl.value.trim()){
+        titleEl.value = "Project Tasks and Notes";
       }
+      // Clear prior output so it doesn't look mismatched; user can click Generate (or just edit then Generate)
+      document.getElementById("htmlOut").textContent = "";
+      document.getElementById("preview").innerHTML = "";
+      document.getElementById("copyBtn").disabled = true;
+
       render();
       save();
-      showToast("Example loaded");
+      showToast("Loaded Azure Migration (15)");
     });
 
     document.getElementById("clearBtn").addEventListener("click", () => {
@@ -623,10 +672,12 @@
     document.getElementById("hoursPerDay").addEventListener("input", () => {
       updateTotalsAndDurations();
       save();
+      autoRefreshOutputIfGenerated();
     });
 
     document.getElementById("widgetTitle").addEventListener("input", () => {
       save();
+      autoRefreshOutputIfGenerated();
     });
 
     document.getElementById("generateBtn").addEventListener("click", () => {
@@ -646,7 +697,7 @@
         await navigator.clipboard.writeText(html);
         showToast("Copied to clipboard");
       }catch{
-        // Fallback
+        // Fallback copy
         const ta = document.createElement("textarea");
         ta.value = html;
         ta.style.position = "fixed";
@@ -665,7 +716,9 @@
     (function init(){
       const hasSaved = load();
       if (!hasSaved){
-        rows = [ defaultRow(), defaultRow() ];
+        // Start with the full Azure list by default (since that's your repeatable workflow)
+        rows = azureMigrationTemplate();
+        document.getElementById("widgetTitle").value = "Project Tasks and Notes";
       }
       render();
     })();
