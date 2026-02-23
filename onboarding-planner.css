@@ -99,3 +99,60 @@ button:hover {
   overflow-x: auto;
   line-height: 1.6;
 }
+.plan-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.step-card {
+  border: 1px solid var(--border);
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.step-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.step-title {
+  font-weight: 700;
+  font-size: 16px;
+  margin: 0;
+}
+
+.step-meta {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #1e40af;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.avail-placeholder {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f9fafb;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
