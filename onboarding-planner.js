@@ -42,18 +42,25 @@ function addDays(date, days) {
 // Calendly availability
 // =======================
 async function fetchAvailability(eventTypeUri, startDateISO, windowDays = 5) {
- const start = new Date(startDateISO);
-start.setHours(0, 0, 0, 0);
+  // Create local date at midnight
+  const localStart = new Date(startDateISO + "T00:00:00");
 
-// Ensure we only show slots on/after the planned date (not the day before due to timezone)
-start.setHours(12, 0, 0, 0);
+  // Convert to true UTC start of that local day
+  const startUTC = new Date(
+    Date.UTC(
+      localStart.getFullYear(),
+      localStart.getMonth(),
+      localStart.getDate(),
+      0, 0, 0
+    )
+  );
 
-  const end = addDays(start, windowDays);
+  const endUTC = addDays(startUTC, windowDays);
 
   const url =
     `/api/calendly-availability?event_type=${encodeURIComponent(eventTypeUri)}` +
-    `&start_time=${encodeURIComponent(start.toISOString())}` +
-    `&end_time=${encodeURIComponent(end.toISOString())}`;
+    `&start_time=${encodeURIComponent(startUTC.toISOString())}` +
+    `&end_time=${encodeURIComponent(endUTC.toISOString())}`;
 
   const res = await fetch(url);
   const data = await res.json();
