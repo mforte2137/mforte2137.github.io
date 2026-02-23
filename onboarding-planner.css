@@ -190,3 +190,18 @@ button.secondary:hover {
 .slot-link:hover {
   background: #f9fafb;
 }
+/* MSP text input styling */
+input[type="text"] {
+  width: 260px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: white;
+  color: var(--text);
+  font-size: 14px;
+}
+
+input[type="text"]:focus {
+  border-color: var(--btn);
+  outline: none;
+}
