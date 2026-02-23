@@ -25,19 +25,21 @@ function buildPlan(goLiveDate) {
   // Backward offsets (business days before Go-Live)
   // These offsets are intentionally spread across ~3–4 weeks.
 const planStructure = [
-  { name: "Onboarding 1 – Quote + Tour", offset: 18 },
-  { name: "Focus – Product & Catalog", offset: 13 },
-  { name: "Focus – Templates & Widgets", offset: 8 },
-  { name: "Final Q&A", offset: 3 }
+  { step: 1, name: "Onboarding 1 – Quote + Tour", offset: 18, duration: 30 },
+  { step: 2, name: "Focus – Product & Catalog", offset: 13, duration: 30 },
+  { step: 3, name: "Focus – Templates & Widgets", offset: 8, duration: 30 },
+  { step: 4, name: "Final Q&A", offset: 3, duration: 30 }
 ];
 
   const rows = planStructure.map(step => {
     const meetingDate = subtractBusinessDays(goLiveDate, step.offset);
-    return {
-      name: step.name,
-      date: formatDate(meetingDate),
-      offset: step.offset
-    };
+  return {
+  step: step.step,
+  name: step.name,
+  date: formatDate(meetingDate),
+  offset: step.offset,
+  duration: step.duration
+};
   });
 
   return rows;
@@ -46,7 +48,7 @@ const planStructure = [
 function renderPlan(goLiveValue, rows) {
   let text = `Go-Live: ${goLiveValue}\n\n`;
   rows.forEach(r => {
-    text += `${r.name} → ${r.date}  (T-${r.offset} business days)\n`;
+   text += `Step ${r.step}: ${r.name} → ${r.date}  (${r.duration} min, T-${r.offset} business days)\n`;
   });
   return text;
 }
