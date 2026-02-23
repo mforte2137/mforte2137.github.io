@@ -1,1 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Onboarding Planner Test</title>
+</head>
+<body>
 
+<h2>Calendly Availability Test</h2>
+<button onclick="testAvailability()">Test Availability</button>
+
+<pre id="output"></pre>
+
+<script>
+async function testAvailability() {
+  const eventTypeUri = "https://api.calendly.com/event_types/73b9de31-6fe5-4bd9-bbd4-7afa346ee847"; // Final Q&A
+
+  const start = new Date("2026-02-24");
+  const end = new Date("2026-02-28");
+
+  const url = `/api/calendly-availability?event_type=${encodeURIComponent(eventTypeUri)}&start_time=${encodeURIComponent(start.toISOString())}&end_time=${encodeURIComponent(end.toISOString())}`;
+
+  const res = await fetch(url);
+  const data = await res.json();
+
+  document.getElementById("output").textContent = JSON.stringify(data, null, 2);
+}
+</script>
+
+</body>
+</html>
