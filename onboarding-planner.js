@@ -196,6 +196,9 @@ const mspInput = document.getElementById("mspName");
 const goLiveInput = document.getElementById("goLiveDate");
 const generateBtn = document.getElementById("generateBtn");
 const planCardsEl = document.getElementById("planCards");
+  const reportSection = document.getElementById("reportSection");
+const reportOutput = document.getElementById("reportOutput");
+const copyReportBtn = document.getElementById("copyReportBtn");
 
   generateBtn.addEventListener("click", () => {
 const mspValue = (mspInput.value || "").trim();
@@ -214,5 +217,23 @@ const goLiveDate = new Date(goLiveValue);
 const rows = buildPlan(goLiveDate);
 
 renderPlanCards(planCardsEl, mspValue, goLiveValue, rows);
+ // Build report text
+let reportText = `MSP: ${mspValue}\n`;
+reportText += `Go-Live: ${goLiveValue}\n\n`;
+
+rows.forEach(r => {
+  reportText += `Step ${r.step} – ${r.name}: ${r.date}\n`;
+});
+
+reportOutput.value = reportText;
+reportSection.style.display = "block";   
   });
+  copyReportBtn.addEventListener("click", () => {
+  reportOutput.select();
+  document.execCommand("copy");
+  copyReportBtn.textContent = "Copied!";
+  setTimeout(() => {
+    copyReportBtn.textContent = "Copy Report";
+  }, 1500);
+});
 });
