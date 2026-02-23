@@ -98,7 +98,7 @@ function buildPlan(goLiveDate) {
 // =======================
 // UI rendering (cards)
 // =======================
-function renderPlanCards(containerEl, goLiveValue, rows) {
+function renderPlanCards(containerEl, mspValue, goLiveValue, rows) {
   containerEl.innerHTML = "";
 
   // Go-Live header card
@@ -107,8 +107,8 @@ function renderPlanCards(containerEl, goLiveValue, rows) {
   header.innerHTML = `
     <div class="step-top">
       <div>
-        <div class="step-title">Go-Live</div>
-        <div class="step-meta">${goLiveValue}</div>
+<div class="step-title">${mspValue}</div>
+<div class="step-meta">Go-Live: ${goLiveValue}</div>
       </div>
       <span class="badge">Target</span>
     </div>
@@ -192,20 +192,27 @@ function renderPlanCards(containerEl, goLiveValue, rows) {
 // Wire up UI
 // =======================
 document.addEventListener("DOMContentLoaded", () => {
-  const goLiveInput = document.getElementById("goLiveDate");
-  const generateBtn = document.getElementById("generateBtn");
-  const planCardsEl = document.getElementById("planCards");
+const mspInput = document.getElementById("mspName");
+const goLiveInput = document.getElementById("goLiveDate");
+const generateBtn = document.getElementById("generateBtn");
+const planCardsEl = document.getElementById("planCards");
 
   generateBtn.addEventListener("click", () => {
-    const goLiveValue = goLiveInput.value;
-    if (!goLiveValue) {
-      alert("Please select a Go-Live date.");
-      return;
-    }
+const mspValue = (mspInput.value || "").trim();
+const goLiveValue = goLiveInput.value;
 
-    const goLiveDate = new Date(goLiveValue);
-    const rows = buildPlan(goLiveDate);
+if (!mspValue) {
+  alert("Please enter the MSP name.");
+  return;
+}
+if (!goLiveValue) {
+  alert("Please select a Go-Live date.");
+  return;
+}
 
-    renderPlanCards(planCardsEl, goLiveValue, rows);
+const goLiveDate = new Date(goLiveValue);
+const rows = buildPlan(goLiveDate);
+
+renderPlanCards(planCardsEl, mspValue, goLiveValue, rows);
   });
 });
