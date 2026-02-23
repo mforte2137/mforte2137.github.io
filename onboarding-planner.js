@@ -1,7 +1,19 @@
-// --- Date helpers (Mon–Fri only) ---
+// =======================
+// Calendly event type map
+// =======================
+const EVENT_TYPE_URIS = {
+  "Onboarding 1 – Quote + Tour": "https://api.calendly.com/event_types/1bdc4bfe-720d-4a59-be83-3833a8c42c38",
+  "Focus – Product & Catalog": "https://api.calendly.com/event_types/2458066e-c26c-4eb6-8aa9-4ae97ffaab21",
+  "Focus – Templates & Widgets": "https://api.calendly.com/event_types/c50c8b75-53d1-47b0-b59b-6dc7faed7527",
+  "Final Q&A": "https://api.calendly.com/event_types/73b9de31-6fe5-4bd9-bbd4-7afa346ee847"
+};
+
+// =======================
+// Date helpers (Mon–Fri)
+// =======================
 function isBusinessDay(date) {
   const day = date.getDay();
-  return day !== 0 && day !== 6; // 0 = Sun, 6 = Sat
+  return day !== 0 && day !== 6;
 }
 
 function subtractBusinessDays(date, days) {
@@ -19,12 +31,16 @@ function subtractBusinessDays(date, days) {
 function formatDate(date) {
   return date.toISOString().split("T")[0];
 }
+
 function addDays(date, days) {
   const d = new Date(date);
   d.setDate(d.getDate() + days);
   return d;
 }
 
+// =======================
+// Calendly availability
+// =======================
 async function fetchAvailability(eventTypeUri, startDateISO, windowDays = 5) {
   const start = new Date(startDateISO);
   start.setHours(0, 0, 0, 0);
@@ -45,47 +61,37 @@ async function fetchAvailability(eventTypeUri, startDateISO, windowDays = 5) {
 
   return data;
 }
-const EVENT_TYPE_URIS = {
-  "Onboarding 1 – Quote + Tour": "https://api.calendly.com/event_types/1bdc4bfe-720d-4a59-be83-3833a8c42c38",
-  "Focus – Product & Catalog": "https://api.calendly.com/event_types/2458066e-c26c-4eb6-8aa9-4ae97ffaab21",
-  "Focus – Templates & Widgets": "https://api.calendly.com/event_types/c50c8b75-53d1-47b0-b59b-6dc7faed7527",
-  "Final Q&A": "https://api.calendly.com/event_types/73b9de31-6fe5-4bd9-bbd4-7afa346ee847"
-};
-// --- Planner logic ---
+
+// =======================
+// Planner logic
+// =======================
 function buildPlan(goLiveDate) {
-  // Backward offsets (business days before Go-Live)
-  // These offsets are intentionally spread across ~3–4 weeks.
-const planStructure = [
-  { step: 1, name: "Onboarding 1 – Quote + Tour", offset: 18, duration: 30 },
-  { step: 2, name: "Focus – Product & Catalog", offset: 13, duration: 30 },
-  { step: 3, name: "Focus – Templates & Widgets", offset: 8, duration: 30 },
-  { step: 4, name: "Final Q&A", offset: 3, duration: 30 }
-];
+  const planStructure = [
+    { step: 1, name: "Onboarding 1 – Quote + Tour", offset: 18, duration: 30 },
+    { step: 2, name: "Focus – Product & Catalog", offset: 13, duration: 30 },
+    { step: 3, name: "Focus – Templates & Widgets", offset: 8, duration: 30 },
+    { step: 4, name: "Final Q&A", offset: 3, duration: 30 }
+  ];
 
-  const rows = planStructure.map(step => {
+  return planStructure.map((step) => {
     const meetingDate = subtractBusinessDays(goLiveDate, step.offset);
-  return {
-  step: step.step,
-  name: step.name,
-  date: formatDate(meetingDate),
-  offset: step.offset,
-  duration: step.duration
-};
+    return {
+      step: step.step,
+      name: step.name,
+      date: formatDate(meetingDate),
+      offset: step.offset,
+      duration: step.duration
+    };
   });
-
-  return rows;
 }
 
-function renderPlan(goLiveValue, rows) {
-  let text = `Go-Live: ${goLiveValue}\n\n`;
-  rows.forEach(r => {
-   text += `Step ${r.step}: ${r.name} → ${r.date}  (${r.duration} min, T-${r.offset} business days)\n`;
-  });
-  return text;
-}
+// =======================
+// UI rendering (cards)
+// =======================
 function renderPlanCards(containerEl, goLiveValue, rows) {
   containerEl.innerHTML = "";
 
+  // Go-Live header card
   const header = document.createElement("div");
   header.className = "step-card";
   header.innerHTML = `
@@ -123,7 +129,6 @@ function renderPlanCards(containerEl, goLiveValue, rows) {
       </div>
     `;
 
-    // Wire up button click
     const btn = card.querySelector('[data-action="show-avail"]');
     const availBox = card.querySelector(`#${availId}`);
 
@@ -143,12 +148,12 @@ function renderPlanCards(containerEl, goLiveValue, rows) {
         const slots = (data.collection || []).slice(0, 3);
 
         if (slots.length === 0) {
-          availBox.textContent = "No available times found in the next 5 days. Try adjusting the Go-Live date.";
+          availBox.textContent = "No available times found in the next 5 days. Try a different Go-Live date.";
         } else {
           const list = document.createElement("div");
           list.className = "avail-list";
 
-          slots.forEach(s => {
+          slots.forEach((s) => {
             const a = document.createElement("a");
             a.href = s.scheduling_url;
             a.target = "_blank";
@@ -172,3 +177,25 @@ function renderPlanCards(containerEl, goLiveValue, rows) {
     containerEl.appendChild(card);
   });
 }
+
+// =======================
+// Wire up UI
+// =======================
+document.addEventListener("DOMContentLoaded", () => {
+  const goLiveInput = document.getElementById("goLiveDate");
+  const generateBtn = document.getElementById("generateBtn");
+  const planCardsEl = document.getElementById("planCards");
+
+  generateBtn.addEventListener("click", () => {
+    const goLiveValue = goLiveInput.value;
+    if (!goLiveValue) {
+      alert("Please select a Go-Live date.");
+      return;
+    }
+
+    const goLiveDate = new Date(goLiveValue);
+    const rows = buildPlan(goLiveDate);
+
+    renderPlanCards(planCardsEl, goLiveValue, rows);
+  });
+});
