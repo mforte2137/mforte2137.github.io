@@ -1,31 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Onboarding Planner Test</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Onboarding Planner</title>
+  <link rel="stylesheet" href="onboarding-planner.css" />
+  <script defer src="onboarding-planner.js"></script>
 </head>
-<h1>Onboarding Planner</h1>
+<body>
+  <div class="container">
+    <h1>Onboarding Planner</h1>
 
-<label>
-  Go-Live Date:
-  <input type="date" id="goLiveDate">
-</label>
+    <div class="controls">
+      <label class="field">
+        <span class="label">Go-Live Date</span>
+        <input type="date" id="goLiveDate" />
+      </label>
 
-<button onclick="generatePlan()">Generate Plan</button>
+      <button id="generateBtn" type="button">Generate Plan</button>
+    </div>
 
-<hr>
-
-<pre id="output"></pre>
-
-<script>
-function generatePlan() {
-  const goLive = document.getElementById("goLiveDate").value;
-
-  if (!goLive) {
-    alert("Please select a Go-Live date.");
-    return;
-  }
-
-  document.getElementById("output").textContent =
-    "Selected Go-Live Date: " + goLive;
-}
-</script>
+    <div class="card">
+      <h2>Plan Output</h2>
+      <pre id="output" class="output">Select a Go-Live date, then click “Generate Plan”.</pre>
+    </div>
+  </div>
+</body>
+</html>
