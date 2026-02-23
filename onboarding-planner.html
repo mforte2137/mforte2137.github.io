@@ -3,28 +3,29 @@
 <head>
   <title>Onboarding Planner Test</title>
 </head>
-<body>
+<h1>Onboarding Planner</h1>
 
-<h2>Calendly Availability Test</h2>
-<button onclick="testAvailability()">Test Availability</button>
+<label>
+  Go-Live Date:
+  <input type="date" id="goLiveDate">
+</label>
+
+<button onclick="generatePlan()">Generate Plan</button>
+
+<hr>
 
 <pre id="output"></pre>
 
 <script>
-async function testAvailability() {
-  const eventTypeUri = "https://api.calendly.com/event_types/73b9de31-6fe5-4bd9-bbd4-7afa346ee847"; // Final Q&A
+function generatePlan() {
+  const goLive = document.getElementById("goLiveDate").value;
 
-  const start = new Date("2026-02-24");
-  const end = new Date("2026-02-28");
+  if (!goLive) {
+    alert("Please select a Go-Live date.");
+    return;
+  }
 
-  const url = `/api/calendly-availability?event_type=${encodeURIComponent(eventTypeUri)}&start_time=${encodeURIComponent(start.toISOString())}&end_time=${encodeURIComponent(end.toISOString())}`;
-
-  const res = await fetch(url);
-  const data = await res.json();
-
-  document.getElementById("output").textContent = JSON.stringify(data, null, 2);
+  document.getElementById("output").textContent =
+    "Selected Go-Live Date: " + goLive;
 }
 </script>
-
-</body>
-</html>
