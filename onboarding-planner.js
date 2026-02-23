@@ -42,8 +42,11 @@ function addDays(date, days) {
 // Calendly availability
 // =======================
 async function fetchAvailability(eventTypeUri, startDateISO, windowDays = 5) {
-  const start = new Date(startDateISO);
-  start.setHours(0, 0, 0, 0);
+ const start = new Date(startDateISO);
+start.setHours(0, 0, 0, 0);
+
+// Ensure we only show slots on/after the planned date (not the day before due to timezone)
+start.setHours(12, 0, 0, 0);
 
   const end = addDays(start, windowDays);
 
