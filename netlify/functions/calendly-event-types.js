@@ -42,7 +42,16 @@ exports.handler = async (event) => {
     }
     const eventTypes = JSON.parse(etText);
 
-    const simplified = (eventTypes.collection || []).map((et) => ({
+    const onboardingNames = [
+  "Onboarding 1 – Quote + Tour",
+  "Focus – Product & Catalog",
+  "Focus – Templates & Widgets",
+  "Final Q&A"
+];
+
+const simplified = (eventTypes.collection || [])
+  .filter(et => onboardingNames.includes(et.name))
+  .map((et) => ({
       name: et.name,
       uri: et.uri,
       scheduling_url: et.scheduling_url,
