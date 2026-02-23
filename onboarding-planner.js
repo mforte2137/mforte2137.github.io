@@ -19,7 +19,38 @@ function subtractBusinessDays(date, days) {
 function formatDate(date) {
   return date.toISOString().split("T")[0];
 }
+function addDays(date, days) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
 
+async function fetchAvailability(eventTypeUri, startDateISO, windowDays = 5) {
+  const start = new Date(startDateISO);
+  start.setHours(0, 0, 0, 0);
+
+  const end = addDays(start, windowDays);
+
+  const url =
+    `/api/calendly-availability?event_type=${encodeURIComponent(eventTypeUri)}` +
+    `&start_time=${encodeURIComponent(start.toISOString())}` +
+    `&end_time=${encodeURIComponent(end.toISOString())}`;
+
+  const res = await fetch(url);
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data?.detail || data?.error || "Availability request failed");
+  }
+
+  return data;
+}
+const EVENT_TYPE_URIS = {
+  "Onboarding 1 – Quote + Tour": "https://api.calendly.com/event_types/1bdc4bfe-720d-4a59-be83-3833a8c42c38",
+  "Focus – Product & Catalog": "https://api.calendly.com/event_types/2458066e-c26c-4eb6-8aa9-4ae97ffaab21",
+  "Focus – Templates & Widgets": "https://api.calendly.com/event_types/c50c8b75-53d1-47b0-b59b-6dc7faed7527",
+  "Final Q&A": "https://api.calendly.com/event_types/73b9de31-6fe5-4bd9-bbd4-7afa346ee847"
+};
 // --- Planner logic ---
 function buildPlan(goLiveDate) {
   // Backward offsets (business days before Go-Live)
@@ -55,7 +86,6 @@ function renderPlan(goLiveValue, rows) {
 function renderPlanCards(containerEl, goLiveValue, rows) {
   containerEl.innerHTML = "";
 
-  // Optional: show Go-Live as a small header card
   const header = document.createElement("div");
   header.className = "step-card";
   header.innerHTML = `
@@ -69,9 +99,12 @@ function renderPlanCards(containerEl, goLiveValue, rows) {
   `;
   containerEl.appendChild(header);
 
-  rows.forEach(r => {
+  rows.forEach((r, idx) => {
     const card = document.createElement("div");
     card.className = "step-card";
+
+    const availId = `avail_${idx}`;
+
     card.innerHTML = `
       <div class="step-top">
         <div>
@@ -81,28 +114,61 @@ function renderPlanCards(containerEl, goLiveValue, rows) {
         <span class="badge">Not booked</span>
       </div>
 
-      <div class="avail-placeholder">
-        Availability will appear here next.
+      <div class="step-actions">
+        <button class="secondary" type="button" data-action="show-avail">Show availability</button>
+      </div>
+
+      <div id="${availId}" class="avail-placeholder">
+        Click “Show availability” to load your real Calendly slots for this step.
       </div>
     `;
+
+    // Wire up button click
+    const btn = card.querySelector('[data-action="show-avail"]');
+    const availBox = card.querySelector(`#${availId}`);
+
+    btn.addEventListener("click", async () => {
+      const eventTypeUri = EVENT_TYPE_URIS[r.name];
+      if (!eventTypeUri) {
+        availBox.textContent = "No event type mapping found for this step.";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Loading…";
+      availBox.textContent = "Loading availability from Calendly…";
+
+      try {
+        const data = await fetchAvailability(eventTypeUri, r.date, 5);
+        const slots = (data.collection || []).slice(0, 3);
+
+        if (slots.length === 0) {
+          availBox.textContent = "No available times found in the next 5 days. Try adjusting the Go-Live date.";
+        } else {
+          const list = document.createElement("div");
+          list.className = "avail-list";
+
+          slots.forEach(s => {
+            const a = document.createElement("a");
+            a.href = s.scheduling_url;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            a.className = "slot-link";
+            a.textContent = new Date(s.start_time).toLocaleString();
+            list.appendChild(a);
+          });
+
+          availBox.innerHTML = "";
+          availBox.appendChild(list);
+        }
+      } catch (e) {
+        availBox.textContent = "Error: " + e.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Show availability";
+      }
+    });
+
     containerEl.appendChild(card);
   });
 }
-// --- Wire up UI ---
-document.addEventListener("DOMContentLoaded", () => {
-  const goLiveInput = document.getElementById("goLiveDate");
-  const generateBtn = document.getElementById("generateBtn");
-  const planCardsEl = document.getElementById("planCards");
-
-  generateBtn.addEventListener("click", () => {
-    const goLiveValue = goLiveInput.value;
-    if (!goLiveValue) {
-      alert("Please select a Go-Live date.");
-      return;
-    }
-
-    const goLiveDate = new Date(goLiveValue);
-    const rows = buildPlan(goLiveDate);
-    renderPlanCards(planCardsEl, goLiveValue, rows);
-  });
-});
