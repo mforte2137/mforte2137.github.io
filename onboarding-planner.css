@@ -156,3 +156,37 @@ button:hover {
   color: var(--muted);
   font-size: 13px;
 }
+.step-actions {
+  margin-top: 10px;
+}
+
+button.secondary {
+  background: #ffffff;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+button.secondary:hover {
+  background: #f9fafb;
+}
+
+.avail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slot-link {
+  display: inline-block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  text-decoration: none;
+  color: var(--btn);
+  font-weight: 600;
+}
+
+.slot-link:hover {
+  background: #f9fafb;
+}
