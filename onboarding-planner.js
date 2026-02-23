@@ -24,12 +24,12 @@ function formatDate(date) {
 function buildPlan(goLiveDate) {
   // Backward offsets (business days before Go-Live)
   // These offsets are intentionally spread across ~3–4 weeks.
-  const planStructure = [
-    { name: "Final Q&A", offset: 3 },
-    { name: "Focus – Templates & Widgets", offset: 8 },
-    { name: "Focus – Product & Catalog", offset: 13 },
-    { name: "Onboarding 1 – Quote + Tour", offset: 18 }
-  ];
+const planStructure = [
+  { name: "Final Q&A", offset: 3 },
+  { name: "Focus – Templates & Widgets", offset: 8 },
+  { name: "Focus – Product & Catalog", offset: 13 },
+  { name: "Onboarding 1 – Quote + Tour", offset: 18 }
+];
 
   const rows = planStructure.map(step => {
     const meetingDate = subtractBusinessDays(goLiveDate, step.offset);
