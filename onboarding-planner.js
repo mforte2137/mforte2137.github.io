@@ -52,12 +52,47 @@ function renderPlan(goLiveValue, rows) {
   });
   return text;
 }
+function renderPlanCards(containerEl, goLiveValue, rows) {
+  containerEl.innerHTML = "";
 
+  // Optional: show Go-Live as a small header card
+  const header = document.createElement("div");
+  header.className = "step-card";
+  header.innerHTML = `
+    <div class="step-top">
+      <div>
+        <div class="step-title">Go-Live</div>
+        <div class="step-meta">${goLiveValue}</div>
+      </div>
+      <span class="badge">Target</span>
+    </div>
+  `;
+  containerEl.appendChild(header);
+
+  rows.forEach(r => {
+    const card = document.createElement("div");
+    card.className = "step-card";
+    card.innerHTML = `
+      <div class="step-top">
+        <div>
+          <div class="step-title">Step ${r.step}: ${r.name}</div>
+          <div class="step-meta">${r.date} • ${r.duration} min • T-${r.offset} business days</div>
+        </div>
+        <span class="badge">Not booked</span>
+      </div>
+
+      <div class="avail-placeholder">
+        Availability will appear here next.
+      </div>
+    `;
+    containerEl.appendChild(card);
+  });
+}
 // --- Wire up UI ---
 document.addEventListener("DOMContentLoaded", () => {
   const goLiveInput = document.getElementById("goLiveDate");
   const generateBtn = document.getElementById("generateBtn");
-  const outputEl = document.getElementById("output");
+  const planCardsEl = document.getElementById("planCards");
 
   generateBtn.addEventListener("click", () => {
     const goLiveValue = goLiveInput.value;
@@ -68,6 +103,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const goLiveDate = new Date(goLiveValue);
     const rows = buildPlan(goLiveDate);
-    outputEl.textContent = renderPlan(goLiveValue, rows);
+    renderPlanCards(planCardsEl, goLiveValue, rows);
   });
 });
