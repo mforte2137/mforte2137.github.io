@@ -7,7 +7,8 @@ const EVENT_TYPE_URIS = {
   "Focus – Templates & Widgets": "https://api.calendly.com/event_types/c50c8b75-53d1-47b0-b59b-6dc7faed7527",
   "Final Q&A": "https://api.calendly.com/event_types/73b9de31-6fe5-4bd9-bbd4-7afa346ee847"
 };
-
+const scheduled = {}; 
+// scheduled[r.name] = { start_time, scheduling_url }
 // =======================
 // Date helpers (Mon–Fri)
 // =======================
@@ -94,7 +95,28 @@ function buildPlan(goLiveDate) {
     };
   });
 }
+function buildReportText(mspValue, goLiveValue, rows) {
+  let text = `MSP: ${mspValue}\n`;
+  text += `Go-Live: ${goLiveValue}\n\n`;
 
+  const scheduledRows = rows.filter(r => scheduled[r.name]);
+
+  if (scheduledRows.length === 0) {
+    text += "No onboarding sessions scheduled yet.\n";
+    text += "Tip: Click “Show availability”, then click a time slot.\n";
+    return text;
+  }
+
+  scheduledRows.forEach(r => {
+    const s = scheduled[r.name];
+    const local = new Date(s.start_time).toLocaleString();
+    text += `Step ${r.step} – ${r.name}\n`;
+    text += `Scheduled: ${local}\n`;
+    text += `Link: ${s.scheduling_url}\n\n`;
+  });
+
+  return text.trim();
+}
 // =======================
 // UI rendering (cards)
 // =======================
@@ -163,15 +185,41 @@ function renderPlanCards(containerEl, mspValue, goLiveValue, rows) {
           const list = document.createElement("div");
           list.className = "avail-list";
 
-          slots.forEach((s) => {
-            const a = document.createElement("a");
-            a.href = s.scheduling_url;
-            a.target = "_blank";
-            a.rel = "noopener noreferrer";
-            a.className = "slot-link";
-            a.textContent = new Date(s.start_time).toLocaleString();
-            list.appendChild(a);
-          });
+ slots.forEach((s) => {
+  const btnSlot = document.createElement("button");
+  btnSlot.type = "button";
+  btnSlot.className = "slot-btn";
+  btnSlot.textContent = new Date(s.start_time).toLocaleString();
+
+  btnSlot.addEventListener("click", () => {
+    // Save scheduled selection
+    scheduled[r.name] = {
+      start_time: s.start_time,
+      scheduling_url: s.scheduling_url
+    };
+
+    // Update badge to "Scheduled"
+    const badge = card.querySelector(".badge");
+    badge.textContent = "Scheduled";
+    badge.classList.add("badge-scheduled");
+
+    // Replace availability box with confirm + booking link
+    availBox.innerHTML = `
+      <div class="scheduled-row">
+        <div><strong>Scheduled:</strong> ${new Date(s.start_time).toLocaleString()}</div>
+        <a class="slot-link" href="${s.scheduling_url}" target="_blank" rel="noopener noreferrer">
+          Open booking link
+        </a>
+      </div>
+    `;
+
+    // Update report immediately (ONLY scheduled items)
+    reportOutput.value = buildReportText(mspValue, goLiveValue, rows);
+    reportSection.style.display = "block";
+  });
+
+  list.appendChild(btnSlot);
+});
 
           availBox.innerHTML = "";
           availBox.appendChild(list);
@@ -218,15 +266,8 @@ const rows = buildPlan(goLiveDate);
 
 renderPlanCards(planCardsEl, mspValue, goLiveValue, rows);
  // Build report text
-let reportText = `MSP: ${mspValue}\n`;
-reportText += `Go-Live: ${goLiveValue}\n\n`;
-
-rows.forEach(r => {
-  reportText += `Step ${r.step} – ${r.name}: ${r.date}\n`;
-});
-
-reportOutput.value = reportText;
-reportSection.style.display = "block";   
+reportOutput.value = buildReportText(mspValue, goLiveValue, rows);
+reportSection.style.display = "block";  
   });
   copyReportBtn.addEventListener("click", () => {
   reportOutput.select();
