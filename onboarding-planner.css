@@ -223,3 +223,29 @@ input[type="text"]:focus {
 .report-actions {
   margin-top: 10px;
 }
+.slot-btn {
+  text-align: left;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  cursor: pointer;
+  color: var(--btn);
+  font-weight: 700;
+}
+
+.slot-btn:hover {
+  background: #f9fafb;
+}
+
+.badge-scheduled {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.scheduled-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
