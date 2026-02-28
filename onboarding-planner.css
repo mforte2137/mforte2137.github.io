@@ -278,3 +278,7 @@ input[type="text"]:focus {
   padding: 8px 14px;   /* match homework */
   line-height: 1;      /* match homework */
 }
+.step-actions button,
+.homework-btn {
+  font-size: 14px;
+}
