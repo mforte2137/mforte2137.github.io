@@ -284,10 +284,11 @@ input[type="text"]:focus {
 }
 .app-banner {
   width: 100%;
-  background-color: #2863EB;   /* Brand blue */
+  background-color: #2863EB;
   border-radius: 10px;
   padding: 20px 24px;
   margin-bottom: 24px;
+  box-shadow: 0 6px 18px rgba(40, 99, 235, 0.25);
 }
 
 .banner-inner {
