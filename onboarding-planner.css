@@ -252,15 +252,16 @@ input[type="text"]:focus {
 .homework-btn {
   display: inline-block;
   margin-top: 10px;
+  margin-left: 10px;   /* Adds space between buttons */
   padding: 8px 14px;
-  background-color: #f3f4f6;
+  background-color: #B3CEF9;  /* Your new color */
   border-radius: 6px;
   text-decoration: none;
   font-weight: 600;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  color: #1e3a8a;   /* Slightly darker blue text for contrast */
+  border: 1px solid #9bbcf4;
 }
 
 .homework-btn:hover {
-  background-color: #e5e7eb;
+  background-color: #9bbcf4;
 }
