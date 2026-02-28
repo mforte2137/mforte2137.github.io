@@ -286,7 +286,7 @@ input[type="text"]:focus {
   width: 100%;
   background-color: #2863EB;
   border-radius: 10px;
-  padding: 20px 24px;
+  padding: 16px 24px;
   margin-bottom: 24px;
   box-shadow: 0 6px 18px rgba(40, 99, 235, 0.25);
 }
@@ -310,11 +310,12 @@ input[type="text"]:focus {
 .banner-title {
   color: white;
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.2px;
 }
 
 .banner-subtitle {
-  color: #cbd5e1;
-  font-size: 14px;
-  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  margin-top: 3px;
 }
