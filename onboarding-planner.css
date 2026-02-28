@@ -265,3 +265,8 @@ input[type="text"]:focus {
 .homework-btn:hover {
   background-color: #9bbcf4;
 }
+.step-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
