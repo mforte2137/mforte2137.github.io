@@ -157,15 +157,16 @@ function renderPlanCards(containerEl, mspValue, goLiveValue, rows) {
     Show availability
   </button>
 
-  ${r.step === 1 ? `
-    <a 
-      href=https://"docs.google.com/document/d/1azLuGUAr9wedx-2yQ4ZDvCYcxaAEuiw0hzYIF51bxHA/edit?usp=sharing"
-      target="_blank"
-      class="homework-btn"
-    >
-      View Session 1 Homework
-    </a>
-  ` : ''}
+${r.step === 1 ? `
+  <a 
+    href="https://docs.google.com/document/d/1azLuGUAr9wedx-2yQ4ZDvCYcxaAEuiw0hzYIF51bxHA/edit?usp=sharing"
+    target="_blank"
+    class="homework-btn"
+    rel="noopener noreferrer"
+  >
+    View Session 1 Homework
+  </a>
+` : ''}
 </div>
 
       <div id="${availId}" class="avail-placeholder">
