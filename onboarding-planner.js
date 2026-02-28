@@ -152,9 +152,21 @@ function renderPlanCards(containerEl, mspValue, goLiveValue, rows) {
         <span class="badge">Not booked</span>
       </div>
 
-      <div class="step-actions">
-        <button class="secondary" type="button" data-action="show-avail">Show availability</button>
-      </div>
+ <div class="step-actions">
+  <button class="secondary" type="button" data-action="show-avail">
+    Show availability
+  </button>
+
+  ${r.step === 1 ? `
+    <a 
+      href="https://docs.google.com/document/d/1azLuGUAr9wedx-2yQ4ZDvCYcxaAEuiw0hzYIF51bxHA/edit?tab=t.0"
+      target="_blank"
+      class="homework-btn"
+    >
+      View Session 1 Homework
+    </a>
+  ` : ''}
+</div>
 
       <div id="${availId}" class="avail-placeholder">
         Click “Show availability” to load your real Calendly slots for this step.
