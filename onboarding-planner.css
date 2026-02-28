@@ -271,3 +271,10 @@ input[type="text"]:focus {
   gap: 10px;
   align-items: center;
 }
+.step-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;   /* match homework */
+  line-height: 1;      /* match homework */
+}
