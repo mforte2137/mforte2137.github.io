@@ -282,3 +282,38 @@ input[type="text"]:focus {
 .homework-btn {
   font-size: 14px;
 }
+.app-banner {
+  width: 100%;
+  background: linear-gradient(90deg, #0f172a, #1e3a8a);
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.banner-inner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.banner-logo {
+  height: 50px;
+  width: auto;
+}
+
+.banner-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.banner-title {
+  color: white;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.banner-subtitle {
+  color: #cbd5e1;
+  font-size: 14px;
+  margin-top: 4px;
+}
