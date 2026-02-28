@@ -159,7 +159,7 @@ function renderPlanCards(containerEl, mspValue, goLiveValue, rows) {
 
 ${r.step === 1 ? `
   <a 
-    href="https://docs.google.com/document/d/1azLuGUAr9wedx-2yQ4ZDvCYcxaAEuiw0hzYIF51bxHA/edit?usp=sharing"
+    href="https://docs.google.com/document/d/1azLuGUAr9wedx-2yQ4ZDvCYcxaAEuiw0hzYIF51bxHA/view?usp=sharing"
     target="_blank"
     class="homework-btn"
     rel="noopener noreferrer"
