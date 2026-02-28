@@ -268,7 +268,7 @@ input[type="text"]:focus {
 }
 .step-actions {
   display: flex;
-  gap: 10px;
+  gap: 30px;
   align-items: center;
 }
 .step-actions button {
