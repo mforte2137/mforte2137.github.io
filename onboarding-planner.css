@@ -250,16 +250,17 @@ input[type="text"]:focus {
   gap: 8px;
 }
 .homework-btn {
-  display: inline-block;
-  margin-top: 10px;
-  margin-left: 10px;   /* Adds space between buttons */
+  display: inline-flex;      /* important */
+  align-items: center;       /* vertically center text */
+  justify-content: center;
   padding: 8px 14px;
-  background-color: #EEF2FF;  /* Your new color */
+  background-color: #B3CEF9;
   border-radius: 6px;
   text-decoration: none;
   font-weight: 600;
-  color: #1e3a8a;   /* Slightly darker blue text for contrast */
+  color: #1e3a8a;
   border: 1px solid #9bbcf4;
+  line-height: 1;            /* prevents weird height differences */
 }
 
 .homework-btn:hover {
