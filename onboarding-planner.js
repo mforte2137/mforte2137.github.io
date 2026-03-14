@@ -8,6 +8,7 @@ const copyReportBtn = document.getElementById("copyReport");
 const exportPlanBtn = document.getElementById("exportPlan");
 const importPlanFile = document.getElementById("importPlanFile");
 const agendaPanel = document.getElementById("agendaPanel");
+const copyAgendaBtn = document.getElementById("copyAgenda");
 
 let currentPlanData = null;
 
@@ -15,6 +16,7 @@ recommendBtn.addEventListener("click", generatePlan);
 copyReportBtn.addEventListener("click", copyReport);
 exportPlanBtn.addEventListener("click", exportPlan);
 importPlanFile.addEventListener("change", importPlan);
+copyAgendaBtn.addEventListener("click", copyAgenda);
 
 function generatePlan() {
   const mspName = document.getElementById("mspName").value.trim();
@@ -51,7 +53,8 @@ function generatePlan() {
 
   const whyBullets = buildWhyBullets(recommendedTypeKey, q1, q2, q3, priorities, q5);
   const planMeta = getPlanMeta(recommendedTypeKey);
-  const sessions = buildSessions(recommendedTypeKey, priorities, q5);
+  let sessions = buildSessions(recommendedTypeKey, priorities, q5);
+  sessions = assignPlannedDates(sessions, goLiveDate, recommendedTypeKey);
 
   currentPlanData = {
     mspName,
@@ -546,6 +549,65 @@ function buildTopicList(defaultTopics, priorities) {
   return topics.slice(0, 5);
 }
 
+function assignPlannedDates(sessions, goLiveDate, type) {
+  const goLive = new Date(goLiveDate + "T12:00:00");
+  const spacing = getSessionSpacing(type);
+
+  let totalDaysBack = 0;
+  for (let i = 1; i < sessions.length; i++) {
+    totalDaysBack += spacing;
+    sessions[i].plannedDate = formatDate(subtractBusinessDays(goLive, totalDaysBack));
+  }
+
+  const session1DaysBack = totalDaysBack + getKickoffBuffer(type);
+  sessions[0].plannedDate = formatDate(subtractBusinessDays(goLive, session1DaysBack));
+
+  return sessions;
+}
+
+function getSessionSpacing(type) {
+  const map = {
+    expert: 5,
+    explorer: 4,
+    guided: 6,
+    rollout: 6,
+    momentum: 7
+  };
+
+  return map[type] || 5;
+}
+
+function getKickoffBuffer(type) {
+  const map = {
+    expert: 4,
+    explorer: 3,
+    guided: 5,
+    rollout: 5,
+    momentum: 6
+  };
+
+  return map[type] || 4;
+}
+
+function subtractBusinessDays(date, days) {
+  const result = new Date(date);
+  let remaining = days;
+
+  while (remaining > 0) {
+    result.setDate(result.getDate() - 1);
+    const day = result.getDay();
+    if (day !== 0 && day !== 6) {
+      remaining--;
+    }
+  }
+
+  return result;
+}
+
+function formatDate(date) {
+  return date.toISOString().split("T")[0];
+}
+
 function renderRecommendation(typeName, whyBullets, planMeta) {
   recommendationEl.innerHTML = `
     <div class="recommendation-type">${typeName}</div>
@@ -585,6 +647,7 @@ function renderSessions(sessions) {
     sessionPlanEl.innerHTML += `
       <div class="session-card">
         <div class="session-title">${session.title}</div>
+        <div class="session-date">Planned Date: ${session.plannedDate || "TBD"}</div>
         <div class="session-topics">${topicsText}</div>
         <div class="session-actions">
           <a class="session-link-btn" href="${CALENDLY_LINK}" target="_blank" rel="noopener noreferrer">Schedule Session</a>
@@ -625,6 +688,7 @@ function renderAgenda(planData) {
     <div class="agenda-line"><strong>Onboarding Type:</strong> ${planData.recommendedTypeName}</div>
     <div class="agenda-line"><strong>Go-Live:</strong> ${planData.goLiveDate}</div>
     <div class="agenda-line"><strong>Next Session:</strong> ${nextSession.title}</div>
+    <div class="agenda-line"><strong>Planned Date:</strong> ${nextSession.plannedDate || "TBD"}</div>
     <div class="agenda-line"><strong>Focus Topics:</strong> ${nextSession.topics.join(" • ")}</div>
   `;
 }
@@ -664,7 +728,7 @@ Session Plan:
 `;
 
   sessions.forEach(session => {
-    report += `- ${session.title}
+    report += `- ${session.title} (${session.plannedDate || "TBD"})
 `;
     session.topics.forEach(topic => {
       report += `  • ${topic}
@@ -691,6 +755,35 @@ function getPriorityLabel(value) {
 function copyReport() {
   reportOutput.select();
   document.execCommand("copy");
+}
+
+function copyAgenda() {
+  if (!currentPlanData) {
+    alert("Please generate or import a plan first.");
+    return;
+  }
+
+  const nextSession = currentPlanData.sessions[1] || currentPlanData.sessions[0];
+
+  const text = `MSP: ${currentPlanData.mspName}
+Onboarding Type: ${currentPlanData.recommendedTypeName}
+Go-Live: ${currentPlanData.goLiveDate}
+
+Next Session: ${nextSession.title}
+Planned Date: ${nextSession.plannedDate || "TBD"}
+
+Focus Topics:
+- ${nextSession.topics.join("\n- ")}`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    const original = copyAgendaBtn.textContent;
+    copyAgendaBtn.textContent = "Copied!";
+    setTimeout(() => {
+      copyAgendaBtn.textContent = original;
+    }, 1200);
+  }).catch(() => {
+    alert("Could not copy the agenda.");
+  });
 }
 
 function exportPlan() {
