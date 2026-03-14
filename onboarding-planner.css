@@ -1,79 +1,159 @@
 body {
-font-family: Arial, Helvetica, sans-serif;
-background:#f4f6fb;
-margin:0;
-padding:0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f4f6fb;
+  margin: 0;
+  padding: 0;
+  color: #1f2937;
 }
 
 .container {
-max-width:900px;
-margin:auto;
-padding:20px;
+  max-width: 950px;
+  margin: auto;
+  padding: 20px;
 }
 
 .app-banner {
-background:#2863EB;
-padding:16px 24px;
-border-radius:10px;
-margin-bottom:20px;
-color:white;
+  width: 100%;
+  background-color: #2863EB;
+  border-radius: 10px;
+  padding: 16px 24px;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .banner-title {
-font-size:22px;
-font-weight:800;
+  color: white;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
 }
 
 .banner-subtitle {
-font-size:13px;
-opacity:.85;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  margin-top: 3px;
 }
 
 .card {
-background:white;
-padding:20px;
-margin-bottom:20px;
-border-radius:10px;
-box-shadow:0 4px 12px rgba(0,0,0,.08);
+  background: white;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+h2 {
+  margin-top: 0;
+  margin-bottom: 14px;
 }
 
 label {
-display:block;
-margin-top:12px;
-font-weight:600;
+  display: block;
+  margin-top: 12px;
+  font-weight: 600;
 }
 
-select,input {
-width:100%;
-padding:8px;
-margin-top:4px;
-border-radius:6px;
-border:1px solid #ccc;
-}
-
-button {
-margin-top:16px;
-padding:10px 16px;
-border:none;
-background:#2863EB;
-color:white;
-border-radius:6px;
-cursor:pointer;
-font-weight:600;
-}
-
-button:hover {
-background:#1d4fd1;
-}
-
-.session-card {
-background:#eef2ff;
-padding:12px;
-border-radius:6px;
-margin-top:10px;
+input[type="text"],
+input[type="date"],
+select,
+textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 4px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  box-sizing: border-box;
+  font-size: 14px;
 }
 
 textarea {
-width:100%;
-margin-top:10px;
+  margin-top: 10px;
+  resize: vertical;
+}
+
+button {
+  margin-top: 16px;
+  padding: 10px 16px;
+  border: none;
+  background: #2863EB;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+button:hover {
+  background: #1d4fd1;
+}
+
+.checkbox-group {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 18px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  margin-top: 0;
+}
+
+.checkbox-item input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+.recommendation-type {
+  font-size: 24px;
+  font-weight: 800;
+  color: #1e3a8a;
+  margin-bottom: 14px;
+}
+
+.info-section {
+  margin-top: 16px;
+  padding: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.info-section h3 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+.info-section ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.info-section li {
+  margin-bottom: 6px;
+}
+
+.session-card {
+  background: #eef2ff;
+  padding: 12px 14px;
+  border-radius: 8px;
+  margin-top: 10px;
+  border-left: 4px solid #2863EB;
+}
+
+.session-title {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.session-topics {
+  color: #475569;
+  font-size: 14px;
+}
+
+.muted {
+  color: #64748b;
 }
