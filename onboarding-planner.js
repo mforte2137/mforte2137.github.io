@@ -21,6 +21,7 @@ copyAgendaBtn.addEventListener("click", copyAgenda);
 function generatePlan() {
   const mspName = document.getElementById("mspName").value.trim();
   const goLiveDate = document.getElementById("goLiveDate").value;
+  const plannerUsage = document.getElementById("plannerUsage").value;
   const q1 = document.getElementById("q1").value;
   const q2 = document.getElementById("q2").value;
   const q3 = document.getElementById("q3").value;
@@ -59,6 +60,7 @@ function generatePlan() {
   currentPlanData = {
     mspName,
     goLiveDate,
+    plannerUsage,
     answers: {
       q1,
       q2,
@@ -83,6 +85,7 @@ function renderAll(planData) {
   renderReport(
     planData.mspName,
     planData.goLiveDate,
+    planData.plannerUsage,
     planData.recommendedTypeName,
     planData.whyBullets,
     planData.planMeta,
@@ -722,9 +725,24 @@ function bindSessionStatusButtons() {
   });
 }
 
+function getAgendaSession(planData) {
+  if (!planData || !planData.sessions || planData.sessions.length === 0) {
+    return null;
+  }
+
+  const startIndex = planData.plannerUsage === "session1" ? 1 : 0;
+
+  for (let i = startIndex; i < planData.sessions.length; i++) {
+    if (!planData.sessions[i].isScheduled) {
+      return planData.sessions[i];
+    }
+  }
+
+  return planData.sessions[startIndex] || planData.sessions[planData.sessions.length - 1];
+}
+
 function renderAgenda(planData) {
-  const nextUnscheduled = planData.sessions.find(session => !session.isScheduled);
-  const nextSession = nextUnscheduled || planData.sessions[planData.sessions.length - 1];
+  const nextSession = getAgendaSession(planData);
 
   if (!nextSession) {
     agendaPanel.innerHTML = `<div class="muted">No session data available.</div>`;
@@ -735,6 +753,7 @@ function renderAgenda(planData) {
     <div class="agenda-title">Next Meeting Agenda</div>
     <div class="agenda-line"><strong>MSP:</strong> ${planData.mspName}</div>
     <div class="agenda-line"><strong>Onboarding Type:</strong> ${planData.recommendedTypeName}</div>
+    <div class="agenda-line"><strong>Planner Usage:</strong> ${planData.plannerUsage === "session1" ? "We are in Session 1 now" : "Planning / kickoff only"}</div>
     <div class="agenda-line"><strong>Go-Live:</strong> ${planData.goLiveDate}</div>
     <div class="agenda-line"><strong>Next Session:</strong> ${nextSession.title}</div>
     <div class="agenda-line"><strong>Planned Date:</strong> ${nextSession.plannedDate || "TBD"}</div>
@@ -742,11 +761,13 @@ function renderAgenda(planData) {
   `;
 }
 
-function renderReport(mspName, goLiveDate, typeName, whyBullets, planMeta, sessions, priorities) {
+function renderReport(mspName, goLiveDate, plannerUsage, typeName, whyBullets, planMeta, sessions, priorities) {
   const priorityLabels = priorities.map(getPriorityLabel);
+  const usageLabel = plannerUsage === "session1" ? "We are in Session 1 now" : "Planning / kickoff only";
 
   let report = `MSP: ${mspName}
 Go-Live Date: ${goLiveDate}
+Planner Usage: ${usageLabel}
 
 Recommended Onboarding Type: ${typeName}
 
@@ -785,6 +806,20 @@ Session Plan:
     });
   });
 
+  const nextSession = getAgendaSession({ plannerUsage, sessions });
+
+  if (nextSession) {
+    report += `
+Next Meeting Agenda:
+- ${nextSession.title}
+- Planned Date: ${nextSession.plannedDate || "TBD"}
+`;
+    nextSession.topics.forEach(topic => {
+      report += `  • ${topic}
+`;
+    });
+  }
+
   reportOutput.value = report;
 }
 
@@ -812,8 +847,7 @@ function copyAgenda() {
     return;
   }
 
-  const nextUnscheduled = currentPlanData.sessions.find(session => !session.isScheduled);
-  const nextSession = nextUnscheduled || currentPlanData.sessions[currentPlanData.sessions.length - 1];
+  const nextSession = getAgendaSession(currentPlanData);
 
   if (!nextSession) {
     alert("No agenda available to copy.");
@@ -822,6 +856,7 @@ function copyAgenda() {
 
   const text = `MSP: ${currentPlanData.mspName}
 Onboarding Type: ${currentPlanData.recommendedTypeName}
+Planner Usage: ${currentPlanData.plannerUsage === "session1" ? "We are in Session 1 now" : "Planning / kickoff only"}
 Go-Live: ${currentPlanData.goLiveDate}
 
 Next Session: ${nextSession.title}
@@ -893,6 +928,7 @@ function importPlan(event) {
 function populateForm(planData) {
   document.getElementById("mspName").value = planData.mspName || "";
   document.getElementById("goLiveDate").value = planData.goLiveDate || "";
+  document.getElementById("plannerUsage").value = planData.plannerUsage || "planning";
   document.getElementById("q1").value = planData.answers?.q1 || "";
   document.getElementById("q2").value = planData.answers?.q2 || "";
   document.getElementById("q3").value = planData.answers?.q3 || "";
