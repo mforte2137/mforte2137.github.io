@@ -3,9 +3,16 @@ const recommendationEl = document.getElementById("recommendation");
 const sessionPlanEl = document.getElementById("sessionPlan");
 const reportOutput = document.getElementById("reportOutput");
 const copyReportBtn = document.getElementById("copyReport");
+const exportPlanBtn = document.getElementById("exportPlan");
+const importPlanFile = document.getElementById("importPlanFile");
+const agendaPanel = document.getElementById("agendaPanel");
+
+let currentPlanData = null;
 
 recommendBtn.addEventListener("click", generatePlan);
 copyReportBtn.addEventListener("click", copyReport);
+exportPlanBtn.addEventListener("click", exportPlan);
+importPlanFile.addEventListener("change", importPlan);
 
 function generatePlan() {
   const mspName = document.getElementById("mspName").value.trim();
@@ -44,14 +51,51 @@ function generatePlan() {
   const planMeta = getPlanMeta(recommendedTypeKey);
   const sessions = buildSessions(recommendedTypeKey, priorities, q5);
 
-  renderRecommendation(recommendedTypeName, whyBullets, planMeta);
-  renderSessions(sessions);
-  renderReport(mspName, goLiveDate, recommendedTypeName, whyBullets, planMeta, sessions, priorities);
+  currentPlanData = {
+    mspName,
+    goLiveDate,
+    answers: {
+      q1,
+      q2,
+      q3,
+      q5
+    },
+    priorities,
+    recommendedTypeKey,
+    recommendedTypeName,
+    whyBullets,
+    planMeta,
+    sessions
+  };
+
+  renderAll(currentPlanData);
+}
+
+function renderAll(planData) {
+  renderRecommendation(planData.recommendedTypeName, planData.whyBullets, planData.planMeta);
+  renderSessions(planData.sessions);
+  renderAgenda(planData);
+  renderReport(
+    planData.mspName,
+    planData.goLiveDate,
+    planData.recommendedTypeName,
+    planData.whyBullets,
+    planData.planMeta,
+    planData.sessions,
+    planData.priorities
+  );
 }
 
 function getSelectedPriorities() {
   const checked = document.querySelectorAll('input[name="priority"]:checked');
   return Array.from(checked).map(item => item.value);
+}
+
+function setSelectedPriorities(priorities) {
+  const checkboxes = document.querySelectorAll('input[name="priority"]');
+  checkboxes.forEach(box => {
+    box.checked = priorities.includes(box.value);
+  });
 }
 
 function scoreAssessment(q1, q2, q3, priorities, q5) {
@@ -63,22 +107,18 @@ function scoreAssessment(q1, q2, q3, priorities, q5) {
     momentum: 0
   };
 
-  // Experience
   if (q1 === "several") scores.expert += 2;
   if (q1 === "one") scores.explorer += 1;
   if (q1 === "new") scores.guided += 2;
 
-  // Learning style
   if (q2 === "experiment") scores.explorer += 2;
   if (q2 === "structured") scores.guided += 2;
   if (q2 === "mix") scores.expert += 1;
 
-  // Team structure
   if (q3 === "few") scores.expert += 1;
   if (q3 === "small") scores.explorer += 1;
   if (q3 === "departments") scores.guided += 2;
 
-  // Priorities
   if (priorities.includes("sales")) scores.rollout += 2;
   if (priorities.includes("speed")) scores.explorer += 1;
   if (priorities.includes("sync")) scores.expert += 1;
@@ -86,10 +126,8 @@ function scoreAssessment(q1, q2, q3, priorities, q5) {
   if (priorities.includes("pricing")) scores.guided += 1;
   if (priorities.includes("experience")) scores.guided += 1;
 
-  // Storefront
   if (q5 === "yes") scores.rollout += 1;
 
-  // Momentum risk - light rule
   if (q1 === "new" && q3 === "small" && q2 === "structured") {
     scores.momentum += 2;
   }
@@ -121,7 +159,6 @@ const typeNames = {
 function buildWhyBullets(type, q1, q2, q3, priorities, q5) {
   const reasonPool = [];
 
-  // Experience
   if (q1 === "several") {
     reasonPool.push({
       types: ["expert"],
@@ -143,7 +180,6 @@ function buildWhyBullets(type, q1, q2, q3, priorities, q5) {
     });
   }
 
-  // Learning style
   if (q2 === "experiment") {
     reasonPool.push({
       types: ["explorer"],
@@ -165,7 +201,6 @@ function buildWhyBullets(type, q1, q2, q3, priorities, q5) {
     });
   }
 
-  // Team structure
   if (q3 === "few") {
     reasonPool.push({
       types: ["expert"],
@@ -187,7 +222,6 @@ function buildWhyBullets(type, q1, q2, q3, priorities, q5) {
     });
   }
 
-  // Priorities
   if (priorities.includes("speed")) {
     reasonPool.push({
       types: ["explorer"],
@@ -230,7 +264,6 @@ function buildWhyBullets(type, q1, q2, q3, priorities, q5) {
     });
   }
 
-  // Storefront
   if (q5 === "yes") {
     reasonPool.push({
       types: ["rollout"],
@@ -245,7 +278,6 @@ function buildWhyBullets(type, q1, q2, q3, priorities, q5) {
     });
   }
 
-  // Type-specific fallback
   if (type === "momentum") {
     reasonPool.push({
       types: ["momentum"],
@@ -556,6 +588,19 @@ function renderSessions(sessions) {
   });
 }
 
+function renderAgenda(planData) {
+  const nextSession = planData.sessions[1] || planData.sessions[0];
+
+  agendaPanel.innerHTML = `
+    <div class="agenda-title">Next Meeting Agenda</div>
+    <div class="agenda-line"><strong>MSP:</strong> ${planData.mspName}</div>
+    <div class="agenda-line"><strong>Onboarding Type:</strong> ${planData.recommendedTypeName}</div>
+    <div class="agenda-line"><strong>Go-Live:</strong> ${planData.goLiveDate}</div>
+    <div class="agenda-line"><strong>Next Session:</strong> ${nextSession.title}</div>
+    <div class="agenda-line"><strong>Focus Topics:</strong> ${nextSession.topics.join(" • ")}</div>
+  `;
+}
+
 function renderReport(mspName, goLiveDate, typeName, whyBullets, planMeta, sessions, priorities) {
   const priorityLabels = priorities.map(getPriorityLabel);
 
@@ -618,4 +663,64 @@ function getPriorityLabel(value) {
 function copyReport() {
   reportOutput.select();
   document.execCommand("copy");
+}
+
+function exportPlan() {
+  if (!currentPlanData) {
+    alert("Please generate or import a plan first.");
+    return;
+  }
+
+  const safeName = currentPlanData.mspName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  const filename = `${safeName || "msp"}-onboarding-plan.json`;
+
+  const dataStr = JSON.stringify(currentPlanData, null, 2);
+  const blob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  URL.revokeObjectURL(url);
+}
+
+function importPlan(event) {
+  const file = event.target.files[0];
+
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+
+      populateForm(imported);
+      currentPlanData = imported;
+      renderAll(imported);
+    } catch (err) {
+      alert("Could not import plan file. Please check that it is a valid JSON export.");
+    }
+  };
+
+  reader.readAsText(file);
+}
+
+function populateForm(planData) {
+  document.getElementById("mspName").value = planData.mspName || "";
+  document.getElementById("goLiveDate").value = planData.goLiveDate || "";
+  document.getElementById("q1").value = planData.answers?.q1 || "";
+  document.getElementById("q2").value = planData.answers?.q2 || "";
+  document.getElementById("q3").value = planData.answers?.q3 || "";
+  document.getElementById("q5").value = planData.answers?.q5 || "";
+
+  setSelectedPriorities(planData.priorities || []);
 }
