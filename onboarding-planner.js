@@ -365,7 +365,8 @@ function buildSessions(type, priorities, storefrontAnswer) {
       "First quote demo",
       "Customer quote experience",
       "Roadmap planning"
-    ]
+    ],
+    isScheduled: false
   });
 
   if (type === "explorer") {
@@ -377,7 +378,8 @@ function buildSessions(type, priorities, storefrontAnswer) {
         "Bundles",
         "Dynamic pricing",
         "Margin strategy"
-      ], priorities)
+      ], priorities),
+      isScheduled: false
     });
 
     sessions.push({
@@ -388,7 +390,8 @@ function buildSessions(type, priorities, storefrontAnswer) {
         "Cover pages",
         "Branding",
         "Customer quote experience"
-      ], priorities)
+      ], priorities),
+      isScheduled: false
     });
   }
 
@@ -401,7 +404,8 @@ function buildSessions(type, priorities, storefrontAnswer) {
         "Source of truth",
         "Marketplace imports",
         "Catalog structure"
-      ], priorities)
+      ], priorities),
+      isScheduled: false
     });
 
     sessions.push({
@@ -412,7 +416,8 @@ function buildSessions(type, priorities, storefrontAnswer) {
         "Approval rules",
         "Quote workflow",
         "Email defaults"
-      ], priorities)
+      ], priorities),
+      isScheduled: false
     });
   }
 
@@ -425,7 +430,8 @@ function buildSessions(type, priorities, storefrontAnswer) {
         "Bundles",
         "Dynamic pricing",
         "Pricing consistency"
-      ], priorities)
+      ], priorities),
+      isScheduled: false
     });
 
     sessions.push({
@@ -436,7 +442,8 @@ function buildSessions(type, priorities, storefrontAnswer) {
         "Email defaults",
         "Email templates",
         "Notifications"
-      ], priorities)
+      ], priorities),
+      isScheduled: false
     });
 
     sessions.push({
@@ -447,7 +454,8 @@ function buildSessions(type, priorities, storefrontAnswer) {
         "Approval rules",
         "Users & permissions",
         "Operational workflow"
-      ], priorities)
+      ], priorities),
+      isScheduled: false
     });
   }
 
@@ -460,7 +468,8 @@ function buildSessions(type, priorities, storefrontAnswer) {
         "Dynamic pricing",
         "Distributor feeds",
         "PSA sync"
-      ], priorities)
+      ], priorities),
+      isScheduled: false
     });
 
     sessions.push({
@@ -471,7 +480,8 @@ function buildSessions(type, priorities, storefrontAnswer) {
         "Branding",
         "Customer quote experience",
         "Notifications"
-      ], priorities)
+      ], priorities),
+      isScheduled: false
     });
 
     sessions.push({
@@ -481,7 +491,8 @@ function buildSessions(type, priorities, storefrontAnswer) {
         "Opportunity stages",
         "Users & permissions",
         "Approval workflow"
-      ], priorities)
+      ], priorities),
+      isScheduled: false
     });
 
     sessions.push({
@@ -491,7 +502,8 @@ function buildSessions(type, priorities, storefrontAnswer) {
         "How to send a quote",
         "How to follow the customer experience",
         "Basic quoting workflow for reps"
-      ]
+      ],
+      isScheduled: false
     });
 
     if (storefrontAnswer === "yes" || storefrontAnswer === "maybe") {
@@ -502,7 +514,8 @@ function buildSessions(type, priorities, storefrontAnswer) {
           "Catalog readiness for storefront",
           "Self-serve order flow",
           "Approved order sync back to Salesbuildr"
-        ]
+        ],
+        isScheduled: false
       });
     }
   }
@@ -514,7 +527,8 @@ function buildSessions(type, priorities, storefrontAnswer) {
         "Products & categories",
         "Marketplace imports",
         "First real quote workflow"
-      ], priorities)
+      ], priorities),
+      isScheduled: false
     });
 
     sessions.push({
@@ -524,7 +538,8 @@ function buildSessions(type, priorities, storefrontAnswer) {
         "Email defaults",
         "Customer quote experience",
         "Simple best practices"
-      ], priorities)
+      ], priorities),
+      isScheduled: false
     });
   }
 
@@ -552,17 +567,22 @@ function buildTopicList(defaultTopics, priorities) {
 function assignPlannedDates(sessions, goLiveDate, type) {
   const goLive = new Date(goLiveDate + "T12:00:00");
   const spacing = getSessionSpacing(type);
+  const kickoffBuffer = getKickoffBuffer(type);
 
-  let totalDaysBack = 0;
-  for (let i = 1; i < sessions.length; i++) {
-    totalDaysBack += spacing;
-    sessions[i].plannedDate = formatDate(subtractBusinessDays(goLive, totalDaysBack));
+  const sessionDates = new Array(sessions.length);
+  let daysBackFromGoLive = 0;
+
+  for (let i = sessions.length - 1; i >= 1; i--) {
+    sessionDates[i] = formatDate(subtractBusinessDays(goLive, daysBackFromGoLive));
+    daysBackFromGoLive += spacing;
   }
 
-  const session1DaysBack = totalDaysBack + getKickoffBuffer(type);
-  sessions[0].plannedDate = formatDate(subtractBusinessDays(goLive, session1DaysBack));
+  sessionDates[0] = formatDate(subtractBusinessDays(goLive, daysBackFromGoLive + kickoffBuffer));
 
-  return sessions;
+  return sessions.map((session, index) => ({
+    ...session,
+    plannedDate: sessionDates[index]
+  }));
 }
 
 function getSessionSpacing(type) {
@@ -640,24 +660,32 @@ function renderRecommendation(typeName, whyBullets, planMeta) {
 function renderSessions(sessions) {
   sessionPlanEl.innerHTML = "";
 
-  sessions.forEach(session => {
+  sessions.forEach((session, index) => {
     const topicsText = session.topics.join(" • ");
     const sessionTitleForCopy = `Salesbuildr Onboarding – ${session.title.replace(/^Session \d+ – /, "").replace(/^Optional Add-On – /, "")}`;
+    const statusClass = session.isScheduled ? "status-scheduled" : "status-not-scheduled";
+    const statusText = session.isScheduled ? "Scheduled" : "Not Scheduled";
+    const toggleText = session.isScheduled ? "Mark Unscheduled" : "Mark Scheduled";
 
     sessionPlanEl.innerHTML += `
       <div class="session-card">
-        <div class="session-title">${session.title}</div>
+        <div class="session-header">
+          <div class="session-title">${session.title}</div>
+          <div class="session-status-badge ${statusClass}">${statusText}</div>
+        </div>
         <div class="session-date">Planned Date: ${session.plannedDate || "TBD"}</div>
         <div class="session-topics">${topicsText}</div>
         <div class="session-actions">
           <a class="session-link-btn" href="${CALENDLY_LINK}" target="_blank" rel="noopener noreferrer">Schedule Session</a>
           <button class="session-copy-btn" type="button" data-copy-title="${escapeHtml(sessionTitleForCopy)}">Copy Session Title</button>
+          <button class="session-status-btn" type="button" data-session-index="${index}">${toggleText}</button>
         </div>
       </div>
     `;
   });
 
   bindSessionCopyButtons();
+  bindSessionStatusButtons();
 }
 
 function bindSessionCopyButtons() {
@@ -679,8 +707,29 @@ function bindSessionCopyButtons() {
   });
 }
 
+function bindSessionStatusButtons() {
+  const buttons = document.querySelectorAll(".session-status-btn");
+
+  buttons.forEach(button => {
+    button.addEventListener("click", () => {
+      const index = Number(button.getAttribute("data-session-index"));
+
+      if (!currentPlanData || !currentPlanData.sessions[index]) return;
+
+      currentPlanData.sessions[index].isScheduled = !currentPlanData.sessions[index].isScheduled;
+      renderAll(currentPlanData);
+    });
+  });
+}
+
 function renderAgenda(planData) {
-  const nextSession = planData.sessions[1] || planData.sessions[0];
+  const nextUnscheduled = planData.sessions.find(session => !session.isScheduled);
+  const nextSession = nextUnscheduled || planData.sessions[planData.sessions.length - 1];
+
+  if (!nextSession) {
+    agendaPanel.innerHTML = `<div class="muted">No session data available.</div>`;
+    return;
+  }
 
   agendaPanel.innerHTML = `
     <div class="agenda-title">Next Meeting Agenda</div>
@@ -728,7 +777,7 @@ Session Plan:
 `;
 
   sessions.forEach(session => {
-    report += `- ${session.title} (${session.plannedDate || "TBD"})
+    report += `- ${session.title} (${session.plannedDate || "TBD"}) [${session.isScheduled ? "Scheduled" : "Not Scheduled"}]
 `;
     session.topics.forEach(topic => {
       report += `  • ${topic}
@@ -763,7 +812,13 @@ function copyAgenda() {
     return;
   }
 
-  const nextSession = currentPlanData.sessions[1] || currentPlanData.sessions[0];
+  const nextUnscheduled = currentPlanData.sessions.find(session => !session.isScheduled);
+  const nextSession = nextUnscheduled || currentPlanData.sessions[currentPlanData.sessions.length - 1];
+
+  if (!nextSession) {
+    alert("No agenda available to copy.");
+    return;
+  }
 
   const text = `MSP: ${currentPlanData.mspName}
 Onboarding Type: ${currentPlanData.recommendedTypeName}
