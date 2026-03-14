@@ -72,7 +72,9 @@ textarea {
 }
 
 button,
-.import-label {
+.import-label,
+.session-link-btn,
+.session-copy-btn {
   margin-top: 16px;
   padding: 10px 16px;
   border: none;
@@ -84,10 +86,13 @@ button,
   font-size: 14px;
   display: inline-block;
   text-decoration: none;
+  box-sizing: border-box;
 }
 
 button:hover,
-.import-label:hover {
+.import-label:hover,
+.session-link-btn:hover,
+.session-copy-btn:hover {
   background: #1d4fd1;
 }
 
@@ -142,7 +147,7 @@ button:hover,
 
 .session-card {
   background: #eef2ff;
-  padding: 12px 14px;
+  padding: 14px;
   border-radius: 8px;
   margin-top: 10px;
   border-left: 4px solid #2863EB;
@@ -156,6 +161,19 @@ button:hover,
 .session-topics {
   color: #475569;
   font-size: 14px;
+  line-height: 1.5;
+}
+
+.session-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.session-link-btn,
+.session-copy-btn {
+  margin-top: 0;
 }
 
 .agenda-panel {
