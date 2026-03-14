@@ -85,9 +85,22 @@
     </div>
 
     <div class="card">
+      <h2>Next Meeting Agenda</h2>
+      <div id="agendaPanel" class="agenda-panel">
+        <div class="muted">Generate a plan or import a saved plan to view the next meeting agenda.</div>
+      </div>
+    </div>
+
+    <div class="card">
       <h2>Onboarding Report</h2>
-      <textarea id="reportOutput" rows="10"></textarea>
-      <button id="copyReport" type="button">Copy Report</button>
+      <textarea id="reportOutput" rows="12"></textarea>
+
+      <div class="button-row">
+        <button id="copyReport" type="button">Copy Report</button>
+        <button id="exportPlan" type="button">Export Plan</button>
+        <label for="importPlanFile" class="import-label">Import Plan</label>
+        <input type="file" id="importPlanFile" accept=".json">
+      </div>
     </div>
 
   </div>
