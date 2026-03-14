@@ -1,3 +1,5 @@
+const CALENDLY_LINK = "https://calendly.com/mike-salesbuildr/onboarding-1-quote-tour";
+
 const recommendBtn = document.getElementById("recommendBtn");
 const recommendationEl = document.getElementById("recommendation");
 const sessionPlanEl = document.getElementById("sessionPlan");
@@ -578,13 +580,39 @@ function renderSessions(sessions) {
 
   sessions.forEach(session => {
     const topicsText = session.topics.join(" • ");
+    const sessionTitleForCopy = `Salesbuildr Onboarding – ${session.title.replace(/^Session \d+ – /, "").replace(/^Optional Add-On – /, "")}`;
 
     sessionPlanEl.innerHTML += `
       <div class="session-card">
         <div class="session-title">${session.title}</div>
         <div class="session-topics">${topicsText}</div>
+        <div class="session-actions">
+          <a class="session-link-btn" href="${CALENDLY_LINK}" target="_blank" rel="noopener noreferrer">Schedule Session</a>
+          <button class="session-copy-btn" type="button" data-copy-title="${escapeHtml(sessionTitleForCopy)}">Copy Session Title</button>
+        </div>
       </div>
     `;
+  });
+
+  bindSessionCopyButtons();
+}
+
+function bindSessionCopyButtons() {
+  const buttons = document.querySelectorAll(".session-copy-btn");
+
+  buttons.forEach(button => {
+    button.addEventListener("click", () => {
+      const text = button.getAttribute("data-copy-title");
+      navigator.clipboard.writeText(text).then(() => {
+        const original = button.textContent;
+        button.textContent = "Copied!";
+        setTimeout(() => {
+          button.textContent = original;
+        }, 1200);
+      }).catch(() => {
+        alert("Could not copy the session title.");
+      });
+    });
   });
 }
 
@@ -723,4 +751,12 @@ function populateForm(planData) {
   document.getElementById("q5").value = planData.answers?.q5 || "";
 
   setSelectedPriorities(planData.priorities || []);
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
