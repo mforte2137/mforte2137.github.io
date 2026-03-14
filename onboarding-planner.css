@@ -74,7 +74,8 @@ textarea {
 button,
 .import-label,
 .session-link-btn,
-.session-copy-btn {
+.session-copy-btn,
+.session-status-btn {
   margin-top: 16px;
   padding: 10px 16px;
   border: none;
@@ -92,7 +93,8 @@ button,
 button:hover,
 .import-label:hover,
 .session-link-btn:hover,
-.session-copy-btn:hover {
+.session-copy-btn:hover,
+.session-status-btn:hover {
   background: #1d4fd1;
 }
 
@@ -153,9 +155,35 @@ button:hover,
   border-left: 4px solid #2863EB;
 }
 
+.session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
 .session-title {
   font-weight: 700;
-  margin-bottom: 6px;
+  font-size: 16px;
+}
+
+.session-status-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.status-not-scheduled {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.status-scheduled {
+  background: #dcfce7;
+  color: #166534;
 }
 
 .session-date {
@@ -179,7 +207,8 @@ button:hover,
 }
 
 .session-link-btn,
-.session-copy-btn {
+.session-copy-btn,
+.session-status-btn {
   margin-top: 0;
 }
 
