@@ -264,3 +264,40 @@ button:hover,
 #importPlanFile {
   display: none;
 }
+.agent-toggle {
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.agent-toggle input {
+  margin-right: 6px;
+}
+
+.script-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.script-content {
+  background: white;
+  padding: 24px;
+  width: 600px;
+  max-height: 80%;
+  overflow-y: auto;
+  border-radius: 10px;
+}
+
+.script-content h3 {
+  margin-top: 0;
+}
+
+.close-modal {
+  margin-top: 16px;
+}
