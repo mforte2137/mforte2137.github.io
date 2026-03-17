@@ -1,8 +1,21 @@
-const CALENDLY_LINK = "https://calendly.com/mike-salesbuildr/onboarding-1-quote-tour";
+const AGENT_LINKS = {
+  mike: "https://calendly.com/mike-salesbuildr/onboarding-1-quote-tour",
+  bram: "https://calendly.com/bram-salesbuildr/onboarding-1-quote-tour",
+  kristel: "https://calendly.com/kristel-salesbuildr/onboarding-1-quote-tour",
+  demi: "https://calendly.com/demi-salesbuildr/onboarding-1-quote-tour"
+};
+
+const AGENT_LABELS = {
+  mike: "Mike",
+  bram: "Bram",
+  kristel: "Kristel",
+  demi: "Demi"
+};
 
 const recommendBtn = document.getElementById("recommendBtn");
 const recommendationEl = document.getElementById("recommendation");
 const sessionPlanEl = document.getElementById("sessionPlan");
+const addonPlanEl = document.getElementById("addonPlan");
 const reportOutput = document.getElementById("reportOutput");
 const copyReportBtn = document.getElementById("copyReport");
 const exportPlanBtn = document.getElementById("exportPlan");
@@ -25,7 +38,8 @@ function generatePlan() {
   const q1 = document.getElementById("q1").value;
   const q2 = document.getElementById("q2").value;
   const q3 = document.getElementById("q3").value;
-  const q5 = document.getElementById("q5").value;
+  const salesTrainingNeeded = document.getElementById("salesTrainingNeeded").value;
+  const storefrontNeeded = document.getElementById("storefrontNeeded").value;
   const priorities = getSelectedPriorities();
 
   if (!mspName) {
@@ -38,7 +52,7 @@ function generatePlan() {
     return;
   }
 
-  if (!q1 || !q2 || !q3 || !q5) {
+  if (!q1 || !q2 || !q3 || !salesTrainingNeeded || !storefrontNeeded) {
     alert("Please answer all assessment questions.");
     return;
   }
@@ -48,14 +62,18 @@ function generatePlan() {
     return;
   }
 
-  const scores = scoreAssessment(q1, q2, q3, priorities, q5);
+  const scores = scoreAssessment(q1, q2, q3, priorities);
   const recommendedTypeKey = getWinningType(scores);
   const recommendedTypeName = typeNames[recommendedTypeKey];
 
-  const whyBullets = buildWhyBullets(recommendedTypeKey, q1, q2, q3, priorities, q5);
+  const whyBullets = buildWhyBullets(recommendedTypeKey, q1, q2, q3, priorities);
   const planMeta = getPlanMeta(recommendedTypeKey);
-  let sessions = buildSessions(recommendedTypeKey, priorities, q5);
-  sessions = assignPlannedDates(sessions, goLiveDate, recommendedTypeKey);
+
+  let coreSessions = buildCoreSessions(recommendedTypeKey, priorities);
+  let addonSessions = buildAddonSessions(salesTrainingNeeded, storefrontNeeded);
+
+  coreSessions = assignPlannedDates(coreSessions, goLiveDate, recommendedTypeKey, false);
+  addonSessions = assignPlannedDates(addonSessions, goLiveDate, recommendedTypeKey, true, coreSessions.length);
 
   currentPlanData = {
     mspName,
@@ -65,14 +83,16 @@ function generatePlan() {
       q1,
       q2,
       q3,
-      q5
+      salesTrainingNeeded,
+      storefrontNeeded
     },
     priorities,
     recommendedTypeKey,
     recommendedTypeName,
     whyBullets,
     planMeta,
-    sessions
+    coreSessions,
+    addonSessions
   };
 
   renderAll(currentPlanData);
@@ -80,18 +100,10 @@ function generatePlan() {
 
 function renderAll(planData) {
   renderRecommendation(planData.recommendedTypeName, planData.whyBullets, planData.planMeta);
-  renderSessions(planData.sessions);
+  renderSessions(planData.coreSessions, sessionPlanEl, false);
+  renderSessions(planData.addonSessions, addonPlanEl, true);
   renderAgenda(planData);
-  renderReport(
-    planData.mspName,
-    planData.goLiveDate,
-    planData.plannerUsage,
-    planData.recommendedTypeName,
-    planData.whyBullets,
-    planData.planMeta,
-    planData.sessions,
-    planData.priorities
-  );
+  renderReport(planData);
 }
 
 function getSelectedPriorities() {
@@ -106,7 +118,7 @@ function setSelectedPriorities(priorities) {
   });
 }
 
-function scoreAssessment(q1, q2, q3, priorities, q5) {
+function scoreAssessment(q1, q2, q3, priorities) {
   const scores = {
     expert: 0,
     explorer: 0,
@@ -125,16 +137,17 @@ function scoreAssessment(q1, q2, q3, priorities, q5) {
 
   if (q3 === "few") scores.expert += 1;
   if (q3 === "small") scores.explorer += 1;
-  if (q3 === "departments") scores.guided += 2;
+  if (q3 === "departments") {
+    scores.guided += 2;
+    scores.rollout += 1;
+  }
 
-  if (priorities.includes("sales")) scores.rollout += 2;
+  if (priorities.includes("sales")) scores.rollout += 1;
   if (priorities.includes("speed")) scores.explorer += 1;
   if (priorities.includes("sync")) scores.expert += 1;
   if (priorities.includes("appearance")) scores.guided += 1;
   if (priorities.includes("pricing")) scores.guided += 1;
   if (priorities.includes("experience")) scores.guided += 1;
-
-  if (q5 === "yes") scores.rollout += 1;
 
   if (q1 === "new" && q3 === "small" && q2 === "structured") {
     scores.momentum += 2;
@@ -164,7 +177,7 @@ const typeNames = {
   momentum: "Momentum Risk"
 };
 
-function buildWhyBullets(type, q1, q2, q3, priorities, q5) {
+function buildWhyBullets(type, q1, q2, q3, priorities) {
   const reasonPool = [];
 
   if (q1 === "several") {
@@ -261,7 +274,7 @@ function buildWhyBullets(type, q1, q2, q3, priorities, q5) {
   if (priorities.includes("sales")) {
     reasonPool.push({
       types: ["rollout"],
-      text: "Sales team enablement is a priority, so onboarding may need both setup and rep training."
+      text: "Sales team enablement is a priority, which may require a broader rollout approach."
     });
   }
 
@@ -269,20 +282,6 @@ function buildWhyBullets(type, q1, q2, q3, priorities, q5) {
     reasonPool.push({
       types: ["guided", "momentum"],
       text: "Customer quote experience matters, so template design and decision flow should be prioritized."
-    });
-  }
-
-  if (q5 === "yes") {
-    reasonPool.push({
-      types: ["rollout"],
-      text: "Storefront is in scope, which adds an additional workflow beyond standard quoting."
-    });
-  }
-
-  if (q5 === "maybe") {
-    reasonPool.push({
-      types: ["rollout"],
-      text: "Storefront may become relevant, so we should leave room for that in the onboarding roadmap."
     });
   }
 
@@ -336,12 +335,11 @@ function getPlanMeta(type) {
     rollout: {
       sessions: "4–5",
       pace: "4–5 weeks",
-      meaning: "A two-phase onboarding approach: setup first, then sales-user enablement.",
+      meaning: "A more structured rollout that often suits broader teams and more operational setup.",
       focusAreas: [
         "Catalog & Configuration",
         "Templates & Quote Experience",
-        "Sales Team Training",
-        "Optional Storefront"
+        "Integrations & Workflow"
       ]
     },
     momentum: {
@@ -358,195 +356,200 @@ function getPlanMeta(type) {
   return meta[type];
 }
 
-function buildSessions(type, priorities, storefrontAnswer) {
+function buildCoreSessions(type, priorities) {
   const sessions = [];
 
-  sessions.push({
-    title: "Session 1 – Kickoff + First Quote + Roadmap",
-    topics: [
+  sessions.push(makeSession(
+    "Session 1 – Kickoff + First Quote + Roadmap",
+    [
       "Kickoff",
       "First quote demo",
       "Customer quote experience",
       "Roadmap planning"
-    ],
-    isScheduled: false
-  });
+    ]
+  ));
 
   if (type === "explorer") {
-    sessions.push({
-      title: "Session 2 – Catalog & Quoting Workflow",
-      topics: buildTopicList([
+    sessions.push(makeSession(
+      "Session 2 – Catalog & Quoting Workflow",
+      buildTopicList([
         "Products & categories",
         "Marketplace imports",
         "Bundles",
         "Dynamic pricing",
         "Margin strategy"
-      ], priorities),
-      isScheduled: false
-    });
+      ], priorities)
+    ));
 
-    sessions.push({
-      title: "Session 3 – Templates & Quote Presentation",
-      topics: buildTopicList([
+    sessions.push(makeSession(
+      "Session 3 – Templates & Quote Presentation",
+      buildTopicList([
         "Templates",
         "Widgets",
         "Cover pages",
         "Branding",
         "Customer quote experience"
-      ], priorities),
-      isScheduled: false
-    });
+      ], priorities)
+    ));
   }
 
   if (type === "expert") {
-    sessions.push({
-      title: "Session 2 – Integrations & Catalog Strategy",
-      topics: buildTopicList([
+    sessions.push(makeSession(
+      "Session 2 – Integrations & Catalog Strategy",
+      buildTopicList([
         "PSA sync",
         "Distributor feeds",
         "Source of truth",
         "Marketplace imports",
         "Catalog structure"
-      ], priorities),
-      isScheduled: false
-    });
+      ], priorities)
+    ));
 
-    sessions.push({
-      title: "Session 3 – Templates & Workflow",
-      topics: buildTopicList([
+    sessions.push(makeSession(
+      "Session 3 – Templates & Workflow",
+      buildTopicList([
         "Templates",
         "Widgets",
         "Approval rules",
         "Quote workflow",
         "Email defaults"
-      ], priorities),
-      isScheduled: false
-    });
+      ], priorities)
+    ));
   }
 
   if (type === "guided") {
-    sessions.push({
-      title: "Session 2 – Catalog & Pricing",
-      topics: buildTopicList([
+    sessions.push(makeSession(
+      "Session 2 – Catalog & Pricing",
+      buildTopicList([
         "Products & categories",
         "Marketplace imports",
         "Bundles",
         "Dynamic pricing",
         "Pricing consistency"
-      ], priorities),
-      isScheduled: false
-    });
+      ], priorities)
+    ));
 
-    sessions.push({
-      title: "Session 3 – Templates & Email Experience",
-      topics: buildTopicList([
+    sessions.push(makeSession(
+      "Session 3 – Templates & Email Experience",
+      buildTopicList([
         "Templates",
         "Widgets",
         "Email defaults",
         "Email templates",
         "Notifications"
-      ], priorities),
-      isScheduled: false
-    });
+      ], priorities)
+    ));
 
-    sessions.push({
-      title: "Session 4 – Integrations & Workflow",
-      topics: buildTopicList([
+    sessions.push(makeSession(
+      "Session 4 – Integrations & Workflow",
+      buildTopicList([
         "PSA sync",
         "Opportunity stages",
         "Approval rules",
         "Users & permissions",
         "Operational workflow"
-      ], priorities),
-      isScheduled: false
-    });
+      ], priorities)
+    ));
   }
 
   if (type === "rollout") {
-    sessions.push({
-      title: "Session 2 – Catalog & Configuration",
-      topics: buildTopicList([
+    sessions.push(makeSession(
+      "Session 2 – Catalog & Configuration",
+      buildTopicList([
         "Products & categories",
         "Marketplace imports",
         "Dynamic pricing",
         "Distributor feeds",
         "PSA sync"
-      ], priorities),
-      isScheduled: false
-    });
+      ], priorities)
+    ));
 
-    sessions.push({
-      title: "Session 3 – Templates & Quote Experience",
-      topics: buildTopicList([
+    sessions.push(makeSession(
+      "Session 3 – Templates & Quote Experience",
+      buildTopicList([
         "Templates",
         "Widgets",
         "Branding",
         "Customer quote experience",
         "Notifications"
-      ], priorities),
-      isScheduled: false
-    });
+      ], priorities)
+    ));
 
-    sessions.push({
-      title: "Session 4 – Integrations & Workflow",
-      topics: buildTopicList([
+    sessions.push(makeSession(
+      "Session 4 – Integrations & Workflow",
+      buildTopicList([
         "PSA sync behavior",
         "Opportunity stages",
         "Users & permissions",
         "Approval workflow"
-      ], priorities),
-      isScheduled: false
-    });
-
-    sessions.push({
-      title: "Session 5 – Sales Team Training",
-      topics: [
-        "How to create a quote",
-        "How to send a quote",
-        "How to follow the customer experience",
-        "Basic quoting workflow for reps"
-      ],
-      isScheduled: false
-    });
-
-    if (storefrontAnswer === "yes" || storefrontAnswer === "maybe") {
-      sessions.push({
-        title: "Optional Add-On – Storefront Module",
-        topics: [
-          "Storefront overview",
-          "Catalog readiness for storefront",
-          "Self-serve order flow",
-          "Approved order sync back to Salesbuildr"
-        ],
-        isScheduled: false
-      });
-    }
+      ], priorities)
+    ));
   }
 
   if (type === "momentum") {
-    sessions.push({
-      title: "Session 2 – Quick Quote Workflow",
-      topics: buildTopicList([
+    sessions.push(makeSession(
+      "Session 2 – Quick Quote Workflow",
+      buildTopicList([
         "Products & categories",
         "Marketplace imports",
         "First real quote workflow"
-      ], priorities),
-      isScheduled: false
-    });
+      ], priorities)
+    ));
 
-    sessions.push({
-      title: "Session 3 – Templates & Essentials",
-      topics: buildTopicList([
+    sessions.push(makeSession(
+      "Session 3 – Templates & Essentials",
+      buildTopicList([
         "Templates",
         "Email defaults",
         "Customer quote experience",
         "Simple best practices"
-      ], priorities),
-      isScheduled: false
-    });
+      ], priorities)
+    ));
   }
 
   return sessions;
+}
+
+function buildAddonSessions(salesTrainingNeeded, storefrontNeeded) {
+  const sessions = [];
+
+  if (salesTrainingNeeded === "yes") {
+    sessions.push(makeSession(
+      "Add-On – Sales Team Training",
+      [
+        "How to create a quote from templates",
+        "How to add products and services",
+        "How to send quotes",
+        "Sales-only quoting workflow"
+      ],
+      true
+    ));
+  }
+
+  if (storefrontNeeded === "yes") {
+    sessions.push(makeSession(
+      "Add-On – Storefront Module",
+      [
+        "Storefront overview",
+        "Catalog readiness for storefront",
+        "Self-serve order flow",
+        "Approved order sync back to Salesbuildr"
+      ],
+      true
+    ));
+  }
+
+  return sessions;
+}
+
+function makeSession(title, topics, isAddon = false) {
+  return {
+    title,
+    topics,
+    isScheduled: false,
+    isAddon,
+    assignedAgent: "mike"
+  };
 }
 
 function buildTopicList(defaultTopics, priorities) {
@@ -567,24 +570,34 @@ function buildTopicList(defaultTopics, priorities) {
   return topics.slice(0, 5);
 }
 
-function assignPlannedDates(sessions, goLiveDate, type) {
+function assignPlannedDates(sessions, goLiveDate, type, isAddon = false, coreCount = 0) {
+  if (sessions.length === 0) return sessions;
+
   const goLive = new Date(goLiveDate + "T12:00:00");
   const spacing = getSessionSpacing(type);
   const kickoffBuffer = getKickoffBuffer(type);
 
-  const sessionDates = new Array(sessions.length);
-  let daysBackFromGoLive = 0;
+  if (!isAddon) {
+    const sessionDates = new Array(sessions.length);
+    let daysBackFromGoLive = 0;
 
-  for (let i = sessions.length - 1; i >= 1; i--) {
-    sessionDates[i] = formatDate(subtractBusinessDays(goLive, daysBackFromGoLive));
-    daysBackFromGoLive += spacing;
+    for (let i = sessions.length - 1; i >= 1; i--) {
+      sessionDates[i] = formatDate(subtractBusinessDays(goLive, daysBackFromGoLive));
+      daysBackFromGoLive += spacing;
+    }
+
+    sessionDates[0] = formatDate(subtractBusinessDays(goLive, daysBackFromGoLive + kickoffBuffer));
+
+    return sessions.map((session, index) => ({
+      ...session,
+      plannedDate: sessionDates[index]
+    }));
   }
 
-  sessionDates[0] = formatDate(subtractBusinessDays(goLive, daysBackFromGoLive + kickoffBuffer));
-
+  const startBack = (coreCount - 1) * spacing;
   return sessions.map((session, index) => ({
     ...session,
-    plannedDate: sessionDates[index]
+    plannedDate: formatDate(subtractBusinessDays(goLive, Math.max(0, startBack - ((index + 1) * 2))))
   }));
 }
 
@@ -645,7 +658,7 @@ function renderRecommendation(typeName, whyBullets, planMeta) {
     <div class="info-section">
       <h3>What this means</h3>
       <ul>
-        <li>Recommended sessions: <strong>${planMeta.sessions}</strong></li>
+        <li>Recommended core sessions: <strong>${planMeta.sessions}</strong></li>
         <li>Estimated pace: <strong>${planMeta.pace}</strong></li>
         <li>${planMeta.meaning}</li>
       </ul>
@@ -660,28 +673,43 @@ function renderRecommendation(typeName, whyBullets, planMeta) {
   `;
 }
 
-function renderSessions(sessions) {
-  sessionPlanEl.innerHTML = "";
+function renderSessions(sessions, containerEl, isAddonSection) {
+  containerEl.innerHTML = "";
+
+  if (!sessions || sessions.length === 0) {
+    containerEl.innerHTML = `<div class="muted">${isAddonSection ? "No add-on sessions selected." : "No sessions generated."}</div>`;
+    return;
+  }
 
   sessions.forEach((session, index) => {
     const topicsText = session.topics.join(" • ");
-    const sessionTitleForCopy = `Salesbuildr Onboarding – ${session.title.replace(/^Session \d+ – /, "").replace(/^Optional Add-On – /, "")}`;
+    const sessionTitleForCopy = `Salesbuildr Onboarding – ${session.title.replace(/^Session \d+ – /, "").replace(/^Add-On – /, "")}`;
     const statusClass = session.isScheduled ? "status-scheduled" : "status-not-scheduled";
     const statusText = session.isScheduled ? "Scheduled" : "Not Scheduled";
     const toggleText = session.isScheduled ? "Mark Unscheduled" : "Mark Scheduled";
+    const cardClass = session.isAddon ? "session-card addon-card" : "session-card";
+    const sessionKey = getSessionKey(session, isAddonSection, index);
 
-    sessionPlanEl.innerHTML += `
-      <div class="session-card">
+    containerEl.innerHTML += `
+      <div class="${cardClass}">
         <div class="session-header">
           <div class="session-title">${session.title}</div>
           <div class="session-status-badge ${statusClass}">${statusText}</div>
         </div>
         <div class="session-date">Planned Date: ${session.plannedDate || "TBD"}</div>
         <div class="session-topics">${topicsText}</div>
+
+        <div class="agent-row">
+          <label for="agent-${sessionKey}">Assigned Agent</label>
+          <select class="agent-select" id="agent-${sessionKey}" data-session-key="${sessionKey}">
+            ${buildAgentOptions(session.assignedAgent)}
+          </select>
+        </div>
+
         <div class="session-actions">
-          <a class="session-link-btn" href="${CALENDLY_LINK}" target="_blank" rel="noopener noreferrer">Schedule Session</a>
+          <a class="session-link-btn" href="${AGENT_LINKS[session.assignedAgent]}" target="_blank" rel="noopener noreferrer">Schedule Session</a>
           <button class="session-copy-btn" type="button" data-copy-title="${escapeHtml(sessionTitleForCopy)}">Copy Session Title</button>
-          <button class="session-status-btn" type="button" data-session-index="${index}">${toggleText}</button>
+          <button class="session-status-btn" type="button" data-session-key="${sessionKey}">${toggleText}</button>
         </div>
       </div>
     `;
@@ -689,6 +717,17 @@ function renderSessions(sessions) {
 
   bindSessionCopyButtons();
   bindSessionStatusButtons();
+  bindAgentDropdowns();
+}
+
+function getSessionKey(session, isAddonSection, index) {
+  return `${isAddonSection ? "addon" : "core"}-${index}`;
+}
+
+function buildAgentOptions(selectedAgent) {
+  return Object.keys(AGENT_LABELS)
+    .map(agent => `<option value="${agent}" ${agent === selectedAgent ? "selected" : ""}>${AGENT_LABELS[agent]}</option>`)
+    .join("");
 }
 
 function bindSessionCopyButtons() {
@@ -715,30 +754,58 @@ function bindSessionStatusButtons() {
 
   buttons.forEach(button => {
     button.addEventListener("click", () => {
-      const index = Number(button.getAttribute("data-session-index"));
+      const sessionKey = button.getAttribute("data-session-key");
+      const target = getSessionByKey(sessionKey);
+      if (!target) return;
 
-      if (!currentPlanData || !currentPlanData.sessions[index]) return;
-
-      currentPlanData.sessions[index].isScheduled = !currentPlanData.sessions[index].isScheduled;
+      target.isScheduled = !target.isScheduled;
       renderAll(currentPlanData);
     });
   });
 }
 
+function bindAgentDropdowns() {
+  const dropdowns = document.querySelectorAll(".agent-select");
+
+  dropdowns.forEach(dropdown => {
+    dropdown.addEventListener("change", () => {
+      const sessionKey = dropdown.getAttribute("data-session-key");
+      const target = getSessionByKey(sessionKey);
+      if (!target) return;
+
+      target.assignedAgent = dropdown.value;
+      renderAll(currentPlanData);
+    });
+  });
+}
+
+function getSessionByKey(sessionKey) {
+  if (!currentPlanData) return null;
+
+  const [group, indexStr] = sessionKey.split("-");
+  const index = Number(indexStr);
+
+  if (group === "core") return currentPlanData.coreSessions[index];
+  if (group === "addon") return currentPlanData.addonSessions[index];
+
+  return null;
+}
+
 function getAgendaSession(planData) {
-  if (!planData || !planData.sessions || planData.sessions.length === 0) {
-    return null;
-  }
+  if (!planData) return null;
+
+  const combined = [...planData.coreSessions, ...planData.addonSessions];
+  if (combined.length === 0) return null;
 
   const startIndex = planData.plannerUsage === "session1" ? 1 : 0;
 
-  for (let i = startIndex; i < planData.sessions.length; i++) {
-    if (!planData.sessions[i].isScheduled) {
-      return planData.sessions[i];
+  for (let i = startIndex; i < combined.length; i++) {
+    if (!combined[i].isScheduled) {
+      return combined[i];
     }
   }
 
-  return planData.sessions[startIndex] || planData.sessions[planData.sessions.length - 1];
+  return combined[startIndex] || combined[combined.length - 1];
 }
 
 function renderAgenda(planData) {
@@ -756,34 +823,35 @@ function renderAgenda(planData) {
     <div class="agenda-line"><strong>Planner Usage:</strong> ${planData.plannerUsage === "session1" ? "We are in Session 1 now" : "Planning / kickoff only"}</div>
     <div class="agenda-line"><strong>Go-Live:</strong> ${planData.goLiveDate}</div>
     <div class="agenda-line"><strong>Next Session:</strong> ${nextSession.title}</div>
+    <div class="agenda-line"><strong>Assigned Agent:</strong> ${AGENT_LABELS[nextSession.assignedAgent]}</div>
     <div class="agenda-line"><strong>Planned Date:</strong> ${nextSession.plannedDate || "TBD"}</div>
     <div class="agenda-line"><strong>Focus Topics:</strong> ${nextSession.topics.join(" • ")}</div>
   `;
 }
 
-function renderReport(mspName, goLiveDate, plannerUsage, typeName, whyBullets, planMeta, sessions, priorities) {
-  const priorityLabels = priorities.map(getPriorityLabel);
-  const usageLabel = plannerUsage === "session1" ? "We are in Session 1 now" : "Planning / kickoff only";
+function renderReport(planData) {
+  const priorityLabels = planData.priorities.map(getPriorityLabel);
+  const usageLabel = planData.plannerUsage === "session1" ? "We are in Session 1 now" : "Planning / kickoff only";
 
-  let report = `MSP: ${mspName}
-Go-Live Date: ${goLiveDate}
+  let report = `MSP: ${planData.mspName}
+Go-Live Date: ${planData.goLiveDate}
 Planner Usage: ${usageLabel}
 
-Recommended Onboarding Type: ${typeName}
+Recommended Onboarding Type: ${planData.recommendedTypeName}
 
 Why this was recommended:
 `;
 
-  whyBullets.forEach(item => {
+  planData.whyBullets.forEach(item => {
     report += `- ${item}
 `;
   });
 
   report += `
 What this means:
-- Recommended sessions: ${planMeta.sessions}
-- Estimated pace: ${planMeta.pace}
-- ${planMeta.meaning}
+- Recommended core sessions: ${planData.planMeta.sessions}
+- Estimated pace: ${planData.planMeta.pace}
+- ${planData.planMeta.meaning}
 
 Priority Areas:
 `;
@@ -794,11 +862,11 @@ Priority Areas:
   });
 
   report += `
-Session Plan:
+Core Sessions:
 `;
 
-  sessions.forEach(session => {
-    report += `- ${session.title} (${session.plannedDate || "TBD"}) [${session.isScheduled ? "Scheduled" : "Not Scheduled"}]
+  planData.coreSessions.forEach(session => {
+    report += `- ${session.title} (${session.plannedDate || "TBD"}) [${session.isScheduled ? "Scheduled" : "Not Scheduled"}] [Agent: ${AGENT_LABELS[session.assignedAgent]}]
 `;
     session.topics.forEach(topic => {
       report += `  • ${topic}
@@ -806,12 +874,31 @@ Session Plan:
     });
   });
 
-  const nextSession = getAgendaSession({ plannerUsage, sessions });
+  report += `
+Add-On Sessions:
+`;
+
+  if (planData.addonSessions.length === 0) {
+    report += `- None
+`;
+  } else {
+    planData.addonSessions.forEach(session => {
+      report += `- ${session.title} (${session.plannedDate || "TBD"}) [${session.isScheduled ? "Scheduled" : "Not Scheduled"}] [Agent: ${AGENT_LABELS[session.assignedAgent]}]
+`;
+      session.topics.forEach(topic => {
+        report += `  • ${topic}
+`;
+      });
+    });
+  }
+
+  const nextSession = getAgendaSession(planData);
 
   if (nextSession) {
     report += `
 Next Meeting Agenda:
 - ${nextSession.title}
+- Assigned Agent: ${AGENT_LABELS[nextSession.assignedAgent]}
 - Planned Date: ${nextSession.plannedDate || "TBD"}
 `;
     nextSession.topics.forEach(topic => {
@@ -860,6 +947,7 @@ Planner Usage: ${currentPlanData.plannerUsage === "session1" ? "We are in Sessio
 Go-Live: ${currentPlanData.goLiveDate}
 
 Next Session: ${nextSession.title}
+Assigned Agent: ${AGENT_LABELS[nextSession.assignedAgent]}
 Planned Date: ${nextSession.plannedDate || "TBD"}
 
 Focus Topics:
@@ -932,7 +1020,8 @@ function populateForm(planData) {
   document.getElementById("q1").value = planData.answers?.q1 || "";
   document.getElementById("q2").value = planData.answers?.q2 || "";
   document.getElementById("q3").value = planData.answers?.q3 || "";
-  document.getElementById("q5").value = planData.answers?.q5 || "";
+  document.getElementById("salesTrainingNeeded").value = planData.answers?.salesTrainingNeeded || "";
+  document.getElementById("storefrontNeeded").value = planData.answers?.storefrontNeeded || "";
 
   setSelectedPriorities(planData.priorities || []);
 }
