@@ -573,32 +573,61 @@ function buildTopicList(defaultTopics, priorities) {
 function assignPlannedDates(sessions, goLiveDate, type, isAddon = false, coreCount = 0) {
   if (sessions.length === 0) return sessions;
 
+  const today = new Date();
   const goLive = new Date(goLiveDate + "T12:00:00");
+
+  // === RULES ===
+  const START_OFFSET = 5; // start ~5 business days from today
+  const END_BUFFER = 3;   // finish 3 business days before go-live
+
   const spacing = getSessionSpacing(type);
-  const kickoffBuffer = getKickoffBuffer(type);
+
+  // === CALCULATE WINDOW ===
+  const startDate = addBusinessDays(today, START_OFFSET);
+  const endDate = subtractBusinessDays(goLive, END_BUFFER);
+
+  // === BUILD FULL SESSION LIST (core + addons) ===
+  let fullSessions;
 
   if (!isAddon) {
-    const sessionDates = new Array(sessions.length);
-    let daysBackFromGoLive = 0;
-
-    for (let i = sessions.length - 1; i >= 1; i--) {
-      sessionDates[i] = formatDate(subtractBusinessDays(goLive, daysBackFromGoLive));
-      daysBackFromGoLive += spacing;
-    }
-
-    sessionDates[0] = formatDate(subtractBusinessDays(goLive, daysBackFromGoLive + kickoffBuffer));
-
-    return sessions.map((session, index) => ({
-      ...session,
-      plannedDate: sessionDates[index]
-    }));
+    // core phase
+    fullSessions = [...sessions];
+  } else {
+    // addons come AFTER core
+    fullSessions = [...Array(coreCount).fill(null), ...sessions];
   }
 
-  const startBack = (coreCount - 1) * spacing;
-  return sessions.map((session, index) => ({
-    ...session,
-    plannedDate: formatDate(subtractBusinessDays(goLive, Math.max(0, startBack - ((index + 1) * 2))))
-  }));
+  // === ASSIGN DATES ===
+  const datedSessions = [];
+
+  let currentDate = new Date(startDate);
+
+  for (let i = 0; i < fullSessions.length; i++) {
+    if (fullSessions[i] === null) {
+      // skip placeholders (used to push addons after core)
+      currentDate = addBusinessDays(currentDate, spacing);
+      continue;
+    }
+
+    // Don't go past endDate
+    if (currentDate > endDate) {
+      currentDate = new Date(endDate);
+    }
+
+    datedSessions.push({
+      ...fullSessions[i],
+      plannedDate: formatDate(currentDate)
+    });
+
+    currentDate = addBusinessDays(currentDate, spacing);
+  }
+
+  // If we're in addon phase, remove placeholders
+  if (isAddon) {
+    return datedSessions.slice(coreCount);
+  }
+
+  return datedSessions;
 }
 
 function getSessionSpacing(type) {
@@ -642,6 +671,21 @@ function subtractBusinessDays(date, days) {
 
 function formatDate(date) {
   return date.toISOString().split("T")[0];
+}
+
+function addBusinessDays(date, days) {
+  const result = new Date(date);
+  let added = 0;
+
+  while (added < days) {
+    result.setDate(result.getDate() + 1);
+    const day = result.getDay();
+    if (day !== 0 && day !== 6) {
+      added++;
+    }
+  }
+
+  return result;
 }
 
 function renderRecommendation(typeName, whyBullets, planMeta) {
