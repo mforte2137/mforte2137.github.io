@@ -69,11 +69,17 @@
         <label class="checkbox-item"><input type="checkbox" name="priority" value="experience"> Better customer quote experience</label>
       </div>
 
-      <label for="q5">5. Will you use the Storefront module?</label>
-      <select id="q5">
+      <label for="salesTrainingNeeded">5. Will your sales team need a dedicated training session?</label>
+      <select id="salesTrainingNeeded">
         <option value="">Select</option>
         <option value="yes">Yes</option>
-        <option value="maybe">Not sure</option>
+        <option value="no">No</option>
+      </select>
+
+      <label for="storefrontNeeded">6. Will you use the Storefront module?</label>
+      <select id="storefrontNeeded">
+        <option value="">Select</option>
+        <option value="yes">Yes</option>
         <option value="no">No</option>
       </select>
 
@@ -86,8 +92,13 @@
     </div>
 
     <div class="card">
-      <h2>Session Plan</h2>
+      <h2>Core Sessions</h2>
       <div id="sessionPlan"></div>
+    </div>
+
+    <div class="card">
+      <h2>Add-On Sessions</h2>
+      <div id="addonPlan"></div>
     </div>
 
     <div class="card">
@@ -103,7 +114,7 @@
 
     <div class="card">
       <h2>Onboarding Report</h2>
-      <textarea id="reportOutput" rows="16"></textarea>
+      <textarea id="reportOutput" rows="18"></textarea>
 
       <div class="button-row">
         <button id="copyReport" type="button">Copy Report</button>
