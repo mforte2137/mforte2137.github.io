@@ -69,11 +69,18 @@ function generatePlan() {
   const whyBullets = buildWhyBullets(recommendedTypeKey, q1, q2, q3, priorities);
   const planMeta = getPlanMeta(recommendedTypeKey);
 
-  let coreSessions = buildCoreSessions(recommendedTypeKey, priorities);
-  let addonSessions = buildAddonSessions(salesTrainingNeeded, storefrontNeeded);
+ let coreSessions = buildCoreSessions(recommendedTypeKey, priorities);
+let addonSessions = buildAddonSessions(salesTrainingNeeded, storefrontNeeded);
 
-  coreSessions = assignPlannedDates(coreSessions, goLiveDate, recommendedTypeKey, false);
-  addonSessions = assignPlannedDates(addonSessions, goLiveDate, recommendedTypeKey, true, coreSessions.length);
+// Combine all sessions for proper scheduling
+let allSessions = [...coreSessions, ...addonSessions];
+
+// Assign dates ONCE
+allSessions = assignPlannedDates(allSessions, goLiveDate, recommendedTypeKey);
+
+// Split them back out
+coreSessions = allSessions.slice(0, coreSessions.length);
+addonSessions = allSessions.slice(coreSessions.length);
 
   currentPlanData = {
     mspName,
@@ -570,7 +577,7 @@ function buildTopicList(defaultTopics, priorities) {
   return topics.slice(0, 5);
 }
 
-function assignPlannedDates(sessions, goLiveDate, type, isAddon = false, coreCount = 0) {
+function assignPlannedDates(sessions, goLiveDate, type)
   if (sessions.length === 0) return sessions;
 
   const today = new Date();
