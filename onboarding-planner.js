@@ -1,8 +1,8 @@
 const AGENT_LINKS = {
   mike: "https://calendly.com/mike-salesbuildr/onboarding-1-quote-tour",
-  bram: "https://calendly.com/bram-salesbuildr/onboarding-1-quote-tour",
-  kristel: "https://calendly.com/kristel-salesbuildr/onboarding-1-quote-tour",
-  demi: "https://calendly.com/demi-salesbuildr/onboarding-1-quote-tour"
+  bram: "https://calendly.com/salesbuildr-bram",
+  kristel: "https://calendly.com/kristel-salesbuildr",
+  demi: "https://calendly.com/demi-salesbuildr"
 };
 
 const AGENT_LABELS = {
@@ -22,14 +22,25 @@ const exportPlanBtn = document.getElementById("exportPlan");
 const importPlanFile = document.getElementById("importPlanFile");
 const agendaPanel = document.getElementById("agendaPanel");
 const copyAgendaBtn = document.getElementById("copyAgenda");
+const agentModeToggle = document.getElementById("agentModeToggle");
 
 let currentPlanData = null;
+let agentMode = false;
 
 recommendBtn.addEventListener("click", generatePlan);
 copyReportBtn.addEventListener("click", copyReport);
 exportPlanBtn.addEventListener("click", exportPlan);
 importPlanFile.addEventListener("change", importPlan);
 copyAgendaBtn.addEventListener("click", copyAgenda);
+
+if (agentModeToggle) {
+  agentModeToggle.addEventListener("change", (e) => {
+    agentMode = e.target.checked;
+    if (currentPlanData) {
+      renderAll(currentPlanData);
+    }
+  });
+}
 
 function generatePlan() {
   const mspName = document.getElementById("mspName").value.trim();
@@ -583,8 +594,8 @@ function assignPlannedDates(sessions, goLiveDate, type) {
 
   const goLive = new Date(goLiveDate + "T12:00:00");
 
-  const START_OFFSET = 5; // first meeting ~5 business days from now
-  const END_BUFFER = 3;   // leave 3 business days before go-live
+  const START_OFFSET = 5;
+  const END_BUFFER = 3;
 
   const startDate = addBusinessDays(today, START_OFFSET);
   const endDate = subtractBusinessDays(goLive, END_BUFFER);
@@ -604,8 +615,7 @@ function assignPlannedDates(sessions, goLiveDate, type) {
       ? addBusinessDays(parseIsoDate(scheduledCoreDates[scheduledCoreDates.length - 1]), 2)
       : startDate;
 
-    const addonEnd = endDate;
-    scheduledAddonDates = spreadDatesBetween(addonStart, addonEnd, addonSessions.length);
+    scheduledAddonDates = spreadDatesBetween(addonStart, endDate, addonSessions.length);
   }
 
   const updatedCore = coreSessions.map((session, index) => ({
@@ -777,6 +787,7 @@ function renderSessions(sessions, containerEl, isAddonSection) {
           <a class="session-link-btn" href="${AGENT_LINKS[session.assignedAgent]}" target="_blank" rel="noopener noreferrer">Schedule Session</a>
           <button class="session-copy-btn" type="button" data-copy-title="${escapeHtml(sessionTitleForCopy)}">Copy Session Title</button>
           <button class="session-status-btn" type="button" data-session-key="${sessionKey}">${toggleText}</button>
+          ${agentMode ? `<button class="session-script-btn" type="button" onclick="openScript('${escapeHtmlAttribute(session.title)}')">View Script</button>` : ""}
         </div>
       </div>
     `;
@@ -1093,12 +1104,166 @@ function populateForm(planData) {
   document.getElementById("salesTrainingNeeded").value = planData.answers?.salesTrainingNeeded || "";
   document.getElementById("storefrontNeeded").value = planData.answers?.storefrontNeeded || "";
   setSelectedPriorities(planData.priorities || []);
+
+  if (agentModeToggle) {
+    agentMode = agentModeToggle.checked;
+  }
 }
 
+function openScript(sessionTitle) {
+  const modal = document.getElementById("scriptModal");
+  const body = document.getElementById("scriptBody");
+
+  if (!modal || !body) return;
+
+  body.innerHTML = getScriptContent(sessionTitle);
+  modal.style.display = "flex";
+}
+
+function closeScript() {
+  const modal = document.getElementById("scriptModal");
+  if (modal) {
+    modal.style.display = "none";
+  }
+}
+
+function getScriptContent(title) {
+  let objective = "Guide the MSP through this session at a high level and keep the focus on outcomes.";
+  let flow = [
+    "Reconfirm goals for the session",
+    "Introduce the key concept",
+    "Demonstrate the core workflow",
+    "Keep configuration high-level",
+    "Set the next step clearly"
+  ];
+  let keyPoints = [
+    "Stay outcome-focused",
+    "Keep the explanation simple",
+    "Show the workflow without going deep into every setting"
+  ];
+  let avoid = [
+    "Deep configuration",
+    "Edge cases",
+    "Opening unrelated settings"
+  ];
+  let homeworkLink = "https://docs.google.com/document/d/placeholder";
+
+  if (title.includes("Kickoff")) {
+    objective = "Set expectations, demonstrate the quoting workflow, and align on the onboarding path.";
+    flow = [
+      "Set context and goals",
+      "Demonstrate a first quote",
+      "Show the customer quote experience",
+      "Review the roadmap",
+      "Introduce homework"
+    ];
+    homeworkLink = "https://docs.google.com/document/d/placeholder-session-1";
+  }
+
+  if (title.includes("Catalog")) {
+    objective = "Help the MSP understand how catalog structure supports faster, more consistent quoting.";
+    flow = [
+      "Reconnect to the quoting goal",
+      "Show products and categories",
+      "Show marketplace imports",
+      "Explain pricing at a high level",
+      "Set next actions"
+    ];
+    homeworkLink = "https://docs.google.com/document/d/placeholder-session-2";
+  }
+
+  if (title.includes("Templates")) {
+    objective = "Help the MSP understand how templates shape the customer quote experience.";
+    flow = [
+      "Explain the role of templates",
+      "Show widgets and structure",
+      "Demonstrate the customer-facing flow",
+      "Avoid deep editing of every element",
+      "Introduce homework"
+    ];
+    homeworkLink = "https://docs.google.com/document/d/placeholder-session-3";
+  }
+
+  if (title.includes("Integrations")) {
+    objective = "Explain how Salesbuildr fits into their operational workflow without getting lost in setup details.";
+    flow = [
+      "Reconnect to business outcome",
+      "Explain sync behavior",
+      "Show workflow touchpoints",
+      "Keep it conceptual unless needed",
+      "Set next step"
+    ];
+    homeworkLink = "https://docs.google.com/document/d/placeholder-session-4";
+  }
+
+  if (title.includes("Sales Team Training")) {
+    objective = "Train the sales team to confidently create and send quotes without diving into admin setup.";
+    flow = [
+      "Show how to start a quote",
+      "Add products and services",
+      "Use templates",
+      "Send the quote",
+      "Answer rep-focused questions only"
+    ];
+    keyPoints = [
+      "Keep this session practical",
+      "Focus only on the rep workflow",
+      "Avoid admin and configuration detail"
+    ];
+    avoid = [
+      "Admin setup",
+      "Deep template editing",
+      "Advanced configuration"
+    ];
+    homeworkLink = "https://docs.google.com/document/d/placeholder-sales-training";
+  }
+
+  if (title.includes("Storefront")) {
+    objective = "Explain how the storefront works and where it fits into the MSP’s quoting and ordering flow.";
+    flow = [
+      "Explain the storefront purpose",
+      "Show how catalog readiness matters",
+      "Show the self-serve customer flow",
+      "Explain approved order sync",
+      "Set next actions"
+    ];
+    homeworkLink = "https://docs.google.com/document/d/placeholder-storefront";
+  }
+
+  return `
+    <h3>${escapeHtml(title)}</h3>
+
+    <p><strong>Objective</strong><br>${escapeHtml(objective)}</p>
+
+    <p><strong>Flow</strong><br>${flow.map(item => escapeHtml(item)).join("<br>")}</p>
+
+    <p><strong>Key Points</strong><br>${keyPoints.map(item => escapeHtml(item)).join("<br>")}</p>
+
+    <p><strong>Avoid</strong><br>${avoid.map(item => escapeHtml(item)).join("<br>")}</p>
+
+    <p><strong>Homework Handoff</strong><br>Send the relevant homework sheet in the meeting chat at the right point in the session.</p>
+
+    <p><strong>Homework Link</strong><br>
+      <a href="${homeworkLink}" target="_blank" rel="noopener noreferrer">${escapeHtml(homeworkLink)}</a>
+    </p>
+  `;
+}
+
+window.openScript = openScript;
+window.closeScript = closeScript;
+
 function escapeHtml(text) {
-  return text
+  return String(text)
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+}
+
+function escapeHtmlAttribute(text) {
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "\\'");
 }
