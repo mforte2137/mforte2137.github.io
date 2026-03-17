@@ -65,22 +65,20 @@ function generatePlan() {
   const scores = scoreAssessment(q1, q2, q3, priorities);
   const recommendedTypeKey = getWinningType(scores);
   const recommendedTypeName = typeNames[recommendedTypeKey];
-
   const whyBullets = buildWhyBullets(recommendedTypeKey, q1, q2, q3, priorities);
   const planMeta = getPlanMeta(recommendedTypeKey);
 
- let coreSessions = buildCoreSessions(recommendedTypeKey, priorities);
-let addonSessions = buildAddonSessions(salesTrainingNeeded, storefrontNeeded);
+  const coreSessions = buildCoreSessions(recommendedTypeKey, priorities);
+  const addonSessions = buildAddonSessions(salesTrainingNeeded, storefrontNeeded);
 
-// Combine all sessions for proper scheduling
-let allSessions = [...coreSessions, ...addonSessions];
+  const combinedSessions = assignPlannedDates(
+    [...coreSessions, ...addonSessions],
+    goLiveDate,
+    recommendedTypeKey
+  );
 
-// Assign dates ONCE
-allSessions = assignPlannedDates(allSessions, goLiveDate, recommendedTypeKey);
-
-// Split them back out
-coreSessions = allSessions.slice(0, coreSessions.length);
-addonSessions = allSessions.slice(coreSessions.length);
+  const finalCoreSessions = combinedSessions.slice(0, coreSessions.length);
+  const finalAddonSessions = combinedSessions.slice(coreSessions.length);
 
   currentPlanData = {
     mspName,
@@ -98,8 +96,8 @@ addonSessions = allSessions.slice(coreSessions.length);
     recommendedTypeName,
     whyBullets,
     planMeta,
-    coreSessions,
-    addonSessions
+    coreSessions: finalCoreSessions,
+    addonSessions: finalAddonSessions
   };
 
   renderAll(currentPlanData);
@@ -304,7 +302,6 @@ function buildWhyBullets(type, q1, q2, q3, priorities) {
     .map(item => item.text);
 
   const unique = [...new Set(filtered)];
-
   return unique.slice(0, 3);
 }
 
@@ -555,7 +552,8 @@ function makeSession(title, topics, isAddon = false) {
     topics,
     isScheduled: false,
     isAddon,
-    assignedAgent: "mike"
+    assignedAgent: "mike",
+    plannedDate: ""
   };
 }
 
@@ -577,88 +575,106 @@ function buildTopicList(defaultTopics, priorities) {
   return topics.slice(0, 5);
 }
 
-function assignPlannedDates(sessions, goLiveDate, type)
-  if (sessions.length === 0) return sessions;
+function assignPlannedDates(sessions, goLiveDate, type) {
+  if (!sessions.length) return sessions;
 
   const today = new Date();
+  today.setHours(12, 0, 0, 0);
+
   const goLive = new Date(goLiveDate + "T12:00:00");
 
-  // === RULES ===
-  const START_OFFSET = 5; // start ~5 business days from today
-  const END_BUFFER = 3;   // finish 3 business days before go-live
+  const START_OFFSET = 5; // first meeting ~5 business days from now
+  const END_BUFFER = 3;   // leave 3 business days before go-live
 
-  const spacing = getSessionSpacing(type);
-
-  // === CALCULATE WINDOW ===
   const startDate = addBusinessDays(today, START_OFFSET);
   const endDate = subtractBusinessDays(goLive, END_BUFFER);
 
-  // === BUILD FULL SESSION LIST (core + addons) ===
-  let fullSessions;
+  const coreSessions = sessions.filter(session => !session.isAddon);
+  const addonSessions = sessions.filter(session => session.isAddon);
 
-  if (!isAddon) {
-    // core phase
-    fullSessions = [...sessions];
-  } else {
-    // addons come AFTER core
-    fullSessions = [...Array(coreCount).fill(null), ...sessions];
+  let scheduledCoreDates = [];
+  let scheduledAddonDates = [];
+
+  if (coreSessions.length > 0) {
+    scheduledCoreDates = spreadDatesBetween(startDate, endDate, coreSessions.length);
   }
 
-  // === ASSIGN DATES ===
-  const datedSessions = [];
+  if (addonSessions.length > 0) {
+    const addonStart = coreSessions.length > 0
+      ? addBusinessDays(parseIsoDate(scheduledCoreDates[scheduledCoreDates.length - 1]), 2)
+      : startDate;
 
-  let currentDate = new Date(startDate);
-
-  for (let i = 0; i < fullSessions.length; i++) {
-    if (fullSessions[i] === null) {
-      // skip placeholders (used to push addons after core)
-      currentDate = addBusinessDays(currentDate, spacing);
-      continue;
-    }
-
-    // Don't go past endDate
-    if (currentDate > endDate) {
-      currentDate = new Date(endDate);
-    }
-
-    datedSessions.push({
-      ...fullSessions[i],
-      plannedDate: formatDate(currentDate)
-    });
-
-    currentDate = addBusinessDays(currentDate, spacing);
+    const addonEnd = endDate;
+    scheduledAddonDates = spreadDatesBetween(addonStart, addonEnd, addonSessions.length);
   }
 
-  // If we're in addon phase, remove placeholders
-  if (isAddon) {
-    return datedSessions.slice(coreCount);
-  }
+  const updatedCore = coreSessions.map((session, index) => ({
+    ...session,
+    plannedDate: scheduledCoreDates[index] || formatDate(startDate)
+  }));
 
-  return datedSessions;
+  const updatedAddon = addonSessions.map((session, index) => ({
+    ...session,
+    plannedDate: scheduledAddonDates[index] || formatDate(endDate)
+  }));
+
+  return [...updatedCore, ...updatedAddon];
 }
 
-function getSessionSpacing(type) {
-  const map = {
-    expert: 5,
-    explorer: 4,
-    guided: 6,
-    rollout: 6,
-    momentum: 7
-  };
+function spreadDatesBetween(startDate, endDate, count) {
+  if (count <= 0) return [];
 
-  return map[type] || 5;
+  if (count === 1) {
+    return [formatDate(startDate)];
+  }
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  const totalBusinessDays = countBusinessDaysBetween(start, end);
+
+  if (totalBusinessDays <= 0) {
+    const fallback = [];
+    let current = new Date(start);
+    for (let i = 0; i < count; i++) {
+      fallback.push(formatDate(current));
+      current = addBusinessDays(current, 1);
+    }
+    return fallback;
+  }
+
+  const gap = Math.max(1, Math.floor(totalBusinessDays / (count - 1)));
+  const dates = [];
+  let current = new Date(start);
+
+  for (let i = 0; i < count; i++) {
+    dates.push(formatDate(current));
+    current = addBusinessDays(current, gap);
+    if (current > end) {
+      current = new Date(end);
+    }
+  }
+
+  return dates;
 }
 
-function getKickoffBuffer(type) {
-  const map = {
-    expert: 4,
-    explorer: 3,
-    guided: 5,
-    rollout: 5,
-    momentum: 6
-  };
+function countBusinessDaysBetween(startDate, endDate) {
+  const current = new Date(startDate);
+  let count = 0;
 
-  return map[type] || 4;
+  while (current < endDate) {
+    current.setDate(current.getDate() + 1);
+    const day = current.getDay();
+    if (day !== 0 && day !== 6) {
+      count++;
+    }
+  }
+
+  return count;
+}
+
+function parseIsoDate(iso) {
+  return new Date(iso + "T12:00:00");
 }
 
 function subtractBusinessDays(date, days) {
@@ -676,10 +692,6 @@ function subtractBusinessDays(date, days) {
   return result;
 }
 
-function formatDate(date) {
-  return date.toISOString().split("T")[0];
-}
-
 function addBusinessDays(date, days) {
   const result = new Date(date);
   let added = 0;
@@ -693,6 +705,10 @@ function addBusinessDays(date, days) {
   }
 
   return result;
+}
+
+function formatDate(date) {
+  return date.toISOString().split("T")[0];
 }
 
 function renderRecommendation(typeName, whyBullets, planMeta) {
@@ -739,7 +755,7 @@ function renderSessions(sessions, containerEl, isAddonSection) {
     const statusText = session.isScheduled ? "Scheduled" : "Not Scheduled";
     const toggleText = session.isScheduled ? "Mark Unscheduled" : "Mark Scheduled";
     const cardClass = session.isAddon ? "session-card addon-card" : "session-card";
-    const sessionKey = getSessionKey(session, isAddonSection, index);
+    const sessionKey = getSessionKey(isAddonSection, index);
 
     containerEl.innerHTML += `
       <div class="${cardClass}">
@@ -771,7 +787,7 @@ function renderSessions(sessions, containerEl, isAddonSection) {
   bindAgentDropdowns();
 }
 
-function getSessionKey(session, isAddonSection, index) {
+function getSessionKey(isAddonSection, index) {
   return `${isAddonSection ? "addon" : "core"}-${index}`;
 }
 
@@ -836,8 +852,8 @@ function getSessionByKey(sessionKey) {
   const [group, indexStr] = sessionKey.split("-");
   const index = Number(indexStr);
 
-  if (group === "core") return currentPlanData.coreSessions[index];
-  if (group === "addon") return currentPlanData.addonSessions[index];
+  if (group === "core") return currentPlanData.coreSessions[index] || null;
+  if (group === "addon") return currentPlanData.addonSessions[index] || null;
 
   return null;
 }
@@ -1044,7 +1060,6 @@ function exportPlan() {
 
 function importPlan(event) {
   const file = event.target.files[0];
-
   if (!file) return;
 
   const reader = new FileReader();
@@ -1054,8 +1069,12 @@ function importPlan(event) {
       const imported = JSON.parse(e.target.result);
 
       populateForm(imported);
-      currentPlanData = imported;
-      renderAll(imported);
+      currentPlanData = {
+        ...imported,
+        coreSessions: imported.coreSessions || [],
+        addonSessions: imported.addonSessions || []
+      };
+      renderAll(currentPlanData);
     } catch (err) {
       alert("Could not import plan file. Please check that it is a valid JSON export.");
     }
@@ -1073,7 +1092,6 @@ function populateForm(planData) {
   document.getElementById("q3").value = planData.answers?.q3 || "";
   document.getElementById("salesTrainingNeeded").value = planData.answers?.salesTrainingNeeded || "";
   document.getElementById("storefrontNeeded").value = planData.answers?.storefrontNeeded || "";
-
   setSelectedPriorities(planData.priorities || []);
 }
 
