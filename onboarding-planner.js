@@ -120,6 +120,11 @@ function renderAll(planData) {
   renderSessions(planData.addonSessions, addonPlanEl, true);
   renderAgenda(planData);
   renderReport(planData);
+
+  // Bind buttons once after all session HTML has been rendered
+  bindSessionCopyButtons();
+  bindSessionStatusButtons();
+  bindAgentDropdowns();
 }
 
 function getSelectedPriorities() {
@@ -793,10 +798,6 @@ const toggleText = isScheduled ? "Mark Unscheduled" : "Mark Scheduled";
       </div>
     `;
   });
-
-  bindSessionCopyButtons();
-  bindSessionStatusButtons();
-  bindAgentDropdowns();
 }
 
 function getSessionKey(isAddonSection, index) {
