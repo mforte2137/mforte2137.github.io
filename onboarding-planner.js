@@ -762,7 +762,6 @@ function renderSessions(sessions, containerEl, isAddonSection) {
     const topicsText = session.topics.join(" • ");
     const sessionTitleForCopy = `Salesbuildr Onboarding – ${session.title.replace(/^Session \d+ – /, "").replace(/^Add-On – /, "")}`;
 const isScheduled = Boolean(session.isScheduled);
-
 const statusClass = isScheduled ? "status-scheduled" : "status-not-scheduled";
 const statusText = isScheduled ? "Scheduled" : "Not Scheduled";
 const toggleText = isScheduled ? "Mark Unscheduled" : "Mark Scheduled";
@@ -835,13 +834,42 @@ function bindSessionStatusButtons() {
   buttons.forEach(button => {
     button.addEventListener("click", () => {
       const sessionKey = button.getAttribute("data-session-key");
-      const target = getSessionByKey(sessionKey);
-      if (!target) return;
-
-      target.isScheduled = !target.isScheduled;
-      renderAll(currentPlanData);
+      toggleSessionStatus(sessionKey);
     });
   });
+}
+
+function toggleSessionStatus(sessionKey) {
+  if (!currentPlanData) return;
+
+  const [group, indexStr] = sessionKey.split("-");
+  const index = Number(indexStr);
+
+  if (group === "core" && currentPlanData.coreSessions[index]) {
+    currentPlanData.coreSessions = currentPlanData.coreSessions.map((session, i) => {
+      if (i === index) {
+        return {
+          ...session,
+          isScheduled: !Boolean(session.isScheduled)
+        };
+      }
+      return session;
+    });
+  }
+
+  if (group === "addon" && currentPlanData.addonSessions[index]) {
+    currentPlanData.addonSessions = currentPlanData.addonSessions.map((session, i) => {
+      if (i === index) {
+        return {
+          ...session,
+          isScheduled: !Boolean(session.isScheduled)
+        };
+      }
+      return session;
+    });
+  }
+
+  renderAll(currentPlanData);
 }
 
 function bindAgentDropdowns() {
