@@ -761,9 +761,11 @@ function renderSessions(sessions, containerEl, isAddonSection) {
   sessions.forEach((session, index) => {
     const topicsText = session.topics.join(" • ");
     const sessionTitleForCopy = `Salesbuildr Onboarding – ${session.title.replace(/^Session \d+ – /, "").replace(/^Add-On – /, "")}`;
-    const statusClass = session.isScheduled ? "status-scheduled" : "status-not-scheduled";
-    const statusText = session.isScheduled ? "Scheduled" : "Not Scheduled";
-    const toggleText = session.isScheduled ? "Mark Unscheduled" : "Mark Scheduled";
+const isScheduled = Boolean(session.isScheduled);
+
+const statusClass = isScheduled ? "status-scheduled" : "status-not-scheduled";
+const statusText = isScheduled ? "Scheduled" : "Not Scheduled";
+const toggleText = isScheduled ? "Mark Unscheduled" : "Mark Scheduled";
     const cardClass = session.isAddon ? "session-card addon-card" : "session-card";
     const sessionKey = getSessionKey(isAddonSection, index);
 
