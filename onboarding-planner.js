@@ -840,6 +840,8 @@ function bindSessionStatusButtons() {
 }
 
 function toggleSessionStatus(sessionKey) {
+  console.log("toggle clicked", sessionKey);
+  
   if (!currentPlanData) return;
 
   const [group, indexStr] = sessionKey.split("-");
