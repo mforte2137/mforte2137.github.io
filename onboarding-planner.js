@@ -107,6 +107,10 @@ Reassure:
 - It doesn’t need to be perfect
 
 Share the homework link in chat.`
+    👉 Homework:
+<a href="https://docs.google.com/document/d/1azLuGUAr9wedx-2yQ4ZDvCYcxaAEuiw0hzYIF51bxHA/edit?usp=sharing" target="_blank">
+Open Homework Document
+</a>
   }
 };
 
