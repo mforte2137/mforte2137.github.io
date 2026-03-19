@@ -5,6 +5,111 @@ const AGENT_LINKS = {
   demi: "https://calendly.com/demi-salesbuildr"
 };
 
+const SESSION_SCRIPTS = {
+  "Session 1 – Kickoff + First Quote + Roadmap": {
+    objective: `Guide the MSP through their first successful interaction with Salesbuildr by demonstrating how a simple quote is created and experienced by the customer.
+
+This session establishes a clear mental model of how Salesbuildr works at a high level, without getting into configuration, so the MSP understands how all key areas connect back to quoting.`,
+
+    flow: [
+      {
+        title: "1. Introduction (2 min)",
+        content: `Welcome and quick intro.
+
+Set expectations:
+"I’ll guide you through getting up and running with Salesbuildr."`
+      },
+      {
+        title: "2. First Quote Demo (Anchor) (2–3 min)",
+        content: `Create a simple hardware quote live.
+Use hardware template from MSP OR (US/CA) Marketplace → Basic Hardware Template.
+
+Keep it fast and simple.
+
+Emphasize:
+- "This is how quickly a quote can be created"
+- "We’ll refer back to this quote as we go through the tour"
+
+This becomes the anchor point for the rest of the session.`
+      },
+      {
+        title: "3. Customer Experience (1 min)",
+        content: `Mark quote as sent.
+
+Copy the quote link, paste into chat, and have them open it.
+
+Reinforce:
+- This is what you are building toward
+- The quote is both a sales tool and experience`
+      },
+      {
+        title: "4. Guided Tour (High-Level Only)",
+        content: `Keep everything tied back to the quote.
+
+Quote Editor:
+- Show widgets (left)
+- Show pricing/tools (right)
+
+Products:
+- Synced from PSA
+
+Marketplace:
+- Import products
+- Only syncs when used in a quote
+
+Categories:
+- Structure and pricing control
+
+Opportunities:
+- Linked to quotes
+- Refer back to demo
+
+Templates / Widgets:
+- Widgets = building blocks
+- Templates = structure
+- Guides customer journey
+- Standardization
+
+Dynamic Pricing:
+- Cost + margin = price
+- Keeps pricing current
+
+Admin:
+- Preview only
+- Covered in homework`
+      }
+    ],
+
+    keyPoints: [
+      "The quote is the center of everything",
+      "Keep things simple and high-level",
+      "Templates guide the customer journey",
+      "Standardization improves consistency",
+      "You don’t need everything perfect to start"
+    ],
+
+    avoid: [
+      "Do NOT configure admin settings",
+      "Do NOT troubleshoot",
+      "Do NOT solve edge cases",
+      "Say: 'We’ll cover that in a focused session'"
+    ],
+
+    homework: `Introduce the homework (30 minutes).
+
+They will:
+- Create a simple quote
+- Build familiarity
+- Configure essential settings
+
+Reassure:
+- Nothing will break
+- It doesn’t need to be perfect
+
+Share the homework link in chat.`
+  }
+};
+
 const AGENT_LABELS = {
   mike: "Mike",
   bram: "Bram",
@@ -1161,125 +1266,46 @@ function closeScript() {
 }
 
 function getScriptContent(title) {
-  let objective = "Guide the MSP through this session at a high level and keep the focus on outcomes.";
-  let flow = [
-    "Reconfirm goals for the session",
-    "Introduce the key concept",
-    "Demonstrate the core workflow",
-    "Keep configuration high-level",
-    "Set the next step clearly"
-  ];
-  let keyPoints = [
-    "Stay outcome-focused",
-    "Keep the explanation simple",
-    "Show the workflow without going deep into every setting"
-  ];
-  let avoid = [
-    "Deep configuration",
-    "Edge cases",
-    "Opening unrelated settings"
-  ];
-  let homeworkLink = "https://docs.google.com/document/d/placeholder";
+  const script = SESSION_SCRIPTS[title];
 
-  if (title.includes("Kickoff")) {
-    objective = "Set expectations, demonstrate the quoting workflow, and align on the onboarding path.";
-    flow = [
-      "Set context and goals",
-      "Demonstrate a first quote",
-      "Show the customer quote experience",
-      "Review the roadmap",
-      "Introduce homework"
-    ];
-    homeworkLink = "https://docs.google.com/document/d/placeholder-session-1";
+  if (!script) {
+    return "<p>No script available yet.</p>";
   }
 
-  if (title.includes("Catalog")) {
-    objective = "Help the MSP understand how catalog structure supports faster, more consistent quoting.";
-    flow = [
-      "Reconnect to the quoting goal",
-      "Show products and categories",
-      "Show marketplace imports",
-      "Explain pricing at a high level",
-      "Set next actions"
-    ];
-    homeworkLink = "https://docs.google.com/document/d/placeholder-session-2";
-  }
+  let html = `
+    <h2>${title}</h2>
 
-  if (title.includes("Templates")) {
-    objective = "Help the MSP understand how templates shape the customer quote experience.";
-    flow = [
-      "Explain the role of templates",
-      "Show widgets and structure",
-      "Demonstrate the customer-facing flow",
-      "Avoid deep editing of every element",
-      "Introduce homework"
-    ];
-    homeworkLink = "https://docs.google.com/document/d/placeholder-session-3";
-  }
+    <h3>Objective</h3>
+    <p>${script.objective.replace(/\n/g, "<br>")}</p>
 
-  if (title.includes("Integrations")) {
-    objective = "Explain how Salesbuildr fits into their operational workflow without getting lost in setup details.";
-    flow = [
-      "Reconnect to business outcome",
-      "Explain sync behavior",
-      "Show workflow touchpoints",
-      "Keep it conceptual unless needed",
-      "Set next step"
-    ];
-    homeworkLink = "https://docs.google.com/document/d/placeholder-session-4";
-  }
-
-  if (title.includes("Sales Team Training")) {
-    objective = "Train the sales team to confidently create and send quotes without diving into admin setup.";
-    flow = [
-      "Show how to start a quote",
-      "Add products and services",
-      "Use templates",
-      "Send the quote",
-      "Answer rep-focused questions only"
-    ];
-    keyPoints = [
-      "Keep this session practical",
-      "Focus only on the rep workflow",
-      "Avoid admin and configuration detail"
-    ];
-    avoid = [
-      "Admin setup",
-      "Deep template editing",
-      "Advanced configuration"
-    ];
-    homeworkLink = "https://docs.google.com/document/d/placeholder-sales-training";
-  }
-
-  if (title.includes("Storefront")) {
-    objective = "Explain how the storefront works and where it fits into the MSP’s quoting and ordering flow.";
-    flow = [
-      "Explain the storefront purpose",
-      "Show how catalog readiness matters",
-      "Show the self-serve customer flow",
-      "Explain approved order sync",
-      "Set next actions"
-    ];
-    homeworkLink = "https://docs.google.com/document/d/placeholder-storefront";
-  }
-
-  return `
-    <h3>${escapeHtml(title)}</h3>
-
-    <p><strong>Objective</strong><br>${escapeHtml(objective)}</p>
-
-    <p><strong>Flow</strong><br>${flow.map(item => escapeHtml(item)).join("<br>")}</p>
-
-    <p><strong>Key Points</strong><br>${keyPoints.map(item => escapeHtml(item)).join("<br>")}</p>
-
-    <p><strong>Avoid</strong><br>${avoid.map(item => escapeHtml(item)).join("<br>")}</p>
-
-    <p><strong>Homework Handoff</strong><br>Send the relevant homework sheet in the meeting chat at the right point in the session.</p>
-
-    <p><strong>Homework Link</strong><br>
-      <a href="${homeworkLink}" target="_blank" rel="noopener noreferrer">${escapeHtml(homeworkLink)}</a>
-    </p>
+    <h3>Session Flow</h3>
   `;
+
+  script.flow.forEach(step => {
+    html += `
+      <div style="margin-bottom:10px;">
+        <strong>${step.title}</strong><br>
+        ${step.content.replace(/\n/g, "<br>")}
+      </div>
+    `;
+  });
+
+  html += `
+    <h3>Key Points</h3>
+    <ul>
+      ${script.keyPoints.map(p => `<li>${p}</li>`).join("")}
+    </ul>
+
+    <h3>Avoid</h3>
+    <ul>
+      ${script.avoid.map(a => `<li>${a}</li>`).join("")}
+    </ul>
+
+    <h3>Homework</h3>
+    <p>${script.homework.replace(/\n/g, "<br>")}</p>
+  `;
+
+  return html;
 }
 
 window.openScript = openScript;
