@@ -108,7 +108,7 @@ Reassure:
 
 Share the homework link in chat.
 
-<a href="..." target="_blank" style="display:inline-block;margin-top:8px;font-weight:600;">
+<a href="https://docs.google.com/document/d/1azLuGUAr9wedx-2yQ4ZDvCYcxaAEuiw0hzYIF51bxHA/edit?usp=sharing" target="_blank" style="display:inline-block;margin-top:8px;font-weight:600;">
   🔗 Open Homework Document
 </a>`
   }
