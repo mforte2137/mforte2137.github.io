@@ -95,7 +95,7 @@ Admin:
       "Say: 'We’ll cover that in a focused session'"
     ],
 
-    homework: `Introduce the homework (30 minutes).
+homework: `Introduce the homework (30 minutes).
 
 They will:
 - Create a simple quote
@@ -106,11 +106,11 @@ Reassure:
 - Nothing will break
 - It doesn’t need to be perfect
 
-Share the homework link in chat.`
-    👉 Homework:
-<a href="https://docs.google.com/document/d/1azLuGUAr9wedx-2yQ4ZDvCYcxaAEuiw0hzYIF51bxHA/edit?usp=sharing" target="_blank">
-Open Homework Document
-</a>
+Share the homework link in chat.
+
+<a href="..." target="_blank" style="display:inline-block;margin-top:8px;font-weight:600;">
+  🔗 Open Homework Document
+</a>`
   }
 };
 
