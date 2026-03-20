@@ -239,7 +239,7 @@ Do NOT:
       "Do NOT bulk edit or fix pricing",
       "Do NOT troubleshoot missing products",
       "Do NOT build bundles step-by-step",
-      "Say: 'We’ll cover that in detail in homework or a focused session'"
+      "Say: 'We’ll cover that in detail in homework or a focused session'",
       "Do NOT let homework questions consume the full session"
     ],
 
@@ -374,7 +374,7 @@ Keep this quick — reinforce, don’t build.`
       "Do NOT configure every widget",
       "Do NOT perfect layout or design during the session",
       "Do NOT get stuck editing content",
-      "Say: 'We’ll cover that in detail in homework'"
+      "Say: 'We’ll cover that in detail in homework'",
 "Do NOT let homework questions consume the full session"
       
     ],
