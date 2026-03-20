@@ -645,7 +645,7 @@ function buildCoreSessions(type, priorities) {
     ));
 
     sessions.push(makeSession(
-      "Session 3 – Templates & Quote Presentation",
+      "Session 3 – Templates, Widgets & Cover Pages",
       buildTopicList([
         "Templates",
         "Widgets",
@@ -669,7 +669,7 @@ function buildCoreSessions(type, priorities) {
     ));
 
     sessions.push(makeSession(
-      "Session 3 – Templates & Workflow",
+      "Session 3 – Templates, Widgets & Cover Pages",
       buildTopicList([
         "Templates",
         "Widgets",
@@ -693,7 +693,7 @@ function buildCoreSessions(type, priorities) {
     ));
 
     sessions.push(makeSession(
-      "Session 3 – Templates & Email Experience",
+      "Session 3 – Templates, Widgets & Cover Pages",
       buildTopicList([
         "Templates",
         "Widgets",
@@ -728,7 +728,7 @@ function buildCoreSessions(type, priorities) {
     ));
 
     sessions.push(makeSession(
-      "Session 3 – Templates & Quote Experience",
+      "Session 3 – Templates, Widgets & Cover Pages",
       buildTopicList([
         "Templates",
         "Widgets",
@@ -760,7 +760,7 @@ function buildCoreSessions(type, priorities) {
     ));
 
     sessions.push(makeSession(
-      "Session 3 – Templates & Essentials",
+      "Session 3 – Templates, Widgets & Cover Pages",
       buildTopicList([
         "Templates",
         "Email defaults",
