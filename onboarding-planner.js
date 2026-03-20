@@ -118,10 +118,23 @@ Share the homework link in chat.
 
 This session focuses on the core concepts of catalog management and pricing, while leaving detailed setup and cleanup to homework.`,
 
-    flow: [
-      {
-        title: "1. Product Model Overview (Concept First)",
-        content: `Explain the 3 item types:
+flow: [
+  {
+    title: "1. Homework Review / Key Questions (5–10 min)",
+    content: `Ask what questions came up from homework.
+
+Address the 1–2 most important questions.
+
+Keep answers focused and practical.
+
+If something requires a deeper dive, capture it for follow-up so the session stays on track.
+
+If needed, say:
+"That’s a great question — let’s make sure we stay on track today, and we can come back to that in a focused follow-up if needed."`
+  },
+  {
+    title: "2. Product Model Overview (Concept First)",
+    content: `Explain the 3 item types:
 - Products (managed in Salesbuildr)
 - Services and Labor (managed in PSA)
 
@@ -133,7 +146,7 @@ Reinforce:
 - This keeps the PSA clean and controlled`
       },
       {
-        title: "2. Categories = Portfolio Structure",
+        title: "3. Categories = Portfolio Structure",
         content: `Show category structure (root + sub-categories).
 
 Key idea:
@@ -148,7 +161,7 @@ Reinforce:
 Do NOT spend time editing or reorganizing here.`
       },
       {
-        title: "3. Products Overview (What Good Looks Like)",
+        title: "4. Products Overview (What Good Looks Like)",
         content: `Show the product list briefly.
 
 Explain:
@@ -164,7 +177,7 @@ Do NOT:
 - fix catalog issues`
       },
       {
-        title: "4. Adding Products to a Quote (Anchor Back to Session 1)",
+        title: "5. Adding Products to a Quote (Anchor Back to Session 1)",
         content: `Go back to a quote.
 
 Show how to:
@@ -176,7 +189,7 @@ Reinforce:
 - This is the real workflow`
       },
       {
-        title: "5. Marketplace (Key Moment)",
+        title: "6. Marketplace (Key Moment)",
         content: `Show how to search and import a product.
 
 Key idea:
@@ -188,7 +201,7 @@ Reinforce:
 - Sync to PSA when quoted`
       },
       {
-        title: "6. Bundles (Concept Only)",
+        title: "7. Bundles (Concept Only)",
         content: `Briefly explain that bundles are grouped products and/or services.
 
 Position them as:
@@ -198,7 +211,7 @@ Position them as:
 Do NOT build one live.`
       },
       {
-        title: "7. Pricing (High-Level Only)",
+        title: "8. Pricing (High-Level Only)",
         content: `Explain:
 - distributor cost + category markup = price
 
@@ -227,6 +240,7 @@ Do NOT:
       "Do NOT troubleshoot missing products",
       "Do NOT build bundles step-by-step",
       "Say: 'We’ll cover that in detail in homework or a focused session'"
+      "Do NOT let homework questions consume the full session"
     ],
 
     homework: `This is where they will actually set up and refine their catalog.
@@ -251,18 +265,31 @@ They will:
 
 This session focuses on how templates, widgets, and cover pages work together to create a consistent and professional quote experience — without getting into detailed configuration.`,
 
-    flow: [
-      {
-        title: "1. Reconnect to the Quote (Anchor)",
-        content: `Start with a quote.
+flow: [
+  {
+    title: "1. Homework Review / Key Questions (5–10 min)",
+    content: `Ask what questions came up from homework.
+
+Address the 1–2 most important questions.
+
+Keep answers focused and practical.
+
+If something requires a deeper dive, capture it for follow-up so the session stays on track.
+
+If needed, say:
+"That’s a great question — let’s make sure we stay on track today, and we can come back to that in a focused follow-up if needed."`
+  },
+  {
+    title: "2. Reconnect to the Quote (Anchor)",
+    content: `Start with a quote.
 
 Reinforce:
 - This is what your customer sees
 - This is not just a quote — it’s a sales experience`
-      },
-      {
-        title: "2. What Makes a Strong Proposal",
-        content: `Explain that a strong proposal:
+  },
+  {
+    title: "3. What Makes a Strong Proposal",
+    content: `Explain that a strong proposal:
 - tells a clear story
 - focuses on outcomes (not technical details)
 - makes it easy for the customer to decide
@@ -274,10 +301,10 @@ Simple structure:
 - next steps
 
 Templates deliver this structure consistently.`
-      },
-      {
-        title: "3. Cover Pages (First Impression Layer)",
-        content: `Optional but powerful.
+  },
+  {
+    title: "4. Cover Pages (First Impression Layer)",
+    content: `Optional but powerful.
 
 Explain:
 - Adds a professional, branded introduction
@@ -289,10 +316,10 @@ Do NOT build one live.
 Position as:
 - branding and positioning tool
 - covered in homework`
-      },
-      {
-        title: "4. Widgets (Building Blocks)",
-        content: `Widgets are the components used to build templates.
+  },
+  {
+    title: "5. Widgets (Building Blocks)",
+    content: `Widgets are the components used to build templates.
 
 Types include:
 - content only
@@ -304,10 +331,10 @@ Key idea:
 Widgets help tell your story in sections.
 
 Do NOT build or configure deeply.`
-      },
-      {
-        title: "5. Templates (Structure & Consistency)",
-        content: `Templates are built from widgets and define the structure of the quote.
+  },
+  {
+    title: "6. Templates (Structure & Consistency)",
+    content: `Templates are built from widgets and define the structure of the quote.
 
 Explain:
 - ensures consistency across the team
@@ -317,10 +344,10 @@ Show Marketplace templates as examples.
 
 Key idea:
 You don’t start from scratch — you adapt and refine.`
-      },
-      {
-        title: "6. Bring It Together (Light Demo)",
-        content: `SHOW:
+  },
+  {
+    title: "7. Bring It Together (Light Demo)",
+    content: `SHOW:
 - Create a quote using a Marketplace template
 - Add a product or service
 - Optionally add a widget
@@ -330,8 +357,8 @@ Explain:
 - Widgets can be added as needed
 
 Keep this quick — reinforce, don’t build.`
-      }
-    ],
+  }
+],
 
     keyPoints: [
       "A quote is a guided customer experience, not just pricing",
@@ -348,6 +375,8 @@ Keep this quick — reinforce, don’t build.`
       "Do NOT perfect layout or design during the session",
       "Do NOT get stuck editing content",
       "Say: 'We’ll cover that in detail in homework'"
+"Do NOT let homework questions consume the full session"
+      
     ],
 
     homework: `This is where they will build and refine their proposal structure.
