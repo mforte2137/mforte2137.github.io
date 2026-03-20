@@ -111,7 +111,7 @@ Share the homework link in chat.
 <a href="https://docs.google.com/document/d/1azLuGUAr9wedx-2yQ4ZDvCYcxaAEuiw0hzYIF51bxHA/edit?usp=sharing" target="_blank" style="display:inline-block;margin-top:8px;font-weight:600;">
   🔗 Open Homework Document
 </a>`
-  }
+  },
     "Session 2 – Catalog & Pricing": {
     objective: `Help the MSP understand how products are structured, sourced, and priced in Salesbuildr so they can build quotes efficiently and consistently.
 
