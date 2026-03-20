@@ -1538,6 +1538,8 @@ function openScript(sessionTitle) {
   if (!modal || !body) return;
 
   body.innerHTML = getScriptContent(sessionTitle);
+  body.scrollTop = 0;
+  modal.scrollTop = 0;
   modal.style.display = "flex";
 }
 
