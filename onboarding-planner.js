@@ -820,7 +820,7 @@ function buildCoreSessions(type, priorities) {
     ));
 
     sessions.push(makeSession(
-      "Session 4 – Integrations & Workflow",
+      "Session 4 – Refining Your Workflow",
       buildTopicList([
         "PSA sync",
         "Opportunity stages",
@@ -855,7 +855,7 @@ function buildCoreSessions(type, priorities) {
     ));
 
     sessions.push(makeSession(
-      "Session 4 – Integrations & Workflow",
+      "Session 4 – Refining Your Workflow",
       buildTopicList([
         "PSA sync behavior",
         "Opportunity stages",
