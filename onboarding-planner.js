@@ -6,7 +6,7 @@ const AGENT_LINKS = {
 };
 
 const SESSION_SCRIPTS = {
-  "Session 1 – Kickoff + First Quote + Roadmap": {
+  session1: {
     objective: `Guide the MSP through their first successful interaction with Salesbuildr by demonstrating how a simple quote is created and experienced by the customer.
 
 This session establishes a clear mental model of how Salesbuildr works at a high level, without getting into configuration, so the MSP understands how all key areas connect back to quoting.`,
@@ -95,7 +95,7 @@ Admin:
       "Say: 'We’ll cover that in a focused session'"
     ],
 
-homework: `Introduce the homework (30 minutes).
+    homework: `Introduce the homework (30 minutes).
 
 They will:
 - Create a simple quote
@@ -112,7 +112,8 @@ Share the homework link in chat.
   🔗 Open Homework Document
 </a>`
   },
-    "Session 2 – Catalog & Pricing": {
+
+  session2_catalog: {
     objective: `Help the MSP understand how products are structured, sourced, and priced in Salesbuildr so they can build quotes efficiently and consistently.
 
 This session focuses on the core concepts of catalog management and pricing, while leaving detailed setup and cleanup to homework.`,
@@ -1402,8 +1403,19 @@ function closeScript() {
   }
 }
 
+function getScriptKeyFromTitle(title) {
+  if (title.includes("Kickoff")) return "session1";
+  if (title.includes("Catalog")) return "session2_catalog";
+  if (title.includes("Templates")) return "session3_templates";
+  if (title.includes("Integrations")) return "session4_integrations";
+  if (title.includes("Sales Team Training")) return "addon_sales";
+  if (title.includes("Storefront")) return "addon_storefront";
+  return null;
+}
+
 function getScriptContent(title) {
-  const script = SESSION_SCRIPTS[title];
+  const scriptKey = getScriptKeyFromTitle(title);
+  const script = SESSION_SCRIPTS[scriptKey];
 
   if (!script) {
     return "<p>No script available yet.</p>";
