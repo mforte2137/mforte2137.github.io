@@ -1552,7 +1552,7 @@ function getScriptKeyFromTitle(title) {
   if (title.includes("Kickoff")) return "session1";
   if (title.includes("Catalog")) return "session2_catalog";
   if (title.includes("Templates")) return "session3_templates";
-  if (title.includes("Integrations")) return "session4_integrations";
+  if (title.includes("Workflow")) return "session4_workflow";
   if (title.includes("Sales Team Training")) return "addon_sales";
   if (title.includes("Storefront")) return "addon_storefront";
   return null;
