@@ -1534,13 +1534,16 @@ function populateForm(planData) {
 function openScript(sessionTitle) {
   const modal = document.getElementById("scriptModal");
   const body = document.getElementById("scriptBody");
+  const content = document.querySelector(".script-content");
 
-  if (!modal || !body) return;
+  if (!modal || !body || !content) return;
 
   body.innerHTML = getScriptContent(sessionTitle);
+  modal.style.display = "flex";
+
   body.scrollTop = 0;
   modal.scrollTop = 0;
-  modal.style.display = "flex";
+  content.scrollTop = 0;
 }
 
 function closeScript() {
