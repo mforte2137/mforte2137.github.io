@@ -245,6 +245,122 @@ They will:
 <a href="PASTE_SESSION_2_HOMEWORK_LINK_HERE" target="_blank" style="display:inline-block;margin-top:8px;font-weight:600;">
   🔗 Open Homework Document
 </a>`
+  },
+  session3_templates: {
+    objective: `Help the MSP understand how to design a clear, compelling proposal that guides the customer toward a decision.
+
+This session focuses on how templates, widgets, and cover pages work together to create a consistent and professional quote experience — without getting into detailed configuration.`,
+
+    flow: [
+      {
+        title: "1. Reconnect to the Quote (Anchor)",
+        content: `Start with a quote.
+
+Reinforce:
+- This is what your customer sees
+- This is not just a quote — it’s a sales experience`
+      },
+      {
+        title: "2. What Makes a Strong Proposal",
+        content: `Explain that a strong proposal:
+- tells a clear story
+- focuses on outcomes (not technical details)
+- makes it easy for the customer to decide
+
+Simple structure:
+- problem
+- solution
+- what’s included
+- next steps
+
+Templates deliver this structure consistently.`
+      },
+      {
+        title: "3. Cover Pages (First Impression Layer)",
+        content: `Optional but powerful.
+
+Explain:
+- Adds a professional, branded introduction
+- Uses variables for personalization
+- Can be tailored by solution or vertical
+
+Do NOT build one live.
+
+Position as:
+- branding and positioning tool
+- covered in homework`
+      },
+      {
+        title: "4. Widgets (Building Blocks)",
+        content: `Widgets are the components used to build templates.
+
+Types include:
+- content only
+- content with products/services
+- forms
+- images/media
+
+Key idea:
+Widgets help tell your story in sections.
+
+Do NOT build or configure deeply.`
+      },
+      {
+        title: "5. Templates (Structure & Consistency)",
+        content: `Templates are built from widgets and define the structure of the quote.
+
+Explain:
+- ensures consistency across the team
+- guides the customer through a decision journey
+
+Show Marketplace templates as examples.
+
+Key idea:
+You don’t start from scratch — you adapt and refine.`
+      },
+      {
+        title: "6. Bring It Together (Light Demo)",
+        content: `SHOW:
+- Create a quote using a Marketplace template
+- Add a product or service
+- Optionally add a widget
+
+Explain:
+- Templates can be edited
+- Widgets can be added as needed
+
+Keep this quick — reinforce, don’t build.`
+      }
+    ],
+
+    keyPoints: [
+      "A quote is a guided customer experience, not just pricing",
+      "Templates create structure and consistency",
+      "Widgets are the building blocks of that experience",
+      "Cover pages enhance professionalism and positioning",
+      "The goal is clarity and simplicity for the customer",
+      "You are guiding the customer toward a decision"
+    ],
+
+    avoid: [
+      "Do NOT build templates from scratch",
+      "Do NOT configure every widget",
+      "Do NOT perfect layout or design during the session",
+      "Do NOT get stuck editing content",
+      "Say: 'We’ll cover that in detail in homework'"
+    ],
+
+    homework: `This is where they will build and refine their proposal structure.
+
+They will:
+- Create a cover page
+- Build and modify widgets
+- Build or customize templates
+- Explore Marketplace templates
+
+<a href="PASTE_SESSION_3_HOMEWORK_LINK_HERE" target="_blank" style="display:inline-block;margin-top:8px;font-weight:600;">
+  🔗 Open Homework Document
+</a>`
   }
 };
 
