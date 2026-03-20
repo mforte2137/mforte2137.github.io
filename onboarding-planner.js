@@ -112,6 +112,139 @@ Share the homework link in chat.
   🔗 Open Homework Document
 </a>`
   }
+    "Session 2 – Catalog & Pricing": {
+    objective: `Help the MSP understand how products are structured, sourced, and priced in Salesbuildr so they can build quotes efficiently and consistently.
+
+This session focuses on the core concepts of catalog management and pricing, while leaving detailed setup and cleanup to homework.`,
+
+    flow: [
+      {
+        title: "1. Product Model Overview (Concept First)",
+        content: `Explain the 3 item types:
+- Products (managed in Salesbuildr)
+- Services and Labor (managed in PSA)
+
+Key idea:
+Products are managed in Salesbuildr because pricing is dynamic and tied to distributors.
+
+Reinforce:
+- Products do not sync to PSA until used in a quote
+- This keeps the PSA clean and controlled`
+      },
+      {
+        title: "2. Categories = Portfolio Structure",
+        content: `Show category structure (root + sub-categories).
+
+Key idea:
+Categories define:
+- organization
+- pricing (markup / margin)
+
+Reinforce:
+- Sub-categories control pricing strategy
+- This is where standardization begins
+
+Do NOT spend time editing or reorganizing here.`
+      },
+      {
+        title: "3. Products Overview (What Good Looks Like)",
+        content: `Show the product list briefly.
+
+Explain:
+- In stock vs not found
+- Dynamic vs static pricing
+
+Key idea:
+We want clean, active, dynamically priced products.
+
+Do NOT:
+- bulk edit
+- clean data
+- fix catalog issues`
+      },
+      {
+        title: "4. Adding Products to a Quote (Anchor Back to Session 1)",
+        content: `Go back to a quote.
+
+Show how to:
+- browse categories
+- add a product
+
+Reinforce:
+- Everything connects back to quoting
+- This is the real workflow`
+      },
+      {
+        title: "5. Marketplace (Key Moment)",
+        content: `Show how to search and import a product.
+
+Key idea:
+This is how you bring in new products when they do not exist yet.
+
+Reinforce:
+- Import into catalog
+- Add to quote
+- Sync to PSA when quoted`
+      },
+      {
+        title: "6. Bundles (Concept Only)",
+        content: `Briefly explain that bundles are grouped products and/or services.
+
+Position them as:
+- an efficiency tool
+- something most MSPs already understand conceptually
+
+Do NOT build one live.`
+      },
+      {
+        title: "7. Pricing (High-Level Only)",
+        content: `Explain:
+- distributor cost + category markup = price
+
+Reinforce:
+- pricing is centralized
+- supports consistency
+
+Do NOT:
+- adjust pricing live
+- go into bulk edits`
+      }
+    ],
+
+    keyPoints: [
+      "Products are managed in Salesbuildr for dynamic pricing",
+      "Categories control both structure and pricing",
+      "Marketplace is how new products are introduced",
+      "Everything connects back to quoting",
+      "Standardization improves speed and consistency",
+      "The goal is a clean, usable catalog — not perfection"
+    ],
+
+    avoid: [
+      "Do NOT clean up the product catalog live",
+      "Do NOT bulk edit or fix pricing",
+      "Do NOT troubleshoot missing products",
+      "Do NOT build bundles step-by-step",
+      "Say: 'We’ll cover that in detail in homework or a focused session'"
+    ],
+
+    homework: `This is where they will actually set up and refine their catalog.
+
+They will:
+- Organize categories and sub-categories
+- Add products to the catalog
+- Use Marketplace to import products
+- Add products by MPN
+- Create unique/manual products
+- Create bundles
+- Configure markups
+- Enable dynamic pricing by clearing static pricing
+- Unlist inactive or end-of-life products
+
+<a href="PASTE_SESSION_2_HOMEWORK_LINK_HERE" target="_blank" style="display:inline-block;margin-top:8px;font-weight:600;">
+  🔗 Open Homework Document
+</a>`
+  }
 };
 
 const AGENT_LABELS = {
