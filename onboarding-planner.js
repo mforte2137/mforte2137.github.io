@@ -877,7 +877,8 @@ function generatePlan() {
     whyBullets,
     planMeta,
     coreSessions: finalCoreSessions,
-    addonSessions: finalAddonSessions
+    addonSessions: finalAddonSessions,
+    notes: []
   };
 
   renderAll(currentPlanData);
