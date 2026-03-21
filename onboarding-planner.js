@@ -878,7 +878,8 @@ function generatePlan() {
     planMeta,
     coreSessions: finalCoreSessions,
     addonSessions: finalAddonSessions,
-    notes: []
+    notes: [],
+    adhocSessions: []
   };
 
   renderAll(currentPlanData);
@@ -893,6 +894,9 @@ function renderAll(planData) {
   
 notes = planData.notes || [];
 renderNotes();
+
+  adhocSessions = planData.adhocSessions || [];
+renderAdhocSessions();
   
   // Bind buttons once after all session HTML has been rendered
   bindSessionCopyButtons();
@@ -2019,8 +2023,60 @@ function toggleNoteStatus(index) {
   renderNotes();
 }
 
-/* ===== ADD THIS BLOCK END ===== */
+let adhocSessions = [];
 
+document.getElementById("saveAdhocBtn").addEventListener("click", () => {
+  const title = document.getElementById("adhocTitle").value;
+  const date = document.getElementById("adhocDate").value;
+  const agent = document.getElementById("adhocAgent").value;
+
+  if (!title.trim()) return;
+
+  const session = {
+    title,
+    plannedDate: date || "TBD",
+    assignedAgent: agent,
+    isScheduled: false,
+    isAddon: false,
+    isAdhoc: true,
+    topics: []
+  };
+
+  if (!currentPlanData.adhocSessions) {
+    currentPlanData.adhocSessions = [];
+  }
+
+  currentPlanData.adhocSessions.push(session);
+  adhocSessions = currentPlanData.adhocSessions;
+
+  renderAdhocSessions();
+
+  // reset form
+  document.getElementById("adhocTitle").value = "";
+  document.getElementById("adhocDate").value = "";
+  document.getElementById("adhocForm").style.display = "none";
+});
+
+function renderAdhocSessions() {
+  const container = document.getElementById("adhocSection");
+  if (!container) return;
+
+  if (!adhocSessions || adhocSessions.length === 0) {
+    container.innerHTML = `<div class="muted">No ad-hoc sessions added.</div>`;
+    return;
+  }
+
+  container.innerHTML = adhocSessions.map(session => `
+    <div class="session-card" style="margin-bottom:12px;">
+      <div class="session-title">${session.title}</div>
+      <div class="session-date">Planned Date: ${session.plannedDate}</div>
+      <div class="session-topics">Ad-hoc session</div>
+      <div class="session-agent">Agent: ${session.assignedAgent}</div>
+    </div>
+  `).join("");
+}
+
+/* ===== ADD THIS BLOCK END ===== */
 
 function getScriptKeyFromTitle(title) {
   if (title.includes("Kickoff")) return "session1";
