@@ -890,7 +890,10 @@ function renderAll(planData) {
   renderSessions(planData.addonSessions, addonPlanEl, true);
   renderAgenda(planData);
   renderReport(planData);
-
+  
+notes = planData.notes || [];
+renderNotes();
+  
   // Bind buttons once after all session HTML has been rendered
   bindSessionCopyButtons();
   bindSessionStatusButtons();
@@ -1961,7 +1964,12 @@ document.getElementById("saveNoteBtn").addEventListener("click", () => {
     status: "Open"
   };
 
-  notes.push(note);
+ if (!currentPlanData.notes) {
+  currentPlanData.notes = [];
+}
+
+currentPlanData.notes.push(note);
+notes = currentPlanData.notes;
 
   renderNotes();
 
