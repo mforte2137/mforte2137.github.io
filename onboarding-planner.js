@@ -1934,6 +1934,13 @@ function closeScript() {
   }
 }
 
+document.getElementById("addNoteBtn").addEventListener("click", () => {
+  const form = document.getElementById("noteForm");
+  if (!form) return;
+
+  form.style.display = form.style.display === "none" ? "block" : "none";
+});
+
 function getScriptKeyFromTitle(title) {
   if (title.includes("Kickoff")) return "session1";
   if (title.includes("Catalog")) return "session2_catalog";
