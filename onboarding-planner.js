@@ -1978,16 +1978,28 @@ function renderNotes() {
     return;
   }
 
-  container.innerHTML = notes.map(note => `
-    <div class="note-item">
+  container.innerHTML = notes.map((note, index) => `
+    <div class="note-item" style="margin-bottom:12px;">
       <strong>${note.type}</strong>
       ${note.session ? `— ${note.session}` : ""}
       <br>
       ${note.text}
       <br>
       <em>Status: ${note.status}</em>
+      <br>
+      <button type="button" onclick="toggleNoteStatus(${index})">
+        ${note.status === "Open" ? "Mark Done" : "Mark Open"}
+      </button>
     </div>
   `).join("");
+}
+
+function toggleNoteStatus(index) {
+  if (!notes[index]) return;
+
+  notes[index].status = notes[index].status === "Open" ? "Done" : "Open";
+
+  renderNotes();
 }
 
 /* ===== ADD THIS BLOCK END ===== */
