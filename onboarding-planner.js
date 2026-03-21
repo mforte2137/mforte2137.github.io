@@ -2066,14 +2066,46 @@ function renderAdhocSessions() {
     return;
   }
 
-  container.innerHTML = adhocSessions.map(session => `
-    <div class="session-card" style="margin-bottom:12px;">
-      <div class="session-title">${session.title}</div>
-      <div class="session-date">Planned Date: ${session.plannedDate}</div>
-      <div class="session-topics">Ad-hoc session</div>
-      <div class="session-agent">Agent: ${session.assignedAgent}</div>
-    </div>
-  `).join("");
+  container.innerHTML = adhocSessions.map((session, index) => {
+    const isScheduled = Boolean(session.isScheduled);
+    const statusClass = isScheduled ? "status-scheduled" : "status-not-scheduled";
+    const statusText = isScheduled ? "Scheduled" : "Not Scheduled";
+    const toggleText = isScheduled ? "Mark Unscheduled" : "Mark Scheduled";
+
+    const sessionKey = `adhoc-${index}`;
+
+    return `
+      <div class="session-card">
+        <div class="session-header">
+          <div class="session-title">${session.title}</div>
+          <div class="session-status-badge ${statusClass}">${statusText}</div>
+        </div>
+
+        <div class="session-date">Planned Date: ${session.plannedDate}</div>
+        <div class="session-topics">Ad-hoc session</div>
+
+        <div class="agent-row">
+          <label>Assigned Agent</label>
+          <select class="agent-select" data-session-key="${sessionKey}">
+            ${buildAgentOptions(session.assignedAgent)}
+          </select>
+        </div>
+
+        <div class="session-actions">
+          <button class="session-copy-btn" type="button">
+            Copy Session Title
+          </button>
+
+          <button class="session-status-btn" type="button" data-session-key="${sessionKey}">
+            ${toggleText}
+          </button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  bindSessionStatusButtons();
+  bindAgentDropdowns();
 }
 
 /* ===== ADD THIS BLOCK END ===== */
