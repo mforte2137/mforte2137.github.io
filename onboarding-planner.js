@@ -652,6 +652,125 @@ This session may lead to:
 - a focused rep follow-up
 - a Loom walkthrough for a specific question
 - an ad-hoc session for a special quoting scenario`
+  },
+  addon_storefront: {
+    objective: `Help the MSP understand how the Storefront works, what business problem it solves, and how to set up a simple first version for testing.
+
+This session focuses on the self-serve purchasing workflow, basic setup structure, and best practices for launching with a controlled test use case.`,
+
+    flow: [
+      {
+        title: "1. What Storefront Is / Why It Exists",
+        content: `Explain the purpose of Storefront:
+
+- a self-serve portal for customers
+- used for pre-selected, easy-to-order items
+
+Examples:
+- laptops
+- monitors
+- keyboards
+- docking stations
+- laptop bags
+
+Reinforce:
+- not a replacement for every quote
+- designed for simple, repeatable purchasing
+
+Key idea:
+Storefront reduces friction for small, standard purchases.`
+      },
+      {
+        title: "2. What Happens When a Customer Orders",
+        content: `Explain the workflow:
+
+- customer logs in
+- selects approved items
+- places the basket order
+- order syncs to Salesbuildr as an approved order
+- follows the normal order workflow
+
+Key idea:
+Storefront orders flow into the same process as other approved orders.`
+      },
+      {
+        title: "3. Best Practice: Start with a Test Company",
+        content: `Recommend a controlled rollout:
+
+- build the first storefront for Test Company
+- use it to understand the experience
+- test safely before opening to real customers
+
+Key idea:
+Start small, test the experience, then expand.`
+      },
+      {
+        title: "4. Basic Storefront Structure",
+        content: `Explain the setup model:
+
+- create a root category (Storefront)
+- create sub-categories (Laptops, Monitors, Docking Stations, etc.)
+- add products into those categories
+
+Key idea:
+Start with a clean, intentionally selected catalog.`
+      },
+      {
+        title: "5. Control Access",
+        content: `Explain access control:
+
+- whitelist companies allowed to use the storefront
+- enable self-serve at the company level
+- select contacts who can access it
+
+Key idea:
+Access is controlled at both company and contact level.`
+      },
+      {
+        title: "6. Bring It Together (Light Walkthrough)",
+        content: `Walk through at a high level:
+
+- category structure
+- company access settings
+- contact enablement
+- how the experience connects back to workflow
+
+Keep this as a guided overview, not a full build-out.`
+      }
+    ],
+
+    keyPoints: [
+      "Storefront is designed for simple, repeatable purchases",
+      "Start with a controlled test use case",
+      "Product selection should be intentional and limited at first",
+      "Access is managed by company and contact",
+      "Orders follow the normal operational workflow",
+      "The goal is simplicity and control, not a large catalog launch"
+    ],
+
+    avoid: [
+      "Do NOT build a large storefront live",
+      "Do NOT over-expand the product set during the session",
+      "Do NOT troubleshoot edge cases during the session",
+      "Do NOT treat Storefront as a replacement for all quoting",
+      "Do NOT open to multiple customers before testing",
+      "Say: 'Let’s keep this focused on a clean first setup, and we can refine it after testing.'"
+    ],
+
+    homework: `Follow these steps to set up your initial Storefront:
+
+- Create a root category for Storefront
+- Create sub-categories (Laptops, Monitors, etc.)
+- Add starter products
+- Whitelist Test Company
+- Enable self-serve on the company
+- Select contacts for access
+
+Start with a controlled test setup before expanding.
+
+<a href="PASTE_STOREFRONT_VIDEO_LINK_HERE" target="_blank" style="display:inline-block;margin-top:8px;font-weight:600;">
+  🔗 Watch Storefront Setup Video
+</a>`
   }
 };
 
