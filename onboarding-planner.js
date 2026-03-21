@@ -1941,6 +1941,58 @@ document.getElementById("addNoteBtn").addEventListener("click", () => {
   form.style.display = form.style.display === "none" ? "block" : "none";
 });
 
+
+/* ===== ADD THIS BLOCK START ===== */
+
+let notes = [];
+
+document.getElementById("saveNoteBtn").addEventListener("click", () => {
+  const type = document.getElementById("noteType").value;
+  const session = document.getElementById("noteSession").value;
+  const text = document.getElementById("noteText").value;
+
+  if (!text.trim()) return;
+
+  const note = {
+    type,
+    session,
+    text,
+    status: "Open"
+  };
+
+  notes.push(note);
+
+  renderNotes();
+
+  // reset form
+  document.getElementById("noteText").value = "";
+  document.getElementById("noteForm").style.display = "none";
+});
+
+function renderNotes() {
+  const container = document.getElementById("notesSection");
+  if (!container) return;
+
+  if (notes.length === 0) {
+    container.innerHTML = `<div class="muted">No notes yet.</div>`;
+    return;
+  }
+
+  container.innerHTML = notes.map(note => `
+    <div class="note-item">
+      <strong>${note.type}</strong>
+      ${note.session ? `— ${note.session}` : ""}
+      <br>
+      ${note.text}
+      <br>
+      <em>Status: ${note.status}</em>
+    </div>
+  `).join("");
+}
+
+/* ===== ADD THIS BLOCK END ===== */
+
+
 function getScriptKeyFromTitle(title) {
   if (title.includes("Kickoff")) return "session1";
   if (title.includes("Catalog")) return "session2_catalog";
