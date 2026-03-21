@@ -115,6 +115,26 @@
     <button id="addAdhocBtn" type="button">+ Add Ad-Hoc Session</button>
   </div>
 
+      <div id="adhocForm" style="display:none; margin-top:12px;">
+  <label for="adhocTitle">Session Title</label>
+  <input id="adhocTitle" type="text" placeholder="Enter session title..." />
+
+  <label for="adhocDate">Planned Date</label>
+  <input id="adhocDate" type="date" />
+
+  <label for="adhocAgent">Assigned Agent</label>
+  <select id="adhocAgent">
+    <option value="mike">Mike</option>
+    <option value="bram">Bram</option>
+    <option value="kristel">Kristel</option>
+    <option value="demi">Demi</option>
+  </select>
+
+  <div class="button-row">
+    <button id="saveAdhocBtn" type="button">Add Session</button>
+  </div>
+</div>
+      
   <div id="adhocSection">
     <div class="muted">No ad-hoc sessions added.</div>
   </div>
