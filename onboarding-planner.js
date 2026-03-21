@@ -1889,7 +1889,8 @@ function importPlan(event) {
       currentPlanData = {
         ...imported,
         coreSessions: imported.coreSessions || [],
-        addonSessions: imported.addonSessions || []
+        addonSessions: imported.addonSessions || [],
+        notes: imported.notes || []
       };
       renderAll(currentPlanData);
     } catch (err) {
