@@ -138,6 +138,35 @@
     <button id="addNoteBtn" type="button">+ Add Note</button>
   </div>
 
+<div id="noteForm" style="display:none; margin-top:12px;">
+  <label for="noteType">Note Type</label>
+  <select id="noteType">
+    <option value="Question">Question</option>
+    <option value="Follow-up">Follow-up</option>
+    <option value="Loom to record">Loom to record</option>
+    <option value="Decision">Decision</option>
+    <option value="Ad-hoc session idea">Ad-hoc session idea</option>
+  </select>
+
+  <label for="noteSession">Related Session</label>
+  <select id="noteSession">
+    <option value="">General</option>
+    <option value="Session 1">Session 1</option>
+    <option value="Session 2">Session 2</option>
+    <option value="Session 3">Session 3</option>
+    <option value="Session 4">Session 4</option>
+    <option value="Sales Training">Sales Training</option>
+    <option value="Storefront">Storefront</option>
+  </select>
+
+  <label for="noteText">Note</label>
+  <textarea id="noteText" rows="4" placeholder="Enter note or follow-up item..."></textarea>
+
+  <div class="button-row">
+    <button id="saveNoteBtn" type="button">Save Note</button>
+  </div>
+</div>
+  
   <div id="notesSection">
     <div class="muted">No notes yet.</div>
   </div>
