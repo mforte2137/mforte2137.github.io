@@ -390,6 +390,141 @@ They will:
 <a href="PASTE_SESSION_3_HOMEWORK_LINK_HERE" target="_blank" style="display:inline-block;margin-top:8px;font-weight:600;">
   🔗 Open Homework Document
 </a>`
+  },
+  session4_workflow: {
+    objective: `Help the MSP refine how they actually build and adjust quotes in Salesbuildr by reviewing their practice quotes, answering common workflow questions, and reinforcing best practices.
+
+This session focuses on real-world quote usage, light workflow refinement, and identifying whether additional follow-up is needed.`,
+
+    flow: [
+      {
+        title: "1. Practice Quote Review / Key Questions (10–15 min)",
+        content: `Review the test quotes they created.
+
+Ask:
+- what felt easy
+- what felt confusing
+- what questions came up
+
+Focus on:
+- quote adjustments
+- adding products
+- pricing changes
+- discounts
+- option choices
+
+Key idea:
+Use their real quotes as the discussion anchor.`
+      },
+      {
+        title: "2. How They Are Actually Quoting",
+        content: `Ask how they expect their sales team to build quotes.
+
+Ask:
+- what they are trying to replicate from their current tool
+- where they feel friction
+- what they want to improve most
+
+Key idea:
+This is about aligning workflow, not copying the old tool exactly.`
+      },
+      {
+        title: "3. Common Quote-Level Adjustments",
+        content: `Show high-level examples of common quote-level flexibility.
+
+Examples:
+- discounts
+- price changes
+- quote-level overrides
+- quantity adjustments
+
+Example:
+Allowing recipient quantity changes on a quote even if that is off by default.
+
+Reinforce:
+Salesbuildr has defaults for consistency, but there is quote-level flexibility where needed.`
+      },
+      {
+        title: "4. Product Choice / Options",
+        content: `Introduce the concept of quote options in a practical way.
+
+Example:
+- add two laptop choices
+- configure single-choice or multi-choice options
+
+Explain:
+- this helps the customer compare options
+- supports guided decision-making
+- keeps the quote clean and structured
+
+Do a light demo, not a deep build.`
+      },
+      {
+        title: "5. Additional Product Questions",
+        content: `Address common product questions that appear after they begin quoting.
+
+Typical examples:
+- adding products
+- choosing the right product
+- handling special items
+- when to use Marketplace vs existing catalog items
+
+Keep this practical and tied to the quotes they already created.`
+      },
+      {
+        title: "6. Reinforce Best Practices",
+        content: `Bring the session back to:
+- keep quoting simple
+- standardize where possible
+- use flexibility intentionally
+- do not over-customize every quote
+
+Key idea:
+Consistency first, refinement over time.`
+      },
+      {
+        title: "7. Decide the Next Step",
+        content: `At the end of the session, decide:
+
+- are they ready to move forward confidently?
+- do they need a focused follow-up?
+- do they need an ad-hoc session for a specific topic?
+- have they practiced enough?
+
+This is the natural decision point for:
+- no further onboarding needed
+- add ad-hoc session
+- follow up with Loom or notes`
+      }
+    ],
+
+    keyPoints: [
+      "Real quoting questions usually appear only after hands-on practice",
+      "Quote-level flexibility exists, but defaults still matter",
+      "Options help guide customer decisions clearly",
+      "The goal is to refine workflow, not recreate the old tool exactly",
+      "Consistency is more valuable than excessive customization",
+      "This session helps determine whether an additional focused session is needed"
+    ],
+
+    avoid: [
+      "Do NOT let one edge case take over the session",
+      "Do NOT attempt to redesign their entire process live",
+      "Do NOT over-explain every quote setting",
+      "Do NOT promise to recreate the old tool exactly",
+      "Say: 'Let’s keep this focused on your main quoting workflow, and if needed we can handle that as a separate follow-up.'"
+    ],
+
+    homework: `This session usually ends in one of three ways:
+
+- They are ready to move forward
+- They need a focused follow-up session
+- They need offline follow-up (notes / Loom / specific answer)
+
+This is the natural place to identify:
+- deferred questions
+- MSP-specific needs
+- possible ad-hoc sessions`
   }
 };
 
