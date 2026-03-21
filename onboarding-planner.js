@@ -1946,6 +1946,13 @@ document.getElementById("addNoteBtn").addEventListener("click", () => {
   form.style.display = form.style.display === "none" ? "block" : "none";
 });
 
+document.getElementById("addAdhocBtn").addEventListener("click", () => {
+  const form = document.getElementById("adhocForm");
+  if (!form) return;
+
+  form.style.display = form.style.display === "none" ? "block" : "none";
+});
+
 
 /* ===== ADD THIS BLOCK START ===== */
 
