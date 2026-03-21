@@ -525,6 +525,133 @@ This is the natural place to identify:
 - deferred questions
 - MSP-specific needs
 - possible ad-hoc sessions`
+  },
+  addon_sales: {
+    objective: `Train the sales team to confidently create, adjust, and send quotes in Salesbuildr using the current approved quoting workflow.
+
+This session focuses on the rep experience only. It is designed to get the sales team quoting quickly and consistently, without going into configuration or admin setup.`,
+
+    flow: [
+      {
+        title: "1. Set Expectations / Scope",
+        content: `Explain that this session is about how to make quotes.
+
+Clarify:
+- setup and configuration have already been handled
+- today is about the quoting workflow
+- not every feature needs to be covered
+
+Key message:
+Today is about how to create and send quotes confidently.`
+      },
+      {
+        title: "2. Start a Quote",
+        content: `Show where reps begin.
+
+Show how to select:
+- company
+- opportunity
+- quote entry point
+
+Keep it simple and repeatable.
+
+Key idea:
+This is the standard starting point for reps.`
+      },
+      {
+        title: "3. Use the Current Template Workflow",
+        content: `Show how to choose the template that is ready for use.
+
+Explain:
+- the quote structure is already designed for them
+- this session is about using the workflow, not building templates
+
+Key idea:
+Reps are using the system, not designing it.`
+      },
+      {
+        title: "4. Add Products and Services",
+        content: `Show how to add products and services into the quote.
+
+Use a realistic example.
+
+Keep it focused on the rep workflow:
+- select
+- add
+- review
+
+Reinforce:
+This is the day-to-day quoting motion.`
+      },
+      {
+        title: "5. Show the Customer Experience",
+        content: `Preview the quote and show what the customer sees.
+
+Reinforce:
+- this is not just pricing
+- this is the customer-facing sales experience
+- the rep is guiding the customer toward a decision`
+      },
+      {
+        title: "6. Show Simple Quote Adjustments",
+        content: `Only show the adjustments reps are likely to use.
+
+Examples:
+- changing quantities
+- basic price or discount adjustment (if appropriate)
+- using quote options if part of the workflow
+
+Keep this practical and limited.
+
+Key idea:
+Show the flexibility reps need without opening the door to too many exceptions.`
+      },
+      {
+        title: "7. Reinforce the Standard Rep Workflow",
+        content: `End by showing the simple repeatable motion:
+
+- start quote
+- use approved template
+- add products and services
+- review customer experience
+- send quote
+
+Keep the reps anchored to the standard process.`
+      }
+    ],
+
+    keyPoints: [
+      "This session is about the rep workflow, not admin configuration",
+      "Reps should learn the current approved quoting process",
+      "The goal is confidence and consistency, not mastering every feature",
+      "Quotes should be clear, simple, and customer-friendly",
+      "Start with the standard workflow first, then refine over time",
+      "Salesbuildr does not need to behave exactly like the old system to be effective"
+    ],
+
+    avoid: [
+      "Do NOT go into admin settings",
+      "Do NOT explain template building in detail",
+      "Do NOT edit widgets live",
+      "Do NOT troubleshoot configuration issues during the session",
+      "Do NOT turn the session into a discussion of everything still being refined",
+      "Do NOT promise that every legacy workflow will work exactly the same way",
+      "Say: 'Today we’re focused on the quoting workflow your team will use right now. If something needs deeper refinement, we can handle that separately.'"
+    ],
+
+    homework: `This session usually does not need heavy homework.
+
+Instead, the follow-up should be practical:
+
+- create a few real practice quotes
+- get comfortable with the quoting flow
+- note any rep-specific questions
+- identify where additional coaching is needed
+
+This session may lead to:
+- a focused rep follow-up
+- a Loom walkthrough for a specific question
+- an ad-hoc session for a special quoting scenario`
   }
 };
 
