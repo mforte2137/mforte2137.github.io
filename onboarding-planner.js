@@ -2103,9 +2103,6 @@ function renderAdhocSessions() {
       </div>
     `;
   }).join("");
-
-  bindSessionStatusButtons();
-  bindAgentDropdowns();
 }
 
 /* ===== ADD THIS BLOCK END ===== */
