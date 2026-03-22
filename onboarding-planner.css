@@ -253,7 +253,7 @@ button:hover,
 .session-link-btn:hover,
 .session-copy-btn:hover,
 .session-status-btn:hover {
-  background-color: #e0e0e0;
+  background-color: #b8c0ca;
   transform: translateY(-1px);
   cursor: pointer;
 }
