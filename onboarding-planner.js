@@ -1649,6 +1649,18 @@ function toggleSessionStatus(sessionKey) {
     });
   }
 
+  if (group === "adhoc" && currentPlanData.adhocSessions[index]) {
+  currentPlanData.adhocSessions = currentPlanData.adhocSessions.map((session, i) => {
+    if (i === index) {
+      return {
+        ...session,
+        isScheduled: !Boolean(session.isScheduled)
+      };
+    }
+    return session;
+  });
+}
+  
   renderAll(currentPlanData);
 }
 
