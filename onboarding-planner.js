@@ -1570,7 +1570,6 @@ const toggleText = isScheduled ? "Mark Unscheduled" : "Mark Scheduled";
           <a class="session-link-btn" href="${AGENT_LINKS[session.assignedAgent]}" target="_blank" rel="noopener noreferrer">Schedule Session</a>
           <button class="session-copy-btn" type="button" data-copy-title="${escapeHtml(sessionTitleForCopy)}">Copy Session Title</button>
           <button class="session-status-btn" type="button" data-session-key="${sessionKey}">${toggleText}</button>
-          <button type="button" onclick="deleteAdhocSession(${index})" style="margin-left:8px;">Delete</button>
           ${agentMode ? `<button class="session-script-btn" type="button" onclick="openScript('${escapeHtmlAttribute(session.title)}')">View Script</button>` : ""}
         </div>
       </div>
@@ -2187,17 +2186,21 @@ function renderAdhocSessions() {
           </select>
         </div>
 
- <div class="session-actions">
+<div class="session-actions">
   <a class="session-link-btn" href="${AGENT_LINKS[session.assignedAgent]}" target="_blank" rel="noopener noreferrer">
     Schedule Session
   </a>
 
- <button class="session-copy-btn" type="button" data-copy-title="${escapeHtml(`Salesbuildr Onboarding – ${session.title}`)}">
-  Copy Session Title
-</button>
+  <button class="session-copy-btn" type="button" data-copy-title="${escapeHtml(`Salesbuildr Onboarding – ${session.title}`)}">
+    Copy Session Title
+  </button>
 
   <button class="session-status-btn" type="button" data-session-key="${sessionKey}">
     ${toggleText}
+  </button>
+
+  <button type="button" onclick="deleteAdhocSession(${index})" style="margin-left:8px;">
+    Delete
   </button>
 </div>
       </div>
