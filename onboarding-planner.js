@@ -2108,9 +2108,9 @@ function renderAdhocSessions() {
     Schedule Session
   </a>
 
-  <button class="session-copy-btn" type="button">
-    Copy Session Title
-  </button>
+ <button class="session-copy-btn" type="button" data-copy-title="${escapeHtml(`Salesbuildr Onboarding – ${session.title}`)}">
+  Copy Session Title
+</button>
 
   <button class="session-status-btn" type="button" data-session-key="${sessionKey}">
     ${toggleText}
