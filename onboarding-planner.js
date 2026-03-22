@@ -1793,6 +1793,20 @@ Add-On Sessions:
     });
   }
 
+  report += `
+Ad-Hoc Sessions:
+`;
+
+if (!planData.adhocSessions || planData.adhocSessions.length === 0) {
+  report += `- None
+`;
+} else {
+  planData.adhocSessions.forEach(session => {
+    report += `- ${session.title} (${session.plannedDate || "TBD"}) [${session.isScheduled ? "Scheduled" : "Not Scheduled"}] [Agent: ${AGENT_LABELS[session.assignedAgent]}]
+`;
+  });
+}
+  
   const nextSession = getAgendaSession(planData);
 
   if (nextSession) {
