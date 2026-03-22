@@ -250,6 +250,7 @@ button:hover,
 .session-copy-btn:hover,
 .session-status-btn:hover {
   background-color: #e0e0e0;
+  border-color: #bbb;
   transform: translateY(-1px);
   cursor: pointer;
 }
