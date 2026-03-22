@@ -903,17 +903,15 @@ function renderAll(planData) {
   renderRecommendation(planData.recommendedTypeName, planData.whyBullets, planData.planMeta);
   renderSessions(planData.coreSessions, sessionPlanEl, false);
   renderSessions(planData.addonSessions, addonPlanEl, true);
-  renderAgenda(planData);
   renderReport(planData);
   renderNextSteps(planData);
-  
-notes = planData.notes || [];
-renderNotes();
+
+  notes = planData.notes || [];
+  renderNotes();
 
   adhocSessions = planData.adhocSessions || [];
-renderAdhocSessions();
-  
-  // Bind buttons once after all session HTML has been rendered
+  renderAdhocSessions();
+
   bindSessionCopyButtons();
   bindSessionStatusButtons();
   bindAgentDropdowns();
