@@ -781,6 +781,14 @@ const AGENT_LABELS = {
   demi: "Demi"
 };
 
+const typeNames = {
+  expert: "Targeted Expert",
+  explorer: "Fast-Track Explorer",
+  guided: "Guided Team",
+  rollout: "Admin → Sales Rollout",
+  momentum: "Momentum Risk"
+};
+
 const recommendBtn = document.getElementById("recommendBtn");
 const recommendationEl = document.getElementById("recommendation");
 const sessionPlanEl = document.getElementById("sessionPlan");
@@ -967,14 +975,6 @@ function getWinningType(scores) {
 
   return winner;
 }
-
-const typeNames = {
-  expert: "Targeted Expert",
-  explorer: "Fast-Track Explorer",
-  guided: "Guided Team",
-  rollout: "Admin → Sales Rollout",
-  momentum: "Momentum Risk"
-};
 
 function buildWhyBullets(type, q1, q2, q3, priorities) {
   const reasonPool = [];
