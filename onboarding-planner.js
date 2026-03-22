@@ -2056,6 +2056,33 @@ function toggleNoteStatus(index) {
   renderNotes();
 }
 
+// 👇 PASTE RIGHT HERE
+
+function createAdhocFromNote(index) {
+  if (!notes[index] || !currentPlanData) return;
+
+  const note = notes[index];
+
+  const session = {
+    title: note.text,
+    plannedDate: "TBD",
+    assignedAgent: "mike",
+    isScheduled: false,
+    isAddon: false,
+    isAdhoc: true,
+    topics: []
+  };
+
+  if (!currentPlanData.adhocSessions) {
+    currentPlanData.adhocSessions = [];
+  }
+
+  currentPlanData.adhocSessions.push(session);
+  adhocSessions = currentPlanData.adhocSessions;
+
+  renderAll(currentPlanData);
+}
+
 let adhocSessions = [];
 
 document.getElementById("saveAdhocBtn").addEventListener("click", () => {
