@@ -1205,11 +1205,10 @@ function buildCoreSessions(type, priorities) {
     sessions.push(makeSession(
       "Session 3 – Templates, Widgets & Cover Pages",
       buildTopicList([
-        "Templates",
-        "Widgets",
-        "Approval rules",
-        "Quote workflow",
-        "Email defaults"
+         "Cover Pages",
+    "Widgets",
+    "Templates",
+    "Designing Winning Proposals"
       ], priorities)
     ));
   }
@@ -1264,11 +1263,10 @@ function buildCoreSessions(type, priorities) {
     sessions.push(makeSession(
       "Session 3 – Templates, Widgets & Cover Pages",
       buildTopicList([
-        "Templates",
-        "Widgets",
-        "Branding",
-        "Customer quote experience",
-        "Notifications"
+        "Cover Pages",
+    "Widgets",
+    "Templates",
+    "Designing Winning Proposals"
       ], priorities)
     ));
 
@@ -1296,10 +1294,10 @@ function buildCoreSessions(type, priorities) {
     sessions.push(makeSession(
       "Session 3 – Templates, Widgets & Cover Pages",
       buildTopicList([
-        "Templates",
-        "Email defaults",
-        "Customer quote experience",
-        "Simple best practices"
+         "Cover Pages",
+    "Widgets",
+    "Templates",
+    "Designing Winning Proposals"
       ], priorities)
     ));
   }
