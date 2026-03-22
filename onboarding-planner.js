@@ -808,7 +808,13 @@ recommendBtn.addEventListener("click", generatePlan);
 copyReportBtn.addEventListener("click", copyReport);
 exportPlanBtn.addEventListener("click", exportPlan);
 importPlanFile.addEventListener("change", importPlan);
-copyAgendaBtn.addEventListener("click", copyAgenda);
+
+// 👇 ADD THIS
+const copyNextStepsBtn = document.getElementById("copyNextSteps");
+
+if (copyNextStepsBtn) {
+  copyNextStepsBtn.addEventListener("click", copyNextSteps);
+}
 
 if (agentModeToggle) {
   agentModeToggle.addEventListener("change", (e) => {
