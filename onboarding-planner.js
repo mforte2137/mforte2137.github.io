@@ -2027,18 +2027,24 @@ function renderNotes() {
   }
 
   container.innerHTML = notes.map((note, index) => `
-    <div class="note-item" style="margin-bottom:12px;">
-      <strong>${note.type}</strong>
-      ${note.session ? `— ${note.session}` : ""}
-      <br>
-      ${note.text}
-      <br>
-      <em>Status: ${note.status}</em>
-      <br>
-      <button type="button" onclick="toggleNoteStatus(${index})">
-        ${note.status === "Open" ? "Mark Done" : "Mark Open"}
-      </button>
-    </div>
+  <div class="note-item" style="margin-bottom:12px;">
+  <strong>${note.type}</strong>
+  ${note.session ? `— ${note.session}` : ""}
+  <br>
+  ${note.text}
+  <br>
+  <em>Status: ${note.status}</em>
+  <br>
+  <button type="button" onclick="toggleNoteStatus(${index})">
+    ${note.status === "Open" ? "Mark Done" : "Mark Open"}
+  </button>
+
+  ${note.type === "Ad-hoc session idea" ? `
+    <button type="button" onclick="createAdhocFromNote(${index})">
+      Create Session
+    </button>
+  ` : ""}
+</div>
   `).join("");
 }
 
