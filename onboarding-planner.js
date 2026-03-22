@@ -1707,6 +1707,31 @@ function getAgendaSession(planData) {
   return combined[startIndex] || combined[combined.length - 1];
 }
 
+function getNextStepsData(planData) {
+  if (!planData) return null;
+
+  // 1. Next Planned Session (first not scheduled)
+  const allSessions = [
+    ...(planData.coreSessions || []),
+    ...(planData.addonSessions || []),
+    ...(planData.adhocSessions || [])
+  ];
+
+  const nextSession = allSessions.find(s => !s.isScheduled) || null;
+
+  // 2. Open Notes
+  const openNotes = (planData.notes || []).filter(n => n.status === "Open");
+
+  // 3. Ad-hoc sessions needing attention
+  const adhocPending = (planData.adhocSessions || []).filter(s => !s.isScheduled);
+
+  return {
+    nextSession,
+    openNotes,
+    adhocPending
+  };
+}
+
 function renderAgenda(planData) {
   const nextSession = getAgendaSession(planData);
 
