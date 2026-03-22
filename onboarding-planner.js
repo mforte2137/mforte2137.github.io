@@ -2103,15 +2103,19 @@ function renderAdhocSessions() {
           </select>
         </div>
 
-        <div class="session-actions">
-          <button class="session-copy-btn" type="button">
-            Copy Session Title
-          </button>
+ <div class="session-actions">
+  <a class="session-link-btn" href="${AGENT_LINKS[session.assignedAgent]}" target="_blank" rel="noopener noreferrer">
+    Schedule Session
+  </a>
 
-          <button class="session-status-btn" type="button" data-session-key="${sessionKey}">
-            ${toggleText}
-          </button>
-        </div>
+  <button class="session-copy-btn" type="button">
+    Copy Session Title
+  </button>
+
+  <button class="session-status-btn" type="button" data-session-key="${sessionKey}">
+    ${toggleText}
+  </button>
+</div>
       </div>
     `;
   }).join("");
