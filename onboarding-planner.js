@@ -1687,6 +1687,7 @@ function getSessionByKey(sessionKey) {
 
   if (group === "core") return currentPlanData.coreSessions[index] || null;
   if (group === "addon") return currentPlanData.addonSessions[index] || null;
+  if (group === "adhoc") return currentPlanData.adhocSessions[index] || null;
 
   return null;
 }
@@ -2061,7 +2062,7 @@ document.getElementById("saveAdhocBtn").addEventListener("click", () => {
   currentPlanData.adhocSessions.push(session);
   adhocSessions = currentPlanData.adhocSessions;
 
-  renderAdhocSessions();
+  renderAll(currentPlanData);
 
   // reset form
   document.getElementById("adhocTitle").value = "";
