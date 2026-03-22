@@ -2063,6 +2063,16 @@ function createAdhocFromNote(index) {
 
   const note = notes[index];
 
+  // Prevent duplicate session creation from the same note
+  const alreadyExists = (currentPlanData.adhocSessions || []).some(
+    session => session.title === note.text
+  );
+
+  if (alreadyExists) {
+    alert("An ad-hoc session with this title already exists.");
+    return;
+  }
+
   const session = {
     title: note.text,
     plannedDate: "TBD",
@@ -2078,9 +2088,20 @@ function createAdhocFromNote(index) {
   }
 
   currentPlanData.adhocSessions.push(session);
+
+  // Mark the note as done once a session is created
+  notes[index].status = "Done";
+  currentPlanData.notes = notes;
+
   adhocSessions = currentPlanData.adhocSessions;
 
   renderAll(currentPlanData);
+
+  // Scroll the Ad-Hoc section into view so the user sees the result
+  const adhocCard = document.getElementById("adhocSection");
+  if (adhocCard) {
+    adhocCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
 let adhocSessions = [];
