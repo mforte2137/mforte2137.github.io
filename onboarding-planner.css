@@ -240,6 +240,20 @@ button:hover,
   text-decoration: none;
 }
 
+.session-link-btn,
+.session-copy-btn,
+.session-status-btn {
+  transition: background-color 0.15s ease, transform 0.05s ease;
+}
+
+.session-link-btn:hover,
+.session-copy-btn:hover,
+.session-status-btn:hover {
+  background-color: #f5f5f5;
+  transform: translateY(-1px);
+  cursor: pointer;
+}
+
 .agenda-panel {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
