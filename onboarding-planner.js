@@ -891,6 +891,7 @@ function renderAll(planData) {
   renderSessions(planData.addonSessions, addonPlanEl, true);
   renderAgenda(planData);
   renderReport(planData);
+  renderNextSteps(planData);
   
 notes = planData.notes || [];
 renderNotes();
@@ -1751,6 +1752,68 @@ function renderAgenda(planData) {
     <div class="agenda-line"><strong>Planned Date:</strong> ${nextSession.plannedDate || "TBD"}</div>
     <div class="agenda-line"><strong>Focus Topics:</strong> ${nextSession.topics.join(" • ")}</div>
   `;
+}
+
+function renderNextSteps(planData) {
+  const panel = document.getElementById("nextStepsPanel");
+  if (!panel) return;
+
+  const data = getNextStepsData(planData);
+
+  if (!data) {
+    panel.innerHTML = `<div class="muted">Generate a plan or import a saved plan to view the next steps.</div>`;
+    return;
+  }
+
+  const { nextSession, openNotes, adhocPending } = data;
+
+  let html = "";
+
+  html += `
+    <div class="agenda-line"><strong>Next Planned Session:</strong></div>
+  `;
+
+  if (nextSession) {
+    html += `
+      <div class="agenda-line">${nextSession.title}</div>
+      <div class="agenda-line"><strong>Planned Date:</strong> ${nextSession.plannedDate || "TBD"}</div>
+      <div class="agenda-line"><strong>Assigned Agent:</strong> ${AGENT_LABELS[nextSession.assignedAgent]}</div>
+    `;
+  } else {
+    html += `
+      <div class="agenda-line">All planned sessions are scheduled.</div>
+    `;
+  }
+
+  html += `
+    <div class="agenda-line" style="margin-top:12px;"><strong>Open Follow-Ups (${openNotes.length}):</strong></div>
+  `;
+
+  if (openNotes.length > 0) {
+    openNotes.slice(0, 3).forEach(note => {
+      html += `<div class="agenda-line">- ${note.text}</div>`;
+    });
+
+    if (openNotes.length > 3) {
+      html += `<div class="agenda-line">+ ${openNotes.length - 3} more</div>`;
+    }
+  } else {
+    html += `<div class="agenda-line">- None</div>`;
+  }
+
+  html += `
+    <div class="agenda-line" style="margin-top:12px;"><strong>Ad-Hoc Sessions Requiring Attention:</strong></div>
+  `;
+
+  if (adhocPending.length > 0) {
+    adhocPending.forEach(session => {
+      html += `<div class="agenda-line">- ${session.title} [Not Scheduled]</div>`;
+    });
+  } else {
+    html += `<div class="agenda-line">- None</div>`;
+  }
+
+  panel.innerHTML = html;
 }
 
 function renderReport(planData) {
