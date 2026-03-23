@@ -1933,6 +1933,62 @@ function copyReport() {
   document.execCommand("copy");
 }
 
+function copyNextSteps() {
+  if (!currentPlanData) {
+    alert("Please generate or import a plan first.");
+    return;
+  }
+
+  const data = getNextStepsData(currentPlanData);
+  if (!data) {
+    alert("No next steps available to copy.");
+    return;
+  }
+
+  const { nextSession, openNotes, adhocPending } = data;
+
+  let text = `Next Planned Session:\n`;
+
+  if (nextSession) {
+    text += `- ${nextSession.title}\n`;
+    text += `- Planned Date: ${nextSession.plannedDate || "TBD"}\n`;
+    text += `- Assigned Agent: ${AGENT_LABELS[nextSession.assignedAgent]}\n`;
+  } else {
+    text += `- All planned sessions are scheduled.\n`;
+  }
+
+  text += `\nOpen Follow-Ups:\n`;
+  if (openNotes.length > 0) {
+    openNotes.forEach(note => {
+      text += `- ${note.text}\n`;
+    });
+  } else {
+    text += `- None\n`;
+  }
+
+  text += `\nAd-Hoc Sessions Requiring Attention:\n`;
+  if (adhocPending.length > 0) {
+    adhocPending.forEach(session => {
+      text += `- ${session.title} [Not Scheduled]\n`;
+    });
+  } else {
+    text += `- None\n`;
+  }
+
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById("copyNextSteps");
+    if (!btn) return;
+
+    const original = btn.textContent;
+    btn.textContent = "Copied!";
+    setTimeout(() => {
+      btn.textContent = original;
+    }, 1200);
+  }).catch(() => {
+    alert("Could not copy the next steps.");
+  });
+}
+
 function copyAgenda() {
   if (!currentPlanData) {
     alert("Please generate or import a plan first.");
