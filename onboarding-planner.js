@@ -2199,7 +2199,10 @@ function toggleNoteStatus(index) {
 
   notes[index].status = notes[index].status === "Open" ? "Done" : "Open";
 
+  currentPlanData.notes = notes;
+
   renderNotes();
+  renderNextSteps(currentPlanData); // 👈 ADD THIS LINE
 }
 
 // 👇 PASTE RIGHT HERE
