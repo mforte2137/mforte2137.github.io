@@ -336,6 +336,29 @@
     .note-body { padding: 10px 12px; font-size: 13.5px; line-height: 1.65; color: var(--text); white-space: pre-wrap; word-break: break-word; }
     .notes-empty { font-size: 13px; color: var(--muted); padding: 8px 0; }
 
+    /* ── Note inline edit ── */
+    .note-edit-area {
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .note-edit-area textarea {
+      width: 100%;
+      padding: 9px 11px;
+      border: 1px solid var(--accent);
+      border-radius: 7px;
+      font-size: 13.5px;
+      font-family: inherit;
+      color: var(--text);
+      resize: vertical;
+      min-height: 80px;
+      outline: none;
+      line-height: 1.6;
+      background: #f0f9ff;
+    }
+    .note-edit-actions { display: flex; gap: 7px; justify-content: flex-end; }
+
     /* ── Column section labels ── */
     .col-label {
       padding: 12px 22px 0;
@@ -539,9 +562,12 @@
             <div class="note-item" id="note-${n.id}">
               <div class="note-meta">
                 <span class="note-date">📅 ${fmtDate(n.created)}</span>
-                <button class="btn-icon" onclick="deleteNote('${c.id}','${n.id}')" title="Delete note">🗑</button>
+                <div style="display:flex;gap:2px">
+                  <button class="btn-icon" onclick="editNote('${c.id}','${n.id}')" title="Edit note">✏️</button>
+                  <button class="btn-icon" onclick="deleteNote('${c.id}','${n.id}')" title="Delete note">🗑</button>
+                </div>
               </div>
-              <div class="note-body">${esc(n.text)}</div>
+              <div class="note-body" id="note-body-${n.id}">${esc(n.text)}</div>
             </div>`).join('')}
           </div>`
       }
@@ -725,6 +751,67 @@
     c.notes = c.notes.filter(n => n.id !== noteId);
     save(state);
     renderCenter();
+  }
+
+  function editNote(companyId, noteId) {
+    const c = getCompany(companyId);
+    const n = (c.notes||[]).find(n => n.id === noteId);
+    if (!n) return;
+    const item = document.getElementById(`note-${noteId}`);
+    // Replace the body div with an inline edit area
+    const bodyEl = document.getElementById(`note-body-${noteId}`);
+    bodyEl.style.display = 'none';
+    // Hide the edit/delete buttons while editing
+    const metaButtons = item.querySelector('.note-meta div');
+    metaButtons.style.display = 'none';
+    // Insert edit area if not already present
+    if (!item.querySelector('.note-edit-area')) {
+      const editArea = document.createElement('div');
+      editArea.className = 'note-edit-area';
+      editArea.id = `note-edit-area-${noteId}`;
+      editArea.innerHTML = `
+        <textarea id="note-edit-ta-${noteId}">${esc(n.text)}</textarea>
+        <div class="note-edit-actions">
+          <button class="btn-ghost btn-sm" onclick="cancelNoteEdit('${noteId}')">Cancel</button>
+          <button class="btn-primary btn-sm" onclick="saveNoteEdit('${companyId}','${noteId}')">Save</button>
+        </div>`;
+      item.appendChild(editArea);
+    } else {
+      item.querySelector('.note-edit-area').style.display = 'flex';
+      item.querySelector('.note-edit-area').style.flexDirection = 'column';
+    }
+    // Focus and put cursor at end
+    const ta = document.getElementById(`note-edit-ta-${noteId}`);
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+    // Ctrl+Enter to save from the edit textarea
+    ta.onkeydown = e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) saveNoteEdit(companyId, noteId); };
+  }
+
+  function saveNoteEdit(companyId, noteId) {
+    const c = getCompany(companyId);
+    const n = (c.notes||[]).find(n => n.id === noteId);
+    if (!n) return;
+    const ta = document.getElementById(`note-edit-ta-${noteId}`);
+    const newText = ta.value.trim();
+    if (!newText) { ta.focus(); return; }
+    n.text = newText;
+    save(state);
+    // Update DOM in place — no full re-render, so scroll position is preserved
+    const bodyEl = document.getElementById(`note-body-${noteId}`);
+    bodyEl.textContent = newText;
+    bodyEl.style.display = '';
+    const item = document.getElementById(`note-${noteId}`);
+    item.querySelector('.note-meta div').style.display = '';
+    item.querySelector('.note-edit-area').style.display = 'none';
+    toast('Note updated');
+  }
+
+  function cancelNoteEdit(noteId) {
+    const item = document.getElementById(`note-${noteId}`);
+    document.getElementById(`note-body-${noteId}`).style.display = '';
+    item.querySelector('.note-meta div').style.display = '';
+    item.querySelector('.note-edit-area').style.display = 'none';
   }
 
   // ── Add company modal ──
