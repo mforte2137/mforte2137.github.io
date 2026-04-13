@@ -55,9 +55,31 @@
       <span id="headerHint" class="header-hint"></span>
     </div>
 
+    <!-- Pricing options -->
+    <div class="options-box">
+      <div class="options-box-title">Pricing options</div>
+      <div class="option-row">
+        <label>Calculate pricing using:</label>
+        <div class="toggle-group">
+          <label class="toggle-opt">
+            <input type="radio" name="pricingMode" value="markup" checked> Markup %
+          </label>
+          <label class="toggle-opt">
+            <input type="radio" name="pricingMode" value="margin"> Margin %
+          </label>
+        </div>
+        <input type="number" id="pricingPct" class="num-input" min="0" max="9999" step="0.1" placeholder="e.g. 25">
+        <span class="option-hint" id="pricingHint">
+          25% markup on $100 cost → $125 sell price &nbsp;·&nbsp; Leave blank to skip
+        </span>
+      </div>
+    </div>
+
     <p class="mapping-intro">
-      We've pre-matched your file's columns to Salesbuildr's Special Bid fields using the column names we recognise.
-      Review each row below — adjust any dropdowns that look wrong — then click <strong>Convert</strong>.
+      We've pre-matched your file's columns to Salesbuildr's Special Bid fields.
+      Review each row — adjust any dropdowns that look wrong — then click <strong>Convert</strong>.
+      For fields not in the vendor file (like <strong>Category</strong>), choose <em>(not mapped)</em>
+      and type your own fixed value into the box that appears — it will be applied to every row.
     </p>
 
     <div class="table-scroll">
@@ -66,8 +88,8 @@
           <tr>
             <th>Salesbuildr Field</th>
             <th></th>
-            <th>Your File's Column</th>
-            <th>Sample Value</th>
+            <th>Your File's Column / Fixed Value</th>
+            <th>Sample / Value</th>
           </tr>
         </thead>
         <tbody id="mappingBody"></tbody>
