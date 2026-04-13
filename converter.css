@@ -257,6 +257,113 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(37,99,235,.1);
 }
 
+/* ── Pricing Options Box ─────────────────────────────────── */
+
+.options-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+}
+
+.options-box-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.option-row label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.option-hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  flex-basis: 100%;
+}
+
+/* Markup / Margin toggle */
+.toggle-group {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.toggle-opt {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  user-select: none;
+}
+
+.toggle-opt:first-child {
+  border-right: 1px solid var(--border);
+}
+
+.toggle-opt input[type="radio"] {
+  accent-color: var(--primary);
+}
+
+.toggle-opt:has(input:checked) {
+  background: var(--primary);
+  color: #fff;
+}
+
+.toggle-opt:has(input:checked) input[type="radio"] {
+  accent-color: #fff;
+}
+
+/* ── Fixed-value input (shows when column set to "not mapped") ── */
+
+.fixed-wrap {
+  margin-top: 6px;
+}
+
+.fixed-wrap.hidden { display: none; }
+
+.fixed-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1.5px dashed var(--primary);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--primary-light);
+}
+
+.fixed-input:focus {
+  outline: none;
+  border-style: solid;
+  box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+}
+
+.fixed-input::placeholder {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 /* ── Mapping Table ───────────────────────────────────────── */
 
 .mapping-intro {
