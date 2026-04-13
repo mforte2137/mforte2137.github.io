@@ -356,8 +356,8 @@ function scoreHeaderMatch(header, fieldKey) {
 }
 
 function buildAutoMapping(headers) {
-  // For each field, pick the header with the highest score (≥ 30 to qualify)
-  return Object.fromEntries(
+  // Score every field against every header independently
+  const mapping = Object.fromEntries(
     FIELDS.map(f => {
       let best = { header: '', score: 0 };
       headers.forEach(h => {
@@ -367,6 +367,24 @@ function buildAutoMapping(headers) {
       return [f.key, best.score >= 30 ? best.header : ''];
     })
   );
+
+  // ── Deconflict Name vs MPN ────────────────────────────────────
+  // Vendor files rarely have a column literally called "Name" — they use
+  // "Description" for the product title. If the auto-mapper picked the same
+  // column for both Name and MPN (e.g. "Product No"), Name wins nothing useful
+  // so clear it and fall back to whatever Description is using.
+  if (mapping['Name'] && mapping['Name'] === mapping['MPN']) {
+    mapping['Name'] = '';
+  }
+
+  // If Name is still unmapped but Description found a column, use that column
+  // for Name too. Both pointing at "Description" is fine — it means the full
+  // product text populates both fields, which is what MSPs want customers to see.
+  if (!mapping['Name'] && mapping['Description']) {
+    mapping['Name'] = mapping['Description'];
+  }
+
+  return mapping;
 }
 
 // ── Mapping UI ────────────────────────────────────────────────────
