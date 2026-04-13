@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Special Bid Converter — Salesbuildr</title>
+  <link rel="stylesheet" href="converter.css">
+  <!-- SheetJS — reads Excel & CSV entirely in your browser. No data is sent anywhere. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ── Header ───────────────────────────────────────────── -->
+  <header class="site-header">
+    <div class="logo">Salesbuildr</div>
+    <h1>Special Bid Converter</h1>
+    <p>Upload your vendor deal reg file and convert it to Salesbuildr import format</p>
+  </header>
+
+  <!-- ── Step 1 : Upload ──────────────────────────────────── -->
+  <section id="step-upload" class="card">
+    <h2><span class="step-num" id="num-1">1</span> Upload Vendor File</h2>
+
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-icon">📂</div>
+      <p class="drop-main">Drag &amp; drop your file here</p>
+      <p class="drop-or">— or —</p>
+      <label class="btn btn-secondary" for="fileInput">Choose File</label>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+      <p class="file-types">Accepts .xlsx &nbsp;·&nbsp; .xls &nbsp;·&nbsp; .csv</p>
+    </div>
+
+    <div id="fileInfo" class="hidden"></div>
+  </section>
+
+  <!-- ── Step 2 : Map Columns ─────────────────────────────── -->
+  <section id="step-mapping" class="card hidden">
+    <h2><span class="step-num" id="num-2">2</span> Map Columns</h2>
+
+    <!-- Sheet picker (only shown when file has multiple tabs) -->
+    <div id="sheetSelectorWrap" class="hidden">
+      <div class="control-row">
+        <label for="sheetSelect">Which tab contains your products?</label>
+        <select id="sheetSelect"></select>
+      </div>
+    </div>
+
+    <!-- Header row control -->
+    <div class="control-row">
+      <label for="headerRowInput">Header row detected at row:</label>
+      <input type="number" id="headerRowInput" min="1" value="1" class="num-input">
+      <span class="auto-tag">auto-detected</span>
+      <span id="headerHint" class="header-hint"></span>
+    </div>
+
+    <p class="mapping-intro">
+      We've pre-matched your file's columns to Salesbuildr's Special Bid fields using the column names we recognise.
+      Review each row below — adjust any dropdowns that look wrong — then click <strong>Convert</strong>.
+    </p>
+
+    <div class="table-scroll">
+      <table class="mapping-tbl">
+        <thead>
+          <tr>
+            <th>Salesbuildr Field</th>
+            <th></th>
+            <th>Your File's Column</th>
+            <th>Sample Value</th>
+          </tr>
+        </thead>
+        <tbody id="mappingBody"></tbody>
+      </table>
+    </div>
+
+    <div class="action-row">
+      <button id="applyBtn" class="btn btn-primary">Convert →</button>
+    </div>
+  </section>
+
+  <!-- ── Step 3 : Export ──────────────────────────────────── -->
+  <section id="step-export" class="card hidden">
+    <h2><span class="step-num" id="num-3">3</span> Download Your Converted File</h2>
+
+    <p id="statsLine" class="stats-line"></p>
+
+    <p class="preview-label">Preview — first 5 rows:</p>
+    <div id="previewTable"></div>
+
+    <div class="export-actions">
+      <button id="downloadBtn" class="btn btn-primary">⬇ Download CSV</button>
+      <button id="copyBtn"     class="btn btn-secondary">⎘ Copy to Clipboard</button>
+    </div>
+
+    <div class="tip-box">
+      <strong>Tip:</strong> If you paste directly into Salesbuildr, download a copy too — it's a handy backup.
+    </div>
+
+    <hr class="divider">
+    <button id="startOverBtn" class="btn btn-ghost">← Convert another file</button>
+  </section>
+
+</div><!-- /container -->
+
+<footer class="site-footer">
+  Your file is processed entirely in your browser — no data is uploaded to any server.
+</footer>
+
+<script src="converter.js"></script>
+</body>
+</html>
