@@ -49,8 +49,11 @@ const SYNONYMS = {
     'full description', 'extended description',
   ],
   'Sales Price': [
-    'sales price', 'sell price', 'selling price', 'price', 'sale price',
-    'sp', 'customer price', 'end customer price',
+    // Note: generic 'price' intentionally removed — vendor files use "price" for
+    // buy/cost prices (e.g. "Unit Price", "Reseller Price"), not sales prices.
+    // Only match column names that unambiguously mean the sell-to-customer price.
+    'sales price', 'sell price', 'selling price', 'sale price',
+    'customer price', 'end customer price', 'resell price',
   ],
   Markup:  ['markup', 'mark up', 'mark-up', 'uplift'],
   Margin:  ['margin', 'gp%', 'gross margin', 'gp', 'profit margin', 'margin %'],
@@ -145,6 +148,12 @@ document.addEventListener('DOMContentLoaded', () => {
     buildMappingUI();
   });
 
+  // Update the pricing hint when the MSP switches between markup and margin modes
+  document.querySelectorAll('input[name="pricingMode"]').forEach(radio => {
+    radio.addEventListener('change', updatePricingHint);
+  });
+  document.getElementById('pricingPct').addEventListener('input', updatePricingHint);
+
   document.getElementById('applyBtn').addEventListener('click', runConversion);
   document.getElementById('downloadBtn').addEventListener('click', triggerDownload);
   document.getElementById('copyBtn').addEventListener('click', triggerCopy);
@@ -227,6 +236,37 @@ function reloadSheet(sheetName) {
   document.getElementById('headerRowInput').value = detectedHdrRow + 1;
   updateHeaderHint();
   buildMappingUI();
+}
+
+// ── Pricing Hint ──────────────────────────────────────────────────
+function updatePricingHint() {
+  const mode = document.querySelector('input[name="pricingMode"]:checked').value;
+  const pct  = parseFloat(document.getElementById('pricingPct').value);
+  const hint = document.getElementById('pricingHint');
+
+  if (isNaN(pct) || pct <= 0) {
+    hint.textContent = mode === 'markup'
+      ? 'e.g. 25 → Sales Price = Cost × 1.25 · Leave blank to skip'
+      : 'e.g. 25 → Sales Price = Cost ÷ 0.75 · Leave blank to skip';
+    return;
+  }
+
+  const exampleCost = 100;
+  let sellPrice, equiv;
+
+  if (mode === 'markup') {
+    sellPrice = exampleCost * (1 + pct / 100);
+    const marginPct = (pct / (100 + pct) * 100).toFixed(1);
+    equiv = `= ${marginPct}% margin`;
+  } else {
+    if (pct >= 100) { hint.textContent = 'Margin must be less than 100%'; return; }
+    sellPrice = exampleCost / (1 - pct / 100);
+    const markupPct = (pct / (100 - pct) * 100).toFixed(1);
+    equiv = `= ${markupPct}% markup`;
+  }
+
+  hint.textContent =
+    `${pct}% ${mode} on $${exampleCost} cost → $${sellPrice.toFixed(2)} sell price  (${equiv})`;
 }
 
 // ── Header Detection ──────────────────────────────────────────────
@@ -342,9 +382,9 @@ function buildMappingUI() {
     const val = mapping[field.key] || '';
     if (val) tr.classList.add('mapped');
 
-    // Select element
+    // Column dropdown
     const sel = document.createElement('select');
-    sel.className   = 'col-select';
+    sel.className     = 'col-select';
     sel.dataset.field = field.key;
     opts.forEach(h => {
       const opt = document.createElement('option');
@@ -353,8 +393,19 @@ function buildMappingUI() {
       sel.appendChild(opt);
     });
 
-    const sample = val ? getSampleValue(val) : '—';
+    // Fixed-value text input (shown when dropdown is "(not mapped)")
+    const fixedWrap = document.createElement('div');
+    fixedWrap.className = 'fixed-wrap' + (val ? ' hidden' : '');
 
+    const fixedInp = document.createElement('input');
+    fixedInp.type        = 'text';
+    fixedInp.className   = 'fixed-input';
+    fixedInp.dataset.field = field.key;
+    fixedInp.placeholder = 'or type a fixed value for all rows…';
+    fixedWrap.appendChild(fixedInp);
+
+    // Sample / fixed-value display cell
+    const sample = val ? getSampleValue(val) : '—';
     tr.innerHTML = `
       <td class="field-name">${field.label}</td>
       <td><span class="badge ${field.required ? 'required' : 'optional'}">
@@ -362,14 +413,30 @@ function buildMappingUI() {
       <td class="sel-cell"></td>
       <td class="sample-val" id="sv-${field.key}">${esc(sample)}</td>`;
 
-    tr.querySelector('.sel-cell').appendChild(sel);
+    const selCell = tr.querySelector('.sel-cell');
+    selCell.appendChild(sel);
+    selCell.appendChild(fixedWrap);
     tbody.appendChild(tr);
 
+    // Update UI when dropdown changes
     sel.addEventListener('change', () => {
-      const sv = document.getElementById(`sv-${field.key}`);
       const picked = sel.value;
-      sv.textContent = (picked && picked !== '(not mapped)') ? getSampleValue(picked) : '—';
-      tr.classList.toggle('mapped', picked !== '(not mapped)');
+      const isMapped = picked !== '(not mapped)';
+      const sv = document.getElementById(`sv-${field.key}`);
+
+      fixedWrap.classList.toggle('hidden', isMapped);
+      if (isMapped) fixedInp.value = ''; // clear fixed value when column chosen
+
+      sv.textContent = isMapped ? getSampleValue(picked) : (fixedInp.value.trim() || '—');
+      tr.classList.toggle('mapped', isMapped || fixedInp.value.trim() !== '');
+    });
+
+    // Update row highlight as user types a fixed value
+    fixedInp.addEventListener('input', () => {
+      const sv = document.getElementById(`sv-${field.key}`);
+      const v = fixedInp.value.trim();
+      sv.textContent = v || '—';
+      tr.classList.toggle('mapped', v !== '');
     });
   });
 }
@@ -390,24 +457,40 @@ function getSampleValue(header) {
 
 // ── Conversion ────────────────────────────────────────────────────
 function runConversion() {
-  // Collect user mapping from selects
-  const mapping = {};
+  // Collect column mapping from dropdowns
+  const colMapping = {};
   document.querySelectorAll('.col-select').forEach(sel => {
     const val = sel.value;
-    if (val && val !== '(not mapped)') mapping[sel.dataset.field] = val;
+    if (val && val !== '(not mapped)') colMapping[sel.dataset.field] = val;
   });
 
-  // Validate required fields
-  const missing = FIELDS.filter(f => f.required && !mapping[f.key]).map(f => f.label);
+  // Collect fixed values typed directly by the user
+  const fixedVals = {};
+  document.querySelectorAll('.fixed-input').forEach(inp => {
+    const val = inp.value.trim();
+    if (val) fixedVals[inp.dataset.field] = val;
+  });
+
+  // Validate required fields — a column mapping OR a fixed value satisfies the requirement
+  const missing = FIELDS
+    .filter(f => f.required && !colMapping[f.key] && !fixedVals[f.key])
+    .map(f => f.label);
   if (missing.length) {
-    showError(`Please map these required fields: ${missing.join(', ')}`);
+    showError(`Please map these required fields (or type a fixed value): ${missing.join(', ')}`);
     return;
   }
 
-  // Build column index map: fieldKey → column index in raw row
-  const hRow  = rawRows[detectedHdrRow] || [];
+  // Pricing mode and percentage from the options panel
+  const pricingMode   = document.querySelector('input[name="pricingMode"]:checked').value;
+  const pricingPctRaw = parseFloat(document.getElementById('pricingPct').value);
+  const pricingActive = !isNaN(pricingPctRaw) && pricingPctRaw > 0 &&
+                        !(pricingMode === 'margin' && pricingPctRaw >= 100);
+  const pricingPct    = pricingActive ? pricingPctRaw / 100 : null; // decimal form
+
+  // Build column index map: fieldKey → column position in the raw header row
+  const hRow   = rawRows[detectedHdrRow] || [];
   const colIdx = {};
-  Object.entries(mapping).forEach(([field, colName]) => {
+  Object.entries(colMapping).forEach(([field, colName]) => {
     const i = hRow.findIndex(h => String(h).trim() === colName);
     if (i >= 0) colIdx[field] = i;
   });
@@ -426,28 +509,69 @@ function runConversion() {
     }
 
     const out = {};
+
     FIELDS.forEach(f => {
-      let val = colIdx[f.key] !== undefined ? row[colIdx[f.key]] : '';
+      let val;
+
+      if (fixedVals[f.key]) {
+        // Fixed value typed by the user takes priority
+        val = fixedVals[f.key];
+      } else if (colIdx[f.key] !== undefined) {
+        val = row[colIdx[f.key]];
+      } else {
+        val = '';
+      }
 
       // Normalise value
       if (val === null || val === undefined) val = '';
 
       if (val instanceof Date) {
-        // Format dates as YYYY-MM-DD
         val = val.toISOString().split('T')[0];
       } else if (typeof val === 'number') {
-        // Round floats to 4 decimal places; Excel sometimes gives tiny fp errors
+        // Round floats to 4 decimal places (avoids Excel floating-point noise)
         val = parseFloat(val.toFixed(4));
       } else {
         val = String(val).trim();
-        // Strip currency symbols and thousands separators from price fields
-        if (['Cost','MSRP','Sales Price','Markup','Margin'].includes(f.key)) {
-          val = val.replace(/[$€£AU,\s]/g, '');
+        // Strip currency symbols and thousands separators from price/margin fields
+        if (['Cost', 'MSRP', 'Sales Price', 'Markup', 'Margin'].includes(f.key)) {
+          val = val.replace(/[$€£,]/g, '').replace(/\bAU\b/g, '').trim();
         }
       }
 
       out[f.key] = val;
     });
+
+    // ── Pricing calculation (Markup % or Margin %) ───────────────
+    // Only runs when the MSP entered a % in the pricing options panel AND
+    // the row doesn't already have a Sales Price from a mapped column.
+    if (pricingPct !== null) {
+      const hasSalesPrice = colIdx['Sales Price'] !== undefined || fixedVals['Sales Price'];
+      const hasMarkup     = colIdx['Markup']      !== undefined || fixedVals['Markup'];
+      const hasMargin     = colIdx['Margin']       !== undefined || fixedVals['Margin'];
+
+      const cost = parseFloat(out['Cost']);
+
+      if (!isNaN(cost) && cost > 0) {
+        let sellPrice, markupDec, marginDec;
+
+        if (pricingMode === 'markup') {
+          // Markup %: sell = cost × (1 + pct)
+          sellPrice = cost * (1 + pricingPct);
+          markupDec = pricingPct;
+          marginDec = pricingPct / (1 + pricingPct);   // derived margin
+        } else {
+          // Margin %: sell = cost ÷ (1 − pct)
+          sellPrice = cost / (1 - pricingPct);
+          marginDec = pricingPct;
+          markupDec = pricingPct / (1 - pricingPct);   // derived markup
+        }
+
+        if (!hasSalesPrice) out['Sales Price'] = parseFloat(sellPrice.toFixed(2));
+        // Fill both Markup and Margin so SB has the full picture either way
+        if (!hasMarkup)     out['Markup']      = parseFloat(markupDec.toFixed(4));
+        if (!hasMargin)     out['Margin']      = parseFloat(marginDec.toFixed(4));
+      }
+    }
 
     convertedData.push(out);
   }
@@ -583,6 +707,8 @@ function resetAll() {
   document.getElementById('mappingBody').innerHTML  = '';
   document.getElementById('previewTable').innerHTML = '';
   document.getElementById('statsLine').textContent  = '';
+  document.getElementById('pricingPct').value        = '';
+  updatePricingHint();
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
