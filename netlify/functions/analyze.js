@@ -60,6 +60,12 @@ When you select quotes for the "inside-out language" section, they must be liter
 
 When you generate the 2am fears, infer them from signals in the proposal (industry, company size clues, services discussed, region). Make each fear a specific scenario a real business owner would carry, not a generic IT concern.
 
+=== LANGUAGE ===
+
+Write the entire analysis in the same language as the proposal. Dutch proposal → Dutch report. French (including Québécois) proposal → French report in that register. English proposal → English report, matching the regional variant (US/UK/Canadian) signaled by the document. Match the proposal's locale and register throughout.
+
+The "their" quotes in insideOutQuotes are verbatim text — they stay in the document's original language by definition. The "ours" rewrites must also be in that language so the MSP can use them directly with their client. Translate the signature phrases naturally into the target language rather than keeping them in English.
+
 Use the submit_analysis tool to return your output.`;
 
 const ANALYSIS_TOOL = {
