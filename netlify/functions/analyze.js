@@ -8,10 +8,12 @@
 // as the system prompt, and forces structured JSON output
 // via Claude's tool_use feature.
 //
-// Using claude-haiku-4-5 for speed and cost — a full
-// analysis runs in ~5 seconds and costs well under $0.01.
-// Upgrade to Sonnet by changing the model string below if
-// writing quality needs a boost.
+// Using claude-sonnet-4-6 for editorial voice and analytical
+// depth. A full analysis runs in ~15-20 seconds and costs
+// roughly $0.08 per run. If runs start hitting the Netlify
+// 10s function timeout on very large proposals, either
+// extend the function timeout in netlify.toml, or drop back
+// to 'claude-haiku-4-5-20251001' for large docs only.
 // =========================================================
 
 const SYSTEM_PROMPT = `You are a proposal evaluator built on Mike Minkler's framework for MSP proposals. You analyze real proposals and produce a sharp, decisive "Buyer Decision Journey Report" that helps MSPs see their proposal through a buyer's eyes.
@@ -224,7 +226,7 @@ exports.handler = async (event) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-sonnet-4-6',
         max_tokens: 3000,
         system: SYSTEM_PROMPT,
         tools: [ANALYSIS_TOOL],
