@@ -17,7 +17,6 @@
 
   <!-- ===================================================
        VIEW 1: Upload
-       Shown on page load. User drops a PDF or picks a file.
        =================================================== -->
   <section id="upload-view" class="upload-view">
     <h1 class="big-title">Diagnose a proposal.</h1>
@@ -38,46 +37,101 @@
   </section>
 
   <!-- ===================================================
-       VIEW 2: Parsing state (spinner)
-       Shown while PDF.js extracts text.
+       VIEW 2: Working (spinner) — used for both parsing
+       the PDF and running the analysis.
        =================================================== -->
   <section id="parsing-view" class="parsing-view" hidden>
     <div class="spinner"></div>
-    <p class="parsing-title">Reading the proposal&hellip;</p>
+    <p class="parsing-title" id="parsing-title">Reading the proposal&hellip;</p>
     <p class="parsing-sub" id="parsing-detail">Extracting text from the PDF.</p>
   </section>
 
   <!-- ===================================================
-       VIEW 3: Parsed preview (step 5 dev-verification view)
-       Shows what was extracted. Step 6 will replace this
-       with the real Buyer Decision Journey Report.
+       VIEW 3: Report — populated by JavaScript from the
+       analyze endpoint's response.
        =================================================== -->
-  <section id="parsed-view" class="parsed-view" hidden>
-    <div class="parsed-meta">
-      <div>
-        <strong id="parsed-filename">filename.pdf</strong>
-        <div class="meta-sub">
-          <span id="parsed-pages">0</span> pages &nbsp;&middot;&nbsp;
-          <span id="parsed-chars">0</span> characters extracted
-        </div>
-      </div>
-      <button type="button" id="reset-btn" class="secondary-btn">Upload a different file</button>
+  <section id="report-view" hidden>
+    <div class="meta">
+      <strong id="rpt-filename">filename.pdf</strong> &nbsp;&middot;&nbsp;
+      <span id="rpt-pages">0</span> pages &nbsp;&middot;&nbsp;
+      Analyzed <span id="rpt-date"></span>
     </div>
 
+    <section class="verdict">
+      <div class="kicker">The Verdict</div>
+      <h1 id="rpt-headline"></h1>
+      <p class="sub" id="rpt-subtitle"></p>
+    </section>
+
     <section>
-      <h2><span class="num">00</span>Extracted Text Preview</h2>
-      <p class="lead">This is the raw text we'd send to the analyzer. If it looks garbled, truncated, or empty, the PDF may be image-only (a scan) and would need OCR before we can read it.</p>
-      <pre id="extracted-text" class="extracted-text"></pre>
+      <h2><span class="num">01</span>The Buyer's Decision Journey</h2>
+      <p class="lead">A buyer reads a proposal in a specific order of questions. A winning proposal answers them in that order. Here's where yours lands them.</p>
+
+      <div class="sequence">
+        <div class="row">
+          <div class="label">Ideal</div>
+          <div class="widgets">
+            <div class="widget present"><span class="w-num">W1</span>Their situation</div>
+            <div class="widget present"><span class="w-num">W2</span>Why care now</div>
+            <div class="widget present"><span class="w-num">W3</span>Why trust you</div>
+            <div class="widget present"><span class="w-num">W4</span>What they get</div>
+            <div class="widget present"><span class="w-num">W5</span>Is it worth it</div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Yours</div>
+          <div class="widgets" id="rpt-widgets">
+            <!-- populated by JS -->
+          </div>
+        </div>
+        <div class="note" id="rpt-sequence-note"></div>
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="num">02</span>What Your Buyer Is Worried About at 2am</h2>
+      <p class="lead">These are the fears your likely buyer carries into this decision.</p>
+      <ul class="fears" id="rpt-fears">
+        <!-- populated by JS -->
+      </ul>
+    </section>
+
+    <section>
+      <h2><span class="num">03</span>Inside-Out Language Detected</h2>
+      <p class="lead">You are describing what <em>you</em> do. Your buyer needs to read what <em>they</em> get. Examples lifted directly from your document.</p>
+      <div id="rpt-quotes">
+        <!-- populated by JS -->
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="num">04</span>Your Opening, Rewritten</h2>
+      <p class="lead">One rewrite. This is the first thing your buyer reads. Make it earn the next minute of their attention.</p>
+
+      <div class="rewrite">
+        <div class="rewrite-block before">
+          <div class="rw-tag">What they read today</div>
+          <p id="rpt-before"></p>
+        </div>
+        <div class="rewrite-block after">
+          <div class="rw-tag">What a winning proposal opens with</div>
+          <p id="rpt-after"></p>
+        </div>
+      </div>
     </section>
 
     <aside class="next">
       <div>
-        <div class="nx-title">Next Step</div>
-        <h3>Wire up the full analysis.</h3>
-        <p>This button will be connected in the next deployment step. For now, we're verifying text extraction works cleanly on your real proposals.</p>
+        <div class="nx-title">Your Next Move</div>
+        <h3>Book the Template Masterclass.</h3>
+        <p>Sixty minutes. We rebuild this proposal around your buyer's five questions, in order &mdash; using the widgets you already have in Salesbuildr. You leave with a template you can send tomorrow.</p>
       </div>
-      <button type="button" disabled>Run analysis (step 6)</button>
+      <button type="button">Book the session</button>
     </aside>
+
+    <div class="report-footer">
+      <button type="button" id="restart-btn" class="secondary-btn">Analyze another proposal</button>
+    </div>
   </section>
 
   <!-- ===================================================
