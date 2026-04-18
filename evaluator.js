@@ -27,6 +27,7 @@ const browseBtn     = document.getElementById('browse-btn');
 const parsingTitle  = document.getElementById('parsing-title');
 const parsingDetail = document.getElementById('parsing-detail');
 const restartBtn    = document.getElementById('restart-btn');
+const downloadBtn   = document.getElementById('download-btn');
 
 const errorBanner   = document.getElementById('error-banner');
 const errorDetail   = document.getElementById('error-detail');
@@ -103,16 +104,28 @@ errorDismiss.addEventListener('click', () => {
   showView('upload');
 });
 
-// ---------- PDF handling ----------------------------------
+// "Download report (PDF)" — trigger the browser's print dialog.
+// The @media print styles in evaluator.css hide the upload/parsing views,
+// error banner, and report-footer so only the report itself renders.
+// The user picks "Save as PDF" as the destination.
+downloadBtn.addEventListener('click', () => {
+  window.print();
+});
+
+// ---------- File handling ---------------------------------
 async function handleFile(file) {
   hideError();
 
-  if (!file.name.toLowerCase().endsWith('.pdf')) {
-    showError('Please upload a PDF file.');
+  const lower = file.name.toLowerCase();
+  const isPdf  = lower.endsWith('.pdf');
+  const isDocx = lower.endsWith('.docx');
+
+  if (!isPdf && !isDocx) {
+    showError('Please upload a PDF or Word (.docx) file.');
     return;
   }
   if (file.size > 25 * 1024 * 1024) {
-    showError('That PDF is larger than 25 MB. Large files may be scans; try a text-based export.');
+    showError('That file is larger than 25 MB. Large files may be scans; try a text-based export.');
     return;
   }
 
@@ -120,14 +133,32 @@ async function handleFile(file) {
   setWorking('Reading the proposal…', 'Extracting text from ' + file.name);
 
   try {
-    const text = await extractText(file, (pageNum, total) => {
-      setWorking('Reading the proposal…', 'Reading page ' + pageNum + ' of ' + total + '…');
-    });
-    const pages = text.pageCount;
-    const normalized = normalizeText(text.fullText);
+    let fullText;
+    let pages;
+
+    if (isPdf) {
+      const result = await extractTextFromPdf(file, (pageNum, total) => {
+        setWorking('Reading the proposal…', 'Reading page ' + pageNum + ' of ' + total + '…');
+      });
+      fullText = result.fullText;
+      pages = result.pageCount;
+    } else {
+      // .docx — use mammoth to extract raw text. Word docs don't expose
+      // their final page count to us (that's computed by Word at render
+      // time), so we estimate from the word count at ~350 words/page.
+      setWorking('Reading the proposal…', 'Extracting text from Word document…');
+      fullText = await extractTextFromDocx(file);
+      const wordCount = (fullText.match(/\S+/g) || []).length;
+      pages = Math.max(1, Math.round(wordCount / 350));
+    }
+
+    const normalized = normalizeText(fullText);
 
     if (normalized.length < 200) {
-      showError('Only ' + normalized.length + ' characters were extracted. This PDF may be image-only (a scan) and would need OCR before we can analyze it.');
+      const hint = isPdf
+        ? 'This PDF may be image-only (a scan) and would need OCR before we can analyze it.'
+        : 'This Word doc came back nearly empty. If the content is in embedded images or text boxes, try exporting as PDF first.';
+      showError('Only ' + normalized.length + ' characters were extracted. ' + hint);
       showView('upload');
       return;
     }
@@ -154,8 +185,8 @@ async function handleFile(file) {
   }
 }
 
-// ---------- Text extraction -------------------------------
-async function extractText(file, onProgress) {
+// ---------- Text extraction: PDF --------------------------
+async function extractTextFromPdf(file, onProgress) {
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   const pageCount = pdf.numPages;
@@ -181,6 +212,17 @@ async function extractText(file, onProgress) {
   }
 
   return { fullText: fullText.trim(), pageCount };
+}
+
+// ---------- Text extraction: DOCX -------------------------
+// mammoth.extractRawText returns plain text with paragraphs as \n.
+// Tables, headers, footers, and text boxes are included; images
+// and truly embedded objects are not (they're represented as
+// empty space or warnings in result.messages).
+async function extractTextFromDocx(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const result = await mammoth.extractRawText({ arrayBuffer });
+  return (result && result.value ? result.value : '').trim();
 }
 
 // Collapse the triple-spaces and other whitespace oddities
