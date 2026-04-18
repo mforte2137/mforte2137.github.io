@@ -48,12 +48,20 @@ header.top {
 }
 header.top .brand { font-weight: 700; color: var(--ink); }
 
+/* --- Meta block (report) ---------------------------------- */
+.meta {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
+  color: var(--mute);
+  margin-bottom: 18px;
+  letter-spacing: 0.02em;
+}
+.meta strong { color: var(--ink); font-weight: 600; }
+
 /* =========================================================
    VIEW 1: Upload
    ========================================================= */
-.upload-view {
-  padding-top: 24px;
-}
+.upload-view { padding-top: 24px; }
 .big-title {
   font-size: 46px;
   line-height: 1.1;
@@ -69,10 +77,7 @@ header.top .brand { font-weight: 700; color: var(--ink); }
   margin: 0 0 40px;
   max-width: 680px;
 }
-.big-lead em {
-  font-style: italic;
-  color: var(--ink);
-}
+.big-lead em { font-style: italic; color: var(--ink); }
 
 .dropzone {
   border: 2px dashed var(--rule);
@@ -83,10 +88,7 @@ header.top .brand { font-weight: 700; color: var(--ink); }
   transition: border-color 0.15s, background 0.15s;
 }
 .dropzone:hover,
-.dropzone.is-hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
+.dropzone.is-hover { border-color: var(--accent); background: var(--accent-soft); }
 .dropzone.is-dragover {
   border-color: var(--accent);
   border-style: solid;
@@ -106,13 +108,8 @@ header.top .brand { font-weight: 700; color: var(--ink); }
   margin-bottom: 18px;
 }
 .dz-browse {
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  color: var(--accent);
-  text-decoration: underline;
-  cursor: pointer;
+  background: none; border: none; padding: 0; font: inherit;
+  color: var(--accent); text-decoration: underline; cursor: pointer;
 }
 .dz-note {
   font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
@@ -122,10 +119,7 @@ header.top .brand { font-weight: 700; color: var(--ink); }
   margin-top: 24px;
 }
 
-.upload-footer {
-  margin-top: 24px;
-  text-align: center;
-}
+.upload-footer { margin-top: 24px; text-align: center; }
 .preview-link {
   font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
   font-size: 13px;
@@ -137,12 +131,9 @@ header.top .brand { font-weight: 700; color: var(--ink); }
 .preview-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
 
 /* =========================================================
-   VIEW 2: Parsing (spinner)
+   VIEW 2: Working (spinner)
    ========================================================= */
-.parsing-view {
-  text-align: center;
-  padding: 120px 40px;
-}
+.parsing-view { text-align: center; padding: 120px 40px; }
 .spinner {
   width: 48px;
   height: 48px;
@@ -167,88 +158,41 @@ header.top .brand { font-weight: 700; color: var(--ink); }
 }
 
 /* =========================================================
-   VIEW 3: Parsed preview
+   VIEW 3: Report
    ========================================================= */
-.parsed-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  margin-bottom: 24px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--rule);
-}
-.parsed-meta strong {
-  font-size: 18px;
-  color: var(--ink);
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-weight: 600;
-}
-.parsed-meta .meta-sub {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 13px;
-  color: var(--mute);
-  margin-top: 2px;
-}
-.secondary-btn {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  background: #fff;
-  color: var(--ink);
-  border: 1px solid var(--rule);
-  padding: 10px 16px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: border-color 0.15s;
-}
-.secondary-btn:hover {
-  border-color: var(--ink);
-}
 
-.extracted-text {
-  background: var(--paper-alt);
-  border: 1px solid var(--rule);
-  padding: 20px 24px;
-  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--ink);
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-height: 520px;
-  overflow-y: auto;
-  margin: 0;
+/* The verdict */
+.verdict {
+  border-left: 6px solid var(--accent);
+  padding: 4px 0 4px 24px;
+  margin: 32px 0 56px;
 }
-
-/* =========================================================
-   Error banner
-   ========================================================= */
-.error-banner {
-  margin-top: 24px;
-  padding: 20px 24px;
-  background: var(--accent-soft);
-  border: 1px solid var(--accent);
-  border-left-width: 4px;
-}
-.error-title {
+.verdict .kicker {
   font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   color: var(--accent);
-  margin-bottom: 6px;
-  font-size: 14px;
-}
-.error-detail {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 13px;
-  color: var(--ink-soft);
+  font-weight: 700;
   margin-bottom: 12px;
-  line-height: 1.5;
+}
+.verdict h1 {
+  font-size: 42px;
+  line-height: 1.1;
+  margin: 0 0 14px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.verdict .sub {
+  font-size: 20px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+  margin: 0;
+  max-width: 680px;
 }
 
-/* =========================================================
-   Section headings (shared with report views)
-   ========================================================= */
+/* Section headings */
 h2 {
   font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
   font-size: 12px;
@@ -272,9 +216,168 @@ section p.lead {
   max-width: 660px;
 }
 
-/* =========================================================
-   CTA / Next move (shared)
-   ========================================================= */
+/* Widget sequence */
+.sequence {
+  background: var(--paper-alt);
+  border: 1px solid var(--rule);
+  padding: 28px 28px 22px;
+  margin-top: 8px;
+}
+.sequence .row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.sequence .row:last-child { margin-bottom: 0; }
+.sequence .label {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mute);
+  font-weight: 600;
+}
+.widgets {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+.widget {
+  padding: 12px 10px;
+  border: 1px solid var(--rule);
+  background: #fff;
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  line-height: 1.3;
+  text-align: center;
+  color: var(--ink);
+}
+.widget .w-num {
+  display: block;
+  font-size: 10px;
+  color: var(--mute);
+  letter-spacing: 0.1em;
+  margin-bottom: 3px;
+}
+.widget.present { background: var(--good-soft); border-color: var(--good); }
+.widget.present .w-num { color: var(--good); }
+.widget.missing { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.widget.missing .w-num { color: var(--accent); }
+.widget.overweight { background: var(--warn-soft); border-color: var(--warn); }
+.widget.overweight .w-num { color: var(--warn); }
+.sequence .note {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--rule);
+  line-height: 1.5;
+}
+.sequence .note strong { color: var(--accent); }
+
+/* 2am fears */
+.fears { list-style: none; padding: 0; margin: 0; }
+.fears li {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--rule);
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 14px;
+}
+.fears li:first-child { border-top: 1px solid var(--rule); }
+.fears .mark {
+  color: var(--accent);
+  font-weight: 700;
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
+  padding-top: 2px;
+}
+.fears .fear {
+  font-size: 17px;
+  color: var(--ink);
+  line-height: 1.4;
+}
+.fears .fear small {
+  display: block;
+  font-size: 13px;
+  color: var(--mute);
+  font-style: italic;
+  margin-top: 4px;
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Inside-out quotes */
+.quote-block {
+  margin: 18px 0;
+  padding: 20px 24px;
+  background: var(--paper-alt);
+  border-left: 3px solid var(--ink-soft);
+}
+.quote-block .their {
+  font-style: italic;
+  color: var(--ink);
+  font-size: 16px;
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+.quote-block .their::before { content: '\201C'; margin-right: 2px; }
+.quote-block .their::after { content: '\201D'; margin-left: 2px; }
+.quote-block .arrow {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--good);
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+.quote-block .ours {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Opening rewrite */
+.rewrite {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin-top: 8px;
+}
+.rewrite-block {
+  border: 1px solid var(--rule);
+  padding: 22px 26px;
+}
+.rewrite-block.before { background: #fff; }
+.rewrite-block.after {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.rewrite-block .rw-tag {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.rewrite-block.before .rw-tag { color: var(--accent); }
+.rewrite-block.after .rw-tag { color: #e7c3b9; }
+.rewrite-block p {
+  font-size: 17px;
+  line-height: 1.55;
+  margin: 0;
+}
+.rewrite-block.before p { font-style: italic; color: var(--ink-soft); }
+.rewrite-block.after p { font-weight: 500; }
+
+/* CTA / Next move */
 .next {
   margin-top: 64px;
   padding: 32px 36px;
@@ -320,15 +423,53 @@ section p.lead {
   cursor: pointer;
   white-space: nowrap;
 }
-.next button[disabled] {
-  background: #3a4a63;
-  color: #8da0bc;
-  cursor: not-allowed;
+.next button[disabled] { background: #3a4a63; color: #8da0bc; cursor: not-allowed; }
+
+/* Report footer */
+.report-footer {
+  margin-top: 32px;
+  text-align: center;
 }
 
-/* =========================================================
-   Footer tag
-   ========================================================= */
+/* Secondary button (reused) */
+.secondary-btn {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s;
+}
+.secondary-btn:hover { border-color: var(--ink); }
+
+/* Error banner */
+.error-banner {
+  margin-top: 24px;
+  padding: 20px 24px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-left-width: 4px;
+}
+.error-title {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+.error-detail {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+/* Footer tag */
 footer.tag {
   margin-top: 64px;
   font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
@@ -339,14 +480,24 @@ footer.tag {
   font-style: italic;
 }
 
-/* =========================================================
-   Responsive
-   ========================================================= */
+/* Print */
+@media print {
+  body { font-size: 14px; }
+  .container { padding: 20px; max-width: 100%; }
+  .next { page-break-inside: avoid; }
+  .verdict h1 { font-size: 32px; }
+  .upload-view, .parsing-view, .error-banner, .report-footer { display: none !important; }
+}
+
+/* Mobile */
 @media (max-width: 640px) {
   .container { padding: 28px 20px 60px; }
   .big-title { font-size: 32px; }
   .big-lead { font-size: 17px; }
   .dropzone { padding: 40px 20px; }
-  .parsed-meta { flex-direction: column; align-items: flex-start; }
+  .verdict h1 { font-size: 30px; }
+  .verdict .sub { font-size: 17px; }
+  .widgets { grid-template-columns: repeat(2, 1fr); }
+  .sequence .row { grid-template-columns: 1fr; }
   .next { grid-template-columns: 1fr; }
 }
