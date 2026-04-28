@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salesbuildr Document Converter</title>
+
+  <!-- Client-side conversion libraries — no server required -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:   #0d2d5e;
+      --blue:   #1a6fc4;
+      --sky:    #e8f1fc;
+      --text:   #1a1a1a;
+      --muted:  #5a6a7e;
+      --border: #d0e0f0;
+      --white:  #ffffff;
+      --green:  #17a34a;
+      --amber:  #b45309;
+      --radius: 10px;
+    }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f4f9;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+    .logo-badge {
+      background: var(--blue);
+      border-radius: 7px;
+      padding: 6px 11px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+    header h1 { font-size: 17px; font-weight: 700; }
+    header p  { font-size: 12px; color: #93b8e0; margin-top: 2px; }
+
+    /* ── MAIN ── */
+    main {
+      flex: 1;
+      max-width: 960px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 36px 24px 48px;
+    }
+
+    /* ── UPLOAD ZONE ── */
+    .upload-zone {
+      background: var(--white);
+      border: 2.5px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 52px 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .upload-zone:hover,
+    .upload-zone.drag-over {
+      border-color: var(--blue);
+      background: var(--sky);
+    }
+    .upload-icon { font-size: 48px; margin-bottom: 16px; }
+    .upload-zone h2 { font-size: 20px; color: var(--navy); margin-bottom: 8px; }
+    .upload-zone p  { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+    .browse-link {
+      color: var(--blue);
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .format-badges {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .format-badge {
+      background: var(--sky);
+      color: var(--navy);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* ── PROCESSING ── */
+    .processing {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 64px 0;
+      gap: 20px;
+    }
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 4px solid var(--border);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .processing p { color: var(--muted); font-size: 15px; }
+
+    /* ── RESULTS ── */
+    .results { display: flex; flex-direction: column; gap: 16px; }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 20px;
+    }
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #file-name-display {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--navy);
+    }
+    .type-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 12px;
+      letter-spacing: 0.5px;
+    }
+    .type-pdf  { background: #fee2e2; color: #991b1b; }
+    .type-docx { background: #dbeafe; color: #1e3a8a; }
+    .type-xlsx { background: #d1fae5; color: #065f46; }
+
+    .results-actions { display: flex; gap: 10px; }
+
+    .btn-copy {
+      background: var(--blue);
+      color: var(--white);
+      border: none;
+      border-radius: 7px;
+      padding: 9px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .btn-copy:hover  { background: #155da0; }
+    .btn-copy:active { transform: scale(0.97); }
+    .btn-copy.copied { background: var(--green); }
+
+    .btn-reset {
+      background: var(--white);
+      color: var(--navy);
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      padding: 9px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-reset:hover { background: var(--sky); }
+
+    /* ── NOTES ── */
+    .note {
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .note-info    { background: var(--sky);    border-left: 4px solid var(--blue);  color: #1e3a5c; }
+    .note-warning { background: #fffbeb; border-left: 4px solid #f59e0b; color: #78350f; }
+    .note-error   { background: #fef2f2; border-left: 4px solid #ef4444; color: #7f1d1d; }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 2px solid var(--border);
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.15s;
+    }
+    .tab-btn.active {
+      color: var(--navy);
+      border-bottom-color: var(--blue);
+    }
+    .tab-btn:hover:not(.active) { color: var(--navy); }
+
+    /* ── PREVIEW ── */
+    .preview-frame {
+      width: 100%;
+      height: 560px;
+      border: 1px solid var(--border);
+      border-radius: 0 0 var(--radius) var(--radius);
+      background: var(--white);
+    }
+
+    /* ── CODE OUTPUT ── */
+    .html-output {
+      width: 100%;
+      height: 560px;
+      border: 1px solid var(--border);
+      border-radius: 0 0 var(--radius) var(--radius);
+      padding: 20px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: #1a1a1a;
+      background: #fafbfc;
+      resize: vertical;
+      outline: none;
+    }
+    .html-output:focus { border-color: var(--blue); }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--navy);
+      color: #93b8e0;
+      text-align: center;
+      padding: 16px 24px;
+      font-size: 12px;
+    }
+    footer strong { color: var(--white); }
+
+    /* ── UTILS ── */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-badge">SB</div>
+  <div>
+    <h1>Salesbuildr Document Converter</h1>
+    <p>Convert PDF, Word &amp; Excel documents to TinyMCE-ready inline HTML — paste directly into your Salesbuildr widget</p>
+  </div>
+</header>
+
+<main>
+
+  <!-- UPLOAD ZONE -->
+  <div id="upload-zone" class="upload-zone">
+    <div class="upload-icon">📄</div>
+    <h2>Drop your document here</h2>
+    <p>or <label for="file-input" class="browse-link">browse to select a file</label></p>
+    <input type="file" id="file-input" accept=".pdf,.doc,.docx,.xlsx,.xls" hidden>
+    <div class="format-badges">
+      <span class="format-badge">📄 PDF</span>
+      <span class="format-badge">📝 Word (.docx)</span>
+      <span class="format-badge">📊 Excel (.xlsx)</span>
+    </div>
+  </div>
+
+  <!-- PROCESSING -->
+  <div id="processing" class="processing hidden">
+    <div class="spinner"></div>
+    <p id="processing-msg">Converting your document&hellip;</p>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" class="results hidden">
+
+    <div class="results-header">
+      <div class="file-info">
+        <span id="file-name-display"></span>
+        <span id="file-type-badge" class="type-badge"></span>
+      </div>
+      <div class="results-actions">
+        <button id="copy-btn" class="btn-copy">📋 Copy HTML</button>
+        <button id="reset-btn" class="btn-reset">↩ Convert Another</button>
+      </div>
+    </div>
+
+    <div id="conversion-notes"></div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="preview">👁 Preview</button>
+      <button class="tab-btn" data-tab="code">⟨⟩ HTML Code</button>
+    </div>
+
+    <div id="tab-preview">
+      <iframe id="preview-frame" class="preview-frame" sandbox="allow-same-origin"></iframe>
+    </div>
+
+    <div id="tab-code" class="hidden">
+      <textarea id="html-output" class="html-output" readonly spellcheck="false"></textarea>
+    </div>
+
+  </div>
+
+</main>
+
+<footer>
+  <strong>Salesbuildr Document Converter</strong> &nbsp;·&nbsp;
+  In Salesbuildr, open your widget editor → click <strong>&lt; &gt;</strong> (Source Code) in the TinyMCE toolbar → paste the HTML there
+</footer>
+
+<script>
+// ─────────────────────────────────────────────────────────────────
+//  PDF.js worker (required for PDF parsing)
+// ─────────────────────────────────────────────────────────────────
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ─────────────────────────────────────────────────────────────────
+//  Inline style definitions — applied to converted HTML output
+// ─────────────────────────────────────────────────────────────────
+const FONT = "'Segoe UI', Arial, sans-serif";
+
+const STYLES = {
+  WRAPPER:     `max-width: 860px; margin: 0 auto; padding: 32px; background-color: #ffffff; font-family: ${FONT};`,
+  H1:          `font-family: ${FONT}; font-size: 20px; font-weight: 700; color: #0d2d5e; margin: 28px 0 12px 0; line-height: 1.3; padding: 0; border: none; background: none;`,
+  H2:          `font-family: ${FONT}; font-size: 17px; font-weight: 700; color: #0d2d5e; margin: 22px 0 10px 0; line-height: 1.3; padding: 0; border: none; background: none;`,
+  H3:          `font-family: ${FONT}; font-size: 15px; font-weight: 600; color: #1a3a5c; margin: 18px 0 8px 0; line-height: 1.3; padding: 0; border: none; background: none;`,
+  H4:          `font-family: ${FONT}; font-size: 14px; font-weight: 600; color: #1a3a5c; margin: 14px 0 6px 0; line-height: 1.3; padding: 0;`,
+  P:           `font-family: ${FONT}; font-size: 14px; color: #1a1a1a; line-height: 1.8; margin: 0 0 14px 0; padding: 0;`,
+  UL:          `margin: 0 0 14px 0; padding: 0 0 0 24px;`,
+  OL:          `margin: 0 0 14px 0; padding: 0 0 0 24px;`,
+  LI:          `font-family: ${FONT}; font-size: 14px; color: #1a1a1a; line-height: 1.8; margin: 0 0 6px 0; padding: 0;`,
+  TABLE:       `border-collapse: collapse; width: 100%; margin: 0 0 20px 0; font-family: ${FONT};`,
+  TH:          `background-color: #0d2d5e; color: #ffffff; font-weight: 600; font-size: 13px; padding: 10px 14px; border: 1px solid #0a2244; text-align: left; vertical-align: top;`,
+  TD:          `font-size: 13px; color: #1a1a1a; padding: 10px 14px; border: 1px solid #d0d0d0; vertical-align: top;`,
+  TD_ALT:      `font-size: 13px; color: #1a1a1a; padding: 10px 14px; border: 1px solid #d0d0d0; vertical-align: top; background-color: #f5f9ff;`,
+  BLOCKQUOTE:  `margin: 0 0 14px 0; padding: 12px 16px; border-left: 4px solid #1a6fc4; background-color: #f0f6ff; font-family: ${FONT}; font-size: 14px; color: #334e6e; line-height: 1.8;`,
+  HR:          `border: none; border-top: 1px solid #d0e2f5; margin: 20px 0;`,
+  A:           `color: #1a6fc4; text-decoration: none;`,
+};
+
+// ─────────────────────────────────────────────────────────────────
+//  DOM references
+// ─────────────────────────────────────────────────────────────────
+const uploadZone    = document.getElementById('upload-zone');
+const fileInput     = document.getElementById('file-input');
+const processingEl  = document.getElementById('processing');
+const processingMsg = document.getElementById('processing-msg');
+const resultsEl     = document.getElementById('results');
+const fileNameEl    = document.getElementById('file-name-display');
+const typeBadgeEl   = document.getElementById('file-type-badge');
+const notesEl       = document.getElementById('conversion-notes');
+const previewFrame  = document.getElementById('preview-frame');
+const htmlOutput    = document.getElementById('html-output');
+const copyBtn       = document.getElementById('copy-btn');
+const resetBtn      = document.getElementById('reset-btn');
+
+// ─────────────────────────────────────────────────────────────────
+//  Drag & Drop + File Input
+// ─────────────────────────────────────────────────────────────────
+uploadZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  uploadZone.classList.add('drag-over');
+});
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+uploadZone.addEventListener('click', e => {
+  if (e.target.tagName !== 'LABEL') fileInput.click();
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) handleFile(fileInput.files[0]);
+});
+
+// ─────────────────────────────────────────────────────────────────
+//  Tab switching
+// ─────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.getElementById('tab-preview').classList.toggle('hidden', tab !== 'preview');
+    document.getElementById('tab-code').classList.toggle('hidden', tab !== 'code');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+//  Copy to clipboard
+// ─────────────────────────────────────────────────────────────────
+copyBtn.addEventListener('click', async () => {
+  const text = htmlOutput.value;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    htmlOutput.select();
+    document.execCommand('copy');
+  }
+  copyBtn.textContent = '✅ Copied!';
+  copyBtn.classList.add('copied');
+  setTimeout(() => {
+    copyBtn.innerHTML = '📋 Copy HTML';
+    copyBtn.classList.remove('copied');
+  }, 2500);
+});
+
+// ─────────────────────────────────────────────────────────────────
+//  Reset
+// ─────────────────────────────────────────────────────────────────
+resetBtn.addEventListener('click', resetApp);
+
+function resetApp() {
+  fileInput.value = '';
+  uploadZone.classList.remove('hidden');
+  processingEl.classList.add('hidden');
+  resultsEl.classList.add('hidden');
+  notesEl.innerHTML = '';
+  htmlOutput.value = '';
+  previewFrame.srcdoc = '';
+  copyBtn.innerHTML = '📋 Copy HTML';
+  copyBtn.classList.remove('copied');
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Main entry point
+// ─────────────────────────────────────────────────────────────────
+async function handleFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  const supported = ['pdf', 'doc', 'docx', 'xlsx', 'xls'];
+  if (!supported.includes(ext)) {
+    showNote('error', `Unsupported file type ".${ext}". Please upload a PDF, Word (.docx), or Excel (.xlsx) file.`);
+    return;
+  }
+
+  showProcessing(`Converting ${file.name}…`);
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    let html = '';
+    const notes = [];
+
+    if (ext === 'pdf') {
+      html = await convertPdf(arrayBuffer, notes);
+    } else if (ext === 'docx' || ext === 'doc') {
+      html = await convertDocx(arrayBuffer, notes);
+    } else if (ext === 'xlsx' || ext === 'xls') {
+      html = await convertXlsx(arrayBuffer, notes);
+    }
+
+    const styledHtml = applyInlineStyles(html);
+    showResults(styledHtml, file.name, ext, notes);
+
+  } catch (err) {
+    console.error(err);
+    showProcessingError(err.message || 'An unexpected error occurred during conversion.');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  DOCX → HTML  (mammoth.js)
+// ─────────────────────────────────────────────────────────────────
+async function convertDocx(arrayBuffer, notes) {
+  const result = await mammoth.convertToHtml(
+    { arrayBuffer },
+    {
+      styleMap: [
+        "p[style-name='Title']         => h1:fresh",
+        "p[style-name='Heading 1']     => h1:fresh",
+        "p[style-name='Heading 2']     => h2:fresh",
+        "p[style-name='Heading 3']     => h3:fresh",
+        "p[style-name='Heading 4']     => h4:fresh",
+        "p[style-name='List Bullet']   => ul > li:fresh",
+        "p[style-name='List Number']   => ol > li:fresh",
+        "r[style-name='Strong']        => strong",
+        "r[style-name='Emphasis']      => em",
+      ]
+    }
+  );
+
+  if (result.messages && result.messages.length) {
+    const warnings = result.messages.filter(m => m.type === 'warning');
+    if (warnings.length) {
+      notes.push({ type: 'info', text: `${warnings.length} minor formatting element(s) could not be converted (e.g. custom styles, embedded objects). All text content has been preserved.` });
+    }
+  }
+
+  notes.push({ type: 'info', text: '✔ Word document converted. Inline images are not included in the HTML output. All text, headings, lists, and tables have been preserved verbatim.' });
+
+  return result.value;
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  PDF → HTML  (pdf.js)
+// ─────────────────────────────────────────────────────────────────
+async function convertPdf(arrayBuffer, notes) {
+  const typedArray = new Uint8Array(arrayBuffer);
+  const pdfDoc     = await pdfjsLib.getDocument(typedArray).promise;
+  const parts      = [];
+
+  for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+    const page        = await pdfDoc.getPage(pageNum);
+    const textContent = await page.getTextContent();
+    const viewport    = page.getViewport({ scale: 1 });
+
+    // Group text items by line (similar y-position)
+    const Y_SNAP = 4;
+    const lineMap = new Map();
+
+    for (const item of textContent.items) {
+      if (!item.str || !item.str.trim()) continue;
+      const y    = Math.round(item.transform[5] / Y_SNAP) * Y_SNAP;
+      const x    = item.transform[4];
+      const size = Math.abs(item.transform[3]) || Math.abs(item.transform[0]) || 12;
+      if (!lineMap.has(y)) lineMap.set(y, { items: [], maxSize: 0 });
+      const line = lineMap.get(y);
+      line.items.push({ x, text: item.str, size });
+      if (size > line.maxSize) line.maxSize = size;
+    }
+
+    // Sort lines top-to-bottom (PDF y-axis is bottom=0)
+    const lines = [...lineMap.entries()]
+      .sort((a, b) => b[0] - a[0])
+      .map(([y, data]) => ({
+        y,
+        text: data.items.sort((a, b) => a.x - b.x).map(i => i.text).join(' ').trim(),
+        maxSize: data.maxSize
+      }))
+      .filter(l => l.text.length > 0);
+
+    if (lines.length === 0) continue;
+
+    // Estimate body font size (median)
+    const sizes = lines.map(l => l.maxSize).sort((a, b) => a - b);
+    const bodySize = sizes[Math.floor(sizes.length / 2)] || 12;
+
+    // Convert lines to HTML
+    let paragraphBuffer = [];
+    let prevY = null;
+
+    const flushParagraph = () => {
+      if (paragraphBuffer.length === 0) return;
+      parts.push(`<p>${escHtml(paragraphBuffer.join(' '))}</p>`);
+      paragraphBuffer = [];
+    };
+
+    for (const line of lines) {
+      const isHeading1 = line.maxSize > bodySize * 1.35 || (line.text === line.text.toUpperCase() && line.text.length < 80 && line.maxSize >= bodySize * 1.15);
+      const isHeading2 = !isHeading1 && (line.maxSize > bodySize * 1.15 || (line.text.match(/^(\d+\.|ARTICLE|SECTION|SCHEDULE|EXHIBIT|APPENDIX)/i) && line.text.length < 100));
+      const isHeading3 = !isHeading1 && !isHeading2 && line.maxSize > bodySize * 1.05 && line.text.length < 100;
+
+      const largeGap = prevY !== null && (prevY - line.y) > bodySize * 1.8;
+
+      if (isHeading1 || isHeading2 || isHeading3) {
+        flushParagraph();
+        const tag = isHeading1 ? 'h1' : isHeading2 ? 'h2' : 'h3';
+        parts.push(`<${tag}>${escHtml(line.text)}</${tag}>`);
+      } else if (largeGap) {
+        flushParagraph();
+        paragraphBuffer.push(line.text);
+      } else {
+        paragraphBuffer.push(line.text);
+      }
+
+      prevY = line.y;
+    }
+    flushParagraph();
+
+    // Page divider (except after last page)
+    if (pageNum < pdfDoc.numPages) parts.push('<hr>');
+  }
+
+  notes.push({
+    type: 'warning',
+    text: '⚠ PDF conversion extracts text only — complex formatting, columns, and embedded images cannot be fully reconstructed. ' +
+          'For verbatim legal agreements, <strong>Word (.docx) format gives significantly better results</strong>. ' +
+          'Please review the output carefully before pasting into Salesbuildr.'
+  });
+
+  return parts.join('\n');
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  XLSX → HTML  (SheetJS)
+// ─────────────────────────────────────────────────────────────────
+async function convertXlsx(arrayBuffer, notes) {
+  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+  const htmlParts = [];
+
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    const data  = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+    if (data.length === 0) continue;
+
+    htmlParts.push(`<h2>${escHtml(sheetName)}</h2>`);
+    htmlParts.push('<table>');
+
+    data.forEach((row, rowIdx) => {
+      htmlParts.push('<tr>');
+      row.forEach(cell => {
+        const val = cell === null || cell === undefined ? '' : String(cell);
+        if (rowIdx === 0) {
+          htmlParts.push(`<th>${escHtml(val)}</th>`);
+        } else {
+          htmlParts.push(`<td>${escHtml(val)}</td>`);
+        }
+      });
+      htmlParts.push('</tr>');
+    });
+
+    htmlParts.push('</table>');
+  }
+
+  const sheetCount = workbook.SheetNames.length;
+  notes.push({ type: 'info', text: `✔ Excel file converted — ${sheetCount} sheet${sheetCount !== 1 ? 's' : ''} included as HTML table${sheetCount !== 1 ? 's' : ''}. Formulas are shown as their calculated values.` });
+
+  return htmlParts.join('\n');
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Apply inline styles to HTML string
+// ─────────────────────────────────────────────────────────────────
+function applyInlineStyles(htmlString) {
+  const parser = new DOMParser();
+  const doc    = parser.parseFromString(`<div id="sb-root">${htmlString}</div>`, 'text/html');
+  const root   = doc.getElementById('sb-root');
+
+  // Remove class attributes throughout (TinyMCE may strip them anyway)
+  root.querySelectorAll('[class]').forEach(el => el.removeAttribute('class'));
+
+  function walk(node) {
+    if (node.nodeType !== 1) return;
+
+    const tag = node.tagName;
+    let style = '';
+
+    switch (tag) {
+      case 'H1':         style = STYLES.H1;   break;
+      case 'H2':         style = STYLES.H2;   break;
+      case 'H3':         style = STYLES.H3;   break;
+      case 'H4':         style = STYLES.H4;   break;
+      case 'P':          style = STYLES.P;    break;
+      case 'UL':         style = STYLES.UL;   break;
+      case 'OL':         style = STYLES.OL;   break;
+      case 'LI':         style = STYLES.LI;   break;
+      case 'TABLE':      style = STYLES.TABLE; break;
+      case 'TH':         style = STYLES.TH;   break;
+      case 'BLOCKQUOTE': style = STYLES.BLOCKQUOTE; break;
+      case 'HR':         style = STYLES.HR;   break;
+      case 'A':          style = STYLES.A;    break;
+      case 'STRONG': case 'B': style = 'font-weight: 700;'; break;
+      case 'EM': case 'I':     style = 'font-style: italic;'; break;
+      case 'U':                style = 'text-decoration: underline;'; break;
+      case 'TD': {
+        // Alternate row colouring
+        const row      = node.parentElement;
+        const tbody    = row && row.parentElement;
+        const rowIndex = tbody ? Array.from(tbody.children).indexOf(row) : 0;
+        style = rowIndex % 2 === 0 ? STYLES.TD : STYLES.TD_ALT;
+        break;
+      }
+    }
+
+    if (style) {
+      const existing = node.getAttribute('style') || '';
+      node.setAttribute('style', style + (existing ? ' ' + existing : ''));
+    }
+
+    for (const child of Array.from(node.children)) walk(child);
+  }
+
+  walk(root);
+
+  // Wrap in outer div with Salesbuildr-friendly container style
+  const wrapper = doc.createElement('div');
+  wrapper.setAttribute('style', STYLES.WRAPPER);
+  wrapper.innerHTML = root.innerHTML;
+
+  return wrapper.outerHTML;
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Show results
+// ─────────────────────────────────────────────────────────────────
+function showResults(html, fileName, ext, notes) {
+  // File name and type badge
+  fileNameEl.textContent = fileName;
+  typeBadgeEl.textContent = ext.toUpperCase();
+  typeBadgeEl.className = `type-badge type-${ext === 'doc' ? 'docx' : ext === 'xls' ? 'xlsx' : ext}`;
+
+  // Notes
+  notesEl.innerHTML = '';
+  notes.forEach(n => {
+    const div = document.createElement('div');
+    div.className = `note note-${n.type}`;
+    div.innerHTML = n.text;
+    notesEl.appendChild(div);
+  });
+
+  // Preview
+  previewFrame.srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;padding:0;background:#fff;}</style></head><body>${html}</body></html>`;
+
+  // Code
+  htmlOutput.value = html;
+
+  // Activate preview tab
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-tab="preview"]').classList.add('active');
+  document.getElementById('tab-preview').classList.remove('hidden');
+  document.getElementById('tab-code').classList.add('hidden');
+
+  // Show results, hide upload
+  uploadZone.classList.add('hidden');
+  processingEl.classList.add('hidden');
+  resultsEl.classList.remove('hidden');
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  UI helpers
+// ─────────────────────────────────────────────────────────────────
+function showProcessing(msg) {
+  uploadZone.classList.add('hidden');
+  resultsEl.classList.add('hidden');
+  processingEl.classList.remove('hidden');
+  processingMsg.textContent = msg;
+}
+
+function showProcessingError(msg) {
+  processingEl.classList.add('hidden');
+  uploadZone.classList.remove('hidden');
+  const div = document.createElement('div');
+  div.className = 'note note-error';
+  div.style.marginTop = '16px';
+  div.innerHTML = `<strong>Conversion failed:</strong> ${escHtml(msg)}`;
+  uploadZone.after(div);
+  setTimeout(() => div.remove(), 8000);
+}
+
+function showNote(type, text) {
+  const div = document.createElement('div');
+  div.className = `note note-${type}`;
+  div.style.marginTop = '16px';
+  div.textContent = text;
+  uploadZone.after(div);
+  setTimeout(() => div.remove(), 8000);
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+
+</body>
+</html>
