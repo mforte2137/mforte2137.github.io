@@ -51,7 +51,7 @@ const TOOLS = [
     description:
       "Upload a vendor deal-reg file (xlsx / xls / csv) and convert it into a Salesbuildr import-ready format in seconds.",
     category: "Conversion",
-    url: "https://widgetcreator.netlify.app/tinymce.html",
+    url: "https://widgetcreator.netlify.app/converter.html",
     badge: "",
     updated: "2026-04-28",
     gradient: "teal",
