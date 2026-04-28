@@ -7,9 +7,7 @@
   <link rel="stylesheet" href="evaluator.css">
 </head>
 <body>
-
 <div class="container">
-
   <header class="top">
     <span class="brand">Proposal Evaluator</span>
     <span>Buyer Decision Journey Report</span>
@@ -21,7 +19,6 @@
   <section id="upload-view" class="upload-view">
     <h1 class="big-title">Diagnose a proposal.</h1>
     <p class="big-lead">Upload an MSP proposal. We'll read your proposal through your buyer's eyes and measure it against the five questions every proposal has to answer, in order: <em>Do they understand my situation? Why should I care now? Why should I trust you? What am I getting? Is it worth it?</em></p>
-
     <div class="dropzone" id="dropzone">
       <input type="file" id="file-input" accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx" hidden>
       <div class="dz-inner">
@@ -30,15 +27,13 @@
         <div class="dz-note">Files are parsed in your browser. Only the extracted text is sent for analysis.</div>
       </div>
     </div>
-
     <div class="upload-footer">
       <a href="report-mock.html" class="preview-link" target="_blank" rel="noopener">See a sample report &rarr;</a>
     </div>
   </section>
 
   <!-- ===================================================
-       VIEW 2: Working (spinner) — used for both parsing
-       the PDF and running the analysis.
+       VIEW 2: Working (spinner)
        =================================================== -->
   <section id="parsing-view" class="parsing-view" hidden>
     <div class="spinner"></div>
@@ -47,8 +42,7 @@
   </section>
 
   <!-- ===================================================
-       VIEW 3: Report — populated by JavaScript from the
-       analyze endpoint's response.
+       VIEW 3: Report
        =================================================== -->
   <section id="report-view" hidden>
     <div class="meta">
@@ -66,7 +60,6 @@
     <section>
       <h2><span class="num">01</span>The Buyer's Decision Journey</h2>
       <p class="lead">A buyer reads a proposal in a specific order of questions. A winning proposal answers them in that order. Here's where yours lands them.</p>
-
       <div class="sequence">
         <div class="row">
           <div class="label">Ideal</div>
@@ -107,7 +100,6 @@
     <section>
       <h2><span class="num">04</span>Your Opening, Rewritten</h2>
       <p class="lead">One rewrite. This is the first thing your buyer reads. Make it earn the next minute of their attention.</p>
-
       <div class="rewrite">
         <div class="rewrite-block before">
           <div class="rw-tag">What they read today</div>
@@ -129,6 +121,34 @@
       <button type="button">Book the session</button>
     </aside>
 
+    <!-- ===================================================
+         SECTION 05: Salesbuildr Widget Generator
+         Appears after report renders. Five sequential API
+         calls, one widget rendered as each returns.
+         =================================================== -->
+    <section id="widget-section" hidden>
+      <h2><span class="num">05</span>Your Salesbuildr Widgets</h2>
+      <p class="lead">Five ready-to-paste widgets — one per buyer question — written for this proposal and this buyer. Copy each one into Salesbuildr via the <strong>&lt;&nbsp;&gt;</strong> Source Code button in TinyMCE.</p>
+
+      <!-- Generate prompt / trigger -->
+      <div id="widget-cta" class="widget-cta">
+        <div class="widget-cta-text">
+          <strong>Turn this analysis into widgets.</strong>
+          <span>We'll generate buyer-journey content tailored to this proposal — ready to drop straight into Salesbuildr.</span>
+        </div>
+        <button type="button" id="generate-btn" class="generate-btn">Generate My 5 Widgets</button>
+      </div>
+
+      <!-- Working state — shown during generation -->
+      <div id="widget-working" class="widget-working" hidden>
+        <div class="spinner spinner-sm"></div>
+        <p id="widget-working-msg" class="parsing-sub">Generating widget 1 of 5&hellip;</p>
+      </div>
+
+      <!-- Widget outputs — each card appended as it arrives -->
+      <div id="widget-outputs"></div>
+    </section>
+
     <div class="report-footer">
       <button type="button" id="download-btn" class="secondary-btn">Download report (PDF)</button>
       <button type="button" id="restart-btn" class="secondary-btn">Analyze another proposal</button>
@@ -147,10 +167,9 @@
   <footer class="tag">
     Clarity creates confidence. Confidence drives decisions.
   </footer>
-
 </div>
 
-<!-- PDF.js from CDN (no install, no build) -->
+<!-- PDF.js from CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <!-- mammoth.js: extract text from .docx in the browser -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
