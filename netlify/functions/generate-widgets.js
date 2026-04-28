@@ -72,11 +72,10 @@ const SYSTEM_PROMPT = `You are a Salesbuildr widget creator for MSP proposals. Y
 
 Every widget must follow this structure exactly (populate with real content):
 
-<div style="max-width:860px;margin:0 auto;padding:0;background-color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;">
+<div style="width:100%;padding:0;background-color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;">
 
   <!-- Header bar -->
   <div style="background-color:#0d2d5e;padding:20px 28px;margin-bottom:0;">
-    <p style="margin:0 0 5px 0;font-size:11px;font-weight:600;letter-spacing:1.5px;color:#7eb3e8;text-transform:uppercase;font-family:'Segoe UI',Arial,sans-serif;">[WIDGET LABEL — e.g. W1 · Buyer Decision Journey]</p>
     <h2 style="margin:0;font-size:19px;font-weight:700;color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;line-height:1.3;">[WIDGET TITLE]</h2>
   </div>
 
