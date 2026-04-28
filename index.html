@@ -1,558 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salesbuildr Widget Template Tools</title>
-    
-    <!-- External Dependencies -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    
- <!-- CSS Files -->
-<link rel="stylesheet" href="styles/main.css">
-<link rel="stylesheet" href="styles/cover-page-creator.css">
-<link rel="stylesheet" href="styles/widget-creator.css">
-<link rel="stylesheet" href="styles/matrix-builder.css">
-<link rel="stylesheet" href="styles/ai-generator.css">
-<link rel="stylesheet" href="styles/process-builder.css">
-<link rel="stylesheet" href="styles/sow-creator.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MSP Tools Hub</title>
+  <meta name="description" content="A curated set of practical tools for MSPs — proposals, document conversion, project scoping and more." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <h1>Salesbuildr Widget Template Tools</h1>
-    
-<!-- Tab Navigation -->
-<div class="tabs">
-    <button class="tab-button" data-tab="extractor" style="display: none;">Cover Page Creator</button>
-    <button class="tab-button active" data-tab="widget">Widget Creator</button>
-    <button class="tab-button" data-tab="matrix">Matrix Builder</button>
-    <button class="tab-button" data-tab="ai-generator">AI Content Generator</button>
-    <button class="tab-button" data-tab="process-builder">Process Builder</button>
-    <button class="tab-button" data-tab="sow-creator">SOW Creator</button>
-</div>
 
-    
-    <!-- PDF Text Extractor Tab -->
-    <div id="extractor" class="tab-content">
-        <p>Create Salesbuildr Cover Pages from PDF files.</p>
-        
-        <div class="container">
-            <div id="dropzone" class="dropzone">
-                <h2>Drag & Drop PDF Files Here</h2>
-                <p>Or click to select files</p>
-                <input type="file" id="file-input" style="display: none;" accept=".pdf" multiple>
-            </div>
-            
-            <div class="options">
-                <div class="option-group">
-                    <label for="page-input">Page Numbers (comma-separated):</label>
-                    <input type="text" id="page-input" placeholder="e.g., 1,2,5" value="1">
-                    <small>Leave blank for all pages</small>
-                </div>
-                
-                <div class="option-group">
-                    <label for="dpi-input">DPI Resolution:</label>
-                    <select id="dpi-input">
-                        <option value="150">150 DPI (Fast)</option>
-                        <option value="300" selected>300 DPI (Balanced)</option>
-                        <option value="600">600 DPI (High Quality)</option>
-                    </select>
-                </div>
-                
-                <div class="option-group">
-                    <label for="resize-input">Output Format:</label>
-                    <select id="resize-input">
-                        <option value="true" selected>Resize to A4</option>
-                        <option value="false">Original Size</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="button-container">
-                <button id="process-btn" disabled>Process PDFs</button>
-                <button id="clear-btn">Clear Fields</button>
-            </div>
-            
-            <div class="progress-container" id="progress-container">
-                <p id="progress-text">Processing 0/0 files...</p>
-                <progress id="progress-bar" value="0" max="100"></progress>
-            </div>
-            
-            <div id="status" class="status" style="display: none;"></div>
-            
-            <div id="log-container" class="log-container">
-                <p class="log-entry info">System ready. Upload PDF files to begin.</p>
-            </div>
-            
-            <div id="preview-container" class="preview-container"></div>
-        </div>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="#" class="brand" aria-label="MSP Tools Hub home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="3" width="11" height="11" rx="2.5"/>
+            <rect x="18" y="3" width="11" height="11" rx="2.5"/>
+            <rect x="3" y="18" width="11" height="11" rx="2.5"/>
+            <rect x="18" y="18" width="11" height="11" rx="2.5"/>
+          </svg>
+        </span>
+        <span class="brand-text">MSP Tools Hub</span>
+      </a>
+      <nav class="header-nav" aria-label="Primary">
+        <a href="#tools">Tools</a>
+        <a href="#about">About</a>
+      </nav>
     </div>
-    
-    <!-- Widget Creator Tab -->
-    <div id="widget" class="tab-content active">
-        <p>Create widgets using content from your own website or manufacturers' product pages to build widgets. Paste HTML code into Salesbuildr.</p>
-        
-        <div class="container">
-            <div class="widget-form">
-                <div class="url-container">
-                    <input type="url" id="website-url" class="url-input" placeholder="Enter website URL (e.g., https://example.com)">
-                    <button id="fetch-content-btn">Fetch Content</button>
-                </div>
-                
-                <div class="widget-options">
-                    <div class="option-group">
-                        <label for="image-position">Image Position:</label>
-                        <select id="image-position">
-                            <option value="left" selected>Left</option>
-                            <option value="right">Right</option>
-                            <option value="top">Top</option>
-                            <option value="bottom">Bottom</option>
-                        </select>
-                    </div>
-                    
-                    <div class="option-group">
-                        <label for="summary-length">Summary Length:</label>
-                        <select id="summary-length">
-                            <option value="1 Paragraph">1 Paragraph</option>
-                            <option value="2 Paragraphs" selected>2 Paragraphs</option>
-                            <option value="3 Paragraphs">3 Paragraphs</option>
-                            <option value="4 Paragraphs">4 Paragraphs</option>
-                        </select>
-                    </div>
-                    
-                    <div class="option-group">
-                        <label for="custom-image">Custom Image (optional):</label>
-                        <input type="file" id="custom-image" accept="image/*">
-                    </div>
-                </div>
-                
-                <div class="text-content">
-                    <label for="summary-text">Summary Text (edit as needed):</label>
-                    <textarea id="summary-text" rows="6" placeholder="Your content summary will appear here. You can edit it as needed." style="width: 100%;"></textarea>
-                </div>
-                
-                <div class="button-container">
-                    <button id="generate-widget-btn">Generate Widget</button>
-                    <button id="clear-all-btn">Clear All</button>
-                </div>
-                
-                <div id="widget-status" class="status" style="display: none;"></div>
-            </div>
-            
-            <div id="widget-preview-container">
-                <h3>Widget Preview</h3>
-                <div class="widget-preview" id="widget-preview"></div>
-                
-                <div class="code-container">
-                    <div class="code-header">
-                        <h3>HTML Code</h3>
-                        <button id="copy-code-btn" class="copy-button">Copy Code</button>
-                    </div>
-                    <pre class="code-content" id="widget-code"></pre>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Matrix Builder Tab -->
-    <div id="matrix" class="tab-content">
-        <p>Create comparison tables and feature matrices for your products and services. Match table colors to you branding!</p>
-        
-        <div class="container">
-            <div class="matrix-form">
-                <h3>Table Settings</h3>
-                <div class="options">
-                    <div class="option-group">
-                        <label for="matrix-rows">Number of Rows:</label>
-                        <input type="number" id="matrix-rows" min="1" max="20" value="5">
-                    </div>
-                    
-                    <div class="option-group">
-                        <label for="matrix-columns">Number of Columns:</label>
-                        <input type="number" id="matrix-columns" min="2" max="10" value="4">
-                    </div>
-                    
-                    <div class="option-group">
-                        <label for="header-bg-color">Header Background:</label>
-                        <input type="color" id="header-bg-color" value="#96b83b">
-                    </div>
-                    
-                    <div class="option-group">
-                        <label for="header-text-color">Header Text:</label>
-                        <input type="color" id="header-text-color" value="#ffffff">
-                    </div>
-                    
-                    <div class="option-group">
-                        <label for="row-bg-color-1">Row Background 1:</label>
-                        <input type="color" id="row-bg-color-1" value="#f2f2f2">
-                    </div>
-                    
-                    <div class="option-group">
-                        <label for="row-bg-color-2">Row Background 2:</label>
-                        <input type="color" id="row-bg-color-2" value="#ffffff">
-                    </div>
-                </div>
-                
-                <button id="update-matrix-btn" class="btn btn-primary">Update Matrix</button>
-                
-                <div id="matrix-editor" class="matrix-editor">
-                    <div id="matrix-headers" class="matrix-headers">
-                        <!-- Column headers will be generated here -->
-                    </div>
-                    
-                    <div id="matrix-rows-container" class="matrix-rows">
-                        <!-- Rows will be generated here -->
-                    </div>
-                </div>
-                
-                <div class="button-container">
-                    <button id="generate-matrix-btn" class="btn btn-success">Generate Matrix</button>
-                    <button id="clear-matrix-btn" class="btn btn-secondary">Clear All</button>
-                </div>
-            </div>
-            
-            <div id="matrix-preview-container" style="display: none;">
-                <h3>Matrix Preview</h3>
-                <div class="matrix-preview" id="matrix-preview"></div>
-                
-                <div class="code-container">
-                    <div class="code-header">
-                        <h3>HTML Code</h3>
-                        <button id="copy-matrix-code-btn" class="btn btn-primary">Copy Code</button>
-                    </div>
-                    <div class="code-content" id="matrix-code"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-<!-- AI Content Generator Tab -->
-<div id="ai-generator" class="tab-content">
-    <p>Generate professional marketing content for MSP services and products using AI.</p>
+  </header>
 
+  <section class="hero">
     <div class="container">
-        <div class="options">
-            <div class="option-group">
-                <label for="content-topic">MSP Service or Product:</label>
-                <input type="text" id="content-topic" placeholder="Enter topic (e.g., Microsoft 365 Business Premium)" style="width: 100%;">
-            </div>
+      <p class="eyebrow">A practical toolkit for MSPs</p>
+      <h1>Tools that make selling and scoping easier.</h1>
+      <p class="lede">
+        A small, curated set of utilities to help MSPs run better proposals, faster
+        quotes and cleaner project scoping. Bookmark this page — new tools are
+        added here as they're released.
+      </p>
 
-            <div class="option-group">
-                <label for="content-tone">Tone:</label>
-                <select id="content-tone">
-                    <option value="professional">Professional</option>
-                    <option value="casual">Casual</option>
-                    <option value="enthusiastic">Enthusiastic</option>
-                    <option value="informative">Informative</option>
-                </select>
-            </div>
-
-            <div class="option-group">
-                <label for="content-length">Content Length:</label>
-                <select id="content-length">
-                    <option value="1">1 Paragraph</option>
-                    <option value="2" selected>2 Paragraphs</option>
-                    <option value="3">3 Paragraphs</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="button-container">
-            <button id="generate-ai-btn">Generate AI Content</button>
-            <button id="clear-ai-btn">Clear All Fields</button>
-        </div>
-
-        <div id="ai-status" class="status"></div>
-
-        <div class="progress-container" id="ai-progress-container">
-            <p id="ai-progress-text">Generating content...</p>
-            <progress id="ai-progress-bar" value="50" max="100"></progress>
-        </div>
-
-        <div class="image-section">
-            <h3>Add Image for Content</h3>
-            <div class="options">
-                <div class="option-group">
-                    <label for="image-source">Image Source:</label>
-                    <div class="radio-options">
-                        <div class="radio-option">
-                            <input type="radio" id="image-source-upload" name="image-source" value="upload" checked>
-                            <label for="image-source-upload">Upload</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="image-source-search" name="image-source" value="search">
-                            <label for="image-source-search">Search</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="option-group" id="upload-image-group">
-                    <label for="custom-image-ai">Upload Image:</label>
-                    <div class="upload-btn-wrapper">
-                        <button class="upload-btn">Choose File</button>
-                        <input type="file" id="custom-image-ai" accept="image/*">
-                    </div>
-                    <small id="file-name-display">No file selected</small>
-                </div>
-
-                <div class="option-group" id="search-image-group" style="display: none;">
-                    <label for="image-search-query">Search for Image:</label>
-                    <div class="search-info">
-                        <p><strong>Image Search Tips:</strong> If you need an exact product image, please upload a file. If you'd like a general office image then search for something like "woman with laptop" or "modern office".</p>
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" id="image-search-query" placeholder="Enter image search terms" style="flex-grow: 1;">
-                        <button id="search-images-btn" class="upload-btn">Search</button>
-                    </div>
-                    <div id="image-search-results" class="image-gallery"></div>
-                </div>
-
-                <div class="option-group">
-                    <label>Image Position:</label>
-                    <div class="radio-options">
-                        <div class="radio-option">
-                            <input type="radio" id="image-left" name="image-position" value="left" checked>
-                            <label for="image-left">Left</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="image-right" name="image-position" value="right">
-                            <label for="image-right">Right</label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="text-content">
-            <h3>Generated Content</h3>
-            <p>Edit the generated content as needed:</p>
-            <textarea id="ai-content-text" rows="10" placeholder="Generated MSP marketing content will appear here..." style="width: 100%;"></textarea>
-        </div>
-
-        <!-- Output with Preview above HTML Code -->
-        <div class="output-container">
-            <div class="preview-section">
-                <h3>Content Preview</h3>
-                <!-- This wrapper provides isolation from parent CSS -->
-                <div id="ai-preview-wrapper">
-                    <div id="content-preview"></div>
-                </div>
-            </div>
-
-            <div class="html-output-section">
-                <div class="code-header">
-                    <h3>HTML Code</h3>
-                    <button id="copy-html-btn" class="copy-button">Copy Code</button>
-                </div>
-                <pre class="code-content" id="html-code"></pre>
-            </div>
-        </div>
+      <div class="search-wrap">
+        <span class="search-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/>
+            <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <input id="search" type="search" placeholder="Search tools by name, category or keyword…" autocomplete="off" />
+      </div>
     </div>
-</div>
-  <!-- Process Builder Tab -->
-<div id="process-builder" class="tab-content">
-    <p>Generate professional step-by-step process overviews for MSP services. Perfect for showing methodology and building client confidence.</p>
+  </section>
 
+  <main id="tools" class="tools-section">
     <div class="container">
-        <div class="options">
-            <div class="option-group">
-                <label for="service-type">MSP Service Type:</label>
-                <select id="service-type">
-                    <option value="">Select a service...</option>
-                    <option value="migration">Migration Services (G Suite to M365, Server Migration, etc.)</option>
-                    <option value="security">Security Services (Assessment, Compliance, Penetration Testing)</option>
-                    <option value="infrastructure">Infrastructure Projects (Firewall, Network, Server Upgrades)</option>
-                    <option value="communication">Communication Systems (VoIP, Teams Implementation)</option>
-                    <option value="backup">Backup & Recovery (Disaster Recovery, Backup Systems)</option>
-                    <option value="compliance">Compliance Projects (HIPAA, SOX, PCI-DSS)</option>
-                    <option value="custom">Custom Service (Describe Your Own)</option>
-                </select>
-            </div>
-
-            <div class="option-group">
-                <label for="specific-service">Specific Service:</label>
-                <input type="text" id="specific-service" placeholder="e.g., G Suite to Microsoft 365 Migration" style="width: 100%;">
-                <small>Be specific about what service you're providing</small>
-            </div>
-
-            <div class="option-group">
-                <label for="target-audience">Target Audience:</label>
-                <select id="target-audience">
-                    <option value="executives">Business Executives</option>
-                    <option value="it-managers">IT Managers</option>
-                    <option value="decision-makers">Decision Makers</option>
-                    <option value="technical-staff">Technical Staff</option>
-                </select>
-            </div>
-
-            <div class="option-group">
-                <label for="process-steps">Number of Steps:</label>
-                <select id="process-steps">
-                    <option value="5">5 Steps</option>
-                    <option value="6">6 Steps</option>
-                    <option value="7" selected>7 Steps</option>
-                    <option value="8">8 Steps</option>
-                    <option value="9">9 Steps</option>
-                    <option value="10">10 Steps</option>
-                </select>
-            </div>
-
-            <div class="option-group">
-                <label for="brand-color">Brand Color:</label>
-                <input type="color" id="brand-color" value="#96b83b">
-                <small>Color for checkmarks and accents</small>
-            </div>
-        </div>
-
-        <div class="button-container">
-            <button id="generate-process-btn">Generate Process Steps</button>
-            <button id="clear-process-btn">Clear All Fields</button>
-        </div>
-
-        <div id="process-status" class="status"></div>
-
-        <div class="progress-container" id="process-progress-container">
-            <p id="process-progress-text">Generating process steps...</p>
-            <progress id="process-progress-bar" value="50" max="100"></progress>
-        </div>
-
-        <div class="text-content" id="process-content-section" style="display: none;">
-            <h3>Generated Process Steps</h3>
-            <p>Edit the generated steps as needed:</p>
-            <div id="process-steps-editor"></div>
-        </div>
-
-        <!-- Output with Preview above HTML Code -->
-        <div class="output-container" id="process-output-container" style="display: none;">
-            <div class="preview-section">
-                <h3>Process Preview</h3>
-                <div id="process-preview"></div>
-            </div>
-
-            <div class="html-output-section">
-                <div class="code-header">
-                    <h3>HTML Code</h3>
-                    <button id="copy-process-html-btn" class="copy-button">Copy Code</button>
-                </div>
-                <pre class="code-content" id="process-html-code"></pre>
-            </div>
-        </div>
+      <div class="section-head">
+        <h2>All tools</h2>
+        <p id="result-count" class="result-count"></p>
+      </div>
+      <div id="tools-grid" class="tools-grid" aria-live="polite"></div>
+      <p id="no-results" class="no-results" hidden>No tools match that search.</p>
     </div>
-</div> 
-<!-- SOW Creator Tab -->
-<div id="sow-creator" class="tab-content">
-    <p>Generate professional Statements of Work (SOW) with Executive Summaries for common MSP projects and services.</p>
+  </main>
 
-    <div class="container">
-        <div class="options">
-            <div class="option-group">
-                <label for="sow-service-type">MSP Service Type:</label>
-                <select id="sow-service-type">
-                    <option value="">Select a service...</option>
-                    <option value="migration">Migration Services (G Suite to M365, Server Migration, etc.)</option>
-                    <option value="security">Security Services (Assessment, Compliance, Penetration Testing)</option>
-                    <option value="infrastructure">Infrastructure Projects (Firewall, Network, Server Upgrades)</option>
-                    <option value="communication">Communication Systems (VoIP, Teams Implementation)</option>
-                    <option value="backup">Backup & Recovery (Disaster Recovery, Backup Systems)</option>
-                    <option value="compliance">Compliance Projects (HIPAA, SOX, PCI-DSS)</option>
-                    <option value="custom">Custom Service (Describe Your Own)</option>
-                </select>
-            </div>
-
-            <div class="option-group">
-                <label for="sow-specific-service">Specific Service/Project:</label>
-                <input type="text" id="sow-specific-service" placeholder="e.g., G Suite to Microsoft 365 Migration" style="width: 100%;">
-                <small>Be specific about the project or service you're providing</small>
-            </div>
-
-            <div class="option-group">
-                <label for="sow-client-type">Client Type:</label>
-                <select id="sow-client-type">
-                    <option value="small-business">Small Business (10-50 employees)</option>
-                    <option value="medium-business">Medium Business (50-200 employees)</option>
-                    <option value="enterprise">Enterprise (200+ employees)</option>
-                    <option value="healthcare">Healthcare Organization</option>
-                    <option value="financial">Financial Services</option>
-                    <option value="nonprofit">Non-Profit Organization</option>
-                </select>
-            </div>
-
-            <div class="option-group">
-                <label for="sow-duration">Project Duration:</label>
-                <select id="sow-duration">
-                    <option value="1-2 weeks">1-2 weeks</option>
-                    <option value="3-4 weeks">3-4 weeks</option>
-                    <option value="1-2 months">1-2 months</option>
-                    <option value="3-6 months">3-6 months</option>
-                    <option value="6+ months">6+ months</option>
-                </select>
-            </div>
-
-            <div class="option-group">
-                <label for="sow-budget-range">Budget Range (Optional):</label>
-                <select id="sow-budget-range">
-                    <option value="">Not specified</option>
-                    <option value="under-10k">Under $10,000</option>
-                    <option value="10k-25k">$10,000 - $25,000</option>
-                    <option value="25k-50k">$25,000 - $50,000</option>
-                    <option value="50k-100k">$50,000 - $100,000</option>
-                    <option value="over-100k">Over $100,000</option>
-                </select>
-            </div>
-
-            <div class="option-group">
-                <label for="sow-complexity">Project Complexity:</label>
-                <select id="sow-complexity">
-                    <option value="standard">Standard Implementation</option>
-                    <option value="complex">Complex/Custom Requirements</option>
-                    <option value="enterprise">Enterprise-Level Project</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="button-container">
-            <button id="generate-sow-btn">Generate SOW</button>
-            <button id="clear-sow-btn">Clear All Fields</button>
-        </div>
-
-        <div id="sow-status" class="status"></div>
-
-        <div class="progress-container" id="sow-progress-container">
-            <p id="sow-progress-text">Generating Statement of Work...</p>
-            <progress id="sow-progress-bar" value="50" max="100"></progress>
-        </div>
-
-        <div class="text-content" id="sow-content-section" style="display: none;">
-            <h3>Generated Statement of Work</h3>
-            <p>Edit the generated SOW as needed:</p>
-            <div id="sow-editor"></div>
-        </div>
-
-        <!-- Output with Preview above HTML Code -->
-        <div class="output-container" id="sow-output-container" style="display: none;">
-            <div class="preview-section">
-                <h3>SOW Preview</h3>
-                <div id="sow-preview"></div>
-            </div>
-
-            <div class="html-output-section">
-                <div class="code-header">
-                    <h3>HTML Code</h3>
-                    <button id="copy-sow-html-btn" class="copy-button">Copy Code</button>
-                </div>
-                <pre class="code-content" id="sow-html-code"></pre>
-            </div>
-        </div>
+  <footer id="about" class="site-footer">
+    <div class="container footer-inner">
+      <div>
+        <span class="brand-mark small" aria-hidden="true">
+          <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="3" width="11" height="11" rx="2.5"/>
+            <rect x="18" y="3" width="11" height="11" rx="2.5"/>
+            <rect x="3" y="18" width="11" height="11" rx="2.5"/>
+            <rect x="18" y="18" width="11" height="11" rx="2.5"/>
+          </svg>
+        </span>
+        <p class="footer-text">MSP Tools Hub — built for MSPs, by Salesbuildr.</p>
+      </div>
+      <p class="footer-meta">© <span id="year"></span> Salesbuildr</p>
     </div>
-</div>
-<!-- JavaScript Files -->
-<script src="scripts/main.js"></script>
-<script src="scripts/cover-page-creator.js"></script>
-<script src="scripts/widget-creator.js"></script>
-<script src="scripts/matrix-builder.js"></script>
-<script src="scripts/ai-generator.js"></script>
-<script src="scripts/process-builder.js"></script>
-<script src="scripts/sow-creator.js"></script>
+  </footer>
+
+  <script src="app.js"></script>
 </body>
 </html>
