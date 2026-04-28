@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salesbuildr Widget Creator</title>
+  <link rel="stylesheet" href="sales.css">
+</head>
+<body>
+<div class="container">
+
+  <header class="top">
+    <span class="brand">Salesbuildr Widget Creator</span>
+    <span>Buyer Decision Journey</span>
+  </header>
+
+  <!-- ===================================================
+       VIEW 1: Form
+       =================================================== -->
+  <section id="form-view" class="form-view">
+    <h1 class="big-title">Build your proposal widgets.</h1>
+    <p class="big-lead">Tell us what you're selling and who you're selling it to. We'll generate five buyer-journey widgets — ready to paste straight into Salesbuildr.</p>
+
+    <form id="widget-form" novalidate>
+
+      <!-- Field 1: Solution (required) -->
+      <div class="field-group">
+        <label class="field-label" for="f-solution">
+          What are you proposing?
+          <span class="field-required">Required</span>
+        </label>
+        <p class="field-hint">Describe the solution or project — what you're recommending and roughly what it involves.</p>
+        <textarea
+          id="f-solution"
+          name="solution"
+          class="field-textarea"
+          rows="3"
+          maxlength="500"
+          placeholder="e.g. Network upgrade — new next-gen firewall, managed switch, and structured cabling throughout the office. We'll start with a site survey to document the current environment before any work begins."
+          required
+        ></textarea>
+        <div class="field-counter"><span id="solution-count">0</span> / 500</div>
+      </div>
+
+      <!-- Field 2: Business (required) -->
+      <div class="field-group">
+        <label class="field-label" for="f-business">
+          What kind of business is the customer?
+          <span class="field-required">Required</span>
+        </label>
+        <p class="field-hint">Industry and rough size — this shapes the language and framing of every widget.</p>
+        <div class="field-row">
+          <input
+            type="text"
+            id="f-business"
+            name="business"
+            class="field-input"
+            maxlength="100"
+            placeholder="e.g. Dental practice, law firm, manufacturer, accountancy"
+            required
+          >
+          <input
+            type="text"
+            id="f-size"
+            name="size"
+            class="field-input field-input-sm"
+            maxlength="60"
+            placeholder="Team size (e.g. 25 staff)"
+          >
+        </div>
+      </div>
+
+      <div class="optional-divider">
+        <span>Optional — the more context you give, the more specific the widgets</span>
+      </div>
+
+      <!-- Field 3: Trigger (optional) -->
+      <div class="field-group">
+        <label class="field-label" for="f-trigger">
+          What's prompting this?
+          <span class="field-optional">Optional</span>
+        </label>
+        <p class="field-hint">The event or pain that's driving the proposal — a failing device, a security scare, upcoming growth, a compliance requirement.</p>
+        <input
+          type="text"
+          id="f-trigger"
+          name="trigger"
+          class="field-input"
+          maxlength="200"
+          placeholder="e.g. Existing firewall is end-of-life, network keeps dropping during busy periods"
+        >
+      </div>
+
+      <!-- Field 4: Outcomes (optional) -->
+      <div class="field-group">
+        <label class="field-label" for="f-outcomes">
+          What does success look like for the customer?
+          <span class="field-optional">Optional</span>
+        </label>
+        <p class="field-hint">What the customer cares about beyond "IT working" — reliability, security, compliance, room to grow, staff productivity.</p>
+        <input
+          type="text"
+          id="f-outcomes"
+          name="outcomes"
+          class="field-input"
+          maxlength="200"
+          placeholder="e.g. No more downtime, confidence their data is secure, network that supports 10 new hires"
+        >
+      </div>
+
+      <!-- Field 5: Urgency (optional) -->
+      <div class="field-group">
+        <label class="field-label" for="f-urgency">
+          Any urgency or deadline?
+          <span class="field-optional">Optional</span>
+        </label>
+        <p class="field-hint">A deadline, trigger event, or reason why now rather than later.</p>
+        <input
+          type="text"
+          id="f-urgency"
+          name="urgency"
+          class="field-input"
+          maxlength="200"
+          placeholder="e.g. Office lease renewal in 3 months, recent ransomware attack on a similar local business"
+        >
+      </div>
+
+      <div class="form-footer">
+        <button type="submit" id="submit-btn" class="submit-btn">
+          Generate My 5 Widgets &rarr;
+        </button>
+        <p class="form-note">Widgets appear one by one as each is generated — usually 15–20 seconds total.</p>
+      </div>
+
+    </form>
+  </section>
+
+  <!-- ===================================================
+       VIEW 2: Working / generating
+       =================================================== -->
+  <section id="working-view" hidden>
+    <div class="working-inner">
+      <div class="spinner"></div>
+      <p class="working-title" id="working-title">Generating widget 1 of 5&hellip;</p>
+      <p class="working-sub" id="working-sub">Writing your buyer-journey widgets</p>
+      <div class="working-progress">
+        <div class="progress-track">
+          <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+        </div>
+        <span class="progress-label" id="progress-label">0 of 5</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================
+       VIEW 3: Widget outputs
+       =================================================== -->
+  <section id="output-view" hidden>
+    <div class="output-header">
+      <div>
+        <div class="output-kicker">Your Salesbuildr Widgets</div>
+        <h1 class="output-title" id="output-title"></h1>
+      </div>
+      <button type="button" id="restart-btn" class="secondary-btn">&#8592; Start Over</button>
+    </div>
+    <p class="output-lead">Paste each widget into Salesbuildr using the <strong>&lt;&nbsp;&gt;</strong> Source Code button in TinyMCE. Click any widget title to expand it.</p>
+
+    <div id="widget-outputs"></div>
+
+    <div class="output-footer">
+      <button type="button" id="restart-btn-2" class="secondary-btn">&#8592; Build Another Set</button>
+    </div>
+  </section>
+
+  <!-- ===================================================
+       Error banner
+       =================================================== -->
+  <div id="error-banner" class="error-banner" hidden>
+    <div class="error-title">Something went wrong.</div>
+    <div class="error-detail" id="error-detail"></div>
+    <button type="button" id="error-dismiss" class="secondary-btn">Try again</button>
+  </div>
+
+  <footer class="tag">
+    Clarity creates confidence. Confidence drives decisions.
+  </footer>
+
+</div>
+<script src="sales.js"></script>
+</body>
+</html>
