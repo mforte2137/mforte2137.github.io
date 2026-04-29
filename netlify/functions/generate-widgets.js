@@ -102,8 +102,24 @@ Every widget must follow this structure exactly (populate with real content):
 - CEO audience. Clear, confident, no technical jargon.
 - 150–250 words of visible text total. Concise wins.
 - Buyer-first language: "You get…" not "We provide…"
-- Every claim should feel specific to this MSP and this buyer — not generic boilerplate.
+- Every claim should feel specific to this MSP and this buyer — not generic boilerple.
 - Write in the same language as the proposal (infer from the analysis content).
+
+=== SALESBUILDR TEMPLATE VARIABLES ===
+Use these variables naturally in the widget text. Salesbuildr replaces them automatically when the quote is rendered — the widget personalises itself for each customer without any manual editing.
+
+VARIABLES TO USE:
+- {{company.name}} — the customer's company name. Use instead of "your business", "your firm", "your organisation". Use it 2–4 times naturally across the widget.
+- {{servicingBranch.name}} — the MSP's own company name. Use in W3 and W5 when referring to "we" or "our team" formally, e.g. "At {{servicingBranch.name}}, we handle exactly this kind of project."
+- {{contact.firstName}} — the buyer's first name. Use once at the opening of W1 to address them directly, e.g. "{{contact.firstName}}, here's what we've heard from businesses like yours…"
+- {{owner.firstName}}, {{owner.email}}, {{owner.phone}} — the quote owner's contact details. Use in W5 for the call to action, e.g. "Reach out to {{owner.firstName}} at {{owner.email}} or call {{owner.phone}} to take the next step."
+- {{date quote.expiresAt}} — the quote expiry date. Use optionally in W2 to add deadline-driven urgency, e.g. "This proposal is valid until {{date quote.expiresAt}}."
+
+RULES FOR VARIABLES:
+- Variables must appear exactly as shown, with double curly braces — e.g. {{company.name}} not {company.name} or [company.name].
+- Place variables only inside visible text content — never inside HTML attributes, style="" values, or CSS.
+- Use them naturally — do not force every variable into every widget.
+- {{company.name}} is the most important: use it consistently throughout every widget.
 
 Use the submit_widget tool to return your output.`;
 
