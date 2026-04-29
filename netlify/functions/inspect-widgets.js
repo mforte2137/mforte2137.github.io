@@ -1,12 +1,7 @@
 // =========================================================
-// inspect-widgets.js — Netlify function (TEMPORARY)
-// Path: /api/inspect-widgets
-//
-// Fetches all widget templates from the Salesbuildr API
-// and returns the raw JSON so we can see the exact
-// structure needed to create html-content widgets.
-//
-// DELETE THIS FILE once we have the structure we need.
+// inspect-widgets.js — diagnostic, tries multiple auth
+// methods so we can identify the correct one.
+// DELETE after we find what works.
 // =========================================================
 
 exports.handler = async (event) => {
@@ -19,31 +14,31 @@ exports.handler = async (event) => {
     };
   }
 
-  try {
-    const response = await fetch('https://portal.us1-salesbuildr.com/public-api/quote-widget-template', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+  const BASE = 'https://portal.us1-salesbuildr.com/public-api/quote-widget-template';
+
+  // Try four different auth approaches in parallel
+  const attempts = [
+    { method: 'integration-key header',    headers: { 'Content-Type': 'application/json', 'integration-key': apiKey } },
+    { method: 'Authorization Bearer',      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` } },
+    { method: 'Authorization plain',       headers: { 'Content-Type': 'application/json', 'Authorization': apiKey } },
+    { method: 'x-api-key header',          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey } },
+  ];
+
+  const results = await Promise.all(
+    attempts.map(async ({ method, headers }) => {
+      try {
+        const res  = await fetch(BASE, { method: 'GET', headers });
+        const body = await res.json();
+        return { method, status: res.status, body };
+      } catch (err) {
+        return { method, error: err.message };
       }
-    });
+    })
+  );
 
-    const data = await response.json();
-
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify({ ok: true, status: response.status, data }, null, 2)
-    };
-
-  } catch (err) {
-    return {
-      statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ok: false, error: err.message })
-    };
-  }
+  return {
+    statusCode: 200,
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    body: JSON.stringify({ ok: true, keyLength: apiKey.length, results }, null, 2)
+  };
 };
