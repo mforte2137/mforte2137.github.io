@@ -510,6 +510,149 @@ footer.tag {
 }
 
 /* =========================================================
+   Colour Theme Selector
+   ========================================================= */
+
+/* Grid: 4 columns on desktop, 2 on mobile */
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-top: 4px;
+}
+
+/* Each theme tile */
+.theme-tile {
+  background: #fff;
+  border: 2.5px solid var(--rule);
+  padding: 0;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, transform 0.1s;
+  position: relative;
+  overflow: hidden;
+}
+.theme-tile:hover { border-color: var(--ink-soft); transform: translateY(-2px); }
+.theme-tile.is-selected { border-color: var(--ink); border-width: 3px; }
+
+/* Swatch — split left (primary) / right (accent) */
+.tile-swatch {
+  display: flex;
+  height: 80px;
+  width: 100%;
+}
+.swatch-primary { flex: 2; }
+.swatch-accent  { flex: 1; }
+
+/* Custom swatch placeholder */
+.tile-swatch-custom { background: var(--paper-alt); }
+.custom-swatch-preview {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mute);
+  line-height: 1.4;
+  transition: background 0.2s, color 0.2s;
+}
+
+/* Tile name label */
+.tile-name {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  padding: 10px 8px 12px;
+  letter-spacing: 0.02em;
+}
+.theme-tile.is-selected .tile-name { color: var(--ink); }
+
+/* Checkmark — only visible when selected */
+.tile-check {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.theme-tile.is-selected .tile-check { opacity: 1; }
+
+/* Custom colour inputs */
+.custom-inputs {
+  margin-top: 20px;
+  padding: 22px 24px;
+  background: var(--paper-alt);
+  border: 1.5px solid var(--rule);
+}
+.custom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.custom-label {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 8px;
+}
+.custom-hint {
+  font-weight: 400;
+  color: var(--mute);
+}
+.custom-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.color-picker {
+  width: 48px;
+  height: 40px;
+  border: 1.5px solid var(--rule);
+  padding: 2px;
+  cursor: pointer;
+  background: #fff;
+  flex-shrink: 0;
+}
+.hex-input {
+  flex: 1;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 14px;
+  color: var(--ink);
+  background: #fff;
+  border: 1.5px solid var(--rule);
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+  text-transform: uppercase;
+}
+.hex-input:focus { border-color: var(--ink); }
+.hex-input.is-error { border-color: var(--accent); }
+
+.custom-note {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px;
+  color: var(--mute);
+  margin: 14px 0 0;
+  font-style: italic;
+}
+
+/* Mobile: 2-column theme grid */
+@media (max-width: 640px) {
+  .theme-grid { grid-template-columns: repeat(2, 1fr); }
+  .custom-row { grid-template-columns: 1fr; }
+}
+
+/* =========================================================
    Print — hide everything except widget previews
    ========================================================= */
 @media print {
