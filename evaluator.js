@@ -26,8 +26,9 @@ const downloadBtn   = document.getElementById('download-btn');
 const errorBanner   = document.getElementById('error-banner');
 const errorDetail   = document.getElementById('error-detail');
 const errorDismiss  = document.getElementById('error-dismiss');
-const quoteUrlInput = document.getElementById('quote-url');
-const urlBtn        = document.getElementById('url-btn');
+const pasteTextarea = document.getElementById('paste-text');
+const pasteCount    = document.getElementById('paste-count');
+const pasteBtn      = document.getElementById('paste-btn');
 
 // Report fields
 const rptFilename     = document.getElementById('rpt-filename');
@@ -161,67 +162,43 @@ dropzone.addEventListener('drop', (e) => {
   if (file) handleFile(file);
 });
 
-// ── Quote URL input ───────────────────────────────────────
-urlBtn.addEventListener('click', () => {
-  const url = quoteUrlInput.value.trim();
-  if (!url) {
-    quoteUrlInput.focus();
-    return;
-  }
-  handleQuoteUrl(url);
-});
-quoteUrlInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') urlBtn.click();
+// ── Paste text input ──────────────────────────────────────
+pasteTextarea.addEventListener('input', () => {
+  pasteCount.textContent = pasteTextarea.value.length.toLocaleString();
 });
 
-async function handleQuoteUrl(url) {
+pasteBtn.addEventListener('click', () => {
+  const text = pasteTextarea.value.trim();
+  if (!text) { pasteTextarea.focus(); return; }
+  handlePastedText(text);
+});
+
+async function handlePastedText(rawText) {
   hideError();
-  if (!url.includes('salesbuildr.com')) {
-    showError('Please enter a Salesbuildr quote link (e.g. https://portal.us1-salesbuildr.com/quote/...).');
+
+  const normalized = normalizeText(rawText);
+  if (normalized.length < 200) {
+    showError('The pasted text is too short to analyze (' + normalized.length + ' characters). Please make sure you selected all the text from your quote.');
     return;
   }
+
+  lastTextExcerpt = normalized.slice(0, 1500);
+  const wordCount = (normalized.match(/\S+/g) || []).length;
+  const pages     = Math.max(1, Math.round(wordCount / 350));
 
   showView('parsing');
-  setWorking('Fetching quote from Salesbuildr…', 'Rendering the page — this takes a few seconds.');
-  urlBtn.disabled = true;
+  setWorking('Analyzing against the framework…', 'Claude is reading it through your buyer\'s eyes. Usually 5–10 seconds.');
+  pasteBtn.disabled = true;
 
   try {
-    let response;
-    try {
-      response = await fetch('/api/scrape-quote', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ url })
-      });
-    } catch (e) {
-      throw new Error('Could not reach the scraping service. Check your connection and try again.');
-    }
-
-    let data;
-    try { data = await response.json(); }
-    catch (e) { throw new Error('Unexpected response from scraping service. Status ' + response.status); }
-
-    if (!response.ok || !data.ok) {
-      throw new Error(data.error || 'HTTP ' + response.status);
-    }
-
-    const normalized = normalizeText(data.text);
-    if (normalized.length < 200) {
-      throw new Error('Not enough text was extracted from the quote page. Make sure the link includes the ?key= parameter.');
-    }
-
-    lastTextExcerpt = normalized.slice(0, 1500);
-
-    setWorking('Analyzing against the framework…', 'Claude is reading it through your buyer\'s eyes. Usually 5–10 seconds.');
-
     const analysis = await runAnalysis({
       text:     normalized,
       filename: 'Salesbuildr Quote',
-      pages:    data.pages || 1
+      pages
     });
 
     lastAnalysis = analysis;
-    renderReport(analysis, { filename: 'Salesbuildr Quote', pages: data.pages || 1 });
+    renderReport(analysis, { filename: 'Salesbuildr Quote', pages });
     showView('report');
     widgetSection.hidden = false;
 
@@ -230,7 +207,7 @@ async function handleQuoteUrl(url) {
     showError(err.message || 'Unknown error');
     showView('upload');
   } finally {
-    urlBtn.disabled = false;
+    pasteBtn.disabled = false;
   }
 }
 
@@ -238,6 +215,8 @@ async function handleQuoteUrl(url) {
 restartBtn.addEventListener('click', () => {
   hideError();
   resetWidgetSection();
+  pasteTextarea.value   = '';
+  pasteCount.textContent = '0';
   showView('upload');
 });
 errorDismiss.addEventListener('click', () => {
