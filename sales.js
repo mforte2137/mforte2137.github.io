@@ -114,7 +114,9 @@ const LS_INT_KEY    = 'sb_int_key';
 
 let selectedColors   = { primary:'#0d2d5e', accent:'#1a6fc4', light:'#f0f6ff' };
 let generatedWidgets = [];
+let selectedTriggers = new Set();
 let selectedOutcomes = new Set();
+let selectedUrgency  = new Set();
 
 // ── DOM handles ───────────────────────────────────────────
 const formView          = document.getElementById('form-view');
@@ -191,23 +193,23 @@ function initServiceTiles() {
   });
 }
 
-// ── Trigger chips (single select) ────────────────────────
+// ── Trigger chips (multi-select) ─────────────────────────
 function initTriggerChips() {
   const row = document.getElementById('trigger-chips');
   TRIGGERS.forEach(trigger => {
     const btn = document.createElement('button');
-    btn.type      = 'button';
-    btn.className = 'chip';
+    btn.type        = 'button';
+    btn.className   = 'chip';
     btn.textContent = trigger;
     btn.addEventListener('click', () => {
-      const alreadySelected = btn.classList.contains('is-selected');
-      row.querySelectorAll('.chip').forEach(c => c.classList.remove('is-selected'));
-      if (alreadySelected) {
-        triggerField.value = '';
+      if (btn.classList.contains('is-selected')) {
+        btn.classList.remove('is-selected');
+        selectedTriggers.delete(trigger);
       } else {
         btn.classList.add('is-selected');
-        triggerField.value = trigger;
+        selectedTriggers.add(trigger);
       }
+      triggerField.value = Array.from(selectedTriggers).join('; ');
     });
     row.appendChild(btn);
   });
@@ -235,20 +237,23 @@ function initOutcomeChips() {
   });
 }
 
-// ── Urgency hint prompts ──────────────────────────────────
+// ── Urgency chips (multi-select) ──────────────────────────
 function initUrgencyHints() {
-  const row = document.getElementById('urgency-hints');
+  const row = document.getElementById('urgency-chips');
   URGENCY_HINTS.forEach(hint => {
     const btn = document.createElement('button');
-    btn.type      = 'button';
-    btn.className = 'urgency-hint-chip';
+    btn.type        = 'button';
+    btn.className   = 'chip';
     btn.textContent = hint;
     btn.addEventListener('click', () => {
-      const current = urgencyField.value.trim();
-      urgencyField.value = current ? current + ', ' + hint : hint;
-      urgencyField.focus();
-      // Position cursor at end
-      urgencyField.setSelectionRange(urgencyField.value.length, urgencyField.value.length);
+      if (btn.classList.contains('is-selected')) {
+        btn.classList.remove('is-selected');
+        selectedUrgency.delete(hint);
+      } else {
+        btn.classList.add('is-selected');
+        selectedUrgency.add(hint);
+      }
+      urgencyField.value = Array.from(selectedUrgency).join('; ');
     });
     row.appendChild(btn);
   });
@@ -316,7 +321,9 @@ function restart() {
   form.reset();
   solutionCount.textContent   = '0';
   generatedWidgets            = [];
+  selectedTriggers            = new Set();
   selectedOutcomes            = new Set();
+  selectedUrgency             = new Set();
   individualWidgets.innerHTML = '';
   outputTitle.textContent     = '';
   combinedSection.hidden      = true;
