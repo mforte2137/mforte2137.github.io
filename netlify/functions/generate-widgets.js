@@ -2,18 +2,15 @@
 // Proposal Evaluator — Salesbuildr Widget Generator
 // Path on the live site: /api/generate-widgets
 //
-// Accepts POST { analysis, textExcerpt, widgetId }
-//   analysis    — the structured output from /api/analyze
+// Accepts POST { analysis, textExcerpt, widgetId, colors }
+//   analysis    — structured output from /api/analyze
 //   textExcerpt — first ~1500 chars of the proposal text
 //   widgetId    — "w1" | "w2" | "w3" | "w4" | "w5"
+//   colors      — { primary, accent, light } (optional,
+//                  defaults to corporate blue)
 //
-// Generates ONE widget per call. The browser makes 5
-// sequential calls and renders each widget as it arrives.
-// This keeps each call well inside the Netlify 10s timeout
-// (Haiku returns a single widget in ~3-4 seconds).
-//
-// Model: claude-haiku-4-5-20251001 — same reasoning as
-// analyze.js. Sonnet produces better copy but times out.
+// One widget per call — stays inside the Netlify 10s limit.
+// Model: claude-haiku-4-5-20251001
 // =========================================================
 
 const WIDGET_BRIEFS = {
@@ -49,6 +46,8 @@ const WIDGET_BRIEFS = {
   }
 };
 
+// Colour tokens use {{PRIMARY}}, {{ACCENT}}, {{LIGHT}}, {{BORDER}}
+// — substituted in the handler before sending to Claude.
 const SYSTEM_PROMPT = `You are a Salesbuildr widget creator for MSP proposals. You generate one buyer-facing HTML content widget that a Managed Service Provider pastes directly into their Salesbuildr proposal editor via TinyMCE.
 
 === SALESBUILDR TECHNICAL REQUIREMENTS — NON-NEGOTIABLE ===
@@ -59,14 +58,13 @@ const SYSTEM_PROMPT = `You are a Salesbuildr widget creator for MSP proposals. Y
 - The outermost element must be a single <div> — no siblings at root level.
 
 === COLOUR AND TYPOGRAPHY ===
-- Navy:         #0d2d5e  (header backgrounds, heading text)
-- Blue:         #1a6fc4  (callout borders, accent elements)
-- Light blue:   #f0f6ff  (callout backgrounds, alternate rows)
-- Border:       #d0e2f5
-- Body text:    #1a1a1a, font-size:14px, line-height:1.8
-- Muted text:   #5a6a7e
-- White:        #ffffff
-- Font:         'Segoe UI', Arial, sans-serif (on every element — TinyMCE resets fonts)
+- Primary:    {{PRIMARY}}  (header backgrounds, bold label text)
+- Accent:     {{ACCENT}}   (callout left border, highlight colour)
+- Light tint: {{LIGHT}}    (callout background, alternate row background)
+- Border:     {{BORDER}}   (table and divider borders)
+- Body text:  #1a1a1a, font-size:14px, line-height:1.8
+- Muted:      #5a6a7e
+- Font:       'Segoe UI', Arial, sans-serif (on every element — TinyMCE resets fonts)
 
 === REQUIRED HTML STRUCTURE ===
 
@@ -74,28 +72,28 @@ Every widget must follow this structure exactly (populate with real content):
 
 <div style="width:100%;padding:0;background-color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;">
 
-  <!-- Header bar -->
-  <div style="background-color:#0d2d5e;padding:20px 28px;margin-bottom:0;">
+  <!-- Header bar: primary colour background, white title only -->
+  <div style="background-color:{{PRIMARY}};padding:20px 28px;margin-bottom:0;">
     <h2 style="margin:0;font-size:19px;font-weight:700;color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;line-height:1.3;">[WIDGET TITLE]</h2>
   </div>
 
-  <!-- Callout intro -->
-  <div style="border-left:4px solid #1a6fc4;background-color:#f0f6ff;padding:18px 24px;margin-bottom:0;">
-    <p style="margin:0;font-size:15px;color:#1a3a5c;line-height:1.7;font-family:'Segoe UI',Arial,sans-serif;font-weight:500;">[OPENING STATEMENT — leads with the buyer's situation or the point of this widget]</p>
+  <!-- Callout intro: left accent border, light tint background -->
+  <div style="border-left:4px solid {{ACCENT}};background-color:{{LIGHT}};padding:18px 24px;margin-bottom:0;">
+    <p style="margin:0;font-size:15px;color:#1a3a5c;line-height:1.7;font-family:'Segoe UI',Arial,sans-serif;font-weight:500;">[OPENING STATEMENT]</p>
   </div>
 
-  <!-- Key points — use a 2-column table for 3-5 rows -->
+  <!-- Key points — 2-column table, 3-5 rows -->
   <table style="width:100%;border-collapse:collapse;margin:0;">
     <tr>
-      <td style="width:32%;padding:13px 16px;border:1px solid #d0e2f5;font-size:13px;font-weight:700;color:#0d2d5e;background-color:#f0f6ff;vertical-align:top;font-family:'Segoe UI',Arial,sans-serif;">[LABEL]</td>
-      <td style="padding:13px 16px;border:1px solid #d0e2f5;font-size:14px;color:#1a1a1a;line-height:1.7;vertical-align:top;font-family:'Segoe UI',Arial,sans-serif;">[DETAIL]</td>
+      <td style="width:32%;padding:13px 16px;border:1px solid {{BORDER}};font-size:13px;font-weight:700;color:{{PRIMARY}};background-color:{{LIGHT}};vertical-align:top;font-family:'Segoe UI',Arial,sans-serif;">[LABEL]</td>
+      <td style="padding:13px 16px;border:1px solid {{BORDER}};font-size:14px;color:#1a1a1a;line-height:1.7;vertical-align:top;font-family:'Segoe UI',Arial,sans-serif;">[DETAIL]</td>
     </tr>
-    <!-- repeat <tr> for each point, alternate rows use background-color:#ffffff on the label td and no background on the detail td -->
+    <!-- Alternate rows: label td background-color:#ffffff, detail td no background -->
   </table>
 
   <!-- Closing line -->
-  <div style="padding:16px 24px;border-top:1px solid #d0e2f5;">
-    <p style="margin:0;font-size:13px;color:#5a6a7e;line-height:1.7;font-family:'Segoe UI',Arial,sans-serif;font-style:italic;">[CLOSING STATEMENT — 1 sentence that bridges to the next widget or reinforces the point]</p>
+  <div style="padding:16px 24px;border-top:1px solid {{BORDER}};">
+    <p style="margin:0;font-size:13px;color:#5a6a7e;line-height:1.7;font-family:'Segoe UI',Arial,sans-serif;font-style:italic;">[CLOSING STATEMENT]</p>
   </div>
 
 </div>
@@ -117,16 +115,27 @@ const WIDGET_TOOL = {
     properties: {
       title: {
         type: 'string',
-        description: 'Short display title for this widget (5–8 words). Will appear in the app UI above the widget.'
+        description: 'Short display title for this widget (5–8 words).'
       },
       html: {
         type: 'string',
-        description: 'Complete self-contained HTML snippet. Inline CSS only. No <style> blocks. No scripts. Ready to paste into Salesbuildr TinyMCE via Source Code view.'
+        description: 'Complete self-contained HTML snippet with inline CSS only. No <style> blocks. No scripts.'
       }
     },
     required: ['title', 'html']
   }
 };
+
+// Lighten a hex colour by mixing with white
+function lightenHex(hex, amount) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const nr = Math.round(r + (255 - r) * amount);
+  const ng = Math.round(g + (255 - g) * amount);
+  const nb = Math.round(b + (255 - b) * amount);
+  return `#${nr.toString(16).padStart(2,'0')}${ng.toString(16).padStart(2,'0')}${nb.toString(16).padStart(2,'0')}`;
+}
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -138,9 +147,8 @@ exports.handler = async (event) => {
   }
 
   let body;
-  try {
-    body = JSON.parse(event.body);
-  } catch (e) {
+  try { body = JSON.parse(event.body); }
+  catch (e) {
     return {
       statusCode: 400,
       headers: { 'Content-Type': 'application/json' },
@@ -148,7 +156,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const { analysis, textExcerpt, widgetId } = body;
+  const { analysis, textExcerpt, widgetId, colors } = body;
 
   if (!analysis || !widgetId) {
     return {
@@ -167,9 +175,20 @@ exports.handler = async (event) => {
     };
   }
 
-  // Build a compact, focused context string for Claude.
-  // We use the analysis (already interpreted) not the raw document,
-  // so token count stays low and response time stays fast.
+  // Resolve brand colours — fall back to corporate blue defaults
+  const primary = (colors && colors.primary) || '#0d2d5e';
+  const accent  = (colors && colors.accent)  || '#1a6fc4';
+  const light   = (colors && colors.light)   || '#f0f6ff';
+  const border  = lightenHex(accent, 0.65);
+
+  // Substitute colour tokens into the system prompt
+  const systemPrompt = SYSTEM_PROMPT
+    .replace(/\{\{PRIMARY\}\}/g, primary)
+    .replace(/\{\{ACCENT\}\}/g,  accent)
+    .replace(/\{\{LIGHT\}\}/g,   light)
+    .replace(/\{\{BORDER\}\}/g,  border);
+
+  // Compact context string for Claude
   const w = (analysis.widgetSequence || []).find(x => x.num === parseInt(widgetId[1]));
   const fears = (analysis.fears || []).map(f => `• ${f.fear}`).join('\n');
 
@@ -179,14 +198,14 @@ exports.handler = async (event) => {
 Verdict: ${analysis.verdict?.headline || ''}
 ${analysis.verdict?.subtitle || ''}
 
-Buyer fears (what keeps them up at 2am):
+Buyer fears:
 ${fears}
 
 This widget's status in the original proposal: ${w ? `${w.status} — ${w.detail}` : 'unknown'}
 
 Sequence note: ${analysis.sequenceNote || ''}
 
-Proposal excerpt (first 1,200 characters, for context and language matching):
+Proposal excerpt:
 ${(textExcerpt || '').slice(0, 1200)}
 
 === WIDGET BRIEF ===
@@ -195,7 +214,7 @@ Suggested title: "${brief.title}"
 Purpose: ${brief.purpose}
 Tone: ${brief.tone}
 
-Generate the widget now. Follow the HTML structure and inline CSS requirements exactly.`;
+Generate the widget now.`;
 
   try {
     const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
@@ -208,15 +227,10 @@ Generate the widget now. Follow the HTML structure and inline CSS requirements e
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 2000,
-        system: SYSTEM_PROMPT,
+        system: systemPrompt,
         tools: [WIDGET_TOOL],
         tool_choice: { type: 'tool', name: 'submit_widget' },
-        messages: [
-          {
-            role: 'user',
-            content: userMessage
-          }
-        ]
+        messages: [{ role: 'user', content: userMessage }]
       })
     });
 
@@ -234,7 +248,6 @@ Generate the widget now. Follow the HTML structure and inline CSS requirements e
     }
 
     const data = await anthropicResponse.json();
-
     const toolUseBlock = Array.isArray(data.content)
       ? data.content.find(block => block.type === 'tool_use')
       : null;
@@ -274,11 +287,7 @@ Generate the widget now. Follow the HTML structure and inline CSS requirements e
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ok: false,
-        error: 'Function threw an error.',
-        details: err.message
-      })
+      body: JSON.stringify({ ok: false, error: 'Function threw an error.', details: err.message })
     };
   }
 };
