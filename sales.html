@@ -125,6 +125,137 @@
         >
       </div>
 
+      <!-- ── COLOUR THEME SELECTOR ── -->
+      <div class="optional-divider">
+        <span>Widget colour theme</span>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">
+          Choose a colour theme
+          <span class="field-optional">Optional</span>
+        </label>
+        <p class="field-hint">Pick the theme closest to your brand. The widgets will be generated in these colours. Defaults to Corporate Blue.</p>
+
+        <div class="theme-grid" id="theme-grid">
+
+          <button type="button" class="theme-tile is-selected" data-theme="blue"
+                  data-primary="#0d2d5e" data-accent="#1a6fc4" data-light="#f0f6ff">
+            <div class="tile-swatch">
+              <div class="swatch-primary" style="background:#0d2d5e;"></div>
+              <div class="swatch-accent"  style="background:#1a6fc4;"></div>
+            </div>
+            <div class="tile-name">Corporate Blue</div>
+            <div class="tile-check">✓</div>
+          </button>
+
+          <button type="button" class="theme-tile" data-theme="crimson"
+                  data-primary="#7f1d1d" data-accent="#dc2626" data-light="#fff1f2">
+            <div class="tile-swatch">
+              <div class="swatch-primary" style="background:#7f1d1d;"></div>
+              <div class="swatch-accent"  style="background:#dc2626;"></div>
+            </div>
+            <div class="tile-name">Crimson</div>
+            <div class="tile-check">✓</div>
+          </button>
+
+          <button type="button" class="theme-tile" data-theme="maroon"
+                  data-primary="#4c0519" data-accent="#9f1239" data-light="#fdf2f4">
+            <div class="tile-swatch">
+              <div class="swatch-primary" style="background:#4c0519;"></div>
+              <div class="swatch-accent"  style="background:#9f1239;"></div>
+            </div>
+            <div class="tile-name">Maroon</div>
+            <div class="tile-check">✓</div>
+          </button>
+
+          <button type="button" class="theme-tile" data-theme="green"
+                  data-primary="#14532d" data-accent="#16a34a" data-light="#f0fdf4">
+            <div class="tile-swatch">
+              <div class="swatch-primary" style="background:#14532d;"></div>
+              <div class="swatch-accent"  style="background:#16a34a;"></div>
+            </div>
+            <div class="tile-name">Forest Green</div>
+            <div class="tile-check">✓</div>
+          </button>
+
+          <button type="button" class="theme-tile" data-theme="teal"
+                  data-primary="#134e4a" data-accent="#0d9488" data-light="#f0fdfa">
+            <div class="tile-swatch">
+              <div class="swatch-primary" style="background:#134e4a;"></div>
+              <div class="swatch-accent"  style="background:#0d9488;"></div>
+            </div>
+            <div class="tile-name">Teal</div>
+            <div class="tile-check">✓</div>
+          </button>
+
+          <button type="button" class="theme-tile" data-theme="purple"
+                  data-primary="#3b0764" data-accent="#7c3aed" data-light="#faf5ff">
+            <div class="tile-swatch">
+              <div class="swatch-primary" style="background:#3b0764;"></div>
+              <div class="swatch-accent"  style="background:#7c3aed;"></div>
+            </div>
+            <div class="tile-name">Royal Purple</div>
+            <div class="tile-check">✓</div>
+          </button>
+
+          <button type="button" class="theme-tile" data-theme="slate"
+                  data-primary="#1e293b" data-accent="#475569" data-light="#f8fafc">
+            <div class="tile-swatch">
+              <div class="swatch-primary" style="background:#1e293b;"></div>
+              <div class="swatch-accent"  style="background:#475569;"></div>
+            </div>
+            <div class="tile-name">Slate</div>
+            <div class="tile-check">✓</div>
+          </button>
+
+          <button type="button" class="theme-tile" data-theme="gold"
+                  data-primary="#78350f" data-accent="#d97706" data-light="#fffbeb">
+            <div class="tile-swatch">
+              <div class="swatch-primary" style="background:#78350f;"></div>
+              <div class="swatch-accent"  style="background:#d97706;"></div>
+            </div>
+            <div class="tile-name">Gold</div>
+            <div class="tile-check">✓</div>
+          </button>
+
+          <!-- Custom tile -->
+          <button type="button" class="theme-tile theme-tile-custom" data-theme="custom">
+            <div class="tile-swatch tile-swatch-custom">
+              <div class="custom-swatch-preview" id="custom-preview">
+                <span>Your<br>Colours</span>
+              </div>
+            </div>
+            <div class="tile-name">Custom</div>
+            <div class="tile-check">✓</div>
+          </button>
+
+        </div>
+
+        <!-- Custom colour inputs — shown when Custom tile selected -->
+        <div id="custom-inputs" class="custom-inputs" hidden>
+          <div class="custom-row">
+            <div class="custom-field">
+              <label class="custom-label">Primary colour <span class="custom-hint">(header bars)</span></label>
+              <div class="custom-input-row">
+                <input type="color" id="custom-primary-picker" class="color-picker" value="#0d2d5e">
+                <input type="text"  id="custom-primary-hex"    class="hex-input" maxlength="7" placeholder="#0d2d5e" value="#0d2d5e">
+              </div>
+            </div>
+            <div class="custom-field">
+              <label class="custom-label">Accent colour <span class="custom-hint">(borders &amp; highlights)</span></label>
+              <div class="custom-input-row">
+                <input type="color" id="custom-accent-picker" class="color-picker" value="#1a6fc4">
+                <input type="text"  id="custom-accent-hex"    class="hex-input" maxlength="7" placeholder="#1a6fc4" value="#1a6fc4">
+              </div>
+            </div>
+          </div>
+          <p class="custom-note">The light background tint is calculated automatically from your accent colour.</p>
+        </div>
+
+      </div>
+      <!-- ── END COLOUR THEME ── -->
+
       <div class="form-footer">
         <button type="submit" id="submit-btn" class="submit-btn">
           Generate My 5 Widgets &rarr;
@@ -172,9 +303,7 @@
     </div>
   </section>
 
-  <!-- ===================================================
-       Error banner
-       =================================================== -->
+  <!-- Error banner -->
   <div id="error-banner" class="error-banner" hidden>
     <div class="error-title">Something went wrong.</div>
     <div class="error-detail" id="error-detail"></div>
