@@ -12,6 +12,13 @@
    ========================================================= */
 
 const WIDGET_IDS = ['w1', 'w2', 'w3', 'w4', 'w5'];
+
+// ── Default theme colours ─────────────────────────────────
+let selectedColors = {
+  primary: '#0d2d5e',
+  accent:  '#1a6fc4',
+  light:   '#f0f6ff'
+};
 const WIDGET_LABELS = {
   w1: 'W1 · Their Situation',
   w2: 'W2 · Why Now',
@@ -37,6 +44,80 @@ const restartBtn2   = document.getElementById('restart-btn-2');
 const errorBanner   = document.getElementById('error-banner');
 const errorDetail   = document.getElementById('error-detail');
 const errorDismiss  = document.getElementById('error-dismiss');
+
+// ── Colour theme selector ─────────────────────────────────
+const themeGrid    = document.getElementById('theme-grid');
+const customInputs = document.getElementById('custom-inputs');
+const primaryPicker = document.getElementById('custom-primary-picker');
+const primaryHex    = document.getElementById('custom-primary-hex');
+const accentPicker  = document.getElementById('custom-accent-picker');
+const accentHex     = document.getElementById('custom-accent-hex');
+const customPreview = document.getElementById('custom-preview');
+
+// Calculate a light tint from a hex colour (mix with white)
+function lightenColor(hex, amount = 0.91) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const nr = Math.round(r + (255 - r) * amount);
+  const ng = Math.round(g + (255 - g) * amount);
+  const nb = Math.round(b + (255 - b) * amount);
+  return `#${nr.toString(16).padStart(2, '0')}${ng.toString(16).padStart(2, '0')}${nb.toString(16).padStart(2, '0')}`;
+}
+
+function isValidHex(val) { return /^#[0-9a-fA-F]{6}$/.test(val); }
+
+// Tile click — select a preset or expand custom
+themeGrid.querySelectorAll('.theme-tile').forEach(tile => {
+  tile.addEventListener('click', () => {
+    themeGrid.querySelectorAll('.theme-tile').forEach(t => t.classList.remove('is-selected'));
+    tile.classList.add('is-selected');
+
+    if (tile.dataset.theme === 'custom') {
+      customInputs.hidden = false;
+      updateCustomColors();
+    } else {
+      customInputs.hidden = true;
+      selectedColors = {
+        primary: tile.dataset.primary,
+        accent:  tile.dataset.accent,
+        light:   tile.dataset.light
+      };
+    }
+  });
+});
+
+// Sync colour picker → hex input and update selectedColors
+function syncPicker(picker, hexField, role) {
+  picker.addEventListener('input', () => {
+    hexField.value = picker.value.toUpperCase();
+    updateCustomColors();
+  });
+  hexField.addEventListener('input', () => {
+    const val = hexField.value.trim().startsWith('#')
+      ? hexField.value.trim()
+      : '#' + hexField.value.trim();
+    if (isValidHex(val)) {
+      picker.value = val;
+      hexField.classList.remove('is-error');
+      updateCustomColors();
+    } else {
+      hexField.classList.add('is-error');
+    }
+  });
+}
+syncPicker(primaryPicker, primaryHex, 'primary');
+syncPicker(accentPicker,  accentHex,  'accent');
+
+function updateCustomColors() {
+  const p = primaryPicker.value;
+  const a = accentPicker.value;
+  selectedColors = { primary: p, accent: a, light: lightenColor(a) };
+  // Update the custom tile preview swatch
+  customPreview.style.background = `linear-gradient(135deg, ${p} 60%, ${a} 60%)`;
+  customPreview.querySelector('span').style.color = '#ffffff';
+  customPreview.querySelector('span').textContent  = '';
+}
 
 // ── Character counter for solution textarea ───────────────
 const solutionField = document.getElementById('f-solution');
@@ -182,7 +263,7 @@ async function fetchWidget(fields, widgetId) {
     response = await fetch('/api/sales-widgets', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ fields, widgetId })
+      body:    JSON.stringify({ fields, widgetId, colors: selectedColors })
     });
   } catch (e) {
     throw new Error('Could not reach the widget generator. Check your connection.');
@@ -410,7 +491,7 @@ function buildErrorCard(widgetId, message) {
     card.remove();
     appendSkeletonCard(widgetId);
     try {
-      const widget = await fetchWidget(fields, widgetId);
+      const widget = await fetchWidget(fields, widgetId, selectedColors);
       replaceSkeletonCard(widgetId, widget);
     } catch (err) {
       replaceSkeletonWithError(widgetId, err.message);
