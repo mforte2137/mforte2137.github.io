@@ -23,26 +23,18 @@
 
     <form id="widget-form" novalidate>
 
-      <!-- Field 1: Solution (required) -->
       <div class="field-group">
         <label class="field-label" for="f-solution">
           What are you proposing?
           <span class="field-required">Required</span>
         </label>
         <p class="field-hint">Describe the solution or project — what you're recommending and roughly what it involves.</p>
-        <textarea
-          id="f-solution"
-          name="solution"
-          class="field-textarea"
-          rows="3"
-          maxlength="500"
+        <textarea id="f-solution" name="solution" class="field-textarea" rows="3" maxlength="500"
           placeholder="e.g. Network upgrade — new next-gen firewall, managed switch, and structured cabling throughout the office. We'll start with a site survey to document the current environment before any work begins."
-          required
-        ></textarea>
+          required></textarea>
         <div class="field-counter"><span id="solution-count">0</span> / 500</div>
       </div>
 
-      <!-- Field 2: Business (required) -->
       <div class="field-group">
         <label class="field-label" for="f-business">
           What kind of business is the customer?
@@ -50,23 +42,10 @@
         </label>
         <p class="field-hint">Industry and rough size — this shapes the language and framing of every widget.</p>
         <div class="field-row">
-          <input
-            type="text"
-            id="f-business"
-            name="business"
-            class="field-input"
-            maxlength="100"
-            placeholder="e.g. Dental practice, law firm, manufacturer, accountancy"
-            required
-          >
-          <input
-            type="text"
-            id="f-size"
-            name="size"
-            class="field-input field-input-sm"
-            maxlength="60"
-            placeholder="Team size (e.g. 25 staff)"
-          >
+          <input type="text" id="f-business" name="business" class="field-input" maxlength="100"
+            placeholder="e.g. Dental practice, law firm, manufacturer, accountancy" required>
+          <input type="text" id="f-size" name="size" class="field-input field-input-sm" maxlength="60"
+            placeholder="Team size (e.g. 25 staff)">
         </div>
       </div>
 
@@ -74,200 +53,113 @@
         <span>Optional — the more context you give, the more specific the widgets</span>
       </div>
 
-      <!-- Field 3: Trigger (optional) -->
       <div class="field-group">
         <label class="field-label" for="f-trigger">
           What's prompting this?
           <span class="field-optional">Optional</span>
         </label>
-        <p class="field-hint">The event or pain that's driving the proposal — a failing device, a security scare, upcoming growth, a compliance requirement.</p>
-        <input
-          type="text"
-          id="f-trigger"
-          name="trigger"
-          class="field-input"
-          maxlength="200"
-          placeholder="e.g. Existing firewall is end-of-life, network keeps dropping during busy periods"
-        >
+        <p class="field-hint">The event or pain that's driving the proposal.</p>
+        <input type="text" id="f-trigger" name="trigger" class="field-input" maxlength="200"
+          placeholder="e.g. Existing firewall is end-of-life, network keeps dropping during busy periods">
       </div>
 
-      <!-- Field 4: Outcomes (optional) -->
       <div class="field-group">
         <label class="field-label" for="f-outcomes">
           What does success look like for the customer?
           <span class="field-optional">Optional</span>
         </label>
-        <p class="field-hint">What the customer cares about beyond "IT working" — reliability, security, compliance, room to grow, staff productivity.</p>
-        <input
-          type="text"
-          id="f-outcomes"
-          name="outcomes"
-          class="field-input"
-          maxlength="200"
-          placeholder="e.g. No more downtime, confidence their data is secure, network that supports 10 new hires"
-        >
+        <p class="field-hint">What the customer cares about beyond "IT working."</p>
+        <input type="text" id="f-outcomes" name="outcomes" class="field-input" maxlength="200"
+          placeholder="e.g. No more downtime, confidence their data is secure, network that supports 10 new hires">
       </div>
 
-      <!-- Field 5: Urgency (optional) -->
       <div class="field-group">
         <label class="field-label" for="f-urgency">
           Any urgency or deadline?
           <span class="field-optional">Optional</span>
         </label>
         <p class="field-hint">A deadline, trigger event, or reason why now rather than later.</p>
-        <input
-          type="text"
-          id="f-urgency"
-          name="urgency"
-          class="field-input"
-          maxlength="200"
-          placeholder="e.g. Office lease renewal in 3 months, recent ransomware attack on a similar local business"
-        >
+        <input type="text" id="f-urgency" name="urgency" class="field-input" maxlength="200"
+          placeholder="e.g. Office lease renewal in 3 months, recent ransomware attack on a similar local business">
       </div>
 
-      <!-- ── COLOUR THEME SELECTOR ── -->
-      <div class="optional-divider">
-        <span>Widget colour theme</span>
-      </div>
+      <!-- Colour theme selector -->
+      <div class="optional-divider"><span>Widget colour theme</span></div>
 
       <div class="field-group">
-        <label class="field-label">
-          Choose a colour theme
-          <span class="field-optional">Optional</span>
-        </label>
-        <p class="field-hint">Pick the theme closest to your brand. The widgets will be generated in these colours. Defaults to Corporate Blue.</p>
+        <label class="field-label">Choose a colour theme <span class="field-optional">Optional</span></label>
+        <p class="field-hint">Pick the theme closest to your brand. Defaults to Corporate Blue.</p>
 
         <div class="theme-grid" id="theme-grid">
-
-          <button type="button" class="theme-tile is-selected" data-theme="blue"
-                  data-primary="#0d2d5e" data-accent="#1a6fc4" data-light="#f0f6ff">
-            <div class="tile-swatch">
-              <div class="swatch-primary" style="background:#0d2d5e;"></div>
-              <div class="swatch-accent"  style="background:#1a6fc4;"></div>
-            </div>
-            <div class="tile-name">Corporate Blue</div>
-            <div class="tile-check">✓</div>
+          <button type="button" class="theme-tile is-selected" data-theme="blue" data-primary="#0d2d5e" data-accent="#1a6fc4" data-light="#f0f6ff">
+            <div class="tile-swatch"><div class="swatch-primary" style="background:#0d2d5e;"></div><div class="swatch-accent" style="background:#1a6fc4;"></div></div>
+            <div class="tile-name">Corporate Blue</div><div class="tile-check">✓</div>
           </button>
-
-          <button type="button" class="theme-tile" data-theme="crimson"
-                  data-primary="#7f1d1d" data-accent="#dc2626" data-light="#fff1f2">
-            <div class="tile-swatch">
-              <div class="swatch-primary" style="background:#7f1d1d;"></div>
-              <div class="swatch-accent"  style="background:#dc2626;"></div>
-            </div>
-            <div class="tile-name">Crimson</div>
-            <div class="tile-check">✓</div>
+          <button type="button" class="theme-tile" data-theme="crimson" data-primary="#7f1d1d" data-accent="#dc2626" data-light="#fff1f2">
+            <div class="tile-swatch"><div class="swatch-primary" style="background:#7f1d1d;"></div><div class="swatch-accent" style="background:#dc2626;"></div></div>
+            <div class="tile-name">Crimson</div><div class="tile-check">✓</div>
           </button>
-
-          <button type="button" class="theme-tile" data-theme="maroon"
-                  data-primary="#4c0519" data-accent="#9f1239" data-light="#fdf2f4">
-            <div class="tile-swatch">
-              <div class="swatch-primary" style="background:#4c0519;"></div>
-              <div class="swatch-accent"  style="background:#9f1239;"></div>
-            </div>
-            <div class="tile-name">Maroon</div>
-            <div class="tile-check">✓</div>
+          <button type="button" class="theme-tile" data-theme="maroon" data-primary="#4c0519" data-accent="#9f1239" data-light="#fdf2f4">
+            <div class="tile-swatch"><div class="swatch-primary" style="background:#4c0519;"></div><div class="swatch-accent" style="background:#9f1239;"></div></div>
+            <div class="tile-name">Maroon</div><div class="tile-check">✓</div>
           </button>
-
-          <button type="button" class="theme-tile" data-theme="green"
-                  data-primary="#14532d" data-accent="#16a34a" data-light="#f0fdf4">
-            <div class="tile-swatch">
-              <div class="swatch-primary" style="background:#14532d;"></div>
-              <div class="swatch-accent"  style="background:#16a34a;"></div>
-            </div>
-            <div class="tile-name">Forest Green</div>
-            <div class="tile-check">✓</div>
+          <button type="button" class="theme-tile" data-theme="green" data-primary="#14532d" data-accent="#16a34a" data-light="#f0fdf4">
+            <div class="tile-swatch"><div class="swatch-primary" style="background:#14532d;"></div><div class="swatch-accent" style="background:#16a34a;"></div></div>
+            <div class="tile-name">Forest Green</div><div class="tile-check">✓</div>
           </button>
-
-          <button type="button" class="theme-tile" data-theme="teal"
-                  data-primary="#134e4a" data-accent="#0d9488" data-light="#f0fdfa">
-            <div class="tile-swatch">
-              <div class="swatch-primary" style="background:#134e4a;"></div>
-              <div class="swatch-accent"  style="background:#0d9488;"></div>
-            </div>
-            <div class="tile-name">Teal</div>
-            <div class="tile-check">✓</div>
+          <button type="button" class="theme-tile" data-theme="teal" data-primary="#134e4a" data-accent="#0d9488" data-light="#f0fdfa">
+            <div class="tile-swatch"><div class="swatch-primary" style="background:#134e4a;"></div><div class="swatch-accent" style="background:#0d9488;"></div></div>
+            <div class="tile-name">Teal</div><div class="tile-check">✓</div>
           </button>
-
-          <button type="button" class="theme-tile" data-theme="purple"
-                  data-primary="#3b0764" data-accent="#7c3aed" data-light="#faf5ff">
-            <div class="tile-swatch">
-              <div class="swatch-primary" style="background:#3b0764;"></div>
-              <div class="swatch-accent"  style="background:#7c3aed;"></div>
-            </div>
-            <div class="tile-name">Royal Purple</div>
-            <div class="tile-check">✓</div>
+          <button type="button" class="theme-tile" data-theme="purple" data-primary="#3b0764" data-accent="#7c3aed" data-light="#faf5ff">
+            <div class="tile-swatch"><div class="swatch-primary" style="background:#3b0764;"></div><div class="swatch-accent" style="background:#7c3aed;"></div></div>
+            <div class="tile-name">Royal Purple</div><div class="tile-check">✓</div>
           </button>
-
-          <button type="button" class="theme-tile" data-theme="slate"
-                  data-primary="#1e293b" data-accent="#475569" data-light="#f8fafc">
-            <div class="tile-swatch">
-              <div class="swatch-primary" style="background:#1e293b;"></div>
-              <div class="swatch-accent"  style="background:#475569;"></div>
-            </div>
-            <div class="tile-name">Slate</div>
-            <div class="tile-check">✓</div>
+          <button type="button" class="theme-tile" data-theme="slate" data-primary="#1e293b" data-accent="#475569" data-light="#f8fafc">
+            <div class="tile-swatch"><div class="swatch-primary" style="background:#1e293b;"></div><div class="swatch-accent" style="background:#475569;"></div></div>
+            <div class="tile-name">Slate</div><div class="tile-check">✓</div>
           </button>
-
-          <button type="button" class="theme-tile" data-theme="gold"
-                  data-primary="#78350f" data-accent="#d97706" data-light="#fffbeb">
-            <div class="tile-swatch">
-              <div class="swatch-primary" style="background:#78350f;"></div>
-              <div class="swatch-accent"  style="background:#d97706;"></div>
-            </div>
-            <div class="tile-name">Gold</div>
-            <div class="tile-check">✓</div>
+          <button type="button" class="theme-tile" data-theme="gold" data-primary="#78350f" data-accent="#d97706" data-light="#fffbeb">
+            <div class="tile-swatch"><div class="swatch-primary" style="background:#78350f;"></div><div class="swatch-accent" style="background:#d97706;"></div></div>
+            <div class="tile-name">Gold</div><div class="tile-check">✓</div>
           </button>
-
-          <!-- Custom tile -->
           <button type="button" class="theme-tile theme-tile-custom" data-theme="custom">
-            <div class="tile-swatch tile-swatch-custom">
-              <div class="custom-swatch-preview" id="custom-preview">
-                <span>Your<br>Colours</span>
-              </div>
-            </div>
-            <div class="tile-name">Custom</div>
-            <div class="tile-check">✓</div>
+            <div class="tile-swatch tile-swatch-custom"><div class="custom-swatch-preview" id="custom-preview"><span>Your<br>Colours</span></div></div>
+            <div class="tile-name">Custom</div><div class="tile-check">✓</div>
           </button>
-
         </div>
 
-        <!-- Custom colour inputs — shown when Custom tile selected -->
         <div id="custom-inputs" class="custom-inputs" hidden>
           <div class="custom-row">
             <div class="custom-field">
               <label class="custom-label">Primary colour <span class="custom-hint">(header bars)</span></label>
               <div class="custom-input-row">
                 <input type="color" id="custom-primary-picker" class="color-picker" value="#0d2d5e">
-                <input type="text"  id="custom-primary-hex"    class="hex-input" maxlength="7" placeholder="#0d2d5e" value="#0d2d5e">
+                <input type="text" id="custom-primary-hex" class="hex-input" maxlength="7" placeholder="#0d2d5e" value="#0d2d5e">
               </div>
             </div>
             <div class="custom-field">
               <label class="custom-label">Accent colour <span class="custom-hint">(borders &amp; highlights)</span></label>
               <div class="custom-input-row">
                 <input type="color" id="custom-accent-picker" class="color-picker" value="#1a6fc4">
-                <input type="text"  id="custom-accent-hex"    class="hex-input" maxlength="7" placeholder="#1a6fc4" value="#1a6fc4">
+                <input type="text" id="custom-accent-hex" class="hex-input" maxlength="7" placeholder="#1a6fc4" value="#1a6fc4">
               </div>
             </div>
           </div>
-          <p class="custom-note">The light background tint is calculated automatically from your accent colour.</p>
+          <p class="custom-note">Light background tint is calculated automatically from your accent colour.</p>
         </div>
-
       </div>
-      <!-- ── END COLOUR THEME ── -->
 
       <div class="form-footer">
-        <button type="submit" id="submit-btn" class="submit-btn">
-          Generate My 5 Widgets &rarr;
-        </button>
-        <p class="form-note">Widgets appear one by one as each is generated — usually 15–20 seconds total.</p>
+        <button type="submit" id="submit-btn" class="submit-btn">Generate My 5 Widgets &rarr;</button>
+        <p class="form-note">Widgets appear one by one — usually 15–20 seconds total.</p>
       </div>
 
     </form>
   </section>
 
   <!-- ===================================================
-       VIEW 2: Working / generating
+       VIEW 2: Working
        =================================================== -->
   <section id="working-view" hidden>
     <div class="working-inner">
@@ -275,18 +167,17 @@
       <p class="working-title" id="working-title">Generating widget 1 of 5&hellip;</p>
       <p class="working-sub" id="working-sub">Writing your buyer-journey widgets</p>
       <div class="working-progress">
-        <div class="progress-track">
-          <div class="progress-bar" id="progress-bar" style="width:0%"></div>
-        </div>
+        <div class="progress-track"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
         <span class="progress-label" id="progress-label">0 of 5</span>
       </div>
     </div>
   </section>
 
   <!-- ===================================================
-       VIEW 3: Widget outputs
+       VIEW 3: Output
        =================================================== -->
   <section id="output-view" hidden>
+
     <div class="output-header">
       <div>
         <div class="output-kicker">Your Salesbuildr Widgets</div>
@@ -294,13 +185,71 @@
       </div>
       <button type="button" id="restart-btn" class="secondary-btn">&#8592; Start Over</button>
     </div>
-    <p class="output-lead">Paste each widget into Salesbuildr using the <strong>&lt;&nbsp;&gt;</strong> Source Code button in TinyMCE. Click any widget title to expand it.</p>
 
-    <div id="widget-outputs"></div>
+    <!-- ── COMBINED WIDGET (primary action) ── -->
+    <div id="combined-section" hidden>
+      <div class="combined-card">
+        <div class="combined-card-header">
+          <div class="combined-card-label">
+            <span class="combined-badge">Combined · W1–W5</span>
+            <span class="combined-title">Complete Buyer Journey — One Widget</span>
+          </div>
+          <button type="button" id="combined-copy-btn" class="combined-copy-btn">📋 Copy Widget</button>
+        </div>
+        <p class="combined-hint">All five buyer-journey sections in a single widget. One copy, one paste into Salesbuildr. Each section remains fully editable in TinyMCE.</p>
+        <div class="widget-tabs" id="combined-tabs">
+          <button class="widget-tab is-active" data-pane="preview">Preview</button>
+          <button class="widget-tab" data-pane="code">HTML Code</button>
+        </div>
+        <iframe id="combined-preview" class="combined-preview" sandbox="allow-same-origin"></iframe>
+        <textarea id="combined-code" class="combined-code" readonly spellcheck="false"></textarea>
+      </div>
+
+      <!-- ── CONNECT SALESBUILDR ── -->
+      <div class="sb-connect" id="sb-connect">
+        <button type="button" class="sb-connect-toggle" id="sb-toggle">
+          <span>⚡ Save directly to your Salesbuildr template library</span>
+          <span class="sb-arrow" id="sb-arrow">▼</span>
+        </button>
+        <div class="sb-connect-body" id="sb-connect-body" hidden>
+          <p class="sb-connect-hint">Enter your Salesbuildr credentials once. Tick <em>Remember</em> and they're saved to this device — your sales team won't need to enter them again.</p>
+          <div class="sb-fields">
+            <div class="sb-field">
+              <label class="sb-label">API Key <span class="sb-where">Admin → Integrations → API Key</span></label>
+              <input type="password" id="sb-api-key" class="sb-input" placeholder="Your API key" autocomplete="off">
+            </div>
+            <div class="sb-field">
+              <label class="sb-label">Integration Key <span class="sb-where">Provided by Salesbuildr</span></label>
+              <input type="password" id="sb-int-key" class="sb-input" placeholder="Your integration key" autocomplete="off">
+            </div>
+          </div>
+          <div class="sb-actions">
+            <label class="sb-remember-label">
+              <input type="checkbox" id="sb-remember"> Remember on this device
+            </label>
+            <div class="sb-push-row">
+              <input type="text" id="sb-prefix" class="sb-prefix" maxlength="40"
+                     placeholder="Optional label e.g. Acme Corp (added to widget name)">
+              <button type="button" id="sb-push-btn" class="sb-push-btn" disabled>Save to Salesbuildr →</button>
+            </div>
+          </div>
+          <div id="sb-result" class="sb-result" hidden></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── INDIVIDUAL WIDGETS (secondary, collapsed) ── -->
+    <div id="individual-section" hidden>
+      <button type="button" class="individual-toggle" id="individual-toggle">
+        Show 5 individual widgets ▼
+      </button>
+      <div id="individual-widgets" hidden></div>
+    </div>
 
     <div class="output-footer">
       <button type="button" id="restart-btn-2" class="secondary-btn">&#8592; Build Another Set</button>
     </div>
+
   </section>
 
   <!-- Error banner -->
@@ -310,9 +259,7 @@
     <button type="button" id="error-dismiss" class="secondary-btn">Try again</button>
   </div>
 
-  <footer class="tag">
-    Clarity creates confidence. Confidence drives decisions.
-  </footer>
+  <footer class="tag">Clarity creates confidence. Confidence drives decisions.</footer>
 
 </div>
 <script src="sales.js"></script>
