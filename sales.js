@@ -431,6 +431,8 @@ form.addEventListener('submit', async (e) => {
   combinedSection.hidden      = true;
   individualSection.hidden    = true;
   setProgress(0);
+  workingTitle.textContent = 'Writing your widgets…';
+  workingSub.textContent   = 'Using Sonnet AI — usually 60–90 seconds total. Hang tight.';
   showView('working');
 
   for (let i=0; i<WIDGET_IDS.length; i++) {
@@ -445,15 +447,17 @@ form.addEventListener('submit', async (e) => {
       appendErrorCard(id, err.message);
     }
     setProgress(i+1);
-    if (i===0) showView('output');
   }
 
   submitBtn.disabled = false;
   if (generatedWidgets.length > 0) {
     showCombinedWidget(generatedWidgets);
-    combinedSection.hidden  = false;
+    combinedSection.hidden   = false;
     individualSection.hidden = false;
     initConnectSection();
+    showView('output');  // switch only when everything is ready
+  } else {
+    showView('output'); // show even if all failed, so error cards are visible
   }
 });
 
