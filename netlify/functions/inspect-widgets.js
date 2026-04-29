@@ -20,7 +20,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const response = await fetch('https://portal.salesbuildr.com/public-api/quote-widget-template', {
+    const response = await fetch('https://portal.us1-salesbuildr.com/public-api/quote-widget-template', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
