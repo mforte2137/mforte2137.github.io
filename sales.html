@@ -19,28 +19,41 @@
        =================================================== -->
   <section id="form-view" class="form-view">
     <h1 class="big-title">Build your proposal widgets.</h1>
-    <p class="big-lead">Tell us what you're selling and who you're selling it to. We'll generate five buyer-journey widgets — ready to paste straight into Salesbuildr.</p>
+    <p class="big-lead">Pick a service, fill in the customer context, and we'll generate five buyer-journey widgets ready to paste into Salesbuildr.</p>
 
     <form id="widget-form" novalidate>
 
+      <!-- ── SERVICE PICKER ── -->
+      <div class="service-picker">
+        <div class="service-picker-header">
+          What are you selling today?
+          <span class="service-picker-sub">Pick one to get started — you can edit the description below</span>
+        </div>
+        <div class="service-grid" id="service-grid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Field 1: Solution -->
       <div class="field-group">
         <label class="field-label" for="f-solution">
           What are you proposing?
           <span class="field-required">Required</span>
         </label>
-        <p class="field-hint">Describe the solution or project — what you're recommending and roughly what it involves.</p>
-        <textarea id="f-solution" name="solution" class="field-textarea" rows="3" maxlength="500"
-          placeholder="e.g. Network upgrade — new next-gen firewall, managed switch, and structured cabling throughout the office. We'll start with a site survey to document the current environment before any work begins."
+        <p class="field-hint">Edit or expand the description — the more detail Claude has, the stronger the output.</p>
+        <textarea id="f-solution" name="solution" class="field-textarea" rows="4" maxlength="600"
+          placeholder="Select a service above, or describe your proposal here..."
           required></textarea>
-        <div class="field-counter"><span id="solution-count">0</span> / 500</div>
+        <div class="field-counter"><span id="solution-count">0</span> / 600</div>
       </div>
 
+      <!-- Field 2: Business -->
       <div class="field-group">
         <label class="field-label" for="f-business">
           What kind of business is the customer?
           <span class="field-required">Required</span>
         </label>
-        <p class="field-hint">Industry and rough size — this shapes the language and framing of every widget.</p>
+        <p class="field-hint">Industry and rough size — this shapes the language of every widget.</p>
         <div class="field-row">
           <input type="text" id="f-business" name="business" class="field-input" maxlength="100"
             placeholder="e.g. Dental practice, law firm, manufacturer, accountancy" required>
@@ -53,43 +66,57 @@
         <span>Optional — the more context you give, the more specific the widgets</span>
       </div>
 
+      <!-- Field 3: Trigger -->
       <div class="field-group">
         <label class="field-label" for="f-trigger">
           What's prompting this?
           <span class="field-optional">Optional</span>
         </label>
-        <p class="field-hint">The event or pain that's driving the proposal.</p>
-        <input type="text" id="f-trigger" name="trigger" class="field-input" maxlength="200"
-          placeholder="e.g. Existing firewall is end-of-life, network keeps dropping during busy periods">
+        <p class="field-hint">The event or pain driving the proposal. Click a common trigger or type your own.</p>
+        <div class="chips-row" id="trigger-chips">
+          <!-- Populated by JS -->
+        </div>
+        <input type="text" id="f-trigger" name="trigger" class="field-input chips-field" maxlength="200"
+          placeholder="Or describe the trigger in your own words…">
       </div>
 
+      <!-- Field 4: Outcomes -->
       <div class="field-group">
         <label class="field-label" for="f-outcomes">
           What does success look like for the customer?
           <span class="field-optional">Optional</span>
         </label>
-        <p class="field-hint">What the customer cares about beyond "IT working."</p>
-        <input type="text" id="f-outcomes" name="outcomes" class="field-input" maxlength="200"
-          placeholder="e.g. No more downtime, confidence their data is secure, network that supports 10 new hires">
+        <p class="field-hint">Select all that apply — these shape the value language in every widget.</p>
+        <div class="chips-row chips-multi" id="outcome-chips">
+          <!-- Populated by JS -->
+        </div>
+        <input type="text" id="f-outcomes" name="outcomes" class="field-input chips-field" maxlength="300"
+          placeholder="Or describe what success looks like…">
       </div>
 
+      <!-- Field 5: Urgency -->
       <div class="field-group">
         <label class="field-label" for="f-urgency">
           Any urgency or deadline?
           <span class="field-optional">Optional</span>
         </label>
-        <p class="field-hint">A deadline, trigger event, or reason why now rather than later.</p>
+        <p class="field-hint">Specific timing and context makes W2 (Why Now) far more compelling. Add the detail — dates, events, what's at stake.</p>
         <input type="text" id="f-urgency" name="urgency" class="field-input" maxlength="200"
-          placeholder="e.g. Office lease renewal in 3 months, recent ransomware attack on a similar local business">
+          placeholder="e.g. Cyber insurance renewal in 45 days, broker flagged gaps in their current setup">
+        <div class="urgency-hints">
+          <span class="urgency-hints-label">Common triggers — click to add, then personalise:</span>
+          <div class="urgency-hint-chips" id="urgency-hints">
+            <!-- Populated by JS -->
+          </div>
+        </div>
       </div>
 
-      <!-- Colour theme selector -->
+      <!-- Colour theme -->
       <div class="optional-divider"><span>Widget colour theme</span></div>
 
       <div class="field-group">
         <label class="field-label">Choose a colour theme <span class="field-optional">Optional</span></label>
         <p class="field-hint">Pick the theme closest to your brand. Defaults to Corporate Blue.</p>
-
         <div class="theme-grid" id="theme-grid">
           <button type="button" class="theme-tile is-selected" data-theme="blue" data-primary="#0d2d5e" data-accent="#1a6fc4" data-light="#f0f6ff">
             <div class="tile-swatch"><div class="swatch-primary" style="background:#0d2d5e;"></div><div class="swatch-accent" style="background:#1a6fc4;"></div></div>
@@ -128,7 +155,6 @@
             <div class="tile-name">Custom</div><div class="tile-check">✓</div>
           </button>
         </div>
-
         <div id="custom-inputs" class="custom-inputs" hidden>
           <div class="custom-row">
             <div class="custom-field">
@@ -177,7 +203,6 @@
        VIEW 3: Output
        =================================================== -->
   <section id="output-view" hidden>
-
     <div class="output-header">
       <div>
         <div class="output-kicker">Your Salesbuildr Widgets</div>
@@ -186,7 +211,7 @@
       <button type="button" id="restart-btn" class="secondary-btn">&#8592; Start Over</button>
     </div>
 
-    <!-- ── COMBINED WIDGET (primary action) ── -->
+    <!-- Combined widget -->
     <div id="combined-section" hidden>
       <div class="combined-card">
         <div class="combined-card-header">
@@ -196,7 +221,7 @@
           </div>
           <button type="button" id="combined-copy-btn" class="combined-copy-btn">📋 Copy Widget</button>
         </div>
-        <p class="combined-hint">All five buyer-journey sections in a single widget. One copy, one paste into Salesbuildr. Each section remains fully editable in TinyMCE.</p>
+        <p class="combined-hint">All five sections in a single widget. One copy, one paste into Salesbuildr. Fully editable in TinyMCE.</p>
         <div class="widget-tabs" id="combined-tabs">
           <button class="widget-tab is-active" data-pane="preview">Preview</button>
           <button class="widget-tab" data-pane="code">HTML Code</button>
@@ -205,14 +230,14 @@
         <textarea id="combined-code" class="combined-code" readonly spellcheck="false"></textarea>
       </div>
 
-      <!-- ── CONNECT SALESBUILDR ── -->
+      <!-- Connect Salesbuildr -->
       <div class="sb-connect" id="sb-connect">
         <button type="button" class="sb-connect-toggle" id="sb-toggle">
           <span>⚡ Save directly to your Salesbuildr template library</span>
           <span class="sb-arrow" id="sb-arrow">▼</span>
         </button>
         <div class="sb-connect-body" id="sb-connect-body" hidden>
-          <p class="sb-connect-hint">Enter your Salesbuildr credentials once. Tick <em>Remember</em> and they're saved to this device — your sales team won't need to enter them again.</p>
+          <p class="sb-connect-hint">Enter your Salesbuildr credentials once. Tick <em>Remember</em> and they're saved to this device — your team won't need to enter them again.</p>
           <div class="sb-fields">
             <div class="sb-field">
               <label class="sb-label">API Key <span class="sb-where">Admin → Integrations → API Key</span></label>
@@ -224,12 +249,9 @@
             </div>
           </div>
           <div class="sb-actions">
-            <label class="sb-remember-label">
-              <input type="checkbox" id="sb-remember"> Remember on this device
-            </label>
+            <label class="sb-remember-label"><input type="checkbox" id="sb-remember"> Remember on this device</label>
             <div class="sb-push-row">
-              <input type="text" id="sb-prefix" class="sb-prefix" maxlength="40"
-                     placeholder="Optional label e.g. Acme Corp (added to widget name)">
+              <input type="text" id="sb-prefix" class="sb-prefix" maxlength="40" placeholder="Optional label e.g. Acme Corp (added to widget name)">
               <button type="button" id="sb-push-btn" class="sb-push-btn" disabled>Save to Salesbuildr →</button>
             </div>
           </div>
@@ -238,21 +260,17 @@
       </div>
     </div>
 
-    <!-- ── INDIVIDUAL WIDGETS (secondary, collapsed) ── -->
+    <!-- Individual widgets -->
     <div id="individual-section" hidden>
-      <button type="button" class="individual-toggle" id="individual-toggle">
-        Show 5 individual widgets ▼
-      </button>
+      <button type="button" class="individual-toggle" id="individual-toggle">Show 5 individual widgets ▼</button>
       <div id="individual-widgets" hidden></div>
     </div>
 
     <div class="output-footer">
       <button type="button" id="restart-btn-2" class="secondary-btn">&#8592; Build Another Set</button>
     </div>
-
   </section>
 
-  <!-- Error banner -->
   <div id="error-banner" class="error-banner" hidden>
     <div class="error-title">Something went wrong.</div>
     <div class="error-detail" id="error-detail"></div>
