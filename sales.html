@@ -101,14 +101,11 @@
           <span class="field-optional">Optional</span>
         </label>
         <p class="field-hint">Specific timing and context makes W2 (Why Now) far more compelling. Add the detail — dates, events, what's at stake.</p>
-        <input type="text" id="f-urgency" name="urgency" class="field-input" maxlength="200"
-          placeholder="e.g. Cyber insurance renewal in 45 days, broker flagged gaps in their current setup">
-        <div class="urgency-hints">
-          <span class="urgency-hints-label">Common triggers — click to add, then personalise:</span>
-          <div class="urgency-hint-chips" id="urgency-hints">
-            <!-- Populated by JS -->
-          </div>
+        <div class="chips-row" id="urgency-chips">
+          <!-- Populated by JS -->
         </div>
+        <input type="text" id="f-urgency" name="urgency" class="field-input chips-field" maxlength="200"
+          placeholder="Select above or add your own — include dates and specific context…">
       </div>
 
       <!-- Colour theme -->
