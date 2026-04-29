@@ -19,6 +19,7 @@
   <section id="upload-view" class="upload-view">
     <h1 class="big-title">Diagnose a proposal.</h1>
     <p class="big-lead">Upload an MSP proposal. We'll read your proposal through your buyer's eyes and measure it against the five questions every proposal has to answer, in order: <em>Do they understand my situation? Why should I care now? Why should I trust you? What am I getting? Is it worth it?</em></p>
+
     <div class="dropzone" id="dropzone">
       <input type="file" id="file-input" accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx" hidden>
       <div class="dz-inner">
@@ -27,6 +28,22 @@
         <div class="dz-note">Files are parsed in your browser. Only the extracted text is sent for analysis.</div>
       </div>
     </div>
+
+    <!-- Salesbuildr quote URL option -->
+    <div class="url-option">
+      <div class="url-divider"><span>or paste a Salesbuildr quote link</span></div>
+      <div class="url-row">
+        <input
+          type="url"
+          id="quote-url"
+          class="url-input"
+          placeholder="https://portal.us1-salesbuildr.com/quote/...?key=..."
+        >
+        <button type="button" id="url-btn" class="url-btn">Analyze Link &rarr;</button>
+      </div>
+      <p class="url-hint">Use a shareable quote link — the one with <code>?key=</code> in the address bar.</p>
+    </div>
+
     <div class="upload-footer">
       <a href="report-mock.html" class="preview-link" target="_blank" rel="noopener">See a sample report &rarr;</a>
     </div>
@@ -73,9 +90,7 @@
         </div>
         <div class="row">
           <div class="label">Yours</div>
-          <div class="widgets" id="rpt-widgets">
-            <!-- populated by JS -->
-          </div>
+          <div class="widgets" id="rpt-widgets"></div>
         </div>
         <div class="note" id="rpt-sequence-note"></div>
       </div>
@@ -84,17 +99,13 @@
     <section>
       <h2><span class="num">02</span>What Your Buyer Is Worried About at 2am</h2>
       <p class="lead">These are the fears your likely buyer carries into this decision.</p>
-      <ul class="fears" id="rpt-fears">
-        <!-- populated by JS -->
-      </ul>
+      <ul class="fears" id="rpt-fears"></ul>
     </section>
 
     <section>
       <h2><span class="num">03</span>Inside-Out Language Detected</h2>
       <p class="lead">You are describing what <em>you</em> do. Your buyer needs to read what <em>they</em> get. Examples lifted directly from your document.</p>
-      <div id="rpt-quotes">
-        <!-- populated by JS -->
-      </div>
+      <div id="rpt-quotes"></div>
     </section>
 
     <section>
@@ -123,14 +134,131 @@
 
     <!-- ===================================================
          SECTION 05: Salesbuildr Widget Generator
-         Appears after report renders. Five sequential API
-         calls, one widget rendered as each returns.
          =================================================== -->
     <section id="widget-section" hidden>
       <h2><span class="num">05</span>Your Salesbuildr Widgets</h2>
       <p class="lead">Five ready-to-paste widgets — one per buyer question — written for this proposal and this buyer. Copy each one into Salesbuildr via the <strong>&lt;&nbsp;&gt;</strong> Source Code button in TinyMCE.</p>
 
-      <!-- Generate prompt / trigger -->
+      <!-- Colour theme selector -->
+      <div class="widget-theme-picker">
+        <div class="wtp-label">Choose a colour theme for your widgets</div>
+        <div class="theme-grid" id="widget-theme-grid">
+
+          <button type="button" class="theme-tile is-selected" data-theme="blue"
+                  data-primary="#0d2d5e" data-accent="#1a6fc4" data-light="#f0f6ff">
+            <div class="tile-swatch">
+              <div class="swatch-primary" style="background:#0d2d5e;"></div>
+              <div class="swatch-accent"  style="background:#1a6fc4;"></div>
+            </div>
+            <div class="tile-name">Corporate Blue</div>
+            <div class="tile-check">✓</div>
+          </button>
+
+          <button type="button" class="theme-tile" data-theme="crimson"
+                  data-primary="#7f1d1d" data-accent="#dc2626" data-light="#fff1f2">
+            <div class="tile-swatch">
+              <div class="swatch-primary" style="background:#7f1d1d;"></div>
+              <div class="swatch-accent"  style="background:#dc2626;"></div>
+            </div>
+            <div class="tile-name">Crimson</div>
+            <div class="tile-check">✓</div>
+          </button>
+
+          <button type="button" class="theme-tile" data-theme="maroon"
+                  data-primary="#4c0519" data-accent="#9f1239" data-light="#fdf2f4">
+            <div class="tile-swatch">
+              <div class="swatch-primary" style="background:#4c0519;"></div>
+              <div class="swatch-accent"  style="background:#9f1239;"></div>
+            </div>
+            <div class="tile-name">Maroon</div>
+            <div class="tile-check">✓</div>
+          </button>
+
+          <button type="button" class="theme-tile" data-theme="green"
+                  data-primary="#14532d" data-accent="#16a34a" data-light="#f0fdf4">
+            <div class="tile-swatch">
+              <div class="swatch-primary" style="background:#14532d;"></div>
+              <div class="swatch-accent"  style="background:#16a34a;"></div>
+            </div>
+            <div class="tile-name">Forest Green</div>
+            <div class="tile-check">✓</div>
+          </button>
+
+          <button type="button" class="theme-tile" data-theme="teal"
+                  data-primary="#134e4a" data-accent="#0d9488" data-light="#f0fdfa">
+            <div class="tile-swatch">
+              <div class="swatch-primary" style="background:#134e4a;"></div>
+              <div class="swatch-accent"  style="background:#0d9488;"></div>
+            </div>
+            <div class="tile-name">Teal</div>
+            <div class="tile-check">✓</div>
+          </button>
+
+          <button type="button" class="theme-tile" data-theme="purple"
+                  data-primary="#3b0764" data-accent="#7c3aed" data-light="#faf5ff">
+            <div class="tile-swatch">
+              <div class="swatch-primary" style="background:#3b0764;"></div>
+              <div class="swatch-accent"  style="background:#7c3aed;"></div>
+            </div>
+            <div class="tile-name">Royal Purple</div>
+            <div class="tile-check">✓</div>
+          </button>
+
+          <button type="button" class="theme-tile" data-theme="slate"
+                  data-primary="#1e293b" data-accent="#475569" data-light="#f8fafc">
+            <div class="tile-swatch">
+              <div class="swatch-primary" style="background:#1e293b;"></div>
+              <div class="swatch-accent"  style="background:#475569;"></div>
+            </div>
+            <div class="tile-name">Slate</div>
+            <div class="tile-check">✓</div>
+          </button>
+
+          <button type="button" class="theme-tile" data-theme="gold"
+                  data-primary="#78350f" data-accent="#d97706" data-light="#fffbeb">
+            <div class="tile-swatch">
+              <div class="swatch-primary" style="background:#78350f;"></div>
+              <div class="swatch-accent"  style="background:#d97706;"></div>
+            </div>
+            <div class="tile-name">Gold</div>
+            <div class="tile-check">✓</div>
+          </button>
+
+          <button type="button" class="theme-tile theme-tile-custom" data-theme="custom">
+            <div class="tile-swatch tile-swatch-custom">
+              <div class="custom-swatch-preview" id="widget-custom-preview">
+                <span>Your<br>Colours</span>
+              </div>
+            </div>
+            <div class="tile-name">Custom</div>
+            <div class="tile-check">✓</div>
+          </button>
+
+        </div>
+
+        <!-- Custom hex inputs -->
+        <div id="widget-custom-inputs" class="custom-inputs" hidden>
+          <div class="custom-row">
+            <div class="custom-field">
+              <label class="custom-label">Primary colour <span class="custom-hint">(header bars)</span></label>
+              <div class="custom-input-row">
+                <input type="color" id="widget-primary-picker" class="color-picker" value="#0d2d5e">
+                <input type="text"  id="widget-primary-hex"    class="hex-input" maxlength="7" value="#0d2d5e">
+              </div>
+            </div>
+            <div class="custom-field">
+              <label class="custom-label">Accent colour <span class="custom-hint">(borders &amp; highlights)</span></label>
+              <div class="custom-input-row">
+                <input type="color" id="widget-accent-picker" class="color-picker" value="#1a6fc4">
+                <input type="text"  id="widget-accent-hex"    class="hex-input" maxlength="7" value="#1a6fc4">
+              </div>
+            </div>
+          </div>
+          <p class="custom-note">Light background tint is calculated automatically from your accent colour.</p>
+        </div>
+      </div>
+
+      <!-- Generate CTA -->
       <div id="widget-cta" class="widget-cta">
         <div class="widget-cta-text">
           <strong>Turn this analysis into widgets.</strong>
@@ -139,13 +267,12 @@
         <button type="button" id="generate-btn" class="generate-btn">Generate My 5 Widgets</button>
       </div>
 
-      <!-- Working state — shown during generation -->
+      <!-- Working state -->
       <div id="widget-working" class="widget-working" hidden>
         <div class="spinner spinner-sm"></div>
         <p id="widget-working-msg" class="parsing-sub">Generating widget 1 of 5&hellip;</p>
       </div>
 
-      <!-- Widget outputs — each card appended as it arrives -->
       <div id="widget-outputs"></div>
     </section>
 
@@ -155,9 +282,7 @@
     </div>
   </section>
 
-  <!-- ===================================================
-       Error banner (shared across views)
-       =================================================== -->
+  <!-- Error banner -->
   <div id="error-banner" class="error-banner" hidden>
     <div class="error-title">Something went wrong.</div>
     <div class="error-detail" id="error-detail"></div>
@@ -169,9 +294,7 @@
   </footer>
 </div>
 
-<!-- PDF.js from CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<!-- mammoth.js: extract text from .docx in the browser -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="evaluator.js"></script>
 </body>
