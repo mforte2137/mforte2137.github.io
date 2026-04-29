@@ -24,7 +24,7 @@ exports.handler = async (event) => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'integration-key': apiKey
+        'Authorization': `Bearer ${apiKey}`
       }
     });
 
