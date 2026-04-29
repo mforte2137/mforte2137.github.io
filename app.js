@@ -34,6 +34,18 @@ const TOOLS = [
     icon: "checklist"
   },
   {
+    title: "Proposal Widget Builder",
+    shortLabel: "Widget Builder",
+    description:
+      "Tell us what you're selling and who you're selling it to. We'll generate five buyer-journey widgets — ready to paste straight into Salesbuildr.",
+    category: "Proposal",
+    url: "https://widgetcreator.netlify.app/sales.html",
+    badge: "new",
+    updated: "2026-04-28",
+    gradient: "emerald",
+    icon: "idea"
+  },
+  {
     title: "Document Converter",
     shortLabel: "Document Converter",
     description:
