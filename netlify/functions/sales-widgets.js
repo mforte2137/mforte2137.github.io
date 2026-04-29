@@ -56,10 +56,10 @@ Your output is pasted directly into a Salesbuildr proposal editor via TinyMCE. T
 - The outermost element must be a single <div>.
 
 === COLOUR AND TYPOGRAPHY ===
-Navy:        #0d2d5e  (header backgrounds)
-Blue:        #1a6fc4  (callout borders, accent)
-Light blue:  #f0f6ff  (callout and alternate row backgrounds)
-Border:      #d0e2f5
+Primary:     {{PRIMARY}}  (header backgrounds, bold label text)
+Accent:      {{ACCENT}}   (callout left border, highlight colour)
+Light tint:  {{LIGHT}}    (callout background, alternate row background)
+Border:      {{BORDER}}   (table and divider borders)
 Body text:   #1a1a1a, font-size:14px, line-height:1.8
 Muted:       #5a6a7e
 Font:        'Segoe UI', Arial, sans-serif — repeat on EVERY element
@@ -68,27 +68,27 @@ Font:        'Segoe UI', Arial, sans-serif — repeat on EVERY element
 
 <div style="width:100%;padding:0;background-color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;">
 
-  <!-- Header bar: navy background, white title only — no W1/W2 labels -->
-  <div style="background-color:#0d2d5e;padding:20px 28px;">
+  <!-- Header bar: primary colour background, white title only — no W1/W2 labels -->
+  <div style="background-color:{{PRIMARY}};padding:20px 28px;">
     <h2 style="margin:0;font-size:19px;font-weight:700;color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;line-height:1.3;">[WIDGET TITLE]</h2>
   </div>
 
-  <!-- Callout intro: left blue border, light blue background -->
-  <div style="border-left:4px solid #1a6fc4;background-color:#f0f6ff;padding:18px 24px;">
+  <!-- Callout intro: left accent border, light tint background -->
+  <div style="border-left:4px solid {{ACCENT}};background-color:{{LIGHT}};padding:18px 24px;">
     <p style="margin:0;font-size:15px;color:#1a3a5c;line-height:1.7;font-family:'Segoe UI',Arial,sans-serif;font-weight:500;">[OPENING STATEMENT]</p>
   </div>
 
   <!-- Key points: 2-column table, 3–5 rows -->
   <table style="width:100%;border-collapse:collapse;margin:0;">
     <tr>
-      <td style="width:32%;padding:13px 16px;border:1px solid #d0e2f5;font-size:13px;font-weight:700;color:#0d2d5e;background-color:#f0f6ff;vertical-align:top;font-family:'Segoe UI',Arial,sans-serif;">[LABEL]</td>
-      <td style="padding:13px 16px;border:1px solid #d0e2f5;font-size:14px;color:#1a1a1a;line-height:1.7;vertical-align:top;font-family:'Segoe UI',Arial,sans-serif;">[DETAIL]</td>
+      <td style="width:32%;padding:13px 16px;border:1px solid {{BORDER}};font-size:13px;font-weight:700;color:{{PRIMARY}};background-color:{{LIGHT}};vertical-align:top;font-family:'Segoe UI',Arial,sans-serif;">[LABEL]</td>
+      <td style="padding:13px 16px;border:1px solid {{BORDER}};font-size:14px;color:#1a1a1a;line-height:1.7;vertical-align:top;font-family:'Segoe UI',Arial,sans-serif;">[DETAIL]</td>
     </tr>
     <!-- Alternate rows: label td background-color:#ffffff, detail td no background -->
   </table>
 
   <!-- Closing line -->
-  <div style="padding:16px 24px;border-top:1px solid #d0e2f5;">
+  <div style="padding:16px 24px;border-top:1px solid {{BORDER}};">
     <p style="margin:0;font-size:13px;color:#5a6a7e;line-height:1.7;font-family:'Segoe UI',Arial,sans-serif;font-style:italic;">[CLOSING STATEMENT]</p>
   </div>
 
@@ -143,7 +143,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const { fields, widgetId } = body;
+  const { fields, widgetId, colors } = body;
   if (!fields || !widgetId) {
     return {
       statusCode: 400,
@@ -151,6 +151,31 @@ exports.handler = async (event) => {
       body: JSON.stringify({ ok: false, error: 'Request must include fields and widgetId.' })
     };
   }
+
+  // Apply brand colours — fall back to corporate blue defaults
+  const primary = (colors && colors.primary) || '#0d2d5e';
+  const accent  = (colors && colors.accent)  || '#1a6fc4';
+  const light   = (colors && colors.light)   || '#f0f6ff';
+
+  // Derive a border colour: a slightly darker version of the light tint
+  // Simple approach: lighten the accent at 75% instead of 91%
+  function lightenHex(hex, amount) {
+    const r = parseInt(hex.slice(1,3), 16);
+    const g = parseInt(hex.slice(3,5), 16);
+    const b = parseInt(hex.slice(5,7), 16);
+    const nr = Math.round(r + (255-r) * amount);
+    const ng = Math.round(g + (255-g) * amount);
+    const nb = Math.round(b + (255-b) * amount);
+    return `#${nr.toString(16).padStart(2,'0')}${ng.toString(16).padStart(2,'0')}${nb.toString(16).padStart(2,'0')}`;
+  }
+  const border = lightenHex(accent, 0.65);
+
+  // Substitute colour tokens into the system prompt
+  const systemPrompt = SYSTEM_PROMPT
+    .replace(/\{\{PRIMARY\}\}/g, primary)
+    .replace(/\{\{ACCENT\}\}/g,  accent)
+    .replace(/\{\{LIGHT\}\}/g,   light)
+    .replace(/\{\{BORDER\}\}/g,  border);
 
   const brief = WIDGET_BRIEFS[widgetId];
   if (!brief) {
@@ -192,7 +217,7 @@ Generate the widget now. Follow the HTML structure and inline CSS requirements i
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 2000,
-        system: SYSTEM_PROMPT,
+        system: systemPrompt,
         tools: [WIDGET_TOOL],
         tool_choice: { type: 'tool', name: 'submit_widget' },
         messages: [{ role: 'user', content: userMessage }]
