@@ -72,6 +72,111 @@ header.top .brand { font-weight: 700; color: var(--ink); }
 .field-input-sm { width: 180px; }
 .field-counter { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 11px; color: var(--mute); text-align: right; margin-top: 5px; }
 
+/* ── Service picker ── */
+.service-picker {
+  margin-bottom: 36px;
+  padding: 24px 28px;
+  background: var(--paper-alt);
+  border: 1px solid var(--rule);
+}
+.service-picker-header {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 15px; font-weight: 700; color: var(--ink);
+  margin-bottom: 16px; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+}
+.service-picker-sub {
+  font-size: 12px; font-weight: 400; color: var(--mute); letter-spacing: 0;
+}
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.service-tile {
+  background: #fff; border: 2px solid var(--rule);
+  padding: 14px 12px 12px; cursor: pointer; text-align: center;
+  transition: border-color 0.15s, transform 0.1s, box-shadow 0.1s;
+  position: relative; border-radius: 2px;
+}
+.service-tile:hover {
+  border-color: var(--ink-soft);
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+}
+.service-tile.is-selected {
+  border-color: var(--ink); border-width: 2.5px;
+  background: var(--paper-alt);
+}
+.service-tile-custom {
+  border-style: dashed;
+}
+.service-tile-custom.is-selected {
+  border-style: solid;
+}
+.service-tile-icon {
+  font-size: 26px; line-height: 1; margin-bottom: 8px;
+}
+.service-tile-name {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px; font-weight: 700; color: var(--ink);
+  margin-bottom: 3px; line-height: 1.3;
+}
+.service-tile-sub {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px; color: var(--mute); line-height: 1.3;
+}
+.service-tile-check {
+  position: absolute; top: 5px; right: 7px;
+  font-size: 12px; font-weight: 700; color: var(--ink);
+  opacity: 0; transition: opacity 0.15s;
+}
+.service-tile.is-selected .service-tile-check { opacity: 1; }
+.service-tile.is-selected .service-tile-name  { color: var(--ink); }
+
+/* ── Chips ── */
+.chips-row {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 10px;
+}
+.chip {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px; font-weight: 500;
+  color: var(--ink-soft); background: #fff;
+  border: 1.5px solid var(--rule);
+  padding: 6px 12px; cursor: pointer;
+  border-radius: 20px;
+  transition: all 0.15s; white-space: nowrap; line-height: 1.3;
+}
+.chip:hover { border-color: var(--ink-soft); color: var(--ink); background: var(--paper-alt); }
+.chip.is-selected {
+  background: var(--ink); color: var(--paper);
+  border-color: var(--ink); font-weight: 600;
+}
+.chips-multi .chip.is-selected { background: var(--blue); border-color: var(--blue); }
+.chips-field { margin-top: 0; }
+
+/* ── Urgency hints ── */
+.urgency-hints {
+  margin-top: 10px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+}
+.urgency-hints-label {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px; color: var(--mute); font-style: italic;
+  white-space: nowrap;
+}
+.urgency-hint-chip {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px; color: var(--mute);
+  background: none; border: 1px solid var(--rule);
+  padding: 3px 10px; cursor: pointer;
+  border-radius: 12px; transition: all 0.15s;
+}
+.urgency-hint-chip:hover {
+  border-color: var(--accent); color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .optional-divider {
   display: flex; align-items: center; gap: 16px; margin: 40px 0 32px;
 }
@@ -254,8 +359,11 @@ footer.tag     { margin-top: 64px; font-family: 'Inter', 'Helvetica Neue', Arial
   .form-footer { flex-direction: column; align-items: flex-start; }
   .output-header { flex-direction: column; }
   .output-title  { font-size: 26px; }
+  .service-grid  { grid-template-columns: repeat(2, 1fr); }
   .theme-grid    { grid-template-columns: repeat(2, 1fr); }
   .custom-row    { grid-template-columns: 1fr; }
   .sb-fields     { grid-template-columns: 1fr; }
   .combined-card-header { flex-direction: column; align-items: flex-start; }
+  .chips-row     { gap: 6px; }
+  .urgency-hints { flex-direction: column; align-items: flex-start; }
 }
