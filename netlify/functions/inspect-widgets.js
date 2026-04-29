@@ -24,7 +24,7 @@ exports.handler = async (event) => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey
+        'integration-key': apiKey
       }
     });
 
