@@ -275,7 +275,61 @@
         <p id="widget-working-msg" class="parsing-sub">Generating widget 1 of 5&hellip;</p>
       </div>
 
-      <div id="widget-outputs"></div>
+      <!-- Combined widget -->
+      <div id="combined-section" hidden>
+        <div class="combined-card">
+          <div class="combined-card-header">
+            <div class="combined-card-label">
+              <span class="combined-badge">Combined · W1–W5</span>
+              <span class="combined-title">Complete Buyer Journey — One Widget</span>
+            </div>
+            <button type="button" id="combined-copy-btn" class="combined-copy-btn">📋 Copy Widget</button>
+          </div>
+          <p class="combined-hint">All five sections in a single widget. One copy, one paste. Fully editable in TinyMCE.</p>
+          <div class="widget-tabs" id="combined-tabs">
+            <button class="widget-tab is-active" data-pane="preview">Preview</button>
+            <button class="widget-tab" data-pane="code">HTML Code</button>
+          </div>
+          <iframe id="combined-preview" class="combined-preview" sandbox="allow-same-origin"></iframe>
+          <textarea id="combined-code" class="combined-code" readonly spellcheck="false"></textarea>
+        </div>
+
+        <!-- Connect Salesbuildr -->
+        <div class="sb-connect" id="sb-connect">
+          <button type="button" class="sb-connect-toggle" id="sb-toggle">
+            <span>⚡ Save directly to your Salesbuildr template library</span>
+            <span class="sb-arrow" id="sb-arrow">▼</span>
+          </button>
+          <div class="sb-connect-body" id="sb-connect-body" hidden>
+            <p class="sb-connect-hint">Enter your Salesbuildr credentials once. Tick <em>Remember</em> and they're saved to this device.</p>
+            <div class="sb-fields">
+              <div class="sb-field">
+                <label class="sb-label">API Key <span class="sb-where">Admin → Integrations → API Key</span></label>
+                <input type="password" id="sb-api-key" class="sb-input" placeholder="Your API key" autocomplete="off">
+              </div>
+              <div class="sb-field">
+                <label class="sb-label">Integration Key <span class="sb-where">Provided by Salesbuildr</span></label>
+                <input type="password" id="sb-int-key" class="sb-input" placeholder="Your integration key" autocomplete="off">
+              </div>
+            </div>
+            <div class="sb-actions">
+              <label class="sb-remember-label"><input type="checkbox" id="sb-remember"> Remember on this device</label>
+              <div class="sb-push-row">
+                <input type="text" id="sb-prefix" class="sb-prefix" maxlength="40" placeholder="Optional label e.g. Acme Corp">
+                <button type="button" id="sb-push-btn" class="sb-push-btn" disabled>Save to Salesbuildr →</button>
+              </div>
+            </div>
+            <div id="sb-result" class="sb-result" hidden></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Individual widgets (secondary) -->
+      <div id="individual-section" hidden>
+        <button type="button" class="individual-toggle" id="individual-toggle">Show 5 individual widgets ▼</button>
+        <div id="widget-outputs" hidden></div>
+      </div>
+
     </section>
 
     <div class="report-footer">
