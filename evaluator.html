@@ -29,19 +29,21 @@
       </div>
     </div>
 
-    <!-- Salesbuildr quote URL option -->
-    <div class="url-option">
-      <div class="url-divider"><span>or paste a Salesbuildr quote link</span></div>
-      <div class="url-row">
-        <input
-          type="url"
-          id="quote-url"
-          class="url-input"
-          placeholder="https://portal.us1-salesbuildr.com/quote/...?key=..."
-        >
-        <button type="button" id="url-btn" class="url-btn">Analyze Link &rarr;</button>
+    <!-- Paste text option -->
+    <div class="paste-option">
+      <div class="paste-divider"><span>or paste your quote text</span></div>
+      <p class="paste-hint">Open your quote in Salesbuildr, press <strong>Ctrl+A</strong> then <strong>Ctrl+C</strong> to copy all text, then paste it below.</p>
+      <textarea
+        id="paste-text"
+        class="paste-textarea"
+        rows="5"
+        placeholder="Paste your Salesbuildr quote text here..."
+        spellcheck="false"
+      ></textarea>
+      <div class="paste-footer">
+        <span class="paste-counter"><span id="paste-count">0</span> characters pasted</span>
+        <button type="button" id="paste-btn" class="paste-btn">Analyze Text &rarr;</button>
       </div>
-      <p class="url-hint">Use a shareable quote link — the one with <code>?key=</code> in the address bar.</p>
     </div>
 
     <div class="upload-footer">
