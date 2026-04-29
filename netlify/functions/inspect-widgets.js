@@ -1,7 +1,7 @@
 // =========================================================
-// inspect-widgets.js — diagnostic, tries multiple auth
-// methods so we can identify the correct one.
-// DELETE after we find what works.
+// inspect-widgets.js — Netlify function (TEMPORARY)
+// Path: /api/inspect-widgets
+// DELETE after we confirm the API structure.
 // =========================================================
 
 exports.handler = async (event) => {
@@ -14,31 +14,39 @@ exports.handler = async (event) => {
     };
   }
 
-  const BASE = 'https://portal.us1-salesbuildr.com/public-api/quote-widget-template';
-
-  // Try four different auth approaches in parallel
-  const attempts = [
-    { method: 'integration-key header',    headers: { 'Content-Type': 'application/json', 'integration-key': apiKey } },
-    { method: 'Authorization Bearer',      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` } },
-    { method: 'Authorization plain',       headers: { 'Content-Type': 'application/json', 'Authorization': apiKey } },
-    { method: 'x-api-key header',          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey } },
-  ];
-
-  const results = await Promise.all(
-    attempts.map(async ({ method, headers }) => {
-      try {
-        const res  = await fetch(BASE, { method: 'GET', headers });
-        const body = await res.json();
-        return { method, status: res.status, body };
-      } catch (err) {
-        return { method, error: err.message };
+  try {
+    const response = await fetch(
+      'https://portal.us1-salesbuildr.com/public-api/quote-widget-template',
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'integration-key': apiKey
+        }
       }
-    })
-  );
+    );
 
-  return {
-    statusCode: 200,
-    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-    body: JSON.stringify({ ok: true, keyLength: apiKey.length, results }, null, 2)
-  };
+    const data = await response.json();
+
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({
+        ok: true,
+        apiStatus: response.status,
+        keyLength: apiKey.length,
+        data
+      }, null, 2)
+    };
+
+  } catch (err) {
+    return {
+      statusCode: 500,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ok: false, error: err.message })
+    };
+  }
 };
