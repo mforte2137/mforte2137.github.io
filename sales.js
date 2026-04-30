@@ -112,11 +112,12 @@ const WIDGET_LABELS = { w1:'W1 · Their Situation', w2:'W2 · Why Now', w3:'W3 �
 const LS_API_KEY    = 'sb_api_key';
 const LS_INT_KEY    = 'sb_int_key';
 
-let selectedColors   = { primary:'#0d2d5e', accent:'#1a6fc4', light:'#f0f6ff' };
-let generatedWidgets = [];
-let selectedTriggers = new Set();
-let selectedOutcomes = new Set();
-let selectedUrgency  = new Set();
+let selectedColors      = { primary:'#0d2d5e', accent:'#1a6fc4', light:'#f0f6ff' };
+let generatedWidgets    = [];
+let selectedTriggers    = new Set();
+let selectedOutcomes    = new Set();
+let selectedUrgency     = new Set();
+let selectedServiceName = ''; // name of the selected service tile
 
 // ── DOM handles ───────────────────────────────────────────
 const formView          = document.getElementById('form-view');
@@ -176,6 +177,7 @@ function initServiceTiles() {
     btn.addEventListener('click', () => {
       grid.querySelectorAll('.service-tile').forEach(t => t.classList.remove('is-selected'));
       btn.classList.add('is-selected');
+      selectedServiceName = svc.custom ? '' : svc.name;
 
       if (svc.custom) {
         solutionField.value = '';
@@ -184,7 +186,6 @@ function initServiceTiles() {
       } else {
         solutionField.value = svc.description;
         solutionCount.textContent = svc.description.length;
-        // Scroll smoothly to the textarea
         solutionField.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     });
@@ -321,6 +322,7 @@ function restart() {
   form.reset();
   solutionCount.textContent   = '0';
   generatedWidgets            = [];
+  selectedServiceName         = '';
   selectedTriggers            = new Set();
   selectedOutcomes            = new Set();
   selectedUrgency             = new Set();
@@ -422,8 +424,10 @@ form.addEventListener('submit', async (e) => {
     urgency:  urgencyField.value.trim()
   };
 
-  const titleText = fields.solution.split(/[.!?\n]/)[0].trim();
-  outputTitle.textContent = titleText.length>60 ? titleText.slice(0,57)+'…' : titleText;
+  // Use service tile name if one was selected; otherwise trim the custom description
+  const rawTitle  = fields.solution.split(/[.!?\n]/)[0].trim();
+  const titleText = selectedServiceName || (rawTitle.length > 40 ? rawTitle.slice(0, 38) + '…' : rawTitle);
+  outputTitle.textContent = titleText;
 
   submitBtn.disabled          = true;
   generatedWidgets            = [];
