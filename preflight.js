@@ -246,13 +246,33 @@ pdfDropzone.addEventListener('dragover', e => { e.preventDefault(); pdfDropzone.
 ['dragleave','drop'].forEach(t => pdfDropzone.addEventListener(t, e => { e.preventDefault(); pdfDropzone.classList.remove('is-dragover'); }));
 pdfDropzone.addEventListener('drop', e => {
   const file = e.dataTransfer.files[0];
-  if (file && file.name.toLowerCase().endsWith('.pdf')) handlePdf(file);
-  else showError('Please drop a PDF file.');
+  if (file && file.name.toLowerCase().endsWith('.pdf')) {
+    showPdfSelected(file.name);
+    handlePdf(file);
+  } else {
+    showError('Please drop a PDF file.');
+  }
 });
 pdfInput.addEventListener('change', () => {
-  if (pdfInput.files[0]) handlePdf(pdfInput.files[0]);
+  if (pdfInput.files[0]) {
+    showPdfSelected(pdfInput.files[0].name);
+    handlePdf(pdfInput.files[0]);
+  }
   pdfInput.value = '';
 });
+
+function showPdfSelected(filename) {
+  pdfDropzone.innerHTML = `
+    <div class="pdf-dz-inner">
+      <div class="pdf-dz-icon">✅</div>
+      <div class="pdf-dz-title">${escHtml(filename)}</div>
+      <div class="pdf-dz-sub">Extracting text and running content review…</div>
+    </div>`;
+  pdfDropzone.style.borderStyle  = 'solid';
+  pdfDropzone.style.borderColor  = 'var(--good)';
+  pdfDropzone.style.background   = 'var(--good-soft)';
+  pdfDropzone.style.cursor       = 'default';
+}
 
 // ── Handle PDF upload → content review ───────────────────
 async function handlePdf(file) {
@@ -310,6 +330,17 @@ async function handlePdf(file) {
 
   } catch (err) {
     showError(err.message || 'Content review failed.');
+    // Reset dropzone so they can try again
+    pdfDropzone.innerHTML = `
+      <div class="pdf-dz-inner">
+        <div class="pdf-dz-icon">📄</div>
+        <div class="pdf-dz-title">Drop your quote PDF here</div>
+        <div class="pdf-dz-sub">or <label for="pdf-input" class="pdf-browse">browse your files</label></div>
+      </div>`;
+    pdfDropzone.style.borderStyle = 'dashed';
+    pdfDropzone.style.borderColor = '';
+    pdfDropzone.style.background  = '';
+    pdfDropzone.style.cursor      = 'pointer';
   } finally {
     contentWorking.hidden = true;
   }
