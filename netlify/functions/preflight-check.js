@@ -264,8 +264,8 @@ exports.handler = async (event) => {
 ${itemSummary}
 
 === PROPOSAL TEXT (extracted from PDF) ===
-${quoteText.slice(0, 6000)}
-${quoteText.length > 6000 ? '\n[Text truncated to 6,000 characters]' : ''}
+${quoteText.slice(0, 4000)}
+${quoteText.length > 4000 ? '\n[Text truncated — first 4,000 characters shown]' : ''}
 
 Check for all issues described in your instructions: alignment between the text and pricing, jargon, inside-out language, wishy-washy phrases, and placeholder text. Provide rewrites for the 2-3 most impactful improvements.`;
 
@@ -274,8 +274,8 @@ Check for all issues described in your instructions: alignment between the text 
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
-          model:       'claude-sonnet-4-6',
-          max_tokens:  2500,
+          model:       'claude-haiku-4-5-20251001',
+          max_tokens:  2000,
           system:      CONTENT_SYSTEM,
           tools:       [CONTENT_TOOL],
           tool_choice: { type: 'tool', name: 'submit_content_review' },
