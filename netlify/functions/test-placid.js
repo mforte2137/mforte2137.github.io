@@ -31,40 +31,34 @@ exports.handler = async (event) => {
   }
 
   try {
-    const response = await fetch(PLACID_API, {
-      method: 'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        template_uuid: PLACID_TEMPLATE,
-        layers: {
-          photo:       { image:      TEST_PHOTO  },
-          brand_color: { background: TEST_COLOR  },
-          logo:        { image:      TEST_LOGO   }
-        }
-      })
+    // Step 1: List all templates accessible with this token
+    const listRes  = await fetch('https://api.placid.app/api/rest/templates', {
+      headers: { 'Authorization': `Bearer ${token}` }
     });
+    const listData = await listRes.json();
 
-    const data = await response.json();
-
-    if (!response.ok) {
+    if (!listRes.ok) {
       return {
-        statusCode: response.status,
+        statusCode: listRes.status,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ok: false, error: `Placid returned ${response.status}`, details: data })
+        body: JSON.stringify({ ok: false, error: `Token rejected — Placid returned ${listRes.status}`, details: listData })
       };
     }
+
+    // Return the list so we can see which templates are accessible
+    const templates = Array.isArray(listData)
+      ? listData.map(t => ({ uuid: t.uuid, title: t.title, status: t.status }))
+      : listData;
 
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify({
-        ok:       true,
-        imageUrl: data.image_url || data.url || data,
-        status:   data.status,
-        full:     data
+        ok:               true,
+        templateCount:    Array.isArray(templates) ? templates.length : '?',
+        ourTemplateUuid:  PLACID_TEMPLATE,
+        uuidFound:        Array.isArray(templates) && templates.some(t => t.uuid === PLACID_TEMPLATE),
+        templates
       }, null, 2)
     };
 
