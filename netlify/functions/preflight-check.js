@@ -78,10 +78,12 @@ function runStructuralCheck(quote) {
     passed.push('Contract duration is set');
   }
 
-  if (!quote.paymentTerms) {
-    warnings.push({ item: 'Quote', issue: 'Payment terms not set', fix: 'Add payment terms so the buyer knows when payment is expected' });
-  } else {
+  // Payment terms: Salesbuildr uses a global account default when not overridden
+  // at the quote level, so null here does not mean terms are missing.
+  if (quote.paymentTerms) {
     passed.push(`Payment terms: ${quote.paymentTerms}`);
+  } else {
+    passed.push('Payment terms: using account default');
   }
 
   if (!quote.expiresAt) {
