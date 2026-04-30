@@ -40,10 +40,10 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         template_uuid: PLACID_TEMPLATE,
         layers: {
-          photo:      { image:      TEST_PHOTO },
-          chevron:    { background: TEST_COLOR },
-          accent_bar: { background: TEST_COLOR },
-          logo:       { image:      TEST_LOGO  }
+          photo:      { image:            TEST_PHOTO        },
+          logo:       { image:            TEST_LOGO         },
+          chevron:    { background_color: TEST_COLOR + 'FF' }, // FF = fully opaque
+          accent_bar: { background_color: TEST_COLOR + 'FF' }
         }
       })
     });
