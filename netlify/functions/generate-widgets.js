@@ -58,45 +58,50 @@ const SYSTEM_PROMPT = `You are a Salesbuildr widget creator for MSP proposals. Y
 - The outermost element must be a single <div> — no siblings at root level.
 
 === COLOUR AND TYPOGRAPHY ===
-- Primary:    {{PRIMARY}}  (header backgrounds, bold label text)
-- Accent:     {{ACCENT}}   (callout left border, highlight colour)
-- Light tint: {{LIGHT}}    (callout background, alternate row background)
-- Border:     {{BORDER}}   (table and divider borders)
-- Body text:  #1a1a1a, font-size:14px, line-height:1.8
-- Muted:      #5a6a7e
+- Primary:    {{PRIMARY}}  (section headings only)
+- Accent:     {{ACCENT}}   (left border on sections only)
+- Light tint: {{LIGHT}}    (opening callout background only)
+- Body text:  #2d2d2d, font-size:14px, line-height:1.8
+- Title:      #1a1a1a, font-size:24px, bold
+- Muted:      #6b6b6b (closing line only)
 - Font:       'Segoe UI', Arial, sans-serif (on every element — TinyMCE resets fonts)
 
 === REQUIRED HTML STRUCTURE ===
 
-Every widget must follow this structure exactly (populate with real content):
+White background throughout. Colour accents only — never fills. Single column. Clean and airy.
 
-<div style="width:100%;padding:0;background-color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;">
+<div style="width:100%;padding:28px 32px 32px;background-color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;">
 
-  <!-- Header bar: primary colour background, white title only -->
-  <div style="background-color:{{PRIMARY}};padding:20px 28px;margin-bottom:0;">
-    <h2 style="margin:0;font-size:19px;font-weight:700;color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;line-height:1.3;">[WIDGET TITLE]</h2>
+  <!-- Title: large, bold, near-black — NO coloured background bar -->
+  <h2 style="font-size:24px;font-weight:700;color:#1a1a1a;margin:0 0 20px 0;line-height:1.25;padding:0;border:none;font-family:'Segoe UI',Arial,sans-serif;">[WIDGET TITLE]</h2>
+
+  <!-- Opening callout: light tint background, centred, italic — one key idea -->
+  <div style="background-color:{{LIGHT}};padding:18px 24px;margin:0 0 26px 0;">
+    <p style="margin:0;font-size:15px;color:#444444;line-height:1.7;font-style:italic;text-align:center;font-family:'Segoe UI',Arial,sans-serif;">[OPENING STATEMENT — one sentence, the buyer's core situation or the widget's central idea]</p>
   </div>
 
-  <!-- Callout intro: left accent border, light tint background -->
-  <div style="border-left:4px solid {{ACCENT}};background-color:{{LIGHT}};padding:18px 24px;margin-bottom:0;">
-    <p style="margin:0;font-size:15px;color:#1a3a5c;line-height:1.7;font-family:'Segoe UI',Arial,sans-serif;font-weight:500;">[OPENING STATEMENT]</p>
+  <!-- Section: left accent border + heading in primary colour + body text. Repeat 2–4 times. -->
+  <div style="border-left:4px solid {{ACCENT}};padding:0 0 0 18px;margin:0 0 22px 0;">
+    <h3 style="font-size:15px;font-weight:700;color:{{PRIMARY}};margin:0 0 9px 0;padding:0;font-family:'Segoe UI',Arial,sans-serif;">[SECTION HEADING]</h3>
+    <p style="margin:0 0 8px 0;font-size:14px;color:#2d2d2d;line-height:1.8;font-family:'Segoe UI',Arial,sans-serif;">[PARAGRAPH — or use bullet items below instead]</p>
+    <!-- Bullet items: one <p> per bullet using · character. Do NOT use <ul> or <li> tags. -->
+    <p style="margin:0 0 5px 0;font-size:14px;color:#2d2d2d;line-height:1.6;font-family:'Segoe UI',Arial,sans-serif;">· [BULLET ITEM]</p>
   </div>
 
-  <!-- Key points — 2-column table, 3-5 rows -->
-  <table style="width:100%;border-collapse:collapse;margin:0;">
-    <tr>
-      <td style="width:32%;padding:13px 16px;border:1px solid {{BORDER}};font-size:13px;font-weight:700;color:{{PRIMARY}};background-color:{{LIGHT}};vertical-align:top;font-family:'Segoe UI',Arial,sans-serif;">[LABEL]</td>
-      <td style="padding:13px 16px;border:1px solid {{BORDER}};font-size:14px;color:#1a1a1a;line-height:1.7;vertical-align:top;font-family:'Segoe UI',Arial,sans-serif;">[DETAIL]</td>
-    </tr>
-    <!-- Alternate rows: label td background-color:#ffffff, detail td no background -->
-  </table>
-
-  <!-- Closing line -->
-  <div style="padding:16px 24px;border-top:1px solid {{BORDER}};">
-    <p style="margin:0;font-size:13px;color:#5a6a7e;line-height:1.7;font-family:'Segoe UI',Arial,sans-serif;font-style:italic;">[CLOSING STATEMENT]</p>
-  </div>
+  <!-- Closing line: muted, separated by a subtle rule -->
+  <p style="margin:24px 0 0 0;padding-top:16px;border-top:1px solid #e8e8e8;font-size:13px;color:#6b6b6b;line-height:1.6;font-style:italic;font-family:'Segoe UI',Arial,sans-serif;">[CLOSING STATEMENT]</p>
 
 </div>
+
+STRUCTURE RULES — follow exactly:
+- NO full-width coloured header bars or background fills on the title
+- NO table layouts, NO two-column layouts, NO alternating row colours
+- White background (#ffffff) throughout
+- {{PRIMARY}} used ONLY on h3 section headings
+- {{ACCENT}} used ONLY on left borders of section divs
+- {{LIGHT}} used ONLY on the opening callout background
+- Bullet items must use · character in individual <p> tags — never <ul> or <li>
+- 2–4 sections per widget maximum
 
 === CONTENT GUIDELINES ===
 - CEO audience. Clear, confident, no technical jargon.
