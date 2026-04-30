@@ -57,14 +57,34 @@ exports.handler = async (event) => {
       };
     }
 
+    // Image is queued — poll until finished (max 8 attempts x 1s = 8s)
+    const pollingUrl = data.polling_url;
+    let imageUrl     = data.image_url;
+    let finalStatus  = data.status;
+
+    if (!imageUrl && pollingUrl) {
+      for (let i = 0; i < 8; i++) {
+        await new Promise(r => setTimeout(r, 1000)); // wait 1 second
+        const pollRes  = await fetch(pollingUrl, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const pollData = await pollRes.json();
+        finalStatus = pollData.status;
+        if (pollData.image_url) {
+          imageUrl = pollData.image_url;
+          break;
+        }
+      }
+    }
+
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify({
-        ok:       true,
-        imageUrl: data.image_url || data.url,
-        status:   data.status,
-        full:     data
+        ok:       !!imageUrl,
+        status:   finalStatus,
+        imageUrl,
+        openThis: imageUrl ? `Open this URL in your browser to see the cover page: ${imageUrl}` : 'Still processing — try hitting the URL again in a few seconds'
       }, null, 2)
     };
 
