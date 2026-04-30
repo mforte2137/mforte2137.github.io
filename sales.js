@@ -149,6 +149,7 @@ const sbBody            = document.getElementById('sb-connect-body');
 const sbApiKey          = document.getElementById('sb-api-key');
 const sbIntKey          = document.getElementById('sb-int-key');
 const sbRemember        = document.getElementById('sb-remember');
+const sbReplace         = document.getElementById('sb-replace');
 const sbPrefix          = document.getElementById('sb-prefix');
 const sbPushBtn         = document.getElementById('sb-push-btn');
 const sbResult          = document.getElementById('sb-result');
@@ -333,8 +334,9 @@ function restart() {
   individualWidgets.hidden    = true;
   individualToggle.textContent = 'Show 5 individual widgets ▼';
   sbResult.hidden             = true;
-  sbPushBtn.textContent       = 'Save to Salesbuildr →';
+  sbPushBtn.textContent       = 'Save 5 Widgets →';
   sbPushBtn.classList.remove('is-done');
+  sbReplace.checked           = false;
   sbBody.hidden               = true;
   sbArrow.classList.remove('is-open');
   // Reset service tiles
@@ -495,13 +497,40 @@ sbPushBtn.addEventListener('click', async () => {
   if (sbRemember.checked) { localStorage.setItem(LS_API_KEY,apiKey); localStorage.setItem(LS_INT_KEY,intKey); }
   else { localStorage.removeItem(LS_API_KEY); localStorage.removeItem(LS_INT_KEY); }
   sbPushBtn.disabled=true; sbPushBtn.textContent='Saving…'; sbResult.hidden=true;
-  const widget={ id:'combined', title:outputTitle.textContent||'Buyer Journey Widgets', html:buildCombinedHtml(generatedWidgets) };
+
+  const prefix  = sbPrefix.value.trim();
+  const cleanup = sbReplace.checked;
+
   let res;
-  try { res=await fetch('/api/push-widgets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({widgets:[widget],prefix:sbPrefix.value.trim(),apiKey,integrationKey:intKey})}); }
-  catch(e) { showSbResult(false,'Could not reach the server.'); sbPushBtn.disabled=false; sbPushBtn.textContent='Save to Salesbuildr →'; return; }
-  let data; try{data=await res.json();}catch{data={};}
-  if (data.successCount>0) { showSbResult(true,'Widget saved to your Salesbuildr template library — ready to drag into any quote.'); sbPushBtn.textContent='✓ Saved to Salesbuildr'; sbPushBtn.classList.add('is-done'); }
-  else { showSbResult(false,`Save failed: ${(data.results&&data.results[0]&&data.results[0].error)||data.error||'Unknown error'}`); sbPushBtn.disabled=false; sbPushBtn.textContent='Save to Salesbuildr →'; }
+  try {
+    res = await fetch('/api/push-widgets', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        widgets:        generatedWidgets,   // all 5 individual widgets
+        prefix,
+        apiKey,
+        integrationKey: intKey,
+        cleanup                             // delete previous set first if checked
+      })
+    });
+  } catch(e) {
+    showSbResult(false,'Could not reach the server.');
+    sbPushBtn.disabled=false; sbPushBtn.textContent='Save 5 Widgets →'; return;
+  }
+
+  let data; try { data=await res.json(); } catch { data={}; }
+
+  if (data.successCount > 0) {
+    const deletedMsg = data.deleted > 0 ? ` (${data.deleted} previous widget${data.deleted>1?'s':''} replaced)` : '';
+    const partialMsg = data.successCount < data.total ? ` — ${data.total - data.successCount} failed` : '';
+    showSbResult(true, `${data.successCount} of 5 widgets saved to Salesbuildr${deletedMsg}${partialMsg}. Each starts a new page in the PDF.`);
+    sbPushBtn.textContent='✓ Saved to Salesbuildr'; sbPushBtn.classList.add('is-done');
+  } else {
+    const err = (data.results&&data.results[0]&&data.results[0].error)||data.error||'Unknown error';
+    showSbResult(false,`Save failed: ${err}`);
+    sbPushBtn.disabled=false; sbPushBtn.textContent='Save 5 Widgets →';
+  }
 });
 function showSbResult(ok,msg){ sbResult.textContent=msg; sbResult.className='sb-result'+(ok?'':' is-error'); sbResult.hidden=false; }
 
