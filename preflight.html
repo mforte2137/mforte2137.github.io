@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preflight — MSP Quote Quality Check</title>
+  <link rel="stylesheet" href="preflight.css">
+</head>
+<body>
+<div class="container">
+
+  <header class="top">
+    <span class="brand">Preflight</span>
+    <span>MSP Quote Quality Check</span>
+  </header>
+
+  <!-- ===================================================
+       VIEW 1: Setup
+       =================================================== -->
+  <section id="setup-view">
+    <h1 class="big-title">Check before you send.</h1>
+    <p class="big-lead">Paste your quote ID, connect your Salesbuildr account, and Preflight reviews your quote for issues that could cause problems — before the buyer sees it.</p>
+
+    <!-- Connect Salesbuildr -->
+    <div class="connect-section">
+      <button type="button" class="connect-toggle" id="connect-toggle">
+        <span>⚡ Connect your Salesbuildr account</span>
+        <span class="connect-arrow" id="connect-arrow">▼</span>
+      </button>
+      <div class="connect-body" id="connect-body" hidden>
+        <p class="connect-hint">Your credentials are used only for this check — never stored on our servers. Tick <em>Remember</em> to save them to this device.</p>
+        <div class="connect-fields">
+          <div class="connect-field">
+            <label class="connect-label">API Key <span class="connect-where">Admin → Integrations → API Key</span></label>
+            <input type="password" id="api-key" class="connect-input" placeholder="Your API key" autocomplete="off">
+          </div>
+          <div class="connect-field">
+            <label class="connect-label">Integration Key <span class="connect-where">Provided by Salesbuildr</span></label>
+            <input type="password" id="int-key" class="connect-input" placeholder="Your integration key" autocomplete="off">
+          </div>
+        </div>
+        <label class="remember-label"><input type="checkbox" id="remember-keys"> Remember on this device</label>
+        <div id="connect-status" class="connect-status" hidden></div>
+      </div>
+    </div>
+
+    <!-- Quote ID input -->
+    <div class="quote-input-section">
+      <label class="field-label" for="quote-id">
+        Quote ID or URL
+        <span class="field-required">Required</span>
+      </label>
+      <p class="field-hint">Find the quote ID in Salesbuildr's URL bar, or paste the full quote URL.</p>
+      <div class="quote-input-row">
+        <input type="text" id="quote-id" class="quote-input" placeholder="e.g. Cwlo4pkFxBHCsQ9IFndF  or  https://portal.us1-salesbuildr.com/quote/...">
+        <button type="button" id="run-btn" class="run-btn">Run Preflight →</button>
+      </div>
+    </div>
+
+    <div class="setup-footer">
+      <p class="setup-note">Structural check is instant — no AI, pure logic. Upload your quote PDF afterwards for the full content review.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================
+       VIEW 2: Working
+       =================================================== -->
+  <section id="working-view" hidden>
+    <div class="working-inner">
+      <div class="spinner"></div>
+      <p class="working-title" id="working-title">Running Preflight&hellip;</p>
+      <p class="working-sub" id="working-sub">Fetching quote from Salesbuildr</p>
+    </div>
+  </section>
+
+  <!-- ===================================================
+       VIEW 3: Results
+       =================================================== -->
+  <section id="results-view" hidden>
+
+    <!-- Quote info + recheck -->
+    <div class="results-meta">
+      <div>
+        <div class="results-kicker">Preflight Report</div>
+        <h1 class="results-title" id="results-title"></h1>
+        <p class="results-sub" id="results-sub"></p>
+      </div>
+      <div class="results-actions">
+        <button type="button" id="recheck-btn" class="secondary-btn">↺ Re-check</button>
+        <button type="button" id="restart-btn" class="secondary-btn">← New quote</button>
+      </div>
+    </div>
+
+    <!-- Verdict banner -->
+    <div id="verdict-banner" class="verdict-banner"></div>
+
+    <!-- Structural results -->
+    <div id="structural-results">
+
+      <!-- Critical -->
+      <div id="critical-section" class="result-section" hidden>
+        <div class="section-header section-critical">
+          <span class="section-icon">✗</span>
+          <span class="section-title">Critical — fix before sending</span>
+          <span class="section-count" id="critical-count"></span>
+        </div>
+        <div class="section-body" id="critical-list"></div>
+      </div>
+
+      <!-- Warnings -->
+      <div id="warnings-section" class="result-section" hidden>
+        <div class="section-header section-warning" id="warnings-toggle">
+          <span class="section-icon">!</span>
+          <span class="section-title">Warnings — should fix</span>
+          <span class="section-count" id="warnings-count"></span>
+          <span class="section-chevron">▼</span>
+        </div>
+        <div class="section-body" id="warnings-list"></div>
+      </div>
+
+      <!-- Passed -->
+      <div id="passed-section" class="result-section" hidden>
+        <div class="section-header section-passed" id="passed-toggle">
+          <span class="section-icon">✓</span>
+          <span class="section-title">Passed</span>
+          <span class="section-count" id="passed-count"></span>
+          <span class="section-chevron">▼</span>
+        </div>
+        <div class="section-body section-body-collapsed" id="passed-list"></div>
+      </div>
+
+    </div>
+
+    <!-- ── CONTENT REVIEW SECTION ── -->
+    <div class="content-review-section" id="content-review-section">
+      <div class="content-review-intro">
+        <div class="content-review-pitch">
+          <h2 class="cr-heading">Structural checks catch what's missing.<br>This catches what's wrong.</h2>
+          <p class="cr-body">Upload your quote PDF and Preflight will cross-check your proposal copy against your line items — flagging anything you promised that isn't in your pricing, technical terms your buyer won't understand, and copy that quietly undermines confidence. This is where most pre-send mistakes hide.</p>
+          <p class="cr-body">Download your quote PDF from Salesbuildr's PDF button and drop it here. Takes 30 seconds.</p>
+        </div>
+        <div class="pdf-dropzone" id="pdf-dropzone">
+          <input type="file" id="pdf-input" accept="application/pdf,.pdf" hidden>
+          <div class="pdf-dz-inner">
+            <div class="pdf-dz-icon">📄</div>
+            <div class="pdf-dz-title">Drop your quote PDF here</div>
+            <div class="pdf-dz-sub">or <label for="pdf-input" class="pdf-browse">browse your files</label></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content working state -->
+      <div id="content-working" class="content-working" hidden>
+        <div class="spinner spinner-sm"></div>
+        <p class="working-sub">Running content review — analysing copy, checking alignment, looking for jargon&hellip;</p>
+      </div>
+
+      <!-- Content results -->
+      <div id="content-results" hidden>
+
+        <div class="cr-summary" id="cr-summary"></div>
+
+        <!-- Alignment -->
+        <div id="cr-alignment" class="result-section" hidden>
+          <div class="section-header section-critical">
+            <span class="section-icon">⚠</span>
+            <span class="section-title">Pricing &amp; narrative mismatches</span>
+            <span class="section-count" id="cr-alignment-count"></span>
+          </div>
+          <div class="section-body" id="cr-alignment-list"></div>
+        </div>
+
+        <!-- Jargon -->
+        <div id="cr-jargon" class="result-section" hidden>
+          <div class="section-header section-warning">
+            <span class="section-icon">?</span>
+            <span class="section-title">Jargon &amp; unexplained acronyms</span>
+            <span class="section-count" id="cr-jargon-count"></span>
+          </div>
+          <div class="section-body" id="cr-jargon-list"></div>
+        </div>
+
+        <!-- Language -->
+        <div id="cr-language" class="result-section" hidden>
+          <div class="section-header section-warning">
+            <span class="section-icon">~</span>
+            <span class="section-title">Language issues</span>
+            <span class="section-count" id="cr-language-count"></span>
+          </div>
+          <div class="section-body" id="cr-language-list"></div>
+        </div>
+
+        <!-- Rewrites -->
+        <div id="cr-rewrites" class="result-section" hidden>
+          <div class="section-header section-rewrite">
+            <span class="section-icon">✎</span>
+            <span class="section-title">Suggested rewrites</span>
+            <span class="section-count" id="cr-rewrites-count"></span>
+          </div>
+          <div class="section-body" id="cr-rewrites-list"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Error banner -->
+  <div id="error-banner" class="error-banner" hidden>
+    <div class="error-title">Something went wrong.</div>
+    <div class="error-detail" id="error-detail"></div>
+    <button type="button" id="error-dismiss" class="secondary-btn">Try again</button>
+  </div>
+
+  <footer class="tag">Preflight · Check before you send.</footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="preflight.js"></script>
+</body>
+</html>
