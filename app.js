@@ -40,10 +40,34 @@ const TOOLS = [
       "Tell us what you're selling and who you're selling it to. We'll generate five buyer-journey widgets — ready to paste straight into Salesbuildr.",
     category: "Proposal",
     url: "https://widgetcreator.netlify.app/sales.html",
-    badge: "new",
+    badge: "",
     updated: "2026-04-28",
     gradient: "emerald",
     icon: "idea"
+  },
+  {
+    title: "MSP Quote Preflight",
+    shortLabel: "Quote Preflight",
+    description:
+      "Preflight reviews your quote for issues that could cause problems — before the buyer sees it. Spot the gaps, fix them early, send with confidence.",
+    category: "Quote",
+    url: "https://widgetcreator.netlify.app/preflight.html",
+    badge: "new",
+    updated: "2026-05-01",
+    gradient: "amber",
+    icon: "search"
+  },
+  {
+    title: "Cover Page Creator",
+    shortLabel: "Cover Page Creator",
+    description:
+      "Enter your prospect's details and we'll generate a branded cover page in their colours — ready to drop into a Salesbuildr demo quote in seconds.",
+    category: "Proposal",
+    url: "https://widgetcreator.netlify.app/first-impression.html",
+    badge: "new",
+    updated: "2026-05-01",
+    gradient: "rose",
+    icon: "palette"
   },
   {
     title: "Document Converter",
@@ -258,6 +282,15 @@ const ICONS = {
       <path d="M48 42a10 10 0 0 0-6-19 14 14 0 0 0-27 4 9 9 0 0 0-3 17"/>
       <polyline points="26 32 32 26 38 32"/>
       <line x1="32" y1="26" x2="32" y2="48"/>
+    </svg>`,
+  // Artist's palette (design / branding)
+  palette: `
+    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <path d="M32 6C18 6 6 17 6 31c0 12 9 21 19 21 4 0 5-3 5-6 0-4 3-6 7-6h7c8 0 14-5 14-13C58 16 46 6 32 6z"/>
+      <circle cx="20" cy="22" r="3"/>
+      <circle cx="32" cy="16" r="3"/>
+      <circle cx="44" cy="22" r="3"/>
+      <circle cx="48" cy="34" r="3"/>
     </svg>`
 };
 
