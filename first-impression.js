@@ -41,7 +41,7 @@ const morePhotosBtn    = document.getElementById('more-photos-btn');
 const photoLoading     = document.getElementById('photo-loading');
 const photoCredit      = document.getElementById('photo-credit');
 let   selectedPhotoUrl = '';
-let   photoOffset      = 0;
+let   photoPage        = 1;
 const repNameInput   = document.getElementById('rep-name');
 const generateBtn    = document.getElementById('generate-btn');
 const formError      = document.getElementById('form-error');
@@ -114,7 +114,7 @@ async function fetchPhotos() {
     const res  = await fetch('/api/generate-cover', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action: 'photos', industry: industrySelect.value })
+      body:    JSON.stringify({ action: 'photos', industry: industrySelect.value, page: photoPage })
     });
     const data = await res.json();
     if (!data.ok || !data.photos.length) throw new Error('No photos found.');
@@ -150,9 +150,9 @@ function renderPhotos(photos) {
   });
 }
 
-findPhotosBtn.addEventListener('click', () => { photoOffset = 0; fetchPhotos(); });
-morePhotosBtn.addEventListener('click', fetchPhotos);
-industrySelect.addEventListener('change', () => { photoPicker.hidden = true; selectedPhotoUrl = ''; });
+findPhotosBtn.addEventListener('click', () => { photoPage = 1; fetchPhotos(); });
+morePhotosBtn.addEventListener('click', () => { photoPage++; fetchPhotos(); });
+industrySelect.addEventListener('change', () => { photoPicker.hidden = true; selectedPhotoUrl = ''; photoPage = 1; });
 
 // ── Template selection ────────────────────────────────────
 document.querySelectorAll('.template-tile:not(.is-soon)').forEach(tile => {
