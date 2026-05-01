@@ -90,6 +90,39 @@ async function getPhoto(industry) {
   throw new Error('Could not find a suitable photo. Try a different industry.');
 }
 
+// ── Upload base64 logo to Placid file storage ─────────────
+// If the logo is a base64 data URL (uploaded file), we upload it
+// to Placid's servers and get back a public HTTPS URL that
+// Placid can use when rendering the template.
+async function uploadLogoToPlacid(base64DataUrl) {
+  const matches = base64DataUrl.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+  if (!matches) throw new Error('Invalid image data — please use a logo URL instead.');
+
+  const mimeType = matches[1];
+  const buffer   = Buffer.from(matches[2], 'base64');
+  const ext      = mimeType.split('/')[1] || 'png';
+  const filename = `logo-upload.${ext}`;
+  const boundary = 'FormBoundary' + Date.now().toString(36);
+
+  const bodyParts = Buffer.concat([
+    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: ${mimeType}\r\n\r\n`),
+    buffer,
+    Buffer.from(`\r\n--${boundary}--\r\n`)
+  ]);
+
+  const res  = await fetch('https://api.placid.app/api/rest/files', {
+    method:  'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.PLACID_API_TOKEN}`,
+      'Content-Type':  `multipart/form-data; boundary=${boundary}`
+    },
+    body: bodyParts
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Logo upload to Placid failed.');
+  return data.url; // public HTTPS URL hosted by Placid
+}
+
 // ── Placid image generation ───────────────────────────────
 async function generateImage(templateId, brandColor, photoUrl, logoUrl) {
   const template = TEMPLATES[templateId];
@@ -134,7 +167,7 @@ async function generateImage(templateId, brandColor, photoUrl, logoUrl) {
 // The white rounded rectangle sits in the lower-middle of the image,
 // so we use bottomTemplate with top-heavy padding to sit inside the panel.
 function buildOverlay(brandColor) {
-  const html = `<div style="display:flex;flex-direction:column;justify-content:flex-start;align-items:center;height:100%;padding:32px 48px 16px;text-align:center;">
+  const html = `<div style="display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;padding:0 48px 24px;text-align:center;">
   <h2 style="font-size:22pt;font-weight:700;color:${brandColor};font-family:'Segoe UI',Arial,sans-serif;margin:0 0 10px 0;line-height:1.2;">{{company.name}}</h2>
   <p style="font-size:11pt;color:#333333;font-family:'Segoe UI',Arial,sans-serif;margin:3px 0;">Prepared for {{contact.firstName}} {{contact.lastName}}</p>
   <p style="font-size:10pt;color:#666666;font-family:'Segoe UI',Arial,sans-serif;margin:3px 0;">Presented by {{owner.fullName}}</p>
@@ -208,6 +241,12 @@ exports.handler = async (event) => {
     if (!logoUrl)    return err('logoUrl required.', 400);
 
     try {
+      // If logo is a base64 data URL (file upload), host it on Placid first
+      let resolvedLogoUrl = logoUrl;
+      if (logoUrl && logoUrl.startsWith('data:')) {
+        resolvedLogoUrl = await uploadLogoToPlacid(logoUrl);
+      }
+
       // Use pre-selected photo if provided, otherwise fetch from Unsplash
       const photoUrl = body.photoUrl || await getPhoto(industry || 'generic');
       const template = TEMPLATES[templateId || 'chevron'];
@@ -215,7 +254,7 @@ exports.handler = async (event) => {
 
       const hex8 = brandColor.replace('#', '').padEnd(6,'0').slice(0,6).toUpperCase() + 'FF';
       const color = '#' + hex8;
-      const layers = { photo: { image: photoUrl }, logo: { image: logoUrl } };
+      const layers = { photo: { image: photoUrl }, logo: { image: resolvedLogoUrl } };
       for (const layer of template.colorLayers) layers[layer] = { background_color: color };
 
       const res  = await fetch(PLACID_API, {
