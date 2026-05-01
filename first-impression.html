@@ -73,22 +73,40 @@
 
     <!-- STEP 3: Photo style -->
     <div class="step">
-      <div class="step-label">Step 3 — Photo style</div>
+      <div class="step-label">Step 3 — Background photo</div>
       <div class="field-group">
         <label class="field-label" for="industry">Industry <span class="field-required">Required</span></label>
-        <p class="field-hint">We search Unsplash for a professional photo that suits their sector.</p>
-        <select id="industry" class="field-select">
-          <option value="technology">Technology / IT / MSP</option>
-          <option value="healthcare">Healthcare / Medical</option>
-          <option value="legal">Legal / Law</option>
-          <option value="finance">Financial / Accounting</option>
-          <option value="manufacturing">Manufacturing / Industrial</option>
-          <option value="education">Education</option>
-          <option value="realestate">Real Estate</option>
-          <option value="retail">Retail / Commerce</option>
-          <option value="services">Professional Services</option>
-          <option value="generic">Generic / Business</option>
-        </select>
+        <p class="field-hint">We search Unsplash for professional photos that suit their sector. Pick your favourite.</p>
+        <div class="industry-row">
+          <select id="industry" class="field-select">
+            <option value="technology">Technology / IT / MSP</option>
+            <option value="healthcare">Healthcare / Medical</option>
+            <option value="legal">Legal / Law</option>
+            <option value="finance">Financial / Accounting</option>
+            <option value="manufacturing">Manufacturing / Industrial</option>
+            <option value="education">Education</option>
+            <option value="realestate">Real Estate</option>
+            <option value="retail">Retail / Commerce</option>
+            <option value="services">Professional Services</option>
+            <option value="generic">Generic / Business</option>
+          </select>
+          <button type="button" id="find-photos-btn" class="find-photos-btn">Find Photos →</button>
+        </div>
+      </div>
+
+      <!-- Photo picker — appears after clicking Find Photos -->
+      <div id="photo-picker" hidden>
+        <div class="photo-grid" id="photo-grid">
+          <!-- Populated by JS -->
+        </div>
+        <div class="photo-picker-footer">
+          <button type="button" id="more-photos-btn" class="more-photos-btn">Try different photos</button>
+          <span id="photo-credit" class="photo-credit"></span>
+        </div>
+      </div>
+      <div id="photo-loading" class="photo-loading" hidden>
+        <div class="spinner-sm"></div>
+        <span>Searching Unsplash…</span>
       </div>
     </div>
 
