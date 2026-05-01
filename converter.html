@@ -5,24 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Special Bid Converter — Salesbuildr</title>
   <link rel="stylesheet" href="converter.css">
-  <!-- SheetJS — reads Excel & CSV entirely in your browser. No data is sent anywhere. -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
 <div class="container">
 
-  <!-- ── Header ───────────────────────────────────────────── -->
   <header class="site-header">
     <div class="logo">Salesbuildr</div>
     <h1>Special Bid Converter</h1>
-    <p>Upload your vendor deal reg file and convert it to Salesbuildr import format</p>
+    <p>Upload your vendor deal reg or special bid file — map the columns and push products directly into Salesbuildr</p>
   </header>
 
-  <!-- ── Step 1 : Upload ──────────────────────────────────── -->
+  <!-- ── Step 1: Upload ── -->
   <section id="step-upload" class="card">
-    <h2><span class="step-num" id="num-1">1</span> Upload Vendor File</h2>
-
+    <h2><span class="step-num">1</span> Upload Vendor File</h2>
     <div class="drop-zone" id="dropZone">
       <div class="drop-icon">📂</div>
       <p class="drop-main">Drag &amp; drop your file here</p>
@@ -31,15 +28,25 @@
       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
       <p class="file-types">Accepts .xlsx &nbsp;·&nbsp; .xls &nbsp;·&nbsp; .csv</p>
     </div>
-
     <div id="fileInfo" class="hidden"></div>
+
+    <!-- AI Analysis banner — shown after upload -->
+    <div id="aiPanel" class="ai-panel hidden">
+      <div class="ai-inner">
+        <div id="aiIcon" class="ai-icon">🤖</div>
+        <div class="ai-body">
+          <div id="aiStatus" class="ai-status">Analysing file structure with AI…</div>
+          <div id="aiNotes" class="ai-notes hidden"></div>
+        </div>
+        <div id="aiSpinner" class="ai-spinner"></div>
+      </div>
+    </div>
   </section>
 
-  <!-- ── Step 2 : Map Columns ─────────────────────────────── -->
+  <!-- ── Step 2: Map Columns ── -->
   <section id="step-mapping" class="card hidden">
-    <h2><span class="step-num" id="num-2">2</span> Map Columns</h2>
+    <h2><span class="step-num">2</span> Map Columns</h2>
 
-    <!-- Sheet picker (only shown when file has multiple tabs) -->
     <div id="sheetSelectorWrap" class="hidden">
       <div class="control-row">
         <label for="sheetSelect">Which tab contains your products?</label>
@@ -47,7 +54,6 @@
       </div>
     </div>
 
-    <!-- Header row control -->
     <div class="control-row">
       <label for="headerRowInput">Header row detected at row:</label>
       <input type="number" id="headerRowInput" min="1" value="1" class="num-input">
@@ -55,31 +61,29 @@
       <span id="headerHint" class="header-hint"></span>
     </div>
 
-    <!-- Pricing options -->
+    <!-- Section header exclusion notice -->
+    <div id="excludeNotice" class="exclude-notice hidden">
+      <span class="exclude-icon">🚫</span>
+      <span id="excludeText"></span>
+    </div>
+
     <div class="options-box">
       <div class="options-box-title">Pricing options</div>
       <div class="option-row">
         <label>Calculate pricing using:</label>
         <div class="toggle-group">
-          <label class="toggle-opt">
-            <input type="radio" name="pricingMode" value="markup" checked> Markup %
-          </label>
-          <label class="toggle-opt">
-            <input type="radio" name="pricingMode" value="margin"> Margin %
-          </label>
+          <label class="toggle-opt"><input type="radio" name="pricingMode" value="markup" checked> Markup %</label>
+          <label class="toggle-opt"><input type="radio" name="pricingMode" value="margin"> Margin %</label>
         </div>
         <input type="number" id="pricingPct" class="num-input" min="0" max="9999" step="0.1" placeholder="e.g. 25">
-        <span class="option-hint" id="pricingHint">
-          25% markup on $100 cost → $125 sell price &nbsp;·&nbsp; Leave blank to skip
-        </span>
+        <span class="option-hint" id="pricingHint">25% markup on $100 cost → $125 sell price &nbsp;·&nbsp; Leave blank to skip</span>
       </div>
     </div>
 
     <p class="mapping-intro">
-      We've pre-matched your file's columns to Salesbuildr's Special Bid fields.
-      Review each row — adjust any dropdowns that look wrong — then click <strong>Convert</strong>.
-      For fields not in the vendor file (like <strong>Category</strong>), choose <em>(not mapped)</em>
-      and type your own fixed value into the box that appears — it will be applied to every row.
+      AI has pre-matched your columns where possible — <span class="ai-badge">AI</span> badges show AI suggestions.
+      Review each row, adjust any dropdowns, then click <strong>Convert</strong>.
+      For fields not in the vendor file, choose <em>(not mapped)</em> and type a fixed value.
     </p>
 
     <div class="table-scroll">
@@ -101,32 +105,104 @@
     </div>
   </section>
 
-  <!-- ── Step 3 : Export ──────────────────────────────────── -->
+  <!-- ── Step 3: Export / Push ── -->
   <section id="step-export" class="card hidden">
-    <h2><span class="step-num" id="num-3">3</span> Download Your Converted File</h2>
+    <h2><span class="step-num">3</span> Export or Push to Salesbuildr</h2>
 
     <p id="statsLine" class="stats-line"></p>
 
     <p class="preview-label">Preview — first 5 rows:</p>
     <div id="previewTable"></div>
 
-    <div class="export-actions">
-      <button id="downloadBtn" class="btn btn-primary">⬇ Download CSV</button>
-      <button id="copyBtn"     class="btn btn-secondary">⎘ Copy to Clipboard</button>
+    <!-- ── Option A: Download CSV ── -->
+    <div class="export-block">
+      <div class="export-block-title">Option A — Download CSV</div>
+      <p class="export-block-desc">Download the converted file and import it into Salesbuildr manually via the Special Bid import screen.</p>
+      <div class="export-actions">
+        <button id="downloadBtn" class="btn btn-primary">⬇ Download CSV</button>
+        <button id="copyBtn"     class="btn btn-secondary">⎘ Copy to Clipboard</button>
+      </div>
+    </div>
+
+    <!-- ── Option B: Push to Salesbuildr ── -->
+    <div class="export-block push-block">
+      <div class="export-block-title">Option B — Push Directly to Salesbuildr <span class="recommended-badge">Recommended</span></div>
+      <p class="export-block-desc">Products appear in your Salesbuildr product library instantly — no import UI, no field mapping, no CSV file.</p>
+
+      <!-- Salesbuildr connect -->
+      <div class="sb-connect" id="sbConnect">
+        <button type="button" class="sb-toggle" id="sbToggle">
+          ⚡ Connect your Salesbuildr account <span class="sb-arrow" id="sbArrow">▼</span>
+        </button>
+        <div class="sb-body" id="sbBody" hidden>
+          <p class="sb-hint">Your credentials are sent only to push products — never stored on our servers. Tick <em>Remember</em> to save to this device.</p>
+          <div class="sb-fields">
+            <div class="sb-field">
+              <label class="sb-label">API Key <span class="sb-where">Admin → Integrations → API Key</span></label>
+              <input type="password" id="sbApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
+            </div>
+            <div class="sb-field">
+              <label class="sb-label">Integration Key <span class="sb-where">Provided by Salesbuildr</span></label>
+              <input type="password" id="sbIntKey" class="sb-input" placeholder="Your integration key" autocomplete="new-password">
+            </div>
+          </div>
+          <label class="sb-remember"><input type="checkbox" id="sbRemember"> Remember on this device</label>
+
+          <!-- Category selector -->
+          <div id="categorySection" class="category-section hidden">
+            <label class="sb-label" for="categorySelect">
+              Target category in Salesbuildr <span class="sb-where">Required — products will be created here</span>
+            </label>
+            <div class="category-row">
+              <select id="categorySelect" class="category-select">
+                <option value="">— Select a category —</option>
+              </select>
+              <button type="button" id="fetchCatsBtn" class="btn btn-secondary">↻ Refresh</button>
+            </div>
+            <div id="categoryStatus" class="category-status hidden"></div>
+          </div>
+
+          <!-- Enrich toggle -->
+          <label class="enrich-toggle">
+            <input type="checkbox" id="enrichToggle" checked>
+            <span class="enrich-label">
+              <strong>Enrich product data</strong>
+              <small>Let Salesbuildr auto-fill missing descriptions, images, and specs where it recognises the MPN</small>
+            </span>
+          </label>
+
+          <!-- Push button + progress -->
+          <div class="push-actions">
+            <button type="button" id="pushBtn" class="btn btn-push" disabled>
+              Push to Salesbuildr →
+            </button>
+          </div>
+
+          <div id="pushProgress" class="push-progress hidden">
+            <div class="progress-bar-wrap">
+              <div class="progress-bar" id="progressBar" style="width:0%"></div>
+            </div>
+            <div id="progressText" class="progress-text">Preparing…</div>
+          </div>
+
+          <div id="pushResult" class="push-result hidden"></div>
+        </div>
+      </div>
     </div>
 
     <div class="tip-box">
-      <strong>Tip:</strong> If you paste directly into Salesbuildr, download a copy too — it's a handy backup.
+      <strong>Tip:</strong> For large files (&gt;100 products), the push runs in batches of 100 automatically.
+      If some products already exist in Salesbuildr they may be duplicated — check your product library after importing.
     </div>
 
     <hr class="divider">
     <button id="startOverBtn" class="btn btn-ghost">← Convert another file</button>
   </section>
 
-</div><!-- /container -->
+</div>
 
 <footer class="site-footer">
-  Your file is processed entirely in your browser — no data is uploaded to any server.
+  File parsing runs entirely in your browser — only product data is sent to Salesbuildr when you click Push.
 </footer>
 
 <script src="converter.js"></script>
