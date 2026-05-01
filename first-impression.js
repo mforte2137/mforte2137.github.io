@@ -33,7 +33,15 @@ const logoPreviewImg = document.getElementById('logo-preview-img');
 const logoClearBtn   = document.getElementById('logo-preview-clear');
 const logoUpload     = document.getElementById('logo-upload');
 const logoUploadName = document.getElementById('logo-upload-name');
-const industrySelect = document.getElementById('industry');
+const industrySelect   = document.getElementById('industry');
+const findPhotosBtn    = document.getElementById('find-photos-btn');
+const photoPicker      = document.getElementById('photo-picker');
+const photoGrid        = document.getElementById('photo-grid');
+const morePhotosBtn    = document.getElementById('more-photos-btn');
+const photoLoading     = document.getElementById('photo-loading');
+const photoCredit      = document.getElementById('photo-credit');
+let   selectedPhotoUrl = '';
+let   photoOffset      = 0;
 const repNameInput   = document.getElementById('rep-name');
 const generateBtn    = document.getElementById('generate-btn');
 const formError      = document.getElementById('form-error');
@@ -93,6 +101,58 @@ function updateTemplatePreview(color) {
   document.querySelectorAll('.tp-chevron').forEach(el => el.style.borderLeftColor = color);
   document.querySelectorAll('.tp-bar').forEach(el => el.style.background = color);
 }
+
+// ── Photo picker ──────────────────────────────────────────
+async function fetchPhotos() {
+  findPhotosBtn.disabled    = true;
+  findPhotosBtn.textContent = 'Searching…';
+  photoLoading.hidden       = false;
+  photoPicker.hidden        = true;
+  selectedPhotoUrl          = '';
+
+  try {
+    const res  = await fetch('/api/generate-cover', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ action: 'photos', industry: industrySelect.value })
+    });
+    const data = await res.json();
+    if (!data.ok || !data.photos.length) throw new Error('No photos found.');
+
+    renderPhotos(data.photos);
+    photoPicker.hidden = false;
+  } catch (e) {
+    showFormError('Could not load photos: ' + e.message);
+  } finally {
+    photoLoading.hidden       = true;
+    findPhotosBtn.disabled    = false;
+    findPhotosBtn.textContent = 'Find Photos →';
+  }
+}
+
+function renderPhotos(photos) {
+  photoGrid.innerHTML = '';
+  selectedPhotoUrl    = '';
+  photoCredit.textContent = '';
+
+  photos.forEach(photo => {
+    const tile = document.createElement('div');
+    tile.className = 'photo-thumb';
+    tile.innerHTML = `<img src="${photo.thumb}" alt="${photo.alt}" loading="lazy"><div class="photo-thumb-check">✓</div>`;
+
+    tile.addEventListener('click', () => {
+      document.querySelectorAll('.photo-thumb').forEach(t => t.classList.remove('is-selected'));
+      tile.classList.add('is-selected');
+      selectedPhotoUrl = photo.full;
+      photoCredit.textContent = `Photo by ${photo.credit} on Unsplash`;
+    });
+    photoGrid.appendChild(tile);
+  });
+}
+
+findPhotosBtn.addEventListener('click', () => { photoOffset = 0; fetchPhotos(); });
+morePhotosBtn.addEventListener('click', fetchPhotos);
+industrySelect.addEventListener('change', () => { photoPicker.hidden = true; selectedPhotoUrl = ''; });
 
 // ── Template selection ────────────────────────────────────
 document.querySelectorAll('.template-tile:not(.is-soon)').forEach(tile => {
@@ -209,6 +269,11 @@ function validate() {
     showFormError('Please provide the prospect\'s logo — either a URL or an uploaded file.');
     logoUrlInput.focus(); return false;
   }
+  if (!selectedPhotoUrl) {
+    showFormError('Please click "Find Photos" in Step 3 and select a background photo.');
+    findPhotosBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    return false;
+  }
   return true;
 }
 
@@ -231,8 +296,8 @@ generateBtn.addEventListener('click', async () => {
 
   try {
     // Phase 1 — find photo + start Placid generation
-    workTitle.textContent = 'Finding the perfect photo…';
-    workSub.textContent   = 'Searching Unsplash for your industry';
+    workTitle.textContent = 'Generating your cover page…';
+    workSub.textContent   = 'Applying branding and compositing the image — usually 15 seconds';
 
     const startRes  = await fetch('/api/generate-cover', {
       method:  'POST',
@@ -242,6 +307,7 @@ generateBtn.addEventListener('click', async () => {
         templateId: selectedTemplate,
         brandColor,
         logoUrl,
+        photoUrl:   selectedPhotoUrl,
         industry,
         companyName
       })
