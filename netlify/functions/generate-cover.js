@@ -160,6 +160,35 @@ exports.handler = async (event) => {
     return ok200({ color, found: !!color });
   }
 
+  // ── ACTION: photos — return 4 Unsplash options ────────────
+  if (action === 'photos') {
+    const { industry } = body;
+    try {
+      const keyword = INDUSTRY_KEYWORDS[industry] || INDUSTRY_KEYWORDS.generic;
+      const params  = new URLSearchParams({
+        query:       keyword,
+        orientation: 'portrait',
+        per_page:    '8',
+        client_id:   process.env.UNSPLASH_ACCESS_KEY
+      });
+      const res  = await fetch(`${UNSPLASH_API}?${params}`);
+      const data = await res.json();
+      if (!data.results || data.results.length === 0) return err('No photos found for this industry.');
+
+      // Return 4 varied results — thumbnail for display, regular for generation
+      const photos = data.results.slice(0, 4).map(p => ({
+        id:        p.id,
+        thumb:     p.urls.small,
+        full:      p.urls.regular + '&w=1200&q=80',
+        alt:       p.alt_description || 'Professional photo',
+        credit:    p.user.name
+      }));
+      return ok200({ photos });
+    } catch (e) {
+      return err(e.message);
+    }
+  }
+
   // ── ACTION: start (phase 1 — Unsplash + kick off Placid) ─
   if (action === 'start') {
     const { templateId, brandColor, logoUrl, industry } = body;
@@ -167,7 +196,8 @@ exports.handler = async (event) => {
     if (!logoUrl)    return err('logoUrl required.', 400);
 
     try {
-      const photoUrl = await getPhoto(industry || 'generic');
+      // Use pre-selected photo if provided, otherwise fetch from Unsplash
+      const photoUrl = body.photoUrl || await getPhoto(industry || 'generic');
       const template = TEMPLATES[templateId || 'chevron'];
       if (!template) return err('Unknown template.', 400);
 
