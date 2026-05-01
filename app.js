@@ -99,7 +99,7 @@ const TOOLS = [
     description:
       "Build a list of tasks for complex projects, then generate a clean table of effort hours ready to paste into a Salesbuildr Quote Widget.",
     category: "Scoping",
-    url: "https://widgetcreator.netlify.app/project.html",
+    url: "https://widgetcreator.netlify.app/project-scope.html",
     badge: "",
     updated: "2026-04-28",
     gradient: "purple",
