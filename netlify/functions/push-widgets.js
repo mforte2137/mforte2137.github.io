@@ -101,7 +101,7 @@ exports.handler = async (event) => {
 
   for (let i = 0; i < widgets.length; i++) {
     const widget       = widgets[i];
-    const standardName = STANDARD_NAMES[widget.id] || `W${i + 1}`;
+    const standardName = STANDARD_NAMES[widget.id] || widget.title || `Widget ${i + 1}`;
     const name         = cleanPrefix ? `${cleanPrefix} – ${standardName}` : standardName;
 
     try {
