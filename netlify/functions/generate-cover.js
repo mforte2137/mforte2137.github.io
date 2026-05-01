@@ -1,0 +1,215 @@
+// =========================================================
+// generate-cover.js — Netlify function
+// Path: /api/generate-cover
+//
+// Actions:
+//   extract-color — fetches prospect website, extracts brand colour
+//   generate      — Unsplash photo + Placid image generation
+//   push          — creates Salesbuildr image widget template
+// =========================================================
+
+const PLACID_API  = 'https://api.placid.app/api/rest/images';
+const UNSPLASH_API = 'https://api.unsplash.com/search/photos';
+const SB_BASE     = 'https://portal.us1-salesbuildr.com/public-api/quote-widget-template';
+
+// Template registry — add new Placid templates here as they're created
+const TEMPLATES = {
+  chevron: {
+    uuid:        'o1dobplzksihm',
+    name:        'Chevron',
+    colorLayers: ['chevron', 'accent_bar']
+  }
+  // future templates added here:
+  // split:    { uuid: '...', name: 'Split Panel', colorLayers: ['color_panel'] },
+  // minimal:  { uuid: '...', name: 'Minimal',    colorLayers: ['accent_stripe'] }
+};
+
+// Industry → Unsplash search keyword mapping
+const INDUSTRY_KEYWORDS = {
+  technology:   'modern technology office professional',
+  healthcare:   'healthcare medical professional clinic',
+  legal:        'law office professional corporate',
+  finance:      'financial business corporate office',
+  manufacturing:'manufacturing industrial professional',
+  education:    'education learning institution professional',
+  realestate:   'modern building architecture professional',
+  retail:       'retail business professional commerce',
+  services:     'professional business office team',
+  generic:      'modern professional office business'
+};
+
+// ── Extract brand colour from website ─────────────────────
+async function extractBrandColor(url) {
+  try {
+    const res  = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FirstImpression/1.0)' },
+      signal:  AbortSignal.timeout(5000)
+    });
+    const html = await res.text();
+
+    // 1. Meta theme-color (most reliable)
+    const themeA = html.match(/name=["']theme-color["'][^>]+content=["']([#][0-9a-fA-F]{3,8})["']/i);
+    const themeB = html.match(/content=["']([#][0-9a-fA-F]{3,8})["'][^>]+name=["']theme-color["']/i);
+    if (themeA) return themeA[1].slice(0, 7);
+    if (themeB) return themeB[1].slice(0, 7);
+
+    // 2. CSS custom properties
+    const cssVar = html.match(/--(?:primary|brand|accent|main|color-primary|theme-color|base-color)[^:]*:\s*(#[0-9a-fA-F]{6})/i);
+    if (cssVar) return cssVar[1];
+
+    // 3. Common hex colours in styles (skip near-black and near-white)
+    const hexes = [...html.matchAll(/#([0-9a-fA-F]{6})/g)]
+      .map(m => '#' + m[1].toLowerCase())
+      .filter(h => !['#000000','#ffffff','#333333','#666666','#999999','#cccccc','#f0f0f0','#eeeeee'].includes(h));
+    if (hexes.length > 0) return hexes[0];
+
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// ── Unsplash photo search ─────────────────────────────────
+async function getPhoto(industry) {
+  const keyword = INDUSTRY_KEYWORDS[industry] || INDUSTRY_KEYWORDS.generic;
+  const params  = new URLSearchParams({
+    query:       keyword,
+    orientation: 'portrait',
+    per_page:    '5',
+    client_id:   process.env.UNSPLASH_ACCESS_KEY
+  });
+
+  const res  = await fetch(`${UNSPLASH_API}?${params}`);
+  const data = await res.json();
+
+  if (data.results && data.results.length > 0) {
+    // Pick a varied result based on current minute so reruns give different photos
+    const idx = new Date().getMinutes() % Math.min(data.results.length, 5);
+    return data.results[idx].urls.regular + '&w=1200&q=80';
+  }
+  throw new Error('Could not find a suitable photo. Try a different industry.');
+}
+
+// ── Placid image generation ───────────────────────────────
+async function generateImage(templateId, brandColor, photoUrl, logoUrl) {
+  const template = TEMPLATES[templateId];
+  if (!template) throw new Error(`Unknown template: ${templateId}`);
+
+  // Ensure 8-digit hex (add FF alpha for full opacity)
+  const hex8 = brandColor.replace('#', '').padEnd(6, '0').slice(0, 6).toUpperCase() + 'FF';
+  const color = '#' + hex8;
+
+  const layers = {
+    photo: { image: photoUrl },
+    logo:  { image: logoUrl  }
+  };
+  for (const layer of template.colorLayers) {
+    layers[layer] = { background_color: color };
+  }
+
+  const res  = await fetch(PLACID_API, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.PLACID_API_TOKEN}` },
+    body:    JSON.stringify({ template_uuid: template.uuid, layers })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || `Placid error ${res.status}`);
+
+  // Poll for completion (max 8 seconds)
+  let imageUrl = data.image_url;
+  if (!imageUrl && data.polling_url) {
+    for (let i = 0; i < 8; i++) {
+      await new Promise(r => setTimeout(r, 1000));
+      const poll     = await fetch(data.polling_url, { headers: { 'Authorization': `Bearer ${process.env.PLACID_API_TOKEN}` } });
+      const pollData = await poll.json();
+      if (pollData.image_url) { imageUrl = pollData.image_url; break; }
+    }
+  }
+  if (!imageUrl) throw new Error('Image generation timed out — please try again.');
+  return imageUrl;
+}
+
+// ── Build Salesbuildr overlay HTML ────────────────────────
+function buildOverlay(brandColor) {
+  return `<div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%;padding:40px 52px;text-align:center;">
+  <h2 style="font-size:24pt;font-weight:700;color:${brandColor};font-family:'Segoe UI',Arial,sans-serif;margin:0 0 12px 0;line-height:1.2;">{{company.name}}</h2>
+  <p style="font-size:12pt;color:#333333;font-family:'Segoe UI',Arial,sans-serif;margin:4px 0 2px;">Prepared for {{contact.firstName}} {{contact.lastName}}</p>
+  <p style="font-size:11pt;color:#666666;font-family:'Segoe UI',Arial,sans-serif;margin:2px 0;">Presented by {{owner.fullName}}</p>
+</div>`;
+}
+
+// ── Main handler ──────────────────────────────────────────
+exports.handler = async (event) => {
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'POST required.' }) };
+  }
+
+  let body;
+  try { body = JSON.parse(event.body); }
+  catch (e) { return { statusCode: 400, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'Invalid JSON.' }) }; }
+
+  const { action } = body;
+  const ok200 = (data) => ({ statusCode: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: true, ...data }) });
+  const err   = (msg, code = 500) => ({ statusCode: code, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: msg }) });
+
+  // ── ACTION: extract-color ──────────────────────────────
+  if (action === 'extract-color') {
+    const { websiteUrl } = body;
+    if (!websiteUrl) return err('websiteUrl required.', 400);
+    const color = await extractBrandColor(websiteUrl);
+    return ok200({ color, found: !!color });
+  }
+
+  // ── ACTION: generate ───────────────────────────────────
+  if (action === 'generate') {
+    const { templateId, brandColor, logoUrl, industry } = body;
+    if (!brandColor) return err('brandColor required.', 400);
+    if (!logoUrl)    return err('logoUrl required.', 400);
+
+    try {
+      const photoUrl = await getPhoto(industry || 'generic');
+      const imageUrl = await generateImage(templateId || 'chevron', brandColor, photoUrl, logoUrl);
+      return ok200({ imageUrl, photoUrl });
+    } catch (e) {
+      return err(e.message);
+    }
+  }
+
+  // ── ACTION: push ───────────────────────────────────────
+  if (action === 'push') {
+    const { imageUrl, companyName, brandColor, apiKey, integrationKey } = body;
+    if (!apiKey || !integrationKey) return err('Salesbuildr credentials required.', 401);
+    if (!imageUrl)                  return err('imageUrl required.', 400);
+
+    const overlay = buildOverlay(brandColor || '#1a1a1a');
+    const name    = companyName ? `${companyName} – Cover Page` : 'Cover Page';
+
+    try {
+      const res = await fetch(SB_BASE, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'api-key': apiKey, 'integration-key': integrationKey },
+        body:    JSON.stringify({
+          name,
+          widget: {
+            type:           'image',
+            hidden:         false,
+            locked:         false,
+            attachments:    [],
+            image:          { ref: imageUrl, source: imageUrl, mediaType: 'image' },
+            topTemplate:    null,
+            middleTemplate: null,
+            bottomTemplate: overlay
+          },
+          order: 950
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) return err(data.message || `Salesbuildr error ${res.status}`);
+      return ok200({ salesbuildrId: data.id, name });
+    } catch (e) {
+      return err(e.message);
+    }
+  }
+
+  return err('Unknown action.', 400);
+};
