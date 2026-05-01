@@ -160,16 +160,51 @@ exports.handler = async (event) => {
     return ok200({ color, found: !!color });
   }
 
-  // ── ACTION: generate ───────────────────────────────────
-  if (action === 'generate') {
+  // ── ACTION: start (phase 1 — Unsplash + kick off Placid) ─
+  if (action === 'start') {
     const { templateId, brandColor, logoUrl, industry } = body;
     if (!brandColor) return err('brandColor required.', 400);
     if (!logoUrl)    return err('logoUrl required.', 400);
 
     try {
       const photoUrl = await getPhoto(industry || 'generic');
-      const imageUrl = await generateImage(templateId || 'chevron', brandColor, photoUrl, logoUrl);
-      return ok200({ imageUrl, photoUrl });
+      const template = TEMPLATES[templateId || 'chevron'];
+      if (!template) return err('Unknown template.', 400);
+
+      const hex8 = brandColor.replace('#', '').padEnd(6,'0').slice(0,6).toUpperCase() + 'FF';
+      const color = '#' + hex8;
+      const layers = { photo: { image: photoUrl }, logo: { image: logoUrl } };
+      for (const layer of template.colorLayers) layers[layer] = { background_color: color };
+
+      const res  = await fetch(PLACID_API, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.PLACID_API_TOKEN}` },
+        body:    JSON.stringify({ template_uuid: template.uuid, layers })
+      });
+      const data = await res.json();
+      if (!res.ok) return err(data.message || `Placid error ${res.status}`);
+
+      // Return immediately — client will poll
+      return ok200({ imageId: data.id, photoUrl, status: data.status, imageUrl: data.image_url || null });
+    } catch (e) {
+      return err(e.message);
+    }
+  }
+
+  // ── ACTION: poll (phase 2 — check if Placid is done) ──
+  if (action === 'poll') {
+    const { imageId } = body;
+    if (!imageId) return err('imageId required.', 400);
+    try {
+      const res  = await fetch(`https://api.placid.app/api/rest/images/${imageId}`, {
+        headers: { 'Authorization': `Bearer ${process.env.PLACID_API_TOKEN}` }
+      });
+      const data = await res.json();
+      return ok200({
+        ready:    data.status === 'finished' && !!data.image_url,
+        imageUrl: data.image_url || null,
+        status:   data.status
+      });
     } catch (e) {
       return err(e.message);
     }
