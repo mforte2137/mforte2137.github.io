@@ -24,18 +24,18 @@ const TEMPLATES = {
   // minimal:  { uuid: '...', name: 'Minimal',    colorLayers: ['accent_stripe'] }
 };
 
-// Industry → Unsplash search keyword mapping
+// Photo category → Unsplash search keyword mapping (all tech-focused)
 const INDUSTRY_KEYWORDS = {
-  technology:   'modern technology office professional',
-  healthcare:   'healthcare medical professional clinic',
-  legal:        'law office professional corporate',
-  finance:      'financial business corporate office',
-  manufacturing:'manufacturing industrial professional',
-  education:    'education learning institution professional',
-  realestate:   'modern building architecture professional',
-  retail:       'retail business professional commerce',
-  services:     'professional business office team',
-  generic:      'modern professional office business'
+  office:        'modern office team computers professional workspace',
+  datacenter:    'data center server room technology infrastructure',
+  cloud:         'cloud technology server digital infrastructure',
+  network:       'network cables ethernet connectivity technology',
+  security:      'cybersecurity data security digital protection lock',
+  consulting:    'business IT consulting meeting professional team',
+  technician:    'IT technician network engineer technology support field',
+  abstract_lines:'abstract technology digital lines light background',
+  abstract_circuit:'circuit board technology macro abstract close up',
+  abstract_fiber:'fiber optic light technology abstract bokeh glow'
 };
 
 // ── Extract brand colour from website ─────────────────────
