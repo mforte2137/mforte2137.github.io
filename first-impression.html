@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>First Impression — Branded Cover Page Creator</title>
+  <link rel="stylesheet" href="first-impression.css">
+</head>
+<body>
+<div class="container">
+
+  <header class="top">
+    <span class="brand">First Impression</span>
+    <span>Branded Cover Page Creator</span>
+  </header>
+
+  <!-- ===================================================
+       VIEW 1: Form
+       =================================================== -->
+  <section id="form-view">
+    <h1 class="big-title">Make it personal.</h1>
+    <p class="big-lead">Enter your prospect's details and we'll generate a branded cover page in their colours — ready to drop into a Salesbuildr demo quote in seconds.</p>
+
+    <!-- STEP 1: Prospect -->
+    <div class="step">
+      <div class="step-label">Step 1 — Who is this for?</div>
+
+      <div class="field-group">
+        <label class="field-label" for="company-name">Prospect company name <span class="field-required">Required</span></label>
+        <input type="text" id="company-name" class="field-input" maxlength="80" placeholder="e.g. Tierney's IT Services">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="website-url">Their website URL <span class="field-optional">Optional — we'll try to extract their brand colour</span></label>
+        <div class="extract-row">
+          <input type="url" id="website-url" class="field-input" placeholder="https://tierneys.com">
+          <button type="button" id="extract-btn" class="extract-btn">Extract colour →</button>
+        </div>
+        <p id="extract-status" class="extract-status" hidden></p>
+      </div>
+    </div>
+
+    <!-- STEP 2: Branding -->
+    <div class="step">
+      <div class="step-label">Step 2 — Their branding</div>
+
+      <div class="field-group">
+        <label class="field-label">Brand colour <span class="field-required">Required</span></label>
+        <p class="field-hint">Auto-extracted from their website, or pick manually. This colours the design elements on the cover page.</p>
+        <div class="color-pick-row">
+          <input type="color" id="brand-color-picker" class="color-picker-lg" value="#1a4da0">
+          <input type="text"  id="brand-color-hex"    class="hex-input-lg" maxlength="7" value="#1a4da0" placeholder="#1a4da0">
+          <div class="color-preview" id="color-preview" style="background:#1a4da0;"></div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="logo-url">Their logo URL <span class="field-required">Required</span></label>
+        <p class="field-hint">Visit their website, right-click the logo → <em>Copy image address</em>, and paste it here. PNG with transparent background works best.</p>
+        <div class="logo-row">
+          <input type="url" id="logo-url" class="field-input" placeholder="https://tierneys.com/logo.png">
+          <button type="button" id="preview-logo-btn" class="preview-logo-btn">Preview</button>
+        </div>
+        <div id="logo-preview-area" class="logo-preview-area" hidden>
+          <img id="logo-preview-img" src="" alt="Logo preview" class="logo-preview-img">
+          <button type="button" id="logo-preview-clear" class="logo-clear-btn">✕</button>
+        </div>
+        <p class="field-hint" style="margin-top:8px;">No URL? <label for="logo-upload" class="upload-link">Upload a file instead</label></p>
+        <input type="file" id="logo-upload" accept="image/*" hidden>
+        <div id="logo-upload-name" class="logo-upload-name" hidden></div>
+      </div>
+    </div>
+
+    <!-- STEP 3: Photo style -->
+    <div class="step">
+      <div class="step-label">Step 3 — Photo style</div>
+      <div class="field-group">
+        <label class="field-label" for="industry">Industry <span class="field-required">Required</span></label>
+        <p class="field-hint">We search Unsplash for a professional photo that suits their sector.</p>
+        <select id="industry" class="field-select">
+          <option value="technology">Technology / IT / MSP</option>
+          <option value="healthcare">Healthcare / Medical</option>
+          <option value="legal">Legal / Law</option>
+          <option value="finance">Financial / Accounting</option>
+          <option value="manufacturing">Manufacturing / Industrial</option>
+          <option value="education">Education</option>
+          <option value="realestate">Real Estate</option>
+          <option value="retail">Retail / Commerce</option>
+          <option value="services">Professional Services</option>
+          <option value="generic">Generic / Business</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- STEP 4: Template -->
+    <div class="step">
+      <div class="step-label">Step 4 — Cover page template</div>
+      <div class="field-hint" style="margin-bottom:16px;">More templates coming soon. Select one to use it.</div>
+      <div class="template-grid" id="template-grid">
+
+        <button type="button" class="template-tile is-selected" data-template="chevron">
+          <div class="template-preview">
+            <div class="tp-chevron" id="tp-chevron-1"></div>
+            <div class="tp-bar"     id="tp-bar-1"></div>
+          </div>
+          <div class="template-name">Chevron</div>
+          <div class="template-check">✓</div>
+        </button>
+
+        <button type="button" class="template-tile is-soon" disabled>
+          <div class="template-preview tp-soon"><span>Coming<br>soon</span></div>
+          <div class="template-name">Split Panel</div>
+        </button>
+
+        <button type="button" class="template-tile is-soon" disabled>
+          <div class="template-preview tp-soon"><span>Coming<br>soon</span></div>
+          <div class="template-name">Minimal</div>
+        </button>
+
+        <button type="button" class="template-tile is-soon" disabled>
+          <div class="template-preview tp-soon"><span>Coming<br>soon</span></div>
+          <div class="template-name">Bold Block</div>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- STEP 5: Rep name -->
+    <div class="step">
+      <div class="step-label">Step 5 — Your details</div>
+      <div class="field-group">
+        <label class="field-label" for="rep-name">Your name <span class="field-optional">Optional — shown as presenter on the cover</span></label>
+        <input type="text" id="rep-name" class="field-input" maxlength="80" placeholder="e.g. Glen Brown, Salesbuildr">
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <button type="button" id="generate-btn" class="generate-btn">Generate Cover Page →</button>
+      <p class="form-note">Takes about 15 seconds — we find the photo, apply the branding, and render your cover page.</p>
+    </div>
+
+    <div id="form-error" class="form-error" hidden></div>
+
+  </section>
+
+  <!-- ===================================================
+       VIEW 2: Working
+       =================================================== -->
+  <section id="working-view" hidden>
+    <div class="working-inner">
+      <div class="spinner"></div>
+      <p class="working-title" id="working-title">Finding the perfect photo&hellip;</p>
+      <p class="working-sub"  id="working-sub">Searching Unsplash for your industry</p>
+    </div>
+  </section>
+
+  <!-- ===================================================
+       VIEW 3: Result
+       =================================================== -->
+  <section id="result-view" hidden>
+
+    <div class="result-header">
+      <div>
+        <div class="result-kicker">Cover Page Ready</div>
+        <h1 class="result-title" id="result-title"></h1>
+      </div>
+      <button type="button" id="restart-btn" class="secondary-btn">← Start Over</button>
+    </div>
+
+    <div class="result-layout">
+
+      <!-- Cover page preview -->
+      <div class="cover-preview-wrap">
+        <img id="cover-preview" class="cover-preview" src="" alt="Generated cover page">
+      </div>
+
+      <!-- Actions -->
+      <div class="result-actions">
+
+        <div class="action-card">
+          <div class="action-card-title">📥 Download PNG</div>
+          <p class="action-card-desc">Save the cover page as a high-resolution PNG — upload it to Salesbuildr's Cover Page section and add your variable overlays there.</p>
+          <a id="download-btn" class="action-btn action-btn-download" download>Download Cover Page</a>
+        </div>
+
+        <div class="action-card">
+          <div class="action-card-title">⚡ Save to Widget Library</div>
+          <p class="action-card-desc">Push directly to your Salesbuildr template library as an image widget with variable overlays pre-wired — ready to drag into any quote.</p>
+
+          <!-- Connect section -->
+          <div class="mini-connect" id="mini-connect">
+            <button type="button" class="mini-connect-toggle" id="mini-toggle">
+              Connect Salesbuildr <span class="mini-arrow" id="mini-arrow">▼</span>
+            </button>
+            <div class="mini-connect-body" id="mini-body" hidden>
+              <div class="mini-fields">
+                <div class="mini-field">
+                  <label class="mini-label">API Key <span class="mini-where">Admin → Integrations</span></label>
+                  <input type="password" id="sb-api-key" class="mini-input" placeholder="Your API key" autocomplete="off">
+                </div>
+                <div class="mini-field">
+                  <label class="mini-label">Integration Key <span class="mini-where">Provided by Salesbuildr</span></label>
+                  <input type="password" id="sb-int-key" class="mini-input" placeholder="Your integration key" autocomplete="off">
+                </div>
+              </div>
+              <label class="mini-remember"><input type="checkbox" id="sb-remember"> Remember on this device</label>
+            </div>
+          </div>
+
+          <button type="button" id="push-btn" class="action-btn action-btn-push">Save to Salesbuildr →</button>
+          <div id="push-result" class="push-result" hidden></div>
+        </div>
+
+      </div>
+    </div>
+
+  </section>
+
+  <footer class="tag">First Impression · Branded demo cover pages in seconds.</footer>
+
+</div>
+<script src="first-impression.js"></script>
+</body>
+</html>
