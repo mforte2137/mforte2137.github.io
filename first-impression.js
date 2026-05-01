@@ -230,14 +230,15 @@ generateBtn.addEventListener('click', async () => {
   const logoUrl     = logoFileUploaded ? logoDataUrl : logoUrlInput.value.trim();
 
   try {
+    // Phase 1 — find photo + start Placid generation
     workTitle.textContent = 'Finding the perfect photo…';
     workSub.textContent   = 'Searching Unsplash for your industry';
 
-    const res  = await fetch('/api/generate-cover', {
+    const startRes  = await fetch('/api/generate-cover', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({
-        action:     'generate',
+        action:     'start',
         templateId: selectedTemplate,
         brandColor,
         logoUrl,
@@ -245,14 +246,36 @@ generateBtn.addEventListener('click', async () => {
         companyName
       })
     });
+    const startData = await startRes.json();
+    if (!startRes.ok || !startData.ok) throw new Error(startData.error || 'Could not start generation.');
 
-    workTitle.textContent = 'Generating your cover page…';
-    workSub.textContent   = 'Placid is rendering the design — almost there';
+    // If Placid already finished synchronously (rare but possible)
+    if (startData.imageUrl) {
+      generatedImageUrl = startData.imageUrl;
+    } else {
+      // Phase 2 — poll until Placid finishes (client-side loop, each call < 1s)
+      workTitle.textContent = 'Rendering your cover page…';
+      workSub.textContent   = 'Placid is applying your branding — usually 10–15 seconds';
 
-    const data = await res.json();
-    if (!res.ok || !data.ok) throw new Error(data.error || 'Generation failed.');
+      const imageId = startData.imageId;
+      let ready = false;
 
-    generatedImageUrl = data.imageUrl;
+      for (let i = 0; i < 20; i++) {          // max 40 seconds
+        await new Promise(r => setTimeout(r, 2000));
+        const pollRes  = await fetch('/api/generate-cover', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ action: 'poll', imageId })
+        });
+        const pollData = await pollRes.json();
+        if (pollData.ok && pollData.ready) {
+          generatedImageUrl = pollData.imageUrl;
+          ready = true;
+          break;
+        }
+      }
+      if (!ready) throw new Error('Generation timed out — please try again.');
+    }
 
     // Show result
     resultTitle.textContent   = companyName;
