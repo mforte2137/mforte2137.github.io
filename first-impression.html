@@ -79,16 +79,22 @@
         <p class="field-hint">We search Unsplash for professional photos that suit their sector. Pick your favourite.</p>
         <div class="industry-row">
           <select id="industry" class="field-select">
-            <option value="technology">Technology / IT / MSP</option>
-            <option value="healthcare">Healthcare / Medical</option>
-            <option value="legal">Legal / Law</option>
-            <option value="finance">Financial / Accounting</option>
-            <option value="manufacturing">Manufacturing / Industrial</option>
-            <option value="education">Education</option>
-            <option value="realestate">Real Estate</option>
-            <option value="retail">Retail / Commerce</option>
-            <option value="services">Professional Services</option>
-            <option value="generic">Generic / Business</option>
+            <optgroup label="With People">
+              <option value="office">Modern Office &amp; Team</option>
+              <option value="consulting">IT Consulting</option>
+              <option value="technician">Field Technician</option>
+            </optgroup>
+            <optgroup label="Infrastructure &amp; Technology">
+              <option value="datacenter">Data Centre</option>
+              <option value="cloud">Cloud &amp; Infrastructure</option>
+              <option value="network">Network &amp; Connectivity</option>
+              <option value="security">Cybersecurity</option>
+            </optgroup>
+            <optgroup label="Abstract — No People">
+              <option value="abstract_lines">Abstract — Lines &amp; Light</option>
+              <option value="abstract_circuit">Abstract — Circuit &amp; Code</option>
+              <option value="abstract_fiber">Abstract — Fiber &amp; Glow</option>
+            </optgroup>
           </select>
           <button type="button" id="find-photos-btn" class="find-photos-btn">Find Photos →</button>
         </div>
