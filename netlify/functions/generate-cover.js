@@ -26,16 +26,16 @@ const TEMPLATES = {
 
 // Photo category → Unsplash search keyword mapping (all tech-focused)
 const INDUSTRY_KEYWORDS = {
-  office:        'modern office team computers professional workspace',
-  datacenter:    'data center server room technology infrastructure',
-  cloud:         'cloud technology server digital infrastructure',
-  network:       'network cables ethernet connectivity technology',
-  security:      'cybersecurity data security digital protection lock',
-  consulting:    'business IT consulting meeting professional team',
-  technician:    'IT technician network engineer technology support field',
-  abstract_lines:'abstract technology digital lines light background',
-  abstract_circuit:'circuit board technology macro abstract close up',
-  abstract_fiber:'fiber optic light technology abstract bokeh glow'
+  office:          'modern office team computers professional workspace',
+  datacenter:      'data center server room racks infrastructure',
+  cloud:           'cloud computing technology digital network server',
+  network:         'network cables ethernet switch router technology',
+  security:        'cybersecurity digital network protection encrypted screen',
+  consulting:      'business IT consulting meeting professional boardroom',
+  technician:      'IT technician network engineer field support technology',
+  abstract_lines:  'abstract technology digital lines neon light background',
+  abstract_circuit:'circuit board electronics macro technology close up',
+  abstract_fiber:  'fiber optic light bokeh glow technology abstract'
 };
 
 // ── Extract brand colour from website ─────────────────────
@@ -168,7 +168,7 @@ async function generateImage(templateId, brandColor, photoUrl, logoUrl) {
 // so we use bottomTemplate with top-heavy padding to sit inside the panel.
 function buildOverlay(brandColor) {
   const html = `<div style="text-align:center;width:100%;">
-  <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+  <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
   <h2 style="font-size:22pt;font-weight:700;color:${brandColor};font-family:'Segoe UI',Arial,sans-serif;margin:0 0 10px 0;line-height:1.2;">{{quote.title}}</h2>
   <p style="font-size:11pt;color:#333333;font-family:'Segoe UI',Arial,sans-serif;margin:3px 0;">Prepared for {{contact.firstName}} {{contact.lastName}}</p>
   <p style="font-size:10pt;color:#666666;font-family:'Segoe UI',Arial,sans-serif;margin:3px 0;">Presented by {{owner.fullName}}</p>
@@ -210,11 +210,13 @@ exports.handler = async (event) => {
   if (action === 'photos') {
     const { industry } = body;
     try {
-      const keyword = INDUSTRY_KEYWORDS[industry] || INDUSTRY_KEYWORDS.generic;
+      const keyword = INDUSTRY_KEYWORDS[industry] || INDUSTRY_KEYWORDS.office;
+      const page    = Math.max(1, parseInt(body.page) || 1);
       const params  = new URLSearchParams({
         query:       keyword,
         orientation: 'portrait',
-        per_page:    '8',
+        per_page:    '4',
+        page:        page,
         client_id:   process.env.UNSPLASH_ACCESS_KEY
       });
       const res  = await fetch(`${UNSPLASH_API}?${params}`);
@@ -222,7 +224,7 @@ exports.handler = async (event) => {
       if (!data.results || data.results.length === 0) return err('No photos found for this industry.');
 
       // Return 4 varied results — thumbnail for display, regular for generation
-      const photos = data.results.slice(0, 4).map(p => ({
+      const photos = data.results.map(p => ({
         id:        p.id,
         thumb:     p.urls.small,
         full:      p.urls.regular + '&w=1200&q=80',
