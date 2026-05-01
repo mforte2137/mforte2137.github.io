@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Scope Builder</title>
+  <link rel="stylesheet" href="project-scope.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>Project Scope Builder</h1>
+      <p class="sub">Build a customer-facing project scope with overview, task breakdown, timeline estimate, and exclusions — ready to push directly into Salesbuildr.</p>
+    </div>
+  </header>
+
+  <!-- ── Settings ── -->
+  <div class="card">
+    <div class="toolbar">
+      <div class="left">
+        <label>
+          Project title
+          <input type="text" id="projectTitle" placeholder="e.g. Azure Cloud Migration">
+        </label>
+        <label>
+          Customer name <span class="opt">(optional)</span>
+          <input type="text" id="customerName" placeholder="e.g. Acme Corp">
+        </label>
+        <label>
+          Hours per day
+          <input type="number" id="hoursPerDay" min="1" step="1" value="8">
+        </label>
+      </div>
+      <div class="right">
+        <label>
+          Load a preset
+          <div class="preset-row">
+            <select id="presetSelect">
+              <option value="">— Select preset —</option>
+              <option value="azure">☁️ Azure Migration</option>
+              <option value="m365">📧 Microsoft 365 Migration</option>
+              <option value="network">🔌 Network Infrastructure Upgrade</option>
+              <option value="onboarding">🤝 New Client Onboarding</option>
+              <option value="security">🛡️ Cybersecurity Assessment</option>
+              <option value="backup">💾 Backup &amp; DR Implementation</option>
+              <option value="server">🖥️ Server Refresh</option>
+            </select>
+            <button class="btn primary" id="loadPresetBtn">Load →</button>
+          </div>
+        </label>
+        <button class="btn danger" id="clearBtn">🧹 Clear all</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Project Overview ── -->
+  <div class="card section-card">
+    <h2 class="section-title">Project Overview</h2>
+    <p class="section-hint">A brief description of the engagement — appears at the top of the customer-facing scope. 2–3 sentences is ideal.</p>
+    <textarea id="overview" rows="3" placeholder="e.g. This project covers the migration of your on-premises server infrastructure to Microsoft Azure, delivering improved reliability, scalability, and remote access with minimal disruption to your team."></textarea>
+  </div>
+
+  <!-- ── Task Grid ── -->
+  <div class="card section-card">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">Scope of Work</h2>
+        <p class="section-hint">Rows with 0 hours are excluded from the output. Use Tab to move between fields quickly.</p>
+      </div>
+      <div class="col-toggles">
+        <span class="toggle-label">Show in customer output:</span>
+        <label class="toggle"><input type="checkbox" id="showRole" checked> Role</label>
+        <label class="toggle"><input type="checkbox" id="showHours"> Hours</label>
+        <label class="toggle"><input type="checkbox" id="showNotes" checked> Notes</label>
+      </div>
+    </div>
+    <div class="grid">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-task">Task</th>
+            <th class="col-role">Role</th>
+            <th class="col-hours">Est. Hours</th>
+            <th class="col-dur">Duration (internal)</th>
+            <th class="col-notes">Notes</th>
+            <th class="col-del"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="grid-footer">
+      <button class="btn" id="addRowBtn">➕ Add row</button>
+      <div class="pills">
+        <div class="pill"><span class="pill-label">Total hours</span><strong id="totalHours">0</strong></div>
+        <div class="pill"><span class="pill-label">Est. duration</span><strong id="totalDuration">—</strong></div>
+        <div class="pill"><span class="pill-label">Rows in scope</span><strong id="includedCount">0</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Exclusions ── -->
+  <div class="card section-card">
+    <h2 class="section-title">What's Not Included</h2>
+    <p class="section-hint">One exclusion per line — appears as a bullet list in the scope output. Helps set expectations and reduce scope creep.</p>
+    <textarea id="exclusions" rows="4" placeholder="Third-party vendor coordination beyond 2 hours&#10;Application code changes or custom development&#10;End-user training (available as a separate engagement)&#10;Hardware procurement costs"></textarea>
+  </div>
+
+  <!-- ── Actions ── -->
+  <div class="card actions-card">
+    <div class="actions-left">
+      <button class="btn good" id="generateBtn">🧩 Generate Scope Widget</button>
+      <button class="btn" id="copyBtn" disabled>📋 Copy HTML</button>
+    </div>
+    <div class="actions-right">
+      <!-- Connect Salesbuildr -->
+      <div class="sb-connect">
+        <button type="button" class="sb-toggle" id="sbToggle">
+          ⚡ Save to Salesbuildr <span class="sb-arrow" id="sbArrow">▼</span>
+        </button>
+        <div class="sb-body" id="sbBody" hidden>
+          <p class="sb-hint">Enter your Salesbuildr credentials — saved to this device when you tick <em>Remember</em>.</p>
+          <div class="sb-fields">
+            <div class="sb-field">
+              <label class="sb-label">API Key <span class="sb-where">Admin → Integrations</span></label>
+              <input type="password" id="sbApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
+            </div>
+            <div class="sb-field">
+              <label class="sb-label">Integration Key <span class="sb-where">Provided by Salesbuildr</span></label>
+              <input type="password" id="sbIntKey" class="sb-input" placeholder="Your integration key" autocomplete="new-password">
+            </div>
+          </div>
+          <div class="sb-row">
+            <label class="sb-remember"><input type="checkbox" id="sbRemember"> Remember on this device</label>
+            <input type="text" id="sbPrefix" class="sb-prefix" maxlength="40" placeholder="Optional label e.g. Acme Corp">
+            <button type="button" id="sbPushBtn" class="btn good" disabled>Save to Salesbuildr →</button>
+          </div>
+          <div id="sbResult" class="sb-result" hidden></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Output panels ── -->
+  <div class="output">
+    <div class="card panel">
+      <h2 class="panel-title">Generated HTML</h2>
+      <p class="panel-hint">Paste into Salesbuildr via the <strong>&lt;&nbsp;&gt;</strong> Source Code button in TinyMCE.</p>
+      <pre id="htmlOut"></pre>
+    </div>
+    <div class="card panel">
+      <h2 class="panel-title">Preview</h2>
+      <p class="panel-hint">Approximate preview — Salesbuildr may apply its own typography.</p>
+      <div class="preview-box" id="preview"></div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+<script src="project-scope.js"></script>
+</body>
+</html>
