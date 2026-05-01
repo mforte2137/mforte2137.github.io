@@ -168,7 +168,7 @@ async function generateImage(templateId, brandColor, photoUrl, logoUrl) {
 // so we use bottomTemplate with top-heavy padding to sit inside the panel.
 function buildOverlay(brandColor) {
   const html = `<div style="text-align:center;width:100%;">
-  <br><br><br><br><br><br><br><br>
+  <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
   <h2 style="font-size:22pt;font-weight:700;color:${brandColor};font-family:'Segoe UI',Arial,sans-serif;margin:0 0 10px 0;line-height:1.2;">{{quote.title}}</h2>
   <p style="font-size:11pt;color:#333333;font-family:'Segoe UI',Arial,sans-serif;margin:3px 0;">Prepared for {{contact.firstName}} {{contact.lastName}}</p>
   <p style="font-size:10pt;color:#666666;font-family:'Segoe UI',Arial,sans-serif;margin:3px 0;">Presented by {{owner.fullName}}</p>
