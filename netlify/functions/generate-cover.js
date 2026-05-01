@@ -130,12 +130,24 @@ async function generateImage(templateId, brandColor, photoUrl, logoUrl) {
 }
 
 // ── Build Salesbuildr overlay HTML ────────────────────────
+// Uses topTemplate=null, middleTemplate=null, bottomTemplate=content
+// The white rounded rectangle sits in the lower-middle of the image,
+// so we use bottomTemplate with top-heavy padding to sit inside the panel.
 function buildOverlay(brandColor) {
-  return `<div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%;padding:40px 52px;text-align:center;">
-  <h2 style="font-size:24pt;font-weight:700;color:${brandColor};font-family:'Segoe UI',Arial,sans-serif;margin:0 0 12px 0;line-height:1.2;">{{company.name}}</h2>
-  <p style="font-size:12pt;color:#333333;font-family:'Segoe UI',Arial,sans-serif;margin:4px 0 2px;">Prepared for {{contact.firstName}} {{contact.lastName}}</p>
-  <p style="font-size:11pt;color:#666666;font-family:'Segoe UI',Arial,sans-serif;margin:2px 0;">Presented by {{owner.fullName}}</p>
+  const html = `<div style="display:flex;flex-direction:column;justify-content:flex-start;align-items:center;height:100%;padding:32px 48px 16px;text-align:center;">
+  <h2 style="font-size:22pt;font-weight:700;color:${brandColor};font-family:'Segoe UI',Arial,sans-serif;margin:0 0 10px 0;line-height:1.2;">{{company.name}}</h2>
+  <p style="font-size:11pt;color:#333333;font-family:'Segoe UI',Arial,sans-serif;margin:3px 0;">Prepared for {{contact.firstName}} {{contact.lastName}}</p>
+  <p style="font-size:10pt;color:#666666;font-family:'Segoe UI',Arial,sans-serif;margin:3px 0;">Presented by {{owner.fullName}}</p>
 </div>`;
+  return html;
+}
+
+function buildOverlayZones(brandColor) {
+  return {
+    topTemplate:    null,
+    middleTemplate: buildOverlay(brandColor),
+    bottomTemplate: null
+  };
 }
 
 // ── Main handler ──────────────────────────────────────────
@@ -246,8 +258,8 @@ exports.handler = async (event) => {
     if (!apiKey || !integrationKey) return err('Salesbuildr credentials required.', 401);
     if (!imageUrl)                  return err('imageUrl required.', 400);
 
-    const overlay = buildOverlay(brandColor || '#1a1a1a');
-    const name    = companyName ? `${companyName} – Cover Page` : 'Cover Page';
+    const zones = buildOverlayZones(brandColor || '#1a1a1a');
+    const name  = companyName ? `${companyName} – Cover Page` : 'Cover Page';
 
     try {
       const res = await fetch(SB_BASE, {
@@ -261,9 +273,9 @@ exports.handler = async (event) => {
             locked:         false,
             attachments:    [],
             image:          { ref: imageUrl, source: imageUrl, mediaType: 'image' },
-            topTemplate:    null,
-            middleTemplate: null,
-            bottomTemplate: overlay
+            topTemplate:    zones.topTemplate,
+            middleTemplate: zones.middleTemplate,
+            bottomTemplate: zones.bottomTemplate
           },
           order: 950
         })
