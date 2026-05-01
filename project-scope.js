@@ -411,6 +411,9 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   document.getElementById('htmlOut').textContent = '';
   document.getElementById('preview').innerHTML   = '';
   document.getElementById('copyBtn').disabled    = true;
+  sbPushBtn.textContent = 'Save to Salesbuildr →';
+  sbPushBtn.disabled    = !(sbApiKey.value.trim() && sbIntKey.value.trim());
+  sbResult.hidden       = true;
   render(); saveState(); showToast('Cleared');
 });
 
