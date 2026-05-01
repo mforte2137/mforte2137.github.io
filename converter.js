@@ -258,11 +258,11 @@ async function runAiAnalysis(sheetName) {
     // Rebuild mapping UI with AI suggestions applied
     buildMappingUI();
 
-    // Show notes
+    // Show notes — parse basic markdown and newlines
     status.textContent = '✓ AI analysis complete';
     spinner.style.display = 'none';
     if (aiAnalysis.notes) {
-      notes.textContent = aiAnalysis.notes;
+      notes.innerHTML = formatAiNotes(aiAnalysis.notes);
       notes.classList.remove('hidden');
     }
 
@@ -535,6 +535,15 @@ function runConversion() {
   renderPreview();
   document.getElementById('step-export').classList.remove('hidden');
   document.getElementById('step-export').scrollIntoView({ behavior:'smooth', block:'start' });
+
+  // Auto-open connect panel and load categories if credentials are already saved
+  const savedApi = localStorage.getItem(LS_API_KEY);
+  const savedInt = localStorage.getItem(LS_INT_KEY);
+  if (savedApi && savedInt) {
+    document.getElementById('sbBody').hidden = false;
+    document.getElementById('sbArrow').classList.add('open');
+    fetchCategories();
+  }
 }
 
 // ── Preview ───────────────────────────────────────────────
@@ -783,6 +792,17 @@ function resetAll() {
 }
 
 // ── Utilities ─────────────────────────────────────────────
+function formatAiNotes(text) {
+  // Escape HTML first to prevent XSS
+  let s = String(text)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // Convert **bold** markdown
+  s = s.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // Convert literal \n sequences and real newlines to <br>
+  s = s.replace(/\\n/g, '\n').replace(/\n/g, '<br>');
+  return s;
+}
+
 function showError(msg) {
   document.querySelectorAll('.error-msg').forEach(el => el.remove());
   const div = Object.assign(document.createElement('div'), { className:'error-msg', textContent:msg });
