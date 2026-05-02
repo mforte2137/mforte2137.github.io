@@ -247,7 +247,7 @@ function render() {
 
     // Task
     const tdTask = document.createElement('td'); tdTask.className = 'col-task';
-    const inTask = document.createElement('input'); inTask.type = 'text'; inTask.value = esc(r.task); inTask.placeholder = 'Task description';
+    const inTask = document.createElement('input'); inTask.type = 'text'; inTask.value = r.task || ''; inTask.placeholder = 'Task description';
     inTask.addEventListener('input', e => { rows[idx].task = e.target.value; saveState(); autoRefresh(); });
     tdTask.appendChild(inTask);
 
@@ -257,7 +257,7 @@ function render() {
 
     // Hours
     const tdHours = document.createElement('td'); tdHours.className = 'col-hours';
-    const inHours = document.createElement('input'); inHours.type = 'number'; inHours.min = '0'; inHours.step = '0.5'; inHours.value = esc(r.hours); inHours.placeholder = '0';
+    const inHours = document.createElement('input'); inHours.type = 'number'; inHours.min = '0'; inHours.step = '0.5'; inHours.value = r.hours || ''; inHours.placeholder = '0';
     inHours.addEventListener('input', e => { rows[idx].hours = e.target.value; updateSummary(); saveState(); autoRefresh(); });
     tdHours.appendChild(inHours);
 
@@ -267,7 +267,7 @@ function render() {
 
     // Notes
     const tdNotes = document.createElement('td'); tdNotes.className = 'col-notes';
-    const txNotes = document.createElement('textarea'); txNotes.value = esc(r.notes); txNotes.placeholder = 'Notes shown to customer...';
+    const txNotes = document.createElement('textarea'); txNotes.value = r.notes || ''; txNotes.placeholder = 'Notes shown to customer...';
     txNotes.addEventListener('input', e => { rows[idx].notes = e.target.value; saveState(); autoRefresh(); });
     tdNotes.appendChild(txNotes);
 
