@@ -239,6 +239,11 @@ function render() {
   rows.forEach((r, idx) => {
     const tr = document.createElement('tr');
 
+    // Drag handle
+    tr.dataset.idx = idx;
+    const tdDrag = document.createElement('td'); tdDrag.className = 'col-drag';
+    tdDrag.innerHTML = '<div class="drag-handle" title="Drag to reorder">⠿</div>';
+
     // Task
     const tdTask = document.createElement('td'); tdTask.className = 'col-task';
     const inTask = document.createElement('input'); inTask.type = 'text'; inTask.value = esc(r.task); inTask.placeholder = 'Task description';
@@ -273,10 +278,34 @@ function render() {
     delBtn.addEventListener('click', () => { rows.splice(idx, 1); render(); updateSummary(); saveState(); autoRefresh(); });
     tdDel.appendChild(delBtn);
 
-    tr.append(tdTask, tdRole, tdHours, tdDur, tdNotes, tdDel);
+    tr.append(tdDrag, tdTask, tdRole, tdHours, tdDur, tdNotes, tdDel);
     tbody.appendChild(tr);
   });
   updateSummary();
+  initSortable();
+}
+
+function initSortable() {
+  if (typeof Sortable === 'undefined') return;
+  const tbody = document.getElementById('tbody');
+  Sortable.create(tbody, {
+    handle:     '.drag-handle',
+    animation:  150,
+    ghostClass: 'row-ghost',
+    dragClass:  'row-drag',
+    onEnd: function() {
+      // Read new DOM order and sync the rows array
+      const newRows = [];
+      Array.from(tbody.querySelectorAll('tr')).forEach(tr => {
+        const idx = parseInt(tr.dataset.idx);
+        if (!isNaN(idx)) newRows.push(rows[idx]);
+      });
+      rows = newRows;
+      render();    // re-render so all indices and event listeners are correct
+      saveState();
+      autoRefresh();
+    }
+  });
 }
 
 function updateSummary() {
