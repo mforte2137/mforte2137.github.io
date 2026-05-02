@@ -255,6 +255,13 @@ $('generateBtn').addEventListener('click', () => {
     return;
   }
 
+  // Warn on negative ROI — don't block but make it very clear
+  if (result.roiPct < 0) {
+    showError(`⚠️ These figures produce a negative ROI (${Math.round(result.roiPct)}%). This widget is not ready to share with a customer. Try increasing the interruption frequency (typical unmanaged SMB: 3–4/month), the hourly rate, or reducing the investment figure — until the numbers tell a credible positive story.`);
+    // Still generate so they can see where the gap is, but return after showing error
+    // Continue to generate so they can diagnose the gap
+  }
+
   const company    = str('companyName');
   const brandColor = isValidHex($('brandColorHex').value.trim())
     ? $('brandColorHex').value.trim()
@@ -284,8 +291,16 @@ $('generateBtn').addEventListener('click', () => {
   $('output-view').hidden = false;
   $('output-view').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-  // Auto-open Salesbuildr if keys saved
-  if (localStorage.getItem(LS_API_KEY) && localStorage.getItem(LS_INT_KEY)) {
+  // Block push if ROI is negative — not ready to share
+  const roiNegative = result.roiPct < 0;
+  $('sbPushBtn').disabled = roiNegative || !($('sbApiKey').value.trim() && $('sbIntKey').value.trim());
+  if (roiNegative) {
+    $('sbBody').hidden = false;
+    $('sbArrow').classList.add('open');
+    $('sbResult').textContent = '⚠️ ROI is negative — adjust your inputs before saving to Salesbuildr.';
+    $('sbResult').className   = 'sb-result error';
+    $('sbResult').classList.remove('hidden');
+  } else if (localStorage.getItem(LS_API_KEY) && localStorage.getItem(LS_INT_KEY)) {
     $('sbBody').hidden = false;
     $('sbArrow').classList.add('open');
     updatePushBtn();
