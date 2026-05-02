@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Guide — Salesbuildr</title>
+  <link rel="stylesheet" href="sales-guide.css">
+</head>
+<body>
+<div class="container">
+
+  <header class="top">
+    <span class="brand">Salesbuildr</span>
+    <span>Sales Guide</span>
+  </header>
+
+  <!-- Save/Resume banner -->
+  <div id="resumeBanner" class="resume-banner hidden">
+    <div class="resume-inner">
+      <span class="resume-icon">💾</span>
+      <div class="resume-text">
+        <strong id="resumeTitle">Saved session found</strong>
+        <span id="resumeSubtitle"></span>
+      </div>
+      <div class="resume-actions">
+        <button type="button" id="resumeBtn" class="btn-resume">Resume →</button>
+        <button type="button" id="dismissBtn" class="btn-dismiss">Dismiss</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1>Build the right proposal,<br>for the right customer.</h1>
+    <p class="hero-sub">Start with the customer's problem — not your product catalog. The Sales Guide helps you build a buyer-focused proposal that moves a business owner to yes.</p>
+  </div>
+
+  <!-- ── MODE SELECTOR ── -->
+  <div id="mode-view" class="mode-selector">
+    <button type="button" class="mode-card" data-mode="discovery" id="btnDiscovery">
+      <div class="mode-icon">🔍</div>
+      <div class="mode-label">Discovery</div>
+      <div class="mode-sub">"I just got a call"</div>
+      <div class="mode-desc">You know there's a problem. Answer 6 questions and we'll build your recommendation, hardware checklist, and proposal — ready to complete after the site visit.</div>
+      <div class="mode-cta">Start Discovery →</div>
+    </button>
+    <div class="mode-divider">or</div>
+    <button type="button" class="mode-card" data-mode="execution" id="btnExecution">
+      <div class="mode-icon">⚡</div>
+      <div class="mode-label">Execution</div>
+      <div class="mode-sub">"I have the spec, I need the proposal"</div>
+      <div class="mode-desc">The design desk has done the work. Paste the confirmed spec — hardware list, services, scope — and we'll translate it into a buyer proposal that closes deals.</div>
+      <div class="mode-cta">Start Execution →</div>
+    </button>
+  </div>
+
+  <!-- ── DISCOVERY FORM ── -->
+  <section id="discovery-view" hidden>
+    <div class="form-header">
+      <button type="button" class="back-btn" id="discBackBtn">← Change mode</button>
+      <h2>🔍 Discovery <span class="mode-tag">"I just got a call"</span></h2>
+      <p class="form-lead">Answer these six questions about the customer and their situation. The more specific you are, the more useful the output.</p>
+    </div>
+
+    <div class="q-card">
+      <div class="q-num">1</div>
+      <div class="q-body">
+        <label class="q-label">What's their biggest challenge right now?</label>
+        <p class="q-hint">Pick the one that best describes the primary pain — not the symptom, the underlying problem.</p>
+        <div class="chips-wrap" id="chips-challenge">
+          <button class="chip" data-val="Unreliable IT — constant outages and slow systems">Unreliable IT</button>
+          <button class="chip" data-val="Security concerns — worried about breach or ransomware">Security concerns</button>
+          <button class="chip" data-val="Compliance pressure — audit, insurance, or regulation deadline">Compliance pressure</button>
+          <button class="chip" data-val="Growing team — IT can't keep up with headcount">Growing team</button>
+          <button class="chip" data-val="Bad current MSP — underperforming provider they want to replace">Bad current MSP</button>
+          <button class="chip" data-val="No IT support — they've been managing it themselves">No IT support</button>
+          <button class="chip" data-val="Recent incident — ransomware, breach, or major failure">Recent incident</button>
+        </div>
+        <input type="text" class="other-input" id="other-challenge" placeholder="Other — describe the challenge…">
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-num">2</div>
+      <div class="q-body">
+        <label class="q-label">What kind of business are they?</label>
+        <p class="q-hint">Industry and size shapes the language and the risk profile.</p>
+        <div class="q-row">
+          <select id="q-industry" class="q-select">
+            <option value="">Select industry…</option>
+            <option value="Healthcare / Medical">Healthcare / Medical</option>
+            <option value="Legal / Law firm">Legal / Law firm</option>
+            <option value="Financial / Accounting">Financial / Accounting</option>
+            <option value="Manufacturing / Industrial">Manufacturing / Industrial</option>
+            <option value="Professional Services">Professional Services</option>
+            <option value="Retail / Commerce">Retail / Commerce</option>
+            <option value="Education">Education</option>
+            <option value="Non-profit">Non-profit</option>
+            <option value="Technology / IT">Technology / IT</option>
+            <option value="Other / General business">Other / General business</option>
+          </select>
+          <input type="number" id="q-staff" class="q-num-input" min="1" placeholder="Staff count">
+        </div>
+        <input type="text" class="other-input" id="q-company" placeholder="Customer company name (optional — used in output)">
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-num">3</div>
+      <div class="q-body">
+        <label class="q-label">What triggered this conversation?</label>
+        <p class="q-hint">The trigger is often the strongest urgency angle in the proposal.</p>
+        <div class="chips-wrap" id="chips-trigger">
+          <button class="chip" data-val="Something broke or failed">Something broke</button>
+          <button class="chip" data-val="Security incident or phishing attack">Security incident</button>
+          <button class="chip" data-val="Compliance audit or deadline coming up">Compliance deadline</button>
+          <button class="chip" data-val="New leadership reviewing IT">New leadership</button>
+          <button class="chip" data-val="Current contract or MSP agreement ending">Contract renewal</button>
+          <button class="chip" data-val="Proactive outreach — they reached out first">Proactive outreach</button>
+          <button class="chip" data-val="Referral from existing customer">Referral</button>
+        </div>
+        <input type="text" class="other-input" id="other-trigger" placeholder="Other — describe the trigger…">
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-num">4</div>
+      <div class="q-body">
+        <label class="q-label">What outcome matters most to the decision-maker?</label>
+        <p class="q-hint">This is what the CFO or business owner actually cares about — not what the IT manager cares about.</p>
+        <div class="chips-wrap" id="chips-outcome">
+          <button class="chip" data-val="Less downtime and more reliable systems">Less downtime</button>
+          <button class="chip" data-val="Confidence that they're protected from cyber threats">Security confidence</button>
+          <button class="chip" data-val="Pass a compliance audit or cyber insurance renewal">Pass an audit</button>
+          <button class="chip" data-val="Lower and more predictable IT costs">Lower IT costs</button>
+          <button class="chip" data-val="IT that can support a growing team without friction">Support growth</button>
+          <button class="chip" data-val="Peace of mind — IT just works and someone else handles it">Peace of mind</button>
+          <button class="chip" data-val="Protect the business reputation and client relationships">Protect reputation</button>
+        </div>
+        <input type="text" class="other-input" id="other-outcome" placeholder="Other — what matters most to them?">
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-num">5</div>
+      <div class="q-body">
+        <label class="q-label">What are they comparing you against?</label>
+        <p class="q-hint">Your biggest competitor is usually inertia — doing nothing.</p>
+        <div class="chips-wrap" id="chips-comparison" data-single="true">
+          <button class="chip" data-val="Doing nothing — the biggest competitor is inertia">Doing nothing</button>
+          <button class="chip" data-val="Managing IT internally with their own staff">In-house IT</button>
+          <button class="chip" data-val="A competing MSP they're also talking to">Competitor MSP</button>
+          <button class="chip" data-val="Their current MSP they're considering staying with">Current incumbent</button>
+          <button class="chip" data-val="First time buying managed IT — no direct comparison">First time buying</button>
+        </div>
+        <input type="text" class="other-input" id="other-comparison" placeholder="Other — what's the alternative they're considering?">
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-num">6</div>
+      <div class="q-body">
+        <label class="q-label">What's the shape of this engagement?</label>
+        <p class="q-hint">Pick the closest match — you can select more than one.</p>
+        <div class="chips-wrap" id="chips-shape">
+          <button class="chip" data-val="Fully managed services — ongoing monthly relationship">Fully managed services</button>
+          <button class="chip" data-val="Network upgrade — hardware replacement and infrastructure">Network upgrade</button>
+          <button class="chip" data-val="Project work plus ongoing managed services">Project + ongoing managed</button>
+          <button class="chip" data-val="Security-first — EDR, email security, backup, monitoring">Security-first</button>
+          <button class="chip" data-val="Compliance-driven — HIPAA, NIST, cyber insurance">Compliance-driven</button>
+          <button class="chip" data-val="New client onboarding — first engagement">New client onboarding</button>
+          <button class="chip" data-val="Microsoft 365 or Azure migration">Cloud / M365 migration</button>
+        </div>
+        <input type="text" class="other-input" id="other-shape" placeholder="Other — describe the engagement…">
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <button type="button" id="discGenerateBtn" class="btn-generate">Build My Recommendation →</button>
+      <div class="footer-note">
+        <button type="button" id="saveSessionBtn" class="btn-save">💾 Save &amp; Resume Later</button>
+        <span class="footer-hint">Your answers are saved to this device — come back after the site visit to complete the proposal.</span>
+      </div>
+    </div>
+    <div id="discError" class="form-error hidden"></div>
+  </section>
+
+  <!-- ── EXECUTION FORM ── -->
+  <section id="execution-view" hidden>
+    <div class="form-header">
+      <button type="button" class="back-btn" id="execBackBtn">← Change mode</button>
+      <h2>⚡ Execution <span class="mode-tag">"I have the spec, I need the proposal"</span></h2>
+      <p class="form-lead">Paste the confirmed solution below — hardware list, services, project scope, whatever the design desk or senior engineer put together. We'll translate it into a proposal that moves the customer to yes.</p>
+    </div>
+
+    <div class="q-card">
+      <div class="q-body">
+        <label class="q-label">Confirmed solution specification</label>
+        <p class="q-hint">Paste or type the spec — product names, quantities, services, project notes. The more detail, the more specific the output. Technical language is fine here; we'll handle the translation.</p>
+        <textarea id="exec-spec" rows="10" class="spec-input" placeholder="e.g.
+- Sophos XGS 136 next-gen firewall + 3yr Xstream Protection license
+- 1x Ubiquiti USW-48-PoE managed switch
+- 3x Ubiquiti U6 Pro wireless access points
+- After-hours installation (approx 8 hrs engineer, 4 hrs senior engineer)
+- Sophos MDR — Managed Detection &amp; Response (monthly)
+- Network monitoring and management (monthly)
+- 1yr hardware warranty support included"></textarea>
+        <div class="char-counter"><span id="specCount">0</span> characters</div>
+      </div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-body">
+        <label class="q-label">Customer context <span class="optional-tag">Optional but useful</span></label>
+        <p class="q-hint">A sentence about who the customer is and what they care about — helps Claude frame the proposal for the right audience.</p>
+        <input type="text" id="exec-context" class="q-input" maxlength="200" placeholder="e.g. Law firm, 15 staff, had a phishing incident last month, compliance audit in Q1">
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <button type="button" id="execGenerateBtn" class="btn-generate">Translate to Proposal →</button>
+    </div>
+    <div id="execError" class="form-error hidden"></div>
+  </section>
+
+  <!-- ── WORKING STATE ── -->
+  <section id="working-view" hidden>
+    <div class="working-inner">
+      <div class="spinner"></div>
+      <p class="working-title" id="workingTitle">Analyzing the opportunity…</p>
+      <p class="working-sub" id="workingSub">Claude is reading the customer situation and building your recommendation</p>
+    </div>
+  </section>
+
+  <!-- ── RESULTS VIEW ── -->
+  <section id="results-view" hidden>
+
+    <div class="results-header">
+      <div>
+        <div class="results-kicker" id="resultsMode"></div>
+        <h2 class="results-title" id="resultsTitle"></h2>
+      </div>
+      <button type="button" id="startOverBtn" class="back-btn">← Start over</button>
+    </div>
+
+    <!-- Coaching insight — the key sales moment -->
+    <div class="coaching-card" id="coachingCard">
+      <div class="coaching-icon">💡</div>
+      <div class="coaching-body">
+        <div class="coaching-label">Sales coaching insight</div>
+        <p class="coaching-text" id="coachingText"></p>
+      </div>
+    </div>
+
+    <!-- Solution summary -->
+    <div class="summary-card" id="summaryCard">
+      <div class="summary-label">Recommended approach</div>
+      <p class="summary-text" id="summaryText"></p>
+    </div>
+
+    <!-- Hardware checklist (Discovery only, if hardware needed) -->
+    <div id="hardwareSection" class="result-section hidden">
+      <div class="section-header">
+        <span class="section-icon">🔧</span>
+        <div>
+          <div class="section-title">Hardware checklist — confirm at site visit</div>
+          <div class="section-sub">These components need to be specified before you can finalise the quote. Use this list at the site survey.</div>
+        </div>
+      </div>
+      <div id="hardwareList" class="hardware-list"></div>
+      <div class="hardware-note">After the site visit, use the <strong>Special Bid Converter</strong> to import distributor pricing directly into Salesbuildr.</div>
+    </div>
+
+    <!-- Services recommended -->
+    <div id="servicesSection" class="result-section hidden">
+      <div class="section-header">
+        <span class="section-icon">⚡</span>
+        <div>
+          <div class="section-title">Services to include</div>
+          <div class="section-sub">Core services and optional add-ons recommended for this customer</div>
+        </div>
+      </div>
+      <div id="servicesList" class="services-list"></div>
+    </div>
+
+    <!-- Widget briefs preview -->
+    <div class="result-section">
+      <div class="section-header">
+        <span class="section-icon">📄</span>
+        <div>
+          <div class="section-title">Proposal narrative — W1 to W5</div>
+          <div class="section-sub">These briefs drive the five buyer-journey widgets. Click "Generate Widgets" to build them.</div>
+        </div>
+      </div>
+      <div id="widgetBriefs" class="widget-briefs"></div>
+    </div>
+
+    <!-- Three output actions -->
+    <div class="output-actions">
+      <div class="action-card" id="actionWidgets">
+        <div class="action-icon">🧩</div>
+        <div class="action-title">Generate Proposal Widgets</div>
+        <div class="action-desc">Build all 5 buyer-journey widgets based on this recommendation — ready to paste into Salesbuildr.</div>
+        <button type="button" id="genWidgetsBtn" class="btn-action btn-primary-action">Generate 5 Widgets →</button>
+        <div id="widgetsWorking" class="action-working hidden">
+          <div class="spinner-sm"></div>
+          <span id="widgetsWorkingMsg">Generating widget 1 of 5…</span>
+        </div>
+        <div id="widgetsResult" class="action-result hidden"></div>
+      </div>
+
+      <div class="action-card">
+        <div class="action-icon">📋</div>
+        <div class="action-title">Open Project Scope Builder</div>
+        <div class="action-desc">Pre-load the Scope Builder with the right project type based on this recommendation.</div>
+        <button type="button" id="openScopeBtn" class="btn-action">Open Scope Builder →</button>
+      </div>
+
+      <div class="action-card">
+        <div class="action-icon">💰</div>
+        <div class="action-title">Build ROI Case</div>
+        <div class="action-desc">Open the ROI Builder pre-filled with this customer's profile and the strongest value angle.</div>
+        <button type="button" id="openRoiBtn" class="btn-action">Open ROI Builder →</button>
+      </div>
+    </div>
+
+    <!-- Salesbuildr widget push (shown after widgets generated) -->
+    <div id="widgetOutput" class="widget-output hidden">
+      <div class="out-tabs">
+        <button class="out-tab is-active" data-pane="preview">Preview</button>
+        <button class="out-tab" data-pane="code">HTML Code</button>
+      </div>
+      <iframe id="previewFrame" class="preview-frame" sandbox="allow-same-origin"></iframe>
+      <textarea id="htmlCode" class="html-code" readonly spellcheck="false"></textarea>
+
+      <div class="push-row">
+        <button type="button" id="copyWidgetsBtn" class="btn-secondary">📋 Copy HTML</button>
+        <div class="sb-connect" id="sbConnect">
+          <button type="button" class="sb-toggle" id="sbToggle">⚡ Save to Salesbuildr <span class="sb-arrow" id="sbArrow">▼</span></button>
+          <div class="sb-body" id="sbBody" hidden>
+            <div class="sb-fields">
+              <div class="sb-field">
+                <label class="sb-label">API Key <span class="sb-where">Admin → Integrations</span></label>
+                <input type="password" id="sbApiKey" class="sb-input" autocomplete="new-password" placeholder="Your API key">
+              </div>
+              <div class="sb-field">
+                <label class="sb-label">Integration Key <span class="sb-where">Provided by Salesbuildr</span></label>
+                <input type="password" id="sbIntKey" class="sb-input" autocomplete="new-password" placeholder="Your integration key">
+              </div>
+            </div>
+            <div class="sb-row">
+              <label class="sb-remember"><input type="checkbox" id="sbRemember"> Remember on this device</label>
+              <input type="text" id="sbPrefix" class="sb-prefix" maxlength="40" placeholder="Optional label e.g. Acme Corp">
+              <button type="button" id="sbPushBtn" class="btn-push" disabled>Save to Salesbuildr →</button>
+            </div>
+            <div id="sbResult" class="sb-result hidden"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+</div>
+<footer class="site-footer">Sales Guide · Salesbuildr — Guided selling for MSP teams</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script src="sales-guide.js"></script>
+</body>
+</html>
