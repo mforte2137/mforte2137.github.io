@@ -1,1 +1,222 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROI Builder — Salesbuildr</title>
+  <link rel="stylesheet" href="roi-builder.css">
+</head>
+<body>
+<div class="container">
+
+  <header class="top">
+    <span class="brand">Salesbuildr</span>
+    <span>ROI Builder</span>
+  </header>
+
+  <div class="hero">
+    <h1>Build the business case.</h1>
+    <p class="hero-sub">Turn your proposal into a financial argument. Enter a few numbers — we calculate the ROI and generate a customer-facing widget ready to drop into any Salesbuildr quote.</p>
+  </div>
+
+  <!-- ── FORM ── -->
+  <div id="form-view">
+
+    <!-- Section 1: Investment -->
+    <div class="step-card">
+      <div class="step-label">Investment</div>
+      <p class="step-hint">What is the customer paying? Enter the figures from your quote.</p>
+      <div class="field-grid">
+        <div class="field-group">
+          <label class="field-label" for="monthlyRecurring">Monthly recurring <span class="field-unit">$/month</span></label>
+          <input type="number" id="monthlyRecurring" class="field-input" min="0" step="1" placeholder="e.g. 2500">
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="oneTime">One-time / setup costs <span class="field-unit optional">$ optional</span></label>
+          <input type="number" id="oneTime" class="field-input" min="0" step="1" placeholder="e.g. 5000">
+        </div>
+      </div>
+      <div id="investmentSummary" class="investment-summary hidden"></div>
+    </div>
+
+    <!-- Section 2: Customer Profile -->
+    <div class="step-card">
+      <div class="step-label">Customer Profile</div>
+      <p class="step-hint">Used to personalise the widget and calculate productivity figures.</p>
+      <div class="field-grid">
+        <div class="field-group full-width">
+          <label class="field-label" for="companyName">Company name</label>
+          <input type="text" id="companyName" class="field-input" maxlength="80" placeholder="e.g. Tierney's IT Services">
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="industry">Industry</label>
+          <select id="industry" class="field-input">
+            <option value="generic">Generic / Professional Services</option>
+            <option value="healthcare">Healthcare / Medical</option>
+            <option value="legal">Legal / Law</option>
+            <option value="finance">Financial / Accounting</option>
+            <option value="retail">Retail / Commerce</option>
+            <option value="education">Education</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="staffCount">Number of staff</label>
+          <input type="number" id="staffCount" class="field-input" min="1" step="1" placeholder="e.g. 25">
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="hourlyRate">Avg. staff hourly rate <span class="field-unit">$/hr</span></label>
+          <input type="number" id="hourlyRate" class="field-input" min="1" step="1" placeholder="e.g. 45">
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Current IT Pain -->
+    <div class="step-card">
+      <div class="step-label">Current IT Pain</div>
+      <p class="step-hint">Estimate the impact of IT issues on their team today. Conservative figures make a more credible case.</p>
+      <div class="field-grid">
+        <div class="field-group">
+          <label class="field-label" for="interruptionsPerMonth">IT interruptions per person per month</label>
+          <input type="number" id="interruptionsPerMonth" class="field-input" min="0" step="0.5" placeholder="e.g. 2">
+          <span class="field-hint-small">Slowdowns, support calls, system issues</span>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="hoursPerInterruption">Hours lost per interruption</label>
+          <input type="number" id="hoursPerInterruption" class="field-input" min="0" step="0.25" placeholder="e.g. 1.5">
+          <span class="field-hint-small">Including waiting time and recovery</span>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="currentITSpend">Current monthly IT spend <span class="field-unit optional">$ optional</span></label>
+          <input type="number" id="currentITSpend" class="field-input" min="0" step="1" placeholder="e.g. 3000">
+          <span class="field-hint-small">Existing support contracts, ad-hoc costs</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4: Services Included -->
+    <div class="step-card">
+      <div class="step-label">Services Included</div>
+      <p class="step-hint">Select the services in this proposal — each unlocks a relevant value category in the ROI calculation.</p>
+      <div class="service-checks">
+        <label class="service-check">
+          <input type="checkbox" id="svc-security" value="security" checked>
+          <div class="svc-body">
+            <span class="svc-name">🛡️ Managed Security / EDR</span>
+            <span class="svc-desc">Unlocks: Security risk reduction value</span>
+          </div>
+        </label>
+        <label class="service-check">
+          <input type="checkbox" id="svc-backup" value="backup" checked>
+          <div class="svc-body">
+            <span class="svc-name">💾 Backup &amp; Disaster Recovery</span>
+            <span class="svc-desc">Unlocks: Downtime avoidance value</span>
+          </div>
+        </label>
+        <label class="service-check">
+          <input type="checkbox" id="svc-helpdesk" value="helpdesk" checked>
+          <div class="svc-body">
+            <span class="svc-name">🎧 Helpdesk / NOC Monitoring</span>
+            <span class="svc-desc">Unlocks: Productivity recovery (faster resolution)</span>
+          </div>
+        </label>
+        <label class="service-check">
+          <input type="checkbox" id="svc-compliance" value="compliance">
+          <div class="svc-body">
+            <span class="svc-name">📋 Compliance Support</span>
+            <span class="svc-desc">Unlocks: Regulatory risk value (healthcare, legal, finance)</span>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Section 5: Widget Style -->
+    <div class="step-card">
+      <div class="step-label">Widget Style</div>
+      <p class="step-hint">Choose a colour for the ROI summary block and value category accents.</p>
+      <div class="color-pick-row">
+        <input type="color" id="brandColorPicker" class="color-picker-lg" value="#2563eb">
+        <input type="text"  id="brandColorHex"    class="hex-input-lg" maxlength="7" value="#2563eb">
+        <div class="color-preview" id="colorPreview" style="background:#2563eb;"></div>
+        <div class="color-presets">
+          <button class="color-preset" style="background:#2563eb;" data-color="#2563eb" title="Blue"></button>
+          <button class="color-preset" style="background:#059669;" data-color="#059669" title="Green"></button>
+          <button class="color-preset" style="background:#7c3aed;" data-color="#7c3aed" title="Purple"></button>
+          <button class="color-preset" style="background:#dc2626;" data-color="#dc2626" title="Red"></button>
+          <button class="color-preset" style="background:#0d2d5e;" data-color="#0d2d5e" title="Navy"></button>
+          <button class="color-preset" style="background:#0f172a;" data-color="#0f172a" title="Dark"></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <button type="button" id="generateBtn" class="btn-generate">Calculate ROI &amp; Generate Widget →</button>
+      <p class="form-note">All calculations use conservative industry benchmarks. Figures are estimates only.</p>
+    </div>
+    <div id="formError" class="form-error hidden"></div>
+
+  </div>
+
+  <!-- ── OUTPUT ── -->
+  <div id="output-view" hidden>
+
+    <div class="output-header">
+      <div>
+        <div class="output-kicker">ROI Widget Ready</div>
+        <h2 class="output-title" id="outputTitle"></h2>
+      </div>
+      <button type="button" id="restartBtn" class="btn-ghost">← Build another</button>
+    </div>
+
+    <!-- ROI Summary tiles -->
+    <div class="roi-tiles" id="roiTiles"></div>
+
+    <!-- Tabs -->
+    <div class="out-tabs">
+      <button class="out-tab is-active" data-pane="preview">Preview</button>
+      <button class="out-tab" data-pane="code">HTML Code</button>
+    </div>
+    <iframe id="previewFrame" class="preview-frame" sandbox="allow-same-origin"></iframe>
+    <textarea id="htmlCode" class="html-code" readonly spellcheck="false"></textarea>
+
+    <!-- Actions -->
+    <div class="output-actions">
+      <button type="button" id="copyBtn" class="btn-secondary">📋 Copy HTML</button>
+
+      <!-- Salesbuildr push -->
+      <div class="sb-connect" id="sbConnect">
+        <button type="button" class="sb-toggle" id="sbToggle">
+          ⚡ Save to Salesbuildr widget library
+          <span class="sb-arrow" id="sbArrow">▼</span>
+        </button>
+        <div class="sb-body" id="sbBody" hidden>
+          <p class="sb-hint">Credentials remembered from other tools — or enter them here.</p>
+          <div class="sb-fields">
+            <div class="sb-field">
+              <label class="sb-label">API Key <span class="sb-where">Admin → Integrations</span></label>
+              <input type="password" id="sbApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
+            </div>
+            <div class="sb-field">
+              <label class="sb-label">Integration Key <span class="sb-where">Provided by Salesbuildr</span></label>
+              <input type="password" id="sbIntKey" class="sb-input" placeholder="Your integration key" autocomplete="new-password">
+            </div>
+          </div>
+          <div class="sb-row">
+            <label class="sb-remember"><input type="checkbox" id="sbRemember"> Remember on this device</label>
+            <input type="text" id="sbPrefix" class="sb-prefix" maxlength="40" placeholder="Optional label e.g. Tierney's">
+            <button type="button" id="sbPushBtn" class="btn-push" disabled>Save to Salesbuildr →</button>
+          </div>
+          <div id="sbResult" class="sb-result hidden"></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="disclaimer">* ROI figures are estimates based on industry benchmarks and figures provided. Actual results will vary.</p>
+
+  </div>
+
+</div>
+<footer class="site-footer">ROI Builder · Salesbuildr — All calculations run in your browser.</footer>
+<script src="roi-builder.js"></script>
+</body>
+</html>
