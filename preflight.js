@@ -13,6 +13,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 const LS_API_KEY = 'sb_api_key';
+let   contentAbortCtrl = null;  // AbortController for in-flight content review
 const LS_INT_KEY = 'sb_int_key';
 
 // ── DOM handles ───────────────────────────────────────────
@@ -212,9 +213,16 @@ function renderStructuralResults(data) {
     passedSec.hidden = true;
   }
 
-  // Reset content review area
-  document.getElementById('content-results').hidden = true;
-  document.getElementById('content-working').hidden = true;
+  // Cancel any in-flight content review and reset the section
+  if (contentAbortCtrl) { contentAbortCtrl.abort(); contentAbortCtrl = null; }
+  document.getElementById('content-results').hidden  = true;
+  document.getElementById('content-working').hidden  = true;
+  // Reset PDF dropzone so the MSP can re-upload after fixing issues
+  const dz = document.getElementById('pdf-dropzone');
+  if (dz) {
+    dz.innerHTML = `<div class="pdf-dz-inner"><div class="pdf-dz-icon">📄</div><div class="pdf-dz-title">Drop your quote PDF here</div><div class="pdf-dz-sub">or <label for="pdf-input" class="pdf-browse">browse your files</label></div></div>`;
+    dz.style.borderStyle = 'dashed'; dz.style.borderColor = ''; dz.style.background = ''; dz.style.cursor = 'pointer';
+  }
 }
 
 // ── Collapsible sections ──────────────────────────────────
@@ -309,14 +317,16 @@ async function handlePdf(file) {
       throw new Error('Not enough text could be extracted from this PDF. It may be image-only or scanned.');
     }
 
-    // Send to content review
+    // Send to content review (cancellable via AbortController)
     const apiKey = apiKeyInput.value.trim();
     const intKey = intKeyInput.value.trim();
 
+    contentAbortCtrl = new AbortController();
     const res = await fetch('/api/preflight-check', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action: 'content', quoteId: lastQuoteId, apiKey, integrationKey: intKey, quoteText: normalized })
+      body:    JSON.stringify({ action: 'content', quoteId: lastQuoteId, apiKey, integrationKey: intKey, quoteText: normalized }),
+      signal:  contentAbortCtrl.signal
     });
 
     let data;
@@ -329,6 +339,7 @@ async function handlePdf(file) {
     contentResults.hidden = false;
 
   } catch (err) {
+    if (err.name === 'AbortError') return; // Re-check cancelled this — silently exit
     showError(err.message || 'Content review failed.');
     // Reset dropzone so they can try again
     pdfDropzone.innerHTML = `
