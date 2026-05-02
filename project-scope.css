@@ -89,6 +89,16 @@ thead th {
 tbody td { border-bottom: 1px solid rgba(15,23,42,.06); padding: 8px 10px; vertical-align: top; }
 tbody tr:last-child td { border-bottom: none; }
 tbody tr:hover td { background: rgba(15,23,42,.02); }
+.col-drag  { width: 28px; padding: 0 4px !important; }
+.drag-handle {
+  cursor: grab; color: var(--mute); font-size: 16px; line-height: 1;
+  padding: 6px 4px; text-align: center; user-select: none; opacity: .5;
+  transition: opacity .15s;
+}
+.drag-handle:hover  { opacity: 1; color: var(--text); }
+.drag-handle:active { cursor: grabbing; }
+.row-ghost { opacity: .4; background: var(--surface2) !important; }
+.row-drag  { background: #fff; box-shadow: 0 4px 16px rgba(15,23,42,.12); }
 .col-task  { width: 24%; min-width: 200px; }
 .col-role  { width: 13%; min-width: 120px; }
 .col-hours { width: 100px; }
