@@ -3,6 +3,7 @@
    ========================================================= */
 
 const LS_KEY     = 'sb_project_scope_v1';
+const ROLES      = ['PM', 'Senior Engineer', 'Engineer', 'Technician', 'Account Manager'];
 const LS_API_KEY = 'sb_api_key';
 const LS_INT_KEY = 'sb_int_key';
 
@@ -252,9 +253,7 @@ function render() {
 
     // Role
     const tdRole = document.createElement('td'); tdRole.className = 'col-role';
-    const inRole = document.createElement('input'); inRole.type = 'text'; inRole.value = esc(r.role); inRole.placeholder = 'e.g. Engineer';
-    inRole.addEventListener('input', e => { rows[idx].role = e.target.value; saveState(); autoRefresh(); });
-    tdRole.appendChild(inRole);
+    tdRole.appendChild(buildRoleSelect(r.role, idx));
 
     // Hours
     const tdHours = document.createElement('td'); tdHours.className = 'col-hours';
@@ -284,6 +283,84 @@ function render() {
   updateSummary();
   initSortable();
 }
+
+// ── Role multi-select ─────────────────────────────────────
+function buildRoleSelect(currentRole, idx) {
+  const selected = (currentRole || '').split(' / ').map(r => r.trim()).filter(Boolean);
+  const knownSelected   = selected.filter(r => ROLES.includes(r));
+  const customSelected  = selected.filter(r => !ROLES.includes(r));
+
+  const wrap = document.createElement('div');
+  wrap.className = 'role-select';
+
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'role-trigger' + (selected.length ? '' : ' placeholder');
+  trigger.textContent = selected.length ? selected.join(' / ') : 'Select roles…';
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'role-dropdown';
+  dropdown.hidden = true;
+
+  ROLES.forEach(role => {
+    const label = document.createElement('label');
+    label.className = 'role-option';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = role;
+    cb.checked = knownSelected.includes(role);
+    cb.addEventListener('change', () => updateRoleSelection(dropdown, trigger, idx));
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(' ' + role));
+    dropdown.appendChild(label);
+  });
+
+  const divider = document.createElement('div');
+  divider.className = 'role-divider';
+  dropdown.appendChild(divider);
+
+  const customWrap  = document.createElement('div');
+  customWrap.className = 'role-custom-wrap';
+  const customInput = document.createElement('input');
+  customInput.type  = 'text';
+  customInput.className   = 'role-custom';
+  customInput.placeholder = 'Other…';
+  customInput.value       = customSelected.join(' / ');
+  customInput.addEventListener('input',  () => updateRoleSelection(dropdown, trigger, idx));
+  customInput.addEventListener('click',  e  => e.stopPropagation());
+  customWrap.appendChild(customInput);
+  dropdown.appendChild(customWrap);
+
+  trigger.addEventListener('click', e => {
+    e.stopPropagation();
+    document.querySelectorAll('.role-dropdown').forEach(d => {
+      if (d !== dropdown) d.hidden = true;
+    });
+    dropdown.hidden = !dropdown.hidden;
+  });
+
+  wrap.appendChild(trigger);
+  wrap.appendChild(dropdown);
+  return wrap;
+}
+
+function updateRoleSelection(dropdown, trigger, idx) {
+  const parts = [];
+  dropdown.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => parts.push(cb.value));
+  const custom = dropdown.querySelector('.role-custom').value.trim();
+  if (custom) parts.push(custom);
+  const roleStr = parts.join(' / ');
+  rows[idx].role = roleStr;
+  trigger.textContent = roleStr || 'Select roles…';
+  trigger.classList.toggle('placeholder', !roleStr);
+  saveState();
+  autoRefresh();
+}
+
+// Close all role dropdowns when clicking outside
+document.addEventListener('click', () => {
+  document.querySelectorAll('.role-dropdown').forEach(d => d.hidden = true);
+});
 
 function initSortable() {
   if (typeof Sortable === 'undefined') return;
