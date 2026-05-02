@@ -46,16 +46,16 @@ const TOOLS = [
     icon: "idea"
   },
   {
-    title: "MSP Quote Preflight",
-    shortLabel: "Quote Preflight",
+    title: "ROI Builder",
+    shortLabel: "ROI Builder",
     description:
-      "Preflight reviews your quote for issues that could cause problems — before the buyer sees it. Spot the gaps, fix them early, send with confidence.",
-    category: "Quote",
-    url: "https://widgetcreator.netlify.app/preflight.html",
+      "Turn your proposal into a financial argument. Enter a few numbers — we calculate the ROI and generate a customer-facing widget ready to drop into any Salesbuildr quote.",
+    category: "Proposal",
+    url: "https://widgetcreator.netlify.app/roi-builder.html",
     badge: "new",
     updated: "2026-05-01",
-    gradient: "amber",
-    icon: "search"
+    gradient: "slate",
+    icon: "chart"
   },
   {
     title: "Cover Page Creator",
@@ -64,10 +64,22 @@ const TOOLS = [
       "Enter your prospect's details and we'll generate a branded cover page in their colours — ready to drop into a Salesbuildr demo quote in seconds.",
     category: "Proposal",
     url: "https://widgetcreator.netlify.app/first-impression.html",
-    badge: "new",
+    badge: "",
     updated: "2026-05-01",
     gradient: "rose",
     icon: "palette"
+  },
+  {
+    title: "MSP Quote Preflight",
+    shortLabel: "Quote Preflight",
+    description:
+      "Preflight reviews your quote for issues that could cause problems — before the buyer sees it. Spot the gaps, fix them early, send with confidence.",
+    category: "Quote",
+    url: "https://widgetcreator.netlify.app/preflight.html",
+    badge: "",
+    updated: "2026-05-01",
+    gradient: "amber",
+    icon: "search"
   },
   {
     title: "Document Converter",
@@ -82,8 +94,8 @@ const TOOLS = [
     icon: "doc"
   },
   {
-    title: "Special Bid Converter",
-    shortLabel: "Bid Converter",
+    title: "Import Special Pricing",
+    shortLabel: "Special Pricing",
     description:
       "Upload a vendor deal-reg file (xlsx / xls / csv) and convert it into a Salesbuildr import-ready format in seconds.",
     category: "Conversion",
@@ -101,7 +113,7 @@ const TOOLS = [
     category: "Scoping",
     url: "https://widgetcreator.netlify.app/project-scope.html",
     badge: "",
-    updated: "2026-04-28",
+    updated: "2026-05-01",
     gradient: "purple",
     icon: "calc"
   }
