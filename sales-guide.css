@@ -220,6 +220,7 @@ body { font-family: var(--sans); background: var(--paper); color: var(--ink); fo
 .sb-result.ok    { background: var(--good-soft); color: var(--good); }
 .sb-result.error { background: rgba(220,38,38,.07); color: #dc2626; }
 
+.hidden { display: none !important; }
 .site-footer { text-align: center; font-size: 12px; color: var(--mute); padding: 24px 0 8px; margin-top: 32px; }
 
 /* Spec file upload */
@@ -234,6 +235,26 @@ body { font-family: var(--sans); background: var(--paper); color: var(--ink); fo
 .spec-file-status.error { background: rgba(220,38,38,.06); border-color: rgba(220,38,38,.25); color: #dc2626; }
 .spec-file-clear { font: 500 12px var(--sans); background: none; border: none; color: inherit; cursor: pointer; opacity: .7; padding: 0; }
 .spec-file-clear:hover { opacity: 1; }
+
+/* Approach bullets */
+.approach-bullets { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.approach-bullets li { font-size: 14px; color: var(--ink); line-height: 1.5; }
+
+/* Widget options (color + mode) */
+.widget-options { background: var(--paper-alt); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 14px; }
+.widget-opt-label { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); margin-bottom: 6px; }
+.widget-mode-toggle { display: flex; gap: 8px; }
+.mode-radio { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; color: var(--ink); padding: 8px 14px; border: 1.5px solid var(--rule); border-radius: 8px; transition: all .12s; }
+.mode-radio:has(input:checked) { border-color: var(--accent); background: rgba(37,99,235,.06); color: var(--accent); font-weight: 600; }
+.mode-radio input { accent-color: var(--accent); }
+.guide-color-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.guide-presets { display: flex; gap: 7px; }
+.guide-preset { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: transform .1s, border-color .1s; }
+.guide-preset:hover { transform: scale(1.15); }
+.guide-preset.active { border-color: var(--ink); }
+.guide-color-picker { width: 40px; height: 34px; border: 1.5px solid var(--rule); padding: 2px; border-radius: 7px; cursor: pointer; }
+.guide-hex-input { font: 13px 'Consolas','Courier New',monospace; padding: 7px 10px; border-radius: 7px; border: 1.5px solid var(--rule); width: 100px; text-transform: uppercase; outline: none; }
+.guide-hex-input:focus { border-color: var(--accent); }
 
 /* Responsive */
 @media (max-width: 700px) {
