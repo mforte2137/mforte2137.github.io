@@ -67,14 +67,14 @@ const PRESETS = {
   },
   m365: {
     title:     'Microsoft 365 Migration',
-    overview:  'This project covers the full migration from your current on-premises email and file infrastructure to Microsoft 365, including Exchange Online, SharePoint, Teams, and OneDrive — with a staged approach designed to minimise disruption during the transition.',
+    overview:  'This project covers the full migration from your current on-premises email and file infrastructure to Microsoft 365, including Exchange Online, SharePoint, Teams, and OneDrive — with a staged approach designed to minimize disruption during the transition.',
     exclusions:'Third-party application integrations not listed in scope\nCustom development or workflow automation\nEnd-user device setup beyond standard mail profile configuration\nMicrosoft 365 licensing costs\nData older than agreed retention period',
     tasks: [
       { task:'Project Kickoff & Tenant Assessment', role:'PM / Senior Engineer', hours:'8', notes:'Current environment review, license planning' },
       { task:'DNS & Domain Configuration', role:'Engineer', hours:'4', notes:'MX, SPF, DKIM, DMARC records' },
       { task:'Exchange Online Setup & Mail Flow', role:'Senior Engineer', hours:'8', notes:'Connectors, hybrid config, mail routing' },
       { task:'Mailbox Migration — Batch 1', role:'Engineer', hours:'16', notes:'Priority users, pilot group' },
-      { task:'Mailbox Migration — Remaining Users', role:'Engineer', hours:'24', notes:'Full organisation migration, integrity checks' },
+      { task:'Mailbox Migration — Remaining Users', role:'Engineer', hours:'24', notes:'Full organization migration, integrity checks' },
       { task:'SharePoint Online Setup & Structure', role:'Senior Engineer', hours:'12', notes:'Sites, libraries, permissions' },
       { task:'File Data Migration to SharePoint / OneDrive', role:'Engineer', hours:'16', notes:'On-prem file shares to cloud storage' },
       { task:'Microsoft Teams Setup & Policies', role:'Engineer', hours:'8', notes:'Teams, channels, meeting policies' },
@@ -110,7 +110,7 @@ const PRESETS = {
   },
   onboarding: {
     title:     'New Client Onboarding',
-    overview:  'This project transitions your organisation onto our managed services platform, establishing monitoring, security, backup, and support processes — giving your team a reliable, proactive IT partner from day one.',
+    overview:  'This project transitions your organization onto our managed services platform, establishing monitoring, security, backup, and support processes — giving your team a reliable, proactive IT partner from day one.',
     exclusions:'Hardware procurement or replacement\nSoftware licensing costs\nMajor remediation work identified during assessment (quoted separately)\nEnd-user training beyond basic helpdesk introduction\nThird-party vendor account setup',
     tasks: [
       { task:'Kickoff Meeting & Discovery', role:'PM', hours:'4', notes:'Goals, contacts, priorities, schedule' },
@@ -130,7 +130,7 @@ const PRESETS = {
   },
   security: {
     title:     'Cybersecurity Assessment',
-    overview:  'This engagement delivers a comprehensive assessment of your organisation\'s current cybersecurity posture, identifying vulnerabilities, gaps, and risks — with a prioritised remediation roadmap and executive-level findings report.',
+    overview:  'This engagement delivers a comprehensive assessment of your organization\'s current cybersecurity posture, identifying vulnerabilities, gaps, and risks — with a prioritized remediation roadmap and executive-level findings report.',
     exclusions:'Remediation implementation (available as a follow-on engagement)\nPhysical security assessment\nSocial engineering or phishing simulation exercises\nCompliance certification or audit submission\nThird-party system access not granted during the assessment window',
     tasks: [
       { task:'Scoping & Kickoff', role:'PM', hours:'4', notes:'Scope agreement, access requirements, schedule' },
@@ -631,8 +631,15 @@ sbPushBtn.addEventListener('click', async () => {
 
 // ── Init ──────────────────────────────────────────────────
 (function init() {
-  const hasSaved = loadState();
-  if (!hasSaved) {
+  // Check if Sales Guide passed a preset via URL param
+  const urlPreset = new URLSearchParams(window.location.search).get('preset');
+  const hasSaved  = urlPreset ? false : loadState(); // URL preset overrides saved state
+  if (urlPreset && PRESETS[urlPreset]) {
+    rows = PRESETS[urlPreset].tasks.map(t => ({ ...t }));
+    document.getElementById('projectTitle').value = PRESETS[urlPreset].title;
+    document.getElementById('overview').value     = PRESETS[urlPreset].overview;
+    document.getElementById('exclusions').value   = PRESETS[urlPreset].exclusions;
+  } else if (!hasSaved) {
     rows = PRESETS.azure.tasks.map(t => ({ ...t }));
     document.getElementById('projectTitle').value = PRESETS.azure.title;
     document.getElementById('overview').value     = PRESETS.azure.overview;
