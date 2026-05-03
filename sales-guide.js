@@ -10,10 +10,22 @@ const LS_SESSIONS = 'sb_sales_guide_sessions';
 const MAX_SESSIONS = 5;
 
 // ── State ─────────────────────────────────────────────────
-let currentMode        = null;  // 'discovery' | 'execution'
-let currentRec         = null;  // last recommendation from API
+let currentMode        = null;
+let currentRec         = null;
+let currentAnswers     = {};
 let generatedWidgets   = [];
-let currentSession     = null;  // active save/resume session
+let guideColor         = '#0d2d5e';
+
+// Engagement type → project scope preset mapping
+const SCOPE_PRESET_MAP = {
+  network_upgrade:      'network',
+  managed_services:     'onboarding',
+  security_project:     'security',
+  compliance:           'security',
+  new_client_onboarding:'onboarding',
+  project_plus_managed: 'network',
+  mixed:                'azure'
+};
 
 // ── DOM handles ───────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -31,6 +43,30 @@ function showError(id, msg) {
 }
 function clearError(id) { const el=$(id); if(el) el.classList.add('hidden'); }
 function setWorking(title, sub) { $('workingTitle').textContent=title; $('workingSub').textContent=sub; }
+
+// ── Color picker ─────────────────────────────────────────
+function isValidHex(v) { return /^#[0-9a-fA-F]{6}$/.test(v); }
+
+$('guideColorPicker')?.addEventListener('input', () => {
+  guideColor = $('guideColorPicker').value;
+  $('guideColorHex').value = guideColor.toUpperCase();
+  syncPresets(guideColor);
+});
+$('guideColorHex')?.addEventListener('input', () => {
+  const v = $('guideColorHex').value.trim().startsWith('#') ? $('guideColorHex').value.trim() : '#' + $('guideColorHex').value.trim();
+  if (isValidHex(v)) { guideColor = v; $('guideColorPicker').value = v; syncPresets(v); }
+});
+document.querySelectorAll('.guide-preset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    guideColor = btn.dataset.color;
+    $('guideColorPicker').value = guideColor;
+    $('guideColorHex').value    = guideColor.toUpperCase();
+    syncPresets(guideColor);
+  });
+});
+function syncPresets(color) {
+  document.querySelectorAll('.guide-preset').forEach(b => b.classList.toggle('active', b.dataset.color === color));
+}
 
 // ── Mode selection ────────────────────────────────────────
 ['discovery','execution'].forEach(mode => {
@@ -106,7 +142,8 @@ $('discGenerateBtn').addEventListener('click', async () => {
     }
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Recommendation failed');
-    currentRec = data.recommendation;
+    currentRec     = data.recommendation;
+    currentAnswers = answers;
     renderResults('discovery', answers.company || 'New Opportunity', data.recommendation);
   } catch (e) {
     showSection('discovery-view');
@@ -145,11 +182,26 @@ $('execGenerateBtn').addEventListener('click', async () => {
 });
 
 // ── Render results ────────────────────────────────────────
+// Return first sentence of a brief for compact display
+function briefTeaser(text) {
+  if (!text) return '';
+  const first = text.split(/(?<=[.!?])\s/)[0].trim();
+  return first.length > 10 ? first : text.slice(0, 120) + (text.length > 120 ? '…' : '');
+}
+
 function renderResults(mode, title, rec) {
   $('resultsMode').textContent  = mode === 'discovery' ? '🔍 Discovery Mode' : '⚡ Execution Mode';
   $('resultsTitle').textContent = title;
   $('coachingText').textContent = rec.coaching_insight || '';
-  $('summaryText').textContent  = rec.solution_summary || rec.buyer_summary || '';
+
+  // Recommended approach — bullets
+  const summaryEl = $('summaryText');
+  const bullets = rec.solution_bullets || (rec.buyer_summary ? [rec.buyer_summary] : [rec.solution_summary || '']);
+  if (Array.isArray(bullets) && bullets.length > 0) {
+    summaryEl.innerHTML = `<ul class="approach-bullets">${bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul>`;
+  } else {
+    summaryEl.textContent = rec.solution_summary || rec.buyer_summary || '';
+  }
 
   // Hardware checklist (Discovery only)
   const hwSection = $('hardwareSection');
@@ -163,7 +215,7 @@ function renderResults(mode, title, rec) {
       </div>`).join('');
     hwSection.classList.remove('hidden');
   } else {
-    hwSection.classList.add('hidden');
+    hwSection.classList.add('hidden'); // No hardware = hide entirely
   }
 
   // Services
@@ -190,7 +242,7 @@ function renderResults(mode, title, rec) {
     $('widgetBriefs').innerHTML = ['w1','w2','w3','w4','w5'].map(w => `
       <div class="brief-item">
         <div class="brief-w">${briefLabels[w]}</div>
-        <div class="brief-text">${esc(briefs[w] || '')}</div>
+        <div class="brief-text">${esc(briefTeaser(briefs[w] || ''))}</div>
       </div>`).join('');
   }
 
@@ -231,9 +283,10 @@ $('genWidgetsBtn').addEventListener('click', async () => {
     const id = WIDGET_IDS[i];
     $('widgetsWorkingMsg').textContent = `Generating widget ${i+1} of 5 — ${WIDGET_LABELS[id]}…`;
     try {
+      const colors = { primary: guideColor, accent: guideColor, light: lightenHex(guideColor, 0.91) };
       const res  = await fetch('/api/sales-widgets', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ fields, widgetId: id, colors: { primary:'#0d2d5e', accent:'#1a6fc4', light:'#f0f6ff' } })
+        body: JSON.stringify({ fields, widgetId: id, colors })
       });
       const data = await res.json();
       if (data.ok) generatedWidgets.push(data.widget);
@@ -243,7 +296,10 @@ $('genWidgetsBtn').addEventListener('click', async () => {
   $('widgetsWorking').classList.add('hidden');
 
   if (generatedWidgets.length > 0) {
-    const html = generatedWidgets.map(w => w.html).join('\n<div style="height:20px;"></div>\n');
+    const isCombined = document.querySelector('input[name="widgetMode"]:checked')?.value !== 'individual';
+    const html = isCombined
+      ? generatedWidgets.map(w => w.html).join('\n<div style="height:20px;"></div>\n')
+      : generatedWidgets[0]?.html || '';  // show first in preview; push handles all
     $('previewFrame').srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;background:#fff;}</style></head><body>${html}</body></html>`;
     $('htmlCode').value = html;
     $('widgetOutput').classList.remove('hidden');
@@ -278,11 +334,31 @@ $('copyWidgetsBtn').addEventListener('click', async () => {
   setTimeout(()=>$('copyWidgetsBtn').textContent=orig, 2000);
 });
 
-// Open scope builder
-$('openScopeBtn').addEventListener('click', () => window.open('project-scope.html','_blank'));
+// Open scope builder with pre-selected preset
+$('openScopeBtn').addEventListener('click', () => {
+  const preset = currentRec ? (SCOPE_PRESET_MAP[currentRec.engagement_type] || '') : '';
+  window.open(`project-scope.html${preset ? '?preset='+preset+'&from=guide' : ''}`, '_blank');
+});
 
-// Open ROI builder
-$('openRoiBtn').addEventListener('click', () => window.open('roi-builder.html','_blank'));
+// Open ROI builder with pre-filled context
+$('openRoiBtn').addEventListener('click', () => {
+  const params = new URLSearchParams();
+  if (currentAnswers.industry)   params.set('industry',   currentAnswers.industry.split('/')[0].trim().toLowerCase());
+  if (currentAnswers.staffCount) params.set('staff',      currentAnswers.staffCount);
+  if (currentRec?.services_recommended) {
+    const svcs = currentRec.services_recommended.filter(s => !s.optional).map(s => {
+      const n = s.service.toLowerCase();
+      if (n.includes('security') || n.includes('edr')) return 'security';
+      if (n.includes('backup') || n.includes('recovery')) return 'backup';
+      if (n.includes('helpdesk') || n.includes('noc') || n.includes('monitoring')) return 'helpdesk';
+      if (n.includes('compliance')) return 'compliance';
+      return null;
+    }).filter(Boolean);
+    if (svcs.length) params.set('services', [...new Set(svcs)].join(','));
+  }
+  params.set('from', 'guide');
+  window.open(`roi-builder.html?${params.toString()}`, '_blank');
+});
 
 // Start over
 $('startOverBtn').addEventListener('click', () => {
@@ -319,13 +395,17 @@ $('sbPushBtn').addEventListener('click', async () => {
 
   $('sbPushBtn').disabled=true; $('sbPushBtn').textContent='Saving…'; $('sbResult').classList.add('hidden');
 
-  const title  = $('resultsTitle').textContent || 'Sales Guide Widgets';
-  const prefix = $('sbPrefix').value.trim();
-  const html   = $('htmlCode').value;
+  const title      = $('resultsTitle').textContent || 'Sales Guide Widgets';
+  const prefix     = $('sbPrefix').value.trim();
+  const isCombined = document.querySelector('input[name="widgetMode"]:checked')?.value !== 'individual';
+
+  const widgets = isCombined
+    ? [{ id:'guide', title, html: generatedWidgets.map(w=>w.html).join('\n<div style="height:20px;"></div>\n') }]
+    : generatedWidgets.map(w => ({ id: w.id, title: w.title || title, html: w.html }));
 
   try {
     const res  = await fetch('/api/push-widgets',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({widgets:[{id:'guide',title,html}],prefix,apiKey,integrationKey:intKey})});
+      body:JSON.stringify({widgets, prefix, apiKey, integrationKey:intKey})});
     const data = await res.json();
     if (data.successCount>0) {
       $('sbResult').textContent='✓ Saved to your Salesbuildr widget library.';
@@ -417,6 +497,10 @@ function timeSince(date) {
 
 // ── Utility ───────────────────────────────────────────────
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function lightenHex(hex, amount) {
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return '#'+[r,g,b].map(c=>Math.round(c+(255-c)*amount).toString(16).padStart(2,'0')).join('');
+}
 
 // ── Spec file upload (XLSX / DOCX) ────────────────────────
 const specUploadZone  = $('specUploadZone');
