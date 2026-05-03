@@ -194,7 +194,7 @@ function buildWidget(result, inputs) {
   return `<div style="width:100%;padding:28px 32px 32px;background-color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;">
 
   <h2 style="font-size:22px;font-weight:700;color:#0f1b2d;margin:0 0 6px 0;line-height:1.2;font-family:'Segoe UI',Arial,sans-serif;">The Business Case for Managed IT</h2>
-  <p style="font-size:14px;color:#6b6758;margin:0 0 26px 0;font-family:'Segoe UI',Arial,sans-serif;">Prepared for ${esc(companyLabel)} · Based on your organisation profile and industry benchmarks</p>
+  <p style="font-size:14px;color:#6b6758;margin:0 0 26px 0;font-family:'Segoe UI',Arial,sans-serif;">Prepared for ${esc(companyLabel)} · Based on your organization profile and industry benchmarks</p>
 
   <div style="background-color:#f8fafc;border:1px solid #e2e8f0;padding:16px 20px;margin:0 0 28px 0;display:inline-flex;gap:32px;flex-wrap:wrap;">
     <div><div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6b6758;font-family:'Segoe UI',Arial,sans-serif;">Annual Investment</div><div style="font-size:20px;font-weight:800;color:#0f1b2d;margin-top:4px;font-family:'Segoe UI',Arial,sans-serif;">${fmt(annualRecurring)}/yr${oneTime > 0 ? `<span style="font-size:13px;font-weight:400;color:#6b6758;"> + ${fmt(oneTime)} setup</span>` : ''}</div></div>
@@ -431,5 +431,81 @@ $('sbPushBtn').addEventListener('click', async () => {
   $('sbResult').classList.remove('hidden');
 });
 
+// ── URL context (from Sales Guide) ───────────────────────
+function applyUrlContext() {
+  const params = new URLSearchParams(window.location.search);
+  const from   = params.get('from');
+  if (from !== 'guide') return; // only apply when launched from Sales Guide
+
+  // Industry — match param value to closest <select> option
+  const industryParam = (params.get('industry') || '').toLowerCase();
+  if (industryParam) {
+    const industryMap = {
+      healthcare: 'healthcare',
+      medical: 'healthcare',
+      legal: 'legal',
+      law: 'legal',
+      finance: 'finance',
+      financial: 'finance',
+      accounting: 'finance',
+      retail: 'retail',
+      education: 'education',
+      school: 'education',
+    };
+    const mapped = industryMap[industryParam];
+    if (mapped && $('industry')) {
+      $('industry').value = mapped;
+    }
+  }
+
+  // Staff count
+  const staffParam = params.get('staff');
+  if (staffParam && $('staffCount')) {
+    const n = parseInt(staffParam, 10);
+    if (!isNaN(n) && n > 0) $('staffCount').value = n;
+  }
+
+  // Services — comma-separated list e.g. security,backup,helpdesk,compliance
+  const servicesParam = params.get('services');
+  if (servicesParam) {
+    const incoming = servicesParam.split(',').map(s => s.trim().toLowerCase());
+    // Map common variants to our checkbox IDs
+    const svcMap = {
+      security: 'security',
+      'managed security': 'security',
+      backup: 'backup',
+      'backup & dr': 'backup',
+      'backup and disaster recovery': 'backup',
+      helpdesk: 'helpdesk',
+      'managed helpdesk': 'helpdesk',
+      'help desk': 'helpdesk',
+      compliance: 'compliance',
+    };
+    ['security','backup','helpdesk','compliance'].forEach(svc => {
+      const el = $('svc-' + svc);
+      if (!el) return;
+      // Check if any incoming token maps to this service
+      const matched = incoming.some(tok => {
+        const mapped = svcMap[tok];
+        return mapped === svc || tok === svc || tok.includes(svc);
+      });
+      if (matched) el.checked = true;
+    });
+  }
+
+  // Show a subtle banner so the rep knows context was applied
+  if (industryParam || staffParam || servicesParam) {
+    const banner = document.createElement('div');
+    banner.className = 'guide-context-banner';
+    banner.innerHTML = '↩ Context pre-filled from Sales Guide — review and adjust before calculating.';
+    const firstSection = document.querySelector('.section');
+    if (firstSection) firstSection.insertAdjacentElement('beforebegin', banner);
+
+    // Re-trigger investment summary in case monthly was pre-filled
+    updateInvestmentSummary();
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────
 initSbCredentials();
+applyUrlContext();
