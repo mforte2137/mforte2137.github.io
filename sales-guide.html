@@ -308,6 +308,32 @@
       <div id="widgetBriefs" class="widget-briefs"></div>
     </div>
 
+    <!-- Widget generation options -->
+    <div class="widget-options">
+      <div>
+        <div class="widget-opt-label">Widget mode</div>
+        <div class="widget-mode-toggle">
+          <label class="mode-radio"><input type="radio" name="widgetMode" value="combined" checked> Combined — 1 widget, all 5 sections</label>
+          <label class="mode-radio"><input type="radio" name="widgetMode" value="individual"> Individual — 5 separate widgets</label>
+        </div>
+      </div>
+      <div>
+        <div class="widget-opt-label">Color theme</div>
+        <div class="guide-color-row">
+          <input type="color" id="guideColorPicker" class="guide-color-picker" value="#2563eb">
+          <input type="text"  id="guideColorHex"    class="guide-hex-input" maxlength="7" value="#2563eb">
+          <div class="guide-presets">
+            <button class="guide-preset active" style="background:#0d2d5e;" data-color="#0d2d5e" title="Navy"></button>
+            <button class="guide-preset" style="background:#2563eb;" data-color="#2563eb" title="Blue"></button>
+            <button class="guide-preset" style="background:#059669;" data-color="#059669" title="Green"></button>
+            <button class="guide-preset" style="background:#7c3aed;" data-color="#7c3aed" title="Purple"></button>
+            <button class="guide-preset" style="background:#dc2626;" data-color="#dc2626" title="Red"></button>
+            <button class="guide-preset" style="background:#b45309;" data-color="#b45309" title="Gold"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Three output actions -->
     <div class="output-actions">
       <div class="action-card" id="actionWidgets">
