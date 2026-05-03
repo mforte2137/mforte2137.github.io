@@ -101,6 +101,9 @@ $('discGenerateBtn').addEventListener('click', async () => {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ action:'discover', answers })
     });
+    if (!res.headers.get('content-type')?.includes('application/json')) {
+      throw new Error(`Server error (${res.status}) — make sure the sales-guide.js Netlify function is deployed to netlify/functions/.`);
+    }
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Recommendation failed');
     currentRec = data.recommendation;
@@ -128,6 +131,9 @@ $('execGenerateBtn').addEventListener('click', async () => {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ action:'execute', spec, customerContext: context })
     });
+    if (!res.headers.get('content-type')?.includes('application/json')) {
+      throw new Error(`Server error (${res.status}) — make sure the sales-guide.js Netlify function is deployed to netlify/functions/.`);
+    }
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Translation failed');
     currentRec = data.recommendation;
