@@ -363,6 +363,88 @@
       </div>
     </div>
 
+    <!-- ── CREATE IN SALESBUILDR (Phase 2) ── -->
+    <div class="create-opp-wrap hidden" id="createOppWrap">
+      <button type="button" class="create-opp-toggle" id="createOppToggle">
+        <div class="create-opp-hd">
+          <span class="create-opp-icon">🚀</span>
+          <div>
+            <div class="create-opp-title">Create in Salesbuildr</div>
+            <div class="create-opp-sub">Create the opportunity and a draft quote — ready to build</div>
+          </div>
+        </div>
+        <span class="sb-arrow" id="createOppArrow">▼</span>
+      </button>
+
+      <div class="create-opp-body hidden" id="createOppBody">
+
+        <!-- Credentials -->
+        <div class="opp-creds">
+          <div class="sb-fields">
+            <div class="sb-field">
+              <label class="sb-label">API Key <span class="sb-where">Admin → Integrations</span></label>
+              <input type="password" id="oppApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
+            </div>
+            <div class="sb-field">
+              <label class="sb-label">Integration Key <span class="sb-where">Provided by Salesbuildr</span></label>
+              <input type="password" id="oppIntKey" class="sb-input" placeholder="Your integration key" autocomplete="new-password">
+            </div>
+          </div>
+          <label class="sb-remember"><input type="checkbox" id="oppRemember"> Remember on this device</label>
+        </div>
+
+        <!-- Step 1: Company -->
+        <div class="opp-step" id="oppStep1">
+          <div class="opp-step-hd"><span class="opp-step-num">1</span> Find or create company</div>
+          <div class="opp-search-row">
+            <input type="text" id="oppCompanyName" class="sb-input" placeholder="Type company name…" maxlength="80">
+            <button type="button" id="oppSearchBtn" class="btn-opp-action">Search →</button>
+          </div>
+          <div id="oppCompanyResults" class="opp-company-results hidden"></div>
+          <div id="oppCompanySelected" class="opp-company-selected hidden"></div>
+        </div>
+
+        <!-- Step 2: Opportunity + Quote -->
+        <div class="opp-step hidden" id="oppStep2">
+          <div class="opp-step-hd"><span class="opp-step-num">2</span> Opportunity details</div>
+          <div class="opp-field">
+            <label class="sb-label">Opportunity name</label>
+            <input type="text" id="oppName" class="sb-input" maxlength="120">
+          </div>
+
+          <button type="button" class="opp-brief-toggle" id="oppBriefToggle">
+            <span id="oppBriefToggleLabel">▶ Preview Sales Brief</span>
+            <span class="opp-brief-hint">Full brief will be saved to the opportunity Description field</span>
+          </button>
+          <div class="opp-brief-preview hidden" id="oppBriefPreview">
+            <pre id="oppBriefText" class="brief-pre"></pre>
+          </div>
+
+          <div class="opp-step-hd" style="margin-top:20px;"><span class="opp-step-num">3</span> Quote <span class="opp-optional">optional</span></div>
+          <label class="opp-check-label">
+            <input type="checkbox" id="oppCreateQuote" checked> Also create a draft quote
+          </label>
+          <div id="oppQuoteFields" class="opp-quote-fields">
+            <div class="opp-field" style="margin-top:10px;">
+              <label class="sb-label">Quote title</label>
+              <input type="text" id="oppQuoteTitle" class="sb-input" maxlength="120">
+            </div>
+            <p class="opp-template-note">Uses your account default template — set your <strong>Guided Sales Template</strong> as default and it applies automatically.</p>
+          </div>
+
+          <div class="opp-create-row">
+            <button type="button" id="oppCreateBtn" class="btn-opp-create">Create in Salesbuildr →</button>
+          </div>
+          <div id="oppCreateWorking" class="opp-working hidden">
+            <div class="spinner-sm"></div>
+            <span id="oppWorkingMsg">Working…</span>
+          </div>
+          <div id="oppCreateResult" class="hidden"></div>
+        </div>
+
+      </div>
+    </div>
+
     <!-- Salesbuildr widget push (shown after widgets generated) -->
     <div id="widgetOutput" class="widget-output hidden">
       <div class="out-tabs">
