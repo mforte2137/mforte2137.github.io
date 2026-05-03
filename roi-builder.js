@@ -11,12 +11,31 @@ const LS_INT_KEY = 'sb_int_key';
 // Sources: IBM Cost of a Data Breach 2023, Ponemon Institute,
 // Verizon DBIR 2023 — conservative estimates used throughout.
 const BENCHMARKS = {
-  generic:    { label: 'SMB',          breachCost: 108000, breachProb: 0.15, complianceFine: 0 },
-  healthcare: { label: 'Healthcare',   breachCost: 350000, breachProb: 0.25, complianceFine: 100000 },
-  legal:      { label: 'Legal',        breachCost: 150000, breachProb: 0.18, complianceFine:  50000 },
-  finance:    { label: 'Finance',      breachCost: 200000, breachProb: 0.22, complianceFine:  75000 },
-  retail:     { label: 'Retail',       breachCost: 100000, breachProb: 0.16, complianceFine: 0 },
-  education:  { label: 'Education',    breachCost:  80000, breachProb: 0.18, complianceFine:  20000 },
+  generic:       { label: 'SMB / Professional Services', breachCost: 108000, breachProb: 0.15, complianceFine:       0 },
+  healthcare:    { label: 'Healthcare',                  breachCost: 350000, breachProb: 0.25, complianceFine: 100000 },
+  legal:         { label: 'Legal',                       breachCost: 150000, breachProb: 0.18, complianceFine:  50000 },
+  finance:       { label: 'Finance',                     breachCost: 200000, breachProb: 0.22, complianceFine:  75000 },
+  retail:        { label: 'Retail',                      breachCost: 100000, breachProb: 0.16, complianceFine:       0 },
+  education:     { label: 'Education',                   breachCost:  80000, breachProb: 0.18, complianceFine:  20000 },
+  nonprofit:     { label: 'Non-profit',                  breachCost:  90000, breachProb: 0.17, complianceFine:  15000 },
+  manufacturing: { label: 'Manufacturing',               breachCost: 125000, breachProb: 0.16, complianceFine:       0 },
+  technology:    { label: 'Technology',                  breachCost: 120000, breachProb: 0.20, complianceFine:       0 },
+};
+
+// ── Productivity defaults by industry ────────────────────
+// Sources: BLS Occupational Employment Stats, CompTIA IT
+// Downtime Survey 2023, Gartner SMB IT Impact Report.
+// Conservative figures — designed to be credible in the room.
+const PRODUCTIVITY_DEFAULTS = {
+  generic:       { hourlyRate: 40, interruptionsPerMonth: 3,   hoursPerInterruption: 1.5 },
+  healthcare:    { hourlyRate: 55, interruptionsPerMonth: 4,   hoursPerInterruption: 2.0 },
+  legal:         { hourlyRate: 75, interruptionsPerMonth: 3,   hoursPerInterruption: 2.0 },
+  finance:       { hourlyRate: 65, interruptionsPerMonth: 3.5, hoursPerInterruption: 1.5 },
+  retail:        { hourlyRate: 25, interruptionsPerMonth: 2,   hoursPerInterruption: 1.0 },
+  education:     { hourlyRate: 35, interruptionsPerMonth: 3,   hoursPerInterruption: 1.0 },
+  nonprofit:     { hourlyRate: 35, interruptionsPerMonth: 3,   hoursPerInterruption: 1.5 },
+  manufacturing: { hourlyRate: 42, interruptionsPerMonth: 2,   hoursPerInterruption: 2.0 },
+  technology:    { hourlyRate: 65, interruptionsPerMonth: 2,   hoursPerInterruption: 1.5 },
 };
 
 // ── Helpers ───────────────────────────────────────────────
@@ -59,6 +78,50 @@ function updatePresets(color) {
   });
 }
 updatePresets('#2563eb');
+
+// ── Industry defaults auto-fill ───────────────────────────
+// Fills productivity fields from PRODUCTIVITY_DEFAULTS.
+// mode: 'empty'  — only fills fields that are currently blank (manual industry change)
+//        'force' — fills all fields regardless (Sales Guide open)
+function autoFillFromIndustry(industryKey, mode = 'empty') {
+  const def = PRODUCTIVITY_DEFAULTS[industryKey] || PRODUCTIVITY_DEFAULTS.generic;
+  const bench = BENCHMARKS[industryKey] || BENCHMARKS.generic;
+
+  const hrField  = $('hourlyRate');
+  const intField = $('interruptionsPerMonth');
+  const hrsField = $('hoursPerInterruption');
+
+  const didFill = { hr: false, int: false, hrs: false };
+
+  if (mode === 'force' || !hrField.value)  { hrField.value  = def.hourlyRate;             didFill.hr  = true; }
+  if (mode === 'force' || !intField.value) { intField.value = def.interruptionsPerMonth;   didFill.int = true; }
+  if (mode === 'force' || !hrsField.value) { hrsField.value = def.hoursPerInterruption;   didFill.hrs = true; }
+
+  if (didFill.hr || didFill.int || didFill.hrs) showDefaultsBadge(bench, def);
+}
+
+function showDefaultsBadge(bench, def) {
+  let badge = $('defaults-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'defaults-badge';
+    badge.className = 'defaults-badge';
+    // Insert after the IT Pain section's step-hint
+    const painHint = $('interruptionsPerMonth').closest('.step-card').querySelector('.step-hint');
+    painHint.insertAdjacentElement('afterend', badge);
+  }
+  badge.innerHTML =
+    `<span class="defaults-icon">✦</span> <strong>${bench.label} industry defaults applied</strong> — ` +
+    `${def.interruptionsPerMonth} IT interruptions / person / month · ` +
+    `${def.hoursPerInterruption} hrs each · $${def.hourlyRate}/hr avg. staff cost. ` +
+    `<span class="defaults-src">Sources: BLS, CompTIA, Gartner</span>`;
+  badge.classList.remove('hidden');
+}
+
+// Wire industry change → auto-fill empty fields
+$('industry').addEventListener('change', () => {
+  autoFillFromIndustry($('industry').value, 'empty');
+});
 
 // ── Investment summary live update ────────────────────────
 ['monthlyRecurring','oneTime'].forEach(id => {
@@ -437,26 +500,40 @@ function applyUrlContext() {
   const from   = params.get('from');
   if (from !== 'guide') return; // only apply when launched from Sales Guide
 
-  // Industry — match param value to closest <select> option
-  const industryParam = (params.get('industry') || '').toLowerCase();
+  // Industry — map Sales Guide value to ROI Builder BENCHMARKS key
+  const industryParam = (params.get('industry') || '').toLowerCase().trim();
+  let mappedIndustry = 'generic';
   if (industryParam) {
     const industryMap = {
-      healthcare: 'healthcare',
-      medical: 'healthcare',
-      legal: 'legal',
-      law: 'legal',
-      finance: 'finance',
-      financial: 'finance',
-      accounting: 'finance',
-      retail: 'retail',
-      education: 'education',
-      school: 'education',
+      // Healthcare
+      'healthcare': 'healthcare', 'medical': 'healthcare',
+      // Legal
+      'legal': 'legal', 'law': 'legal',
+      // Finance
+      'finance': 'finance', 'financial': 'finance', 'accounting': 'finance',
+      // Retail
+      'retail': 'retail', 'commerce': 'retail',
+      // Education
+      'education': 'education', 'school': 'education',
+      // Non-profit
+      'non-profit': 'nonprofit', 'nonprofit': 'nonprofit', 'non profit': 'nonprofit', 'ngo': 'nonprofit',
+      // Manufacturing
+      'manufacturing': 'manufacturing', 'industrial': 'manufacturing',
+      // Technology
+      'technology': 'technology', 'tech': 'technology', 'it': 'technology',
+      // Professional / Generic fallbacks
+      'professional': 'generic', 'professional services': 'generic',
+      'other': 'generic', 'general': 'generic',
     };
-    const mapped = industryMap[industryParam];
-    if (mapped && $('industry')) {
-      $('industry').value = mapped;
-    }
+    // Try exact match first, then partial
+    mappedIndustry = industryMap[industryParam]
+      || Object.entries(industryMap).find(([k]) => industryParam.includes(k))?.[1]
+      || 'generic';
+    if ($('industry')) $('industry').value = mappedIndustry;
   }
+
+  // Auto-fill productivity defaults based on industry (force mode — fresh open)
+  autoFillFromIndustry(mappedIndustry, 'force');
 
   // Staff count
   const staffParam = params.get('staff');
@@ -498,7 +575,7 @@ function applyUrlContext() {
     const banner = document.createElement('div');
     banner.className = 'guide-context-banner';
     banner.innerHTML = '↩ Context pre-filled from Sales Guide — review and adjust before calculating.';
-    const firstSection = document.querySelector('.section');
+    const firstSection = document.querySelector('.step-card');
     if (firstSection) firstSection.insertAdjacentElement('beforebegin', banner);
 
     // Re-trigger investment summary in case monthly was pre-filled
