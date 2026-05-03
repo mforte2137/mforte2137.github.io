@@ -412,6 +412,92 @@ function timeSince(date) {
 // ── Utility ───────────────────────────────────────────────
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+// ── Spec file upload (XLSX / DOCX) ────────────────────────
+const specUploadZone  = $('specUploadZone');
+const specFileInput   = $('specFile');
+const specFileStatus  = $('specFileStatus');
+const specUploadInner = $('specUploadInner');
+
+specUploadZone.addEventListener('click', e => {
+  if (!e.target.closest('label')) specFileInput.click();
+});
+specUploadZone.addEventListener('dragover', e => { e.preventDefault(); specUploadZone.classList.add('drag-over'); });
+['dragleave','drop'].forEach(t => specUploadZone.addEventListener(t, e => { e.preventDefault(); specUploadZone.classList.remove('drag-over'); }));
+specUploadZone.addEventListener('drop', e => {
+  const f = e.dataTransfer.files[0];
+  if (f) parseSpecFile(f);
+});
+specFileInput.addEventListener('change', () => {
+  if (specFileInput.files[0]) parseSpecFile(specFileInput.files[0]);
+  specFileInput.value = '';
+});
+
+async function parseSpecFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['xlsx','xls','docx'].includes(ext)) {
+    showSpecStatus(`Unsupported file type: .${ext} — use .xlsx or .docx`, true);
+    return;
+  }
+
+  showSpecStatus('Extracting content…', false, true);
+
+  try {
+    let text = '';
+
+    if (ext === 'xlsx' || ext === 'xls') {
+      const buf  = await file.arrayBuffer();
+      const wb   = XLSX.read(new Uint8Array(buf), { type:'array', cellText:true, cellDates:true });
+      const parts = [];
+      wb.SheetNames.forEach(name => {
+        const ws   = wb.Sheets[name];
+        const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+        const nonEmpty = rows.filter(r => r.some(c => String(c).trim() !== ''));
+        if (nonEmpty.length === 0) return;
+        parts.push(`--- ${name} ---`);
+        nonEmpty.forEach(row => {
+          const cells = row.map(c => String(c).trim()).filter(c => c !== '');
+          if (cells.length > 0) parts.push(cells.join('  |  '));
+        });
+      });
+      text = parts.join('\n');
+
+    } else if (ext === 'docx') {
+      const buf    = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer: buf });
+      text = (result.value || '').trim();
+    }
+
+    text = text.replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+
+    if (text.length < 30) {
+      showSpecStatus('File appears to be empty or could not be read.', true);
+      return;
+    }
+
+    $('exec-spec').value = text;
+    $('specCount').textContent = text.length;
+    showSpecStatus(`✓ ${file.name} extracted — ${text.length.toLocaleString()} characters. Review below and edit if needed.`);
+
+  } catch (e) {
+    showSpecStatus(`Could not read the file: ${e.message}`, true);
+  }
+}
+
+function showSpecStatus(msg, isError = false, isLoading = false) {
+  specFileStatus.textContent  = msg;
+  specFileStatus.className    = 'spec-file-status' + (isError ? ' error' : '');
+  specFileStatus.classList.remove('hidden');
+  if (!isError && !isLoading) {
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'spec-file-clear'; btn.textContent = '✕ Clear';
+    btn.addEventListener('click', () => {
+      $('exec-spec').value = ''; $('specCount').textContent = '0';
+      specFileStatus.classList.add('hidden');
+    });
+    specFileStatus.appendChild(btn);
+  }
+}
+
 // ── Init ──────────────────────────────────────────────────
 initCredentials();
 loadResumeBanner();
