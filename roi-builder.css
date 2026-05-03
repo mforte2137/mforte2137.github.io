@@ -138,6 +138,28 @@ body { font-family: var(--sans); background: var(--paper); color: var(--ink); fo
 
 .disclaimer  { font-size: 11px; color: var(--mute); font-style: italic; margin-top: 16px; }
 
+/* Industry productivity defaults badge */
+.defaults-badge {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 12px;
+  color: #166534;
+  line-height: 1.6;
+  margin-top: 10px;
+}
+.defaults-icon {
+  color: #16a34a;
+  font-size: 11px;
+  margin-right: 3px;
+}
+.defaults-src {
+  color: #4ade80;
+  font-size: 11px;
+  margin-left: 4px;
+}
+
 /* Sales Guide context banner */
 .guide-context-banner {
   background: #eff6ff;
