@@ -196,7 +196,20 @@
     <div class="q-card">
       <div class="q-body">
         <label class="q-label">Confirmed solution specification</label>
-        <p class="q-hint">Paste or type the spec — product names, quantities, services, project notes. The more detail, the more specific the output. Technical language is fine here; we'll handle the translation.</p>
+        <p class="q-hint">Upload the design desk spreadsheet or document, or paste the spec directly. Technical language is fine — we'll handle the translation.</p>
+
+        <!-- File upload option -->
+        <div class="spec-upload" id="specUploadZone">
+          <input type="file" id="specFile" accept=".xlsx,.xls,.docx" hidden>
+          <div class="spec-upload-inner" id="specUploadInner">
+            <span class="spec-upload-icon">📎</span>
+            <span class="spec-upload-label">Drop an <strong>.xlsx</strong> or <strong>.docx</strong> here, or <label for="specFile" class="spec-upload-link">browse</label></span>
+            <span class="spec-upload-hint">We'll extract the content and populate the field below</span>
+          </div>
+          <div id="specFileStatus" class="spec-file-status hidden"></div>
+        </div>
+
+        <label class="q-label" for="exec-spec" style="margin-top:14px;">Or paste / type the spec directly</label>
         <textarea id="exec-spec" rows="10" class="spec-input" placeholder="e.g.
 - Sophos XGS 136 next-gen firewall + 3yr Xstream Protection license
 - 1x Ubiquiti USW-48-PoE managed switch
@@ -363,7 +376,8 @@
 
 </div>
 <footer class="site-footer">Sales Guide · Salesbuildr — Guided selling for MSP teams</footer>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="sales-guide.js"></script>
 </body>
 </html>
