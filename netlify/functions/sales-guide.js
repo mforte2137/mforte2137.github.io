@@ -69,16 +69,19 @@ const DISCOVER_TOOL = {
     properties: {
       coaching_insight: {
         type: 'string',
-        description: 'The key insight the rep should carry into the room. What does this customer really care about? What will make or break this sale? 2-3 sentences, direct and actionable.'
+        description: '1-2 sentences maximum — the single most important thing the rep must know walking into this meeting. Direct, punchy, actionable. No fluff.'
       },
       engagement_type: {
         type: 'string',
         enum: ['managed_services', 'network_upgrade', 'security_project', 'compliance', 'new_client_onboarding', 'project_plus_managed', 'mixed'],
         description: 'The primary type of engagement this is'
       },
-      solution_summary: {
-        type: 'string',
-        description: 'One paragraph summary of the recommended solution in buyer language — what it does for their business, not what it is technically'
+      solution_bullets: {
+        type: 'array',
+        description: '3-4 bullet points describing the recommended approach in plain language — what needs to be in place for this customer. Each bullet: one clear, buyer-focused outcome. No jargon.',
+        items: { type: 'string' },
+        minItems: 2,
+        maxItems: 4
       },
       hardware_needed: {
         type: 'boolean',
@@ -113,13 +116,13 @@ const DISCOVER_TOOL = {
       },
       widget_briefs: {
         type: 'object',
-        description: 'Specific context to drive each of the 5 buyer-journey widgets. Be specific to this customer — use what you know about their situation, trigger, and goals.',
+        description: 'Context for each of the 5 buyer-journey widgets — used to generate the actual proposal content. Each brief is the key angle for that widget in 1-2 sentences. Specific to this customer.',
         properties: {
-          w1: { type: 'string', description: 'Their situation: what is their world like right now? What pain are they carrying? Be specific.' },
-          w2: { type: 'string', description: 'Why now: what makes this urgent? What happens if they wait 6 months? Connect to their trigger.' },
-          w3: { type: 'string', description: 'Why trust us: what credibility angle fits this engagement type? What does a great outcome look like for this customer?' },
-          w4: { type: 'string', description: 'What they get: the key outcomes in business language. What does life look like after this project?' },
-          w5: { type: 'string', description: 'Investment framing: how should the investment be positioned? What does it replace, prevent, or enable?' }
+          w1: { type: 'string', description: 'W1 — their situation in 1-2 sentences: what pain are they carrying right now?' },
+          w2: { type: 'string', description: 'W2 — urgency in 1-2 sentences: why act now, what happens if they wait?' },
+          w3: { type: 'string', description: 'W3 — trust angle in 1-2 sentences: why is this MSP the right partner for this?' },
+          w4: { type: 'string', description: 'W4 — outcomes in 1-2 sentences: what does their business look like after this?' },
+          w5: { type: 'string', description: 'W5 — investment framing in 1-2 sentences: what does it replace, prevent, or enable?' }
         },
         required: ['w1', 'w2', 'w3', 'w4', 'w5']
       },
@@ -128,7 +131,7 @@ const DISCOVER_TOOL = {
         description: 'The strongest ROI angle for this customer — productivity, security risk, compliance, or cost savings? One sentence.'
       }
     },
-    required: ['coaching_insight', 'engagement_type', 'solution_summary', 'hardware_needed', 'services_recommended', 'widget_briefs']
+    required: ['coaching_insight', 'engagement_type', 'solution_bullets', 'hardware_needed', 'services_recommended', 'widget_briefs']
   }
 };
 
@@ -140,7 +143,7 @@ const EXECUTE_TOOL = {
     properties: {
       coaching_insight: {
         type: 'string',
-        description: 'What the rep should emphasise in the meeting — the strongest commercial angle in this spec. 2-3 sentences.'
+        description: 'What the rep should emphasise in the meeting — the strongest commercial angle in this spec. 1-2 sentences maximum, punchy and direct.'
       },
       buyer_summary: {
         type: 'string',
