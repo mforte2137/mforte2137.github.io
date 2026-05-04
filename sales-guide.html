@@ -429,6 +429,21 @@
             <input type="text" id="oppName" class="sb-input" maxlength="120">
           </div>
 
+          <div class="opp-defaults-row">
+            <div class="opp-field">
+              <label class="sb-label">Owner <span class="sb-where">Who this opp is assigned to</span></label>
+              <select id="oppOwner" class="sb-input"><option value="">— Loading… —</option></select>
+            </div>
+            <div class="opp-field">
+              <label class="sb-label">Pipeline stage</label>
+              <select id="oppPipelineStage" class="sb-input"><option value="">— Loading… —</option></select>
+            </div>
+            <div class="opp-field">
+              <label class="sb-label">Category</label>
+              <select id="oppCategory" class="sb-input"><option value="">— Loading… —</option></select>
+            </div>
+          </div>
+
           <button type="button" class="opp-brief-toggle" id="oppBriefToggle">
             <span id="oppBriefToggleLabel">▶ Preview Sales Brief</span>
             <span class="opp-brief-hint">Full brief will be saved to the opportunity Description field</span>
