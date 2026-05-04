@@ -802,6 +802,10 @@ function initCreateOppPanel() {
   $('oppCreateBtn').disabled = false;
   $('oppQuoteFields').classList.remove('hidden');
 
+  // Show widget notice if widgets have already been generated
+  const hasWidgets = generatedWidgets && generatedWidgets.length > 0;
+  $('oppWidgetNotice').classList.toggle('hidden', !hasWidgets);
+
   $('createOppWrap').classList.remove('hidden');
 }
 
@@ -1020,17 +1024,25 @@ async function doConnectOpportunity() {
     });
     if (!oppRes.ok) throw new Error(oppRes.error || 'Failed to update opportunity.');
 
-    // 2. Create draft quote (optional)
+    // 2. Create draft quote (optional) — inject widgets if generated
     let quoteCreated = false;
+    let widgetsInjected = false;
     if ($('oppCreateQuote').checked) {
-      setOppWorking('Creating draft quote…');
-      const quoteTitle = $('oppQuoteTitle').value.trim() || opp.name;
-      const quoteRes   = await callCreateOpp('create-quote', {
+      const hasWidgets = generatedWidgets && generatedWidgets.length > 0;
+      setOppWorking(hasWidgets ? 'Building quote with widgets…' : 'Creating draft quote…');
+      const quoteTitle  = $('oppQuoteTitle').value.trim() || opp.name;
+      const quotePayload = {
         opportunityId: opp.id,
         title: quoteTitle,
         ...creds
-      });
-      quoteCreated = quoteRes.ok;
+      };
+      if (hasWidgets) {
+        // Pass each widget's HTML as the content array
+        quotePayload.widgets = generatedWidgets.map(w => w.html).filter(Boolean);
+      }
+      const quoteRes = await callCreateOpp('create-quote', quotePayload);
+      quoteCreated   = quoteRes.ok;
+      widgetsInjected = quoteRes.widgetsInjected || false;
     }
 
     // Success
@@ -1042,7 +1054,7 @@ async function doConnectOpportunity() {
         <div class="opp-success-body">
           <strong>Connected to Salesbuildr</strong>
           <div class="opp-success-detail">
-            Sales Brief added to <em>${esc(opp.name)}</em>${quoteCreated ? ' · Draft quote created' : ''}
+            Sales Brief added to <em>${esc(opp.name)}</em>${quoteCreated ? ` · Draft quote created${widgetsInjected ? ' with widgets' : ''}` : ''}
           </div>
           <div class="opp-success-hint">Open Salesbuildr to find your opportunity with the Sales Brief in the Description.</div>
         </div>
