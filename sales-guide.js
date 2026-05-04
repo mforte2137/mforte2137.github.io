@@ -1026,8 +1026,8 @@ async function fetchOppFields() {
   try {
     const res = await callCreateOpp('fetch-opp-fields', { apiKey, integrationKey: intKey });
 
-    // Debug — shows what the opportunity list fetch returned
-    if (res._debug) console.log('[Sales Guide] opp fields debug:', JSON.stringify(res._debug, null, 2));
+    if (res._debug)      console.log('[Sales Guide] opp fields debug:',   JSON.stringify(res._debug, null, 2));
+    if (res._ownerDebug) console.log('[Sales Guide] owner debug:', JSON.stringify(res._ownerDebug, null, 2));
 
     populateSelect($('oppOwner'),         res.owners         || [], LS_OPP_OWNER,    '— Select owner —');
     populateSelect($('oppPipelineStage'), res.pipelineStages || [], LS_OPP_STAGE,    '— Select stage —');
