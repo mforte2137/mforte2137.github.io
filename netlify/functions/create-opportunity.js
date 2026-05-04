@@ -83,25 +83,36 @@ exports.handler = async (event) => {
     }
 
     // ── fetch-opp-fields ────────────────────────────────────
-    // Fetches allowed values for owner, pipeline stage, and
-    // opportunity category so the UI can show live dropdowns.
+    // Tries multiple field name variants for each dropdown —
+    // returns the first one that comes back with data.
     if (action === 'fetch-opp-fields') {
-      const fieldMap = {
-        owners:         'owner',
-        pipelineStages: 'pipelineStage',
-        categories:     'opportunityCategory'
+      const fieldCandidates = {
+        owners:         ['owner', 'owners', 'user', 'users', 'opportunityOwner', 'member'],
+        pipelineStages: ['pipelineStage', 'pipelineStages', 'pipeline-stage', 'pipeline_stage', 'stage', 'opportunityPipelineStage'],
+        categories:     ['opportunityCategory', 'opportunityCategories', 'opportunity-category', 'category', 'opportunityType']
       };
+
       const results = {};
-      for (const [key, fieldName] of Object.entries(fieldMap)) {
-        try {
-          const res  = await fetch(`${BASE}/field/${encodeURIComponent(fieldName)}`, { headers });
-          const data = res.ok ? await res.json() : {};
-          results[key] = data?.values || [];
-        } catch {
-          results[key] = [];
+      const tried   = {};
+
+      for (const [key, candidates] of Object.entries(fieldCandidates)) {
+        results[key] = [];
+        tried[key]   = [];
+        for (const fieldName of candidates) {
+          try {
+            const res  = await fetch(`${BASE}/field/${encodeURIComponent(fieldName)}`, { headers });
+            const data = res.ok ? await res.json() : {};
+            const vals = data?.values || [];
+            tried[key].push({ name: fieldName, count: vals.length, status: res.status });
+            if (vals.length > 0) { results[key] = vals; break; }
+          } catch (e) {
+            tried[key].push({ name: fieldName, error: e.message });
+          }
         }
       }
-      return ok(results);
+
+      // Surface debug info so we can identify the correct field names
+      return ok({ ...results, _tried: tried });
     }
 
     // ── search-contact ──────────────────────────────────────
