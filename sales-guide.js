@@ -4,8 +4,11 @@
     the Netlify function also uses sales-guide.js)
    ========================================================= */
 
-const LS_API_KEY  = 'sb_api_key';
-const LS_INT_KEY  = 'sb_int_key';
+const LS_API_KEY       = 'sb_api_key';
+const LS_INT_KEY       = 'sb_int_key';
+const LS_OPP_OWNER     = 'sb_opp_owner_id';
+const LS_OPP_STAGE     = 'sb_opp_stage_id';
+const LS_OPP_CATEGORY  = 'sb_opp_category_id';
 const LS_SESSIONS = 'sb_sales_guide_sessions';
 const MAX_SESSIONS = 5;
 
@@ -905,8 +908,9 @@ function selectCompany(company) {
   } else {
     // New company — no contacts yet, skip contact requirement
     $('oppContactList').innerHTML = `<div class="opp-contact-none">New company — no contacts yet. Add a contact in Salesbuildr after creating the opportunity.</div>`;
-    selectedOppContact = { id: null, name: '' }; // allow creation to proceed
+    selectedOppContact = { id: null, name: '' };
     $('oppStep2').classList.remove('hidden');
+    fetchOppFields();
   }
 
   $('changeCompanyBtn')?.addEventListener('click', () => {
@@ -977,11 +981,57 @@ function selectContact(contact) {
   $('oppStep2').classList.remove('hidden');
   $('oppStep2').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
+  // Fetch owner / pipeline / category dropdowns once Step 2 is visible
+  fetchOppFields();
+
   $('changeContactBtn')?.addEventListener('click', () => {
     selectedOppContact = null;
     sel.classList.add('hidden');
     $('oppContactList').classList.remove('hidden');
     $('oppStep2').classList.add('hidden');
+  });
+}
+
+async function fetchOppFields() {
+  const apiKey = $('oppApiKey').value.trim();
+  const intKey = $('oppIntKey').value.trim();
+  if (!apiKey || !intKey) return;
+
+  try {
+    const res = await callCreateOpp('fetch-opp-fields', { apiKey, integrationKey: intKey });
+
+    // Populate Owner dropdown
+    populateSelect($('oppOwner'), res.owners || [], LS_OPP_OWNER, '— Select owner —');
+
+    // Populate Pipeline Stage dropdown
+    populateSelect($('oppPipelineStage'), res.pipelineStages || [], LS_OPP_STAGE, '— Select stage —');
+
+    // Populate Category dropdown
+    populateSelect($('oppCategory'), res.categories || [], LS_OPP_CATEGORY, '— Select category —');
+
+  } catch (e) {
+    // Non-fatal — leave dropdowns empty, rep can skip
+    console.warn('[Sales Guide] Could not fetch opp fields:', e.message);
+    [$('oppOwner'), $('oppPipelineStage'), $('oppCategory')].forEach(sel => {
+      if (sel) sel.innerHTML = '<option value="">— Not available —</option>';
+    });
+  }
+}
+
+function populateSelect(el, values, lsKey, placeholder) {
+  if (!el) return;
+  const saved = localStorage.getItem(lsKey) || '';
+  const active = values.filter(v => !v.deleted);
+
+  el.innerHTML = `<option value="">${placeholder}</option>` +
+    active.map(v =>
+      `<option value="${esc(v.id)}" ${v.id === saved ? 'selected' : ''}>${esc(v.displayValue || v.name || v.id)}</option>`
+    ).join('');
+
+  // Remember selection
+  el.addEventListener('change', () => {
+    if (el.value) localStorage.setItem(lsKey, el.value);
+    else localStorage.removeItem(lsKey);
   });
 }
 
@@ -1027,7 +1077,10 @@ async function doCreateOpportunity() {
     const extId = `sg-${slug}-${Date.now().toString().slice(-6)}`;
 
     const oppPayload = { companyId, name: oppName, description, extId, ...creds };
-    if (selectedOppContact?.id) oppPayload.contactId = selectedOppContact.id;
+    if (selectedOppContact?.id)     oppPayload.contactId       = selectedOppContact.id;
+    if ($('oppOwner')?.value)       oppPayload.ownerId         = $('oppOwner').value;
+    if ($('oppPipelineStage')?.value) oppPayload.pipelineStageId = $('oppPipelineStage').value;
+    if ($('oppCategory')?.value)    oppPayload.categoryId      = $('oppCategory').value;
     const oppRes = await callCreateOpp('upsert-opportunity', oppPayload);
     if (!oppRes.ok) throw new Error(oppRes.error || 'Failed to create opportunity.');
     const opportunityId = oppRes.opportunity?.id;
