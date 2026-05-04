@@ -993,6 +993,7 @@ async function doConnectOpportunity() {
       name:        opp.name,
       description,
       extId:       opp.extId,
+      companyId:   selectedOppCompany.id,
       ...creds
     });
     if (!oppRes.ok) throw new Error(oppRes.error || 'Failed to update opportunity.');
