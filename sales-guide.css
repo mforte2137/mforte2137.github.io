@@ -383,6 +383,12 @@ body { font-family: var(--sans); background: var(--paper); color: var(--ink); fo
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
 }
 
+.opp-defaults-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 700px) { .opp-defaults-row { grid-template-columns: 1fr; } }
 .opp-field { display: flex; flex-direction: column; gap: 5px; }
 
 .opp-brief-toggle {
