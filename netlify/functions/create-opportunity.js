@@ -82,6 +82,19 @@ exports.handler = async (event) => {
       return ok({ companies, ...debugShape });
     }
 
+    // ── get-opportunity ─────────────────────────────────────
+    // Fetches full OpportunityResponseDto so we can echo back
+    // all existing IDs (contact, owner, stage, category) when
+    // updating the description — avoids "field required" errors.
+    if (action === 'get-opportunity') {
+      const { opportunityId } = body;
+      if (!opportunityId) return err('opportunityId required.', 400);
+      const res  = await fetch(`${BASE}/opportunity/${opportunityId}`, { headers });
+      const data = res.ok ? await res.json() : {};
+      if (!res.ok) return err(data?.message || 'Failed to fetch opportunity.');
+      return ok({ opportunity: data });
+    }
+
     // ── search-opportunity ──────────────────────────────────
     // Find existing opportunities for a company so the rep
     // can connect the Sales Guide to one they already created.
@@ -186,14 +199,17 @@ exports.handler = async (event) => {
       // Updates description of an EXISTING opportunity using its real
       // externalIdentifier (AT record ID). Never creates new records —
       // avoids the PSA sync issue caused by fake ext IDs.
-      const { name, description, extId, companyId } = body;
+      const { name, description, extId, companyId, contactId, ownerId, pipelineStageId, categoryId } = body;
       if (!extId) return err('extId required.', 400);
 
-      const payload = {
-        name:      name || 'Opportunity',
-        description,
-        companyId
-      };
+      // Echo back all existing field IDs so Salesbuildr doesn't
+      // treat missing fields as intentional removals
+      const payload = { name: name || 'Opportunity', description };
+      if (companyId)       payload.companyId       = companyId;
+      if (contactId)       payload.contactId       = contactId;
+      if (ownerId)         payload.ownerId         = ownerId;
+      if (pipelineStageId) payload.pipelineStageId = pipelineStageId;
+      if (categoryId)      payload.categoryId      = categoryId;
 
       const res  = await fetch(`${BASE}/opportunity/ext/${encodeURIComponent(extId)}`, {
         method:  'PUT',
