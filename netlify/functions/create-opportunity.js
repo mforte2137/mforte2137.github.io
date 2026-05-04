@@ -107,32 +107,24 @@ exports.handler = async (event) => {
         }
       } catch { results.pipelineStages = []; }
 
-      // Owners — list endpoints (quote & opportunity) strip nested objects.
-      // Fetch 1 individual quote by ID to get the full QuoteResponseDto with owner.
+      // Owners — quote list returns full QuoteResponseDto with owner nested object.
+      // Response shape confirmed from OpenAPI: { results: [...], total: N }
       try {
-        const listRes  = await fetch(`${BASE}/quote?size=5`, { headers });
-        const listData = listRes.ok ? await listRes.json() : {};
-        const listItems = listData?.data || listData?.items || (Array.isArray(listData) ? listData : []);
-        const quoteIds  = listItems.map(q => q.id).filter(Boolean).slice(0, 3);
-
+        const res    = await fetch(`${BASE}/quote?size=20`, { headers });
+        const data   = res.ok ? await res.json() : {};
+        // Quote list uses 'results' key — not 'data' or 'items'
+        const quotes = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
         const ownerMap = new Map();
-        // Fetch first quote individually for debug
-        if (quoteIds.length > 0) {
-          const res   = await fetch(`${BASE}/quote/${quoteIds[0]}`, { headers });
-          const quote = res.ok ? await res.json() : {};
-          // Surface top-level keys and owner shape for debugging
-          results._ownerDebug = {
-            quoteListCount: listItems.length,
-            quoteIdsFound:  quoteIds,
-            quoteStatus:    res.status,
-            quoteTopKeys:   Object.keys(quote),
-            ownerField:     quote.owner   ? JSON.stringify(quote.owner)   : null,
-            createdByField: quote.createdBy ? JSON.stringify(quote.createdBy) : null
-          };
-          const o = quote.owner || quote.createdBy;
-          if (o?.id) ownerMap.set(o.id, { id: o.id, displayValue: o.name || o.email || o.id, extId: o.externalIdentifier || o.email || null });
-        }
-
+        quotes.forEach(q => {
+          const o = q.owner || q.createdBy;
+          if (o?.id) {
+            ownerMap.set(o.id, {
+              id:           o.id,
+              displayValue: o.name || o.email || o.id,
+              extId:        o.externalIdentifier || o.email || null
+            });
+          }
+        });
         results.owners = [...ownerMap.values()];
       } catch { results.owners = []; }
 
