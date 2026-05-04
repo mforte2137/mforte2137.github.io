@@ -6,10 +6,7 @@
 
 const LS_API_KEY       = 'sb_api_key';
 const LS_INT_KEY       = 'sb_int_key';
-const LS_OPP_OWNER     = 'sb_opp_owner_id';
-const LS_OPP_STAGE     = 'sb_opp_stage_id';
-const LS_OPP_CATEGORY  = 'sb_opp_category_id';
-const LS_OPP_EMAIL     = 'sb_opp_owner_email';
+// (Phase 2 field cache keys removed — no longer creating opportunities)
 const LS_SESSIONS = 'sb_sales_guide_sessions';
 const MAX_SESSIONS = 5;
 
@@ -678,8 +675,11 @@ function showSpecStatus(msg, isError = false, isLoading = false) {
 initCredentials();
 loadResumeBanner();
 
+
 // ═════════════════════════════════════════════════════════
-// PHASE 2 — Create in Salesbuildr
+// PHASE 2 — Connect to Salesbuildr
+// Links the Sales Guide recommendation to an existing
+// opportunity and creates a draft quote against it.
 // ═════════════════════════════════════════════════════════
 
 const ENGAGEMENT_LABELS = {
@@ -697,13 +697,12 @@ const ENGAGEMENT_LABELS = {
   copilot_ai:            'Microsoft Copilot & AI Readiness'
 };
 
-// Track selected company and contact across wizard steps
-let selectedOppCompany  = null;
-let selectedOppContact  = null;
+let selectedOppCompany     = null;
+let selectedOppOpportunity = null;
 
-// ── Build plain-text Sales Brief from currentRec ──────────
+// ── Build plain-text Sales Brief ─────────────────────────
 function buildSalesBrief() {
-  const rec = currentRec;
+  const rec  = currentRec;
   if (!rec) return '';
   const company = currentAnswers?.company || '';
   const date    = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
@@ -770,51 +769,43 @@ function buildSalesBrief() {
   return lines.join('\n');
 }
 
-// ── Initialise the panel when results are shown ───────────
+// ── Init panel when results are shown ────────────────────
 function initCreateOppPanel() {
-  selectedOppCompany = null;
-  selectedOppContact = null;
+  selectedOppCompany     = null;
+  selectedOppOpportunity = null;
 
-  // Pre-fill credentials from localStorage
   const a = localStorage.getItem(LS_API_KEY), i = localStorage.getItem(LS_INT_KEY);
   if (a) $('oppApiKey').value = a;
   if (i) $('oppIntKey').value = i;
   if (a && i) $('oppRemember').checked = true;
-  const savedEmail = localStorage.getItem(LS_OPP_EMAIL);
-  if (savedEmail) $('oppOwnerEmail').value = savedEmail;
 
-  // Pre-fill company name from Discovery answers
-  const company  = currentAnswers?.company || '';
+  const company = currentAnswers?.company || '';
   if (company) $('oppCompanyName').value = company;
 
-  // Pre-fill opportunity + quote titles
   const engType  = currentRec?.engagement_type || 'mixed';
   const engLabel = ENGAGEMENT_LABELS[engType] || 'IT Services';
-  $('oppName').value       = company ? `${engLabel} — ${company}` : engLabel;
   $('oppQuoteTitle').value = company ? `${company} — ${engLabel} Proposal` : `${engLabel} Proposal`;
-
-  // Pre-fill Sales Brief text
   $('oppBriefText').textContent = buildSalesBrief();
 
   // Reset all steps
   $('oppStep2').classList.add('hidden');
+  $('oppStep3').classList.add('hidden');
   $('oppCompanyResults').classList.add('hidden');
   $('oppCompanySelected').classList.add('hidden');
-  $('oppContactSection').classList.add('hidden');
-  $('oppContactSelected').classList.add('hidden');
+  $('oppOppList').classList.add('hidden');
+  $('oppOppSelected').classList.add('hidden');
   $('oppBriefPreview').classList.add('hidden');
   $('oppBriefToggleLabel').textContent = '▶ Preview Sales Brief';
   $('oppCreateResult').classList.add('hidden');
-  $('oppCreateBtn').textContent = 'Create in Salesbuildr →';
+  $('oppCreateBtn').textContent = 'Connect to Salesbuildr →';
   $('oppCreateBtn').classList.remove('is-done');
   $('oppCreateBtn').disabled = false;
   $('oppQuoteFields').classList.remove('hidden');
 
-  // Show the panel
   $('createOppWrap').classList.remove('hidden');
 }
 
-// ── Toggle panel open/close ───────────────────────────────
+// ── Toggle panel ──────────────────────────────────────────
 $('createOppToggle')?.addEventListener('click', () => {
   const body  = $('createOppBody');
   const arrow = $('createOppArrow');
@@ -823,7 +814,7 @@ $('createOppToggle')?.addEventListener('click', () => {
   arrow.classList.toggle('open', !isOpen);
 });
 
-// ── Toggle Sales Brief preview ────────────────────────────
+// ── Sales Brief preview ───────────────────────────────────
 $('oppBriefToggle')?.addEventListener('click', () => {
   const preview = $('oppBriefPreview');
   const isOpen  = !preview.classList.contains('hidden');
@@ -831,7 +822,7 @@ $('oppBriefToggle')?.addEventListener('click', () => {
   $('oppBriefToggleLabel').textContent = isOpen ? '▶ Preview Sales Brief' : '▼ Hide Sales Brief';
 });
 
-// ── Toggle quote fields ───────────────────────────────────
+// ── Quote fields toggle ───────────────────────────────────
 $('oppCreateQuote')?.addEventListener('change', () => {
   $('oppQuoteFields').classList.toggle('hidden', !$('oppCreateQuote').checked);
 });
@@ -844,7 +835,7 @@ async function doCompanySearch() {
   const name   = $('oppCompanyName').value.trim();
   const apiKey = $('oppApiKey').value.trim();
   const intKey = $('oppIntKey').value.trim();
-  if (!name)            { showOppError('Enter a company name to search.'); return; }
+  if (!name)              { showOppError('Enter a company name to search.'); return; }
   if (!apiKey || !intKey) { showOppError('Enter your API credentials first.'); return; }
 
   $('oppSearchBtn').disabled    = true;
@@ -854,15 +845,8 @@ async function doCompanySearch() {
 
   try {
     const res = await callCreateOpp('search-company', { name, apiKey, integrationKey: intKey });
-    const companies = res.companies || [];
-    // Surface debug info when empty so we can identify the response shape
-    if (companies.length === 0 && res._rawKeys) {
-      console.log('[Sales Guide] Company search raw response keys:', res._rawKeys, 'isArray:', res._isArray);
-    }
-    renderCompanyResults(companies, name);
-  } catch (e) {
-    showOppError('Search failed: ' + e.message);
-  }
+    renderCompanyResults(res.companies || [], name);
+  } catch (e) { showOppError('Search failed: ' + e.message); }
 
   $('oppSearchBtn').disabled    = false;
   $('oppSearchBtn').textContent = 'Search →';
@@ -870,260 +854,160 @@ async function doCompanySearch() {
 
 function renderCompanyResults(companies, searchName) {
   const wrap = $('oppCompanyResults');
-
   if (companies.length === 0) {
-    wrap.innerHTML = `
-      <div class="no-results-hint">No match for "<strong>${esc(searchName)}</strong>" in Salesbuildr</div>
-      <button class="opp-result-item opp-result-new" data-action="create" data-name="${esc(searchName)}">
-        + Create "<strong>${esc(searchName)}</strong>" as a new company
-      </button>`;
+    wrap.innerHTML = `<div class="no-results-hint">No match for "<strong>${esc(searchName)}</strong>" in Salesbuildr</div>`;
   } else {
     wrap.innerHTML = `
-      <div class="opp-results-label">Select existing or create new:</div>
+      <div class="opp-results-label">Select company:</div>
       ${companies.slice(0, 6).map(c => `
-        <button class="opp-result-item" data-action="select" data-id="${esc(c.id)}" data-name="${esc(c.name)}">
+        <button class="opp-result-item" data-id="${esc(c.id)}" data-name="${esc(c.name)}">
           ${esc(c.name)}
           ${c.number ? `<span class="opp-result-num">#${esc(c.number)}</span>` : ''}
-        </button>`).join('')}
-      <button class="opp-result-item opp-result-new" data-action="create" data-name="${esc(searchName)}">
-        + Create "<strong>${esc(searchName)}</strong>" as a new company
-      </button>`;
+        </button>`).join('')}`;
   }
-
   wrap.classList.remove('hidden');
-
   wrap.querySelectorAll('.opp-result-item').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (btn.dataset.action === 'select') {
-        selectCompany({ id: btn.dataset.id, name: btn.dataset.name, existing: true });
-      } else {
-        selectCompany({ id: null, name: btn.dataset.name, existing: false });
-      }
-    });
+    btn.addEventListener('click', () => selectCompany({ id: btn.dataset.id, name: btn.dataset.name }));
   });
 }
 
 function selectCompany(company) {
-  selectedOppCompany = company;
-  selectedOppContact = null;
+  selectedOppCompany     = company;
+  selectedOppOpportunity = null;
   $('oppCompanyResults').classList.add('hidden');
 
   const sel = $('oppCompanySelected');
-  sel.innerHTML = company.existing
-    ? `<div class="company-selected-tag">✓ ${esc(company.name)} <span class="existing-badge">existing</span>
-         <button class="change-company-btn" id="changeCompanyBtn">Change</button></div>`
-    : `<div class="company-selected-tag">+ Will create <strong>${esc(company.name)}</strong> as new company
-         <button class="change-company-btn" id="changeCompanyBtn">Change</button></div>`;
+  sel.innerHTML = `<div class="company-selected-tag">✓ ${esc(company.name)}
+    <button class="change-company-btn" id="changeCompanyBtn">Change</button></div>`;
   sel.classList.remove('hidden');
 
-  // Update opportunity and quote titles
-  const engType  = currentRec?.engagement_type || 'mixed';
-  const engLabel = ENGAGEMENT_LABELS[engType] || 'IT Services';
-  $('oppName').value       = `${engLabel} — ${company.name}`;
-  $('oppQuoteTitle').value = `${company.name} — ${engLabel} Proposal`;
-
-  // Reset and show contact section
-  $('oppContactSelected').classList.add('hidden');
-  $('oppStep2').classList.add('hidden');
-  const contactSection = $('oppContactSection');
-  contactSection.classList.remove('hidden');
-
-  // If existing company, auto-fetch its contacts
-  if (company.existing && company.id) {
-    loadContactsForCompany(company.id);
-  } else {
-    // New company — no contacts yet, skip contact requirement
-    $('oppContactList').innerHTML = `<div class="opp-contact-none">New company — no contacts yet. Add a contact in Salesbuildr after creating the opportunity.</div>`;
-    selectedOppContact = { id: null, name: '' };
-    $('oppStep2').classList.remove('hidden');
-    fetchOppFields();
-  }
+  // Load opportunities for this company
+  $('oppStep2').classList.remove('hidden');
+  loadOpportunitiesForCompany(company.id);
 
   $('changeCompanyBtn')?.addEventListener('click', () => {
-    selectedOppCompany = null;
-    selectedOppContact = null;
+    selectedOppCompany = null; selectedOppOpportunity = null;
     sel.classList.add('hidden');
-    contactSection.classList.add('hidden');
     $('oppStep2').classList.add('hidden');
+    $('oppStep3').classList.add('hidden');
     $('oppCompanyResults').classList.remove('hidden');
   });
 }
 
-async function loadContactsForCompany(companyId) {
+// ── Opportunity list for selected company ─────────────────
+async function loadOpportunitiesForCompany(companyId) {
   const apiKey = $('oppApiKey').value.trim();
   const intKey = $('oppIntKey').value.trim();
-  const list   = $('oppContactList');
+  const list   = $('oppOppList');
 
-  list.innerHTML = '<div class="opp-contact-loading">Loading contacts…</div>';
+  list.innerHTML = '<div class="opp-contact-loading">Loading opportunities…</div>';
+  list.classList.remove('hidden');
+  $('oppStep3').classList.add('hidden');
 
   try {
-    const res      = await callCreateOpp('search-contact', { companyId, apiKey, integrationKey: intKey });
-    const contacts = res.contacts || [];
-    renderContactList(contacts);
+    const res  = await callCreateOpp('search-opportunity', { companyId, apiKey, integrationKey: intKey });
+    renderOpportunityList(res.opportunities || []);
   } catch (e) {
-    list.innerHTML = `<div class="opp-contact-none">Could not load contacts — ${esc(e.message)}</div>`;
-    $('oppStep2').classList.remove('hidden');
+    list.innerHTML = `<div class="opp-contact-none">Could not load opportunities — ${esc(e.message)}</div>`;
   }
 }
 
-function renderContactList(contacts) {
-  const list = $('oppContactList');
-
-  if (contacts.length === 0) {
-    list.innerHTML = `<div class="opp-contact-none">No contacts found for this company. Add one in Salesbuildr and retry, or proceed without a contact.</div>`;
-    selectedOppContact = { id: null, name: '' };
-    $('oppStep2').classList.remove('hidden');
+function renderOpportunityList(opps) {
+  const list = $('oppOppList');
+  if (opps.length === 0) {
+    list.innerHTML = `<div class="opp-contact-none">No opportunities found for this company. Create one in Salesbuildr or Autotask first, then come back.</div>`;
     return;
   }
+  list.innerHTML = `
+    <div class="opp-results-label">Select opportunity:</div>
+    ${opps.slice(0, 10).map(o => {
+      const date = o.expectedCloseDate ? ` · Close ${o.expectedCloseDate.slice(0,10)}` : '';
+      return `<button class="opp-result-item" data-id="${esc(o.id)}" data-extid="${esc(o.externalIdentifier || '')}" data-name="${esc(o.name)}">
+        ${esc(o.name)}<span class="opp-result-num">${date}</span>
+      </button>`;
+    }).join('')}`;
 
-  list.innerHTML = contacts.slice(0, 10).map(c => {
-    const name  = c.name || [c.firstName, c.lastName].filter(Boolean).join(' ') || 'Unnamed contact';
-    const email = c.email || c.externalIdentifier || '';
-    const role  = c.jobTitle || c.title || '';
-    return `<button class="opp-contact-item" data-id="${esc(c.id)}" data-name="${esc(name)}">
-      <div>
-        <div>${esc(name)}</div>
-        ${email ? `<div class="opp-contact-email">${esc(email)}</div>` : ''}
-      </div>
-      ${role ? `<span class="opp-contact-role">${esc(role)}</span>` : ''}
-    </button>`;
-  }).join('');
-
-  list.querySelectorAll('.opp-contact-item').forEach(btn => {
-    btn.addEventListener('click', () => {
-      selectContact({ id: btn.dataset.id, name: btn.dataset.name });
-    });
+  list.querySelectorAll('.opp-result-item').forEach(btn => {
+    btn.addEventListener('click', () => selectOpportunity({
+      id:    btn.dataset.id,
+      extId: btn.dataset.extid,
+      name:  btn.dataset.name
+    }));
   });
 }
 
-function selectContact(contact) {
-  selectedOppContact = contact;
-  $('oppContactList').classList.add('hidden');
+function selectOpportunity(opp) {
+  selectedOppOpportunity = opp;
+  $('oppOppList').classList.add('hidden');
 
-  const sel = $('oppContactSelected');
-  sel.innerHTML = `✓ ${esc(contact.name)} <button class="change-company-btn" id="changeContactBtn">Change</button>`;
+  const sel = $('oppOppSelected');
+  sel.innerHTML = `<div class="company-selected-tag">✓ ${esc(opp.name)}
+    <button class="change-company-btn" id="changeOppBtn">Change</button></div>`;
   sel.classList.remove('hidden');
 
-  $('oppStep2').classList.remove('hidden');
-  $('oppStep2').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-  // Fetch owner / pipeline / category dropdowns once Step 2 is visible
-  fetchOppFields();
-
-  $('changeContactBtn')?.addEventListener('click', () => {
-    selectedOppContact = null;
-    sel.classList.add('hidden');
-    $('oppContactList').classList.remove('hidden');
-    $('oppStep2').classList.add('hidden');
-  });
-}
-
-async function fetchOppFields() {
-  const apiKey = $('oppApiKey').value.trim();
-  const intKey = $('oppIntKey').value.trim();
-  if (!apiKey || !intKey) return;
-
-  try {
-    const res = await callCreateOpp('fetch-opp-fields', { apiKey, integrationKey: intKey });
-
-    if (res._debug)      console.log('[Sales Guide] opp fields debug:',   JSON.stringify(res._debug, null, 2));
-    if (res._ownerDebug) console.log('[Sales Guide] owner debug:', JSON.stringify(res._ownerDebug, null, 2));
-
-    populateSelect($('oppOwner'),         res.owners         || [], LS_OPP_OWNER,    '— Select owner —');
-    populateSelect($('oppPipelineStage'), res.pipelineStages || [], LS_OPP_STAGE,    '— Select stage —');
-    populateSelect($('oppCategory'),      res.categories     || [], LS_OPP_CATEGORY, '— Select category —');
-
-  } catch (e) {
-    // Non-fatal — leave dropdowns empty, rep can skip
-    console.warn('[Sales Guide] Could not fetch opp fields:', e.message);
-    [$('oppOwner'), $('oppPipelineStage'), $('oppCategory')].forEach(sel => {
-      if (sel) sel.innerHTML = '<option value="">— Not available —</option>';
-    });
+  // Pre-fill quote title from opp name
+  if (opp.name && !$('oppQuoteTitle').value) {
+    $('oppQuoteTitle').value = `${opp.name} — Proposal`;
   }
-}
 
-function populateSelect(el, values, lsKey, placeholder) {
-  if (!el) return;
-  const saved  = localStorage.getItem(lsKey) || '';
-  const active = values.filter(v => !v.deleted);
+  $('oppStep3').classList.remove('hidden');
+  $('oppStep3').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-  // Store extId alongside id so owner can use ownerExtId fallback
-  el.innerHTML = `<option value="">${placeholder}</option>` +
-    active.map(v =>
-      `<option value="${esc(v.id)}" data-ext="${esc(v.extId || '')}" ${v.id === saved ? 'selected' : ''}>${esc(v.displayValue || v.name || v.id)}</option>`
-    ).join('');
-
-  el.addEventListener('change', () => {
-    if (el.value) localStorage.setItem(lsKey, el.value);
-    else localStorage.removeItem(lsKey);
+  $('changeOppBtn')?.addEventListener('click', () => {
+    selectedOppOpportunity = null;
+    sel.classList.add('hidden');
+    $('oppStep3').classList.add('hidden');
+    $('oppOppList').classList.remove('hidden');
   });
 }
 
-// ── Main creation flow ────────────────────────────────────
-$('oppCreateBtn')?.addEventListener('click', doCreateOpportunity);
+// ── Main connect flow ─────────────────────────────────────
+$('oppCreateBtn')?.addEventListener('click', doConnectOpportunity);
 
-async function doCreateOpportunity() {
+async function doConnectOpportunity() {
   const apiKey = $('oppApiKey').value.trim();
   const intKey = $('oppIntKey').value.trim();
-  if (!apiKey || !intKey)      { showOppError('Enter your API credentials first.'); return; }
-  if (!selectedOppCompany)     { showOppError('Select a company first.'); return; }
+  if (!apiKey || !intKey)         { showOppError('Enter your API credentials first.'); return; }
+  if (!selectedOppOpportunity)    { showOppError('Select an opportunity first.'); return; }
 
-  const ownerEmail = $('oppOwnerEmail')?.value.trim() || '';
   if ($('oppRemember').checked) {
     localStorage.setItem(LS_API_KEY, apiKey);
     localStorage.setItem(LS_INT_KEY, intKey);
-    if (ownerEmail) localStorage.setItem(LS_OPP_EMAIL, ownerEmail);
   } else {
     localStorage.removeItem(LS_API_KEY);
     localStorage.removeItem(LS_INT_KEY);
-    localStorage.removeItem(LS_OPP_EMAIL);
   }
 
   $('oppCreateBtn').disabled    = true;
   $('oppCreateWorking').classList.remove('hidden');
   $('oppCreateResult').classList.add('hidden');
 
-  const creds      = { apiKey, integrationKey: intKey };
-  const oppName    = $('oppName').value.trim() || 'New Opportunity';
+  const creds       = { apiKey, integrationKey: intKey };
   const description = buildSalesBrief();
+  const opp         = selectedOppOpportunity;
 
   try {
-    // 1. Get or create company
-    let companyId = selectedOppCompany.id;
-    if (!companyId) {
-      setOppWorking('Creating company in Salesbuildr…');
-      const res = await callCreateOpp('create-company', { name: selectedOppCompany.name, ...creds });
-      if (!res.ok) throw new Error(res.error || 'Failed to create company.');
-      companyId = res.company?.id;
-      if (!companyId) throw new Error('Company created but no ID returned.');
-    }
+    // 1. Update opportunity description with Sales Brief
+    setOppWorking('Adding Sales Brief to opportunity…');
+    const oppRes = await callCreateOpp('upsert-opportunity', {
+      name:        opp.name,
+      description,
+      extId:       opp.extId,
+      ...creds
+    });
+    if (!oppRes.ok) throw new Error(oppRes.error || 'Failed to update opportunity.');
 
-    // 2. Upsert opportunity (unique external ID per session)
-    setOppWorking('Creating opportunity…');
-    const slug  = selectedOppCompany.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 20);
-    const extId = `sg-${slug}-${Date.now().toString().slice(-6)}`;
-
-    const oppPayload = { companyId, name: oppName, description, extId, ...creds };
-    if (selectedOppContact?.id)       oppPayload.contactId       = selectedOppContact.id;
-    if ($('oppPipelineStage')?.value) oppPayload.pipelineStageId = $('oppPipelineStage').value;
-    if ($('oppCategory')?.value)      oppPayload.categoryId      = $('oppCategory').value;
-    // Owner: prefer dropdown ID, fall back to email as ownerExtId
-    if ($('oppOwner')?.value) {
-      oppPayload.ownerId = $('oppOwner').value;
-    } else if (ownerEmail) {
-      oppPayload.ownerExtId = ownerEmail;
-    }
-    const oppRes = await callCreateOpp('upsert-opportunity', oppPayload);
-    if (!oppRes.ok) throw new Error(oppRes.error || 'Failed to create opportunity.');
-    const opportunityId = oppRes.opportunity?.id;
-
-    // 3. Create draft quote (optional)
+    // 2. Create draft quote (optional)
     let quoteCreated = false;
-    if ($('oppCreateQuote').checked && opportunityId) {
+    if ($('oppCreateQuote').checked) {
       setOppWorking('Creating draft quote…');
-      const quoteTitle = $('oppQuoteTitle').value.trim() || oppName;
-      const quoteRes   = await callCreateOpp('create-quote', { opportunityId, title: quoteTitle, ...creds });
-      quoteCreated     = quoteRes.ok;
+      const quoteTitle = $('oppQuoteTitle').value.trim() || opp.name;
+      const quoteRes   = await callCreateOpp('create-quote', {
+        opportunityId: opp.id,
+        title: quoteTitle,
+        ...creds
+      });
+      quoteCreated = quoteRes.ok;
     }
 
     // Success
@@ -1133,16 +1017,15 @@ async function doCreateOpportunity() {
       <div class="opp-success">
         <div class="opp-success-icon">✓</div>
         <div class="opp-success-body">
-          <strong>Created in Salesbuildr</strong>
+          <strong>Connected to Salesbuildr</strong>
           <div class="opp-success-detail">
-            Opportunity: <em>${esc(oppName)}</em> — Sales Brief saved to Description
-            ${quoteCreated ? ' · Draft quote created' : ''}
+            Sales Brief added to <em>${esc(opp.name)}</em>${quoteCreated ? ' · Draft quote created' : ''}
           </div>
-          <div class="opp-success-hint">Open Salesbuildr and search <strong>${esc(selectedOppCompany.name)}</strong> to find the new opportunity.</div>
+          <div class="opp-success-hint">Open Salesbuildr to find your opportunity with the Sales Brief in the Description.</div>
         </div>
       </div>`;
     resultEl.classList.remove('hidden');
-    $('oppCreateBtn').textContent = '✓ Created';
+    $('oppCreateBtn').textContent = '✓ Connected';
     $('oppCreateBtn').classList.add('is-done');
 
   } catch (e) {
