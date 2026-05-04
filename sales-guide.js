@@ -768,7 +768,12 @@ async function doCompanySearch() {
 
   try {
     const res = await callCreateOpp('search-company', { name, apiKey, integrationKey: intKey });
-    renderCompanyResults(res.companies || [], name);
+    const companies = res.companies || [];
+    // Surface debug info when empty so we can identify the response shape
+    if (companies.length === 0 && res._rawKeys) {
+      console.log('[Sales Guide] Company search raw response keys:', res._rawKeys, 'isArray:', res._isArray);
+    }
+    renderCompanyResults(companies, name);
   } catch (e) {
     showOppError('Search failed: ' + e.message);
   }
