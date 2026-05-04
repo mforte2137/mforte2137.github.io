@@ -24,7 +24,11 @@ const SCOPE_PRESET_MAP = {
   compliance:           'security',
   new_client_onboarding:'onboarding',
   project_plus_managed: 'network',
-  mixed:                'azure'
+  mixed:                'azure',
+  endpoint_refresh:     'endpoint',
+  server_eol:           'server',
+  voip_project:         'voip',
+  backup_dr:            'backup'
 };
 
 // ── DOM handles ───────────────────────────────────────────
@@ -601,12 +605,16 @@ loadResumeBanner();
 
 const ENGAGEMENT_LABELS = {
   managed_services:      'Managed Services',
-  network_upgrade:       'Network Upgrade',
+  network_upgrade:       'Network Infrastructure Upgrade',
   security_project:      'Security Project',
   compliance:            'Compliance Project',
   new_client_onboarding: 'New Client Onboarding',
   project_plus_managed:  'Project + Managed Services',
-  mixed:                 'IT Services'
+  mixed:                 'IT Services',
+  endpoint_refresh:      'Endpoint Refresh',
+  server_eol:            'Server Infrastructure Refresh',
+  voip_project:          'VoIP & Communications Upgrade',
+  backup_dr:             'Backup & Disaster Recovery'
 };
 
 // Track selected company across wizard steps
