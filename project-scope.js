@@ -693,6 +693,124 @@ sbPushBtn.addEventListener('click', async () => {
   }
 });
 
+// ── Template management ───────────────────────────────────
+const LS_TEMPLATES = 'sb_scope_templates_v1';
+
+function captureCurrentState() {
+  return {
+    projectTitle: document.getElementById('projectTitle').value,
+    customerName: document.getElementById('customerName').value,
+    hoursPerDay:  document.getElementById('hoursPerDay').value,
+    overview:     document.getElementById('overview').value,
+    exclusions:   document.getElementById('exclusions').value,
+    showRole:     document.getElementById('showRole').checked,
+    showHours:    document.getElementById('showHours').checked,
+    showNotes:    document.getElementById('showNotes').checked,
+    rows:         rows.map(r => ({ ...r }))
+  };
+}
+
+function applyState(s) {
+  document.getElementById('projectTitle').value = s.projectTitle ?? '';
+  document.getElementById('customerName').value = s.customerName ?? '';
+  document.getElementById('hoursPerDay').value  = s.hoursPerDay  ?? 8;
+  document.getElementById('overview').value     = s.overview     ?? '';
+  document.getElementById('exclusions').value   = s.exclusions   ?? '';
+  document.getElementById('showRole').checked   = s.showRole  !== false;
+  document.getElementById('showHours').checked  = s.showHours === true;
+  document.getElementById('showNotes').checked  = s.showNotes !== false;
+  rows = (s.rows || []).map(r => ({ ...r }));
+  render();
+  updateTotals();
+  saveState();
+}
+
+function getTemplates()        { try { return JSON.parse(localStorage.getItem(LS_TEMPLATES)) || []; } catch { return []; } }
+function saveTemplates(tmpl)   { localStorage.setItem(LS_TEMPLATES, JSON.stringify(tmpl)); }
+
+function renderTemplateSelect() {
+  const sel   = document.getElementById('templateSelect');
+  const saved = sel.value;
+  const tmpl  = getTemplates();
+  sel.innerHTML = `<option value="">— ${tmpl.length ? 'My saved templates' : 'No saved templates yet'} —</option>` +
+    tmpl.map(t => `<option value="${esc(t.name)}">${esc(t.name)}</option>`).join('');
+  if (saved) sel.value = saved;
+}
+
+// Save as Template
+document.getElementById('saveTemplateBtn').addEventListener('click', () => {
+  const def  = document.getElementById('projectTitle').value.trim() || 'My Template';
+  const name = prompt('Name this template:', def);
+  if (!name?.trim()) return;
+  const trimmed   = name.trim();
+  const templates = getTemplates();
+  const existing  = templates.findIndex(t => t.name === trimmed);
+  const entry     = { name: trimmed, savedAt: new Date().toISOString(), ...captureCurrentState() };
+  if (existing >= 0) {
+    if (!confirm(`Replace existing template "${trimmed}"?`)) return;
+    templates[existing] = entry;
+  } else {
+    templates.push(entry);
+  }
+  saveTemplates(templates);
+  renderTemplateSelect();
+  document.getElementById('templateSelect').value = trimmed;
+  showToast(`"${trimmed}" saved`);
+});
+
+// Load Template
+document.getElementById('loadTemplateBtn').addEventListener('click', () => {
+  const name = document.getElementById('templateSelect').value;
+  if (!name) return;
+  const tmpl = getTemplates().find(t => t.name === name);
+  if (!tmpl) return;
+  if (rows.length && !confirm(`Load "${name}"? Your current scope will be replaced.`)) return;
+  applyState(tmpl);
+  showToast(`"${name}" loaded`);
+});
+
+// Delete Template
+document.getElementById('deleteTemplateBtn').addEventListener('click', () => {
+  const name = document.getElementById('templateSelect').value;
+  if (!name) return;
+  if (!confirm(`Delete template "${name}"?`)) return;
+  saveTemplates(getTemplates().filter(t => t.name !== name));
+  renderTemplateSelect();
+  showToast(`"${name}" deleted`);
+});
+
+// Export JSON
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const state = captureCurrentState();
+  const slug  = (state.projectTitle || 'scope').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const json  = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), ...state }, null, 2);
+  const a     = document.createElement('a');
+  a.href      = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+  a.download  = `${slug}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+// Import JSON
+document.getElementById('importInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!Array.isArray(data.rows)) throw new Error('Not a valid scope file');
+      if (rows.length && !confirm(`Import "${data.projectTitle || file.name}"? Current scope will be replaced.`)) return;
+      applyState(data);
+      showToast(`Imported: ${data.projectTitle || file.name}`);
+    } catch {
+      alert('Could not read this file — make sure it is a valid scope JSON export.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
 // ── Init ──────────────────────────────────────────────────
 (function init() {
   // Check if Sales Guide passed a preset via URL param
@@ -710,5 +828,6 @@ sbPushBtn.addEventListener('click', async () => {
     document.getElementById('exclusions').value   = PRESETS.azure.exclusions;
   }
   render();
+  renderTemplateSelect();
   initSbCredentials();
 })();
