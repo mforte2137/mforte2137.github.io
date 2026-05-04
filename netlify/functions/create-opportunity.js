@@ -95,52 +95,29 @@ exports.handler = async (event) => {
         results.categories = (data?.values || []).filter(v => !v.deleted);
       } catch { results.categories = []; }
 
-      // Owners & Pipeline stages — the list endpoint returns IdentifiedOpportunityResponseDto
-      // (stripped schema — no owner or pipelineStage fields). We need to fetch a few
-      // individual opportunities by ID to get the full OpportunityResponseDto.
+      // Pipeline stages — try the same naming pattern that worked for category
       try {
-        // Step 1: get a handful of opportunity IDs from the list
-        const listRes  = await fetch(`${BASE}/opportunity?size=10`, { headers });
-        const listData = listRes.ok ? await listRes.json() : {};
-        const listOpps = listData?.data || listData?.items || (Array.isArray(listData) ? listData : []);
-        const ids      = listOpps.map(o => o.id).filter(Boolean).slice(0, 5);
-
-        const ownerMap = new Map();
-        const stageMap = new Map();
-
-        // Step 2: fetch each individual opportunity to get full DTO
-        await Promise.all(ids.map(async id => {
-          try {
-            const res  = await fetch(`${BASE}/opportunity/${id}`, { headers });
-            const opp  = res.ok ? await res.json() : {};
-
-            if (opp.owner?.id) {
-              ownerMap.set(opp.owner.id, {
-                id:           opp.owner.id,
-                displayValue: opp.owner.name || opp.owner.externalIdentifier || opp.owner.id,
-                extId:        opp.owner.externalIdentifier || null
-              });
-            }
-            const stageId   = opp.pipelineStage?.id   || opp.pipelineStageId;
-            const stageName = opp.pipelineStage?.name || opp.pipelineStageDisplayValue || stageId;
-            if (stageId) stageMap.set(stageId, { id: stageId, displayValue: stageName });
-          } catch { /* skip failed individual fetch */ }
-        }));
-
-        results.owners         = [...ownerMap.values()];
-        results.pipelineStages = [...stageMap.values()];
-        results._debug = {
-          listCount:  listOpps.length,
-          idsFound:   ids,
-          ownersFound: results.owners.length,
-          stagesFound: results.pipelineStages.length,
-          listKeys:   Object.keys(listData || {})
-        };
-      } catch (e) {
-        results.owners         = [];
+        const candidates = ['opportunity-stage', 'opportunity-pipeline-stage', 'pipeline-stage', 'pipelineStage'];
         results.pipelineStages = [];
-        results._debug = { error: e.message };
-      }
+        for (const name of candidates) {
+          const res  = await fetch(`${BASE}/field/${encodeURIComponent(name)}`, { headers });
+          const data = res.ok ? await res.json() : {};
+          const vals = (data?.values || []).filter(v => !v.deleted);
+          if (vals.length > 0) { results.pipelineStages = vals; break; }
+        }
+      } catch { results.pipelineStages = []; }
+
+      // Owners — try field endpoint with opportunity- prefix pattern
+      try {
+        const candidates = ['opportunity-owner', 'opportunity-user', 'owner', 'user'];
+        results.owners = [];
+        for (const name of candidates) {
+          const res  = await fetch(`${BASE}/field/${encodeURIComponent(name)}`, { headers });
+          const data = res.ok ? await res.json() : {};
+          const vals = (data?.values || []).filter(v => !v.deleted);
+          if (vals.length > 0) { results.owners = vals; break; }
+        }
+      } catch { results.owners = []; }
 
       return ok(results);
     }
