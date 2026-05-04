@@ -1,652 +1,745 @@
 /* =========================================================
-   Proposal Evaluator — complete stylesheet
-   Includes: original styles + widget generator +
-   colour theme selector + quote URL input
+   Proposal Evaluator — evaluator.js
+   Includes: original analysis flow + Salesbuildr quote URL
+   input + color theme selector for widget generation.
    ========================================================= */
 
-:root {
-  --ink:         #0f1b2d;
-  --ink-soft:    #2b3a52;
-  --paper:       #fafaf7;
-  --paper-alt:   #f3f1ea;
-  --rule:        #d9d4c5;
-  --accent:      #b8371f;
-  --accent-soft: #f4e3de;
-  --good:        #2f6b3a;
-  --good-soft:   #dfe9da;
-  --warn:        #8a6a00;
-  --warn-soft:   #f4ecc9;
-  --mute:        #6b6758;
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ── Module-level state ────────────────────────────────────
+let lastAnalysis     = null;
+let lastTextExcerpt  = '';
+let selectedColors   = { primary: '#0d2d5e', accent: '#1a6fc4', light: '#f0f6ff' };
+let generatedWidgets = [];
+const LS_API_KEY     = 'sb_api_key';
+const LS_INT_KEY     = 'sb_int_key';
+
+// ── DOM handles ───────────────────────────────────────────
+const uploadView    = document.getElementById('upload-view');
+const parsingView   = document.getElementById('parsing-view');
+const reportView    = document.getElementById('report-view');
+const dropzone      = document.getElementById('dropzone');
+const fileInput     = document.getElementById('file-input');
+const browseBtn     = document.getElementById('browse-btn');
+const parsingTitle  = document.getElementById('parsing-title');
+const parsingDetail = document.getElementById('parsing-detail');
+const restartBtn    = document.getElementById('restart-btn');
+const downloadBtn   = document.getElementById('download-btn');
+const errorBanner   = document.getElementById('error-banner');
+const errorDetail   = document.getElementById('error-detail');
+const errorDismiss  = document.getElementById('error-dismiss');
+const pasteTextarea = document.getElementById('paste-text');
+const pasteCount    = document.getElementById('paste-count');
+const pasteBtn      = document.getElementById('paste-btn');
+
+// Report fields
+const rptFilename     = document.getElementById('rpt-filename');
+const rptPages        = document.getElementById('rpt-pages');
+const rptDate         = document.getElementById('rpt-date');
+const rptHeadline     = document.getElementById('rpt-headline');
+const rptSubtitle     = document.getElementById('rpt-subtitle');
+const rptWidgets      = document.getElementById('rpt-widgets');
+const rptSequenceNote = document.getElementById('rpt-sequence-note');
+const rptFears        = document.getElementById('rpt-fears');
+const rptQuotes       = document.getElementById('rpt-quotes');
+const rptBefore       = document.getElementById('rpt-before');
+const rptAfter        = document.getElementById('rpt-after');
+
+// Combined widget + Connect Salesbuildr
+const combinedSection   = document.getElementById('combined-section');
+const combinedCopyBtn   = document.getElementById('combined-copy-btn');
+const combinedPreview   = document.getElementById('combined-preview');
+const combinedCode      = document.getElementById('combined-code');
+const combinedTabs      = document.getElementById('combined-tabs');
+const individualSection = document.getElementById('individual-section');
+const individualToggle  = document.getElementById('individual-toggle');
+const sbToggle          = document.getElementById('sb-toggle');
+const sbArrow           = document.getElementById('sb-arrow');
+const sbBody            = document.getElementById('sb-connect-body');
+const sbApiKey          = document.getElementById('sb-api-key');
+const sbIntKey          = document.getElementById('sb-int-key');
+const sbRemember        = document.getElementById('sb-remember');
+const sbPrefix          = document.getElementById('sb-prefix');
+const sbPushBtn         = document.getElementById('sb-push-btn');
+const sbResult          = document.getElementById('sb-result');
+
+// Widget generator
+const widgetSection    = document.getElementById('widget-section');
+const widgetCta        = document.getElementById('widget-cta');
+const widgetWorking    = document.getElementById('widget-working');
+const widgetWorkingMsg = document.getElementById('widget-working-msg');
+const widgetOutputs    = document.getElementById('widget-outputs');
+const generateBtn      = document.getElementById('generate-btn');
+
+// ── View switching ────────────────────────────────────────
+function showView(name) {
+  uploadView.hidden  = name !== 'upload';
+  parsingView.hidden = name !== 'parsing';
+  reportView.hidden  = name !== 'report';
+}
+function setWorking(title, detail) {
+  parsingTitle.textContent  = title;
+  parsingDetail.textContent = detail;
+}
+function showError(message) {
+  errorDetail.textContent = message;
+  errorBanner.hidden = false;
+}
+function hideError() { errorBanner.hidden = true; }
+
+// ── Colour theme selector ─────────────────────────────────
+function lightenColor(hex, amount) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return '#' + [r, g, b].map(c => Math.round(c + (255 - c) * amount).toString(16).padStart(2, '0')).join('');
+}
+function isValidHex(val) { return /^#[0-9a-fA-F]{6}$/.test(val); }
+
+const themeGrid        = document.getElementById('widget-theme-grid');
+const customInputsEl   = document.getElementById('widget-custom-inputs');
+const primaryPicker    = document.getElementById('widget-primary-picker');
+const primaryHexInput  = document.getElementById('widget-primary-hex');
+const accentPicker     = document.getElementById('widget-accent-picker');
+const accentHexInput   = document.getElementById('widget-accent-hex');
+const customPreview    = document.getElementById('widget-custom-preview');
+
+themeGrid.querySelectorAll('.theme-tile').forEach(tile => {
+  tile.addEventListener('click', () => {
+    themeGrid.querySelectorAll('.theme-tile').forEach(t => t.classList.remove('is-selected'));
+    tile.classList.add('is-selected');
+    if (tile.dataset.theme === 'custom') {
+      customInputsEl.hidden = false;
+      updateCustomColors();
+    } else {
+      customInputsEl.hidden = true;
+      selectedColors = {
+        primary: tile.dataset.primary,
+        accent:  tile.dataset.accent,
+        light:   tile.dataset.light
+      };
+    }
+  });
+});
+
+function syncColorPicker(picker, hexField) {
+  picker.addEventListener('input', () => {
+    hexField.value = picker.value.toUpperCase();
+    updateCustomColors();
+  });
+  hexField.addEventListener('input', () => {
+    const val = hexField.value.trim().startsWith('#')
+      ? hexField.value.trim() : '#' + hexField.value.trim();
+    if (isValidHex(val)) {
+      picker.value = val;
+      hexField.classList.remove('is-error');
+      updateCustomColors();
+    } else {
+      hexField.classList.add('is-error');
+    }
+  });
+}
+syncColorPicker(primaryPicker, primaryHexInput);
+syncColorPicker(accentPicker,  accentHexInput);
+
+function updateCustomColors() {
+  const p = primaryPicker.value;
+  const a = accentPicker.value;
+  selectedColors = { primary: p, accent: a, light: lightenColor(a, 0.91) };
+  customPreview.style.background = `linear-gradient(135deg, ${p} 60%, ${a} 60%)`;
+  const span = customPreview.querySelector('span');
+  if (span) { span.style.color = '#ffffff'; span.textContent = ''; }
 }
 
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
-body {
-  font-family: 'Georgia', 'Charter', 'Cambria', serif;
-  background: var(--paper);
-  color: var(--ink);
-  line-height: 1.55;
-  font-size: 17px;
-  -webkit-font-smoothing: antialiased;
-}
-.container { max-width: 820px; margin: 0 auto; padding: 48px 40px 80px; }
+// ── Drag & Drop + File Input ──────────────────────────────
+// Dropzone is a <label for="file-input"> — clicking it natively
+// triggers the file dialog without needing programmatic .click().
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) handleFile(file);
+  fileInput.value = '';
+});
+['dragenter', 'dragover'].forEach(type => {
+  dropzone.addEventListener(type, (e) => {
+    e.preventDefault();
+    dropzone.classList.add('is-dragover');
+  });
+});
+['dragleave', 'drop'].forEach(type => {
+  dropzone.addEventListener(type, (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('is-dragover');
+  });
+});
+dropzone.addEventListener('drop', (e) => {
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
 
-/* Header */
-header.top {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  border-bottom: 2px solid var(--ink);
-  padding-bottom: 12px;
-  margin-bottom: 40px;
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-}
-header.top .brand { font-weight: 700; color: var(--ink); }
+// ── Paste text input ──────────────────────────────────────
+pasteTextarea.addEventListener('input', () => {
+  pasteCount.textContent = pasteTextarea.value.length.toLocaleString();
+});
 
-/* Meta */
-.meta {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 13px;
-  color: var(--mute);
-  margin-bottom: 18px;
-  letter-spacing: 0.02em;
-}
-.meta strong { color: var(--ink); font-weight: 600; }
+pasteBtn.addEventListener('click', () => {
+  const text = pasteTextarea.value.trim();
+  if (!text) { pasteTextarea.focus(); return; }
+  handlePastedText(text);
+});
 
-/* =========================================================
-   VIEW 1: Upload
-   ========================================================= */
-.upload-view { padding-top: 24px; }
-.big-title {
-  font-size: 46px;
-  line-height: 1.1;
-  margin: 0 0 18px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-}
-.big-lead {
-  font-size: 19px;
-  line-height: 1.5;
-  color: var(--ink-soft);
-  margin: 0 0 40px;
-  max-width: 680px;
-}
-.big-lead em { font-style: italic; color: var(--ink); }
+async function handlePastedText(rawText) {
+  hideError();
 
-.dropzone {
-  border: 2px dashed var(--rule);
-  background: var(--paper-alt);
-  padding: 60px 40px;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-.dropzone:hover,
-.dropzone.is-hover    { border-color: var(--accent); background: var(--accent-soft); }
-.dropzone.is-dragover { border-color: var(--accent); border-style: solid; background: var(--accent-soft); }
-.dz-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--ink);
-  margin-bottom: 6px;
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-}
-.dz-sub {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 14px;
-  color: var(--ink-soft);
-  margin-bottom: 18px;
-}
-.dz-browse {
-  background: none; border: none; padding: 0; font: inherit;
-  color: var(--accent); text-decoration: underline; cursor: pointer;
-}
-.dz-note {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 12px;
-  color: var(--mute);
-  letter-spacing: 0.02em;
-  margin-top: 24px;
+  const normalized = normalizeText(rawText);
+  if (normalized.length < 200) {
+    showError('The pasted text is too short to analyze (' + normalized.length + ' characters). Please make sure you selected all the text from your quote.');
+    return;
+  }
+
+  lastTextExcerpt = normalized.slice(0, 1500);
+  const wordCount = (normalized.match(/\S+/g) || []).length;
+  const pages     = Math.max(1, Math.round(wordCount / 350));
+
+  showView('parsing');
+  setWorking('Analyzing against the framework…', 'Claude is reading it through your buyer\'s eyes. Usually 5–10 seconds.');
+  pasteBtn.disabled = true;
+
+  try {
+    const analysis = await runAnalysis({
+      text:     normalized,
+      filename: 'Salesbuildr Quote',
+      pages
+    });
+
+    lastAnalysis = analysis;
+    renderReport(analysis, { filename: 'Salesbuildr Quote', pages });
+    showView('report');
+    widgetSection.hidden = false;
+
+  } catch (err) {
+    console.error(err);
+    showError(err.message || 'Unknown error');
+    showView('upload');
+  } finally {
+    pasteBtn.disabled = false;
+  }
 }
 
-/* ── Paste text option ── */
-.paste-option { margin-top: 28px; }
-.paste-divider {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 12px;
-}
-.paste-divider::before,
-.paste-divider::after {
-  content: '';
-  flex: 1;
-  border-top: 1px dashed var(--rule);
-}
-.paste-divider span {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--mute);
-  white-space: nowrap;
-}
-.paste-hint {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 13px;
-  color: var(--mute);
-  margin: 0 0 10px;
-  line-height: 1.5;
-}
-.paste-hint strong { color: var(--ink-soft); }
-.paste-textarea {
-  width: 100%;
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 13px;
-  color: var(--ink);
-  background: #fff;
-  border: 1.5px solid var(--rule);
-  padding: 12px 14px;
-  outline: none;
-  transition: border-color 0.15s;
-  resize: vertical;
-  line-height: 1.5;
-}
-.paste-textarea:focus { border-color: var(--ink); }
-.paste-textarea::placeholder { color: var(--mute); }
-.paste-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 8px;
-}
-.paste-counter {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 12px;
-  color: var(--mute);
-}
-.paste-btn {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  background: var(--ink);
-  color: var(--paper);
-  border: none;
-  padding: 10px 20px;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s;
-}
-.paste-btn:hover    { background: var(--accent); }
-.paste-btn:disabled { background: var(--mute); cursor: not-allowed; }
+// ── Restart ───────────────────────────────────────────────
+restartBtn.addEventListener('click', () => {
+  hideError();
+  resetWidgetSection();
+  pasteTextarea.value   = '';
+  pasteCount.textContent = '0';
+  showView('upload');
+});
+errorDismiss.addEventListener('click', () => {
+  hideError();
+  showView('upload');
+});
+downloadBtn.addEventListener('click', () => window.print());
 
-.upload-footer { margin-top: 24px; text-align: center; }
-.preview-link {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 13px;
-  color: var(--ink-soft);
-  text-decoration: none;
-  border-bottom: 1px dotted var(--ink-soft);
-  padding-bottom: 1px;
-}
-.preview-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
+// ── File handling ─────────────────────────────────────────
+async function handleFile(file) {
+  hideError();
+  const lower  = file.name.toLowerCase();
+  const isPdf  = lower.endsWith('.pdf');
+  const isDocx = lower.endsWith('.docx');
+  if (!isPdf && !isDocx) {
+    showError('Please upload a PDF or Word (.docx) file.');
+    return;
+  }
+  if (file.size > 25 * 1024 * 1024) {
+    showError('That file is larger than 25 MB. Try a text-based export.');
+    return;
+  }
 
-/* =========================================================
-   VIEW 2: Working
-   ========================================================= */
-.parsing-view { text-align: center; padding: 120px 40px; }
-.spinner {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 28px;
-  border: 3px solid var(--rule);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.parsing-title { font-size: 22px; font-weight: 600; color: var(--ink); margin: 0 0 8px; }
-.parsing-sub {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 13px;
-  color: var(--mute);
-  margin: 0;
+  showView('parsing');
+  setWorking('Reading the proposal…', 'Extracting text from ' + file.name);
+
+  try {
+    let fullText, pages;
+
+    if (isPdf) {
+      const result = await extractTextFromPdf(file, (pageNum, total) => {
+        setWorking('Reading the proposal…', 'Reading page ' + pageNum + ' of ' + total + '…');
+      });
+      fullText = result.fullText;
+      pages    = result.pageCount;
+    } else {
+      setWorking('Reading the proposal…', 'Extracting text from Word document…');
+      fullText = await extractTextFromDocx(file);
+      const wordCount = (fullText.match(/\S+/g) || []).length;
+      pages = Math.max(1, Math.round(wordCount / 350));
+    }
+
+    const normalized = normalizeText(fullText);
+    if (normalized.length < 200) {
+      const hint = isPdf
+        ? 'This PDF may be image-only and would need OCR before we can analyze it.'
+        : 'This Word doc came back nearly empty. Try exporting as PDF first.';
+      showError('Only ' + normalized.length + ' characters were extracted. ' + hint);
+      showView('upload');
+      return;
+    }
+
+    lastTextExcerpt = normalized.slice(0, 1500);
+
+    setWorking('Analyzing against the framework…', 'Claude is reading it through your buyer\'s eyes. Usually 5–10 seconds.');
+
+    const analysis = await runAnalysis({ text: normalized, filename: file.name, pages });
+
+    lastAnalysis = analysis;
+    renderReport(analysis, { filename: file.name, pages });
+    showView('report');
+    widgetSection.hidden = false;
+
+  } catch (err) {
+    console.error(err);
+    showError(err.message || 'Unknown error');
+    showView('upload');
+  }
 }
 
-/* =========================================================
-   VIEW 3: Report
-   ========================================================= */
-.verdict {
-  border-left: 6px solid var(--accent);
-  padding: 4px 0 4px 24px;
-  margin: 32px 0 56px;
-}
-.verdict .kicker {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--accent);
-  font-weight: 700;
-  margin-bottom: 12px;
-}
-.verdict h1 {
-  font-size: 42px;
-  line-height: 1.1;
-  margin: 0 0 14px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-}
-.verdict .sub {
-  font-size: 20px;
-  line-height: 1.4;
-  color: var(--ink-soft);
-  margin: 0;
-  max-width: 680px;
+// ── Text extraction: PDF ──────────────────────────────────
+async function extractTextFromPdf(file, onProgress) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf         = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const pageCount   = pdf.numPages;
+  let fullText = '';
+  for (let i = 1; i <= pageCount; i++) {
+    if (onProgress) onProgress(i, pageCount);
+    const page        = await pdf.getPage(i);
+    const textContent = await page.getTextContent();
+    let pageText = '';
+    let lastY    = null;
+    for (const item of textContent.items) {
+      if (!item.str) continue;
+      const y = item.transform ? item.transform[5] : null;
+      if (lastY !== null && y !== null && Math.abs(y - lastY) > 4) pageText += '\n';
+      pageText += item.str + ' ';
+      lastY = y;
+    }
+    fullText += '\n\n--- Page ' + i + ' ---\n' + pageText.trim();
+  }
+  return { fullText: fullText.trim(), pageCount };
 }
 
-h2 {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 12px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--mute);
-  font-weight: 700;
-  margin: 56px 0 18px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--rule);
-}
-h2 .num { display: inline-block; width: 22px; color: var(--ink); }
-section p.lead {
-  font-size: 17px;
-  color: var(--ink-soft);
-  margin: 0 0 24px;
-  max-width: 660px;
+// ── Text extraction: DOCX ─────────────────────────────────
+async function extractTextFromDocx(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const result      = await mammoth.extractRawText({ arrayBuffer });
+  return (result && result.value ? result.value : '').trim();
 }
 
-/* Widget sequence */
-.sequence {
-  background: var(--paper-alt);
-  border: 1px solid var(--rule);
-  padding: 28px 28px 22px;
-  margin-top: 8px;
-}
-.sequence .row {
-  display: grid;
-  grid-template-columns: 110px 1fr;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 14px;
-}
-.sequence .row:last-child { margin-bottom: 0; }
-.sequence .label {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--mute);
-  font-weight: 600;
-}
-.widgets { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-.widget {
-  padding: 12px 10px;
-  border: 1px solid var(--rule);
-  background: #fff;
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 11px;
-  line-height: 1.3;
-  text-align: center;
-  color: var(--ink);
-}
-.widget .w-num { display: block; font-size: 10px; color: var(--mute); letter-spacing: 0.1em; margin-bottom: 3px; }
-.widget.present    { background: var(--good-soft);  border-color: var(--good);   }
-.widget.present .w-num  { color: var(--good); }
-.widget.missing    { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-.widget.missing .w-num  { color: var(--accent); }
-.widget.overweight { background: var(--warn-soft);  border-color: var(--warn);   }
-.widget.overweight .w-num { color: var(--warn); }
-.sequence .note {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 13px;
-  color: var(--ink-soft);
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px dashed var(--rule);
-  line-height: 1.5;
-}
-.sequence .note strong { color: var(--accent); }
-
-/* Fears */
-.fears { list-style: none; padding: 0; margin: 0; }
-.fears li { padding: 14px 0; border-bottom: 1px solid var(--rule); display: grid; grid-template-columns: 24px 1fr; gap: 14px; }
-.fears li:first-child { border-top: 1px solid var(--rule); }
-.fears .mark { color: var(--accent); font-weight: 700; font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; padding-top: 2px; }
-.fears .fear { font-size: 17px; color: var(--ink); line-height: 1.4; }
-.fears .fear small { display: block; font-size: 13px; color: var(--mute); font-style: italic; margin-top: 4px; font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; }
-
-/* Quotes */
-.quote-block { margin: 18px 0; padding: 20px 24px; background: var(--paper-alt); border-left: 3px solid var(--ink-soft); }
-.quote-block .their { font-style: italic; color: var(--ink); font-size: 16px; margin: 0 0 12px; line-height: 1.5; }
-.quote-block .their::before { content: '\201C'; margin-right: 2px; }
-.quote-block .their::after  { content: '\201D'; margin-left: 2px; }
-.quote-block .arrow { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--good); font-weight: 700; margin: 0 0 6px; }
-.quote-block .ours { color: var(--ink); font-size: 16px; font-weight: 600; margin: 0; line-height: 1.5; }
-
-/* Rewrite */
-.rewrite { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 8px; }
-.rewrite-block { border: 1px solid var(--rule); padding: 22px 26px; }
-.rewrite-block.before { background: #fff; }
-.rewrite-block.after  { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-.rewrite-block .rw-tag { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; margin-bottom: 10px; }
-.rewrite-block.before .rw-tag { color: var(--accent); }
-.rewrite-block.after  .rw-tag { color: #e7c3b9; }
-.rewrite-block p { font-size: 17px; line-height: 1.55; margin: 0; }
-.rewrite-block.before p { font-style: italic; color: var(--ink-soft); }
-.rewrite-block.after  p { font-weight: 500; }
-
-/* CTA */
-.next {
-  margin-top: 64px;
-  padding: 32px 36px;
-  background: var(--ink);
-  color: var(--paper);
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 24px;
-  align-items: center;
-}
-.next .nx-title { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #a0b4cc; font-weight: 700; margin-bottom: 8px; }
-.next h3 { margin: 0 0 6px; font-size: 22px; line-height: 1.3; font-weight: 600; }
-.next p  { margin: 0; font-size: 14px; color: #c5cfdb; font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; line-height: 1.5; }
-.next button { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; background: var(--accent); color: #fff; border: none; padding: 14px 22px; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
-.next button[disabled] { background: #3a4a63; color: #8da0bc; cursor: not-allowed; }
-
-/* Report footer */
-.report-footer { margin-top: 32px; text-align: center; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
-
-/* Secondary button */
-.secondary-btn {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  background: #fff;
-  color: var(--ink);
-  border: 1px solid var(--rule);
-  padding: 10px 16px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: border-color 0.15s;
-}
-.secondary-btn:hover { border-color: var(--ink); }
-
-/* Error banner */
-.error-banner { margin-top: 24px; padding: 20px 24px; background: var(--accent-soft); border: 1px solid var(--accent); border-left-width: 4px; }
-.error-title  { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-weight: 700; color: var(--accent); margin-bottom: 6px; font-size: 14px; }
-.error-detail { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: var(--ink-soft); margin-bottom: 12px; line-height: 1.5; }
-
-footer.tag { margin-top: 64px; font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 11px; letter-spacing: 0.1em; color: var(--mute); text-align: center; font-style: italic; }
-
-/* =========================================================
-   SECTION 05: Widget Generator
-   ========================================================= */
-.widget-theme-picker {
-  background: var(--paper-alt);
-  border: 1px solid var(--rule);
-  padding: 22px 24px 24px;
-  margin-bottom: 24px;
-}
-.wtp-label {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--mute);
-  margin-bottom: 16px;
+function normalizeText(s) {
+  return s
+    .replace(/[ \t]+/g,  ' ')
+    .replace(/ *\n */g,  '\n')
+    .replace(/\n{3,}/g,  '\n\n')
+    .trim();
 }
 
-/* Theme grid */
-.theme-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
-.theme-tile {
-  background: #fff;
-  border: 2.5px solid var(--rule);
-  padding: 0;
-  cursor: pointer;
-  text-align: center;
-  transition: border-color 0.15s, transform 0.1s;
-  position: relative;
-  overflow: hidden;
-}
-.theme-tile:hover      { border-color: var(--ink-soft); transform: translateY(-2px); }
-.theme-tile.is-selected { border-color: var(--ink); border-width: 3px; }
+// ── API: analyze ──────────────────────────────────────────
+async function runAnalysis({ text, filename, pages }) {
+  let response;
+  try {
+    response = await fetch('/api/analyze', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ text, filename, pages })
+    });
+  } catch (e) {
+    throw new Error('Could not reach the analyzer. Check your connection and try again.');
+  }
+  let data;
+  try { data = await response.json(); }
+  catch (e) { throw new Error('Unexpected response. Status ' + response.status); }
 
-.tile-swatch { display: flex; height: 72px; width: 100%; }
-.swatch-primary { flex: 2; }
-.swatch-accent  { flex: 1; }
-
-.tile-swatch-custom { background: var(--paper-alt); }
-.custom-swatch-preview {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--mute);
-  line-height: 1.4;
-  transition: background 0.2s;
+  if (!response.ok || !data.ok) {
+    const detail = data && data.error   ? data.error                           : 'HTTP ' + response.status;
+    const more   = data && data.details ? ' (' + data.details.slice(0, 200) + ')' : '';
+    throw new Error('Analysis failed: ' + detail + more);
+  }
+  if (!data.analysis) throw new Error('The analyzer returned no analysis. Please try again.');
+  return data.analysis;
 }
 
-.tile-name {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--ink-soft);
-  padding: 8px 6px 10px;
-  letter-spacing: 0.02em;
-}
-.theme-tile.is-selected .tile-name { color: var(--ink); }
+// ── Report rendering ──────────────────────────────────────
+function renderReport(a, meta) {
+  rptFilename.textContent = meta.filename;
+  rptPages.textContent    = meta.pages;
+  rptDate.textContent     = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  rptHeadline.textContent = a.verdict.headline;
+  rptSubtitle.textContent = a.verdict.subtitle;
 
-.tile-check {
-  position: absolute;
-  top: 5px;
-  right: 7px;
-  font-size: 13px;
-  color: var(--ink);
-  font-weight: 700;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-.theme-tile.is-selected .tile-check { opacity: 1; }
+  rptWidgets.innerHTML = '';
+  a.widgetSequence.forEach(w => {
+    const div = document.createElement('div');
+    div.className = 'widget ' + w.status;
+    const num = document.createElement('span');
+    num.className = 'w-num'; num.textContent = 'W' + w.num;
+    div.appendChild(num);
+    div.appendChild(document.createTextNode(w.detail));
+    rptWidgets.appendChild(div);
+  });
+  rptSequenceNote.textContent = a.sequenceNote;
 
-/* Custom colour inputs */
-.custom-inputs { margin-top: 16px; padding: 18px 20px; background: #fff; border: 1px solid var(--rule); }
-.custom-row    { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.custom-label  { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 12px; font-weight: 700; color: var(--ink); display: block; margin-bottom: 7px; }
-.custom-hint   { font-weight: 400; color: var(--mute); }
-.custom-input-row { display: flex; align-items: center; gap: 8px; }
-.color-picker  { width: 44px; height: 36px; border: 1.5px solid var(--rule); padding: 2px; cursor: pointer; background: #fff; flex-shrink: 0; }
-.hex-input     { flex: 1; font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; color: var(--ink); background: #fff; border: 1.5px solid var(--rule); padding: 8px 10px; outline: none; transition: border-color 0.15s; text-transform: uppercase; }
-.hex-input:focus    { border-color: var(--ink); }
-.hex-input.is-error { border-color: var(--accent); }
-.custom-note   { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 12px; color: var(--mute); margin: 12px 0 0; font-style: italic; }
+  rptFears.innerHTML = '';
+  a.fears.forEach(f => {
+    const li   = document.createElement('li');
+    const mark = document.createElement('span');
+    mark.className = 'mark'; mark.textContent = '—';
+    const fearDiv = document.createElement('div');
+    fearDiv.className = 'fear';
+    fearDiv.appendChild(document.createTextNode(f.fear));
+    const small = document.createElement('small');
+    small.textContent = f.proposalGap;
+    fearDiv.appendChild(small);
+    li.appendChild(mark); li.appendChild(fearDiv);
+    rptFears.appendChild(li);
+  });
 
-/* Widget CTA */
-.widget-cta {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 24px;
-  background: var(--paper-alt);
-  border: 1px solid var(--rule);
-  padding: 22px 24px;
-  margin-top: 0;
-}
-.widget-cta-text { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; color: var(--ink-soft); line-height: 1.5; }
-.widget-cta-text strong { display: block; font-size: 15px; color: var(--ink); margin-bottom: 3px; }
-.generate-btn {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  background: var(--ink);
-  color: var(--paper);
-  border: none;
-  padding: 13px 22px;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s;
-}
-.generate-btn:hover    { background: var(--accent); }
-.generate-btn:disabled { background: var(--mute); cursor: not-allowed; }
+  rptQuotes.innerHTML = '';
+  a.insideOutQuotes.forEach(q => {
+    const block = document.createElement('div');
+    block.className = 'quote-block';
+    const their = document.createElement('p'); their.className = 'their'; their.textContent = q.their;
+    const arrow = document.createElement('p'); arrow.className = 'arrow'; arrow.textContent = 'Outside-in rewrite';
+    const ours  = document.createElement('p'); ours.className  = 'ours';  ours.textContent  = q.ours;
+    block.appendChild(their); block.appendChild(arrow); block.appendChild(ours);
+    rptQuotes.appendChild(block);
+  });
 
-/* Widget working state */
-.widget-working { display: flex; align-items: center; gap: 16px; padding: 24px 0 12px; }
-.spinner-sm { width: 28px; height: 28px; border-width: 3px; margin: 0; flex-shrink: 0; }
-
-/* Widget cards */
-.widget-card { margin-top: 22px; border: 1px solid var(--rule); background: #fff; }
-.widget-card-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 18px; background: var(--paper-alt); border-bottom: 1px solid var(--rule); }
-.widget-card-label  { display: flex; align-items: center; gap: 10px; }
-.widget-badge { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent); padding: 3px 8px; flex-shrink: 0; }
-.widget-card-title  { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 600; color: var(--ink); }
-.widget-copy-btn { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; background: var(--ink); color: var(--paper); border: none; padding: 7px 14px; font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; cursor: pointer; white-space: nowrap; transition: background 0.15s; flex-shrink: 0; }
-.widget-copy-btn:hover     { background: var(--accent); }
-.widget-copy-btn.is-copied { background: var(--good); }
-
-.widget-tabs { display: flex; border-bottom: 1px solid var(--rule); background: #fff; }
-.widget-tab  { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; background: none; border: none; padding: 8px 16px; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mute); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
-.widget-tab.is-active { color: var(--ink); border-bottom-color: var(--ink); }
-
-.widget-preview { width: 100%; height: 320px; border: none; display: block; background: #fff; }
-.widget-code    { display: none; width: 100%; height: 320px; border: none; border-top: 1px solid var(--rule); padding: 14px 18px; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; line-height: 1.6; color: var(--ink); background: var(--paper-alt); resize: vertical; outline: none; }
-
-/* =========================================================
-   Print
-   ========================================================= */
-@media print {
-  body { font-size: 14px; }
-  .container { padding: 20px; max-width: 100%; }
-  .next { page-break-inside: avoid; }
-  .verdict h1 { font-size: 32px; }
-  .upload-view, .parsing-view, .error-banner,
-  .report-footer, #widget-section { display: none !important; }
+  rptBefore.textContent = a.openingRewrite.before;
+  rptAfter.textContent  = a.openingRewrite.after;
 }
 
-/* ── Combined widget card ── */
-.combined-card { border: 2px solid var(--ink); background: #fff; margin-bottom: 0; }
-.combined-card-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; background: var(--ink); flex-wrap: wrap; }
-.combined-card-label  { display: flex; align-items: center; gap: 12px; }
-.combined-badge { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink); background: #ffffff; padding: 3px 9px; flex-shrink: 0; }
-.combined-title { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 600; color: #ffffff; }
-.combined-copy-btn { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; background: var(--accent); color: #fff; border: none; padding: 8px 18px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; white-space: nowrap; transition: background 0.15s; flex-shrink: 0; }
-.combined-copy-btn:hover     { background: #96271a; }
-.combined-copy-btn.is-copied { background: var(--good); }
-.combined-hint { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 12px; color: var(--mute); padding: 10px 20px; border-bottom: 1px solid var(--rule); background: var(--paper-alt); line-height: 1.5; }
-.combined-preview { width: 100%; height: 440px; border: none; display: block; background: #fff; }
-.combined-code    { display: none; width: 100%; height: 440px; border: none; border-top: 1px solid var(--rule); padding: 14px 18px; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; line-height: 1.6; color: var(--ink); background: var(--paper-alt); resize: vertical; outline: none; }
+// ══════════════════════════════════════════════════════════
+//  WIDGET GENERATOR
+// ══════════════════════════════════════════════════════════
+const WIDGET_IDS = ['w1', 'w2', 'w3', 'w4', 'w5'];
+const WIDGET_LABELS = {
+  w1: 'W1 · Their Situation',
+  w2: 'W2 · Why Care Now',
+  w3: 'W3 · Why Trust Us',
+  w4: 'W4 · What They Get',
+  w5: 'W5 · Is It Worth It'
+};
 
-/* ── Connect Salesbuildr ── */
-.sb-connect { border: 1.5px solid var(--rule); border-top: none; margin-bottom: 24px; }
-.sb-connect-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: var(--paper-alt); border: none; cursor: pointer; font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 600; color: var(--ink-soft); transition: background 0.15s; }
-.sb-connect-toggle:hover { background: #ede9df; color: var(--ink); }
-.sb-arrow { font-size: 11px; transition: transform 0.2s; }
-.sb-arrow.is-open { transform: rotate(180deg); }
-.sb-connect-body { padding: 18px 20px; border-top: 1px solid var(--rule); }
-.sb-connect-hint { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: var(--mute); margin-bottom: 16px; line-height: 1.5; }
-.sb-connect-hint em { font-style: normal; font-weight: 600; color: var(--ink-soft); }
-.sb-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-.sb-label  { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 12px; font-weight: 700; color: var(--ink); display: block; margin-bottom: 5px; }
-.sb-where  { font-weight: 400; color: var(--mute); font-size: 11px; }
-.sb-input  { width: 100%; font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: var(--ink); background: #fff; border: 1.5px solid var(--rule); padding: 8px 11px; outline: none; transition: border-color 0.15s; }
-.sb-input:focus { border-color: var(--ink); }
-.sb-actions { display: flex; flex-direction: column; gap: 10px; }
-.sb-remember-label { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: var(--ink-soft); display: flex; align-items: center; gap: 8px; cursor: pointer; }
-.sb-push-row { display: flex; gap: 10px; flex-wrap: wrap; }
-.sb-prefix { flex: 1; min-width: 140px; font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: var(--ink); background: #fff; border: 1.5px solid var(--rule); padding: 8px 11px; outline: none; transition: border-color 0.15s; }
-.sb-prefix:focus { border-color: var(--ink); }
-.sb-prefix::placeholder { color: var(--mute); }
-.sb-push-btn { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; background: var(--ink); color: var(--paper); border: none; padding: 8px 20px; font-size: 12px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
-.sb-push-btn:hover    { background: var(--accent); }
-.sb-push-btn:disabled { background: var(--mute); cursor: not-allowed; }
-.sb-push-btn.is-done  { background: var(--good); }
-.sb-result { margin-top: 12px; padding: 11px 14px; font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; line-height: 1.5; border-left: 4px solid var(--good); background: var(--good-soft); color: var(--ink); }
-.sb-result.is-error { border-left-color: var(--accent); background: var(--accent-soft); }
+generateBtn.addEventListener('click', generateWidgets);
 
-/* ── Individual accordion ── */
-.individual-toggle { width: 100%; padding: 11px 18px; background: var(--paper-alt); border: 1.5px solid var(--rule); border-top: none; font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mute); cursor: pointer; text-align: left; transition: background 0.15s; }
-.individual-toggle:hover { background: #ede9df; color: var(--ink); }
+// Combined widget tabs
+combinedTabs.querySelectorAll('.widget-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    combinedTabs.querySelectorAll('.widget-tab').forEach(b => b.classList.remove('is-active'));
+    btn.classList.add('is-active');
+    const pane = btn.dataset.pane;
+    combinedPreview.style.display = pane === 'preview' ? 'block' : 'none';
+    combinedCode.style.display    = pane === 'code'    ? 'block' : 'none';
+  });
+});
 
-/* ── Push to Salesbuildr ── */
-.push-cta {
-  background: var(--paper-alt);
-  border: 1.5px solid var(--rule);
-  border-left: 4px solid var(--ink);
-  padding: 18px 22px;
-  margin-bottom: 16px;
-}
-.push-cta-text { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; margin-bottom: 12px; }
-.push-cta-text strong { display: block; font-size: 14px; color: var(--ink); margin-bottom: 3px; }
-.push-cta-text span   { font-size: 13px; color: var(--mute); }
-.push-cta-fields      { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-.push-prefix-input {
-  flex: 1; min-width: 160px;
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 13px; color: var(--ink); background: #fff;
-  border: 1.5px solid var(--rule); padding: 9px 12px; outline: none;
-  transition: border-color 0.15s;
-}
-.push-prefix-input:focus { border-color: var(--ink); }
-.push-prefix-input::placeholder { color: var(--mute); }
-.push-btn {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  background: var(--ink); color: var(--paper); border: none;
-  padding: 9px 20px; font-size: 12px; font-weight: 600;
-  letter-spacing: 0.07em; text-transform: uppercase;
-  cursor: pointer; white-space: nowrap; transition: background 0.15s;
-}
-.push-btn:hover    { background: var(--accent); }
-.push-btn:disabled { background: var(--mute); cursor: not-allowed; }
-.push-btn.is-done  { background: var(--good); }
-.push-result {
-  padding: 12px 18px; margin-bottom: 16px;
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 13px; line-height: 1.5;
-  border-left: 4px solid var(--good); background: var(--good-soft); color: var(--ink);
-}
-.push-result.is-error { border-left-color: var(--accent); background: var(--accent-soft); }
+combinedCopyBtn.addEventListener('click', async () => {
+  const text = combinedCode.value;
+  try { await navigator.clipboard.writeText(text); }
+  catch { const ta=document.createElement('textarea'); ta.value=text; ta.style.cssText='position:fixed;opacity:0;'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
+  combinedCopyBtn.textContent = '✅ Copied!'; combinedCopyBtn.classList.add('is-copied');
+  setTimeout(() => { combinedCopyBtn.textContent = '📋 Copy Widget'; combinedCopyBtn.classList.remove('is-copied'); }, 2500);
+});
 
-/* =========================================================
-   Mobile
-   ========================================================= */
-@media (max-width: 640px) {
-  .container  { padding: 28px 20px 60px; }
-  .big-title  { font-size: 32px; }
-  .big-lead   { font-size: 17px; }
-  .dropzone   { padding: 40px 20px; }
-  .verdict h1 { font-size: 30px; }
-  .verdict .sub { font-size: 17px; }
-  .widgets    { grid-template-columns: repeat(2, 1fr); }
-  .sequence .row { grid-template-columns: 1fr; }
-  .next       { grid-template-columns: 1fr; }
-  .url-row    { flex-direction: column; }
-  .theme-grid { grid-template-columns: repeat(3, 1fr); }
-  .custom-row { grid-template-columns: 1fr; }
-  .widget-cta { grid-template-columns: 1fr; }
+individualToggle.addEventListener('click', () => {
+  const widgetOutputs = document.getElementById('widget-outputs');
+  const open = !widgetOutputs.hidden;
+  widgetOutputs.hidden = open;
+  individualToggle.textContent = open ? 'Show 5 individual widgets ▼' : 'Hide individual widgets ▲';
+});
+
+// Connect Salesbuildr
+sbToggle.addEventListener('click', () => {
+  const isOpen = !sbBody.hidden; sbBody.hidden = isOpen;
+  sbArrow.classList.toggle('is-open', !isOpen);
+});
+sbApiKey.addEventListener('input', updateSbPushButton);
+sbIntKey.addEventListener('input', updateSbPushButton);
+sbPushBtn.addEventListener('click', pushToSalesbuildr);
+
+async function generateWidgets() {
+  if (!lastAnalysis) return;
+  generateBtn.disabled    = true;
+  widgetCta.hidden        = true;
+  widgetOutputs.innerHTML = '';
+  widgetWorking.hidden    = false;
+
+  for (let i = 0; i < WIDGET_IDS.length; i++) {
+    const id = WIDGET_IDS[i];
+    widgetWorkingMsg.textContent = `Generating widget ${i + 1} of 5 — ${WIDGET_LABELS[id]}…`;
+    try {
+      const widget = await fetchWidget(id);
+      appendWidgetCard(widget);
+      generatedWidgets.push(widget);
+    } catch (err) {
+      appendWidgetError(id, err.message);
+    }
+  }
+  widgetWorking.hidden = true;
+
+  // Build combined widget and show sections
+  if (generatedWidgets.length > 0) {
+    buildCombinedWidget(generatedWidgets);
+    combinedSection.hidden   = false;
+    individualSection.hidden = false;
+    initSbConnect();
+  }
+}
+
+function buildCombinedHtml(widgets) {
+  return widgets.map(w => w.html).join('\n<div style="height:20px;"></div>\n');
+}
+
+function buildCombinedWidget(widgets) {
+  const html = buildCombinedHtml(widgets);
+  combinedCode.value     = html;
+  combinedPreview.srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;padding:0;background:#fff;}</style></head><body>${html}</body></html>`;
+  combinedTabs.querySelectorAll('.widget-tab').forEach(b => b.classList.remove('is-active'));
+  combinedTabs.querySelector('[data-pane="preview"]').classList.add('is-active');
+  combinedPreview.style.display = 'block';
+  combinedCode.style.display    = 'none';
+}
+
+function initSbConnect() {
+  const savedApi = localStorage.getItem(LS_API_KEY);
+  const savedInt = localStorage.getItem(LS_INT_KEY);
+  if (savedApi) sbApiKey.value = savedApi;
+  if (savedInt) sbIntKey.value = savedInt;
+  if (savedApi && savedInt) sbRemember.checked = true;
+  updateSbPushButton();
+}
+
+function updateSbPushButton() {
+  sbPushBtn.disabled = !(sbApiKey.value.trim() && sbIntKey.value.trim());
+}
+
+async function pushToSalesbuildr() {
+  const apiKey = sbApiKey.value.trim();
+  const intKey = sbIntKey.value.trim();
+  if (!apiKey || !intKey) return;
+
+  if (sbRemember.checked) { localStorage.setItem(LS_API_KEY, apiKey); localStorage.setItem(LS_INT_KEY, intKey); }
+  else { localStorage.removeItem(LS_API_KEY); localStorage.removeItem(LS_INT_KEY); }
+
+  sbPushBtn.disabled = true; sbPushBtn.textContent = 'Saving…'; sbResult.hidden = true;
+
+  const combinedWidget = { id: 'combined', title: `Buyer Journey — ${rptFilename.textContent || 'Proposal'}`, html: buildCombinedHtml(generatedWidgets) };
+  const prefix = sbPrefix.value.trim();
+
+  let res;
+  try {
+    res = await fetch('/api/push-widgets', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ widgets:[combinedWidget], prefix, apiKey, integrationKey:intKey }) });
+  } catch (e) {
+    showSbResult(false, 'Could not reach the server.'); sbPushBtn.disabled=false; sbPushBtn.textContent='Save to Salesbuildr →'; return;
+  }
+  let data; try { data = await res.json(); } catch { data={}; }
+
+  if (data.successCount > 0) {
+    showSbResult(true, 'Widget saved to your Salesbuildr template library — ready to drag into any quote.');
+    sbPushBtn.textContent = '✓ Saved to Salesbuildr'; sbPushBtn.classList.add('is-done');
+  } else {
+    const err = (data.results&&data.results[0]&&data.results[0].error)||data.error||'Unknown error';
+    showSbResult(false, `Save failed: ${err}`); sbPushBtn.disabled=false; sbPushBtn.textContent='Save to Salesbuildr →';
+  }
+}
+
+function showSbResult(ok, msg) {
+  sbResult.textContent = msg; sbResult.className = 'sb-result'+(ok?'':' is-error'); sbResult.hidden=false;
+}
+
+async function fetchWidget(widgetId) {
+  let response;
+  try {
+    response = await fetch('/api/generate-widgets', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        analysis:    lastAnalysis,
+        textExcerpt: lastTextExcerpt,
+        widgetId,
+        colors:      selectedColors
+      })
+    });
+  } catch (e) {
+    throw new Error('Could not reach the widget generator. Check your connection.');
+  }
+  let data;
+  try { data = await response.json(); }
+  catch (e) { throw new Error('Unexpected response. Status ' + response.status); }
+
+  if (!response.ok || !data.ok) {
+    throw new Error(data && data.error ? data.error : 'HTTP ' + response.status);
+  }
+  return data.widget;
+}
+
+function appendWidgetCard(widget) {
+  const card   = document.createElement('div');
+  card.className = 'widget-card';
+
+  const header = document.createElement('div');
+  header.className = 'widget-card-header';
+
+  const labelGroup = document.createElement('div');
+  labelGroup.className = 'widget-card-label';
+  const badge = document.createElement('span');
+  badge.className = 'widget-badge';
+  badge.textContent = WIDGET_LABELS[widget.id] || widget.id.toUpperCase();
+  const title = document.createElement('span');
+  title.className = 'widget-card-title';
+  title.textContent = widget.title;
+  labelGroup.appendChild(badge);
+  labelGroup.appendChild(title);
+
+  const copyBtn = document.createElement('button');
+  copyBtn.type = 'button'; copyBtn.className = 'widget-copy-btn';
+  copyBtn.textContent = 'Copy HTML';
+  copyBtn.addEventListener('click', () => copyWidgetHtml(widget.html, copyBtn));
+
+  header.appendChild(labelGroup);
+  header.appendChild(copyBtn);
+
+  const tabs = document.createElement('div');
+  tabs.className = 'widget-tabs';
+  const previewTab = document.createElement('button');
+  previewTab.type = 'button'; previewTab.className = 'widget-tab is-active'; previewTab.textContent = 'Preview';
+  const codeTab = document.createElement('button');
+  codeTab.type = 'button'; codeTab.className = 'widget-tab'; codeTab.textContent = 'HTML Code';
+  tabs.appendChild(previewTab); tabs.appendChild(codeTab);
+
+  const iframe = document.createElement('iframe');
+  iframe.className = 'widget-preview';
+  iframe.setAttribute('sandbox', 'allow-same-origin');
+  iframe.srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;padding:0;background:#fff;}</style></head><body>${widget.html}</body></html>`;
+
+  const textarea = document.createElement('textarea');
+  textarea.className = 'widget-code'; textarea.readOnly = true; textarea.spellcheck = false;
+  textarea.value = widget.html;
+
+  previewTab.addEventListener('click', () => {
+    previewTab.classList.add('is-active'); codeTab.classList.remove('is-active');
+    iframe.style.display = 'block'; textarea.style.display = 'none';
+  });
+  codeTab.addEventListener('click', () => {
+    codeTab.classList.add('is-active'); previewTab.classList.remove('is-active');
+    iframe.style.display = 'none'; textarea.style.display = 'block';
+  });
+
+  card.appendChild(header); card.appendChild(tabs);
+  card.appendChild(iframe); card.appendChild(textarea);
+  widgetOutputs.appendChild(card);
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function appendWidgetError(widgetId, message) {
+  const card = document.createElement('div');
+  card.className = 'widget-card';
+  card.style.borderColor = 'var(--accent)';
+  const header = document.createElement('div');
+  header.className = 'widget-card-header';
+  const badge = document.createElement('span');
+  badge.className = 'widget-badge'; badge.textContent = WIDGET_LABELS[widgetId] || widgetId;
+  const msg = document.createElement('span');
+  msg.className = 'widget-card-title'; msg.style.color = 'var(--accent)'; msg.textContent = 'Generation failed';
+  const retryBtn = document.createElement('button');
+  retryBtn.type = 'button'; retryBtn.className = 'widget-copy-btn'; retryBtn.textContent = 'Retry';
+  retryBtn.addEventListener('click', async () => {
+    card.remove();
+    try { appendWidgetCard(await fetchWidget(widgetId)); }
+    catch (err) { appendWidgetError(widgetId, err.message); }
+  });
+  header.appendChild(badge); header.appendChild(msg); header.appendChild(retryBtn);
+  const detail = document.createElement('div');
+  detail.style.cssText = 'padding:12px 18px;font-family:"Inter","Helvetica Neue",Arial,sans-serif;font-size:13px;color:var(--accent);';
+  detail.textContent = message;
+  card.appendChild(header); card.appendChild(detail);
+  widgetOutputs.appendChild(card);
+}
+
+async function copyWidgetHtml(html, btn) {
+  try { await navigator.clipboard.writeText(html); }
+  catch {
+    const ta = document.createElement('textarea');
+    ta.value = html; ta.style.cssText = 'position:fixed;opacity:0;';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+  }
+  btn.textContent = 'Copied!'; btn.classList.add('is-copied');
+  setTimeout(() => { btn.textContent = 'Copy HTML'; btn.classList.remove('is-copied'); }, 2500);
+}
+
+async function pushToSalesbuildr() {
+  if (generatedWidgets.length === 0) return;
+  pushBtn.disabled    = true;
+  pushBtn.textContent = 'Saving…';
+  pushResult.hidden   = true;
+
+  const prefix = pushPrefix.value.trim();
+  let response;
+  try {
+    response = await fetch('/api/push-widgets', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ widgets: generatedWidgets, prefix })
+    });
+  } catch (e) {
+    showPushResult(false, 'Could not reach the server. Check your connection.');
+    pushBtn.disabled    = false;
+    pushBtn.textContent = 'Save to Salesbuildr →';
+    return;
+  }
+  let data;
+  try { data = await response.json(); } catch (e) { data = {}; }
+
+  if (data.successCount > 0) {
+    const all = data.successCount === data.total;
+    showPushResult(true,
+      all
+        ? `All ${data.total} widgets saved to your Salesbuildr template library.`
+        : `${data.successCount} of ${data.total} widgets saved. ${data.total - data.successCount} failed.`
+    );
+    pushBtn.textContent = '✓ Saved to Salesbuildr';
+    pushBtn.classList.add('is-done');
+  } else {
+    const err = (data.results && data.results[0] && data.results[0].error) || 'Unknown error';
+    showPushResult(false, `Save failed: ${err}`);
+    pushBtn.disabled    = false;
+    pushBtn.textContent = 'Save to Salesbuildr →';
+  }
+}
+
+function showPushResult(ok, message) {
+  pushResult.textContent = message;
+  pushResult.className   = 'push-result' + (ok ? '' : ' is-error');
+  pushResult.hidden      = false;
+}
+
+function resetWidgetSection() {
+  lastAnalysis = null; lastTextExcerpt = '';
+  generatedWidgets                       = [];
+  widgetSection.hidden                   = true;
+  widgetCta.hidden                       = false;
+  widgetWorking.hidden                   = true;
+  document.getElementById('widget-outputs').innerHTML = '';
+  generateBtn.disabled                   = false;
+  combinedSection.hidden                 = true;
+  individualSection.hidden               = true;
+  sbResult.hidden                        = true;
+  sbPushBtn.textContent                  = 'Save to Salesbuildr →';
+  sbPushBtn.classList.remove('is-done');
+  sbBody.hidden                          = true;
+  sbArrow.classList.remove('is-open');
+  selectedColors = { primary: '#0d2d5e', accent: '#1a6fc4', light: '#f0f6ff' };
+  themeGrid.querySelectorAll('.theme-tile').forEach(t => t.classList.remove('is-selected'));
+  const defaultTile = themeGrid.querySelector('[data-theme="blue"]');
+  if (defaultTile) defaultTile.classList.add('is-selected');
+  customInputsEl.hidden = true;
 }
