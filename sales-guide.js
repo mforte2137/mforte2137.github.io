@@ -1041,8 +1041,9 @@ async function doConnectOpportunity() {
         quotePayload.widgets = generatedWidgets.map(w => w.html).filter(Boolean);
       }
       const quoteRes = await callCreateOpp('create-quote', quotePayload);
-      quoteCreated   = quoteRes.ok;
+      quoteCreated    = quoteRes.ok;
       widgetsInjected = quoteRes.widgetsInjected || false;
+      if (quoteRes.templateDebug) console.log('[Sales Guide] template debug:', JSON.stringify(quoteRes.templateDebug));
     }
 
     // Success
