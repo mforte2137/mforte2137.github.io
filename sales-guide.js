@@ -28,7 +28,8 @@ const SCOPE_PRESET_MAP = {
   endpoint_refresh:     'endpoint',
   server_eol:           'server',
   voip_project:         'voip',
-  backup_dr:            'backup'
+  backup_dr:            'backup',
+  copilot_ai:           'copilot'
 };
 
 // ── DOM handles ───────────────────────────────────────────
@@ -665,7 +666,8 @@ const ENGAGEMENT_LABELS = {
   endpoint_refresh:      'Endpoint Refresh',
   server_eol:            'Server Infrastructure Refresh',
   voip_project:          'VoIP & Communications Upgrade',
-  backup_dr:             'Backup & Disaster Recovery'
+  backup_dr:             'Backup & Disaster Recovery',
+  copilot_ai:            'Microsoft Copilot & AI Readiness'
 };
 
 // Track selected company and contact across wizard steps
