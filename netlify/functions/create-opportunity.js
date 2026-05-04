@@ -86,33 +86,54 @@ exports.handler = async (event) => {
     // Tries multiple field name variants for each dropdown —
     // returns the first one that comes back with data.
     if (action === 'fetch-opp-fields') {
-      const fieldCandidates = {
-        owners:         ['owner', 'owners', 'user', 'users', 'opportunityOwner', 'member'],
-        pipelineStages: ['pipelineStage', 'pipelineStages', 'pipeline-stage', 'pipeline_stage', 'stage', 'opportunityPipelineStage'],
-        categories:     ['opportunityCategory', 'opportunityCategories', 'opportunity-category', 'category', 'opportunityType']
-      };
-
       const results = {};
-      const tried   = {};
 
-      for (const [key, candidates] of Object.entries(fieldCandidates)) {
-        results[key] = [];
-        tried[key]   = [];
-        for (const fieldName of candidates) {
-          try {
-            const res  = await fetch(`${BASE}/field/${encodeURIComponent(fieldName)}`, { headers });
-            const data = res.ok ? await res.json() : {};
-            const vals = data?.values || [];
-            tried[key].push({ name: fieldName, count: vals.length, status: res.status });
-            if (vals.length > 0) { results[key] = vals; break; }
-          } catch (e) {
-            tried[key].push({ name: fieldName, error: e.message });
+      // Categories — confirmed working field name
+      try {
+        const res  = await fetch(`${BASE}/field/opportunity-category`, { headers });
+        const data = res.ok ? await res.json() : {};
+        results.categories = (data?.values || []).filter(v => !v.deleted);
+      } catch { results.categories = []; }
+
+      // Pipeline stages — not in field endpoint; extract from existing opportunities
+      try {
+        const res  = await fetch(`${BASE}/opportunity?size=50`, { headers });
+        const data = res.ok ? await res.json() : {};
+        const opps = data?.data || data?.items || (Array.isArray(data) ? data : []);
+        const stageMap = new Map();
+        opps.forEach(o => {
+          // Try nested object first (pipelineStage.id / .name), then flat fields
+          const stage = o.pipelineStage;
+          const stageId   = stage?.id   || o.pipelineStageId;
+          const stageName = stage?.name || o.pipelineStageName || stageId;
+          if (stageId) {
+            stageMap.set(stageId, { id: stageId, displayValue: stageName });
           }
-        }
-      }
+        });
+        results.pipelineStages = [...stageMap.values()];
+      } catch { results.pipelineStages = []; }
 
-      // Surface debug info so we can identify the correct field names
-      return ok({ ...results, _tried: tried });
+      // Owners — extract from existing opportunities using OwnerDto shape:
+      // { id, name, externalIdentifier (email), externalIdentifiers }
+      try {
+        const res  = await fetch(`${BASE}/opportunity?size=50`, { headers });
+        const data = res.ok ? await res.json() : {};
+        const opps = data?.data || data?.items || (Array.isArray(data) ? data : []);
+        const ownerMap = new Map();
+        opps.forEach(o => {
+          const owner = o.owner;
+          if (owner?.id) {
+            ownerMap.set(owner.id, {
+              id:           owner.id,
+              displayValue: owner.name || owner.externalIdentifier || owner.id,
+              extId:        owner.externalIdentifier || null
+            });
+          }
+        });
+        results.owners = [...ownerMap.values()];
+      } catch { results.owners = []; }
+
+      return ok(results);
     }
 
     // ── search-contact ──────────────────────────────────────
