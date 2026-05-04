@@ -82,6 +82,24 @@ exports.handler = async (event) => {
       return ok({ companies, ...debugShape });
     }
 
+    // ── search-contact ──────────────────────────────────────
+    if (action === 'search-contact') {
+      const { companyId } = body;
+      if (!companyId) return err('companyId required.', 400);
+
+      const res  = await fetch(`${BASE}/contact?filters=${encodeURIComponent('company.id:' + companyId)}&size=20`, { headers });
+      const data = await res.json();
+
+      let contacts = [];
+      if (Array.isArray(data))              contacts = data;
+      else if (Array.isArray(data?.data))   contacts = data.data;
+      else if (Array.isArray(data?.items))  contacts = data.items;
+      else if (Array.isArray(data?.results))contacts = data.results;
+      else if (data?.id)                    contacts = [data];
+
+      return ok({ contacts });
+    }
+
     // ── create-company ──────────────────────────────────────
     if (action === 'create-company') {
       const { name } = body;
@@ -103,11 +121,12 @@ exports.handler = async (event) => {
 
     // ── upsert-opportunity ──────────────────────────────────
     if (action === 'upsert-opportunity') {
-      const { companyId, name, description, extId } = body;
+      const { companyId, name, description, extId, contactId } = body;
       if (!companyId) return err('companyId required.', 400);
       if (!extId)     return err('extId required.', 400);
 
       const payload = { name: name || 'New Opportunity', companyId, description };
+      if (contactId) payload.contactId = contactId;
 
       const res  = await fetch(`${BASE}/opportunity/ext/${encodeURIComponent(extId)}`, {
         method:  'PUT',
