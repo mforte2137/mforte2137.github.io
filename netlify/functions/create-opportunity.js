@@ -186,12 +186,13 @@ exports.handler = async (event) => {
       // Updates description of an EXISTING opportunity using its real
       // externalIdentifier (AT record ID). Never creates new records —
       // avoids the PSA sync issue caused by fake ext IDs.
-      const { name, description, extId } = body;
+      const { name, description, extId, companyId } = body;
       if (!extId) return err('extId required.', 400);
 
       const payload = {
-        name:        name || 'Opportunity',
-        description
+        name:      name || 'Opportunity',
+        description,
+        companyId
       };
 
       const res  = await fetch(`${BASE}/opportunity/ext/${encodeURIComponent(extId)}`, {
