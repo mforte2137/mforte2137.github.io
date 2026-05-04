@@ -34,6 +34,25 @@ const SCOPE_PRESET_MAP = {
 // ── DOM handles ───────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
+// ── Recommendation normaliser ─────────────────────────────
+// Haiku occasionally returns array fields as objects or null.
+// This ensures every field the UI calls .map/.forEach on is
+// always a proper array before renderResults touches it.
+function normaliseRec(rec) {
+  if (!rec) return rec;
+  const toArray = v => {
+    if (Array.isArray(v))         return v;
+    if (v && typeof v === 'object') return Object.values(v);
+    if (typeof v === 'string' && v.trim()) return [v];
+    return [];
+  };
+  rec.solution_bullets      = toArray(rec.solution_bullets);
+  rec.hardware_checklist    = toArray(rec.hardware_checklist);
+  rec.services_recommended  = toArray(rec.services_recommended);
+  if (!rec.widget_briefs || typeof rec.widget_briefs !== 'object') rec.widget_briefs = {};
+  return rec;
+}
+
 // ── Helpers ───────────────────────────────────────────────
 function showSection(id) {
   ['mode-view','discovery-view','execution-view','working-view','results-view'].forEach(s => {
@@ -146,9 +165,9 @@ $('discGenerateBtn').addEventListener('click', async () => {
     }
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Recommendation failed');
-    currentRec     = data.recommendation;
+    currentRec     = normaliseRec(data.recommendation);
     currentAnswers = answers;
-    renderResults('discovery', answers.company || 'New Opportunity', data.recommendation);
+    renderResults('discovery', answers.company || 'New Opportunity', currentRec);
   } catch (e) {
     showSection('discovery-view');
     showError('discError', e.message || 'Something went wrong. Please try again.');
@@ -177,8 +196,8 @@ $('execGenerateBtn').addEventListener('click', async () => {
     }
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Translation failed');
-    currentRec = data.recommendation;
-    renderResults('execution', context || 'Proposal Spec', data.recommendation);
+    currentRec = normaliseRec(data.recommendation);
+    renderResults('execution', context || 'Proposal Spec', currentRec);
   } catch (e) {
     showSection('execution-view');
     showError('execError', e.message || 'Something went wrong. Please try again.');
