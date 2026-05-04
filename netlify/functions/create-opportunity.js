@@ -107,24 +107,31 @@ exports.handler = async (event) => {
         }
       } catch { results.pipelineStages = []; }
 
-      // Owners — no field endpoint works; extract from quote owners instead.
-      // QuoteResponseDto.owner is IdentifiedPersonResponseDto { id, name, email }
-      // which gives us real user IDs without needing a /users endpoint.
+      // Owners — list endpoints (quote & opportunity) strip nested objects.
+      // Fetch 1 individual quote by ID to get the full QuoteResponseDto with owner.
       try {
-        const res  = await fetch(`${BASE}/quote?size=20`, { headers });
-        const data = res.ok ? await res.json() : {};
-        const quotes = data?.data || data?.items || (Array.isArray(data) ? data : []);
+        const listRes  = await fetch(`${BASE}/quote?size=5`, { headers });
+        const listData = listRes.ok ? await listRes.json() : {};
+        const listItems = listData?.data || listData?.items || (Array.isArray(listData) ? listData : []);
+        const quoteIds  = listItems.map(q => q.id).filter(Boolean).slice(0, 3);
+
         const ownerMap = new Map();
-        quotes.forEach(q => {
-          const o = q.owner;
-          if (o?.id) {
-            ownerMap.set(o.id, {
-              id:           o.id,
-              displayValue: o.name || o.email || o.id,
-              extId:        o.externalIdentifier || o.email || null
-            });
-          }
-        });
+        await Promise.all(quoteIds.map(async id => {
+          try {
+            const res   = await fetch(`${BASE}/quote/${id}`, { headers });
+            const quote = res.ok ? await res.json() : {};
+            // Try owner first, then createdBy
+            const o = quote.owner || quote.createdBy;
+            if (o?.id) {
+              ownerMap.set(o.id, {
+                id:           o.id,
+                displayValue: o.name || o.email || o.id,
+                extId:        o.externalIdentifier || o.email || null
+              });
+            }
+          } catch { /* skip */ }
+        }));
+
         results.owners = [...ownerMap.values()];
       } catch { results.owners = []; }
 
