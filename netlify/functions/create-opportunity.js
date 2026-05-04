@@ -95,43 +95,52 @@ exports.handler = async (event) => {
         results.categories = (data?.values || []).filter(v => !v.deleted);
       } catch { results.categories = []; }
 
-      // Pipeline stages — not in field endpoint; extract from existing opportunities
+      // Owners & Pipeline stages — the list endpoint returns IdentifiedOpportunityResponseDto
+      // (stripped schema — no owner or pipelineStage fields). We need to fetch a few
+      // individual opportunities by ID to get the full OpportunityResponseDto.
       try {
-        const res  = await fetch(`${BASE}/opportunity?size=50`, { headers });
-        const data = res.ok ? await res.json() : {};
-        const opps = data?.data || data?.items || (Array.isArray(data) ? data : []);
-        const stageMap = new Map();
-        opps.forEach(o => {
-          // Try nested object first (pipelineStage.id / .name), then flat fields
-          const stage = o.pipelineStage;
-          const stageId   = stage?.id   || o.pipelineStageId;
-          const stageName = stage?.name || o.pipelineStageName || stageId;
-          if (stageId) {
-            stageMap.set(stageId, { id: stageId, displayValue: stageName });
-          }
-        });
-        results.pipelineStages = [...stageMap.values()];
-      } catch { results.pipelineStages = []; }
+        // Step 1: get a handful of opportunity IDs from the list
+        const listRes  = await fetch(`${BASE}/opportunity?size=10`, { headers });
+        const listData = listRes.ok ? await listRes.json() : {};
+        const listOpps = listData?.data || listData?.items || (Array.isArray(listData) ? listData : []);
+        const ids      = listOpps.map(o => o.id).filter(Boolean).slice(0, 5);
 
-      // Owners — extract from existing opportunities using OwnerDto shape:
-      // { id, name, externalIdentifier (email), externalIdentifiers }
-      try {
-        const res  = await fetch(`${BASE}/opportunity?size=50`, { headers });
-        const data = res.ok ? await res.json() : {};
-        const opps = data?.data || data?.items || (Array.isArray(data) ? data : []);
         const ownerMap = new Map();
-        opps.forEach(o => {
-          const owner = o.owner;
-          if (owner?.id) {
-            ownerMap.set(owner.id, {
-              id:           owner.id,
-              displayValue: owner.name || owner.externalIdentifier || owner.id,
-              extId:        owner.externalIdentifier || null
-            });
-          }
-        });
-        results.owners = [...ownerMap.values()];
-      } catch { results.owners = []; }
+        const stageMap = new Map();
+
+        // Step 2: fetch each individual opportunity to get full DTO
+        await Promise.all(ids.map(async id => {
+          try {
+            const res  = await fetch(`${BASE}/opportunity/${id}`, { headers });
+            const opp  = res.ok ? await res.json() : {};
+
+            if (opp.owner?.id) {
+              ownerMap.set(opp.owner.id, {
+                id:           opp.owner.id,
+                displayValue: opp.owner.name || opp.owner.externalIdentifier || opp.owner.id,
+                extId:        opp.owner.externalIdentifier || null
+              });
+            }
+            const stageId   = opp.pipelineStage?.id   || opp.pipelineStageId;
+            const stageName = opp.pipelineStage?.name || opp.pipelineStageDisplayValue || stageId;
+            if (stageId) stageMap.set(stageId, { id: stageId, displayValue: stageName });
+          } catch { /* skip failed individual fetch */ }
+        }));
+
+        results.owners         = [...ownerMap.values()];
+        results.pipelineStages = [...stageMap.values()];
+        results._debug = {
+          listCount:  listOpps.length,
+          idsFound:   ids,
+          ownersFound: results.owners.length,
+          stagesFound: results.pipelineStages.length,
+          listKeys:   Object.keys(listData || {})
+        };
+      } catch (e) {
+        results.owners         = [];
+        results.pipelineStages = [];
+        results._debug = { error: e.message };
+      }
 
       return ok(results);
     }
