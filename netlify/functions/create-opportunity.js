@@ -224,11 +224,28 @@ exports.handler = async (event) => {
 
     // ── create-quote ────────────────────────────────────────
     if (action === 'create-quote') {
-      const { opportunityId, title, templateId } = body;
+      const { opportunityId, title, templateId, widgets } = body;
       if (!opportunityId) return err('opportunityId required.', 400);
 
+      let resolvedTemplateId = templateId || null;
+
+      // If widgets provided, build a one-time quote template containing them
+      if (Array.isArray(widgets) && widgets.length > 0) {
+        const tmplPayload = {
+          name:    `Sales Guide — ${title || 'Proposal'} — ${Date.now()}`,
+          widgets: widgets.map(w => ({ type: 'html-content', content: w }))
+        };
+        const tmplRes  = await fetch(`${BASE}/quote-template`, {
+          method:  'POST',
+          headers,
+          body:    JSON.stringify(tmplPayload)
+        });
+        const tmplData = tmplRes.ok ? await tmplRes.json() : null;
+        if (tmplData?.id) resolvedTemplateId = tmplData.id;
+      }
+
       const payload = { opportunityId, title: title || 'Proposal' };
-      if (templateId) payload.templateId = templateId;
+      if (resolvedTemplateId) payload.templateId = resolvedTemplateId;
 
       const res  = await fetch(`${BASE}/quote`, {
         method:  'POST',
@@ -238,7 +255,7 @@ exports.handler = async (event) => {
       const data = await res.json();
 
       if (!res.ok) return err(data?.message || data?.error || 'Failed to create quote.');
-      return ok({ quote: data });
+      return ok({ quote: data, widgetsInjected: !!resolvedTemplateId && Array.isArray(widgets) && widgets.length > 0 });
     }
 
     return err('Unknown action.', 400);
