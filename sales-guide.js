@@ -936,16 +936,34 @@ function renderOpportunityList(opps) {
   });
 }
 
-function selectOpportunity(opp) {
-  selectedOppOpportunity = opp;
-  $('oppOppList').classList.add('hidden');
-
+async function selectOpportunity(opp) {
+  // Show selected state immediately
   const sel = $('oppOppSelected');
-  sel.innerHTML = `<div class="company-selected-tag">✓ ${esc(opp.name)}
-    <button class="change-company-btn" id="changeOppBtn">Change</button></div>`;
+  sel.innerHTML = `<div class="company-selected-tag">
+    <div class="spinner-sm" style="width:14px;height:14px;"></div>
+    Loading ${esc(opp.name)}…</div>`;
+  $('oppOppList').classList.add('hidden');
   sel.classList.remove('hidden');
 
-  // Pre-fill quote title from opp name
+  // Fetch full opportunity to get all existing field IDs
+  try {
+    const apiKey = $('oppApiKey').value.trim();
+    const intKey = $('oppIntKey').value.trim();
+    const res    = await callCreateOpp('get-opportunity', { opportunityId: opp.id, apiKey, integrationKey: intKey });
+    if (res.ok && res.opportunity) {
+      const full = res.opportunity;
+      opp.contactId       = full.contactId       || null;
+      opp.ownerId         = full.ownerId         || null;
+      opp.pipelineStageId = full.pipelineStageId || null;
+      opp.categoryId      = full.categoryId      || null;
+    }
+  } catch { /* use what we have */ }
+
+  selectedOppOpportunity = opp;
+
+  sel.innerHTML = `<div class="company-selected-tag">✓ ${esc(opp.name)}
+    <button class="change-company-btn" id="changeOppBtn">Change</button></div>`;
+
   if (opp.name && !$('oppQuoteTitle').value) {
     $('oppQuoteTitle').value = `${opp.name} — Proposal`;
   }
@@ -990,10 +1008,14 @@ async function doConnectOpportunity() {
     // 1. Update opportunity description with Sales Brief
     setOppWorking('Adding Sales Brief to opportunity…');
     const oppRes = await callCreateOpp('upsert-opportunity', {
-      name:        opp.name,
+      name:           opp.name,
       description,
-      extId:       opp.extId,
-      companyId:   selectedOppCompany.id,
+      extId:          opp.extId,
+      companyId:      selectedOppCompany.id,
+      contactId:      opp.contactId       || undefined,
+      ownerId:        opp.ownerId         || undefined,
+      pipelineStageId:opp.pipelineStageId || undefined,
+      categoryId:     opp.categoryId      || undefined,
       ...creds
     });
     if (!oppRes.ok) throw new Error(oppRes.error || 'Failed to update opportunity.');
