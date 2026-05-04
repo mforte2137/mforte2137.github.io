@@ -168,6 +168,47 @@ const PRESETS = {
       { task:'Project Management', role:'PM', hours:'16', notes:'Scheduling, vendor coordination, reporting' }
     ]
   },
+  endpoint: {
+    title:     'Endpoint Refresh & Device Deployment',
+    overview:  'This project replaces aging workstations and laptops across your organization — ensuring all staff are on modern, supported hardware ahead of the Windows 10 end-of-life deadline. Devices will be pre-configured, data migrated, and handed over with minimal disruption to each user.',
+    exclusions:'Hardware procurement costs (quoted separately)\nSoftware or operating system licensing costs\nData that cannot be located or accessed on the old device\nPersonal files or non-business data\nPrinter or peripheral setup beyond standard USB connection',
+    tasks: [
+      { task:'Asset Audit & Device Inventory', role:'Engineer', hours:'4', notes:'Catalogue all existing devices, specs, age and OS version' },
+      { task:'New Device Specification & Procurement', role:'PM', hours:'4', notes:'Hardware selection, ordering, delivery tracking' },
+      { task:'Image & Build Preparation', role:'Senior Engineer', hours:'8', notes:'Standard image creation, software stack, policies' },
+      { task:'Device Imaging & Pre-configuration', role:'Engineer', hours:'16', notes:'OS imaging, domain join, software deployment per device' },
+      { task:'Data Migration — User Files & Profile', role:'Engineer', hours:'24', notes:'Documents, desktop, browser favourites, Outlook PST' },
+      { task:'Application Configuration per User', role:'Engineer', hours:'16', notes:'Line-of-business apps, email profile, mapped drives, printers' },
+      { task:'BitLocker & Security Policy Enforcement', role:'Senior Engineer', hours:'4', notes:'Encryption, screen lock, endpoint protection agent' },
+      { task:'Intune / MDM Enrolment', role:'Senior Engineer', hours:'8', notes:'Device enrolment, compliance policies, app deployment' },
+      { task:'User Handover & Orientation', role:'Engineer', hours:'8', notes:'New device walkthrough, key differences, helpdesk contact' },
+      { task:'Old Device Wipe & Disposal', role:'Engineer', hours:'8', notes:'Secure data wipe, WEEE disposal or trade-in coordination' },
+      { task:'Windows 10 EOL Communication & Documentation', role:'PM', hours:'4', notes:'Timeline comms, asset register update, completion sign-off' },
+      { task:'Project Management', role:'PM', hours:'16', notes:'Scheduling, user communications, progress tracking' }
+    ]
+  },
+  voip: {
+    title:     'VoIP & Business Communications Upgrade',
+    overview:  'This project replaces your existing phone system with a modern cloud-based VoIP or UCaaS solution — delivering reliable business communications, mobile flexibility, and Microsoft Teams integration. Number porting, hardware installation, and user training are included to ensure a smooth cutover.',
+    exclusions:'Ongoing SIP trunk or UCaaS subscription costs\nISP or internet circuit upgrades (quoted separately if required)\nCabling or structured wiring beyond standard patch cable runs\nCustom auto-attendant scripting beyond agreed call flows\nThird-party application integrations not listed in scope',
+    tasks: [
+      { task:'Current System Audit & Requirements Gathering', role:'Senior Engineer', hours:'6', notes:'Existing numbers, call flows, voicemail, hunt groups, fax lines' },
+      { task:'Internet & Network Readiness Assessment', role:'Senior Engineer', hours:'4', notes:'Bandwidth, QoS capability, VLAN design for voice traffic' },
+      { task:'Solution Design & Call Flow Planning', role:'Senior Engineer', hours:'8', notes:'Auto-attendant, hunt groups, voicemail, hold music, hours' },
+      { task:'Number Porting Coordination', role:'PM', hours:'6', notes:'LOA submission, carrier liaison, porting schedule management' },
+      { task:'UCaaS / Teams Voice Tenant Configuration', role:'Senior Engineer', hours:'8', notes:'Licensing, dial plan, emergency locations, policy assignment' },
+      { task:'QoS & Network Configuration for Voice', role:'Senior Engineer', hours:'6', notes:'VLAN tagging, traffic prioritisation, firewall rules' },
+      { task:'VoIP Hardware Deployment', role:'Engineer', hours:'12', notes:'Desk phone provisioning, headsets, ATA adapters for fax/analogue' },
+      { task:'Auto-Attendant & Call Flow Configuration', role:'Senior Engineer', hours:'8', notes:'IVR menus, business hours, after-hours routing, voicemail-to-email' },
+      { task:'Microsoft Teams Voice Integration', role:'Senior Engineer', hours:'8', notes:'Direct Routing or Calling Plans, Teams app configuration' },
+      { task:'User Provisioning & Extension Assignment', role:'Engineer', hours:'8', notes:'DDI assignment, voicemail setup, softphone configuration' },
+      { task:'Testing & Pre-Cutover Validation', role:'Senior Engineer', hours:'6', notes:'Inbound/outbound calls, hunt groups, failover, emergency dialling' },
+      { task:'Cutover Execution', role:'Senior Engineer', hours:'4', notes:'Number activation, final routing switch, live monitoring' },
+      { task:'User Training & Handover', role:'PM / Engineer', hours:'8', notes:'Handset use, Teams calling, voicemail, call transfer walkthrough' },
+      { task:'Post-Cutover Support & Optimisation', role:'Engineer', hours:'8', notes:'48-72hr hypercare, issue resolution, call quality tuning' },
+      { task:'Project Management', role:'PM', hours:'16', notes:'Scheduling, number porting liaison, stakeholder communications' }
+    ]
+  },
   server: {
     title:     'Server Refresh & Hardware Deployment',
     overview:  'This project replaces your existing server hardware with new equipment, migrating all roles, services, and data with minimal downtime — leaving your environment fully documented and supported on modern, warrantied infrastructure.',
