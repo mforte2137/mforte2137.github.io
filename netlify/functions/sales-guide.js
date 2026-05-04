@@ -209,8 +209,8 @@ Build a sales recommendation and widget briefs for this opportunity.`;
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 2500,
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1500,
           system: DISCOVER_SYSTEM,
           tools: [DISCOVER_TOOL],
           tool_choice: { type: 'tool', name: 'submit_discovery_recommendation' },
@@ -242,8 +242,8 @@ Translate this into buyer language and generate widget briefs for a compelling p
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 2000,
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1500,
           system: EXECUTE_SYSTEM,
           tools: [EXECUTE_TOOL],
           tool_choice: { type: 'tool', name: 'submit_execution_recommendation' },
