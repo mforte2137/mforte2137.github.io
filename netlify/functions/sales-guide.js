@@ -210,7 +210,7 @@ Build a sales recommendation and widget briefs for this opportunity.`;
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
-          max_tokens: 1024,
+          max_tokens: 1800,
           system: DISCOVER_SYSTEM,
           tools: [DISCOVER_TOOL],
           tool_choice: { type: 'tool', name: 'submit_discovery_recommendation' },
@@ -220,7 +220,8 @@ Build a sales recommendation and widget briefs for this opportunity.`;
       const data = await res.json();
       const tool = Array.isArray(data.content) ? data.content.find(b => b.type === 'tool_use') : null;
       if (!tool) return err('No recommendation returned.');
-      return ok({ recommendation: tool.input });
+      // Surface stop_reason so client can detect truncation
+      return ok({ recommendation: tool.input, stop_reason: data.stop_reason });
     } catch (e) { return err(e.message); }
   }
 
@@ -243,7 +244,7 @@ Translate this into buyer language and generate widget briefs for a compelling p
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
-          max_tokens: 1024,
+          max_tokens: 1800,
           system: EXECUTE_SYSTEM,
           tools: [EXECUTE_TOOL],
           tool_choice: { type: 'tool', name: 'submit_execution_recommendation' },
