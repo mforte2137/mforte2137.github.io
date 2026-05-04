@@ -79,6 +79,7 @@ header.top .brand { font-weight: 700; color: var(--ink); }
 .big-lead em { font-style: italic; color: var(--ink); }
 
 .dropzone {
+  display: block;
   border: 2px dashed var(--rule);
   background: var(--paper-alt);
   padding: 60px 40px;
