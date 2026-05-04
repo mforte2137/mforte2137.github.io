@@ -20,14 +20,14 @@
     <h1 class="big-title">Diagnose a proposal.</h1>
     <p class="big-lead">Upload an MSP proposal. We'll read your proposal through your buyer's eyes and measure it against the five questions every proposal has to answer, in order: <em>Do they understand my situation? Why should I care now? Why should I trust you? What am I getting? Is it worth it?</em></p>
 
-    <div class="dropzone" id="dropzone">
-      <input type="file" id="file-input" accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx" hidden>
+    <label class="dropzone" id="dropzone" for="file-input">
+      <input type="file" id="file-input" accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx" style="display:none">
       <div class="dz-inner">
         <div class="dz-title">Drop a PDF or Word doc here</div>
-        <div class="dz-sub">or <button type="button" class="dz-browse" id="browse-btn">browse your files</button></div>
+        <div class="dz-sub">or <span class="dz-browse" id="browse-btn">browse your files</span></div>
         <div class="dz-note">Files are parsed in your browser. Only the extracted text is sent for analysis.</div>
       </div>
-    </div>
+    </label>
 
     <!-- Paste text option -->
     <div class="paste-option">
@@ -143,7 +143,7 @@
 
       <!-- Colour theme selector -->
       <div class="widget-theme-picker">
-        <div class="wtp-label">Choose a colour theme for your widgets</div>
+        <div class="wtp-label">Choose a color theme for your widgets</div>
         <div class="theme-grid" id="widget-theme-grid">
 
           <button type="button" class="theme-tile is-selected" data-theme="blue"
@@ -242,21 +242,21 @@
         <div id="widget-custom-inputs" class="custom-inputs" hidden>
           <div class="custom-row">
             <div class="custom-field">
-              <label class="custom-label">Primary colour <span class="custom-hint">(header bars)</span></label>
+              <label class="custom-label">Primary color <span class="custom-hint">(header bars)</span></label>
               <div class="custom-input-row">
                 <input type="color" id="widget-primary-picker" class="color-picker" value="#0d2d5e">
                 <input type="text"  id="widget-primary-hex"    class="hex-input" maxlength="7" value="#0d2d5e">
               </div>
             </div>
             <div class="custom-field">
-              <label class="custom-label">Accent colour <span class="custom-hint">(borders &amp; highlights)</span></label>
+              <label class="custom-label">Accent color <span class="custom-hint">(borders &amp; highlights)</span></label>
               <div class="custom-input-row">
                 <input type="color" id="widget-accent-picker" class="color-picker" value="#1a6fc4">
                 <input type="text"  id="widget-accent-hex"    class="hex-input" maxlength="7" value="#1a6fc4">
               </div>
             </div>
           </div>
-          <p class="custom-note">Light background tint is calculated automatically from your accent colour.</p>
+          <p class="custom-note">Light background tint is calculated automatically from your accent color.</p>
         </div>
       </div>
 
