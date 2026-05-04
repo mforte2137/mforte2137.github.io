@@ -9,6 +9,7 @@ const LS_INT_KEY       = 'sb_int_key';
 const LS_OPP_OWNER     = 'sb_opp_owner_id';
 const LS_OPP_STAGE     = 'sb_opp_stage_id';
 const LS_OPP_CATEGORY  = 'sb_opp_category_id';
+const LS_OPP_EMAIL     = 'sb_opp_owner_email';
 const LS_SESSIONS = 'sb_sales_guide_sessions';
 const MAX_SESSIONS = 5;
 
@@ -769,6 +770,8 @@ function initCreateOppPanel() {
   if (a) $('oppApiKey').value = a;
   if (i) $('oppIntKey').value = i;
   if (a && i) $('oppRemember').checked = true;
+  const savedEmail = localStorage.getItem(LS_OPP_EMAIL);
+  if (savedEmail) $('oppOwnerEmail').value = savedEmail;
 
   // Pre-fill company name from Discovery answers
   const company  = currentAnswers?.company || '';
@@ -1031,15 +1034,15 @@ async function fetchOppFields() {
 
 function populateSelect(el, values, lsKey, placeholder) {
   if (!el) return;
-  const saved = localStorage.getItem(lsKey) || '';
+  const saved  = localStorage.getItem(lsKey) || '';
   const active = values.filter(v => !v.deleted);
 
+  // Store extId alongside id so owner can use ownerExtId fallback
   el.innerHTML = `<option value="">${placeholder}</option>` +
     active.map(v =>
-      `<option value="${esc(v.id)}" ${v.id === saved ? 'selected' : ''}>${esc(v.displayValue || v.name || v.id)}</option>`
+      `<option value="${esc(v.id)}" data-ext="${esc(v.extId || '')}" ${v.id === saved ? 'selected' : ''}>${esc(v.displayValue || v.name || v.id)}</option>`
     ).join('');
 
-  // Remember selection
   el.addEventListener('change', () => {
     if (el.value) localStorage.setItem(lsKey, el.value);
     else localStorage.removeItem(lsKey);
@@ -1055,12 +1058,15 @@ async function doCreateOpportunity() {
   if (!apiKey || !intKey)      { showOppError('Enter your API credentials first.'); return; }
   if (!selectedOppCompany)     { showOppError('Select a company first.'); return; }
 
+  const ownerEmail = $('oppOwnerEmail')?.value.trim() || '';
   if ($('oppRemember').checked) {
     localStorage.setItem(LS_API_KEY, apiKey);
     localStorage.setItem(LS_INT_KEY, intKey);
+    if (ownerEmail) localStorage.setItem(LS_OPP_EMAIL, ownerEmail);
   } else {
     localStorage.removeItem(LS_API_KEY);
     localStorage.removeItem(LS_INT_KEY);
+    localStorage.removeItem(LS_OPP_EMAIL);
   }
 
   $('oppCreateBtn').disabled    = true;
@@ -1088,10 +1094,15 @@ async function doCreateOpportunity() {
     const extId = `sg-${slug}-${Date.now().toString().slice(-6)}`;
 
     const oppPayload = { companyId, name: oppName, description, extId, ...creds };
-    if (selectedOppContact?.id)     oppPayload.contactId       = selectedOppContact.id;
-    if ($('oppOwner')?.value)       oppPayload.ownerId         = $('oppOwner').value;
+    if (selectedOppContact?.id)       oppPayload.contactId       = selectedOppContact.id;
     if ($('oppPipelineStage')?.value) oppPayload.pipelineStageId = $('oppPipelineStage').value;
-    if ($('oppCategory')?.value)    oppPayload.categoryId      = $('oppCategory').value;
+    if ($('oppCategory')?.value)      oppPayload.categoryId      = $('oppCategory').value;
+    // Owner: prefer dropdown ID, fall back to email as ownerExtId
+    if ($('oppOwner')?.value) {
+      oppPayload.ownerId = $('oppOwner').value;
+    } else if (ownerEmail) {
+      oppPayload.ownerExtId = ownerEmail;
+    }
     const oppRes = await callCreateOpp('upsert-opportunity', oppPayload);
     if (!oppRes.ok) throw new Error(oppRes.error || 'Failed to create opportunity.');
     const opportunityId = oppRes.opportunity?.id;
