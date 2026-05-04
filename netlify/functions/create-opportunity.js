@@ -82,6 +82,19 @@ exports.handler = async (event) => {
       return ok({ companies, ...debugShape });
     }
 
+    // ── search-opportunity ──────────────────────────────────
+    // Find existing opportunities for a company so the rep
+    // can connect the Sales Guide to one they already created.
+    if (action === 'search-opportunity') {
+      const { companyId } = body;
+      if (!companyId) return err('companyId required.', 400);
+
+      const res  = await fetch(`${BASE}/opportunity?filters=${encodeURIComponent('company.id:' + companyId)}&size=20`, { headers });
+      const data = res.ok ? await res.json() : {};
+      const opps = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
+      return ok({ opportunities: opps });
+    }
+
     // ── fetch-opp-fields ────────────────────────────────────
     // Tries multiple field name variants for each dropdown —
     // returns the first one that comes back with data.
@@ -170,21 +183,16 @@ exports.handler = async (event) => {
 
     // ── upsert-opportunity ──────────────────────────────────
     if (action === 'upsert-opportunity') {
-      const { companyId, name, description, extId, contactId, ownerId, pipelineStageId, categoryId } = body;
-      if (!companyId) return err('companyId required.', 400);
-      if (!extId)     return err('extId required.', 400);
+      // Updates description of an EXISTING opportunity using its real
+      // externalIdentifier (AT record ID). Never creates new records —
+      // avoids the PSA sync issue caused by fake ext IDs.
+      const { name, description, extId } = body;
+      if (!extId) return err('extId required.', 400);
 
-      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
       const payload = {
-        name:      name || 'New Opportunity',
-        companyId,
-        description,
-        startDate: today
+        name:        name || 'Opportunity',
+        description
       };
-      if (contactId)      payload.contactId      = contactId;
-      if (ownerId)        payload.ownerId        = ownerId;
-      if (pipelineStageId)payload.pipelineStageId= pipelineStageId;
-      if (categoryId)     payload.categoryId     = categoryId;
 
       const res  = await fetch(`${BASE}/opportunity/ext/${encodeURIComponent(extId)}`, {
         method:  'PUT',
