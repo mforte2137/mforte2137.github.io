@@ -376,8 +376,8 @@
         <div class="create-opp-hd">
           <span class="create-opp-icon">🚀</span>
           <div>
-            <div class="create-opp-title">Create in Salesbuildr</div>
-            <div class="create-opp-sub">Create the opportunity and a draft quote — ready to build</div>
+            <div class="create-opp-title">Connect to Salesbuildr</div>
+            <div class="create-opp-sub">Link this recommendation to an existing opportunity and create a draft quote</div>
           </div>
         </div>
         <span class="sb-arrow" id="createOppArrow">▼</span>
@@ -397,68 +397,41 @@
               <input type="password" id="oppIntKey" class="sb-input" placeholder="Your integration key" autocomplete="new-password">
             </div>
           </div>
-          <div class="sb-field" style="margin-top:4px;">
-            <label class="sb-label">Your Salesbuildr email <span class="sb-where">Used to assign opportunities to you</span></label>
-            <input type="email" id="oppOwnerEmail" class="sb-input" placeholder="you@yourcompany.com" autocomplete="email">
-          </div>
           <label class="sb-remember"><input type="checkbox" id="oppRemember"> Remember on this device</label>
         </div>
 
         <!-- Step 1: Company -->
         <div class="opp-step" id="oppStep1">
-          <div class="opp-step-hd"><span class="opp-step-num">1</span> Find or create company</div>
+          <div class="opp-step-hd"><span class="opp-step-num">1</span> Find company</div>
           <div class="opp-search-row">
             <input type="text" id="oppCompanyName" class="sb-input" placeholder="Type company name…" maxlength="80">
             <button type="button" id="oppSearchBtn" class="btn-opp-action">Search →</button>
           </div>
           <div id="oppCompanyResults" class="opp-company-results hidden"></div>
           <div id="oppCompanySelected" class="opp-company-selected hidden"></div>
-
-          <!-- Contact selector — auto-loads after company confirmed -->
-          <div id="oppContactSection" class="opp-contact-section hidden">
-            <div class="opp-contact-hd">
-              <span class="opp-contact-label">Contact at this company</span>
-              <span class="opp-contact-hint">Required by Salesbuildr</span>
-            </div>
-            <div id="oppContactList" class="opp-contact-list"></div>
-            <div id="oppContactSelected" class="opp-contact-selected hidden"></div>
-          </div>
         </div>
 
-        <!-- Step 2: Opportunity + Quote -->
+        <!-- Step 2: Select existing opportunity -->
         <div class="opp-step hidden" id="oppStep2">
-          <div class="opp-step-hd"><span class="opp-step-num">2</span> Opportunity details</div>
-          <div class="opp-field">
-            <label class="sb-label">Opportunity name</label>
-            <input type="text" id="oppName" class="sb-input" maxlength="120">
-          </div>
+          <div class="opp-step-hd"><span class="opp-step-num">2</span> Select opportunity</div>
+          <p class="opp-step-hint">Select the opportunity you already created in Salesbuildr or Autotask. The Sales Brief will be added to its Description.</p>
+          <div id="oppOppList" class="opp-company-results hidden"></div>
+          <div id="oppOppSelected" class="opp-company-selected hidden"></div>
+        </div>
 
-          <div class="opp-defaults-row">
-            <div class="opp-field">
-              <label class="sb-label">Owner <span class="sb-where">Who this opp is assigned to</span></label>
-              <select id="oppOwner" class="sb-input"><option value="">— Loading… —</option></select>
-            </div>
-            <div class="opp-field">
-              <label class="sb-label">Pipeline stage</label>
-              <select id="oppPipelineStage" class="sb-input"><option value="">— Loading… —</option></select>
-            </div>
-            <div class="opp-field">
-              <label class="sb-label">Category</label>
-              <select id="oppCategory" class="sb-input"><option value="">— Loading… —</option></select>
-            </div>
-          </div>
-
+        <!-- Step 3: Quote -->
+        <div class="opp-step hidden" id="oppStep3">
           <button type="button" class="opp-brief-toggle" id="oppBriefToggle">
             <span id="oppBriefToggleLabel">▶ Preview Sales Brief</span>
-            <span class="opp-brief-hint">Full brief will be saved to the opportunity Description field</span>
+            <span class="opp-brief-hint">Will be saved to the opportunity Description</span>
           </button>
           <div class="opp-brief-preview hidden" id="oppBriefPreview">
             <pre id="oppBriefText" class="brief-pre"></pre>
           </div>
 
-          <div class="opp-step-hd" style="margin-top:20px;"><span class="opp-step-num">3</span> Quote <span class="opp-optional">optional</span></div>
+          <div class="opp-step-hd" style="margin-top:16px;"><span class="opp-step-num">3</span> Quote <span class="opp-optional">optional</span></div>
           <label class="opp-check-label">
-            <input type="checkbox" id="oppCreateQuote" checked> Also create a draft quote
+            <input type="checkbox" id="oppCreateQuote" checked> Create a draft quote
           </label>
           <div id="oppQuoteFields" class="opp-quote-fields">
             <div class="opp-field" style="margin-top:10px;">
@@ -469,7 +442,7 @@
           </div>
 
           <div class="opp-create-row">
-            <button type="button" id="oppCreateBtn" class="btn-opp-create">Create in Salesbuildr →</button>
+            <button type="button" id="oppCreateBtn" class="btn-opp-create">Connect to Salesbuildr →</button>
           </div>
           <div id="oppCreateWorking" class="opp-working hidden">
             <div class="spinner-sm"></div>
