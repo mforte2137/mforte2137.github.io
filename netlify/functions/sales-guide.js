@@ -73,7 +73,7 @@ const DISCOVER_TOOL = {
       },
       engagement_type: {
         type: 'string',
-        enum: ['managed_services', 'network_upgrade', 'security_project', 'compliance', 'new_client_onboarding', 'project_plus_managed', 'mixed'],
+        enum: ['managed_services', 'network_upgrade', 'endpoint_refresh', 'server_eol', 'security_project', 'compliance', 'new_client_onboarding', 'project_plus_managed', 'voip_project', 'backup_dr', 'mixed'],
         description: 'The primary type of engagement this is'
       },
       solution_bullets: {
