@@ -107,16 +107,25 @@ exports.handler = async (event) => {
         }
       } catch { results.pipelineStages = []; }
 
-      // Owners — try field endpoint with opportunity- prefix pattern
+      // Owners — no field endpoint works; extract from quote owners instead.
+      // QuoteResponseDto.owner is IdentifiedPersonResponseDto { id, name, email }
+      // which gives us real user IDs without needing a /users endpoint.
       try {
-        const candidates = ['opportunity-owner', 'opportunity-user', 'owner', 'user'];
-        results.owners = [];
-        for (const name of candidates) {
-          const res  = await fetch(`${BASE}/field/${encodeURIComponent(name)}`, { headers });
-          const data = res.ok ? await res.json() : {};
-          const vals = (data?.values || []).filter(v => !v.deleted);
-          if (vals.length > 0) { results.owners = vals; break; }
-        }
+        const res  = await fetch(`${BASE}/quote?size=20`, { headers });
+        const data = res.ok ? await res.json() : {};
+        const quotes = data?.data || data?.items || (Array.isArray(data) ? data : []);
+        const ownerMap = new Map();
+        quotes.forEach(q => {
+          const o = q.owner;
+          if (o?.id) {
+            ownerMap.set(o.id, {
+              id:           o.id,
+              displayValue: o.name || o.email || o.id,
+              extId:        o.externalIdentifier || o.email || null
+            });
+          }
+        });
+        results.owners = [...ownerMap.values()];
       } catch { results.owners = []; }
 
       return ok(results);
