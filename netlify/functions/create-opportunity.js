@@ -61,7 +61,7 @@ exports.handler = async (event) => {
       const { name } = body;
       if (!name) return err('Company name required.', 400);
 
-      const res  = await fetch(`${BASE}/company?search=${encodeURIComponent(name)}&limit=8`, { headers });
+      const res  = await fetch(`${BASE}/company?query=${encodeURIComponent(name)}&size=8`, { headers });
       const data = await res.json();
 
       // Salesbuildr returns { data: [...] } or plain array
