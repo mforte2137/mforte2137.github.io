@@ -75,16 +75,29 @@ function normaliseRec(rec) {
   if (typeof rec.coaching_insight === 'string') rec.coaching_insight = cleanStr(rec.coaching_insight);
   if (typeof rec.roi_angle        === 'string') rec.roi_angle        = cleanStr(rec.roi_angle);
 
-  // Clean widget briefs
+  // Clean widget briefs — handle string, object, nested object, and JSON-string forms
+  if (typeof rec.widget_briefs === 'string') {
+    try { rec.widget_briefs = JSON.parse(rec.widget_briefs); }
+    catch { rec.widget_briefs = {}; }
+  }
   if (!rec.widget_briefs || typeof rec.widget_briefs !== 'object') {
     rec.widget_briefs = {};
-  } else {
-    ['w1','w2','w3','w4','w5'].forEach(k => {
-      if (typeof rec.widget_briefs[k] === 'string') {
-        rec.widget_briefs[k] = cleanStr(rec.widget_briefs[k]);
-      }
-    });
   }
+  ['w1','w2','w3','w4','w5'].forEach(k => {
+    const val = rec.widget_briefs[k];
+    if (typeof val === 'string') {
+      rec.widget_briefs[k] = cleanStr(val);
+    } else if (val && typeof val === 'object') {
+      // Haiku sometimes returns { text: '...' } or { content: '...' }
+      rec.widget_briefs[k] = cleanStr(val.text || val.content || val.value || Object.values(val)[0] || '');
+    } else {
+      rec.widget_briefs[k] = '';
+    }
+  });
+
+  // Debug — remove once briefs are confirmed working
+  console.log('[Sales Guide] normalised widget_briefs:', JSON.stringify(rec.widget_briefs, null, 2));
+  console.log('[Sales Guide] raw rec keys:', Object.keys(rec));
 
   return rec;
 }
@@ -1000,14 +1013,12 @@ async function fetchOppFields() {
   try {
     const res = await callCreateOpp('fetch-opp-fields', { apiKey, integrationKey: intKey });
 
-    // Populate Owner dropdown
-    populateSelect($('oppOwner'), res.owners || [], LS_OPP_OWNER, '— Select owner —');
+    // Debug — shows which field names worked
+    if (res._tried) console.log('[Sales Guide] field name probe results:', JSON.stringify(res._tried, null, 2));
 
-    // Populate Pipeline Stage dropdown
-    populateSelect($('oppPipelineStage'), res.pipelineStages || [], LS_OPP_STAGE, '— Select stage —');
-
-    // Populate Category dropdown
-    populateSelect($('oppCategory'), res.categories || [], LS_OPP_CATEGORY, '— Select category —');
+    populateSelect($('oppOwner'),         res.owners         || [], LS_OPP_OWNER,    '— Select owner —');
+    populateSelect($('oppPipelineStage'), res.pipelineStages || [], LS_OPP_STAGE,    '— Select stage —');
+    populateSelect($('oppCategory'),      res.categories     || [], LS_OPP_CATEGORY, '— Select category —');
 
   } catch (e) {
     // Non-fatal — leave dropdowns empty, rep can skip
