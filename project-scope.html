@@ -42,14 +42,34 @@
               <option value="azure">☁️ Azure Migration</option>
               <option value="m365">📧 Microsoft 365 Migration</option>
               <option value="network">🔌 Network Infrastructure Upgrade</option>
+              <option value="endpoint">💻 Endpoint Refresh</option>
+              <option value="server">🖥️ Server Refresh</option>
+              <option value="voip">📞 VoIP &amp; Communications</option>
               <option value="onboarding">🤝 New Client Onboarding</option>
               <option value="security">🛡️ Cybersecurity Assessment</option>
               <option value="backup">💾 Backup &amp; DR Implementation</option>
-              <option value="server">🖥️ Server Refresh</option>
+              <option value="copilot">🤖 Microsoft Copilot &amp; AI</option>
             </select>
             <button class="btn primary" id="loadPresetBtn">Load →</button>
           </div>
         </label>
+
+        <label>
+          My templates
+          <div class="preset-row">
+            <select id="templateSelect"><option value="">— No saved templates yet —</option></select>
+            <button class="btn primary" id="loadTemplateBtn">Load →</button>
+            <button class="btn danger-sm" id="deleteTemplateBtn" title="Delete selected template">🗑</button>
+          </div>
+        </label>
+
+        <div class="template-actions">
+          <button class="btn" id="saveTemplateBtn">💾 Save as Template</button>
+          <button class="btn" id="exportBtn">⬇ Export JSON</button>
+          <label class="btn" for="importInput" style="cursor:pointer;">⬆ Import JSON</label>
+          <input type="file" id="importInput" accept=".json" style="display:none">
+        </div>
+
         <button class="btn danger" id="clearBtn">🧹 Clear all</button>
       </div>
     </div>
