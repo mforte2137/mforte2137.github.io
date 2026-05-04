@@ -35,21 +35,53 @@ const SCOPE_PRESET_MAP = {
 const $ = id => document.getElementById(id);
 
 // ── Recommendation normaliser ─────────────────────────────
-// Haiku occasionally returns array fields as objects or null.
-// This ensures every field the UI calls .map/.forEach on is
-// always a proper array before renderResults touches it.
+// Haiku occasionally returns array fields as objects, nulls,
+// or strings containing XML parameter tags / markdown markers.
+// This guarantees every array field is clean before rendering.
 function normaliseRec(rec) {
   if (!rec) return rec;
-  const toArray = v => {
-    if (Array.isArray(v))         return v;
-    if (v && typeof v === 'object') return Object.values(v);
-    if (typeof v === 'string' && v.trim()) return [v];
-    return [];
-  };
-  rec.solution_bullets      = toArray(rec.solution_bullets);
-  rec.hardware_checklist    = toArray(rec.hardware_checklist);
-  rec.services_recommended  = toArray(rec.services_recommended);
-  if (!rec.widget_briefs || typeof rec.widget_briefs !== 'object') rec.widget_briefs = {};
+
+  // Strip <parameter name="item">...</parameter> wrappers and
+  // leading markdown list markers (* - •) that Haiku sometimes adds.
+  function cleanStr(s) {
+    return String(s)
+      .replace(/<parameter[^>]*>/gi, '')
+      .replace(/<\/parameter>/gi, '')
+      .replace(/^[\*\-•]\s+/, '')
+      .trim();
+  }
+
+  // Convert any value to a clean array of non-empty strings
+  function toArray(v) {
+    let arr;
+    if (Array.isArray(v))             arr = v;
+    else if (v && typeof v === 'object') arr = Object.values(v);
+    else if (typeof v === 'string' && v.trim()) arr = [v];
+    else                              arr = [];
+    // Clean each string item; filter out empties
+    return arr.map(item => typeof item === 'string' ? cleanStr(item) : item)
+              .filter(item => item !== '' && item != null);
+  }
+
+  rec.solution_bullets     = toArray(rec.solution_bullets);
+  rec.hardware_checklist   = toArray(rec.hardware_checklist);
+  rec.services_recommended = toArray(rec.services_recommended);
+
+  // Clean string fields too
+  if (typeof rec.coaching_insight === 'string') rec.coaching_insight = cleanStr(rec.coaching_insight);
+  if (typeof rec.roi_angle        === 'string') rec.roi_angle        = cleanStr(rec.roi_angle);
+
+  // Clean widget briefs
+  if (!rec.widget_briefs || typeof rec.widget_briefs !== 'object') {
+    rec.widget_briefs = {};
+  } else {
+    ['w1','w2','w3','w4','w5'].forEach(k => {
+      if (typeof rec.widget_briefs[k] === 'string') {
+        rec.widget_briefs[k] = cleanStr(rec.widget_briefs[k]);
+      }
+    });
+  }
+
   return rec;
 }
 
@@ -636,8 +668,9 @@ const ENGAGEMENT_LABELS = {
   backup_dr:             'Backup & Disaster Recovery'
 };
 
-// Track selected company across wizard steps
-let selectedOppCompany = null;
+// Track selected company and contact across wizard steps
+let selectedOppCompany  = null;
+let selectedOppContact  = null;
 
 // ── Build plain-text Sales Brief from currentRec ──────────
 function buildSalesBrief() {
@@ -711,6 +744,7 @@ function buildSalesBrief() {
 // ── Initialise the panel when results are shown ───────────
 function initCreateOppPanel() {
   selectedOppCompany = null;
+  selectedOppContact = null;
 
   // Pre-fill credentials from localStorage
   const a = localStorage.getItem(LS_API_KEY), i = localStorage.getItem(LS_INT_KEY);
@@ -731,10 +765,12 @@ function initCreateOppPanel() {
   // Pre-fill Sales Brief text
   $('oppBriefText').textContent = buildSalesBrief();
 
-  // Reset step 2 visibility
+  // Reset all steps
   $('oppStep2').classList.add('hidden');
   $('oppCompanyResults').classList.add('hidden');
   $('oppCompanySelected').classList.add('hidden');
+  $('oppContactSection').classList.add('hidden');
+  $('oppContactSelected').classList.add('hidden');
   $('oppBriefPreview').classList.add('hidden');
   $('oppBriefToggleLabel').textContent = '▶ Preview Sales Brief';
   $('oppCreateResult').classList.add('hidden');
@@ -838,6 +874,7 @@ function renderCompanyResults(companies, searchName) {
 
 function selectCompany(company) {
   selectedOppCompany = company;
+  selectedOppContact = null;
   $('oppCompanyResults').classList.add('hidden');
 
   const sel = $('oppCompanySelected');
@@ -848,21 +885,101 @@ function selectCompany(company) {
          <button class="change-company-btn" id="changeCompanyBtn">Change</button></div>`;
   sel.classList.remove('hidden');
 
-  // Update opportunity and quote titles to reflect chosen company
+  // Update opportunity and quote titles
   const engType  = currentRec?.engagement_type || 'mixed';
   const engLabel = ENGAGEMENT_LABELS[engType] || 'IT Services';
   $('oppName').value       = `${engLabel} — ${company.name}`;
   $('oppQuoteTitle').value = `${company.name} — ${engLabel} Proposal`;
 
-  // Show step 2
-  $('oppStep2').classList.remove('hidden');
-  $('oppStep2').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  // Reset and show contact section
+  $('oppContactSelected').classList.add('hidden');
+  $('oppStep2').classList.add('hidden');
+  const contactSection = $('oppContactSection');
+  contactSection.classList.remove('hidden');
+
+  // If existing company, auto-fetch its contacts
+  if (company.existing && company.id) {
+    loadContactsForCompany(company.id);
+  } else {
+    // New company — no contacts yet, skip contact requirement
+    $('oppContactList').innerHTML = `<div class="opp-contact-none">New company — no contacts yet. Add a contact in Salesbuildr after creating the opportunity.</div>`;
+    selectedOppContact = { id: null, name: '' }; // allow creation to proceed
+    $('oppStep2').classList.remove('hidden');
+  }
 
   $('changeCompanyBtn')?.addEventListener('click', () => {
     selectedOppCompany = null;
+    selectedOppContact = null;
     sel.classList.add('hidden');
+    contactSection.classList.add('hidden');
     $('oppStep2').classList.add('hidden');
     $('oppCompanyResults').classList.remove('hidden');
+  });
+}
+
+async function loadContactsForCompany(companyId) {
+  const apiKey = $('oppApiKey').value.trim();
+  const intKey = $('oppIntKey').value.trim();
+  const list   = $('oppContactList');
+
+  list.innerHTML = '<div class="opp-contact-loading">Loading contacts…</div>';
+
+  try {
+    const res      = await callCreateOpp('search-contact', { companyId, apiKey, integrationKey: intKey });
+    const contacts = res.contacts || [];
+    renderContactList(contacts);
+  } catch (e) {
+    list.innerHTML = `<div class="opp-contact-none">Could not load contacts — ${esc(e.message)}</div>`;
+    $('oppStep2').classList.remove('hidden');
+  }
+}
+
+function renderContactList(contacts) {
+  const list = $('oppContactList');
+
+  if (contacts.length === 0) {
+    list.innerHTML = `<div class="opp-contact-none">No contacts found for this company. Add one in Salesbuildr and retry, or proceed without a contact.</div>`;
+    selectedOppContact = { id: null, name: '' };
+    $('oppStep2').classList.remove('hidden');
+    return;
+  }
+
+  list.innerHTML = contacts.slice(0, 10).map(c => {
+    const name  = [c.firstName, c.lastName].filter(Boolean).join(' ') || c.name || 'Unnamed contact';
+    const email = c.email || '';
+    const role  = c.jobTitle || c.title || '';
+    return `<button class="opp-contact-item" data-id="${esc(c.id)}" data-name="${esc(name)}">
+      <div>
+        <div>${esc(name)}</div>
+        ${email ? `<div class="opp-contact-email">${esc(email)}</div>` : ''}
+      </div>
+      ${role ? `<span class="opp-contact-role">${esc(role)}</span>` : ''}
+    </button>`;
+  }).join('');
+
+  list.querySelectorAll('.opp-contact-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectContact({ id: btn.dataset.id, name: btn.dataset.name });
+    });
+  });
+}
+
+function selectContact(contact) {
+  selectedOppContact = contact;
+  $('oppContactList').classList.add('hidden');
+
+  const sel = $('oppContactSelected');
+  sel.innerHTML = `✓ ${esc(contact.name)} <button class="change-company-btn" id="changeContactBtn">Change</button>`;
+  sel.classList.remove('hidden');
+
+  $('oppStep2').classList.remove('hidden');
+  $('oppStep2').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  $('changeContactBtn')?.addEventListener('click', () => {
+    selectedOppContact = null;
+    sel.classList.add('hidden');
+    $('oppContactList').classList.remove('hidden');
+    $('oppStep2').classList.add('hidden');
   });
 }
 
@@ -907,13 +1024,9 @@ async function doCreateOpportunity() {
     const slug  = selectedOppCompany.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 20);
     const extId = `sg-${slug}-${Date.now().toString().slice(-6)}`;
 
-    const oppRes = await callCreateOpp('upsert-opportunity', {
-      companyId,
-      name: oppName,
-      description,
-      extId,
-      ...creds
-    });
+    const oppPayload = { companyId, name: oppName, description, extId, ...creds };
+    if (selectedOppContact?.id) oppPayload.contactId = selectedOppContact.id;
+    const oppRes = await callCreateOpp('upsert-opportunity', oppPayload);
     if (!oppRes.ok) throw new Error(oppRes.error || 'Failed to create opportunity.');
     const opportunityId = oppRes.opportunity?.id;
 
