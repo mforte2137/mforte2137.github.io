@@ -68,9 +68,19 @@ function normaliseRec(rec) {
               .filter(item => item !== '' && item != null);
   }
 
+  // Deep-clean helper — cleans all string values inside an object
+  function cleanObj(obj) {
+    if (!obj || typeof obj !== 'object') return obj;
+    const out = {};
+    for (const [k, v] of Object.entries(obj)) {
+      out[k] = typeof v === 'string' ? cleanStr(v) : v;
+    }
+    return out;
+  }
+
   rec.solution_bullets     = toArray(rec.solution_bullets);
-  rec.hardware_checklist   = toArray(rec.hardware_checklist);
-  rec.services_recommended = toArray(rec.services_recommended);
+  rec.hardware_checklist   = toArray(rec.hardware_checklist).map(cleanObj);
+  rec.services_recommended = toArray(rec.services_recommended).map(cleanObj);
 
   // Clean string fields too
   if (typeof rec.coaching_insight === 'string') rec.coaching_insight = cleanStr(rec.coaching_insight);
@@ -1016,8 +1026,8 @@ async function fetchOppFields() {
   try {
     const res = await callCreateOpp('fetch-opp-fields', { apiKey, integrationKey: intKey });
 
-    // Debug — shows which field names worked
-    if (res._tried) console.log('[Sales Guide] field name probe results:', JSON.stringify(res._tried, null, 2));
+    // Debug — shows what the opportunity list fetch returned
+    if (res._debug) console.log('[Sales Guide] opp fields debug:', JSON.stringify(res._debug, null, 2));
 
     populateSelect($('oppOwner'),         res.owners         || [], LS_OPP_OWNER,    '— Select owner —');
     populateSelect($('oppPipelineStage'), res.pipelineStages || [], LS_OPP_STAGE,    '— Select stage —');
