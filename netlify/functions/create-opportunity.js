@@ -64,9 +64,22 @@ exports.handler = async (event) => {
       const res  = await fetch(`${BASE}/company?query=${encodeURIComponent(name)}&size=8`, { headers });
       const data = await res.json();
 
-      // Salesbuildr returns { data: [...] } or plain array
-      const companies = data?.data || (Array.isArray(data) ? data : []);
-      return ok({ companies });
+      // Handle all possible response shapes from Salesbuildr:
+      //   { data: [...] }  |  { items: [...] }  |  { results: [...] }
+      //   plain array [...]  |  single object {...}
+      let companies = [];
+      if (Array.isArray(data))              companies = data;
+      else if (Array.isArray(data?.data))   companies = data.data;
+      else if (Array.isArray(data?.items))  companies = data.items;
+      else if (Array.isArray(data?.results))companies = data.results;
+      else if (data?.id)                    companies = [data]; // single object returned
+
+      // Expose the raw response keys for debugging when nothing found
+      const debugShape = companies.length === 0
+        ? { _rawKeys: Object.keys(data || {}), _isArray: Array.isArray(data) }
+        : {};
+
+      return ok({ companies, ...debugShape });
     }
 
     // ── create-company ──────────────────────────────────────
