@@ -967,8 +967,8 @@ function renderContactList(contacts) {
   }
 
   list.innerHTML = contacts.slice(0, 10).map(c => {
-    const name  = [c.firstName, c.lastName].filter(Boolean).join(' ') || c.name || 'Unnamed contact';
-    const email = c.email || '';
+    const name  = c.name || [c.firstName, c.lastName].filter(Boolean).join(' ') || 'Unnamed contact';
+    const email = c.email || c.externalIdentifier || '';
     const role  = c.jobTitle || c.title || '';
     return `<button class="opp-contact-item" data-id="${esc(c.id)}" data-name="${esc(name)}">
       <div>
