@@ -358,6 +358,31 @@ body { font-family: var(--sans); background: var(--paper); color: var(--ink); fo
   padding: 0; margin-left: auto;
 }
 
+/* Contact selector */
+.opp-contact-section { display: flex; flex-direction: column; gap: 8px; }
+.opp-contact-hd      { display: flex; align-items: center; gap: 8px; }
+.opp-contact-label   { font: 700 12px var(--sans); color: var(--ink); }
+.opp-contact-hint    { font-size: 11px; color: var(--mute); }
+.opp-contact-list    { border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: #fff; }
+.opp-contact-item {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 10px 14px; font: 13px var(--sans); color: var(--ink);
+  background: none; border: none; border-bottom: 1px solid var(--rule);
+  cursor: pointer; text-align: left; transition: background .1s;
+}
+.opp-contact-item:last-child { border-bottom: none; }
+.opp-contact-item:hover { background: var(--paper-alt); }
+.opp-contact-role  { font-size: 11px; color: var(--mute); margin-left: auto; }
+.opp-contact-email { font-size: 11px; color: var(--mute); }
+.opp-contact-none  { padding: 12px 14px; font-size: 13px; color: var(--amber); }
+.opp-contact-loading { padding: 10px 14px; font-size: 13px; color: var(--mute); font-style: italic; }
+.opp-contact-selected {
+  padding: 10px 14px; background: var(--good-soft);
+  border: 1px solid rgba(5,150,105,.25); border-radius: 9px;
+  font-size: 13px; color: var(--good);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+
 .opp-field { display: flex; flex-direction: column; gap: 5px; }
 
 .opp-brief-toggle {
