@@ -230,6 +230,7 @@ exports.handler = async (event) => {
       let resolvedTemplateId = templateId || null;
 
       // If widgets provided, build a one-time quote template containing them
+      let templateDebug = null;
       if (Array.isArray(widgets) && widgets.length > 0) {
         const tmplPayload = {
           name:    `Sales Guide — ${title || 'Proposal'} — ${Date.now()}`,
@@ -240,8 +241,9 @@ exports.handler = async (event) => {
           headers,
           body:    JSON.stringify(tmplPayload)
         });
-        const tmplData = tmplRes.ok ? await tmplRes.json() : null;
-        if (tmplData?.id) resolvedTemplateId = tmplData.id;
+        const tmplData = await tmplRes.json();
+        templateDebug  = { status: tmplRes.status, id: tmplData?.id, error: tmplData?.message || tmplData?.error || null };
+        if (tmplRes.ok && tmplData?.id) resolvedTemplateId = tmplData.id;
       }
 
       const payload = { opportunityId, title: title || 'Proposal' };
@@ -255,7 +257,7 @@ exports.handler = async (event) => {
       const data = await res.json();
 
       if (!res.ok) return err(data?.message || data?.error || 'Failed to create quote.');
-      return ok({ quote: data, widgetsInjected: !!resolvedTemplateId && Array.isArray(widgets) && widgets.length > 0 });
+      return ok({ quote: data, widgetsInjected: !!resolvedTemplateId && Array.isArray(widgets) && widgets.length > 0, templateDebug });
     }
 
     return err('Unknown action.', 400);
