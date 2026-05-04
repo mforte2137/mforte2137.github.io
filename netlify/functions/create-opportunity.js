@@ -116,21 +116,22 @@ exports.handler = async (event) => {
         const quoteIds  = listItems.map(q => q.id).filter(Boolean).slice(0, 3);
 
         const ownerMap = new Map();
-        await Promise.all(quoteIds.map(async id => {
-          try {
-            const res   = await fetch(`${BASE}/quote/${id}`, { headers });
-            const quote = res.ok ? await res.json() : {};
-            // Try owner first, then createdBy
-            const o = quote.owner || quote.createdBy;
-            if (o?.id) {
-              ownerMap.set(o.id, {
-                id:           o.id,
-                displayValue: o.name || o.email || o.id,
-                extId:        o.externalIdentifier || o.email || null
-              });
-            }
-          } catch { /* skip */ }
-        }));
+        // Fetch first quote individually for debug
+        if (quoteIds.length > 0) {
+          const res   = await fetch(`${BASE}/quote/${quoteIds[0]}`, { headers });
+          const quote = res.ok ? await res.json() : {};
+          // Surface top-level keys and owner shape for debugging
+          results._ownerDebug = {
+            quoteListCount: listItems.length,
+            quoteIdsFound:  quoteIds,
+            quoteStatus:    res.status,
+            quoteTopKeys:   Object.keys(quote),
+            ownerField:     quote.owner   ? JSON.stringify(quote.owner)   : null,
+            createdByField: quote.createdBy ? JSON.stringify(quote.createdBy) : null
+          };
+          const o = quote.owner || quote.createdBy;
+          if (o?.id) ownerMap.set(o.id, { id: o.id, displayValue: o.name || o.email || o.id, extId: o.externalIdentifier || o.email || null });
+        }
 
         results.owners = [...ownerMap.values()];
       } catch { results.owners = []; }
