@@ -43,6 +43,29 @@ function showToast(msg) {
 
 // ── Preset data ───────────────────────────────────────────
 const PRESETS = {
+  copilot: {
+    title:     'Microsoft Copilot Readiness & Deployment',
+    overview:  'This project prepares your Microsoft 365 environment for Copilot, deploys it to a pilot group, and drives adoption across your team. Before Copilot can be activated safely, your tenant data needs to be governed correctly — we handle the sensitivity labelling, SharePoint structure review, and security posture checks that most deployments skip, and that organisations later regret. The result is a Copilot deployment your staff actually use, with your business data protected.',
+    exclusions:'Microsoft 365 Copilot licensing costs\nCustom Copilot Studio agent development (available as a separate engagement)\nThird-party AI tool integrations\nData migration or SharePoint redesign beyond the scope of Copilot readiness\nLegal or compliance review of AI acceptable-use policy',
+    tasks: [
+      { task:'Copilot Readiness Assessment', role:'Senior Engineer', hours:'8', notes:'Licensing eligibility, tenant configuration, security score, MFA status' },
+      { task:'Data Governance Review — SharePoint & OneDrive', role:'Senior Engineer', hours:'12', notes:'Oversharing audit, orphaned sites, broad permissions, stale content' },
+      { task:'Sensitivity Label Design & Implementation', role:'Senior Engineer', hours:'12', notes:'Label taxonomy, auto-labelling policies, default labels per site/library' },
+      { task:'Information Barriers & Access Review', role:'Senior Engineer', hours:'8', notes:'Confirm no unintended data exposure before Copilot surfaces content' },
+      { task:'Microsoft Purview Configuration', role:'Senior Engineer', hours:'8', notes:'DLP policies, retention labels, audit logging baseline' },
+      { task:'Copilot Licensing Activation & Admin Centre Setup', role:'Engineer', hours:'4', notes:'License assignment, Copilot admin settings, web access policy' },
+      { task:'Pilot Group Selection & Onboarding', role:'PM', hours:'4', notes:'5–15 users across key roles, briefing, feedback process setup' },
+      { task:'Copilot in Teams — Configuration & Pilot', role:'Engineer', hours:'6', notes:'Meeting transcription, recap, call notes — test with pilot group' },
+      { task:'Copilot in Outlook — Configuration & Pilot', role:'Engineer', hours:'4', notes:'Email summary, draft assist, thread summary — pilot validation' },
+      { task:'Copilot in Word, Excel & PowerPoint — Pilot', role:'Engineer', hours:'4', notes:'Document generation, data analysis, presentation drafting' },
+      { task:'Prompt Engineering Training — Pilot Group', role:'PM / Senior Engineer', hours:'6', notes:'How to write effective prompts, practical use cases per role' },
+      { task:'Pilot Review & Feedback Analysis', role:'PM', hours:'4', notes:'Usage data review, feedback collation, blockers and wins documented' },
+      { task:'Broad Rollout & Department Training', role:'PM / Engineer', hours:'12', notes:'Role-specific training sessions — how Copilot helps their actual job' },
+      { task:'Copilot Adoption & Usage Reporting Setup', role:'Engineer', hours:'4', notes:'Microsoft 365 Copilot dashboard, usage metrics, value reporting' },
+      { task:'AI Acceptable Use Policy — Template & Review', role:'PM', hours:'4', notes:'Draft policy for client review — what Copilot can and cannot be used for' },
+      { task:'Project Management', role:'PM', hours:'16', notes:'Scheduling, stakeholder communications, milestone tracking' }
+    ]
+  },
   azure: {
     title:     'Azure Cloud Migration',
     overview:  'This project covers the full migration of your on-premises server infrastructure to Microsoft Azure, delivering improved reliability, scalability, and remote access — with minimal disruption to your team and day-to-day operations.',
