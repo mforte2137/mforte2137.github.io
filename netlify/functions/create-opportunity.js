@@ -82,6 +82,28 @@ exports.handler = async (event) => {
       return ok({ companies, ...debugShape });
     }
 
+    // ── fetch-opp-fields ────────────────────────────────────
+    // Fetches allowed values for owner, pipeline stage, and
+    // opportunity category so the UI can show live dropdowns.
+    if (action === 'fetch-opp-fields') {
+      const fieldMap = {
+        owners:         'owner',
+        pipelineStages: 'pipelineStage',
+        categories:     'opportunityCategory'
+      };
+      const results = {};
+      for (const [key, fieldName] of Object.entries(fieldMap)) {
+        try {
+          const res  = await fetch(`${BASE}/field/${encodeURIComponent(fieldName)}`, { headers });
+          const data = res.ok ? await res.json() : {};
+          results[key] = data?.values || [];
+        } catch {
+          results[key] = [];
+        }
+      }
+      return ok(results);
+    }
+
     // ── search-contact ──────────────────────────────────────
     if (action === 'search-contact') {
       const { companyId } = body;
@@ -121,12 +143,21 @@ exports.handler = async (event) => {
 
     // ── upsert-opportunity ──────────────────────────────────
     if (action === 'upsert-opportunity') {
-      const { companyId, name, description, extId, contactId } = body;
+      const { companyId, name, description, extId, contactId, ownerId, pipelineStageId, categoryId } = body;
       if (!companyId) return err('companyId required.', 400);
       if (!extId)     return err('extId required.', 400);
 
-      const payload = { name: name || 'New Opportunity', companyId, description };
-      if (contactId) payload.contactId = contactId;
+      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      const payload = {
+        name:      name || 'New Opportunity',
+        companyId,
+        description,
+        startDate: today
+      };
+      if (contactId)      payload.contactId      = contactId;
+      if (ownerId)        payload.ownerId        = ownerId;
+      if (pipelineStageId)payload.pipelineStageId= pipelineStageId;
+      if (categoryId)     payload.categoryId     = categoryId;
 
       const res  = await fetch(`${BASE}/opportunity/ext/${encodeURIComponent(extId)}`, {
         method:  'PUT',
