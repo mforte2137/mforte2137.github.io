@@ -225,6 +225,7 @@ $('discGenerateBtn').addEventListener('click', async () => {
     }
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Recommendation failed');
+    console.log('[Sales Guide] stop_reason:', data.stop_reason);
     currentRec     = normaliseRec(data.recommendation);
     currentAnswers = answers;
     renderResults('discovery', answers.company || 'New Opportunity', currentRec);
@@ -310,7 +311,6 @@ function renderResults(mode, title, rec) {
         <span class="svc-billing bill-${s.billing || 'monthly'}">${s.billing || 'monthly'}</span>
         <div class="svc-body">
           <div class="svc-name">${esc(s.service)}${s.optional ? ' <span class="svc-optional-tag">— optional add-on</span>' : ''}</div>
-          <div class="svc-reason">${esc(s.reason)}</div>
         </div>
       </div>`).join('');
     svcSection.classList.remove('hidden');
