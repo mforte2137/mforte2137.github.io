@@ -86,40 +86,32 @@ exports.handler = async (event) => {
     // Returns all products/services tagged 'guided' from the
     // MSP's Salesbuildr catalog — the curated set for guided sales.
     if (action === 'fetch-guided-catalog') {
-      // Try both filter formats — labels:guided and label:guided
-      const url1 = `${BASE}/product?filters=${encodeURIComponent('labels:guided')}&size=50`;
-      const url2 = `${BASE}/product?filters=${encodeURIComponent('label:guided')}&size=50`;
-      const url3 = `${BASE}/product?size=5`; // unfiltered sample to see response shape
+      // Fetch all products unfiltered — server-side label filter unreliable for PSA items.
+      // Filter client-side by checking labels array contains 'guided'.
+      const res  = await fetch(`${BASE}/product?size=100`, { headers });
+      const data = res.ok ? await res.json() : {};
+      const all  = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
 
-      const [r1, r2, r3] = await Promise.all([
-        fetch(url1, { headers }).then(r => r.json()).catch(() => ({})),
-        fetch(url2, { headers }).then(r => r.json()).catch(() => ({})),
-        fetch(url3, { headers }).then(r => r.json()).catch(() => ({})),
-      ]);
+      // Client-side label filter
+      const guided = all.filter(p => {
+        const lbls = p.labels || [];
+        return Array.isArray(lbls)
+          ? lbls.some(l => (typeof l === 'string' ? l : l?.name || l?.value || '').toLowerCase() === 'guided')
+          : false;
+      });
 
-      const extract = d => d?.data || d?.items || d?.results || (Array.isArray(d) ? d : []);
-      const items1 = extract(r1);
-      const items2 = extract(r2);
-      const sample = extract(r3);
-
-      // Use whichever filter returned results
-      const rawItems = items1.length ? items1 : items2.length ? items2 : [];
-
-      const catalog = rawItems.map(p => ({
+      const catalog = guided.map(p => ({
         id:    p.id,
         name:  p.name || p.description || 'Unknown',
         price: p.sellPrice ?? p.price ?? p.recurringPrice ?? p.unitPrice ?? 0,
-        type:  p.type || 'service',
+        type:  p.productType || p.type || 'product',
       }));
 
-      // Debug: surface response shapes
+      // Debug to confirm what labels look like
       const debug = {
-        url1Count:    items1.length,
-        url2Count:    items2.length,
-        sampleCount:  sample.length,
-        sampleKeys:   sample[0] ? Object.keys(sample[0]) : [],
-        r1TopKeys:    Object.keys(r1),
-        r2TopKeys:    Object.keys(r2),
+        totalFetched: all.length,
+        guidedFound:  guided.length,
+        firstLabels:  all[0]?.labels ?? 'n/a',
       };
 
       return ok({ catalog, _debug: debug });
