@@ -1002,6 +1002,7 @@ async function loadGuidedCatalog() {
   try {
     const res     = await callCreateOpp('fetch-guided-catalog', { apiKey, integrationKey: intKey });
     const catalog = res.catalog || [];
+    if (res._debug) console.log('[Sales Guide] catalog debug:', JSON.stringify(res._debug, null, 2));
     renderServiceSelection(catalog);
   } catch (e) {
     list.innerHTML = `<div class="opp-contact-none">Could not load catalog — ${esc(e.message)}</div>`;
