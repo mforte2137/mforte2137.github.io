@@ -234,7 +234,7 @@ exports.handler = async (event) => {
       if (Array.isArray(widgets) && widgets.length > 0) {
         const tmplPayload = {
           name:    `Sales Guide — ${title || 'Proposal'} — ${Date.now()}`,
-          widgets: widgets.map(w => ({ type: 'html-content', content: w }))
+          widgets: widgets.map(w => ({ type: 'content', content: w }))
         };
         const tmplRes  = await fetch(`${BASE}/quote-template`, {
           method:  'POST',
