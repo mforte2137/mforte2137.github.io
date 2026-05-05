@@ -86,17 +86,43 @@ exports.handler = async (event) => {
     // Returns all products/services tagged 'guided' from the
     // MSP's Salesbuildr catalog — the curated set for guided sales.
     if (action === 'fetch-guided-catalog') {
-      const res  = await fetch(`${BASE}/product?filters=${encodeURIComponent('labels:guided')}&size=50`, { headers });
-      const data = res.ok ? await res.json() : {};
-      const items = data?.data || data?.items || data?.results || (Array.isArray(data) ? data : []);
-      // Normalise price field — Salesbuildr may use sellPrice, price, or recurringPrice
-      const catalog = items.map(p => ({
+      // Try both filter formats — labels:guided and label:guided
+      const url1 = `${BASE}/product?filters=${encodeURIComponent('labels:guided')}&size=50`;
+      const url2 = `${BASE}/product?filters=${encodeURIComponent('label:guided')}&size=50`;
+      const url3 = `${BASE}/product?size=5`; // unfiltered sample to see response shape
+
+      const [r1, r2, r3] = await Promise.all([
+        fetch(url1, { headers }).then(r => r.json()).catch(() => ({})),
+        fetch(url2, { headers }).then(r => r.json()).catch(() => ({})),
+        fetch(url3, { headers }).then(r => r.json()).catch(() => ({})),
+      ]);
+
+      const extract = d => d?.data || d?.items || d?.results || (Array.isArray(d) ? d : []);
+      const items1 = extract(r1);
+      const items2 = extract(r2);
+      const sample = extract(r3);
+
+      // Use whichever filter returned results
+      const rawItems = items1.length ? items1 : items2.length ? items2 : [];
+
+      const catalog = rawItems.map(p => ({
         id:    p.id,
         name:  p.name || p.description || 'Unknown',
         price: p.sellPrice ?? p.price ?? p.recurringPrice ?? p.unitPrice ?? 0,
         type:  p.type || 'service',
       }));
-      return ok({ catalog });
+
+      // Debug: surface response shapes
+      const debug = {
+        url1Count:    items1.length,
+        url2Count:    items2.length,
+        sampleCount:  sample.length,
+        sampleKeys:   sample[0] ? Object.keys(sample[0]) : [],
+        r1TopKeys:    Object.keys(r1),
+        r2TopKeys:    Object.keys(r2),
+      };
+
+      return ok({ catalog, _debug: debug });
     }
 
     // ── get-opportunity ─────────────────────────────────────
