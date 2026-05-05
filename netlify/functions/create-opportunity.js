@@ -227,24 +227,9 @@ exports.handler = async (event) => {
       const { opportunityId, title, templateId, widgets } = body;
       if (!opportunityId) return err('opportunityId required.', 400);
 
-      let resolvedTemplateId = templateId || null;
-
-      // If widgets provided, build a one-time quote template containing them
-      let templateDebug = null;
-      if (Array.isArray(widgets) && widgets.length > 0) {
-        const tmplPayload = {
-          name:    `Sales Guide — ${title || 'Proposal'} — ${Date.now()}`,
-          widgets: widgets.map(w => ({ type: 'content', content: w }))
-        };
-        const tmplRes  = await fetch(`${BASE}/quote-template`, {
-          method:  'POST',
-          headers,
-          body:    JSON.stringify(tmplPayload)
-        });
-        const tmplData = await tmplRes.json();
-        templateDebug  = { status: tmplRes.status, id: tmplData?.id, error: tmplData?.message || tmplData?.error || null };
-        if (tmplRes.ok && tmplData?.id) resolvedTemplateId = tmplData.id;
-      }
+      // Note: quote-template API only accepts structural widgets (items, summary, total)
+      // not HTML content widgets — widget injection into quotes is not supported via API.
+      const resolvedTemplateId = templateId || null;
 
       const payload = { opportunityId, title: title || 'Proposal' };
       if (resolvedTemplateId) payload.templateId = resolvedTemplateId;
@@ -257,7 +242,7 @@ exports.handler = async (event) => {
       const data = await res.json();
 
       if (!res.ok) return err(data?.message || data?.error || 'Failed to create quote.');
-      return ok({ quote: data, widgetsInjected: !!resolvedTemplateId && Array.isArray(widgets) && widgets.length > 0, templateDebug });
+      return ok({ quote: data });
     }
 
     return err('Unknown action.', 400);
