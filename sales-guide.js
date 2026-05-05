@@ -789,11 +789,14 @@ function initCreateOppPanel() {
 
   // Reset all steps
   $('oppStep2').classList.add('hidden');
+  $('oppServiceStep').classList.add('hidden');
   $('oppStep3').classList.add('hidden');
   $('oppCompanyResults').classList.add('hidden');
   $('oppCompanySelected').classList.add('hidden');
   $('oppOppList').classList.add('hidden');
   $('oppOppSelected').classList.add('hidden');
+  $('oppServiceList').innerHTML = '';
+  $('oppServiceTotal').classList.add('hidden');
   $('oppBriefPreview').classList.add('hidden');
   $('oppBriefToggleLabel').textContent = '▶ Preview Sales Brief';
   $('oppCreateResult').classList.add('hidden');
@@ -972,15 +975,174 @@ async function selectOpportunity(opp) {
     $('oppQuoteTitle').value = `${opp.name} — Proposal`;
   }
 
-  $('oppStep3').classList.remove('hidden');
-  $('oppStep3').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  // Load guided catalog and show service selection
+  $('oppServiceStep').classList.remove('hidden');
+  $('oppServiceStep').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  loadGuidedCatalog();
 
   $('changeOppBtn')?.addEventListener('click', () => {
     selectedOppOpportunity = null;
     sel.classList.add('hidden');
+    $('oppServiceStep').classList.add('hidden');
     $('oppStep3').classList.add('hidden');
     $('oppOppList').classList.remove('hidden');
   });
+}
+
+// ── Guided catalog fetch & service matching ───────────────
+async function loadGuidedCatalog() {
+  const apiKey = $('oppApiKey').value.trim();
+  const intKey = $('oppIntKey').value.trim();
+  const list   = $('oppServiceList');
+
+  list.innerHTML = '<div class="opp-contact-loading">Loading your catalog…</div>';
+  $('oppStep3').classList.add('hidden');
+  $('oppServiceTotal').classList.add('hidden');
+
+  try {
+    const res     = await callCreateOpp('fetch-guided-catalog', { apiKey, integrationKey: intKey });
+    const catalog = res.catalog || [];
+    renderServiceSelection(catalog);
+  } catch (e) {
+    list.innerHTML = `<div class="opp-contact-none">Could not load catalog — ${esc(e.message)}</div>`;
+    $('oppStep3').classList.remove('hidden');
+  }
+}
+
+function matchScore(a, b) {
+  a = a.toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
+  b = b.toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
+  if (a === b) return 1;
+  if (a.includes(b) || b.includes(a)) return 0.85;
+  const wordsA = a.split(/\s+/).filter(w => w.length > 2);
+  const wordsB = b.split(/\s+/).filter(w => w.length > 2);
+  if (!wordsA.length || !wordsB.length) return 0;
+  const shared = wordsA.filter(w => wordsB.includes(w)).length;
+  return shared / Math.max(wordsA.length, wordsB.length);
+}
+
+function renderServiceSelection(catalog) {
+  const list         = $('oppServiceList');
+  const recs         = currentRec?.services_recommended || [];
+  const defaultQty   = parseInt(currentAnswers?.staffCount) || 1;
+  const usedCatalogIds = new Set();
+
+  // Match each recommendation to a catalog item
+  const matched   = [];
+  const unmatched = [];
+
+  recs.forEach(rec => {
+    let best = null, bestScore = 0;
+    catalog.forEach(item => {
+      if (usedCatalogIds.has(item.id)) return;
+      const score = matchScore(rec.service, item.name);
+      if (score > bestScore) { bestScore = score; best = item; }
+    });
+    if (best && bestScore >= 0.45) {
+      usedCatalogIds.add(best.id);
+      matched.push({ rec, item: best, preSelected: !rec.optional });
+    } else {
+      unmatched.push(rec);
+    }
+  });
+
+  // Extras — guided catalog items not matched to any recommendation
+  const extras = catalog.filter(item => !usedCatalogIds.has(item.id));
+
+  let html = '';
+
+  if (matched.length > 0) {
+    html += `<div class="opp-svc-section-label">Recommended &amp; matched</div>`;
+    matched.forEach(({ rec, item, preSelected }) => {
+      const badge = rec.optional ? 'optional' : 'matched';
+      const label = rec.optional ? 'Optional' : 'Recommended';
+      html += svcRow(item, defaultQty, preSelected, badge, label);
+    });
+  }
+
+  if (extras.length > 0) {
+    html += `<div class="opp-svc-section-label" style="margin-top:10px;">Also in your catalog</div>`;
+    extras.forEach(item => {
+      html += svcRow(item, defaultQty, false, 'extra', '');
+    });
+  }
+
+  if (unmatched.length > 0) {
+    const names = unmatched.map(r => r.service).join(', ');
+    html += `<div class="opp-svc-unmatched" style="margin-top:10px;">
+      ✦ Also recommended but not in your guided catalog — add manually if needed: <strong>${esc(names)}</strong>
+    </div>`;
+  }
+
+  if (!html) {
+    html = '<div class="opp-contact-none">No guided catalog items found. Tag products with "guided" in Salesbuildr.</div>';
+  }
+
+  list.innerHTML = html;
+
+  // Wire up checkboxes and qty inputs → update running total
+  list.querySelectorAll('.opp-svc-check, .opp-svc-qty').forEach(el => {
+    el.addEventListener('change', updateServiceTotal);
+    el.addEventListener('input',  updateServiceTotal);
+  });
+  updateServiceTotal();
+
+  $('oppStep3').classList.remove('hidden');
+  $('oppStep3').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function svcRow(item, defaultQty, preSelected, badgeClass, badgeLabel) {
+  const price = typeof item.price === 'number' ? item.price : 0;
+  const lineTotal = price * defaultQty;
+  return `
+    <label class="opp-svc-item${badgeClass === 'matched' ? ' is-matched' : badgeClass === 'extra' ? ' is-extra' : ''}">
+      <input type="checkbox" class="opp-svc-check" data-id="${esc(item.id)}" data-price="${price}" ${preSelected ? 'checked' : ''}>
+      <div class="opp-svc-info">
+        <span class="opp-svc-name">${esc(item.name)}</span>
+        <div class="opp-svc-meta">
+          ${price > 0 ? `<span class="opp-svc-price">$${price.toFixed(2)}/mo each</span>` : ''}
+          ${badgeLabel ? `<span class="opp-svc-badge ${badgeClass}">${badgeLabel}</span>` : ''}
+        </div>
+      </div>
+      <div class="opp-svc-qty-wrap">
+        <label>Qty</label>
+        <input type="number" class="opp-svc-qty" value="${defaultQty}" min="1" max="999">
+      </div>
+      <span class="opp-svc-line-total">$${lineTotal.toFixed(2)}/mo</span>
+    </label>`;
+}
+
+function updateServiceTotal() {
+  let total = 0; let count = 0;
+  $('oppServiceList').querySelectorAll('.opp-svc-item').forEach(row => {
+    const check = row.querySelector('.opp-svc-check');
+    const qty   = parseInt(row.querySelector('.opp-svc-qty')?.value) || 1;
+    const price = parseFloat(check?.dataset.price) || 0;
+    const lineEl = row.querySelector('.opp-svc-line-total');
+    const line   = check?.checked ? price * qty : 0;
+    if (lineEl) lineEl.textContent = `$${(price * qty).toFixed(2)}/mo`;
+    if (check?.checked) { total += line; count++; }
+    row.style.opacity = check?.checked ? '1' : '0.5';
+  });
+  const totalEl = $('oppServiceTotal');
+  if (count > 0) {
+    totalEl.innerHTML = `<span>${count} service${count !== 1 ? 's' : ''} selected</span><strong>$${total.toFixed(2)}/mo</strong>`;
+    totalEl.classList.remove('hidden');
+  } else {
+    totalEl.classList.add('hidden');
+  }
+}
+
+function getSelectedServices() {
+  const selected = [];
+  $('oppServiceList')?.querySelectorAll('.opp-svc-item').forEach(row => {
+    const check = row.querySelector('.opp-svc-check');
+    if (check?.checked) {
+      const qty = parseInt(row.querySelector('.opp-svc-qty')?.value) || 1;
+      selected.push({ id: check.dataset.id, quantity: qty });
+    }
+  });
+  return selected;
 }
 
 // ── Main connect flow ─────────────────────────────────────
@@ -1024,26 +1186,18 @@ async function doConnectOpportunity() {
     });
     if (!oppRes.ok) throw new Error(oppRes.error || 'Failed to update opportunity.');
 
-    // 2. Create draft quote (optional) — inject widgets if generated
+    // 2. Create draft quote with services (optional)
     let quoteCreated = false;
-    let widgetsInjected = false;
+    let serviceCount = 0;
     if ($('oppCreateQuote').checked) {
-      const hasWidgets = generatedWidgets && generatedWidgets.length > 0;
-      setOppWorking(hasWidgets ? 'Building quote with widgets…' : 'Creating draft quote…');
-      const quoteTitle  = $('oppQuoteTitle').value.trim() || opp.name;
-      const quotePayload = {
-        opportunityId: opp.id,
-        title: quoteTitle,
-        ...creds
-      };
-      if (hasWidgets) {
-        // Pass each widget's HTML as the content array
-        quotePayload.widgets = generatedWidgets.map(w => w.html).filter(Boolean);
-      }
-      const quoteRes = await callCreateOpp('create-quote', quotePayload);
-      quoteCreated    = quoteRes.ok;
-      widgetsInjected = quoteRes.widgetsInjected || false;
-      if (quoteRes.templateDebug) console.log('[Sales Guide] template debug:', JSON.stringify(quoteRes.templateDebug));
+      const selectedServices = getSelectedServices();
+      serviceCount = selectedServices.length;
+      setOppWorking(serviceCount > 0 ? `Creating quote with ${serviceCount} service${serviceCount !== 1 ? 's' : ''}…` : 'Creating draft quote…');
+      const quoteTitle   = $('oppQuoteTitle').value.trim() || opp.name;
+      const quotePayload = { opportunityId: opp.id, title: quoteTitle, ...creds };
+      if (selectedServices.length > 0) quotePayload.products = selectedServices;
+      const quoteRes     = await callCreateOpp('create-quote', quotePayload);
+      quoteCreated       = quoteRes.ok;
     }
 
     // Success
@@ -1055,7 +1209,7 @@ async function doConnectOpportunity() {
         <div class="opp-success-body">
           <strong>Connected to Salesbuildr</strong>
           <div class="opp-success-detail">
-            Sales Brief added to <em>${esc(opp.name)}</em>${quoteCreated ? ` · Draft quote created${widgetsInjected ? ' with widgets' : ''}` : ''}
+            Sales Brief added to <em>${esc(opp.name)}</em>${quoteCreated ? ` · Draft quote created${serviceCount > 0 ? ` with ${serviceCount} service${serviceCount !== 1 ? 's' : ''}` : ''}` : ''}
           </div>
           <div class="opp-success-hint">Open Salesbuildr to find your opportunity with the Sales Brief in the Description.</div>
         </div>
