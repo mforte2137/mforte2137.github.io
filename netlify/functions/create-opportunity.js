@@ -82,6 +82,23 @@ exports.handler = async (event) => {
       return ok({ companies, ...debugShape });
     }
 
+    // ── fetch-guided-catalog ─────────────────────────────────
+    // Returns all products/services tagged 'guided' from the
+    // MSP's Salesbuildr catalog — the curated set for guided sales.
+    if (action === 'fetch-guided-catalog') {
+      const res  = await fetch(`${BASE}/product?filters=${encodeURIComponent('labels:guided')}&size=50`, { headers });
+      const data = res.ok ? await res.json() : {};
+      const items = data?.data || data?.items || data?.results || (Array.isArray(data) ? data : []);
+      // Normalise price field — Salesbuildr may use sellPrice, price, or recurringPrice
+      const catalog = items.map(p => ({
+        id:    p.id,
+        name:  p.name || p.description || 'Unknown',
+        price: p.sellPrice ?? p.price ?? p.recurringPrice ?? p.unitPrice ?? 0,
+        type:  p.type || 'service',
+      }));
+      return ok({ catalog });
+    }
+
     // ── get-opportunity ─────────────────────────────────────
     // Fetches full OpportunityResponseDto so we can echo back
     // all existing IDs (contact, owner, stage, category) when
@@ -227,12 +244,12 @@ exports.handler = async (event) => {
       const { opportunityId, title, templateId, widgets } = body;
       if (!opportunityId) return err('opportunityId required.', 400);
 
-      // Note: quote-template API only accepts structural widgets (items, summary, total)
-      // not HTML content widgets — widget injection into quotes is not supported via API.
       const resolvedTemplateId = templateId || null;
+      const { products } = body; // array of {id, quantity}
 
       const payload = { opportunityId, title: title || 'Proposal' };
       if (resolvedTemplateId) payload.templateId = resolvedTemplateId;
+      if (Array.isArray(products) && products.length > 0) payload.products = products;
 
       const res  = await fetch(`${BASE}/quote`, {
         method:  'POST',
