@@ -106,6 +106,7 @@ exports.handler = async (event) => {
         price:  p.sellPrice ?? p.price ?? p.recurringPrice ?? p.unitPrice ?? 0,
         type:   p.productType || p.type || 'product',
         labels: Array.isArray(p.labels) ? p.labels.map(l => typeof l === 'string' ? l : (l?.name || '')).filter(Boolean) : [],
+        unit:   (p.unit || p.term || 'month').toLowerCase(),
       }));
 
       // Debug to confirm what labels look like
