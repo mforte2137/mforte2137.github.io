@@ -1039,10 +1039,16 @@ function itemIsRelevant(item, engLabel) {
   return (item.labels || []).includes(engLabel);
 }
 
-// True if item is a one-time Professional Services fee (qty should be 1)
+// True if item should default to qty 1 — PS project fees, assessments,
+// and any non-monthly billing (quarterly, annual, one-time)
 function isProjectFee(item) {
   const n = item.name.toLowerCase();
-  return n.startsWith('professional services') || n.includes('assessment') || n.includes('readiness assessment');
+  const u = (item.unit || 'month').toLowerCase();
+  return n.startsWith('professional services')
+    || n.includes('assessment')
+    || u === 'quarter' || u === 'quarterly'
+    || u === 'year'    || u === 'annual'
+    || u === 'once'    || u === 'one-time' || u === 'onetime';
 }
 
 function matchScore(a, b) {
