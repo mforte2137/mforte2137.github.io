@@ -1010,6 +1010,41 @@ async function loadGuidedCatalog() {
   }
 }
 
+// Maps engagement type → the catalog label that's relevant for that engagement
+const ENGAGEMENT_LABEL_MAP = {
+  network_upgrade:       'guided-network',
+  endpoint_refresh:      'guided-endpoint',
+  server_eol:            'guided-server',
+  voip_project:          'guided-voip',
+  backup_dr:             'guided-security',
+  security_project:      'guided-security',
+  compliance:            'guided-security',
+  copilot_ai:            'guided-copilot',
+  // These see the full guided catalog (no sub-label narrowing)
+  managed_services:      null,
+  new_client_onboarding: null,
+  project_plus_managed:  null,
+  mixed:                 null
+};
+
+// Returns the engagement-specific label for the current recommendation
+function currentEngagementLabel() {
+  const type = currentRec?.engagement_type || 'mixed';
+  return ENGAGEMENT_LABEL_MAP[type] ?? null;
+}
+
+// True if a catalog item is relevant to the current engagement
+function itemIsRelevant(item, engLabel) {
+  if (!engLabel) return true;   // no filter for general engagements
+  return (item.labels || []).includes(engLabel);
+}
+
+// True if item is a one-time Professional Services fee (qty should be 1)
+function isProjectFee(item) {
+  const n = item.name.toLowerCase();
+  return n.startsWith('professional services') || n.includes('assessment') || n.includes('readiness assessment');
+}
+
 function matchScore(a, b) {
   a = a.toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
   b = b.toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
@@ -1026,6 +1061,7 @@ function renderServiceSelection(catalog) {
   const list         = $('oppServiceList');
   const recs         = currentRec?.services_recommended || [];
   const defaultQty   = parseInt(currentAnswers?.staffCount) || 1;
+  const engLabel     = currentEngagementLabel();
   const usedCatalogIds = new Set();
 
   // Match each recommendation to a catalog item
@@ -1039,7 +1075,7 @@ function renderServiceSelection(catalog) {
       const score = matchScore(rec.service, item.name);
       if (score > bestScore) { bestScore = score; best = item; }
     });
-    if (best && bestScore >= 0.45) {
+    if (best && bestScore >= 0.3) {
       usedCatalogIds.add(best.id);
       matched.push({ rec, item: best, preSelected: !rec.optional });
     } else {
@@ -1047,24 +1083,32 @@ function renderServiceSelection(catalog) {
     }
   });
 
-  // Extras — guided catalog items not matched to any recommendation
-  const extras = catalog.filter(item => !usedCatalogIds.has(item.id));
+  // Extras — filter to only items relevant to this engagement type
+  const extras = catalog.filter(item =>
+    !usedCatalogIds.has(item.id) && itemIsRelevant(item, engLabel)
+  );
 
   let html = '';
 
   if (matched.length > 0) {
     html += `<div class="opp-svc-section-label">Recommended &amp; matched</div>`;
     matched.forEach(({ rec, item, preSelected }) => {
+      const qty   = isProjectFee(item) ? 1 : defaultQty;
       const badge = rec.optional ? 'optional' : 'matched';
       const label = rec.optional ? 'Optional' : 'Recommended';
-      html += svcRow(item, defaultQty, preSelected, badge, label);
+      html += svcRow(item, qty, preSelected, badge, label);
     });
   }
 
   if (extras.length > 0) {
-    html += `<div class="opp-svc-section-label" style="margin-top:10px;">Also in your catalog</div>`;
+    const engName = engLabel ? engLabel.replace('guided-', '').replace(/-/g, ' ') : '';
+    const sectionLabel = engName
+      ? `Also in your catalog <span style="font-weight:400;text-transform:none;">(${engName} items)</span>`
+      : 'Also in your catalog';
+    html += `<div class="opp-svc-section-label" style="margin-top:10px;">${sectionLabel}</div>`;
     extras.forEach(item => {
-      html += svcRow(item, defaultQty, false, 'extra', '');
+      const qty = isProjectFee(item) ? 1 : defaultQty;
+      html += svcRow(item, qty, false, 'extra', '');
     });
   }
 
