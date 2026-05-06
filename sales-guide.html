@@ -370,377 +370,6 @@
       </div>
     </div>
 
-
-    <!-- ── CREATE IN SALESBUILDR (Phase 2) ── -->
-    <div class="create-opp-wrap hidden" id="createOppWrap">
-      <button type="button" class="create-opp-toggle" id="createOppToggle">
-        <div class="create-opp-hd">
-          <span class="create-opp-icon">🚀</span>
-          <div>
-            <div class="create-opp-title">Connect to Salesbuildr</div>
-            <div class="create-opp-sub">Link this recommendation to an existing opportunity and create a draft quote</div>
-          </div>
-        </div>
-        <span class="sb-arrow" id="createOppArrow">▼</span>
-      </button>
-
-      <div class="create-opp-body hidden" id="createOppBody">
-
-        <!-- Credentials -->
-        <div class="opp-creds">
-          <div class="sb-fields">
-            <div class="sb-field">
-              <label class="sb-label">API Key <span class="sb-where">Admin → Integrations</span></label>
-              <input type="password" id="oppApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
-            </div>
-            <div class="sb-field">
-              <label class="sb-label">Integration Key <span class="sb-where">Provided by Salesbuildr</span></label>
-              <input type="password" id="oppIntKey" class="sb-input" placeholder="Your integration key" autocomplete="new-password">
-            </div>
-          </div>
-          <label class="sb-remember"><input type="checkbox" id="oppRemember"> Remember on this device</label>
-        </div>
-
-        <!-- Step 1: Company -->
-        <div class="opp-step" id="oppStep1">
-          <div class="opp-step-hd"><span class="opp-step-num">1</span> Find company</div>
-          <div class="opp-search-row">
-            <input type="text" id="oppCompanyName" class="sb-input" placeholder="Type company name…" maxlength="80">
-            <button type="button" id="oppSearchBtn" class="btn-opp-action">Search →</button>
-          </div>
-          <div id="oppCompanyResults" class="opp-company-results hidden"></div>
-          <div id="oppCompanySelected" class="opp-company-selected hidden"></div>
-        </div>
-
-        <!-- Step 2: Select existing opportunity -->
-        <div class="opp-step hidden" id="oppStep2">
-          <div class="opp-step-hd"><span class="opp-step-num">2</span> Select opportunity</div>
-          <p class="opp-step-hint">Select the opportunity you already created in Salesbuildr or Autotask. The Sales Brief will be added to its Description.</p>
-          <div id="oppOppList" class="opp-company-results hidden"></div>
-          <div id="oppOppSelected" class="opp-company-selected hidden"></div>
-        </div>
-
-        <!-- Step 3: Services to include -->
-        <div class="opp-step hidden" id="oppServiceStep">
-          <div class="opp-step-hd"><span class="opp-step-num">3</span> Services to include</div>
-          <p class="opp-step-hint">Matched from your guided catalog — check what to add to the quote.</p>
-          <div id="oppServiceList" class="opp-service-list"></div>
-          <div id="oppServiceTotal" class="opp-service-total hidden"></div>
-        </div>
-
-        <!-- Step 4: Quote -->
-        <div class="opp-step hidden" id="oppStep3">
-          <button type="button" class="opp-brief-toggle" id="oppBriefToggle">
-            <span id="oppBriefToggleLabel">▶ Preview Sales Brief</span>
-            <span class="opp-brief-hint">Will be saved to the opportunity Description</span>
-          </button>
-          <div class="opp-brief-preview hidden" id="oppBriefPreview">
-            <pre id="oppBriefText" class="brief-pre"></pre>
-          </div>
-
-          <div class="opp-step-hd" style="margin-top:16px;"><span class="opp-step-num">4</span> Quote <span class="opp-optional">optional</span></div>
-          <div id="oppWidgetNotice" class="hidden" style="font-size:12px;color:#92400e;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;margin-bottom:8px;">
-            ✦ Widgets generated — use <strong>Save to Salesbuildr</strong> above to push them to your library, then open the quote, click <strong>+</strong> and add them from your widget library.
-          </div>
-          <label class="opp-check-label">
-            <input type="checkbox" id="oppCreateQuote" checked> Create a draft quote
-          </label>
-          <div id="oppQuoteFields" class="opp-quote-fields">
-            <div class="opp-field" style="margin-top:10px;">
-              <label class="sb-label">Quote title</label>
-              <input type="text" id="oppQuoteTitle" class="sb-input" maxlength="120">
-            </div>
-            <p class="opp-template-note">Uses your account default template — set your <strong>Guided Sales Template</strong> as default and it applies automatically.</p>
-          </div>
-
-          <div class="opp-create-row">
-            <button type="button" id="oppCreateBtn" class="btn-opp-create">Connect to Salesbuildr →</button>
-          </div>
-          <div id="oppCreateWorking" class="opp-working hidden">
-            <div class="spinner-sm"></div>
-            <span id="oppWorkingMsg">Working…</span>
-          </div>
-          <div id="oppCreateResult" class="hidden"></div>
-        </div>
-
-      </div>
-    </div>
-
-  </section>
-
-  <!-- ── EXECUTION FORM ── -->
-  <section id="execution-view" hidden>
-    <div class="form-header">
-      <button type="button" class="back-btn" id="execBackBtn">← Change mode</button>
-      <h2>⚡ Execution <span class="mode-tag">"I have the spec, I need the proposal"</span></h2>
-      <p class="form-lead">Paste the confirmed solution below — hardware list, services, project scope, whatever the design desk or senior engineer put together. We'll translate it into a proposal that moves the customer to yes.</p>
-    </div>
-
-    <div class="q-card">
-      <div class="q-body">
-        <label class="q-label">Confirmed solution specification</label>
-        <p class="q-hint">Upload the design desk spreadsheet or document, or paste the spec directly. Technical language is fine — we'll handle the translation.</p>
-
-        <!-- File upload option -->
-        <div class="spec-upload" id="specUploadZone">
-          <input type="file" id="specFile" accept=".xlsx,.xls,.docx" hidden>
-          <div class="spec-upload-inner" id="specUploadInner">
-            <span class="spec-upload-icon">📎</span>
-            <span class="spec-upload-label">Drop an <strong>.xlsx</strong> or <strong>.docx</strong> here, or <label for="specFile" class="spec-upload-link">browse</label></span>
-            <span class="spec-upload-hint">We'll extract the content and populate the field below</span>
-          </div>
-          <div id="specFileStatus" class="spec-file-status hidden"></div>
-        </div>
-
-        <label class="q-label" for="exec-spec" style="margin-top:14px;">Or paste / type the spec directly</label>
-        <textarea id="exec-spec" rows="10" class="spec-input" placeholder="e.g.
-- Sophos XGS 136 next-gen firewall + 3yr Xstream Protection license
-- 1x Ubiquiti USW-48-PoE managed switch
-- 3x Ubiquiti U6 Pro wireless access points
-- After-hours installation (approx 8 hrs engineer, 4 hrs senior engineer)
-- Sophos MDR — Managed Detection &amp; Response (monthly)
-- Network monitoring and management (monthly)
-- 1yr hardware warranty support included"></textarea>
-        <div class="char-counter"><span id="specCount">0</span> characters</div>
-      </div>
-    </div>
-
-    <div class="q-card">
-      <div class="q-body">
-        <label class="q-label">Customer context <span class="optional-tag">Optional but useful</span></label>
-        <p class="q-hint">A sentence about who the customer is and what they care about — helps Claude frame the proposal for the right audience.</p>
-        <input type="text" id="exec-context" class="q-input" maxlength="200" placeholder="e.g. Law firm, 15 staff, had a phishing incident last month, compliance audit in Q1">
-      </div>
-    </div>
-
-    <div class="form-footer">
-      <button type="button" id="execGenerateBtn" class="btn-generate">Translate to Proposal →</button>
-    </div>
-    <div id="execError" class="form-error hidden"></div>
-  </section>
-
-  <!-- ── WORKING STATE ── -->
-  <section id="working-view" hidden>
-    <div class="working-inner">
-      <div class="spinner"></div>
-      <p class="working-title" id="workingTitle">Analyzing the opportunity…</p>
-      <p class="working-sub" id="workingSub">Claude is reading the customer situation and building your recommendation</p>
-    </div>
-  </section>
-
-  <!-- ── RESULTS VIEW ── -->
-  <section id="results-view" hidden>
-
-    <div class="results-header">
-      <div>
-        <div class="results-kicker" id="resultsMode"></div>
-        <h2 class="results-title" id="resultsTitle"></h2>
-      </div>
-      <button type="button" id="startOverBtn" class="back-btn">← Start over</button>
-    </div>
-
-    <!-- Coaching insight — the key sales moment -->
-    <div class="coaching-card" id="coachingCard">
-      <div class="coaching-icon">💡</div>
-      <div class="coaching-body">
-        <div class="coaching-label">Sales coaching insight</div>
-        <p class="coaching-text" id="coachingText"></p>
-      </div>
-    </div>
-
-    <!-- Solution summary -->
-    <div class="summary-card" id="summaryCard">
-      <div class="summary-label">Recommended approach</div>
-      <p class="summary-text" id="summaryText"></p>
-    </div>
-
-    <!-- Hardware checklist (Discovery only, if hardware needed) -->
-    <div id="hardwareSection" class="result-section hidden">
-      <div class="section-header">
-        <span class="section-icon">🔧</span>
-        <div>
-          <div class="section-title">Hardware checklist — confirm at site visit</div>
-          <div class="section-sub">These components need to be specified before you can finalise the quote. Use this list at the site survey.</div>
-        </div>
-      </div>
-      <div id="hardwareList" class="hardware-list"></div>
-      <div class="hardware-note">After the site visit, use the <strong>Special Bid Converter</strong> to import distributor pricing directly into Salesbuildr.</div>
-    </div>
-
-    <!-- Services recommended -->
-    <div id="servicesSection" class="result-section hidden">
-      <div class="section-header">
-        <span class="section-icon">⚡</span>
-        <div>
-          <div class="section-title">Services to include</div>
-          <div class="section-sub">Core services and optional add-ons recommended for this customer</div>
-        </div>
-      </div>
-      <div id="servicesList" class="services-list"></div>
-    </div>
-
-    <!-- Widget briefs preview -->
-    <div class="result-section">
-      <div class="section-header">
-        <span class="section-icon">📄</span>
-        <div>
-          <div class="section-title">Proposal narrative — W1 to W5</div>
-          <div class="section-sub">These briefs drive the five buyer-journey widgets. Click "Generate Widgets" to build them.</div>
-        </div>
-      </div>
-      <div id="widgetBriefs" class="widget-briefs"></div>
-    </div>
-
-    <!-- Widget generation options -->
-    <div class="widget-options">
-      <div>
-        <div class="widget-opt-label">Widget mode</div>
-        <div class="widget-mode-toggle">
-          <label class="mode-radio"><input type="radio" name="widgetMode" value="combined" checked> Combined — 1 widget, all 5 sections</label>
-          <label class="mode-radio"><input type="radio" name="widgetMode" value="individual"> Individual — 5 separate widgets</label>
-        </div>
-      </div>
-      <div>
-        <div class="widget-opt-label">Color theme</div>
-        <div class="guide-color-row">
-          <input type="color" id="guideColorPicker" class="guide-color-picker" value="#2563eb">
-          <input type="text"  id="guideColorHex"    class="guide-hex-input" maxlength="7" value="#2563eb">
-          <div class="guide-presets">
-            <button class="guide-preset active" style="background:#0d2d5e;" data-color="#0d2d5e" title="Navy"></button>
-            <button class="guide-preset" style="background:#2563eb;" data-color="#2563eb" title="Blue"></button>
-            <button class="guide-preset" style="background:#059669;" data-color="#059669" title="Green"></button>
-            <button class="guide-preset" style="background:#7c3aed;" data-color="#7c3aed" title="Purple"></button>
-            <button class="guide-preset" style="background:#dc2626;" data-color="#dc2626" title="Red"></button>
-            <button class="guide-preset" style="background:#b45309;" data-color="#b45309" title="Gold"></button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Three output actions -->
-    <div class="output-actions">
-      <div class="action-card" id="actionWidgets">
-        <div class="action-icon">🧩</div>
-        <div class="action-title">Generate Proposal Widgets</div>
-        <div class="action-desc">Build all 5 buyer-journey widgets based on this recommendation — ready to paste into Salesbuildr.</div>
-        <button type="button" id="genWidgetsBtn" class="btn-action btn-primary-action">Generate 5 Widgets →</button>
-        <div id="widgetsWorking" class="action-working hidden">
-          <div class="spinner-sm"></div>
-          <span id="widgetsWorkingMsg">Generating widget 1 of 5…</span>
-        </div>
-        <div id="widgetsResult" class="action-result hidden"></div>
-      </div>
-
-      <div class="action-card">
-        <div class="action-icon">📋</div>
-        <div class="action-title">Open Project Scope Builder</div>
-        <div class="action-desc">Pre-load the Scope Builder with the right project type based on this recommendation.</div>
-        <button type="button" id="openScopeBtn" class="btn-action">Open Scope Builder →</button>
-      </div>
-
-      <div class="action-card">
-        <div class="action-icon">💰</div>
-        <div class="action-title">Build ROI Case</div>
-        <div class="action-desc">Open the ROI Builder pre-filled with this customer's profile and the strongest value angle.</div>
-        <button type="button" id="openRoiBtn" class="btn-action">Open ROI Builder →</button>
-      </div>
-    </div>
-
-    <!-- ── CREATE IN SALESBUILDR (Phase 2) ── -->
-    <div class="create-opp-wrap hidden" id="createOppWrap">
-      <button type="button" class="create-opp-toggle" id="createOppToggle">
-        <div class="create-opp-hd">
-          <span class="create-opp-icon">🚀</span>
-          <div>
-            <div class="create-opp-title">Connect to Salesbuildr</div>
-            <div class="create-opp-sub">Link this recommendation to an existing opportunity and create a draft quote</div>
-          </div>
-        </div>
-        <span class="sb-arrow" id="createOppArrow">▼</span>
-      </button>
-
-      <div class="create-opp-body hidden" id="createOppBody">
-
-        <!-- Credentials -->
-        <div class="opp-creds">
-          <div class="sb-fields">
-            <div class="sb-field">
-              <label class="sb-label">API Key <span class="sb-where">Admin → Integrations</span></label>
-              <input type="password" id="oppApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
-            </div>
-            <div class="sb-field">
-              <label class="sb-label">Integration Key <span class="sb-where">Provided by Salesbuildr</span></label>
-              <input type="password" id="oppIntKey" class="sb-input" placeholder="Your integration key" autocomplete="new-password">
-            </div>
-          </div>
-          <label class="sb-remember"><input type="checkbox" id="oppRemember"> Remember on this device</label>
-        </div>
-
-        <!-- Step 1: Company -->
-        <div class="opp-step" id="oppStep1">
-          <div class="opp-step-hd"><span class="opp-step-num">1</span> Find company</div>
-          <div class="opp-search-row">
-            <input type="text" id="oppCompanyName" class="sb-input" placeholder="Type company name…" maxlength="80">
-            <button type="button" id="oppSearchBtn" class="btn-opp-action">Search →</button>
-          </div>
-          <div id="oppCompanyResults" class="opp-company-results hidden"></div>
-          <div id="oppCompanySelected" class="opp-company-selected hidden"></div>
-        </div>
-
-        <!-- Step 2: Select existing opportunity -->
-        <div class="opp-step hidden" id="oppStep2">
-          <div class="opp-step-hd"><span class="opp-step-num">2</span> Select opportunity</div>
-          <p class="opp-step-hint">Select the opportunity you already created in Salesbuildr or Autotask. The Sales Brief will be added to its Description.</p>
-          <div id="oppOppList" class="opp-company-results hidden"></div>
-          <div id="oppOppSelected" class="opp-company-selected hidden"></div>
-        </div>
-
-        <!-- Step 3: Services to include -->
-        <div class="opp-step hidden" id="oppServiceStep">
-          <div class="opp-step-hd"><span class="opp-step-num">3</span> Services to include</div>
-          <p class="opp-step-hint">Matched from your guided catalog — check what to add to the quote.</p>
-          <div id="oppServiceList" class="opp-service-list"></div>
-          <div id="oppServiceTotal" class="opp-service-total hidden"></div>
-        </div>
-
-        <!-- Step 4: Quote -->
-        <div class="opp-step hidden" id="oppStep3">
-          <button type="button" class="opp-brief-toggle" id="oppBriefToggle">
-            <span id="oppBriefToggleLabel">▶ Preview Sales Brief</span>
-            <span class="opp-brief-hint">Will be saved to the opportunity Description</span>
-          </button>
-          <div class="opp-brief-preview hidden" id="oppBriefPreview">
-            <pre id="oppBriefText" class="brief-pre"></pre>
-          </div>
-
-          <div class="opp-step-hd" style="margin-top:16px;"><span class="opp-step-num">4</span> Quote <span class="opp-optional">optional</span></div>
-          <div id="oppWidgetNotice" class="hidden" style="font-size:12px;color:#92400e;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;margin-bottom:8px;">
-            ✦ Widgets generated — use <strong>Save to Salesbuildr</strong> above to push them to your library, then open the quote, click <strong>+</strong> and add them from your widget library.
-          </div>
-          <label class="opp-check-label">
-            <input type="checkbox" id="oppCreateQuote" checked> Create a draft quote
-          </label>
-          <div id="oppQuoteFields" class="opp-quote-fields">
-            <div class="opp-field" style="margin-top:10px;">
-              <label class="sb-label">Quote title</label>
-              <input type="text" id="oppQuoteTitle" class="sb-input" maxlength="120">
-            </div>
-            <p class="opp-template-note">Uses your account default template — set your <strong>Guided Sales Template</strong> as default and it applies automatically.</p>
-          </div>
-
-          <div class="opp-create-row">
-            <button type="button" id="oppCreateBtn" class="btn-opp-create">Connect to Salesbuildr →</button>
-          </div>
-          <div id="oppCreateWorking" class="opp-working hidden">
-            <div class="spinner-sm"></div>
-            <span id="oppWorkingMsg">Working…</span>
-          </div>
-          <div id="oppCreateResult" class="hidden"></div>
-        </div>
-
-      </div>
-    </div>
-
     <!-- Salesbuildr widget push (shown after widgets generated) -->
     <div id="widgetOutput" class="widget-output hidden">
 
@@ -776,6 +405,199 @@
         </div>
       </div>
     </div>
+
+
+    <!-- ── CREATE IN SALESBUILDR (Phase 2) ── -->
+    <div class="create-opp-wrap hidden" id="createOppWrap">
+      <button type="button" class="create-opp-toggle" id="createOppToggle">
+        <div class="create-opp-hd">
+          <span class="create-opp-icon">🚀</span>
+          <div>
+            <div class="create-opp-title">Connect to Salesbuildr</div>
+            <div class="create-opp-sub">Link this recommendation to an existing opportunity and create a draft quote</div>
+          </div>
+        </div>
+        <span class="sb-arrow" id="createOppArrow">▼</span>
+      </button>
+
+      <div class="create-opp-body hidden" id="createOppBody">
+
+        <!-- Credentials -->
+        <div class="opp-creds">
+          <div class="sb-fields">
+            <div class="sb-field">
+              <label class="sb-label">API Key <span class="sb-where">Admin → Integrations</span></label>
+              <input type="password" id="oppApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
+            </div>
+            <div class="sb-field">
+              <label class="sb-label">Integration Key <span class="sb-where">Provided by Salesbuildr</span></label>
+              <input type="password" id="oppIntKey" class="sb-input" placeholder="Your integration key" autocomplete="new-password">
+            </div>
+          </div>
+          <label class="sb-remember"><input type="checkbox" id="oppRemember"> Remember on this device</label>
+        </div>
+
+        <!-- Step 1: Company -->
+        <div class="opp-step" id="oppStep1">
+          <div class="opp-step-hd"><span class="opp-step-num">1</span> Find company</div>
+          <div class="opp-search-row">
+            <input type="text" id="oppCompanyName" class="sb-input" placeholder="Type company name…" maxlength="80">
+            <button type="button" id="oppSearchBtn" class="btn-opp-action">Search →</button>
+          </div>
+          <div id="oppCompanyResults" class="opp-company-results hidden"></div>
+          <div id="oppCompanySelected" class="opp-company-selected hidden"></div>
+        </div>
+
+        <!-- Step 2: Select existing opportunity -->
+        <div class="opp-step hidden" id="oppStep2">
+          <div class="opp-step-hd"><span class="opp-step-num">2</span> Select opportunity</div>
+          <p class="opp-step-hint">Select the opportunity you already created in Salesbuildr or Autotask. The Sales Brief will be added to its Description.</p>
+          <div id="oppOppList" class="opp-company-results hidden"></div>
+          <div id="oppOppSelected" class="opp-company-selected hidden"></div>
+        </div>
+
+        <!-- Step 3: Services to include -->
+        <div class="opp-step hidden" id="oppServiceStep">
+          <div class="opp-step-hd"><span class="opp-step-num">3</span> Services to include</div>
+          <p class="opp-step-hint">Matched from your guided catalog — check what to add to the quote.</p>
+          <div id="oppServiceList" class="opp-service-list"></div>
+          <div id="oppServiceTotal" class="opp-service-total hidden"></div>
+        </div>
+
+        <!-- Step 4: Quote -->
+        <div class="opp-step hidden" id="oppStep3">
+          <button type="button" class="opp-brief-toggle" id="oppBriefToggle">
+            <span id="oppBriefToggleLabel">▶ Preview Sales Brief</span>
+            <span class="opp-brief-hint">Will be saved to the opportunity Description</span>
+          </button>
+          <div class="opp-brief-preview hidden" id="oppBriefPreview">
+            <pre id="oppBriefText" class="brief-pre"></pre>
+          </div>
+
+          <div class="opp-step-hd" style="margin-top:16px;"><span class="opp-step-num">4</span> Quote <span class="opp-optional">optional</span></div>
+          <div id="oppWidgetNotice" class="hidden" style="font-size:12px;color:#92400e;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;margin-bottom:8px;">
+            ✦ Widgets generated — use <strong>Save to Salesbuildr</strong> above to push them to your library, then open the quote, click <strong>+</strong> and add them from your widget library.
+          </div>
+          <label class="opp-check-label">
+            <input type="checkbox" id="oppCreateQuote" checked> Create a draft quote
+          </label>
+          <div id="oppQuoteFields" class="opp-quote-fields">
+            <div class="opp-field" style="margin-top:10px;">
+              <label class="sb-label">Quote title</label>
+              <input type="text" id="oppQuoteTitle" class="sb-input" maxlength="120">
+            </div>
+            <p class="opp-template-note">Uses your account default template — set your <strong>Guided Sales Template</strong> as default and it applies automatically.</p>
+          </div>
+
+          <div class="opp-create-row">
+            <button type="button" id="oppCreateBtn" class="btn-opp-create">Connect to Salesbuildr →</button>
+          </div>
+          <div id="oppCreateWorking" class="opp-working hidden">
+            <div class="spinner-sm"></div>
+            <span id="oppWorkingMsg">Working…</span>
+          </div>
+          <div id="oppCreateResult" class="hidden"></div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ── CREATE IN SALESBUILDR (Phase 2) ── -->
+    <div class="create-opp-wrap hidden" id="createOppWrap">
+      <button type="button" class="create-opp-toggle" id="createOppToggle">
+        <div class="create-opp-hd">
+          <span class="create-opp-icon">🚀</span>
+          <div>
+            <div class="create-opp-title">Connect to Salesbuildr</div>
+            <div class="create-opp-sub">Link this recommendation to an existing opportunity and create a draft quote</div>
+          </div>
+        </div>
+        <span class="sb-arrow" id="createOppArrow">▼</span>
+      </button>
+
+      <div class="create-opp-body hidden" id="createOppBody">
+
+        <!-- Credentials -->
+        <div class="opp-creds">
+          <div class="sb-fields">
+            <div class="sb-field">
+              <label class="sb-label">API Key <span class="sb-where">Admin → Integrations</span></label>
+              <input type="password" id="oppApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
+            </div>
+            <div class="sb-field">
+              <label class="sb-label">Integration Key <span class="sb-where">Provided by Salesbuildr</span></label>
+              <input type="password" id="oppIntKey" class="sb-input" placeholder="Your integration key" autocomplete="new-password">
+            </div>
+          </div>
+          <label class="sb-remember"><input type="checkbox" id="oppRemember"> Remember on this device</label>
+        </div>
+
+        <!-- Step 1: Company -->
+        <div class="opp-step" id="oppStep1">
+          <div class="opp-step-hd"><span class="opp-step-num">1</span> Find company</div>
+          <div class="opp-search-row">
+            <input type="text" id="oppCompanyName" class="sb-input" placeholder="Type company name…" maxlength="80">
+            <button type="button" id="oppSearchBtn" class="btn-opp-action">Search →</button>
+          </div>
+          <div id="oppCompanyResults" class="opp-company-results hidden"></div>
+          <div id="oppCompanySelected" class="opp-company-selected hidden"></div>
+        </div>
+
+        <!-- Step 2: Select existing opportunity -->
+        <div class="opp-step hidden" id="oppStep2">
+          <div class="opp-step-hd"><span class="opp-step-num">2</span> Select opportunity</div>
+          <p class="opp-step-hint">Select the opportunity you already created in Salesbuildr or Autotask. The Sales Brief will be added to its Description.</p>
+          <div id="oppOppList" class="opp-company-results hidden"></div>
+          <div id="oppOppSelected" class="opp-company-selected hidden"></div>
+        </div>
+
+        <!-- Step 3: Services to include -->
+        <div class="opp-step hidden" id="oppServiceStep">
+          <div class="opp-step-hd"><span class="opp-step-num">3</span> Services to include</div>
+          <p class="opp-step-hint">Matched from your guided catalog — check what to add to the quote.</p>
+          <div id="oppServiceList" class="opp-service-list"></div>
+          <div id="oppServiceTotal" class="opp-service-total hidden"></div>
+        </div>
+
+        <!-- Step 4: Quote -->
+        <div class="opp-step hidden" id="oppStep3">
+          <button type="button" class="opp-brief-toggle" id="oppBriefToggle">
+            <span id="oppBriefToggleLabel">▶ Preview Sales Brief</span>
+            <span class="opp-brief-hint">Will be saved to the opportunity Description</span>
+          </button>
+          <div class="opp-brief-preview hidden" id="oppBriefPreview">
+            <pre id="oppBriefText" class="brief-pre"></pre>
+          </div>
+
+          <div class="opp-step-hd" style="margin-top:16px;"><span class="opp-step-num">4</span> Quote <span class="opp-optional">optional</span></div>
+          <div id="oppWidgetNotice" class="hidden" style="font-size:12px;color:#92400e;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;margin-bottom:8px;">
+            ✦ Widgets generated — use <strong>Save to Salesbuildr</strong> above to push them to your library, then open the quote, click <strong>+</strong> and add them from your widget library.
+          </div>
+          <label class="opp-check-label">
+            <input type="checkbox" id="oppCreateQuote" checked> Create a draft quote
+          </label>
+          <div id="oppQuoteFields" class="opp-quote-fields">
+            <div class="opp-field" style="margin-top:10px;">
+              <label class="sb-label">Quote title</label>
+              <input type="text" id="oppQuoteTitle" class="sb-input" maxlength="120">
+            </div>
+            <p class="opp-template-note">Uses your account default template — set your <strong>Guided Sales Template</strong> as default and it applies automatically.</p>
+          </div>
+
+          <div class="opp-create-row">
+            <button type="button" id="oppCreateBtn" class="btn-opp-create">Connect to Salesbuildr →</button>
+          </div>
+          <div id="oppCreateWorking" class="opp-working hidden">
+            <div class="spinner-sm"></div>
+            <span id="oppWorkingMsg">Working…</span>
+          </div>
+          <div id="oppCreateResult" class="hidden"></div>
+        </div>
+
+      </div>
+    </div>
+
 
   </section>
 
