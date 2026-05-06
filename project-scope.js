@@ -152,8 +152,8 @@ const PRESETS = {
     ]
   },
   security: {
-    title:     'Cybersecurity Assessment',
-    overview:  'This engagement delivers a comprehensive assessment of your organization\'s current cybersecurity posture, identifying vulnerabilities, gaps, and risks — with a prioritized remediation roadmap and executive-level findings report.',
+    title:     'Cybersecurity & Compliance Assessment',
+    overview:  'This engagement delivers a comprehensive assessment of your organization\'s current cybersecurity posture and compliance position, identifying vulnerabilities, gaps, and risks — with a prioritized remediation roadmap and executive-level findings report.',
     exclusions:'Remediation implementation (available as a follow-on engagement)\nPhysical security assessment\nSocial engineering or phishing simulation exercises\nCompliance certification or audit submission\nThird-party system access not granted during the assessment window',
     tasks: [
       { task:'Scoping & Kickoff', role:'PM', hours:'4', notes:'Scope agreement, access requirements, schedule' },
