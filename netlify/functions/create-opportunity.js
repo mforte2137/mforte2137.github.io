@@ -101,10 +101,11 @@ exports.handler = async (event) => {
       });
 
       const catalog = guided.map(p => ({
-        id:    p.id,
-        name:  p.name || p.description || 'Unknown',
-        price: p.sellPrice ?? p.price ?? p.recurringPrice ?? p.unitPrice ?? 0,
-        type:  p.productType || p.type || 'product',
+        id:     p.id,
+        name:   p.name || p.description || 'Unknown',
+        price:  p.sellPrice ?? p.price ?? p.recurringPrice ?? p.unitPrice ?? 0,
+        type:   p.productType || p.type || 'product',
+        labels: Array.isArray(p.labels) ? p.labels.map(l => typeof l === 'string' ? l : (l?.name || '')).filter(Boolean) : [],
       }));
 
       // Debug to confirm what labels look like
