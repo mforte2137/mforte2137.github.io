@@ -114,24 +114,17 @@ const DISCOVER_TOOL = {
           required: ['service', 'billing', 'reason', 'optional']
         }
       },
-      widget_briefs: {
-        type: 'object',
-        description: 'Context for each of the 5 buyer-journey widgets — used to generate the actual proposal content. Each brief is the key angle for that widget in 1-2 sentences. Specific to this customer.',
-        properties: {
-          w1: { type: 'string', description: 'W1 — their situation in 1-2 sentences: what pain are they carrying right now?' },
-          w2: { type: 'string', description: 'W2 — urgency in 1-2 sentences: why act now, what happens if they wait?' },
-          w3: { type: 'string', description: 'W3 — trust angle in 1-2 sentences: why is this MSP the right partner for this?' },
-          w4: { type: 'string', description: 'W4 — outcomes in 1-2 sentences: what does their business look like after this?' },
-          w5: { type: 'string', description: 'W5 — investment framing in 1-2 sentences: what does it replace, prevent, or enable?' }
-        },
-        required: ['w1', 'w2', 'w3', 'w4', 'w5']
-      },
+      w1_situation: { type: 'string', description: 'W1 — their situation in 1-2 sentences: what pain are they carrying right now?' },
+      w2_urgency:   { type: 'string', description: 'W2 — urgency in 1-2 sentences: why act now, what happens if they wait?' },
+      w3_trust:     { type: 'string', description: 'W3 — trust angle in 1-2 sentences: why is this MSP the right partner for this?' },
+      w4_outcome:   { type: 'string', description: 'W4 — outcomes in 1-2 sentences: what does their business look like after this?' },
+      w5_investment:{ type: 'string', description: 'W5 — investment framing in 1-2 sentences: what does it replace, prevent, or enable?' },
       roi_angle: {
         type: 'string',
         description: 'The strongest ROI angle for this customer — productivity, security risk, compliance, or cost savings? One sentence.'
       }
     },
-    required: ['coaching_insight', 'engagement_type', 'solution_bullets', 'hardware_needed', 'services_recommended', 'widget_briefs']
+    required: ['coaching_insight', 'engagement_type', 'solution_bullets', 'hardware_needed', 'services_recommended', 'w1_situation', 'w2_urgency', 'w3_trust', 'w4_outcome', 'w5_investment']
   }
 };
 
@@ -149,17 +142,11 @@ const EXECUTE_TOOL = {
         type: 'string',
         description: 'The technical spec translated into a paragraph of buyer language — what this solution DOES for the business, zero technical jargon'
       },
-      widget_briefs: {
-        type: 'object',
-        properties: {
-          w1: { type: 'string', description: 'Situation context implied by this spec' },
-          w2: { type: 'string', description: 'Urgency angle from this spec — what risk does it address?' },
-          w3: { type: 'string', description: 'Trust/credibility angle for this type of project' },
-          w4: { type: 'string', description: 'Specific outcomes from this spec in buyer language' },
-          w5: { type: 'string', description: 'Investment framing — what does this replace, prevent, or enable?' }
-        },
-        required: ['w1', 'w2', 'w3', 'w4', 'w5']
-      },
+      w1_situation: { type: 'string', description: 'Situation context implied by this spec' },
+      w2_urgency:   { type: 'string', description: 'Urgency angle from this spec — what risk does it address?' },
+      w3_trust:     { type: 'string', description: 'Trust/credibility angle for this type of project' },
+      w4_outcome:   { type: 'string', description: 'Specific outcomes from this spec in buyer language' },
+      w5_investment:{ type: 'string', description: 'Investment framing — what does this replace, prevent, or enable?' },
       scope_notes: {
         type: 'string',
         description: 'Key project scope considerations based on the spec — what the project scope builder should emphasise'
@@ -169,7 +156,7 @@ const EXECUTE_TOOL = {
         description: 'Brief note on the billing shape — e.g. primarily one-time project, monthly recurring services, or mixed'
       }
     },
-    required: ['coaching_insight', 'buyer_summary', 'widget_briefs']
+    required: ['coaching_insight', 'buyer_summary', 'w1_situation', 'w2_urgency', 'w3_trust', 'w4_outcome', 'w5_investment']
   }
 };
 
@@ -210,7 +197,7 @@ Build a sales recommendation and widget briefs for this opportunity.`;
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1500,
+          max_tokens: 1200,
           system: DISCOVER_SYSTEM,
           tools: [DISCOVER_TOOL],
           tool_choice: { type: 'tool', name: 'submit_discovery_recommendation' },
@@ -244,7 +231,7 @@ Translate this into buyer language and generate widget briefs for a compelling p
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1500,
+          max_tokens: 1200,
           system: EXECUTE_SYSTEM,
           tools: [EXECUTE_TOOL],
           tool_choice: { type: 'tool', name: 'submit_execution_recommendation' },
