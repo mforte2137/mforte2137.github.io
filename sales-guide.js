@@ -1076,15 +1076,24 @@ function renderServiceSelection(catalog) {
   const recs         = currentRec?.services_recommended || [];
   const defaultQty   = parseInt(currentAnswers?.staffCount) || 1;
   const engLabel     = currentEngagementLabel();
+
+  // Filter catalog to engagement-relevant items BEFORE matching.
+  // If no engagement label (managed_services, mixed etc.) use full catalog.
+  const relevantCatalog = engLabel
+    ? catalog.filter(item => itemIsRelevant(item, engLabel))
+    : catalog;
+
+  console.log(`[Sales Guide] engagement: ${currentRec?.engagement_type}, label: ${engLabel}, relevant items: ${relevantCatalog.length} of ${catalog.length}`);
+
   const usedCatalogIds = new Set();
 
-  // Match each recommendation to a catalog item
+  // Match each recommendation to a relevant catalog item
   const matched   = [];
   const unmatched = [];
 
   recs.forEach(rec => {
     let best = null, bestScore = 0;
-    catalog.forEach(item => {
+    relevantCatalog.forEach(item => {
       if (usedCatalogIds.has(item.id)) return;
       const score = matchScore(rec.service, item.name);
       if (score > bestScore) { bestScore = score; best = item; }
@@ -1097,10 +1106,8 @@ function renderServiceSelection(catalog) {
     }
   });
 
-  // Extras — filter to only items relevant to this engagement type
-  const extras = catalog.filter(item =>
-    !usedCatalogIds.has(item.id) && itemIsRelevant(item, engLabel)
-  );
+  // Extras — relevant items not matched to any recommendation
+  const extras = relevantCatalog.filter(item => !usedCatalogIds.has(item.id));
 
   let html = '';
 
