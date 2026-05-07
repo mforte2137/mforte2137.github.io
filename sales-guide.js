@@ -1046,11 +1046,13 @@ function itemIsRelevant(item, engLabel) {
 }
 
 // True if item should default to qty 1 — PS project fees, assessments,
-// and any non-monthly billing (quarterly, annual, one-time)
+// bundles (qty handled internally), and non-monthly billing
 function isProjectFee(item) {
   const n = item.name.toLowerCase();
-  const u = (item.unit || 'month').toLowerCase();
-  return n.startsWith('professional services')
+  const u = (item.unit || '').toLowerCase();
+  const t = (item.type || '').toLowerCase();
+  return t === 'bundle'
+    || n.startsWith('professional services')
     || n.includes('assessment')
     || u === 'quarter' || u === 'quarterly'
     || u === 'year'    || u === 'annual'
@@ -1187,21 +1189,30 @@ function svcRow(item, defaultQty, preSelected, badgeClass, badgeLabel) {
 }
 
 function updateServiceTotal() {
-  let total = 0; let count = 0;
+  let monthly = 0, oneTime = 0, count = 0;
   $('oppServiceList').querySelectorAll('.opp-svc-item').forEach(row => {
-    const check = row.querySelector('.opp-svc-check');
-    const qty   = parseInt(row.querySelector('.opp-svc-qty')?.value) || 1;
-    const price = parseFloat(check?.dataset.price) || 0;
-    const lineEl   = row.querySelector('.opp-svc-line-total');
-    const uSuffix  = check?.dataset.unit || '';
-    const line     = check?.checked ? price * qty : 0;
-    if (lineEl) lineEl.textContent = `$${(price * qty).toFixed(2)}${uSuffix}`;
-    if (check?.checked) { total += line; count++; }
+    const check   = row.querySelector('.opp-svc-check');
+    const qty     = parseInt(row.querySelector('.opp-svc-qty')?.value) || 1;
+    const price   = parseFloat(check?.dataset.price) || 0;
+    const lineEl  = row.querySelector('.opp-svc-line-total');
+    const uSuffix = check?.dataset.unit || '';
+    const line    = price * qty;
+    if (lineEl) lineEl.textContent = `$${line.toFixed(2)}${uSuffix}`;
+    if (check?.checked) {
+      count++;
+      if (uSuffix === '/mo' || uSuffix === '/month') monthly += line;
+      else if (uSuffix === '/yr' || uSuffix === '/year') monthly += line / 12;
+      else if (uSuffix === '/qtr') monthly += line / 3;
+      else oneTime += line; // blank unit = one-time
+    }
     row.style.opacity = check?.checked ? '1' : '0.5';
   });
   const totalEl = $('oppServiceTotal');
   if (count > 0) {
-    totalEl.innerHTML = `<span>${count} service${count !== 1 ? 's' : ''} selected</span><strong>$${total.toFixed(2)}/mo</strong>`;
+    const parts = [];
+    if (monthly > 0) parts.push(`<strong>$${monthly.toFixed(2)}/mo</strong> recurring`);
+    if (oneTime > 0) parts.push(`<strong>$${oneTime.toFixed(2)}</strong> one-time`);
+    totalEl.innerHTML = `<span>${count} item${count !== 1 ? 's' : ''} selected</span><span>${parts.join(' &nbsp;·&nbsp; ')}</span>`;
     totalEl.classList.remove('hidden');
   } else {
     totalEl.classList.add('hidden');
