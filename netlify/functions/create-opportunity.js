@@ -50,6 +50,10 @@ exports.handler = async (event) => {
   catch { return err('Invalid JSON.', 400); }
 
   const { action, apiKey, integrationKey } = body;
+
+  // Ping — warm-up call, no credentials needed
+  if (action === 'ping') return { statusCode: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: true, pong: true }) };
+
   if (!apiKey || !integrationKey) return err('API credentials required.', 400);
 
   const headers = sbHeaders(apiKey, integrationKey);
