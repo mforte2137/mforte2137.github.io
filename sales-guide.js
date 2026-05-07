@@ -336,6 +336,14 @@ function renderResults(mode, title, rec) {
     updatePushBtn();
   }
 
+  // Warm up the create-opportunity function in the background
+  // so it's ready when the rep reaches the Connect panel
+  fetch('/api/create-opportunity', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'ping' })
+  }).catch(() => {});
+
   // Initialise Phase 2 Create in Salesbuildr panel
   initCreateOppPanel();
 }
