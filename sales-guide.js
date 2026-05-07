@@ -49,6 +49,8 @@ function normaliseRec(rec) {
     return String(s)
       .replace(/<parameter[^>]*>/gi, '')
       .replace(/<\/parameter>/gi, '')
+      .replace(/<item>/gi, '')
+      .replace(/<\/item>/gi, '')
       .replace(/^[\*\-•]\s+/, '')
       .trim();
   }
@@ -1032,13 +1034,15 @@ function currentEngagementLabel() {
 }
 
 // True if a catalog item is relevant to the current engagement.
-// PSA-synced services & labor don't carry engagement-specific labels in the API
-// so they're always included — only hardware products are filtered by label.
+// Items with ONLY the generic 'guided' label (no engagement-specific guided-xxx)
+// are always relevant — this covers PSA-synced services whose engagement labels
+// aren't returned by the API. Items with engagement-specific labels are filtered.
 function itemIsRelevant(item, engLabel) {
   if (!engLabel) return true;
-  const t = (item.type || '').toLowerCase();
-  if (t === 'service' || t === 'labor') return true;   // services always relevant
-  return (item.labels || []).includes(engLabel);        // hardware filtered by label
+  const labels    = item.labels || [];
+  const engLabels = labels.filter(l => l !== 'guided' && l.startsWith('guided-'));
+  if (engLabels.length === 0) return true;       // no engagement label → always relevant
+  return engLabels.includes(engLabel);            // has labels → must match current engagement
 }
 
 // True if item should default to qty 1 — PS project fees, assessments,
@@ -1166,7 +1170,7 @@ function svcRow(item, defaultQty, preSelected, badgeClass, badgeLabel) {
   const lineSuffix = uLabel || '';
   return `
     <label class="opp-svc-item${badgeClass === 'matched' ? ' is-matched' : badgeClass === 'extra' ? ' is-extra' : ''}">
-      <input type="checkbox" class="opp-svc-check" data-id="${esc(item.id)}" data-price="${price}" ${preSelected ? 'checked' : ''}>
+      <input type="checkbox" class="opp-svc-check" data-id="${esc(item.id)}" data-price="${price}" data-unit="${esc(uLabel)}" ${preSelected ? 'checked' : ''}>
       <div class="opp-svc-info">
         <span class="opp-svc-name">${esc(item.name)}</span>
         <div class="opp-svc-meta">
@@ -1188,9 +1192,10 @@ function updateServiceTotal() {
     const check = row.querySelector('.opp-svc-check');
     const qty   = parseInt(row.querySelector('.opp-svc-qty')?.value) || 1;
     const price = parseFloat(check?.dataset.price) || 0;
-    const lineEl = row.querySelector('.opp-svc-line-total');
-    const line   = check?.checked ? price * qty : 0;
-    if (lineEl) lineEl.textContent = `$${(price * qty).toFixed(2)}/mo`;
+    const lineEl   = row.querySelector('.opp-svc-line-total');
+    const uSuffix  = check?.dataset.unit || '';
+    const line     = check?.checked ? price * qty : 0;
+    if (lineEl) lineEl.textContent = `$${(price * qty).toFixed(2)}${uSuffix}`;
     if (check?.checked) { total += line; count++; }
     row.style.opacity = check?.checked ? '1' : '0.5';
   });
