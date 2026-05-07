@@ -82,6 +82,9 @@ exports.handler = async (event) => {
       return ok({ companies, ...debugShape });
     }
 
+    // ── ping ────────────────────────────────────────────────
+    if (action === 'ping') return ok({ pong: true });
+
     // ── fetch-guided-catalog ─────────────────────────────────
     // Returns all products/services tagged 'guided' from the
     // MSP's Salesbuildr catalog — the curated set for guided sales.
