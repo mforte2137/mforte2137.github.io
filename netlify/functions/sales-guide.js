@@ -83,29 +83,6 @@ const DISCOVER_TOOL = {
         minItems: 2,
         maxItems: 4
       },
-      w1_situation: { type: 'string', description: 'W1 — their situation in 1-2 sentences: what pain are they carrying right now?' },
-      w2_urgency:   { type: 'string', description: 'W2 — urgency in 1-2 sentences: why act now, what happens if they wait?' },
-      w3_trust:     { type: 'string', description: 'W3 — trust angle in 1-2 sentences: why is this MSP the right partner for this?' },
-      w4_outcome:   { type: 'string', description: 'W4 — outcomes in 1-2 sentences: what does their business look like after this?' },
-      w5_investment:{ type: 'string', description: 'W5 — investment framing in 1-2 sentences: what does it replace, prevent, or enable?' },
-      roi_angle: {
-        type: 'string',
-        description: 'The strongest ROI angle for this customer — productivity, security risk, compliance, or cost savings? One sentence.'
-      },
-      services_recommended: {
-        type: 'array',
-        description: 'Managed and recurring services to include in the proposal',
-        items: {
-          type: 'object',
-          properties: {
-            service:  { type: 'string', description: 'Service name in plain language e.g. Managed Security, Network Monitoring' },
-            billing:  { type: 'string', enum: ['monthly', 'annual', 'one-time'], description: 'How this service is billed' },
-            reason:   { type: 'string', description: 'Why this service is right for this specific customer — connected to their pain' },
-            optional: { type: 'boolean', description: 'True if this should be presented as an optional add-on' }
-          },
-          required: ['service', 'billing', 'reason', 'optional']
-        }
-      },
       hardware_needed: {
         type: 'boolean',
         description: 'Whether physical hardware is a significant part of this engagement'
@@ -122,6 +99,29 @@ const DISCOVER_TOOL = {
           },
           required: ['component', 'confirm']
         }
+      },
+      services_recommended: {
+        type: 'array',
+        description: 'Managed and recurring services to include in the proposal',
+        items: {
+          type: 'object',
+          properties: {
+            service:  { type: 'string', description: 'Service name in plain language e.g. Managed Security, Network Monitoring' },
+            billing:  { type: 'string', enum: ['monthly', 'annual', 'one-time'], description: 'How this service is billed' },
+            reason:   { type: 'string', description: 'Why this service is right for this specific customer — connected to their pain' },
+            optional: { type: 'boolean', description: 'True if this should be presented as an optional add-on' }
+          },
+          required: ['service', 'billing', 'reason', 'optional']
+        }
+      },
+      w1_situation: { type: 'string', description: 'W1 — their situation in 1-2 sentences: what pain are they carrying right now?' },
+      w2_urgency:   { type: 'string', description: 'W2 — urgency in 1-2 sentences: why act now, what happens if they wait?' },
+      w3_trust:     { type: 'string', description: 'W3 — trust angle in 1-2 sentences: why is this MSP the right partner for this?' },
+      w4_outcome:   { type: 'string', description: 'W4 — outcomes in 1-2 sentences: what does their business look like after this?' },
+      w5_investment:{ type: 'string', description: 'W5 — investment framing in 1-2 sentences: what does it replace, prevent, or enable?' },
+      roi_angle: {
+        type: 'string',
+        description: 'The strongest ROI angle for this customer — productivity, security risk, compliance, or cost savings? One sentence.'
       }
     },
     required: ['coaching_insight', 'engagement_type', 'solution_bullets', 'hardware_needed', 'services_recommended', 'w1_situation', 'w2_urgency', 'w3_trust', 'w4_outcome', 'w5_investment']
@@ -197,7 +197,7 @@ Build a sales recommendation and widget briefs for this opportunity.`;
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1200,
+          max_tokens: 1300,
           system: DISCOVER_SYSTEM,
           tools: [DISCOVER_TOOL],
           tool_choice: { type: 'tool', name: 'submit_discovery_recommendation' },
@@ -231,7 +231,7 @@ Translate this into buyer language and generate widget briefs for a compelling p
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1200,
+          max_tokens: 1300,
           system: EXECUTE_SYSTEM,
           tools: [EXECUTE_TOOL],
           tool_choice: { type: 'tool', name: 'submit_execution_recommendation' },
