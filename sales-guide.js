@@ -1151,16 +1151,26 @@ function renderServiceSelection(catalog) {
   $('oppStep3').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
+function unitLabel(unit) {
+  const u = (unit || '').toLowerCase();
+  if (u === 'month' || u === 'monthly')      return '/mo';
+  if (u === 'quarter' || u === 'quarterly')  return '/qtr';
+  if (u === 'year'    || u === 'annual')     return '/yr';
+  return '';  // one-time / hardware — no recurring suffix
+}
+
 function svcRow(item, defaultQty, preSelected, badgeClass, badgeLabel) {
-  const price = typeof item.price === 'number' ? item.price : 0;
+  const price   = typeof item.price === 'number' ? item.price : 0;
+  const uLabel  = unitLabel(item.unit);
   const lineTotal = price * defaultQty;
+  const lineSuffix = uLabel || '';
   return `
     <label class="opp-svc-item${badgeClass === 'matched' ? ' is-matched' : badgeClass === 'extra' ? ' is-extra' : ''}">
       <input type="checkbox" class="opp-svc-check" data-id="${esc(item.id)}" data-price="${price}" ${preSelected ? 'checked' : ''}>
       <div class="opp-svc-info">
         <span class="opp-svc-name">${esc(item.name)}</span>
         <div class="opp-svc-meta">
-          ${price > 0 ? `<span class="opp-svc-price">$${price.toFixed(2)}/mo each</span>` : ''}
+          ${price > 0 ? `<span class="opp-svc-price">$${price.toFixed(2)}${uLabel} each</span>` : ''}
           ${badgeLabel ? `<span class="opp-svc-badge ${badgeClass}">${badgeLabel}</span>` : ''}
         </div>
       </div>
@@ -1168,7 +1178,7 @@ function svcRow(item, defaultQty, preSelected, badgeClass, badgeLabel) {
         <label>Qty</label>
         <input type="number" class="opp-svc-qty" value="${defaultQty}" min="1" max="999">
       </div>
-      <span class="opp-svc-line-total">$${lineTotal.toFixed(2)}/mo</span>
+      <span class="opp-svc-line-total">$${lineTotal.toFixed(2)}${lineSuffix}</span>
     </label>`;
 }
 
