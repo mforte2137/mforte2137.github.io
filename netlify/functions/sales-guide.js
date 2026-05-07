@@ -83,22 +83,14 @@ const DISCOVER_TOOL = {
         minItems: 2,
         maxItems: 4
       },
-      hardware_needed: {
-        type: 'boolean',
-        description: 'Whether physical hardware is a significant part of this engagement'
-      },
-      hardware_checklist: {
-        type: 'array',
-        description: 'Hardware components to confirm at a site survey. Only populate if hardware_needed is true.',
-        items: {
-          type: 'object',
-          properties: {
-            component:    { type: 'string', description: 'Component type e.g. Core Switch, Firewall, Wireless AP' },
-            confirm:      { type: 'string', description: 'The specific question to answer at the site visit e.g. How many wired ports needed — determines 24 vs 48 port' },
-            never_forget: { type: 'string', description: 'Why this component matters / what gets missed — e.g. UPS is almost always forgotten' }
-          },
-          required: ['component', 'confirm']
-        }
+      w1_situation: { type: 'string', description: 'W1 — their situation in 1-2 sentences: what pain are they carrying right now?' },
+      w2_urgency:   { type: 'string', description: 'W2 — urgency in 1-2 sentences: why act now, what happens if they wait?' },
+      w3_trust:     { type: 'string', description: 'W3 — trust angle in 1-2 sentences: why is this MSP the right partner for this?' },
+      w4_outcome:   { type: 'string', description: 'W4 — outcomes in 1-2 sentences: what does their business look like after this?' },
+      w5_investment:{ type: 'string', description: 'W5 — investment framing in 1-2 sentences: what does it replace, prevent, or enable?' },
+      roi_angle: {
+        type: 'string',
+        description: 'The strongest ROI angle for this customer — productivity, security risk, compliance, or cost savings? One sentence.'
       },
       services_recommended: {
         type: 'array',
@@ -114,14 +106,22 @@ const DISCOVER_TOOL = {
           required: ['service', 'billing', 'reason', 'optional']
         }
       },
-      w1_situation: { type: 'string', description: 'W1 — their situation in 1-2 sentences: what pain are they carrying right now?' },
-      w2_urgency:   { type: 'string', description: 'W2 — urgency in 1-2 sentences: why act now, what happens if they wait?' },
-      w3_trust:     { type: 'string', description: 'W3 — trust angle in 1-2 sentences: why is this MSP the right partner for this?' },
-      w4_outcome:   { type: 'string', description: 'W4 — outcomes in 1-2 sentences: what does their business look like after this?' },
-      w5_investment:{ type: 'string', description: 'W5 — investment framing in 1-2 sentences: what does it replace, prevent, or enable?' },
-      roi_angle: {
-        type: 'string',
-        description: 'The strongest ROI angle for this customer — productivity, security risk, compliance, or cost savings? One sentence.'
+      hardware_needed: {
+        type: 'boolean',
+        description: 'Whether physical hardware is a significant part of this engagement'
+      },
+      hardware_checklist: {
+        type: 'array',
+        description: 'Hardware components to confirm at a site survey. Only populate if hardware_needed is true.',
+        items: {
+          type: 'object',
+          properties: {
+            component:    { type: 'string', description: 'Component type e.g. Core Switch, Firewall, Wireless AP' },
+            confirm:      { type: 'string', description: 'The specific question to answer at the site visit' },
+            never_forget: { type: 'string', description: 'Key thing reps miss on this component' }
+          },
+          required: ['component', 'confirm']
+        }
       }
     },
     required: ['coaching_insight', 'engagement_type', 'solution_bullets', 'hardware_needed', 'services_recommended', 'w1_situation', 'w2_urgency', 'w3_trust', 'w4_outcome', 'w5_investment']
