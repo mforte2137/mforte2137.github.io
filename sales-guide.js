@@ -1031,10 +1031,14 @@ function currentEngagementLabel() {
   return ENGAGEMENT_LABEL_MAP[type] ?? null;
 }
 
-// True if a catalog item is relevant to the current engagement
+// True if a catalog item is relevant to the current engagement.
+// PSA-synced services & labor don't carry engagement-specific labels in the API
+// so they're always included — only hardware products are filtered by label.
 function itemIsRelevant(item, engLabel) {
-  if (!engLabel) return true;   // no filter for general engagements
-  return (item.labels || []).includes(engLabel);
+  if (!engLabel) return true;
+  const t = (item.type || '').toLowerCase();
+  if (t === 'service' || t === 'labor') return true;   // services always relevant
+  return (item.labels || []).includes(engLabel);        // hardware filtered by label
 }
 
 // True if item should default to qty 1 — PS project fees, assessments,
