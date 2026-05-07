@@ -83,25 +83,15 @@ function normaliseRec(rec) {
   if (typeof rec.coaching_insight === 'string') rec.coaching_insight = cleanStr(rec.coaching_insight);
   if (typeof rec.roi_angle        === 'string') rec.roi_angle        = cleanStr(rec.roi_angle);
 
-  // Clean widget briefs — handle string, object, nested object, and JSON-string forms
-  if (typeof rec.widget_briefs === 'string') {
-    try { rec.widget_briefs = JSON.parse(rec.widget_briefs); }
-    catch { rec.widget_briefs = {}; }
-  }
-  if (!rec.widget_briefs || typeof rec.widget_briefs !== 'object') {
-    rec.widget_briefs = {};
-  }
-  ['w1','w2','w3','w4','w5'].forEach(k => {
-    const val = rec.widget_briefs[k];
-    if (typeof val === 'string') {
-      rec.widget_briefs[k] = cleanStr(val);
-    } else if (val && typeof val === 'object') {
-      // Haiku sometimes returns { text: '...' } or { content: '...' }
-      rec.widget_briefs[k] = cleanStr(val.text || val.content || val.value || Object.values(val)[0] || '');
-    } else {
-      rec.widget_briefs[k] = '';
-    }
-  });
+  // Reconstruct widget_briefs from flat top-level fields (Haiku-friendly schema)
+  // Falls back to nested widget_briefs object if flat fields are absent (Sonnet compat)
+  rec.widget_briefs = {
+    w1: cleanStr(rec.w1_situation  || rec.widget_briefs?.w1 || ''),
+    w2: cleanStr(rec.w2_urgency    || rec.widget_briefs?.w2 || ''),
+    w3: cleanStr(rec.w3_trust      || rec.widget_briefs?.w3 || ''),
+    w4: cleanStr(rec.w4_outcome    || rec.widget_briefs?.w4 || ''),
+    w5: cleanStr(rec.w5_investment || rec.widget_briefs?.w5 || ''),
+  };
 
   // Debug — remove once briefs are confirmed working
   console.log('[Sales Guide] normalised widget_briefs:', JSON.stringify(rec.widget_briefs, null, 2));
