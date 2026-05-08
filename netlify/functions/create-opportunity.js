@@ -113,7 +113,11 @@ exports.handler = async (event) => {
         price:  p.sellPrice ?? p.price ?? p.recurringPrice ?? p.unitPrice ?? 0,
         type:   p.productType || p.type || 'product',
         labels: Array.isArray(p.labels) ? p.labels.map(l => typeof l === 'string' ? l : (l?.name || '')).filter(Boolean) : [],
-        unit:   (p.unit || p.term || '').toLowerCase(),
+        unit:   (() => {
+          const t = (p.productType || p.type || '').toLowerCase();
+          if (t === 'bundle') return 'month'; // bundles are monthly recurring
+          return (p.unit || p.term || '').toLowerCase();
+        })(),
       }));
 
       // Debug to confirm what labels look like
