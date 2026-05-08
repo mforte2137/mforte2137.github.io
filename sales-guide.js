@@ -43,16 +43,27 @@ const $ = id => document.getElementById(id);
 function normaliseRec(rec) {
   if (!rec) return rec;
 
-  // Strip <parameter name="item">...</parameter> wrappers and
-  // leading markdown list markers (* - •) that Haiku sometimes adds.
+  // Strip ALL XML/HTML tags Haiku might wrap content in,
+  // plus leading markdown list markers.
   function cleanStr(s) {
     return String(s)
-      .replace(/<parameter[^>]*>/gi, '')
-      .replace(/<\/parameter>/gi, '')
-      .replace(/<item>/gi, '')
-      .replace(/<\/item>/gi, '')
+      .replace(/<[^>]+>/g, '')   // strip any XML/HTML tag generically
       .replace(/^[\*\-•]\s+/, '')
       .trim();
+  }
+
+  // Extract solution bullets from XML-wrapped strings.
+  // Haiku sometimes returns the whole array as one string with
+  // <solution_bullet>...</solution_bullet> tags.
+  function extractBullets(v) {
+    if (typeof v === 'string') {
+      const matches = v.match(/<solution_bullet>([\s\S]*?)<\/solution_bullet>/gi);
+      if (matches && matches.length > 0) {
+        return matches.map(m => cleanStr(m)).filter(Boolean);
+      }
+    }
+    return toArray(v).map(item => typeof item === 'string' ? cleanStr(item) : item)
+                     .filter(s => typeof s === 'string' && s.length > 0 && s !== 'false' && s !== 'true');
   }
 
   // Convert any value to a clean array of non-empty strings
@@ -77,9 +88,10 @@ function normaliseRec(rec) {
     return out;
   }
 
-  rec.solution_bullets     = toArray(rec.solution_bullets);
+  rec.solution_bullets     = extractBullets(rec.solution_bullets);
   rec.hardware_checklist   = toArray(rec.hardware_checklist).map(cleanObj);
-  rec.services_recommended = toArray(rec.services_recommended).map(cleanObj);
+  rec.services_recommended = toArray(rec.services_recommended).map(cleanObj)
+    .filter(s => s.service && s.service.length > 0); // drop items with empty service name
 
   // Clean string fields too
   if (typeof rec.coaching_insight === 'string') rec.coaching_insight = cleanStr(rec.coaching_insight);
@@ -1059,8 +1071,9 @@ function isProjectFee(item) {
 }
 
 function matchScore(a, b) {
-  a = a.toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
-  b = b.toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
+  if (!a || !b) return 0;
+  a = String(a).toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
+  b = String(b).toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
   if (a === b) return 1;
   if (a.includes(b) || b.includes(a)) return 0.85;
   const wordsA = a.split(/\s+/).filter(w => w.length > 2);
