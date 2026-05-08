@@ -1020,10 +1020,9 @@ const ENGAGEMENT_LABEL_MAP = {
   security_project:      'guided-security',
   compliance:            'guided-security',
   copilot_ai:            'guided-copilot',
-  // These see the full guided catalog (no sub-label narrowing)
-  managed_services:      null,
-  new_client_onboarding: null,
-  project_plus_managed:  null,
+  managed_services:      'guided-onboarding',
+  new_client_onboarding: 'guided-onboarding',
+  project_plus_managed:  'guided-onboarding',
   mixed:                 null
 };
 
