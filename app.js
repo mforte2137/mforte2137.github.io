@@ -46,13 +46,25 @@ const TOOLS = [
     icon: "idea"
   },
   {
+    title: "Guided Sales Tool",
+    shortLabel: "Guided Sales Tool",
+    description:
+      "Start with the customer's problem — not your product catalog. The Sales Guide helps you build a buyer-focused proposal that moves a business owner to yes.",
+    category: "Proposal",
+    url: "https://widgetcreator.netlify.app/sales-guide.html",
+    badge: "new",
+    updated: "2026-05-08",
+    gradient: "sunset",
+    icon: "compass"
+  },
+  {
     title: "ROI Builder",
     shortLabel: "ROI Builder",
     description:
       "Turn your proposal into a financial argument. Enter a few numbers — we calculate the ROI and generate a customer-facing widget ready to drop into any Salesbuildr quote.",
     category: "Proposal",
     url: "https://widgetcreator.netlify.app/roi-builder.html",
-    badge: "new",
+    badge: "",
     updated: "2026-05-01",
     gradient: "slate",
     icon: "chart"
@@ -217,7 +229,8 @@ const GRADIENTS = {
   amber:   "linear-gradient(135deg, #92400e 0%, #f59e0b 55%, #fcd34d 100%)",
   rose:    "linear-gradient(135deg, #9f1239 0%, #e11d48 55%, #fb7185 100%)",
   emerald: "linear-gradient(135deg, #065f46 0%, #10b981 55%, #6ee7b7 100%)",
-  slate:   "linear-gradient(135deg, #1e293b 0%, #475569 55%, #94a3b8 100%)"
+  slate:   "linear-gradient(135deg, #1e293b 0%, #475569 55%, #94a3b8 100%)",
+  sunset:  "linear-gradient(135deg, #be185d 0%, #ec4899 40%, #fb923c 100%)"
 };
 
 /* =========================================================
@@ -303,6 +316,13 @@ const ICONS = {
       <circle cx="32" cy="16" r="3"/>
       <circle cx="44" cy="22" r="3"/>
       <circle cx="48" cy="34" r="3"/>
+    </svg>`,
+  // Compass (guidance / direction)
+  compass: `
+    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="32" r="24"/>
+      <polygon points="32,14 38,32 32,50 26,32"/>
+      <circle cx="32" cy="32" r="2"/>
     </svg>`
 };
 
