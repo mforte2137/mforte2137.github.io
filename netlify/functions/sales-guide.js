@@ -100,20 +100,7 @@ const DISCOVER_TOOL = {
           required: ['component', 'confirm']
         }
       },
-      services_recommended: {
-        type: 'array',
-        description: 'Managed and recurring services to include in the proposal',
-        items: {
-          type: 'object',
-          properties: {
-            service:  { type: 'string', description: 'Service name in plain language e.g. Managed Security, Network Monitoring' },
-            billing:  { type: 'string', enum: ['monthly', 'annual', 'one-time'], description: 'How this service is billed' },
-            reason:   { type: 'string', description: 'Why this service is right for this specific customer — connected to their pain' },
-            optional: { type: 'boolean', description: 'True if this should be presented as an optional add-on' }
-          },
-          required: ['service', 'billing', 'reason', 'optional']
-        }
-      },
+      // services_recommended removed — curated per-engagement framework used instead
       w1_situation: { type: 'string', description: 'W1 — their situation in 1-2 sentences: what pain are they carrying right now?' },
       w2_urgency:   { type: 'string', description: 'W2 — urgency in 1-2 sentences: why act now, what happens if they wait?' },
       w3_trust:     { type: 'string', description: 'W3 — trust angle in 1-2 sentences: why is this MSP the right partner for this?' },
@@ -124,7 +111,7 @@ const DISCOVER_TOOL = {
         description: 'The strongest ROI angle for this customer — productivity, security risk, compliance, or cost savings? One sentence.'
       }
     },
-    required: ['coaching_insight', 'engagement_type', 'solution_bullets', 'hardware_needed', 'services_recommended', 'w1_situation', 'w2_urgency', 'w3_trust', 'w4_outcome', 'w5_investment']
+    required: ['coaching_insight', 'engagement_type', 'solution_bullets', 'hardware_needed', 'w1_situation', 'w2_urgency', 'w3_trust', 'w4_outcome', 'w5_investment']
   }
 };
 
