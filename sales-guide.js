@@ -303,13 +303,14 @@ function renderResults(mode, title, rec) {
     hwSection.classList.add('hidden'); // No hardware = hide entirely
   }
 
-  // Services
+  // Services — use curated engagement framework, not Claude-generated names
   const svcSection = $('servicesSection');
-  if (mode === 'discovery' && rec.services_recommended?.length > 0) {
+  const curatedServices = ENGAGEMENT_SERVICES[rec.engagement_type] || ENGAGEMENT_SERVICES.mixed;
+  if (mode === 'discovery') {
     const list = $('servicesList');
-    list.innerHTML = rec.services_recommended.map(s => `
+    list.innerHTML = curatedServices.map(s => `
       <div class="svc-item${s.optional ? ' is-optional' : ''}">
-        <span class="svc-billing bill-${s.billing || 'monthly'}">${s.billing || 'monthly'}</span>
+        <span class="svc-billing bill-${s.billing || 'monthly'}">${(s.billing || 'monthly').replace('-', '&#8209;')}</span>
         <div class="svc-body">
           <div class="svc-name">${esc(s.service)}${s.optional ? ' <span class="svc-optional-tag">— optional add-on</span>' : ''}</div>
         </div>
@@ -1023,6 +1024,78 @@ async function loadGuidedCatalog() {
 }
 
 // Maps engagement type → the catalog label that's relevant for that engagement
+// ── Curated service framework per engagement type ─────────
+// Industry-standard MSP services for each engagement.
+// These replace Claude-generated names which can vary and be inaccurate.
+// Reps map these categories to their specific catalog items.
+const ENGAGEMENT_SERVICES = {
+  network_upgrade: [
+    { service: 'Network Monitoring & Management', billing: 'monthly', optional: false },
+    { service: 'Managed Firewall Service', billing: 'monthly', optional: false },
+    { service: 'Network Maintenance & Patching', billing: 'monthly', optional: true },
+  ],
+  endpoint_refresh: [
+    { service: 'Managed Endpoint Protection (EDR)', billing: 'monthly', optional: false },
+    { service: 'Patch Management & Device Updates', billing: 'monthly', optional: false },
+    { service: 'Backup & Disaster Recovery', billing: 'monthly', optional: false },
+    { service: 'Helpdesk & End-User Support', billing: 'monthly', optional: true },
+  ],
+  server_eol: [
+    { service: 'Server Monitoring & Administration', billing: 'monthly', optional: false },
+    { service: 'Server Backup & Disaster Recovery', billing: 'monthly', optional: false },
+    { service: 'IT Helpdesk & Support', billing: 'monthly', optional: true },
+  ],
+  security_project: [
+    { service: 'Endpoint Detection & Response (EDR)', billing: 'monthly', optional: false },
+    { service: 'Email Security & Anti-Phishing', billing: 'monthly', optional: false },
+    { service: 'DNS Filtering & Web Protection', billing: 'monthly', optional: false },
+    { service: 'Compliance Management & Reporting', billing: 'monthly', optional: true },
+  ],
+  compliance: [
+    { service: 'Compliance Management & Reporting', billing: 'monthly', optional: false },
+    { service: 'Endpoint Detection & Response (EDR)', billing: 'monthly', optional: false },
+    { service: 'Email Security & Anti-Phishing', billing: 'monthly', optional: false },
+    { service: 'Security Awareness Training', billing: 'annual', optional: true },
+  ],
+  voip_project: [
+    { service: 'Hosted VoIP / UCaaS (Teams Voice or PBX)', billing: 'monthly', optional: false },
+    { service: 'VoIP System Monitoring & Support', billing: 'monthly', optional: false },
+    { service: 'Number Porting & Migration', billing: 'one-time', optional: false },
+  ],
+  backup_dr: [
+    { service: 'Backup & Disaster Recovery', billing: 'monthly', optional: false },
+    { service: 'Backup Monitoring & Recovery Testing', billing: 'monthly', optional: false },
+    { service: 'DR Planning & Documentation', billing: 'one-time', optional: true },
+  ],
+  copilot_ai: [
+    { service: 'Microsoft 365 Copilot Licensing', billing: 'monthly', optional: false },
+    { service: 'AI Governance & Data Management', billing: 'monthly', optional: false },
+    { service: 'Copilot Adoption & Training Programme', billing: 'monthly', optional: true },
+  ],
+  managed_services: [
+    { service: 'Managed IT Support & Helpdesk', billing: 'monthly', optional: false },
+    { service: 'Endpoint Security & EDR', billing: 'monthly', optional: false },
+    { service: 'Backup & Disaster Recovery', billing: 'monthly', optional: false },
+    { service: 'Email Security & Anti-Phishing', billing: 'monthly', optional: true },
+  ],
+  new_client_onboarding: [
+    { service: 'Managed IT Support & Helpdesk', billing: 'monthly', optional: false },
+    { service: 'Endpoint Security & EDR', billing: 'monthly', optional: false },
+    { service: 'Backup & Disaster Recovery', billing: 'monthly', optional: false },
+    { service: 'Email Security & Anti-Phishing', billing: 'monthly', optional: true },
+  ],
+  project_plus_managed: [
+    { service: 'Managed IT Support & Helpdesk', billing: 'monthly', optional: false },
+    { service: 'Endpoint Security & EDR', billing: 'monthly', optional: false },
+    { service: 'Backup & Disaster Recovery', billing: 'monthly', optional: false },
+  ],
+  mixed: [
+    { service: 'Managed IT Support & Helpdesk', billing: 'monthly', optional: false },
+    { service: 'Endpoint Security & EDR', billing: 'monthly', optional: false },
+    { service: 'Backup & Disaster Recovery', billing: 'monthly', optional: false },
+  ],
+};
+
 const ENGAGEMENT_LABEL_MAP = {
   network_upgrade:       'guided-network',
   endpoint_refresh:      'guided-endpoint',
