@@ -1112,16 +1112,26 @@ function renderServiceSelection(catalog) {
     }
   });
 
-  // Step 2: Name-based matching for remaining recommendations
-  // against individual services (not bundles/PS fees already selected).
+  // Step 2: Name-based matching for remaining individual services.
+  // Only match against items with NO engagement-specific label in the API
+  // (i.e., truly universal services). Skip bundles and PS fees (already handled).
+  const universalServices = relevantCatalog.filter(item => {
+    if (usedCatalogIds.has(item.id)) return false;
+    const t = (item.type || '').toLowerCase();
+    if (t === 'bundle' || isProjectFee(item)) return false; // already handled
+    const engLabels = (item.labels || []).filter(l => l !== 'guided' && l.startsWith('guided-'));
+    return engLabels.length === 0; // only truly universal items (no engagement-specific label)
+  });
+
   recs.forEach(rec => {
+    if (!rec.service) return;
     let best = null, bestScore = 0;
-    relevantCatalog.forEach(item => {
+    universalServices.forEach(item => {
       if (usedCatalogIds.has(item.id)) return;
       const score = matchScore(rec.service, item.name);
       if (score > bestScore) { bestScore = score; best = item; }
     });
-    if (best && bestScore >= 0.3) {
+    if (best && bestScore >= 0.4) {
       usedCatalogIds.add(best.id);
       matched.push({ rec, item: best, preSelected: !rec.optional });
     } else {
@@ -1129,7 +1139,7 @@ function renderServiceSelection(catalog) {
     }
   });
 
-  // Extras — relevant items not matched to any recommendation
+  // Extras — remaining relevant items (unchecked, rep adds as needed)
   const extras = relevantCatalog.filter(item => !usedCatalogIds.has(item.id));
 
   let html = '';
