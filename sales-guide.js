@@ -1228,11 +1228,7 @@ function renderServiceSelection(catalog) {
   }
 
   if (extras.length > 0) {
-    const engName = engLabel ? engLabel.replace('guided-', '').replace(/-/g, ' ') : '';
-    const sectionLabel = engName
-      ? `Also in your catalog <span style="font-weight:400;text-transform:none;">(${engName} items)</span>`
-      : 'Also in your catalog';
-    html += `<div class="opp-svc-section-label" style="margin-top:10px;">${sectionLabel}</div>`;
+    html += `<div class="opp-svc-section-label" style="margin-top:10px;">Also in your catalog</div>`;
     extras.forEach(item => {
       const qty = isProjectFee(item) ? 1 : defaultQty;
       html += svcRow(item, qty, false, 'extra', '');
