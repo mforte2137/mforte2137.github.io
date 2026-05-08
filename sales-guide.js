@@ -1099,10 +1099,21 @@ function renderServiceSelection(catalog) {
 
   const usedCatalogIds = new Set();
 
-  // Match each recommendation to a relevant catalog item
   const matched   = [];
   const unmatched = [];
 
+  // Step 1: Auto pre-select bundles and PS fees from the relevant catalog.
+  // These are curated for the engagement type — no name matching needed.
+  relevantCatalog.forEach(item => {
+    const t = (item.type || '').toLowerCase();
+    if (t === 'bundle' || isProjectFee(item)) {
+      usedCatalogIds.add(item.id);
+      matched.push({ rec: { service: item.name, optional: false }, item, preSelected: true });
+    }
+  });
+
+  // Step 2: Name-based matching for remaining recommendations
+  // against individual services (not bundles/PS fees already selected).
   recs.forEach(rec => {
     let best = null, bestScore = 0;
     relevantCatalog.forEach(item => {
