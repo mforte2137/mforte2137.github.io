@@ -52,18 +52,23 @@ function normaliseRec(rec) {
       .trim();
   }
 
-  // Extract solution bullets from XML-wrapped strings.
-  // Haiku sometimes returns the whole array as one string with
-  // <solution_bullet>...</solution_bullet> tags.
+  // Extract solution bullets from whatever format Haiku returns.
+  // Handles: XML-wrapped strings, plain arrays, mixed content.
   function extractBullets(v) {
-    if (typeof v === 'string') {
-      const matches = v.match(/<solution_bullet>([\s\S]*?)<\/solution_bullet>/gi);
-      if (matches && matches.length > 0) {
-        return matches.map(m => cleanStr(m)).filter(Boolean);
-      }
+    // Flatten to a single string to search for XML tags
+    const flat = Array.isArray(v) ? v.join('\n') : String(v || '');
+
+    // Try extracting <solution_bullet> XML tags from anywhere in the content
+    const xmlMatches = flat.match(/<solution_bullet>([\s\S]*?)<\/solution_bullet>/gi);
+    if (xmlMatches && xmlMatches.length > 0) {
+      return xmlMatches.map(m => cleanStr(m))
+                       .filter(s => s && s !== 'false' && s !== 'true' && s.length > 4);
     }
-    return toArray(v).map(item => typeof item === 'string' ? cleanStr(item) : item)
-                     .filter(s => typeof s === 'string' && s.length > 0 && s !== 'false' && s !== 'true');
+
+    // No XML tags — use the array items directly
+    const arr = Array.isArray(v) ? v : (flat.trim() ? [flat] : []);
+    return arr.map(item => cleanStr(String(item)))
+              .filter(s => s && s !== 'false' && s !== 'true' && s.length > 4);
   }
 
   // Convert any value to a clean array of non-empty strings
