@@ -490,7 +490,13 @@ exports.handler = async (event) => {
       // Debug: expose raw field names from first result so we know what the API actually returns
       const debugFields = scored[0] ? Object.keys(scored[0].p) : [];
 
-      return ok({ products, catalogSize: all.length, matched: products.length, _debugFields: debugFields });
+      // Debug: also return top 5 below-threshold items so we can see what almost made it
+      const allScored = hardwareOnly
+        .map(p => ({ name: p.name?.slice(0,40), score: scoreProduct(p), mfr: p.manufacturer }))
+        .filter(({ score }) => score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5);
+      return ok({ products, catalogSize: all.length, matched: products.length, _debugFields: debugFields, _nearMisses: allScored });
     }
 
         return err('Unknown action.', 400);
