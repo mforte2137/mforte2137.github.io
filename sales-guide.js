@@ -130,7 +130,7 @@ function normaliseRec(rec) {
 
 // ── Helpers ───────────────────────────────────────────────
 function showSection(id) {
-  ['mode-view','discovery-view','execution-view','working-view','results-view'].forEach(s => {
+  ['mode-view','discovery-view','execution-view','quickquote-view','working-view','results-view'].forEach(s => {
     const el = $(s); if (el) el.hidden = s !== id;
   });
 }
@@ -167,7 +167,7 @@ function syncPresets(color) {
 }
 
 // ── Mode selection ────────────────────────────────────────
-['discovery','execution'].forEach(mode => {
+['discovery','execution','quickquote'].forEach(mode => {
   document.querySelectorAll(`.mode-card[data-mode="${mode}"]`).forEach(btn => {
     btn.addEventListener('click', () => activateMode(mode));
   });
@@ -175,12 +175,13 @@ function syncPresets(color) {
 
 function activateMode(mode) {
   currentMode = mode;
-  showSection(mode === 'discovery' ? 'discovery-view' : 'execution-view');
+  showSection(mode === 'discovery' ? 'discovery-view' : mode === 'execution' ? 'execution-view' : 'quickquote-view');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 $('discBackBtn').addEventListener('click', () => { showSection('mode-view'); currentMode = null; });
 $('execBackBtn').addEventListener('click', () => { showSection('mode-view'); currentMode = null; });
+$('qqBackBtn').addEventListener('click', () => { showSection('mode-view'); currentMode = null; });
 
 // ── Chips (multi-select, or single-select with data-single) ─
 document.querySelectorAll('.chips-wrap').forEach(wrap => {
@@ -696,6 +697,330 @@ function showSpecStatus(msg, isError = false, isLoading = false) {
     });
     specFileStatus.appendChild(btn);
   }
+}
+
+
+
+// ═════════════════════════════════════════════════════════
+// QUICK QUOTE — Mode 3
+// Find products in catalog, generate cover note, create quote
+// ═════════════════════════════════════════════════════════
+
+let qqSelectedCompany     = null;
+let qqSelectedOpportunity = null;
+let qqMatchedProducts     = [];   // [{id, name, price, unit, qty}]
+
+// ── Character counter ─────────────────────────────────────
+$('qq-request')?.addEventListener('input', () => {
+  $('qqCount').textContent = $('qq-request').value.length;
+});
+
+// ── Restore saved credentials ─────────────────────────────
+function initQQCredentials() {
+  const a = localStorage.getItem(LS_API_KEY), i = localStorage.getItem(LS_INT_KEY);
+  if (a) $('qqApiKey').value = a;
+  if (i) $('qqIntKey').value = i;
+  if (a && i) $('qqRemember').checked = true;
+}
+// Called lazily when quickquote mode opens
+document.querySelectorAll('.mode-card[data-mode="quickquote"]').forEach(btn => {
+  btn.addEventListener('click', () => { setTimeout(initQQCredentials, 50); });
+});
+
+// ── Search catalog ────────────────────────────────────────
+$('qqSearchBtn')?.addEventListener('click', doQQCatalogSearch);
+
+async function doQQCatalogSearch() {
+  clearError('qqError');
+  const request = $('qq-request').value.trim();
+  const apiKey  = $('qqApiKey').value.trim();
+  const intKey  = $('qqIntKey').value.trim();
+
+  if (!request)         { showError('qqError', 'Describe what the customer needs first.'); return; }
+  if (!apiKey || !intKey) { showError('qqError', 'Enter your API credentials to search your catalog.'); return; }
+
+  if ($('qqRemember').checked) {
+    localStorage.setItem(LS_API_KEY, apiKey);
+    localStorage.setItem(LS_INT_KEY, intKey);
+  } else {
+    localStorage.removeItem(LS_API_KEY);
+    localStorage.removeItem(LS_INT_KEY);
+  }
+
+  $('qqSearchBtn').disabled    = true;
+  $('qqSearchBtn').textContent = 'Searching…';
+  $('qqResultsWrap').classList.add('hidden');
+
+  try {
+    // 1. Search catalog
+    const catRes = await callCreateOpp('search-products', { query: request, apiKey, integrationKey: intKey });
+    const products = catRes.products || [];
+
+    // 2. Generate cover note (fire in parallel with rendering, non-blocking)
+    const coverPromise = fetch('/api/sales-guide', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'quick-quote', request })
+    }).then(r => r.json()).catch(() => ({ ok: false }));
+
+    // 3. Render product matches
+    renderQQProducts(products, request);
+
+    // 4. Fill cover note when ready
+    $('qqCoverText').textContent = 'Writing cover note…';
+    const coverData = await coverPromise;
+    if (coverData.ok && coverData.cover_note) {
+      $('qqCoverText').textContent = coverData.cover_note;
+      // Show unmatched items if any
+      if (coverData.unmatched_items?.length > 0) {
+        $('qqUnmatched').textContent = '✦ Not found in catalog — add manually: ' + coverData.unmatched_items.join(', ');
+        $('qqUnmatched').classList.remove('hidden');
+      }
+    } else {
+      $('qqCoverText').textContent = '(Cover note unavailable — paste the product list into your quote manually.)';
+    }
+
+    $('qqResultsWrap').classList.remove('hidden');
+    $('qqResultsWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (e) {
+    showError('qqError', e.message || 'Search failed. Check your credentials and try again.');
+  }
+
+  $('qqSearchBtn').disabled    = false;
+  $('qqSearchBtn').textContent = 'Search My Catalog →';
+}
+
+// ── Render matched products ───────────────────────────────
+function renderQQProducts(products, request) {
+  qqMatchedProducts = [];
+  qqSelectedCompany = null;
+  qqSelectedOpportunity = null;
+  $('qqCompanyResults').classList.add('hidden');
+  $('qqCompanySelected').classList.add('hidden');
+  $('qqOppStep').classList.add('hidden');
+  $('qqQuoteStep').classList.add('hidden');
+  $('qqCreateResult').classList.add('hidden');
+  $('qqUnmatched').classList.add('hidden');
+
+  const list = $('qqProductList');
+
+  if (products.length === 0) {
+    list.innerHTML = '<div class="opp-contact-none">No products found in your catalog for this request. Try different keywords, or add the products manually in Salesbuildr.</div>';
+    $('qqMatchSub').textContent = 'No matches found — try different keywords';
+    $('qqProductTotal').classList.add('hidden');
+    return;
+  }
+
+  $('qqMatchSub').textContent = `${products.length} product${products.length !== 1 ? 's' : ''} found — confirm quantities`;
+
+  list.innerHTML = products.map(p => {
+    const uLabel = unitLabel(p.unit);
+    return `
+      <label class="opp-svc-item is-matched">
+        <input type="checkbox" class="opp-svc-check" data-id="${esc(p.id)}" data-name="${esc(p.name)}" data-price="${p.price}" data-unit="${esc(uLabel)}" checked>
+        <div class="opp-svc-info">
+          <span class="opp-svc-name">${esc(p.name)}</span>
+          <div class="opp-svc-meta">
+            ${p.price > 0 ? `<span class="opp-svc-price">$${p.price.toFixed(2)}${uLabel} each</span>` : ''}
+            ${p.vendor ? `<span class="opp-svc-badge extra">${esc(p.vendor)}</span>` : ''}
+            ${p.sku    ? `<span class="opp-svc-badge extra">${esc(p.sku)}</span>` : ''}
+          </div>
+        </div>
+        <div class="opp-svc-qty-wrap">
+          <label>Qty</label>
+          <input type="number" class="opp-svc-qty" value="1" min="1" max="999">
+        </div>
+        <span class="opp-svc-line-total">$${p.price.toFixed(2)}${uLabel}</span>
+      </label>`;
+  }).join('');
+
+  list.querySelectorAll('.opp-svc-check, .opp-svc-qty').forEach(el => {
+    el.addEventListener('change', updateQQTotal);
+    el.addEventListener('input',  updateQQTotal);
+  });
+  updateQQTotal();
+}
+
+function updateQQTotal() {
+  let total = 0, count = 0;
+  qqMatchedProducts = [];
+  $('qqProductList').querySelectorAll('.opp-svc-item').forEach(row => {
+    const check   = row.querySelector('.opp-svc-check');
+    const qty     = parseInt(row.querySelector('.opp-svc-qty')?.value) || 1;
+    const price   = parseFloat(check?.dataset.price) || 0;
+    const uSuffix = check?.dataset.unit || '';
+    const lineEl  = row.querySelector('.opp-svc-line-total');
+    const line    = price * qty;
+    if (lineEl) lineEl.textContent = `$${line.toFixed(2)}${uSuffix}`;
+    row.style.opacity = check?.checked ? '1' : '0.5';
+    if (check?.checked) {
+      count++;
+      total += line;
+      qqMatchedProducts.push({ id: check.dataset.id, name: check.dataset.name, qty, price });
+    }
+  });
+
+  const totalEl = $('qqProductTotal');
+  if (count > 0) {
+    totalEl.innerHTML = `<span>${count} item${count !== 1 ? 's' : ''} selected</span><span><strong>$${total.toFixed(2)}</strong> total</span>`;
+    totalEl.classList.remove('hidden');
+  } else {
+    totalEl.classList.add('hidden');
+  }
+}
+
+// ── Company search for QQ ─────────────────────────────────
+$('qqCompanySearchBtn')?.addEventListener('click', doQQCompanySearch);
+$('qqCompanyName')?.addEventListener('keydown', e => { if (e.key === 'Enter') doQQCompanySearch(); });
+
+async function doQQCompanySearch() {
+  const name   = $('qqCompanyName').value.trim();
+  const apiKey = $('qqApiKey').value.trim();
+  const intKey = $('qqIntKey').value.trim();
+  if (!name) return;
+
+  $('qqCompanySearchBtn').disabled    = true;
+  $('qqCompanySearchBtn').textContent = 'Searching…';
+
+  try {
+    const res = await callCreateOpp('search-company', { name, apiKey, integrationKey: intKey });
+    renderQQCompanyResults(res.companies || [], name);
+  } catch (e) { showError('qqError', 'Company search failed: ' + e.message); }
+
+  $('qqCompanySearchBtn').disabled    = false;
+  $('qqCompanySearchBtn').textContent = 'Search →';
+}
+
+function renderQQCompanyResults(companies, searchName) {
+  const wrap = $('qqCompanyResults');
+  if (companies.length === 0) {
+    wrap.innerHTML = `<div class="no-results-hint">No match for "<strong>${esc(searchName)}</strong>"</div>`;
+  } else {
+    wrap.innerHTML = `<div class="opp-results-label">Select company:</div>
+      ${companies.slice(0, 6).map(c => `
+        <button class="opp-result-item" data-id="${esc(c.id)}" data-name="${esc(c.name)}">
+          ${esc(c.name)}${c.number ? ` <span class="opp-result-num">#${esc(c.number)}</span>` : ''}
+        </button>`).join('')}`;
+  }
+  wrap.classList.remove('hidden');
+  wrap.querySelectorAll('.opp-result-item').forEach(btn => {
+    btn.addEventListener('click', () => qqSelectCompany({ id: btn.dataset.id, name: btn.dataset.name }));
+  });
+}
+
+function qqSelectCompany(company) {
+  qqSelectedCompany = company;
+  $('qqCompanyResults').classList.add('hidden');
+  const sel = $('qqCompanySelected');
+  sel.innerHTML = `<div class="company-selected-tag">✓ ${esc(company.name)}
+    <button class="change-company-btn" id="qqChangeCompanyBtn">Change</button></div>`;
+  sel.classList.remove('hidden');
+  $('qqOppStep').classList.remove('hidden');
+  loadQQOpportunities(company.id);
+  $('qqChangeCompanyBtn')?.addEventListener('click', () => {
+    qqSelectedCompany = null; qqSelectedOpportunity = null;
+    sel.classList.add('hidden');
+    $('qqOppStep').classList.add('hidden');
+    $('qqQuoteStep').classList.add('hidden');
+    $('qqCompanyResults').classList.remove('hidden');
+  });
+}
+
+async function loadQQOpportunities(companyId) {
+  const apiKey = $('qqApiKey').value.trim();
+  const intKey = $('qqIntKey').value.trim();
+  const list   = $('qqOppList');
+  list.innerHTML = '<div class="opp-contact-loading">Loading opportunities…</div>';
+  list.classList.remove('hidden');
+  $('qqQuoteStep').classList.add('hidden');
+
+  try {
+    const res  = await callCreateOpp('search-opportunity', { companyId, apiKey, integrationKey: intKey });
+    const opps = res.opportunities || [];
+    if (opps.length === 0) {
+      list.innerHTML = '<div class="opp-contact-none">No opportunities found — create one in Salesbuildr first.</div>';
+      return;
+    }
+    list.innerHTML = `<div class="opp-results-label">Select opportunity:</div>
+      ${opps.slice(0, 10).map(o => {
+        const date = o.expectedCloseDate ? ` · Close ${o.expectedCloseDate.slice(0,10)}` : '';
+        return `<button class="opp-result-item" data-id="${esc(o.id)}" data-name="${esc(o.name)}">
+          ${esc(o.name)}<span class="opp-result-num">${date}</span>
+        </button>`;
+      }).join('')}`;
+    list.querySelectorAll('.opp-result-item').forEach(btn => {
+      btn.addEventListener('click', () => qqSelectOpportunity({ id: btn.dataset.id, name: btn.dataset.name }));
+    });
+  } catch (e) {
+    list.innerHTML = `<div class="opp-contact-none">Could not load opportunities — ${esc(e.message)}</div>`;
+  }
+}
+
+function qqSelectOpportunity(opp) {
+  qqSelectedOpportunity = opp;
+  $('qqOppList').classList.add('hidden');
+  const sel = $('qqOppSelected');
+  sel.innerHTML = `<div class="company-selected-tag">✓ ${esc(opp.name)}
+    <button class="change-company-btn" id="qqChangeOppBtn">Change</button></div>`;
+  sel.classList.remove('hidden');
+  $('qqQuoteTitle').value = `${esc(opp.name)} — Quick Quote`;
+  $('qqQuoteStep').classList.remove('hidden');
+  $('qqQuoteStep').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  $('qqChangeOppBtn')?.addEventListener('click', () => {
+    qqSelectedOpportunity = null;
+    sel.classList.add('hidden');
+    $('qqQuoteStep').classList.add('hidden');
+    $('qqOppList').classList.remove('hidden');
+  });
+}
+
+// ── Create quote ──────────────────────────────────────────
+$('qqCreateQuoteBtn')?.addEventListener('click', doQQCreateQuote);
+
+async function doQQCreateQuote() {
+  if (!qqSelectedOpportunity) return;
+  const apiKey = $('qqApiKey').value.trim();
+  const intKey = $('qqIntKey').value.trim();
+  const title  = $('qqQuoteTitle').value.trim() || qqSelectedOpportunity.name;
+
+  const selected = qqMatchedProducts.filter(p => p.id);
+  if (selected.length === 0) { showError('qqError', 'Select at least one product before creating the quote.'); return; }
+
+  $('qqCreateQuoteBtn').disabled    = true;
+  $('qqCreateWorking').classList.remove('hidden');
+  $('qqCreateResult').classList.add('hidden');
+  $('qqCreateWorkingMsg').textContent = `Creating quote with ${selected.length} product${selected.length !== 1 ? 's' : ''}…`;
+
+  try {
+    const res = await callCreateOpp('create-quote', {
+      opportunityId: qqSelectedOpportunity.id,
+      title,
+      products: selected.map(p => ({ id: p.id, quantity: p.qty })),
+      apiKey,
+      integrationKey: intKey
+    });
+    $('qqCreateWorking').classList.add('hidden');
+    if (res.ok) {
+      $('qqCreateResult').innerHTML = `<div class="opp-success">
+        <div class="opp-success-icon">✓</div>
+        <div class="opp-success-body">
+          <strong>Quote created</strong>
+          <div class="opp-success-detail">Draft quote added to <em>${esc(qqSelectedOpportunity.name)}</em> with ${selected.length} product${selected.length !== 1 ? 's' : ''}</div>
+          <div class="opp-success-hint">Open Salesbuildr to review and send the quote.</div>
+        </div>
+      </div>`;
+      $('qqCreateQuoteBtn').textContent = '✓ Quote Created';
+      $('qqCreateQuoteBtn').classList.add('is-done');
+    } else {
+      throw new Error(res.error || 'Quote creation failed');
+    }
+  } catch (e) {
+    $('qqCreateWorking').classList.add('hidden');
+    $('qqCreateResult').innerHTML = `<div class="opp-error">✕ ${esc(e.message)}</div>`;
+    $('qqCreateQuoteBtn').disabled = false;
+  }
+  $('qqCreateResult').classList.remove('hidden');
 }
 
 // ── Init ──────────────────────────────────────────────────
