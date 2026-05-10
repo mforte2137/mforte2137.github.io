@@ -303,19 +303,11 @@ exports.handler = async (event) => {
       const { query, keywords } = body;
       if (!query && (!keywords || keywords.length === 0)) return err('query required.', 400);
 
-      // Fetch catalog — run two offset-based requests in parallel to cover up to 400 items
-      // without hitting Netlify's 10s timeout on a single large fetch.
-      const [res1, res2] = await Promise.all([
-        fetch(`${BASE}/product?size=200&offset=0`, { headers }),
-        fetch(`${BASE}/product?size=200&offset=200`, { headers })
-      ]);
-      const [data1, data2] = await Promise.all([
-        res1.ok ? res1.json() : Promise.resolve({}),
-        res2.ok ? res2.json() : Promise.resolve({})
-      ]);
-      const page1 = data1?.results || data1?.data || data1?.items || (Array.isArray(data1) ? data1 : []);
-      const page2 = data2?.results || data2?.data || data2?.items || (Array.isArray(data2) ? data2 : []);
-      const all  = [...new Map([...page1, ...page2].map(p => [p.id, p])).values()]; // dedupe by id
+      // Single fetch — Salesbuildr API doesn't support pagination params (page= or offset=).
+      // size=500 returns whatever the API allows in one call.
+      const res  = await fetch(`${BASE}/product?size=500`, { headers });
+      const data = res.ok ? await res.json() : {};
+      const all  = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
 
       // Score every product against the keyword list sent from the client
       const kws = Array.isArray(keywords) && keywords.length > 0
@@ -458,7 +450,7 @@ exports.handler = async (event) => {
       // Debug: expose raw field names from first result so we know what the API actually returns
       const debugFields = scored[0] ? Object.keys(scored[0].p) : [];
 
-      return ok({ products, catalogSize: all.length, page1: page1.length, page2: page2.length, matched: products.length, _debugFields: debugFields });
+      return ok({ products, catalogSize: all.length, matched: products.length, _debugFields: debugFields });
     }
 
         return err('Unknown action.', 400);
