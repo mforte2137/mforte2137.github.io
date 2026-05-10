@@ -97,7 +97,7 @@ exports.handler = async (event) => {
       // Filter client-side by checking labels array contains 'guided'.
       const res  = await fetch(`${BASE}/product?size=100`, { headers });
       const data = res.ok ? await res.json() : {};
-      const all  = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
+      const all  = [...page1, ...page2];
 
       // Client-side label filter
       const guided = all.filter(p => {
@@ -303,15 +303,23 @@ exports.handler = async (event) => {
       const { query, keywords } = body;
       if (!query && (!keywords || keywords.length === 0)) return err('query required.', 400);
 
-      // Fetch full catalog — 500 to get past potential 200-item page limit
-      const res  = await fetch(`${BASE}/product?size=500`, { headers });
+      // Fetch catalog in two pages of 200 to avoid Netlify 10s timeout on large catalogs.
+      // Page 1
+      const res1  = await fetch(`${BASE}/product?size=200&page=1`, { headers });
+      const data1 = res1.ok ? await res1.json() : {};
+      const page1 = data1?.results || data1?.data || data1?.items || (Array.isArray(data1) ? data1 : []);
+      // Page 2
+      const res2  = await fetch(`${BASE}/product?size=200&page=2`, { headers });
+      const data2 = res2.ok ? await res2.json() : {};
+      const page2 = data2?.results || data2?.data || data2?.items || (Array.isArray(data2) ? data2 : []);
       const data = res.ok ? await res.json() : {};
-      const all  = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
+      const all  = [...page1, ...page2];
 
       // Score every product against the keyword list sent from the client
       const kws = Array.isArray(keywords) && keywords.length > 0
         ? keywords
-        : (query || '').toLowerCase().split(/\s+/).filter(w => w.length > 2);
+        : (query || '').toLowerCase().split(/\s+/)
+            .filter(w => w.length > 2 && !['one','two','three','four','five','six','seven','eight','nine','ten'].includes(w));
 
       // Exclude services, labor, bundles, and unlisted items.
       // listed:false means the rep has hidden it from their catalog — don't quote it.
@@ -355,6 +363,9 @@ exports.handler = async (event) => {
       const wantsLaptop   = requestLower.includes('laptop') || requestLower.includes('notebook');
       const wantsMonitor  = requestLower.includes('monitor') || requestLower.includes('display') || requestLower.includes('screen');
       const wantsDock     = requestLower.includes('dock') || requestLower.includes('docking') || requestLower.includes('station');
+      const wantsPhone    = requestLower.includes('phone') || requestLower.includes('voip') || requestLower.includes('handset')
+                         || requestLower.includes('yealink') || requestLower.includes('snom') || requestLower.includes('poly')
+                         || requestLower.includes('cisco') || requestLower.includes('t54') || requestLower.includes('t57');
       const wantsDell     = requestLower.includes('dell');
       const wantsLenovo   = requestLower.includes('lenovo');
       const wantsHp       = requestLower.includes('hp') || requestLower.includes('elitebook') || requestLower.includes('probook');
@@ -380,12 +391,14 @@ exports.handler = async (event) => {
 
         // Brand bonus — if a specific brand was requested, reward exact manufacturer match
         const mfr = (p.manufacturer || '').toLowerCase();
-        if (wantsDell   && mfr.includes('dell'))   score += 4;
-        if (wantsLenovo && mfr.includes('lenovo')) score += 4;
+        if (wantsDell   && mfr.includes('dell'))      score += 4;
+        if (wantsLenovo && mfr.includes('lenovo'))    score += 4;
         if (wantsHp     && (mfr.includes('hp') || mfr.includes('hewlett'))) score += 4;
+        if (wantsPhone  && (mfr.includes('yealink') || mfr.includes('snom') || mfr.includes('poly') || mfr.includes('cisco'))) score += 4;
 
         // Penalise off-brand when a specific brand was requested
-        if (wantsDell && !mfr.includes('dell')   && score > 0) score -= 3;
+        if (wantsDell   && !mfr.includes('dell')   && score > 0) score -= 3;
+        if (wantsPhone  && !wantsLaptop && !wantsMonitor && (nameLower.includes('laptop') || nameLower.includes('notebook'))) score -= 5;
 
         // Hard penalise category mismatches
         const isPhone       = nameLower.includes('voip') || nameLower.includes('sip-') || /phone/.test(nameLower) || nameLower.includes('handset');
@@ -401,7 +414,7 @@ exports.handler = async (event) => {
         const wantsLargeMonitor = wantsMonitor && (requestLower.includes('27') || requestLower.includes('24') || requestLower.includes('32'));
         const isSmallMonitor = wantsLargeMonitor && (nameLower.includes('13.') || nameLower.includes('15.') || nameLower.includes('portable'));
 
-        if (isPhone)                                                  score -= 8;
+        if (isPhone && !wantsPhone)                                    score -= 8;
         if (isAIO   && wantsMonitor)                                  score -= 6;
         if (isAIO   && wantsLaptop)                                   score -= 6;
         if (isCharger)                                                score -= 6;
@@ -443,7 +456,7 @@ exports.handler = async (event) => {
       // Debug: expose raw field names from first result so we know what the API actually returns
       const debugFields = scored[0] ? Object.keys(scored[0].p) : [];
 
-      return ok({ products, catalogSize: all.length, matched: products.length, _debugFields: debugFields });
+      return ok({ products, catalogSize: all.length, page1: page1.length, page2: page2.length, matched: products.length, _debugFields: debugFields });
     }
 
         return err('Unknown action.', 400);
