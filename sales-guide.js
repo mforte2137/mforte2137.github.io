@@ -869,10 +869,9 @@ function renderQQProducts(products, request) {
   // Select-all / clear-all convenience controls
   const controls = document.createElement('div');
   controls.style.cssText = 'display:flex;gap:10px;margin-bottom:8px;';
-  controls.innerHTML = \`
-    <button type="button" class="btn-save" id="qqSelectAll" style="font-size:12px;padding:5px 12px;">✓ Select all</button>
-    <button type="button" class="btn-save" id="qqClearAll"  style="font-size:12px;padding:5px 12px;">✕ Clear all</button>
-  \`;
+  controls.innerHTML =
+    '<button type="button" class="btn-save" id="qqSelectAll" style="font-size:12px;padding:5px 12px;">✓ Select all</button>' +
+    '<button type="button" class="btn-save" id="qqClearAll"  style="font-size:12px;padding:5px 12px;">✕ Clear all</button>';
   list.parentElement.insertBefore(controls, list);
   document.getElementById('qqSelectAll')?.addEventListener('click', () => {
     list.querySelectorAll('.opp-svc-check').forEach(c => c.checked = true);
