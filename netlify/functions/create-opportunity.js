@@ -303,16 +303,19 @@ exports.handler = async (event) => {
       const { query, keywords } = body;
       if (!query && (!keywords || keywords.length === 0)) return err('query required.', 400);
 
-      // Fetch catalog in two pages of 200 to avoid Netlify 10s timeout on large catalogs.
-      // Page 1
-      const res1  = await fetch(`${BASE}/product?size=200&page=1`, { headers });
-      const data1 = res1.ok ? await res1.json() : {};
+      // Fetch catalog — run two offset-based requests in parallel to cover up to 400 items
+      // without hitting Netlify's 10s timeout on a single large fetch.
+      const [res1, res2] = await Promise.all([
+        fetch(`${BASE}/product?size=200&offset=0`, { headers }),
+        fetch(`${BASE}/product?size=200&offset=200`, { headers })
+      ]);
+      const [data1, data2] = await Promise.all([
+        res1.ok ? res1.json() : Promise.resolve({}),
+        res2.ok ? res2.json() : Promise.resolve({})
+      ]);
       const page1 = data1?.results || data1?.data || data1?.items || (Array.isArray(data1) ? data1 : []);
-      // Page 2
-      const res2  = await fetch(`${BASE}/product?size=200&page=2`, { headers });
-      const data2 = res2.ok ? await res2.json() : {};
       const page2 = data2?.results || data2?.data || data2?.items || (Array.isArray(data2) ? data2 : []);
-      const all  = [...page1, ...page2];
+      const all  = [...new Map([...page1, ...page2].map(p => [p.id, p])).values()]; // dedupe by id
 
       // Score every product against the keyword list sent from the client
       const kws = Array.isArray(keywords) && keywords.length > 0
