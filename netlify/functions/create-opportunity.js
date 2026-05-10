@@ -97,7 +97,7 @@ exports.handler = async (event) => {
       // Filter client-side by checking labels array contains 'guided'.
       const res  = await fetch(`${BASE}/product?size=100`, { headers });
       const data = res.ok ? await res.json() : {};
-      const all  = [...page1, ...page2];
+      const all  = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
 
       // Client-side label filter
       const guided = all.filter(p => {
@@ -312,7 +312,6 @@ exports.handler = async (event) => {
       const res2  = await fetch(`${BASE}/product?size=200&page=2`, { headers });
       const data2 = res2.ok ? await res2.json() : {};
       const page2 = data2?.results || data2?.data || data2?.items || (Array.isArray(data2) ? data2 : []);
-      const data = res.ok ? await res.json() : {};
       const all  = [...page1, ...page2];
 
       // Score every product against the keyword list sent from the client
