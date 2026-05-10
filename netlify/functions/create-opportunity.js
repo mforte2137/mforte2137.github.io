@@ -364,64 +364,72 @@ exports.handler = async (event) => {
       const wantsLenovo   = requestLower.includes('lenovo');
       const wantsHp       = requestLower.includes('hp') || requestLower.includes('elitebook') || requestLower.includes('probook');
 
+      // Detect model numbers — high-signal tokens like "510", "p7", "t54w", "g5"
+      const modelKws = allKws.filter(k => /[0-9]/.test(k));
+
+      // Detect brand keywords from the request
+      const knownBrands = ['dell','lenovo','hp','jabra','yealink','snom','poly','cisco',
+        'logitech','bose','samsung','lg','adesso','epos','plantronics','apple','startech',
+        'kingston','sandisk','microsoft','philips','axis','creative','asus','acer','sony'];
+      const brandKws = allKws.filter(k => knownBrands.includes(k.toLowerCase()));
+
       function scoreProduct(p) {
         const nameLower = (p.name || '').toLowerCase();
-        const haystack = [
-          p.name            || '',
-          p.shortDescription|| '',
-          p.manufacturer    || '',
-          p.mpn             || '',
-          p.ean             || ''
+        const mfr       = (p.manufacturer || '').toLowerCase();
+        const haystack  = [
+          p.name || '', p.shortDescription || '', p.manufacturer || '', p.mpn || '', p.ean || ''
         ].join(' ').toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
 
         let score = 0;
 
-        // Keyword match scoring
-        for (const kw of allKws) {
-          const k = kw.toLowerCase().replace(/[^a-z0-9]/g, '');
-          if (!k || k.length < 3) continue;
-          if (haystack.includes(k)) score += k.length > 5 ? 3 : k.length > 3 ? 2 : 1;
+        // Model number match — very high signal (+6 each)
+        for (const kw of modelKws) {
+          if (haystack.includes(kw)) score += 6;
         }
 
-        // Brand bonus — if a specific brand was requested, reward exact manufacturer match
-        const mfr = (p.manufacturer || '').toLowerCase();
-        if (wantsDell   && mfr.includes('dell'))      score += 4;
-        if (wantsLenovo && mfr.includes('lenovo'))    score += 4;
-        if (wantsHp     && (mfr.includes('hp') || mfr.includes('hewlett'))) score += 4;
-        if (wantsPhone  && (mfr.includes('yealink') || mfr.includes('snom') || mfr.includes('poly') || mfr.includes('cisco'))) score += 4;
+        // Brand match — reward products from a requested brand (+4)
+        for (const bk of brandKws) {
+          if (mfr.includes(bk) || nameLower.startsWith(bk)) score += 4;
+        }
 
-        // Penalise off-brand when a specific brand was requested
-        if (wantsDell   && !mfr.includes('dell')   && score > 0) score -= 3;
-        if (wantsPhone  && !wantsLaptop && !wantsMonitor && (nameLower.includes('laptop') || nameLower.includes('notebook'))) score -= 5;
+        // General category keywords — lower weight
+        for (const kw of allKws) {
+          if (modelKws.includes(kw) || brandKws.includes(kw)) continue;
+          const k = kw.replace(/[^a-z0-9]/g, '');
+          if (!k || k.length < 3) continue;
+          if (haystack.includes(k)) score += k.length > 5 ? 2 : 1;
+        }
 
-        // Hard penalise category mismatches
-        const isPhone       = nameLower.includes('voip') || nameLower.includes('sip-') || /phone/.test(nameLower) || nameLower.includes('handset');
-        const isAIO         = nameLower.includes('all-in-one') || nameLower.includes('neo 50a') || nameLower.includes('aio');
-        const isCharger     = nameLower.includes('charger') || nameLower.includes('wall charger') || nameLower.includes('power adapter');
-        const isRefurb      = nameLower.startsWith('refurb') || nameLower.startsWith('excess') || nameLower.includes('demo ');
-        const isWorkstation = nameLower.includes('workstation') || /thinkpad p\d/.test(nameLower);
+        // Off-brand penalty — specific brands requested but this item is from another brand
+        if (brandKws.length > 0) {
+          const fromRequestedBrand = brandKws.some(bk => mfr.includes(bk) || nameLower.startsWith(bk));
+          if (!fromRequestedBrand) score -= 3;
+        }
 
-        // Storage / drives — penalise unless request explicitly mentions storage
-        const isDrive = nameLower.includes('hard drive') || nameLower.includes('internal drive')
-          || nameLower.includes('hdd') || /sas/.test(nameLower);
-        // Small/portable monitors — penalise if request specifies a larger size
+        // Category mismatch penalties
+        const isPhone    = nameLower.includes('voip') || nameLower.includes('sip-') || /phone/.test(nameLower) || nameLower.includes('handset');
+        const isAIO      = nameLower.includes('all-in-one') || nameLower.includes('neo 50a');
+        const isCharger  = nameLower.includes('charger') || nameLower.includes('wall charger') || nameLower.includes('power adapter');
+        const isRefurb   = nameLower.startsWith('refurb') || nameLower.startsWith('excess') || nameLower.includes('demo ');
+        const isWorkstation = nameLower.includes('workstation') || /thinkpad p/.test(nameLower);
+        const isDrive    = nameLower.includes('hard drive') || nameLower.includes('internal drive') || nameLower.includes('hdd') || /\bsas\b/.test(nameLower);
+        const isCommercialAudio = nameLower.includes('pa system') || nameLower.includes('ip speaker') || nameLower.includes('soundbar') || nameLower.includes('edgemax');
         const wantsLargeMonitor = wantsMonitor && (requestLower.includes('27') || requestLower.includes('24') || requestLower.includes('32'));
-        const isSmallMonitor = wantsLargeMonitor && (nameLower.includes('13.') || nameLower.includes('15.') || nameLower.includes('portable'));
+        const isSmallMonitor    = wantsLargeMonitor && (nameLower.includes('13.') || nameLower.includes('15.') || nameLower.includes('portable'));
 
-        if (isPhone && !wantsPhone)                                    score -= 8;
-        if (isAIO   && wantsMonitor)                                  score -= 6;
-        if (isAIO   && wantsLaptop)                                   score -= 6;
-        if (isCharger)                                                score -= 6;
+        if (isPhone && !wantsPhone)   score -= 8;
+        if (isAIO && (wantsMonitor || wantsLaptop)) score -= 6;
+        if (isCharger)                score -= 6;
         if (isDrive && !requestLower.includes('drive') && !requestLower.includes('storage')) score -= 7;
-        if (isSmallMonitor)                                           score -= 5;
-        if (isRefurb)                                                 score -= 4;
+        if (isSmallMonitor)           score -= 5;
+        if (isRefurb)                 score -= 4;
         if (isWorkstation && wantsLaptop && !requestLower.includes('workstation')) score -= 4;
+        if (isCommercialAudio && !requestLower.includes('pa') && !requestLower.includes('soundbar')) score -= 5;
 
         return score;
       }
 
-      // Score threshold — require a meaningful match, not just a brand hit.
-      // Score 5+ = brand bonus + at least one keyword, or 2+ keyword matches.
+      // Minimum score: model hit (6) alone qualifies; brand+category (5) qualifies; category-only (<=4) does not.
       const MIN_SCORE = 5;
 
       const scored = hardwareOnly
