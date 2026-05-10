@@ -327,17 +327,21 @@ exports.handler = async (event) => {
       // Synonym expansion — common customer terms → catalog terms
       // e.g. "dock" → also search "docking", "station", "hub"
       const synonyms = {
-        dock:    ['dock', 'docking', 'station', 'hub', 'port'],
-        monitor: ['monitor', 'display', 'screen'],
-        laptop:  ['laptop', 'notebook', 'portable'],
-        phone:   ['phone', 'handset', 'voip', 'telephone'],
-        printer: ['printer', 'mfp', 'multifunction'],
-        keyboard:['keyboard', 'kbd'],
-        mouse:   ['mouse', 'pointer'],
-        headset: ['headset', 'headphone', 'earphone'],
-        cable:   ['cable', 'lead', 'connector'],
-        switch:  ['switch', 'swh'],
-        server:  ['server', 'srv'],
+        dock:     ['dock', 'docking', 'station', 'hub', 'port'],
+        monitor:  ['monitor', 'display', 'screen'],
+        laptop:   ['laptop', 'notebook', 'portable'],
+        phone:    ['phone', 'handset', 'voip', 'telephone'],
+        printer:  ['printer', 'mfp', 'multifunction'],
+        keyboard: ['keyboard', 'kbd'],
+        mouse:    ['mouse', 'pointer'],
+        headset:  ['headset', 'headphone', 'earphone'],
+        cable:    ['cable', 'lead', 'connector'],
+        switch:   ['switch', 'swh'],
+        server:   ['server', 'srv'],
+        // Carry cases — reps say "bag", products say "backpack", "briefcase", "topload", "sleeve"
+        bag:      ['bag', 'backpack', 'briefcase', 'topload', 'sleeve', 'carry', 'case', 'satchel'],
+        backpack: ['bag', 'backpack', 'briefcase', 'topload', 'sleeve', 'carry', 'case', 'satchel'],
+        case:     ['bag', 'backpack', 'briefcase', 'topload', 'sleeve', 'carry', 'case', 'satchel'],
       };
 
       // Expand keywords with synonyms
