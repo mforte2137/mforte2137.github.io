@@ -429,8 +429,10 @@ exports.handler = async (event) => {
         return score;
       }
 
-      // Minimum score: model hit (6) alone qualifies; brand+category (5) qualifies; category-only (<=4) does not.
-      const MIN_SCORE = 5;
+      // Adaptive minimum score:
+      // - Brand or model in request → require 5 (brand+category or model hit)
+      // - Category-only request (no brand, no model) → require 2 (any meaningful keyword match)
+      const MIN_SCORE = (brandKws.length === 0 && modelKws.length === 0) ? 2 : 5;
 
       const scored = hardwareOnly
         .map(p => ({ p, score: scoreProduct(p) }))
