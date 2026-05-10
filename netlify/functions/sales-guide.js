@@ -1,236 +1,330 @@
 // =========================================================
-// sales-guide.js — Netlify function
-// Path: /api/sales-guide
+// create-opportunity.js — Netlify function
+// Path: /api/create-opportunity
 //
-// Two actions:
-//   discover  — takes 6 discovery answers → Claude Sonnet
-//               recommendation with coaching insight,
-//               hardware checklist, service recommendations,
-//               and widget briefs for all 5 W-questions
+// Phase 2 — Guided Sales CRM integration
 //
-//   execute   — takes a free-text spec description → Claude
-//               translates technical solution into buyer
-//               language with widget briefs + scope notes
+// Actions:
+//   search-company     — find existing Salesbuildr companies
+//   create-company     — create a new prospect company
+//   upsert-opportunity — create/update opportunity with Sales Brief
+//   create-quote       — create a draft quote against the opportunity
+//
+// Credentials come from the REQUEST BODY — never env vars.
 // =========================================================
 
-const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
+const BASE = 'https://portal.us1-salesbuildr.com/public-api';
 
-// ── Discovery system prompt ───────────────────────────────
-const DISCOVER_SYSTEM = `You are a senior MSP sales strategist built into Salesbuildr. Your job is to help MSP sales reps build compelling proposals — starting from a customer's problem, not from a product catalog.
+function sbHeaders(apiKey, intKey) {
+  return {
+    'Content-Type': 'application/json',
+    'api-key': apiKey,
+    'integration-key': intKey
+  };
+}
 
-You understand that most MSP sales reps are technically strong but commercially weak. They default to listing products and acronyms that mean nothing to a business owner or CFO. Your role is to bridge that gap.
+function ok(data) {
+  return {
+    statusCode: 200,
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    body: JSON.stringify({ ok: true, ...data })
+  };
+}
 
-The framework you work within is the Buyer Decision Journey — five questions every customer asks before they say yes:
-W1: "Do they understand my situation?"
-W2: "Why should I care about this now?"
-W3: "Why should I trust this MSP?"
-W4: "What exactly am I getting?"
-W5: "Is this worth it?"
+function err(msg, code = 200) {
+  return {
+    statusCode: code,
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    body: JSON.stringify({ ok: false, error: msg })
+  };
+}
 
-Every recommendation you make should move the customer through those five questions.
-
-When you see a discovery profile, your job is to:
-1. Identify the real business problem beneath the technical symptoms
-2. Recommend the right shape of solution (services + project scope)
-3. Flag hardware components that need to be confirmed at a site survey
-4. Give the rep a coaching insight they can use in the room with the customer
-5. Provide specific, buyer-focused briefs for each of the 5 proposal widgets
-
-Always frame recommendations in business outcomes — never in product names or acronyms.
-Use the submit_discovery_recommendation tool to return your output.`;
-
-// ── Execution system prompt ───────────────────────────────
-const EXECUTE_SYSTEM = `You are a senior MSP sales strategist built into Salesbuildr. A design desk or senior engineer has already determined the technical solution. Your job is to translate that technical specification into compelling buyer language that will move a business owner or CFO to say yes.
-
-The customer does not care what brand of firewall is being installed. They care that their business is protected, their team can work without interruption, and they can pass their cyber insurance audit.
-
-Your job is to take the technical spec provided and:
-1. Identify the key business outcomes this solution delivers
-2. Spot the strongest "why now" angle in the spec
-3. Give the rep a coaching insight for the sales conversation
-4. Produce specific, outcome-focused briefs for all 5 proposal widgets
-
-The Buyer Decision Journey framework:
-W1: Situation — show you understand their world
-W2: Urgency — why act now, not later
-W3: Trust — why this MSP is the right partner
-W4: Outcome — what their business looks like after this project
-W5: Investment — frame the value, not just the cost
-
-Translate ALL technical terms into plain business language.
-Use the submit_execution_recommendation tool to return your output.`;
-
-// ── Tool schemas ──────────────────────────────────────────
-const DISCOVER_TOOL = {
-  name: 'submit_discovery_recommendation',
-  description: 'Submit the sales recommendation based on discovery answers',
-  input_schema: {
-    type: 'object',
-    properties: {
-      coaching_insight: {
-        type: 'string',
-        description: '1-2 sentences maximum — the single most important thing the rep must know walking into this meeting. Direct, punchy, actionable. No fluff.'
-      },
-      engagement_type: {
-        type: 'string',
-        enum: ['managed_services', 'network_upgrade', 'endpoint_refresh', 'server_eol', 'security_project', 'compliance', 'new_client_onboarding', 'project_plus_managed', 'voip_project', 'backup_dr', 'copilot_ai', 'mixed'],
-        description: 'The primary type of engagement this is'
-      },
-      solution_bullets: {
-        type: 'array',
-        description: '3-4 bullet points describing the recommended approach in plain language — what needs to be in place for this customer. Each bullet: one clear, buyer-focused outcome. No jargon.',
-        items: { type: 'string' },
-        minItems: 2,
-        maxItems: 4
-      },
-      hardware_needed: {
-        type: 'boolean',
-        description: 'Whether physical hardware is a significant part of this engagement'
-      },
-      hardware_checklist: {
-        type: 'array',
-        description: 'Hardware components to confirm at a site survey. Only populate if hardware_needed is true.',
-        items: {
-          type: 'object',
-          properties: {
-            component:    { type: 'string', description: 'Component type e.g. Core Switch, Firewall, Wireless AP' },
-            confirm:      { type: 'string', description: 'The specific question to answer at the site visit' },
-            never_forget: { type: 'string', description: 'One sentence: the single most common mistake reps make on this component' }
-          },
-          required: ['component', 'confirm']
-        }
-      },
-      // services_recommended removed — curated per-engagement framework used instead
-      w1_situation: { type: 'string', description: 'W1 — their situation in 1-2 sentences: what pain are they carrying right now?' },
-      w2_urgency:   { type: 'string', description: 'W2 — urgency in 1-2 sentences: why act now, what happens if they wait?' },
-      w3_trust:     { type: 'string', description: 'W3 — trust angle in 1-2 sentences: why is this MSP the right partner for this?' },
-      w4_outcome:   { type: 'string', description: 'W4 — outcomes in 1-2 sentences: what does their business look like after this?' },
-      w5_investment:{ type: 'string', description: 'W5 — investment framing in 1-2 sentences: what does it replace, prevent, or enable?' },
-      roi_angle: {
-        type: 'string',
-        description: 'The strongest ROI angle for this customer — productivity, security risk, compliance, or cost savings? One sentence.'
-      }
-    },
-    required: ['coaching_insight', 'engagement_type', 'solution_bullets', 'hardware_needed', 'w1_situation', 'w2_urgency', 'w3_trust', 'w4_outcome', 'w5_investment']
-  }
-};
-
-const EXECUTE_TOOL = {
-  name: 'submit_execution_recommendation',
-  description: 'Submit the buyer-language translation of the technical spec',
-  input_schema: {
-    type: 'object',
-    properties: {
-      coaching_insight: {
-        type: 'string',
-        description: 'What the rep should emphasise in the meeting — the strongest commercial angle in this spec. 1-2 sentences maximum, punchy and direct.'
-      },
-      buyer_summary: {
-        type: 'string',
-        description: 'The technical spec translated into a paragraph of buyer language — what this solution DOES for the business, zero technical jargon'
-      },
-      w1_situation: { type: 'string', description: 'Situation context implied by this spec' },
-      w2_urgency:   { type: 'string', description: 'Urgency angle from this spec — what risk does it address?' },
-      w3_trust:     { type: 'string', description: 'Trust/credibility angle for this type of project' },
-      w4_outcome:   { type: 'string', description: 'Specific outcomes from this spec in buyer language' },
-      w5_investment:{ type: 'string', description: 'Investment framing — what does this replace, prevent, or enable?' },
-      scope_notes: {
-        type: 'string',
-        description: 'Key project scope considerations based on the spec — what the project scope builder should emphasise'
-      },
-      billing_shape: {
-        type: 'string',
-        description: 'Brief note on the billing shape — e.g. primarily one-time project, monthly recurring services, or mixed'
-      }
-    },
-    required: ['coaching_insight', 'buyer_summary', 'w1_situation', 'w2_urgency', 'w3_trust', 'w4_outcome', 'w5_investment']
-  }
-};
-
-// ── Main handler ──────────────────────────────────────────
 exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'POST required.' }) };
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type' } };
   }
+  if (event.httpMethod !== 'POST') return err('POST required.', 405);
 
   let body;
   try { body = JSON.parse(event.body); }
-  catch (e) { return { statusCode: 400, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'Invalid JSON.' }) }; }
+  catch { return err('Invalid JSON.', 400); }
 
-  const { action } = body;
-  const ok = (data) => ({ statusCode: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: true, ...data }) });
-  const err = (msg, code = 500) => ({ statusCode: code, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: msg }) });
+  const { action, apiKey, integrationKey } = body;
 
-  // ── ACTION: discover ──────────────────────────────────────
-  if (action === 'discover') {
-    const { answers } = body;
-    if (!answers) return err('Discovery answers required.', 400);
+  // Ping — warm-up call, no credentials needed
+  if (action === 'ping') return { statusCode: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: true, pong: true }) };
 
-    const userMsg = `Here are the discovery answers for a new sales opportunity:
+  if (!apiKey || !integrationKey) return err('API credentials required.', 400);
 
-Primary challenge: ${answers.challenge || 'Not specified'}
-Business type: ${answers.industry || 'Not specified'}, ${answers.staffCount || '?'} staff
-Trigger for this conversation: ${answers.trigger || 'Not specified'}
-What matters most to the decision-maker: ${answers.outcome || 'Not specified'}
-What they're comparing us against: ${answers.comparison || 'Not specified'}
-Shape of this engagement: ${answers.shape || 'Not specified'}
-Additional context: ${answers.other || 'None'}
+  const headers = sbHeaders(apiKey, integrationKey);
 
-Build a sales recommendation and widget briefs for this opportunity.`;
+  try {
 
-    try {
-      const res = await fetch(ANTHROPIC_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1500,
-          system: DISCOVER_SYSTEM,
-          tools: [DISCOVER_TOOL],
-          tool_choice: { type: 'tool', name: 'submit_discovery_recommendation' },
-          messages: [{ role: 'user', content: userMsg }]
-        })
+    // ── search-company ──────────────────────────────────────
+    if (action === 'search-company') {
+      const { name } = body;
+      if (!name) return err('Company name required.', 400);
+
+      const res  = await fetch(`${BASE}/company?query=${encodeURIComponent(name)}&size=8`, { headers });
+      const data = await res.json();
+
+      // Handle all possible response shapes from Salesbuildr:
+      //   { data: [...] }  |  { items: [...] }  |  { results: [...] }
+      //   plain array [...]  |  single object {...}
+      let companies = [];
+      if (Array.isArray(data))              companies = data;
+      else if (Array.isArray(data?.data))   companies = data.data;
+      else if (Array.isArray(data?.items))  companies = data.items;
+      else if (Array.isArray(data?.results))companies = data.results;
+      else if (data?.id)                    companies = [data]; // single object returned
+
+      // Expose the raw response keys for debugging when nothing found
+      const debugShape = companies.length === 0
+        ? { _rawKeys: Object.keys(data || {}), _isArray: Array.isArray(data) }
+        : {};
+
+      return ok({ companies, ...debugShape });
+    }
+
+    // ── ping ────────────────────────────────────────────────
+    if (action === 'ping') return ok({ pong: true });
+
+    // ── fetch-guided-catalog ─────────────────────────────────
+    // Returns all products/services tagged 'guided' from the
+    // MSP's Salesbuildr catalog — the curated set for guided sales.
+    if (action === 'fetch-guided-catalog') {
+      // Fetch all products unfiltered — server-side label filter unreliable for PSA items.
+      // Filter client-side by checking labels array contains 'guided'.
+      const res  = await fetch(`${BASE}/product?size=100`, { headers });
+      const data = res.ok ? await res.json() : {};
+      const all  = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
+
+      // Client-side label filter
+      const guided = all.filter(p => {
+        const lbls = p.labels || [];
+        return Array.isArray(lbls)
+          ? lbls.some(l => (typeof l === 'string' ? l : l?.name || l?.value || '').toLowerCase() === 'guided')
+          : false;
+      });
+
+      const catalog = guided.map(p => ({
+        id:     p.id,
+        name:   p.name || p.description || 'Unknown',
+        price:  p.sellPrice ?? p.price ?? p.recurringPrice ?? p.unitPrice ?? 0,
+        type:   p.productType || p.type || 'product',
+        labels: Array.isArray(p.labels) ? p.labels.map(l => typeof l === 'string' ? l : (l?.name || '')).filter(Boolean) : [],
+        unit:   (() => {
+          const t = (p.productType || p.type || '').toLowerCase();
+          if (t === 'bundle') return 'month'; // bundles are monthly recurring
+          return (p.unit || p.term || '').toLowerCase();
+        })(),
+      }));
+
+      // Debug to confirm what labels look like
+      const debug = {
+        totalFetched: all.length,
+        guidedFound:  guided.length,
+        firstLabels:  all[0]?.labels ?? 'n/a',
+      };
+
+      return ok({ catalog, _debug: debug });
+    }
+
+    // ── get-opportunity ─────────────────────────────────────
+    // Fetches full OpportunityResponseDto so we can echo back
+    // all existing IDs (contact, owner, stage, category) when
+    // updating the description — avoids "field required" errors.
+    if (action === 'get-opportunity') {
+      const { opportunityId } = body;
+      if (!opportunityId) return err('opportunityId required.', 400);
+      const res  = await fetch(`${BASE}/opportunity/${opportunityId}`, { headers });
+      const data = res.ok ? await res.json() : {};
+      if (!res.ok) return err(data?.message || 'Failed to fetch opportunity.');
+      return ok({ opportunity: data });
+    }
+
+    // ── search-opportunity ──────────────────────────────────
+    // Find existing opportunities for a company so the rep
+    // can connect the Sales Guide to one they already created.
+    if (action === 'search-opportunity') {
+      const { companyId } = body;
+      if (!companyId) return err('companyId required.', 400);
+
+      const res  = await fetch(`${BASE}/opportunity?filters=${encodeURIComponent('company.id:' + companyId)}&size=20`, { headers });
+      const data = res.ok ? await res.json() : {};
+      const opps = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
+      return ok({ opportunities: opps });
+    }
+
+    // ── fetch-opp-fields ────────────────────────────────────
+    // Tries multiple field name variants for each dropdown —
+    // returns the first one that comes back with data.
+    if (action === 'fetch-opp-fields') {
+      const results = {};
+
+      // Categories — confirmed working field name
+      try {
+        const res  = await fetch(`${BASE}/field/opportunity-category`, { headers });
+        const data = res.ok ? await res.json() : {};
+        results.categories = (data?.values || []).filter(v => !v.deleted);
+      } catch { results.categories = []; }
+
+      // Pipeline stages — try the same naming pattern that worked for category
+      try {
+        const candidates = ['opportunity-stage', 'opportunity-pipeline-stage', 'pipeline-stage', 'pipelineStage'];
+        results.pipelineStages = [];
+        for (const name of candidates) {
+          const res  = await fetch(`${BASE}/field/${encodeURIComponent(name)}`, { headers });
+          const data = res.ok ? await res.json() : {};
+          const vals = (data?.values || []).filter(v => !v.deleted);
+          if (vals.length > 0) { results.pipelineStages = vals; break; }
+        }
+      } catch { results.pipelineStages = []; }
+
+      // Owners — quote list returns full QuoteResponseDto with owner nested object.
+      // Response shape confirmed from OpenAPI: { results: [...], total: N }
+      try {
+        const res    = await fetch(`${BASE}/quote?size=20`, { headers });
+        const data   = res.ok ? await res.json() : {};
+        // Quote list uses 'results' key — not 'data' or 'items'
+        const quotes = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
+        const ownerMap = new Map();
+        quotes.forEach(q => {
+          const o = q.owner || q.createdBy;
+          if (o?.id) {
+            ownerMap.set(o.id, {
+              id:           o.id,
+              displayValue: o.name || o.email || o.id,
+              extId:        o.externalIdentifier || o.email || null
+            });
+          }
+        });
+        results.owners = [...ownerMap.values()];
+      } catch { results.owners = []; }
+
+      return ok(results);
+    }
+
+    // ── search-contact ──────────────────────────────────────
+    if (action === 'search-contact') {
+      const { companyId } = body;
+      if (!companyId) return err('companyId required.', 400);
+
+      const res  = await fetch(`${BASE}/contact?filters=${encodeURIComponent('company.id:' + companyId)}&size=20`, { headers });
+      const data = await res.json();
+
+      let contacts = [];
+      if (Array.isArray(data))              contacts = data;
+      else if (Array.isArray(data?.data))   contacts = data.data;
+      else if (Array.isArray(data?.items))  contacts = data.items;
+      else if (Array.isArray(data?.results))contacts = data.results;
+      else if (data?.id)                    contacts = [data];
+
+      return ok({ contacts });
+    }
+
+    // ── create-company ──────────────────────────────────────
+    if (action === 'create-company') {
+      const { name } = body;
+      if (!name) return err('Company name required.', 400);
+
+      // Generate a short reference number (SG + 6-digit timestamp suffix)
+      const number = 'SG-' + Date.now().toString().slice(-6);
+
+      const res  = await fetch(`${BASE}/company`, {
+        method:  'POST',
+        headers,
+        body:    JSON.stringify({ name, number, type: 'prospect' })
       });
       const data = await res.json();
-      const tool = Array.isArray(data.content) ? data.content.find(b => b.type === 'tool_use') : null;
-      if (!tool) return err('No recommendation returned.');
-      // Surface stop_reason so client can detect truncation
-      return ok({ recommendation: tool.input, stop_reason: data.stop_reason });
-    } catch (e) { return err(e.message); }
-  }
 
-  // ── ACTION: execute ───────────────────────────────────────
-  if (action === 'execute') {
-    const { spec, customerContext } = body;
-    if (!spec) return err('Spec description required.', 400);
+      if (!res.ok) return err(data?.message || data?.error || 'Failed to create company.');
+      return ok({ company: data });
+    }
 
-    const userMsg = `Here is the confirmed technical specification for a customer proposal:
+    // ── upsert-opportunity ──────────────────────────────────
+    if (action === 'upsert-opportunity') {
+      // Updates description of an EXISTING opportunity using its real
+      // externalIdentifier (AT record ID). Never creates new records —
+      // avoids the PSA sync issue caused by fake ext IDs.
+      const { name, description, extId, companyId, contactId, ownerId, pipelineStageId, categoryId } = body;
+      if (!extId) return err('extId required.', 400);
 
-${spec}
+      // Echo back all existing field IDs so Salesbuildr doesn't
+      // treat missing fields as intentional removals
+      const payload = { name: name || 'Opportunity', description };
+      if (companyId)       payload.companyId       = companyId;
+      if (contactId)       payload.contactId       = contactId;
+      if (ownerId)         payload.ownerId         = ownerId;
+      if (pipelineStageId) payload.pipelineStageId = pipelineStageId;
+      if (categoryId)      payload.categoryId      = categoryId;
 
-${customerContext ? `Customer context: ${customerContext}` : ''}
-
-Translate this into buyer language and generate widget briefs for a compelling proposal.`;
-
-    try {
-      const res = await fetch(ANTHROPIC_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1500,
-          system: EXECUTE_SYSTEM,
-          tools: [EXECUTE_TOOL],
-          tool_choice: { type: 'tool', name: 'submit_execution_recommendation' },
-          messages: [{ role: 'user', content: userMsg }]
-        })
+      const res  = await fetch(`${BASE}/opportunity/ext/${encodeURIComponent(extId)}`, {
+        method:  'PUT',
+        headers,
+        body:    JSON.stringify(payload)
       });
       const data = await res.json();
-      const tool = Array.isArray(data.content) ? data.content.find(b => b.type === 'tool_use') : null;
-      if (!tool) return err('No recommendation returned.');
-      return ok({ recommendation: tool.input });
-    } catch (e) { return err(e.message); }
-  }
 
-  return err('Unknown action.', 400);
+      if (!res.ok) return err(data?.message || data?.error || 'Failed to create opportunity.');
+      return ok({ opportunity: data });
+    }
+
+    // ── create-quote ────────────────────────────────────────
+    if (action === 'create-quote') {
+      const { opportunityId, title, templateId, widgets } = body;
+      if (!opportunityId) return err('opportunityId required.', 400);
+
+      const resolvedTemplateId = templateId || null;
+      const { products } = body; // array of {id, quantity}
+
+      const payload = { opportunityId, title: title || 'Proposal' };
+      if (resolvedTemplateId) payload.templateId = resolvedTemplateId;
+      if (Array.isArray(products) && products.length > 0) payload.products = products;
+
+      const res  = await fetch(`${BASE}/quote`, {
+        method:  'POST',
+        headers,
+        body:    JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (!res.ok) return err(data?.message || data?.error || 'Failed to create quote.');
+      return ok({ quote: data });
+    }
+
+    // ── search-products ─────────────────────────────────────
+    // Full-text catalog search for Quick Quote mode.
+    // Returns up to 12 matching products from the MSP catalog.
+    if (action === 'search-products') {
+      const { query } = body;
+      if (!query) return err('query required.', 400);
+
+      // Try query param first; fall back to size=100 + client filter if no query support
+      const res  = await fetch(`${BASE}/product?query=${encodeURIComponent(query)}&size=12`, { headers });
+      const data = res.ok ? await res.json() : {};
+      const all  = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
+
+      const products = all.map(p => ({
+        id:     p.id,
+        name:   p.name || p.description || 'Unknown',
+        price:  p.sellPrice ?? p.price ?? p.recurringPrice ?? p.unitPrice ?? 0,
+        type:   p.productType || p.type || 'product',
+        unit:   (() => {
+          const t = (p.productType || p.type || '').toLowerCase();
+          if (t === 'bundle') return 'month';
+          return (p.unit || p.term || '').toLowerCase();
+        })(),
+        vendor: p.vendorName || p.manufacturer || '',
+        sku:    p.sku || p.partNumber || '',
+      }));
+
+      return ok({ products, total: data?.total ?? products.length });
+    }
+
+        return err('Unknown action.', 400);
+
+  } catch (e) {
+    return err(e.message || 'Unexpected server error.');
+  }
 };
