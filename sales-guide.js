@@ -1054,12 +1054,14 @@ const ENGAGEMENT_SERVICES = {
     { service: 'Endpoint Detection & Response (EDR)', billing: 'monthly', optional: false },
     { service: 'Email Security & Anti-Phishing', billing: 'monthly', optional: false },
     { service: 'DNS Filtering & Web Protection', billing: 'monthly', optional: false },
+    { service: 'Backup & Disaster Recovery', billing: 'monthly', optional: false },
     { service: 'Compliance Management & Reporting', billing: 'monthly', optional: true },
   ],
   compliance: [
     { service: 'Compliance Management & Reporting', billing: 'monthly', optional: false },
     { service: 'Endpoint Detection & Response (EDR)', billing: 'monthly', optional: false },
     { service: 'Email Security & Anti-Phishing', billing: 'monthly', optional: false },
+    { service: 'Backup & Disaster Recovery', billing: 'monthly', optional: false },
     { service: 'Security Awareness Training', billing: 'annual', optional: true },
   ],
   voip_project: [
