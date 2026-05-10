@@ -313,6 +313,40 @@ exports.handler = async (event) => {
         ? keywords
         : (query || '').toLowerCase().split(/\s+/).filter(w => w.length > 2);
 
+      // Exclude services/labor/bundles — Quick Quote is hardware/product only.
+      // Services have recurring billing and are handled via the guided catalog flow.
+      const hardwareOnly = all.filter(p => {
+        const t = (p.productType || p.type || '').toLowerCase();
+        return t !== 'service' && t !== 'labor' && t !== 'bundle';
+      });
+
+      // Synonym expansion — common customer terms → catalog terms
+      // e.g. "dock" → also search "docking", "station", "hub"
+      const synonyms = {
+        dock:    ['dock', 'docking', 'station', 'hub', 'port'],
+        monitor: ['monitor', 'display', 'screen'],
+        laptop:  ['laptop', 'notebook', 'portable'],
+        phone:   ['phone', 'handset', 'voip', 'telephone'],
+        printer: ['printer', 'mfp', 'multifunction'],
+        keyboard:['keyboard', 'kbd'],
+        mouse:   ['mouse', 'pointer'],
+        headset: ['headset', 'headphone', 'earphone'],
+        cable:   ['cable', 'lead', 'connector'],
+        switch:  ['switch', 'swh'],
+        server:  ['server', 'srv'],
+      };
+
+      // Expand keywords with synonyms
+      const expandedKws = new Set(kws);
+      for (const kw of kws) {
+        for (const [base, syns] of Object.entries(synonyms)) {
+          if (kw.includes(base) || base.includes(kw)) {
+            syns.forEach(s => expandedKws.add(s));
+          }
+        }
+      }
+      const allKws = [...expandedKws];
+
       function scoreProduct(p) {
         const haystack = [
           p.name || '', p.description || '',
@@ -321,35 +355,53 @@ exports.handler = async (event) => {
         ].join(' ').toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
 
         let score = 0;
-        for (const kw of kws) {
+        for (const kw of allKws) {
           const k = kw.toLowerCase().replace(/[^a-z0-9]/g, '');
-          if (!k) continue;
-          if (haystack.includes(k)) score += k.length > 4 ? 2 : 1;
+          if (!k || k.length < 3) continue;
+          if (haystack.includes(k)) score += k.length > 5 ? 3 : k.length > 3 ? 2 : 1;
         }
         return score;
       }
 
-      const scored = all
+      const scored = hardwareOnly
         .map(p => ({ p, score: scoreProduct(p) }))
         .filter(({ score }) => score > 0)
         .sort((a, b) => b.score - a.score)
         .slice(0, 12);
 
       const products = scored.map(({ p }) => ({
-        id:     p.id,
-        name:   p.name || p.description || 'Unknown',
-        price:  p.sellPrice ?? p.price ?? p.recurringPrice ?? p.unitPrice ?? 0,
-        type:   p.productType || p.type || 'product',
-        unit:   (() => {
+        id:          p.id,
+        name:        p.name || p.description || 'Unknown',
+        price:       p.sellPrice ?? p.price ?? p.recurringPrice ?? p.unitPrice ?? 0,
+        type:        p.productType || p.type || 'product',
+        unit:        (() => {
           const t = (p.productType || p.type || '').toLowerCase();
           if (t === 'bundle') return 'month';
           return (p.unit || p.term || '').toLowerCase();
         })(),
-        vendor: p.vendorName || p.manufacturer || '',
-        sku:    p.sku || p.partNumber || '',
+        vendor:      p.vendorName || p.manufacturer || '',
+        sku:         p.sku || p.partNumber || '',
+        // Availability fields — surface whatever the API returns so the client
+        // can warn the rep. Field names vary; capture the most likely candidates.
+        listed:      p.listed ?? p.isListed ?? p.active ?? null,
+        availability:p.availability ?? p.availabilityStatus ?? null,
+        atp:         p.atp ?? p.availableToPromise ?? p.stockDate ?? null,
+        stock:       p.stockQuantity ?? p.stock ?? p.qty ?? null,
+        _rawAvail:   JSON.stringify({
+          listed:       p.listed,
+          isListed:     p.isListed,
+          active:       p.active,
+          availability: p.availability,
+          status:       p.status,
+          stockQty:     p.stockQuantity,
+          atp:          p.atp,
+        })
       }));
 
-      return ok({ products, catalogSize: all.length, matched: products.length });
+      // Debug: expose raw field names from first result so we know what the API actually returns
+      const debugFields = scored[0] ? Object.keys(scored[0].p) : [];
+
+      return ok({ products, catalogSize: all.length, matched: products.length, _debugFields: debugFields });
     }
 
         return err('Unknown action.', 400);
