@@ -394,19 +394,28 @@ exports.handler = async (event) => {
         const isRefurb      = nameLower.startsWith('refurb') || nameLower.startsWith('excess') || nameLower.includes('demo ');
         const isWorkstation = nameLower.includes('workstation') || /thinkpad p\d/.test(nameLower);
 
+        // Storage / drives — penalise unless request explicitly mentions storage
+        const isDrive = nameLower.includes('hard drive') || nameLower.includes('internal drive')
+          || nameLower.includes('hdd') || /sas/.test(nameLower);
+        // Small/portable monitors — penalise if request specifies a larger size
+        const wantsLargeMonitor = wantsMonitor && (requestLower.includes('27') || requestLower.includes('24') || requestLower.includes('32'));
+        const isSmallMonitor = wantsLargeMonitor && (nameLower.includes('13.') || nameLower.includes('15.') || nameLower.includes('portable'));
+
         if (isPhone)                                                  score -= 8;
         if (isAIO   && wantsMonitor)                                  score -= 6;
         if (isAIO   && wantsLaptop)                                   score -= 6;
         if (isCharger)                                                score -= 6;
+        if (isDrive && !requestLower.includes('drive') && !requestLower.includes('storage')) score -= 7;
+        if (isSmallMonitor)                                           score -= 5;
         if (isRefurb)                                                 score -= 4;
         if (isWorkstation && wantsLaptop && !requestLower.includes('workstation')) score -= 4;
 
         return score;
       }
 
-      // Score threshold — only return items that genuinely matched.
-      // A score of 3+ means at least one meaningful keyword hit (or brand match).
-      const MIN_SCORE = 3;
+      // Score threshold — require a meaningful match, not just a brand hit.
+      // Score 5+ = brand bonus + at least one keyword, or 2+ keyword matches.
+      const MIN_SCORE = 5;
 
       const scored = hardwareOnly
         .map(p => ({ p, score: scoreProduct(p) }))
