@@ -293,7 +293,36 @@ exports.handler = async (event) => {
       return ok({ quote: data });
     }
 
-    return err('Unknown action.', 400);
+    // ── search-products ─────────────────────────────────────
+    // Full-text catalog search for Quick Quote mode.
+    // Returns up to 12 matching products from the MSP catalog.
+    if (action === 'search-products') {
+      const { query } = body;
+      if (!query) return err('query required.', 400);
+
+      // Try query param first; fall back to size=100 + client filter if no query support
+      const res  = await fetch(`${BASE}/product?query=${encodeURIComponent(query)}&size=12`, { headers });
+      const data = res.ok ? await res.json() : {};
+      const all  = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
+
+      const products = all.map(p => ({
+        id:     p.id,
+        name:   p.name || p.description || 'Unknown',
+        price:  p.sellPrice ?? p.price ?? p.recurringPrice ?? p.unitPrice ?? 0,
+        type:   p.productType || p.type || 'product',
+        unit:   (() => {
+          const t = (p.productType || p.type || '').toLowerCase();
+          if (t === 'bundle') return 'month';
+          return (p.unit || p.term || '').toLowerCase();
+        })(),
+        vendor: p.vendorName || p.manufacturer || '',
+        sku:    p.sku || p.partNumber || '',
+      }));
+
+      return ok({ products, total: data?.total ?? products.length });
+    }
+
+        return err('Unknown action.', 400);
 
   } catch (e) {
     return err(e.message || 'Unexpected server error.');
