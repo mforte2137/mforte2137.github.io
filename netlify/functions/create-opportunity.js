@@ -385,20 +385,23 @@ exports.handler = async (event) => {
       function scoreProduct(p) {
         const nameLower = (p.name || '').toLowerCase();
         const mfr       = (p.manufacturer || '').toLowerCase();
-        const haystack  = [
+        const haystackRaw = [
           p.name || '', p.shortDescription || '', p.manufacturer || '', p.mpn || '', p.ean || ''
         ].join(' ').toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
+        // Also build a space-collapsed version so "top load" matches keyword "topload"
+        const haystackCompact = haystackRaw.replace(/ /g, '');
+        const haystack = haystackRaw;
 
         let score = 0;
 
         // Model number match — very high signal (+6 each)
         for (const kw of modelKws) {
-          if (haystack.includes(kw)) score += 6;
+          if (haystack.includes(kw) || haystackCompact.includes(kw)) score += 6;
         }
 
         // Brand match — reward products from a requested brand (+4)
         for (const bk of brandKws) {
-          if (mfr.includes(bk) || nameLower.startsWith(bk)) score += 4;
+          if (mfr.includes(bk) || nameLower.startsWith(bk) || nameLower.includes(bk)) score += 4;
         }
 
         // General category keywords — lower weight
@@ -406,19 +409,19 @@ exports.handler = async (event) => {
           if (modelKws.includes(kw) || brandKws.includes(kw)) continue;
           const k = kw.replace(/[^a-z0-9]/g, '');
           if (!k || k.length < 3) continue;
-          if (haystack.includes(k)) score += k.length > 5 ? 2 : 1;
+          if (haystack.includes(k) || haystackCompact.includes(k)) score += k.length > 5 ? 2 : 1;
         }
 
         // Off-brand penalty — only penalise when the product is in the same category
         // as the requested brand. Don't penalise accessories/bags from other brands
         // just because the rep also asked for a Jabra or Dell item.
         if (brandKws.length > 0) {
-          const fromRequestedBrand = brandKws.some(bk => mfr.includes(bk) || nameLower.startsWith(bk));
+          const fromRequestedBrand = brandKws.some(bk => mfr.includes(bk) || nameLower.includes(bk));
           if (!fromRequestedBrand) {
             // Only penalise if this product looks like it competes with the branded item
             // (i.e. it's also a laptop, phone, speaker, monitor — not an accessory/bag)
             const isAccessory = nameLower.includes('bag') || nameLower.includes('backpack')
-              || nameLower.includes('sleeve') || nameLower.includes('topload')
+              || nameLower.includes('sleeve') || nameLower.includes('topload') || haystackCompact.includes('topload')
               || nameLower.includes('briefcase') || nameLower.includes('cable')
               || nameLower.includes('charger') || nameLower.includes('adapter')
               || nameLower.includes('mouse') || nameLower.includes('keyboard');
@@ -490,8 +493,7 @@ exports.handler = async (event) => {
       // Debug: expose raw field names from first result so we know what the API actually returns
       const debugFields = scored[0] ? Object.keys(scored[0].p) : [];
 
-      // Debug: expose server-side kws and allKws to diagnose synonym expansion
-      return ok({ products, catalogSize: all.length, matched: products.length, _debugFields: debugFields, _serverKws: kws, _allKws: allKws });
+      return ok({ products, catalogSize: all.length, matched: products.length, _debugFields: debugFields });
     }
 
         return err('Unknown action.', 400);
