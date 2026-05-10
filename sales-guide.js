@@ -1137,15 +1137,27 @@ function itemIsRelevant(item, engLabel) {
 }
 
 // True if item should default to qty 1 — PS project fees, assessments,
-// bundles (qty handled internally), and non-monthly billing
+// bundles, and service-type items with non-monthly billing.
+// Hardware products (headsets, laptops, switches) are excluded even if
+// they have one-time billing — those belong in extras, not pre-selected.
 function isProjectFee(item) {
   const n = item.name.toLowerCase();
   const u = (item.unit || '').toLowerCase();
   const t = (item.type || '').toLowerCase();
-  return t === 'bundle'
-    || n.startsWith('professional services')
-    || n.includes('assessment')
-    || u === 'quarter' || u === 'quarterly'
+
+  if (t === 'bundle') return true;
+  if (n.startsWith('professional services') || n.includes('assessment')) return true;
+
+  // For products (hardware etc.), only treat as a project fee if the name
+  // indicates it's a service engagement — not a physical device
+  if (t === 'product') {
+    const isServiceProduct = n.includes('implementation') || n.includes('governance')
+      || n.includes('migration') || n.includes('deployment')
+      || n.includes('configuration') || n.includes('readiness');
+    if (!isServiceProduct) return false;
+  }
+
+  return u === 'quarter' || u === 'quarterly'
     || u === 'year'    || u === 'annual'
     || u === 'once'    || u === 'one-time' || u === 'onetime';
 }
