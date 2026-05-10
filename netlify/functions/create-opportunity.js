@@ -303,8 +303,8 @@ exports.handler = async (event) => {
       const { query, keywords } = body;
       if (!query && (!keywords || keywords.length === 0)) return err('query required.', 400);
 
-      // Fetch full catalog (up to 200 items)
-      const res  = await fetch(`${BASE}/product?size=200`, { headers });
+      // Fetch full catalog — 500 to get past potential 200-item page limit
+      const res  = await fetch(`${BASE}/product?size=500`, { headers });
       const data = res.ok ? await res.json() : {};
       const all  = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
 
@@ -313,11 +313,13 @@ exports.handler = async (event) => {
         ? keywords
         : (query || '').toLowerCase().split(/\s+/).filter(w => w.length > 2);
 
-      // Exclude services/labor/bundles — Quick Quote is hardware/product only.
-      // Services have recurring billing and are handled via the guided catalog flow.
+      // Exclude services, labor, bundles, and unlisted items.
+      // listed:false means the rep has hidden it from their catalog — don't quote it.
       const hardwareOnly = all.filter(p => {
         const t = (p.productType || p.type || '').toLowerCase();
-        return t !== 'service' && t !== 'labor' && t !== 'bundle';
+        if (t === 'service' || t === 'labor' || t === 'bundle') return false;
+        if (p.listed === false) return false;  // confirmed field name from API
+        return true;
       });
 
       // Synonym expansion — common customer terms → catalog terms
@@ -347,11 +349,19 @@ exports.handler = async (event) => {
       }
       const allKws = [...expandedKws];
 
+      // Categories that indicate a phone/AIO/workstation — penalised when request is laptop/monitor
+      const requestLower = (query || '').toLowerCase();
+      const wantsLaptop  = requestLower.includes('laptop') || requestLower.includes('notebook');
+      const wantsMonitor = requestLower.includes('monitor') || requestLower.includes('display') || requestLower.includes('screen');
+
       function scoreProduct(p) {
+        // Use confirmed API field names: manufacturer, mpn, shortDescription
         const haystack = [
-          p.name || '', p.description || '',
-          p.vendorName || '', p.manufacturer || '',
-          p.sku || '', p.partNumber || ''
+          p.name            || '',
+          p.shortDescription|| '',
+          p.manufacturer    || '',
+          p.mpn             || '',
+          p.ean             || ''
         ].join(' ').toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
 
         let score = 0;
@@ -360,6 +370,15 @@ exports.handler = async (event) => {
           if (!k || k.length < 3) continue;
           if (haystack.includes(k)) score += k.length > 5 ? 3 : k.length > 3 ? 2 : 1;
         }
+
+        // Penalise clear category mismatches to push irrelevant items below the fold
+        const nameLower = (p.name || '').toLowerCase();
+        if (wantsLaptop && (nameLower.includes('voip') || nameLower.includes('sip-') || nameLower.includes(' phone'))) score -= 6;
+        if (wantsMonitor && nameLower.includes('all-in-one')) score -= 4;
+        if (wantsMonitor && (nameLower.includes('voip') || nameLower.includes('sip-') || nameLower.includes(' phone'))) score -= 6;
+        // Penalise workstations when user just wants a regular laptop
+        if (wantsLaptop && (nameLower.includes('workstation') || nameLower.includes('thinkpad p')) && !requestLower.includes('workstation')) score -= 3;
+
         return score;
       }
 
@@ -379,23 +398,10 @@ exports.handler = async (event) => {
           if (t === 'bundle') return 'month';
           return (p.unit || p.term || '').toLowerCase();
         })(),
-        vendor:      p.vendorName || p.manufacturer || '',
-        sku:         p.sku || p.partNumber || '',
-        // Availability fields — surface whatever the API returns so the client
-        // can warn the rep. Field names vary; capture the most likely candidates.
-        listed:      p.listed ?? p.isListed ?? p.active ?? null,
-        availability:p.availability ?? p.availabilityStatus ?? null,
-        atp:         p.atp ?? p.availableToPromise ?? p.stockDate ?? null,
-        stock:       p.stockQuantity ?? p.stock ?? p.qty ?? null,
-        _rawAvail:   JSON.stringify({
-          listed:       p.listed,
-          isListed:     p.isListed,
-          active:       p.active,
-          availability: p.availability,
-          status:       p.status,
-          stockQty:     p.stockQuantity,
-          atp:          p.atp,
-        })
+        vendor:      p.manufacturer || '',
+        sku:         p.mpn || p.ean || '',
+        listed:      p.listed ?? null,  // confirmed API field — false = hidden from catalog
+        _rawAvail:   `listed:${p.listed}`
       }));
 
       // Debug: expose raw field names from first result so we know what the API actually returns
