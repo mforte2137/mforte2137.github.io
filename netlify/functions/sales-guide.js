@@ -157,11 +157,11 @@ const QUICK_QUOTE_TOOL = {
     properties: {
       cover_note: {
         type: 'string',
-        description: 'One short paragraph (3-5 sentences) in plain business language. Acknowledge what the customer asked for, confirm what's being quoted, and end with one sentence about the value or outcome — e.g. reducing setup friction, standardising equipment, supporting a new team member. No jargon, no bullet points. Warm and professional.'
+        description: 'One short paragraph (3-5 sentences). Acknowledge what the customer asked for, confirm what is being quoted, and close with one sentence on the value or outcome — e.g. equipping a new team member, standardising the office setup. No bullet points, no jargon. Warm and professional.'
       },
       unmatched_items: {
         type: 'array',
-        description: 'Any items from the customer request that are clearly missing from the search results — things we couldn't find in the catalog. Array of plain-language descriptions.',
+        description: 'Items clearly requested but not found in catalog. Plain language descriptions.',
         items: { type: 'string' }
       }
     },
@@ -256,21 +256,14 @@ Translate this into buyer language and generate widget briefs for a compelling p
 
   // ── ACTION: quick-quote ──────────────────────────────────
   if (action === 'quick-quote') {
-    const { request, matchedProducts } = body;
+    const { request } = body;
     if (!request) return err('Product request required.', 400);
-
-    const productList = Array.isArray(matchedProducts) && matchedProducts.length > 0
-      ? matchedProducts.map(p => `- ${p.name}${p.qty > 1 ? ` (x${p.qty})` : ''}`).join('\n')
-      : '(products not yet confirmed)';
 
     const userMsg = `A customer has made the following product request:
 
 "${request}"
 
-The following items were found in the MSP's catalog and are being quoted:
-${productList}
-
-Write a short cover note for this quote.`;
+Write a short, professional cover note for the quote.`;
 
     try {
       const res = await fetch(ANTHROPIC_URL, {
@@ -279,7 +272,7 @@ Write a short cover note for this quote.`;
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 400,
-          system: 'You are a professional MSP sales assistant. Write clear, warm, concise cover notes for product quotes. Always write in plain business English — no technical jargon, no bullet points. One paragraph only.',
+          system: 'You are a professional MSP sales assistant. Write clear, warm, concise cover notes for product quotes. Plain business English only — no technical jargon, no bullet points, one paragraph. 3-5 sentences maximum.',
           tools: [QUICK_QUOTE_TOOL],
           tool_choice: { type: 'tool', name: 'submit_quick_quote' },
           messages: [{ role: 'user', content: userMsg }]
