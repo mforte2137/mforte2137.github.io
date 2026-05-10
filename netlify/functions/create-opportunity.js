@@ -429,14 +429,24 @@ exports.handler = async (event) => {
         return score;
       }
 
-      // Adaptive minimum score:
-      // - Brand or model in request → require 5 (brand+category or model hit)
-      // - Category-only request (no brand, no model) → require 2 (any meaningful keyword match)
-      const MIN_SCORE = (brandKws.length === 0 && modelKws.length === 0) ? 2 : 5;
+      // Per-product adaptive threshold:
+      // A product that matched a brand or model keyword must score 5+ (strong match).
+      // A product that only matched generic category keywords needs just 2+ (weak match ok).
+      // This handles mixed requests like "Jabra speaker and a laptop bag" — the bag
+      // has no brand/model so it qualifies at 2, while the Jabra needs a strong match at 5.
+      function meetsThreshold(p, score) {
+        if (score <= 0) return false;
+        const nameLower = (p.name || '').toLowerCase();
+        const mfr       = (p.manufacturer || '').toLowerCase();
+        const hay       = (nameLower + ' ' + mfr).replace(/[^a-z0-9 ]/g, ' ');
+        const hitsBrand = brandKws.some(bk => hay.includes(bk));
+        const hitsModel = modelKws.some(mk => hay.includes(mk));
+        return (hitsBrand || hitsModel) ? score >= 5 : score >= 2;
+      }
 
       const scored = hardwareOnly
         .map(p => ({ p, score: scoreProduct(p) }))
-        .filter(({ score }) => score >= MIN_SCORE)
+        .filter(({ p, score }) => meetsThreshold(p, score))
         .sort((a, b) => b.score - a.score)
         .slice(0, 12);
 
