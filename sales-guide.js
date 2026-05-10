@@ -783,16 +783,7 @@ async function doQQCatalogSearch() {
       integrationKey: intKey
     });
     console.log('[Quick Quote] catalog response:', catRes);
-    if (catRes._debugFields) {
-      console.log('[Quick Quote] API product fields available:', catRes._debugFields);
-      // Log availability details of first result to understand field names
-      if (catRes.products?.[0]) {
-        const p = catRes.products[0];
-        console.log('[Quick Quote] availability sample:', {
-          listed: p.listed, availability: p.availability, atp: p.atp, stock: p.stock, _rawAvail: p._rawAvail
-        });
-      }
-    }
+    console.log('[Quick Quote] catalog size:', catRes.catalogSize, '— matched:', catRes.matched);
 
     const products = catRes.products || [];
 
@@ -840,15 +831,10 @@ async function doQQCatalogSearch() {
 // Until we know the exact field names the API returns, we surface _rawAvail in console
 // and show a neutral "Check availability" badge on items where listed===false.
 function qqAvailBadge(p) {
-  if (p.listed === false || p.listed === 0) {
-    return '<span class="opp-svc-badge" style="background:rgba(220,38,38,.1);color:#dc2626;">Not listed</span>';
-  }
-  if (p.atp && typeof p.atp === 'string' && p.atp.length > 0) {
-    // ATP date present — item is on back-order
-    return `<span class="opp-svc-badge" style="background:#fffbeb;color:#92400e;">ATP: ${esc(p.atp)}</span>`;
-  }
-  if (p.stock !== null && p.stock !== undefined && p.stock === 0) {
-    return '<span class="opp-svc-badge" style="background:#fffbeb;color:#92400e;">Check stock</span>';
+  // listed:false means the rep has hidden this product — flag it clearly.
+  // This is the only availability signal the Salesbuildr API returns on products.
+  if (p.listed === false) {
+    return '<span class="opp-svc-badge" style="background:rgba(220,38,38,.1);color:#dc2626;">Not listed — verify before quoting</span>';
   }
   return '';
 }
