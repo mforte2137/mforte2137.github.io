@@ -179,9 +179,9 @@ function activateMode(mode) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-$('discBackBtn').addEventListener('click', () => { showSection('mode-view'); currentMode = null; });
-$('execBackBtn').addEventListener('click', () => { showSection('mode-view'); currentMode = null; });
-$('qqBackBtn').addEventListener('click', () => { showSection('mode-view'); currentMode = null; });
+$('discBackBtn')?.addEventListener('click', () => { showSection('mode-view'); currentMode = null; });
+$('execBackBtn')?.addEventListener('click', () => { showSection('mode-view'); currentMode = null; });
+$('qqBackBtn')?.addEventListener('click', () => { showSection('mode-view'); currentMode = null; });
 
 // ── Chips (multi-select, or single-select with data-single) ─
 document.querySelectorAll('.chips-wrap').forEach(wrap => {
@@ -211,7 +211,7 @@ $('exec-spec')?.addEventListener('input', () => {
 });
 
 // ── Discovery generate ────────────────────────────────────
-$('discGenerateBtn').addEventListener('click', async () => {
+$('discGenerateBtn')?.addEventListener('click', async () => {
   clearError('discError');
 
   const answers = {
@@ -252,7 +252,7 @@ $('discGenerateBtn').addEventListener('click', async () => {
 });
 
 // ── Execution generate ────────────────────────────────────
-$('execGenerateBtn').addEventListener('click', async () => {
+$('execGenerateBtn')?.addEventListener('click', async () => {
   clearError('execError');
   const spec    = $('exec-spec')?.value.trim() || '';
   const context = $('exec-context')?.value.trim() || '';
@@ -372,7 +372,7 @@ function renderResults(mode, title, rec) {
 const WIDGET_IDS    = ['w1','w2','w3','w4','w5'];
 const WIDGET_LABELS = { w1:'W1 · Their Situation', w2:'W2 · Why Now', w3:'W3 · Why Trust Us', w4:'W4 · What They Get', w5:'W5 · The Investment' };
 
-$('genWidgetsBtn').addEventListener('click', async () => {
+$('genWidgetsBtn')?.addEventListener('click', async () => {
   if (!currentRec?.widget_briefs) return;
   $('genWidgetsBtn').disabled = true;
   $('widgetsWorking').classList.remove('hidden');
@@ -436,7 +436,7 @@ document.querySelectorAll('.out-tab').forEach(btn => {
 });
 
 // Copy widgets
-$('copyWidgetsBtn').addEventListener('click', async () => {
+$('copyWidgetsBtn')?.addEventListener('click', async () => {
   const html = $('htmlCode').value;
   try { await navigator.clipboard.writeText(html); }
   catch { const ta=document.createElement('textarea'); ta.value=html; ta.style.cssText='position:fixed;opacity:0;'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
@@ -446,13 +446,13 @@ $('copyWidgetsBtn').addEventListener('click', async () => {
 });
 
 // Open scope builder with pre-selected preset
-$('openScopeBtn').addEventListener('click', () => {
+$('openScopeBtn')?.addEventListener('click', () => {
   const preset = currentRec ? (SCOPE_PRESET_MAP[currentRec.engagement_type] || '') : '';
   window.open(`project-scope.html${preset ? '?preset='+preset+'&from=guide' : ''}`, '_blank');
 });
 
 // Open ROI builder with pre-filled context
-$('openRoiBtn').addEventListener('click', () => {
+$('openRoiBtn')?.addEventListener('click', () => {
   const params = new URLSearchParams();
   if (currentAnswers.industry)   params.set('industry',   currentAnswers.industry.split('/')[0].trim().toLowerCase());
   if (currentAnswers.staffCount) params.set('staff',      currentAnswers.staffCount);
@@ -472,7 +472,7 @@ $('openRoiBtn').addEventListener('click', () => {
 });
 
 // Start over
-$('startOverBtn').addEventListener('click', () => {
+$('startOverBtn')?.addEventListener('click', () => {
   currentRec = null; generatedWidgets = [];
   $('widgetOutput').classList.add('hidden');
   showSection('mode-view');
@@ -490,15 +490,15 @@ function initCredentials() {
 function updatePushBtn() {
   $('sbPushBtn').disabled = !($('sbApiKey').value.trim() && $('sbIntKey').value.trim());
 }
-$('sbToggle').addEventListener('click', () => {
+$('sbToggle')?.addEventListener('click', () => {
   const open = !$('sbBody').hidden;
   $('sbBody').hidden = open;
   $('sbArrow').classList.toggle('open', !open);
 });
-$('sbApiKey').addEventListener('input', updatePushBtn);
-$('sbIntKey').addEventListener('input', updatePushBtn);
+$('sbApiKey')?.addEventListener('input', updatePushBtn);
+$('sbIntKey')?.addEventListener('input', updatePushBtn);
 
-$('sbPushBtn').addEventListener('click', async () => {
+$('sbPushBtn')?.addEventListener('click', async () => {
   const apiKey = $('sbApiKey').value.trim(), intKey = $('sbIntKey').value.trim();
   if (!apiKey || !intKey) return;
   if ($('sbRemember').checked) { localStorage.setItem(LS_API_KEY,apiKey); localStorage.setItem(LS_INT_KEY,intKey); }
@@ -532,7 +532,7 @@ $('sbPushBtn').addEventListener('click', async () => {
 });
 
 // ── Save & Resume ─────────────────────────────────────────
-$('saveSessionBtn').addEventListener('click', () => {
+$('saveSessionBtn')?.addEventListener('click', () => {
   const company = $('q-company')?.value.trim() || 'Unnamed customer';
   const session = {
     id:        Date.now().toString(36),
@@ -568,13 +568,13 @@ function loadResumeBanner() {
   $('resumeSubtitle').textContent = `Discovery session — saved ${ago}`;
   $('resumeBanner').classList.remove('hidden');
 
-  $('resumeBtn').addEventListener('click', () => {
+  $('resumeBtn')?.addEventListener('click', () => {
     activateMode('discovery');
     // Re-apply saved answers
     if (latest.answers) restoreDiscoveryAnswers(latest.answers);
     $('resumeBanner').classList.add('hidden');
   });
-  $('dismissBtn').addEventListener('click', () => {
+  $('dismissBtn')?.addEventListener('click', () => {
     $('resumeBanner').classList.add('hidden');
     const sessions = JSON.parse(localStorage.getItem(LS_SESSIONS) || '[]');
     sessions.shift();
@@ -619,16 +619,16 @@ const specFileInput   = $('specFile');
 const specFileStatus  = $('specFileStatus');
 const specUploadInner = $('specUploadInner');
 
-specUploadZone.addEventListener('click', e => {
+specUploadZone?.addEventListener('click', e => {
   if (!e.target.closest('label')) specFileInput.click();
 });
-specUploadZone.addEventListener('dragover', e => { e.preventDefault(); specUploadZone.classList.add('drag-over'); });
+specUploadZone?.addEventListener('dragover', e => { e.preventDefault(); specUploadZone.classList.add('drag-over'); });
 ['dragleave','drop'].forEach(t => specUploadZone.addEventListener(t, e => { e.preventDefault(); specUploadZone.classList.remove('drag-over'); }));
 specUploadZone.addEventListener('drop', e => {
   const f = e.dataTransfer.files[0];
   if (f) parseSpecFile(f);
 });
-specFileInput.addEventListener('change', () => {
+specFileInput?.addEventListener('change', () => {
   if (specFileInput.files[0]) parseSpecFile(specFileInput.files[0]);
   specFileInput.value = '';
 });
