@@ -784,6 +784,9 @@ async function doQQCatalogSearch() {
     });
     console.log('[Quick Quote] catalog response:', catRes);
     console.log('[Quick Quote] catalog size:', catRes.catalogSize, '— matched:', catRes.matched);
+    if (catRes.products?.length) {
+      console.table(catRes.products.map(p => ({ name: p.name.slice(0,40), score: p._score, vendor: p.vendor, listed: p.listed })));
+    }
 
     const products = catRes.products || [];
 
@@ -861,7 +864,24 @@ function renderQQProducts(products, request) {
     return;
   }
 
-  $('qqMatchSub').textContent = `${products.length} product${products.length !== 1 ? 's' : ''} found — confirm quantities`;
+  $('qqMatchSub').textContent = `${products.length} product${products.length !== 1 ? 's' : ''} found — tick what you want to quote`;
+
+  // Select-all / clear-all convenience controls
+  const controls = document.createElement('div');
+  controls.style.cssText = 'display:flex;gap:10px;margin-bottom:8px;';
+  controls.innerHTML = \`
+    <button type="button" class="btn-save" id="qqSelectAll" style="font-size:12px;padding:5px 12px;">✓ Select all</button>
+    <button type="button" class="btn-save" id="qqClearAll"  style="font-size:12px;padding:5px 12px;">✕ Clear all</button>
+  \`;
+  list.parentElement.insertBefore(controls, list);
+  document.getElementById('qqSelectAll')?.addEventListener('click', () => {
+    list.querySelectorAll('.opp-svc-check').forEach(c => c.checked = true);
+    updateQQTotal();
+  });
+  document.getElementById('qqClearAll')?.addEventListener('click', () => {
+    list.querySelectorAll('.opp-svc-check').forEach(c => c.checked = false);
+    updateQQTotal();
+  });
 
   list.innerHTML = products.map(p => {
     const uLabel = unitLabel(p.unit);
@@ -870,7 +890,7 @@ function renderQQProducts(products, request) {
       <label class="opp-svc-item is-matched">
         <input type="checkbox" class="opp-svc-check"
           data-id="${esc(p.id)}" data-name="${esc(p.name)}"
-          data-price="${p.price || 0}" data-unit="${esc(uLabel)}" checked>
+          data-price="${p.price || 0}" data-unit="${esc(uLabel)}">
         <div class="opp-svc-info">
           <span class="opp-svc-name">${esc(p.name)}</span>
           <div class="opp-svc-meta">
