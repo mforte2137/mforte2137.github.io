@@ -52,22 +52,31 @@ function normaliseRec(rec) {
       .trim();
   }
 
+  // Strip trailing boolean leak from hardware_needed field
+  function stripTrailingBool(s) {
+    return s.replace(/\s*(false|true)\s*$/i, '').trim();
+  }
+
   // Extract solution bullets from whatever format Haiku returns.
-  // Handles: XML-wrapped strings, plain arrays, mixed content.
+  // Handles: XML-wrapped strings, newline-separated strings, plain arrays.
   function extractBullets(v) {
-    // Flatten to a single string to search for XML tags
     const flat = Array.isArray(v) ? v.join('\n') : String(v || '');
 
-    // Try extracting <solution_bullet> XML tags from anywhere in the content
+    // Try <solution_bullet> XML tags first
     const xmlMatches = flat.match(/<solution_bullet>([\s\S]*?)<\/solution_bullet>/gi);
     if (xmlMatches && xmlMatches.length > 0) {
-      return xmlMatches.map(m => cleanStr(m))
+      return xmlMatches.map(m => stripTrailingBool(cleanStr(m)))
                        .filter(s => s && s !== 'false' && s !== 'true' && s.length > 4);
     }
 
-    // No XML tags — use the array items directly
+    // Try splitting on newlines (Haiku sometimes returns \n-separated bullets)
+    const lines = flat.split(/\n+/).map(l => stripTrailingBool(cleanStr(l)))
+                      .filter(s => s && s !== 'false' && s !== 'true' && s.length > 10);
+    if (lines.length > 1) return lines;
+
+    // Fall back to array items directly
     const arr = Array.isArray(v) ? v : (flat.trim() ? [flat] : []);
-    return arr.map(item => cleanStr(String(item)))
+    return arr.map(item => stripTrailingBool(cleanStr(String(item))))
               .filter(s => s && s !== 'false' && s !== 'true' && s.length > 4);
   }
 
