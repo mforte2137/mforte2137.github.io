@@ -294,18 +294,48 @@ exports.handler = async (event) => {
     }
 
     // ── search-products ─────────────────────────────────────
-    // Full-text catalog search for Quick Quote mode.
-    // Returns up to 12 matching products from the MSP catalog.
+    // Catalog search for Quick Quote mode.
+    // Fetches the full catalog and scores products client-side
+    // against keywords extracted from the plain-language request.
+    // The Salesbuildr ?query= param is unreliable for PSA items,
+    // so we pull everything and rank by keyword match score.
     if (action === 'search-products') {
-      const { query } = body;
-      if (!query) return err('query required.', 400);
+      const { query, keywords } = body;
+      if (!query && (!keywords || keywords.length === 0)) return err('query required.', 400);
 
-      // Try query param first; fall back to size=100 + client filter if no query support
-      const res  = await fetch(`${BASE}/product?query=${encodeURIComponent(query)}&size=12`, { headers });
+      // Fetch full catalog (up to 200 items)
+      const res  = await fetch(`${BASE}/product?size=200`, { headers });
       const data = res.ok ? await res.json() : {};
       const all  = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
 
-      const products = all.map(p => ({
+      // Score every product against the keyword list sent from the client
+      const kws = Array.isArray(keywords) && keywords.length > 0
+        ? keywords
+        : (query || '').toLowerCase().split(/\s+/).filter(w => w.length > 2);
+
+      function scoreProduct(p) {
+        const haystack = [
+          p.name || '', p.description || '',
+          p.vendorName || '', p.manufacturer || '',
+          p.sku || '', p.partNumber || ''
+        ].join(' ').toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
+
+        let score = 0;
+        for (const kw of kws) {
+          const k = kw.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (!k) continue;
+          if (haystack.includes(k)) score += k.length > 4 ? 2 : 1;
+        }
+        return score;
+      }
+
+      const scored = all
+        .map(p => ({ p, score: scoreProduct(p) }))
+        .filter(({ score }) => score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 12);
+
+      const products = scored.map(({ p }) => ({
         id:     p.id,
         name:   p.name || p.description || 'Unknown',
         price:  p.sellPrice ?? p.price ?? p.recurringPrice ?? p.unitPrice ?? 0,
@@ -319,7 +349,7 @@ exports.handler = async (event) => {
         sku:    p.sku || p.partNumber || '',
       }));
 
-      return ok({ products, total: data?.total ?? products.length });
+      return ok({ products, catalogSize: all.length, matched: products.length });
     }
 
         return err('Unknown action.', 400);
