@@ -339,9 +339,8 @@ exports.handler = async (event) => {
         switch:   ['switch', 'swh'],
         server:   ['server', 'srv'],
         // Carry cases — reps say "bag", products say "backpack", "briefcase", "topload", "sleeve"
-        bag:      ['bag', 'backpack', 'briefcase', 'topload', 'sleeve', 'carry', 'case', 'satchel'],
-        backpack: ['bag', 'backpack', 'briefcase', 'topload', 'sleeve', 'carry', 'case', 'satchel'],
-        case:     ['bag', 'backpack', 'briefcase', 'topload', 'sleeve', 'carry', 'case', 'satchel'],
+        bag:      ['bag', 'backpack', 'briefcase', 'topload', 'sleeve', 'satchel', 'tote'],
+        backpack: ['bag', 'backpack', 'briefcase', 'topload', 'sleeve', 'satchel', 'tote'],
       };
 
       // Expand keywords with synonyms
@@ -369,7 +368,13 @@ exports.handler = async (event) => {
       const wantsHp       = requestLower.includes('hp') || requestLower.includes('elitebook') || requestLower.includes('probook');
 
       // Detect model numbers — high-signal tokens like "510", "p7", "t54w", "g5"
-      const modelKws = allKws.filter(k => /[0-9]/.test(k));
+      // Model keywords: tokens with digits that look like model numbers (e.g. "510", "t54w", "g5")
+      // Exclude pure storage/RAM sizes like "512", "256", "16gb" — these match too many products
+      const modelKws = allKws.filter(k => {
+        if (/^\d+$/.test(k) && k.length <= 4) return false;  // pure number like "510", "512" — ambiguous
+        if (/^\d+(gb|tb|mb)$/i.test(k)) return false;         // storage size like "512gb", "16gb"
+        return /[0-9]/.test(k);                                 // alphanumeric model like "t54w", "p7", "g5"
+      });
 
       // Detect brand keywords from the request
       const knownBrands = ['dell','lenovo','hp','jabra','yealink','snom','poly','cisco',
@@ -404,10 +409,21 @@ exports.handler = async (event) => {
           if (haystack.includes(k)) score += k.length > 5 ? 2 : 1;
         }
 
-        // Off-brand penalty — specific brands requested but this item is from another brand
+        // Off-brand penalty — only penalise when the product is in the same category
+        // as the requested brand. Don't penalise accessories/bags from other brands
+        // just because the rep also asked for a Jabra or Dell item.
         if (brandKws.length > 0) {
           const fromRequestedBrand = brandKws.some(bk => mfr.includes(bk) || nameLower.startsWith(bk));
-          if (!fromRequestedBrand) score -= 3;
+          if (!fromRequestedBrand) {
+            // Only penalise if this product looks like it competes with the branded item
+            // (i.e. it's also a laptop, phone, speaker, monitor — not an accessory/bag)
+            const isAccessory = nameLower.includes('bag') || nameLower.includes('backpack')
+              || nameLower.includes('sleeve') || nameLower.includes('topload')
+              || nameLower.includes('briefcase') || nameLower.includes('cable')
+              || nameLower.includes('charger') || nameLower.includes('adapter')
+              || nameLower.includes('mouse') || nameLower.includes('keyboard');
+            if (!isAccessory) score -= 3;
+          }
         }
 
         // Category mismatch penalties
