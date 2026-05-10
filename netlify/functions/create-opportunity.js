@@ -349,13 +349,18 @@ exports.handler = async (event) => {
       }
       const allKws = [...expandedKws];
 
-      // Categories that indicate a phone/AIO/workstation — penalised when request is laptop/monitor
       const requestLower = (query || '').toLowerCase();
-      const wantsLaptop  = requestLower.includes('laptop') || requestLower.includes('notebook');
-      const wantsMonitor = requestLower.includes('monitor') || requestLower.includes('display') || requestLower.includes('screen');
+
+      // Detect what broad categories the request is about
+      const wantsLaptop   = requestLower.includes('laptop') || requestLower.includes('notebook');
+      const wantsMonitor  = requestLower.includes('monitor') || requestLower.includes('display') || requestLower.includes('screen');
+      const wantsDock     = requestLower.includes('dock') || requestLower.includes('docking') || requestLower.includes('station');
+      const wantsDell     = requestLower.includes('dell');
+      const wantsLenovo   = requestLower.includes('lenovo');
+      const wantsHp       = requestLower.includes('hp') || requestLower.includes('elitebook') || requestLower.includes('probook');
 
       function scoreProduct(p) {
-        // Use confirmed API field names: manufacturer, mpn, shortDescription
+        const nameLower = (p.name || '').toLowerCase();
         const haystack = [
           p.name            || '',
           p.shortDescription|| '',
@@ -365,30 +370,51 @@ exports.handler = async (event) => {
         ].join(' ').toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
 
         let score = 0;
+
+        // Keyword match scoring
         for (const kw of allKws) {
           const k = kw.toLowerCase().replace(/[^a-z0-9]/g, '');
           if (!k || k.length < 3) continue;
           if (haystack.includes(k)) score += k.length > 5 ? 3 : k.length > 3 ? 2 : 1;
         }
 
-        // Penalise clear category mismatches to push irrelevant items below the fold
-        const nameLower = (p.name || '').toLowerCase();
-        if (wantsLaptop && (nameLower.includes('voip') || nameLower.includes('sip-') || nameLower.includes(' phone'))) score -= 6;
-        if (wantsMonitor && nameLower.includes('all-in-one')) score -= 4;
-        if (wantsMonitor && (nameLower.includes('voip') || nameLower.includes('sip-') || nameLower.includes(' phone'))) score -= 6;
-        // Penalise workstations when user just wants a regular laptop
-        if (wantsLaptop && (nameLower.includes('workstation') || nameLower.includes('thinkpad p')) && !requestLower.includes('workstation')) score -= 3;
+        // Brand bonus — if a specific brand was requested, reward exact manufacturer match
+        const mfr = (p.manufacturer || '').toLowerCase();
+        if (wantsDell   && mfr.includes('dell'))   score += 4;
+        if (wantsLenovo && mfr.includes('lenovo')) score += 4;
+        if (wantsHp     && (mfr.includes('hp') || mfr.includes('hewlett'))) score += 4;
+
+        // Penalise off-brand when a specific brand was requested
+        if (wantsDell && !mfr.includes('dell')   && score > 0) score -= 3;
+
+        // Hard penalise category mismatches
+        const isPhone       = nameLower.includes('voip') || nameLower.includes('sip-') || /phone/.test(nameLower) || nameLower.includes('handset');
+        const isAIO         = nameLower.includes('all-in-one') || nameLower.includes('neo 50a') || nameLower.includes('aio');
+        const isCharger     = nameLower.includes('charger') || nameLower.includes('wall charger') || nameLower.includes('power adapter');
+        const isRefurb      = nameLower.startsWith('refurb') || nameLower.startsWith('excess') || nameLower.includes('demo ');
+        const isWorkstation = nameLower.includes('workstation') || /thinkpad p\d/.test(nameLower);
+
+        if (isPhone)                                                  score -= 8;
+        if (isAIO   && wantsMonitor)                                  score -= 6;
+        if (isAIO   && wantsLaptop)                                   score -= 6;
+        if (isCharger)                                                score -= 6;
+        if (isRefurb)                                                 score -= 4;
+        if (isWorkstation && wantsLaptop && !requestLower.includes('workstation')) score -= 4;
 
         return score;
       }
 
+      // Score threshold — only return items that genuinely matched.
+      // A score of 3+ means at least one meaningful keyword hit (or brand match).
+      const MIN_SCORE = 3;
+
       const scored = hardwareOnly
         .map(p => ({ p, score: scoreProduct(p) }))
-        .filter(({ score }) => score > 0)
+        .filter(({ score }) => score >= MIN_SCORE)
         .sort((a, b) => b.score - a.score)
         .slice(0, 12);
 
-      const products = scored.map(({ p }) => ({
+      const products = scored.map(({ p, score }) => ({
         id:          p.id,
         name:        p.name || p.description || 'Unknown',
         price:       p.sellPrice ?? p.price ?? p.recurringPrice ?? p.unitPrice ?? 0,
@@ -401,7 +427,8 @@ exports.handler = async (event) => {
         vendor:      p.manufacturer || '',
         sku:         p.mpn || p.ean || '',
         listed:      p.listed ?? null,  // confirmed API field — false = hidden from catalog
-        _rawAvail:   `listed:${p.listed}`
+        _rawAvail:   `listed:${p.listed}`,
+        _score:      score
       }));
 
       // Debug: expose raw field names from first result so we know what the API actually returns
