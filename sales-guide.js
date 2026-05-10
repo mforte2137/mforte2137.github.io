@@ -734,14 +734,20 @@ document.querySelectorAll('.mode-card[data-mode="quickquote"]').forEach(btn => {
 // Splits the request into meaningful words, filters stop words
 // and very short tokens, returns unique lowercased keywords.
 function extractKeywords(request) {
-  // Only strip pure grammar words — keep product-relevant terms like "monitor", "dock", "inch"
   const stopWords = new Set([
     'i','a','an','the','and','or','for','with','have','please','also',
     'some','would','just','can','us','our','their','my','this','that',
-    'like','good','great','any','brand','need','want','get'
+    'like','good','great','any','brand','need','want','get',
+    // Number words — quantity hints, not product terms
+    'one','two','three','four','five','six','seven','eight','nine','ten',
+    'eleven','twelve','fifteen','twenty','thirty'
   ]);
-  // Also extract size tokens e.g. "27inch", "512gb", "16gb" without spaces
-  const normalized = request.toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
+  // Collapse "512 gb" → "512gb", "27 inch" → "27inch", "16 gb" → "16gb" before splitting
+  // so spaced specs match the same way as joined ones
+  const collapsed = request.toLowerCase()
+    .replace(/(\d+)\s*(gb|tb|mb|ghz|mhz|inch|in)/g, '$1$2')
+    .replace(/(\d+)\s*"/g, '$1inch');
+  const normalized = collapsed.replace(/[^a-z0-9 ]/g, ' ');
   return [...new Set(
     normalized.split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w))
   )];
