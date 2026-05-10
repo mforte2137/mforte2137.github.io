@@ -734,17 +734,16 @@ document.querySelectorAll('.mode-card[data-mode="quickquote"]').forEach(btn => {
 // Splits the request into meaningful words, filters stop words
 // and very short tokens, returns unique lowercased keywords.
 function extractKeywords(request) {
+  // Only strip pure grammar words — keep product-relevant terms like "monitor", "dock", "inch"
   const stopWords = new Set([
-    'i','a','an','the','and','or','for','with','need','want','get',
-    'some','any','brand','have','please','also','one','two','three',
-    'four','five','six','seven','eight','ten','new','good','great',
-    'like','would','just','can','us','our','their','my','this','that'
+    'i','a','an','the','and','or','for','with','have','please','also',
+    'some','would','just','can','us','our','their','my','this','that',
+    'like','good','great','any','brand','need','want','get'
   ]);
+  // Also extract size tokens e.g. "27inch", "512gb", "16gb" without spaces
+  const normalized = request.toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
   return [...new Set(
-    request.toLowerCase()
-      .replace(/[^a-z0-9 ]/g, ' ')
-      .split(/\s+/)
-      .filter(w => w.length > 2 && !stopWords.has(w))
+    normalized.split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w))
   )];
 }
 
@@ -784,6 +783,16 @@ async function doQQCatalogSearch() {
       integrationKey: intKey
     });
     console.log('[Quick Quote] catalog response:', catRes);
+    if (catRes._debugFields) {
+      console.log('[Quick Quote] API product fields available:', catRes._debugFields);
+      // Log availability details of first result to understand field names
+      if (catRes.products?.[0]) {
+        const p = catRes.products[0];
+        console.log('[Quick Quote] availability sample:', {
+          listed: p.listed, availability: p.availability, atp: p.atp, stock: p.stock, _rawAvail: p._rawAvail
+        });
+      }
+    }
 
     const products = catRes.products || [];
 
@@ -826,6 +835,24 @@ async function doQQCatalogSearch() {
 }
 
 // ── Render matched products ───────────────────────────────
+// Availability badge — shown when we can determine a product is not currently available.
+// We're conservative: only warn when we have clear evidence of unavailability.
+// Until we know the exact field names the API returns, we surface _rawAvail in console
+// and show a neutral "Check availability" badge on items where listed===false.
+function qqAvailBadge(p) {
+  if (p.listed === false || p.listed === 0) {
+    return '<span class="opp-svc-badge" style="background:rgba(220,38,38,.1);color:#dc2626;">Not listed</span>';
+  }
+  if (p.atp && typeof p.atp === 'string' && p.atp.length > 0) {
+    // ATP date present — item is on back-order
+    return `<span class="opp-svc-badge" style="background:#fffbeb;color:#92400e;">ATP: ${esc(p.atp)}</span>`;
+  }
+  if (p.stock !== null && p.stock !== undefined && p.stock === 0) {
+    return '<span class="opp-svc-badge" style="background:#fffbeb;color:#92400e;">Check stock</span>';
+  }
+  return '';
+}
+
 function renderQQProducts(products, request) {
   qqMatchedProducts = [];
   qqSelectedCompany = null;
@@ -842,7 +869,7 @@ function renderQQProducts(products, request) {
   const list = $('qqProductList');
 
   if (products.length === 0) {
-    list.innerHTML = '<div class="opp-contact-none">No products matched in your catalog. The catalog may be empty, or try different keywords (e.g. "laptop" instead of "Dell laptop 14 inch").</div>';
+    list.innerHTML = '<div class="opp-contact-none"><strong>No products matched.</strong><br>Tips: try simpler terms (e.g. "monitor" or "dock" instead of full descriptions). Services like monitoring are excluded — Quick Quote is for hardware and one-time products only.</div>';
     $('qqMatchSub').textContent = 'No matches found';
     $('qqProductTotal').classList.add('hidden');
     return;
@@ -864,6 +891,7 @@ function renderQQProducts(products, request) {
             ${p.price > 0 ? `<span class="opp-svc-price">$${p.price.toFixed(2)}${uLabel} each</span>` : '<span class="opp-svc-price">Price on request</span>'}
             ${p.vendor ? `<span class="opp-svc-badge extra">${esc(p.vendor)}</span>` : ''}
             ${p.sku    ? `<span class="opp-svc-badge extra">${esc(p.sku)}</span>`    : ''}
+            ${qqAvailBadge(p)}
           </div>
         </div>
         <div class="opp-svc-qty-wrap">
