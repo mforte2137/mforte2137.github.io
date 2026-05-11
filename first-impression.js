@@ -51,9 +51,11 @@ let   selectedPhotoUrl = '';
 let   photoPage        = 1;
 let   photoFocalPoint  = 0.5;   // 0.0 = top, 1.0 = bottom, 0.5 = centre
 const repNameInput   = document.getElementById('rep-name');
-const focalControl   = document.getElementById('focal-control');
-const focalSlider    = document.getElementById('focal-slider');
-const focalValueLabel= document.getElementById('focal-value-label');
+const focalControl    = document.getElementById('focal-control');
+const focalSlider     = document.getElementById('focal-slider');
+const focalValueLabel = document.getElementById('focal-value-label');
+const focalPreviewImg = document.getElementById('focal-preview-img');
+const focalViewport   = document.getElementById('focal-viewport');
 const generateBtn    = document.getElementById('generate-btn');
 const formError      = document.getElementById('form-error');
 const restartBtn     = document.getElementById('restart-btn');
@@ -115,6 +117,28 @@ function updateTemplatePreview(color) {
 }
 
 // ── Focal point slider ────────────────────────────────────
+// Updates the live crop preview thumbnail to show exactly what
+// portion of the photo will appear in the portrait cover canvas.
+function updateFocalPreview(sliderVal) {
+  const vpW = focalViewport.offsetWidth  || 80;
+  const vpH = focalViewport.offsetHeight || 110;
+  const imgNW = focalPreviewImg.naturalWidth  || 1;
+  const imgNH = focalPreviewImg.naturalHeight || 1;
+
+  // Scale image so its width fills the viewport (same as cover page behaviour)
+  const scale      = vpW / imgNW;
+  const scaledH    = imgNH * scale;
+  const renderedH  = Math.max(scaledH, vpH);
+
+  // Focal point: 0 = top of image flush top, 1 = bottom flush bottom
+  const maxOffset  = renderedH - vpH;
+  const topOffset  = -(maxOffset * (sliderVal / 100));
+
+  focalPreviewImg.style.width  = vpW + 'px';
+  focalPreviewImg.style.height = renderedH + 'px';
+  focalPreviewImg.style.top    = topOffset + 'px';
+}
+
 function focalLabel(v) {
   if (v <= 10) return 'Very Top';
   if (v <= 25) return 'Top';
@@ -124,10 +148,12 @@ function focalLabel(v) {
   if (v <= 90) return 'Bottom';
   return 'Very Bottom';
 }
+
 focalSlider.addEventListener('input', () => {
   const v         = parseInt(focalSlider.value);
   photoFocalPoint = v / 100;
   focalValueLabel.textContent = focalLabel(v);
+  updateFocalPreview(v);
 });
 
 // ── Logo background removal ───────────────────────────────
@@ -141,6 +167,7 @@ function isNearWhite(r, g, b, tolerance) {
 // Uses a stack-based BFS so it won't hit call-stack limits on large images.
 function removeWhiteBackground(imageEl, tolerance = 30) {
   return new Promise((resolve, reject) => {
+    const src = imageEl.src || imageEl;
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -149,13 +176,14 @@ function removeWhiteBackground(imageEl, tolerance = 30) {
       debgCanvas.width  = W;
       debgCanvas.height = H;
       const ctx = debgCanvas.getContext('2d');
+      // Clear first to avoid stale data from previous draws
+      ctx.clearRect(0, 0, W, H);
       ctx.drawImage(img, 0, 0);
 
       let imageData;
       try {
         imageData = ctx.getImageData(0, 0, W, H);
       } catch (e) {
-        // CORS block — canvas is tainted, can't process
         reject(new Error('cors'));
         return;
       }
@@ -163,9 +191,6 @@ function removeWhiteBackground(imageEl, tolerance = 30) {
       const data    = imageData.data;
       const visited = new Uint8Array(W * H);
 
-      function idx(x, y) { return (y * W + x) * 4; }
-
-      // Flood fill from a seed pixel — erases all connected near-white pixels
       function flood(startX, startY) {
         const stack = [[startX, startY]];
         while (stack.length) {
@@ -176,12 +201,11 @@ function removeWhiteBackground(imageEl, tolerance = 30) {
           visited[pos] = 1;
           const i = pos * 4;
           if (!isNearWhite(data[i], data[i+1], data[i+2], tolerance)) continue;
-          data[i+3] = 0; // erase to transparent
+          data[i+3] = 0;
           stack.push([x+1, y], [x-1, y], [x, y+1], [x, y-1]);
         }
       }
 
-      // Seed from all four corners
       flood(0,   0);
       flood(W-1, 0);
       flood(0,   H-1);
@@ -191,52 +215,61 @@ function removeWhiteBackground(imageEl, tolerance = 30) {
       resolve(debgCanvas.toDataURL('image/png'));
     };
     img.onerror = () => reject(new Error('load'));
-    img.src = imageEl.src || imageEl;
+    // Append cache-bust so browser makes a fresh CORS request
+    // (avoids getting a cached non-CORS response that taints the canvas)
+    const bust = src.includes('?') ? '&_cb=' + Date.now() : '?_cb=' + Date.now();
+    img.src = src + bust;
   });
 }
 
-// Checks if the logo image appears to have a white rectangular background
-// by sampling the four corner pixels
-function hasWhiteBackground(imageEl) {
-  try {
-    const W = imageEl.naturalWidth;
-    const H = imageEl.naturalHeight;
-    if (!W || !H) return false;
-    debgCanvas.width  = W;
-    debgCanvas.height = H;
-    const ctx = debgCanvas.getContext('2d');
-    ctx.drawImage(imageEl, 0, 0);
-    const corners = [
-      ctx.getImageData(0,   0,   1, 1).data,
-      ctx.getImageData(W-1, 0,   1, 1).data,
-      ctx.getImageData(0,   H-1, 1, 1).data,
-      ctx.getImageData(W-1, H-1, 1, 1).data
-    ];
-    // All four corners near-white AND opaque → likely a white-background logo
-    return corners.every(c => isNearWhite(c[0], c[1], c[2], 30) && c[3] > 200);
-  } catch (e) {
-    return false; // CORS-tainted canvas — can't check
-  }
+// Checks corners via a fresh CORS-enabled image load
+function hasWhiteBackground(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const W = img.naturalWidth;
+        const H = img.naturalHeight;
+        if (!W || !H) { resolve(false); return; }
+        debgCanvas.width  = W;
+        debgCanvas.height = H;
+        const ctx = debgCanvas.getContext('2d');
+        ctx.clearRect(0, 0, W, H);
+        ctx.drawImage(img, 0, 0);
+        const corners = [
+          ctx.getImageData(0,   0,   1, 1).data,
+          ctx.getImageData(W-1, 0,   1, 1).data,
+          ctx.getImageData(0,   H-1, 1, 1).data,
+          ctx.getImageData(W-1, H-1, 1, 1).data
+        ];
+        resolve(corners.every(c => isNearWhite(c[0], c[1], c[2], 30) && c[3] > 200));
+      } catch (e) {
+        resolve(false);
+      }
+    };
+    img.onerror = () => resolve(false);
+    const bust = src.includes('?') ? '&_cb=' + Date.now() : '?_cb=' + Date.now();
+    img.src = src + bust;
+  });
 }
 
 async function runDebackground(imageEl, originalSrc) {
   debgStrip.hidden    = true;
   debgCleanDataUrl    = '';
 
-  // For URL-based logos, we need crossOrigin — check if canvas access is possible
-  const hasBg = hasWhiteBackground(imageEl);
-  if (!hasBg) return; // Clean logo — nothing to do
+  const hasBg = await hasWhiteBackground(originalSrc);
+  if (!hasBg) return;
 
-  // Show before preview
   debgBefore.src = originalSrc;
 
   try {
-    const cleanUrl  = await removeWhiteBackground(imageEl);
+    const cleanUrl   = await removeWhiteBackground(imageEl, 30);
     debgCleanDataUrl = cleanUrl;
-    debgAfter.src   = cleanUrl;
+    debgAfter.src    = cleanUrl;
     debgStrip.hidden = false;
   } catch (e) {
-    // CORS or load failure — silently skip, logo will be used as-is
+    // CORS or load failure — silently skip
   }
 }
 
@@ -302,6 +335,9 @@ function renderPhotos(photos) {
       focalSlider.value   = 50;
       photoFocalPoint     = 0.5;
       focalValueLabel.textContent = 'Centre';
+      // Load the thumb into the live preview (thumb is faster than full)
+      focalPreviewImg.src = photo.thumb;
+      focalPreviewImg.onload = () => updateFocalPreview(50);
       focalControl.hidden = false;
     });
     photoGrid.appendChild(tile);
