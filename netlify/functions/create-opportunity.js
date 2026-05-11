@@ -302,10 +302,19 @@ exports.handler = async (event) => {
       const { query } = body;
       if (!query) return err('query required.', 400);
 
-      // 1. Fetch full catalog
-      const res  = await fetch(`${BASE}/product?size=500`, { headers });
-      const data = res.ok ? await res.json() : {};
-      const all  = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
+      // 1. Fetch full catalog — two parallel pages using confirmed 'from' pagination param
+      const [r1, r2] = await Promise.all([
+        fetch(`${BASE}/product?size=200&from=0`,   { headers }),
+        fetch(`${BASE}/product?size=200&from=200`, { headers })
+      ]);
+      const [d1, d2] = await Promise.all([
+        r1.ok ? r1.json() : Promise.resolve({}),
+        r2.ok ? r2.json() : Promise.resolve({})
+      ]);
+      const p1  = d1?.results || d1?.data || d1?.items || (Array.isArray(d1) ? d1 : []);
+      const p2  = d2?.results || d2?.data || d2?.items || (Array.isArray(d2) ? d2 : []);
+      // Dedupe by id in case pages overlap
+      const all = [...new Map([...p1, ...p2].map(p => [p.id, p])).values()];
 
       // 2. Filter to listed, non-service, non-bundle products only
       const hardware = all.filter(p => {
