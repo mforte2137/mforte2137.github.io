@@ -169,6 +169,40 @@ const QUICK_QUOTE_TOOL = {
   }
 };
 
+
+// ── Suggest products tool schema (web search fallback) ────
+const SUGGEST_PRODUCTS_TOOL = {
+  name: 'suggest_products',
+  description: 'Suggest real commercial products with MPNs when none are found in the local catalog',
+  input_schema: {
+    type: 'object',
+    properties: {
+      suggestions: {
+        type: 'array',
+        description: '2-3 real products that match the request, found via web search',
+        items: {
+          type: 'object',
+          properties: {
+            name:         { type: 'string', description: 'Full commercial product name' },
+            manufacturer: { type: 'string', description: 'Manufacturer / brand name' },
+            mpn:          { type: 'string', description: 'Manufacturer Part Number — must be accurate' },
+            approx_price: { type: 'string', description: 'Approximate retail price e.g. "$299 USD"' },
+            description:  { type: 'string', description: 'One sentence: what it is and why it fits the request' }
+          },
+          required: ['name', 'manufacturer', 'mpn', 'description']
+        },
+        minItems: 1,
+        maxItems: 3
+      },
+      not_found_reason: {
+        type: 'string',
+        description: 'Brief note if the exact product genuinely cannot be identified — leave empty if suggestions were found'
+      }
+    },
+    required: ['suggestions']
+  }
+};
+
 // ── Main handler ──────────────────────────────────────────
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -282,6 +316,59 @@ Write a short, professional cover note for the quote.`;
       const tool = Array.isArray(data.content) ? data.content.find(b => b.type === 'tool_use') : null;
       if (!tool) return err('No cover note returned.');
       return ok({ cover_note: tool.input.cover_note, unmatched_items: tool.input.unmatched_items || [] });
+    } catch (e) { return err(e.message); }
+  }
+
+    // ── ACTION: suggest-products ─────────────────────────────
+  // Fires when Quick Quote finds zero catalog matches.
+  // Uses web search to find real products with MPNs so the
+  // rep can import them from the Salesbuildr marketplace.
+  if (action === 'suggest-products') {
+    const { request } = body;
+    if (!request) return err('Product request required.', 400);
+
+    try {
+      const res = await fetch(ANTHROPIC_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'anthropic-beta': 'web-search-2025-03-05'
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1024,
+          tools: [
+            { type: 'web_search_20250305', name: 'web_search' },
+            SUGGEST_PRODUCTS_TOOL
+          ],
+          tool_choice: { type: 'auto' },
+          system: `You are a product research assistant for an MSP (IT services company).
+The rep has requested a product that is not in their local catalog.
+Search the web to find 2-3 real, currently available commercial products that match the request.
+Focus on products commonly sold by MSPs and IT resellers.
+The MPN (Manufacturer Part Number) is critical — it must be accurate as the rep will use it to import the product.
+Use the suggest_products tool to return your findings.`,
+          messages: [{
+            role: 'user',
+            content: `Find real products matching this request: "${request}"
+
+Search for the products and return 2-3 options with accurate MPNs using the suggest_products tool.`
+          }]
+        })
+      });
+
+      const data = await res.json();
+      const tool = Array.isArray(data.content)
+        ? data.content.find(b => b.type === 'tool_use' && b.name === 'suggest_products')
+        : null;
+
+      if (!tool) return err('No suggestions returned.');
+      return ok({
+        suggestions:      tool.input.suggestions || [],
+        not_found_reason: tool.input.not_found_reason || ''
+      });
     } catch (e) { return err(e.message); }
   }
 
