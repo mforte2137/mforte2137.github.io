@@ -33,6 +33,13 @@ const logoPreviewImg = document.getElementById('logo-preview-img');
 const logoClearBtn   = document.getElementById('logo-preview-clear');
 const logoUpload     = document.getElementById('logo-upload');
 const logoUploadName = document.getElementById('logo-upload-name');
+const debgStrip      = document.getElementById('debg-strip');
+const debgBefore     = document.getElementById('debg-before');
+const debgAfter      = document.getElementById('debg-after');
+const debgCanvas     = document.getElementById('debg-canvas');
+const debgUseBtn     = document.getElementById('debg-use-btn');
+const debgSkipBtn    = document.getElementById('debg-skip-btn');
+let   debgCleanDataUrl = '';   // cleaned logo data URL, set after processing
 const industrySelect   = document.getElementById('industry');
 const findPhotosBtn    = document.getElementById('find-photos-btn');
 const photoPicker      = document.getElementById('photo-picker');
@@ -121,6 +128,131 @@ focalSlider.addEventListener('input', () => {
   const v         = parseInt(focalSlider.value);
   photoFocalPoint = v / 100;
   focalValueLabel.textContent = focalLabel(v);
+});
+
+// ── Logo background removal ───────────────────────────────
+
+// Returns true if a pixel (r,g,b) is near-white (within tolerance)
+function isNearWhite(r, g, b, tolerance) {
+  return r >= 255 - tolerance && g >= 255 - tolerance && b >= 255 - tolerance;
+}
+
+// Flood-fill from all four corners to find and erase the white background.
+// Uses a stack-based BFS so it won't hit call-stack limits on large images.
+function removeWhiteBackground(imageEl, tolerance = 30) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const W = img.naturalWidth;
+      const H = img.naturalHeight;
+      debgCanvas.width  = W;
+      debgCanvas.height = H;
+      const ctx = debgCanvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      let imageData;
+      try {
+        imageData = ctx.getImageData(0, 0, W, H);
+      } catch (e) {
+        // CORS block — canvas is tainted, can't process
+        reject(new Error('cors'));
+        return;
+      }
+
+      const data    = imageData.data;
+      const visited = new Uint8Array(W * H);
+
+      function idx(x, y) { return (y * W + x) * 4; }
+
+      // Flood fill from a seed pixel — erases all connected near-white pixels
+      function flood(startX, startY) {
+        const stack = [[startX, startY]];
+        while (stack.length) {
+          const [x, y] = stack.pop();
+          if (x < 0 || x >= W || y < 0 || y >= H) continue;
+          const pos = y * W + x;
+          if (visited[pos]) continue;
+          visited[pos] = 1;
+          const i = pos * 4;
+          if (!isNearWhite(data[i], data[i+1], data[i+2], tolerance)) continue;
+          data[i+3] = 0; // erase to transparent
+          stack.push([x+1, y], [x-1, y], [x, y+1], [x, y-1]);
+        }
+      }
+
+      // Seed from all four corners
+      flood(0,   0);
+      flood(W-1, 0);
+      flood(0,   H-1);
+      flood(W-1, H-1);
+
+      ctx.putImageData(imageData, 0, 0);
+      resolve(debgCanvas.toDataURL('image/png'));
+    };
+    img.onerror = () => reject(new Error('load'));
+    img.src = imageEl.src || imageEl;
+  });
+}
+
+// Checks if the logo image appears to have a white rectangular background
+// by sampling the four corner pixels
+function hasWhiteBackground(imageEl) {
+  try {
+    const W = imageEl.naturalWidth;
+    const H = imageEl.naturalHeight;
+    if (!W || !H) return false;
+    debgCanvas.width  = W;
+    debgCanvas.height = H;
+    const ctx = debgCanvas.getContext('2d');
+    ctx.drawImage(imageEl, 0, 0);
+    const corners = [
+      ctx.getImageData(0,   0,   1, 1).data,
+      ctx.getImageData(W-1, 0,   1, 1).data,
+      ctx.getImageData(0,   H-1, 1, 1).data,
+      ctx.getImageData(W-1, H-1, 1, 1).data
+    ];
+    // All four corners near-white AND opaque → likely a white-background logo
+    return corners.every(c => isNearWhite(c[0], c[1], c[2], 30) && c[3] > 200);
+  } catch (e) {
+    return false; // CORS-tainted canvas — can't check
+  }
+}
+
+async function runDebackground(imageEl, originalSrc) {
+  debgStrip.hidden    = true;
+  debgCleanDataUrl    = '';
+
+  // For URL-based logos, we need crossOrigin — check if canvas access is possible
+  const hasBg = hasWhiteBackground(imageEl);
+  if (!hasBg) return; // Clean logo — nothing to do
+
+  // Show before preview
+  debgBefore.src = originalSrc;
+
+  try {
+    const cleanUrl  = await removeWhiteBackground(imageEl);
+    debgCleanDataUrl = cleanUrl;
+    debgAfter.src   = cleanUrl;
+    debgStrip.hidden = false;
+  } catch (e) {
+    // CORS or load failure — silently skip, logo will be used as-is
+  }
+}
+
+debgUseBtn.addEventListener('click', () => {
+  if (!debgCleanDataUrl) return;
+  logoDataUrl      = debgCleanDataUrl;
+  logoFileUploaded = true;   // treat as uploaded data so it goes via Placid file upload
+  debgUseBtn.textContent = '✓ Cleaned version in use';
+  debgUseBtn.disabled    = true;
+  debgSkipBtn.disabled   = true;
+  // Update the visible preview to the cleaned version
+  logoPreviewImg.src = debgCleanDataUrl;
+});
+
+debgSkipBtn.addEventListener('click', () => {
+  debgStrip.hidden = true;
 });
 
 // ── Photo picker ──────────────────────────────────────────
@@ -233,12 +365,22 @@ function showExtractStatus(ok, msg) {
 previewLogoBtn.addEventListener('click', () => {
   const url = logoUrlInput.value.trim();
   if (!url) { logoUrlInput.focus(); return; }
+  // Load with crossOrigin so canvas can read pixel data (works if server allows it)
+  logoPreviewImg.crossOrigin = 'anonymous';
   logoPreviewImg.src = url;
   logoPreviewImg.onerror = () => {
     logoPreviewArea.hidden = true;
     showFormError('Could not load logo from that URL. Check the address or upload a file instead.');
   };
-  logoPreviewImg.onload = () => { logoPreviewArea.hidden = false; logoFileUploaded = false; };
+  logoPreviewImg.onload = () => {
+    logoPreviewArea.hidden = false;
+    logoFileUploaded = false;
+    debgStrip.hidden = true;
+    debgUseBtn.disabled  = false;
+    debgSkipBtn.disabled = false;
+    debgUseBtn.textContent = 'Use cleaned version ✓';
+    runDebackground(logoPreviewImg, url);
+  };
 });
 
 logoClearBtn.addEventListener('click', () => {
@@ -246,6 +388,8 @@ logoClearBtn.addEventListener('click', () => {
   logoUrlInput.value     = '';
   logoFileUploaded       = false;
   logoUploadName.hidden  = true;
+  debgStrip.hidden       = true;
+  debgCleanDataUrl       = '';
 });
 
 // ── Logo file upload ──────────────────────────────────────
@@ -260,6 +404,19 @@ logoUpload.addEventListener('change', () => {
     logoUploadName.textContent = `✓ ${file.name}`;
     logoUploadName.hidden      = false;
     logoPreviewArea.hidden     = true;
+    debgStrip.hidden           = true;
+    debgUseBtn.disabled        = false;
+    debgSkipBtn.disabled       = false;
+    debgUseBtn.textContent     = 'Use cleaned version ✓';
+    debgCleanDataUrl           = '';
+
+    // Run debackground check on uploaded file via a temp Image element
+    const tmpImg = new Image();
+    tmpImg.onload = () => {
+      debgBefore.src = logoDataUrl;
+      runDebackground(tmpImg, logoDataUrl);
+    };
+    tmpImg.src = logoDataUrl;
   };
   reader.readAsDataURL(file);
 });
@@ -456,6 +613,11 @@ restartBtn.addEventListener('click', () => {
   focalControl.hidden     = true;
   focalSlider.value       = 50;
   photoFocalPoint         = 0.5;
+  debgStrip.hidden        = true;
+  debgCleanDataUrl        = '';
+  debgUseBtn.disabled     = false;
+  debgSkipBtn.disabled    = false;
+  debgUseBtn.textContent  = 'Use cleaned version ✓';
   pushBtn.classList.remove('is-done');
   pushBtn.disabled        = false;
   pushBtn.textContent     = 'Save to Salesbuildr →';
