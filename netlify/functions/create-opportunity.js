@@ -327,7 +327,7 @@ exports.handler = async (event) => {
       // Synonym expansion — common customer terms → catalog terms
       // e.g. "dock" → also search "docking", "station", "hub"
       const synonyms = {
-        dock:     ['dock', 'docking', 'station', 'hub', 'port'],
+        dock:     ['dock', 'docking', 'station', 'hub'],
         monitor:  ['monitor', 'display', 'screen'],
         laptop:   ['laptop', 'notebook', 'portable'],
         phone:    ['phone', 'handset', 'voip', 'telephone'],
@@ -341,6 +341,11 @@ exports.handler = async (event) => {
         // Carry cases — reps say "bag", products say "backpack", "briefcase", "topload", "sleeve"
         bag:      ['bag', 'backpack', 'briefcase', 'topload', 'sleeve', 'satchel', 'tote'],
         backpack: ['bag', 'backpack', 'briefcase', 'topload', 'sleeve', 'satchel', 'tote'],
+        // Networking infrastructure
+        patch:    ['patch', 'panel', 'keystone', 'punchdown'],
+        panel:    ['patch', 'panel', 'keystone', 'punchdown'],
+        unifi:    ['unifi', 'ubiquiti', 'u6', 'uap', 'udm', 'usw'],
+        ubiquiti: ['unifi', 'ubiquiti', 'u6', 'uap', 'udm', 'usw'],
       };
 
       // Expand keywords with synonyms
@@ -379,7 +384,9 @@ exports.handler = async (event) => {
       // Detect brand keywords from the request
       const knownBrands = ['dell','lenovo','hp','jabra','yealink','snom','poly','cisco',
         'logitech','bose','samsung','lg','adesso','epos','plantronics','apple','startech',
-        'kingston','sandisk','microsoft','philips','axis','creative','asus','acer','sony'];
+        'kingston','sandisk','microsoft','philips','axis','creative','asus','acer','sony',
+        'ubiquiti','unifi','netgear','tplink','zyxel','fortinet','meraki','aruba','ruckus',
+        'targus','kensington','brother','epson','canon','xerox','zebra'];
       const brandKws = allKws.filter(k => knownBrands.includes(k.toLowerCase()));
 
       function scoreProduct(p) {
@@ -493,7 +500,7 @@ exports.handler = async (event) => {
       // Debug: expose raw field names from first result so we know what the API actually returns
       const debugFields = scored[0] ? Object.keys(scored[0].p) : [];
 
-      return ok({ products, catalogSize: all.length, matched: products.length, _debugFields: debugFields });
+      return ok({ products, catalogSize: all.length, matched: products.length });
     }
 
         return err('Unknown action.', 400);
