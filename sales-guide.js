@@ -777,21 +777,20 @@ async function doQQCatalogSearch() {
   $('qqSearchBtn').textContent = 'Searching catalog…';
   $('qqResultsWrap').classList.add('hidden');
 
-  const keywords = extractKeywords(request);
-  console.log('[Quick Quote] keywords:', keywords);
+
+  console.log('[Quick Quote] request:', request);
 
   try {
-    // 1. Search catalog — server fetches all, scores by keywords
+    // Search catalog — Claude Haiku matches products semantically
     const catRes = await callCreateOpp('search-products', {
       query: request,
-      keywords,
       apiKey,
       integrationKey: intKey
     });
     console.log('[Quick Quote] catalog response:', catRes);
     console.log('[Quick Quote] catalog size:', catRes.catalogSize, '— matched:', catRes.matched);
     if (catRes.products?.length) {
-      console.table(catRes.products.map(p => ({ name: p.name.slice(0,40), score: p._score, vendor: p.vendor, listed: p.listed })));
+      console.log('[Quick Quote] matched:', catRes.products.map(p => p.name.slice(0,40)));
     }
 
     const products = catRes.products || [];
