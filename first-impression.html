@@ -109,6 +109,20 @@
           <button type="button" id="more-photos-btn" class="more-photos-btn">Try different photos</button>
           <span id="photo-credit" class="photo-credit"></span>
         </div>
+
+        <!-- Focal point control — appears after a photo is selected -->
+        <div id="focal-control" class="focal-control" hidden>
+          <div class="focal-label">
+            <span>Photo position</span>
+            <span id="focal-value-label" class="focal-value-label">Centre</span>
+          </div>
+          <div class="focal-track-wrap">
+            <span class="focal-end-label">Top</span>
+            <input type="range" id="focal-slider" class="focal-slider" min="0" max="100" value="50" step="5">
+            <span class="focal-end-label">Bottom</span>
+          </div>
+          <p class="focal-hint">Drag to reposition the photo within the cover — useful if faces or key details are being cropped.</p>
+        </div>
       </div>
       <div id="photo-loading" class="photo-loading" hidden>
         <div class="spinner-sm"></div>
