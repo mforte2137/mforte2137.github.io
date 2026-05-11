@@ -1,252 +1,339 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>First Impression — Branded Cover Page Creator</title>
-  <link rel="stylesheet" href="first-impression.css">
-</head>
-<body>
-<div class="container">
+// =========================================================
+// generate-cover.js — Netlify function
+// Path: /api/generate-cover
+//
+// Actions:
+//   extract-color — fetches prospect website, extracts brand colour
+//   generate      — Unsplash photo + Placid image generation
+//   push          — creates Salesbuildr image widget template
+// =========================================================
 
-  <header class="top">
-    <span class="brand">First Impression</span>
-    <span>Branded Cover Page Creator</span>
-  </header>
+const PLACID_API  = 'https://api.placid.app/api/rest/images';
+const UNSPLASH_API = 'https://api.unsplash.com/search/photos';
+const SB_BASE     = 'https://portal.us1-salesbuildr.com/public-api/quote-widget-template';
 
-  <!-- ===================================================
-       VIEW 1: Form
-       =================================================== -->
-  <section id="form-view">
-    <h1 class="big-title">Make it personal.</h1>
-    <p class="big-lead">Enter your prospect's details and we'll generate a branded cover page in their colours — ready to drop into a Salesbuildr demo quote in seconds.</p>
+// Template registry — add new Placid templates here as they're created
+const TEMPLATES = {
+  chevron: {
+    uuid:        'o1dobplzksihm',
+    name:        'Chevron',
+    colorLayers: ['chevron', 'accent_bar']
+  },
+  half_circle: {
+    uuid:        'su7f9dcxtokvs',
+    name:        'Half Circle',
+    colorLayers: ['half_circle', 'accent_bar']
+  }
+  // future templates added here:
+  // split:    { uuid: '...', name: 'Split Panel', colorLayers: ['color_panel'] },
+  // minimal:  { uuid: '...', name: 'Minimal',    colorLayers: ['accent_stripe'] }
+};
 
-    <!-- STEP 1: Prospect -->
-    <div class="step">
-      <div class="step-label">Step 1 — Who is this for?</div>
+// Photo category → Unsplash search keyword mapping (all tech-focused)
+const INDUSTRY_KEYWORDS = {
+  office:          'modern office team computers professional workspace',
+  datacenter:      'data center server room racks infrastructure',
+  cloud:           'cloud computing technology digital network server',
+  network:         'network cables ethernet switch router technology',
+  security:        'cybersecurity digital network protection encrypted screen',
+  consulting:      'business IT consulting meeting professional boardroom',
+  technician:      'IT technician network engineer field support technology',
+  abstract_lines:  'abstract technology digital lines neon light background',
+  abstract_circuit:'circuit board electronics macro technology close up',
+  abstract_fiber:  'fiber optic light bokeh glow technology abstract'
+};
 
-      <div class="field-group">
-        <label class="field-label" for="company-name">Prospect company name <span class="field-required">Required</span></label>
-        <input type="text" id="company-name" class="field-input" maxlength="80" placeholder="e.g. Tierney's IT Services">
-      </div>
+// ── Extract brand colour from website ─────────────────────
+async function extractBrandColor(url) {
+  try {
+    const res  = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FirstImpression/1.0)' },
+      signal:  AbortSignal.timeout(5000)
+    });
+    const html = await res.text();
 
-      <div class="field-group">
-        <label class="field-label" for="website-url">Their website URL <span class="field-optional">Optional — we'll try to extract their brand colour</span></label>
-        <div class="extract-row">
-          <input type="url" id="website-url" class="field-input" placeholder="https://tierneys.com">
-          <button type="button" id="extract-btn" class="extract-btn">Extract colour →</button>
-        </div>
-        <p id="extract-status" class="extract-status" hidden></p>
-      </div>
-    </div>
+    // 1. Meta theme-color (most reliable)
+    const themeA = html.match(/name=["']theme-color["'][^>]+content=["']([#][0-9a-fA-F]{3,8})["']/i);
+    const themeB = html.match(/content=["']([#][0-9a-fA-F]{3,8})["'][^>]+name=["']theme-color["']/i);
+    if (themeA) return themeA[1].slice(0, 7);
+    if (themeB) return themeB[1].slice(0, 7);
 
-    <!-- STEP 2: Branding -->
-    <div class="step">
-      <div class="step-label">Step 2 — Their branding</div>
+    // 2. CSS custom properties
+    const cssVar = html.match(/--(?:primary|brand|accent|main|color-primary|theme-color|base-color)[^:]*:\s*(#[0-9a-fA-F]{6})/i);
+    if (cssVar) return cssVar[1];
 
-      <div class="field-group">
-        <label class="field-label">Brand colour <span class="field-required">Required</span></label>
-        <p class="field-hint">Auto-extracted from their website, or pick manually. This colours the design elements on the cover page.</p>
-        <div class="color-pick-row">
-          <input type="color" id="brand-color-picker" class="color-picker-lg" value="#1a4da0">
-          <input type="text"  id="brand-color-hex"    class="hex-input-lg" maxlength="7" value="#1a4da0" placeholder="#1a4da0">
-          <div class="color-preview" id="color-preview" style="background:#1a4da0;"></div>
-        </div>
-      </div>
+    // 3. Common hex colours in styles (skip near-black and near-white)
+    const hexes = [...html.matchAll(/#([0-9a-fA-F]{6})/g)]
+      .map(m => '#' + m[1].toLowerCase())
+      .filter(h => !['#000000','#ffffff','#333333','#666666','#999999','#cccccc','#f0f0f0','#eeeeee'].includes(h));
+    if (hexes.length > 0) return hexes[0];
 
-      <div class="field-group">
-        <label class="field-label" for="logo-url">Their logo URL <span class="field-required">Required</span></label>
-        <p class="field-hint">Visit their website, right-click the logo → <em>Copy image address</em>, and paste it here. PNG with transparent background works best.</p>
-        <div class="logo-row">
-          <input type="url" id="logo-url" class="field-input" placeholder="https://tierneys.com/logo.png">
-          <button type="button" id="preview-logo-btn" class="preview-logo-btn">Preview</button>
-        </div>
-        <div id="logo-preview-area" class="logo-preview-area" hidden>
-          <img id="logo-preview-img" src="" alt="Logo preview" class="logo-preview-img">
-          <button type="button" id="logo-preview-clear" class="logo-clear-btn">✕</button>
-        </div>
-        <p class="field-hint" style="margin-top:8px;">No URL? <label for="logo-upload" class="upload-link">Upload a file instead</label></p>
-        <input type="file" id="logo-upload" accept="image/*" hidden>
-        <div id="logo-upload-name" class="logo-upload-name" hidden></div>
-      </div>
-    </div>
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
 
-    <!-- STEP 3: Photo style -->
-    <div class="step">
-      <div class="step-label">Step 3 — Background photo</div>
-      <div class="field-group">
-        <label class="field-label" for="industry">Industry <span class="field-required">Required</span></label>
-        <p class="field-hint">We search Unsplash for professional photos that suit their sector. Pick your favourite.</p>
-        <div class="industry-row">
-          <select id="industry" class="field-select">
-            <optgroup label="With People">
-              <option value="office">Modern Office &amp; Team</option>
-              <option value="consulting">IT Consulting</option>
-              <option value="technician">Field Technician</option>
-            </optgroup>
-            <optgroup label="Infrastructure &amp; Technology">
-              <option value="datacenter">Data Centre</option>
-              <option value="cloud">Cloud &amp; Infrastructure</option>
-              <option value="network">Network &amp; Connectivity</option>
-              <option value="security">Cybersecurity</option>
-            </optgroup>
-            <optgroup label="Abstract — No People">
-              <option value="abstract_lines">Abstract — Lines &amp; Light</option>
-              <option value="abstract_circuit">Abstract — Circuit &amp; Code</option>
-              <option value="abstract_fiber">Abstract — Fiber &amp; Glow</option>
-            </optgroup>
-          </select>
-          <button type="button" id="find-photos-btn" class="find-photos-btn">Find Photos →</button>
-        </div>
-      </div>
+// ── Unsplash photo search ─────────────────────────────────
+async function getPhoto(industry) {
+  const keyword = INDUSTRY_KEYWORDS[industry] || INDUSTRY_KEYWORDS.generic;
+  const params  = new URLSearchParams({
+    query:       keyword,
+    orientation: 'portrait',
+    per_page:    '5',
+    client_id:   process.env.UNSPLASH_ACCESS_KEY
+  });
 
-      <!-- Photo picker — appears after clicking Find Photos -->
-      <div id="photo-picker" hidden>
-        <div class="photo-grid" id="photo-grid">
-          <!-- Populated by JS -->
-        </div>
-        <div class="photo-picker-footer">
-          <button type="button" id="more-photos-btn" class="more-photos-btn">Try different photos</button>
-          <span id="photo-credit" class="photo-credit"></span>
-        </div>
-      </div>
-      <div id="photo-loading" class="photo-loading" hidden>
-        <div class="spinner-sm"></div>
-        <span>Searching Unsplash…</span>
-      </div>
-    </div>
+  const res  = await fetch(`${UNSPLASH_API}?${params}`);
+  const data = await res.json();
 
-    <!-- STEP 4: Template -->
-    <div class="step">
-      <div class="step-label">Step 4 — Cover page template</div>
-      <div class="field-hint" style="margin-bottom:16px;">More templates coming soon. Select one to use it.</div>
-      <div class="template-grid" id="template-grid">
+  if (data.results && data.results.length > 0) {
+    // Pick a varied result based on current minute so reruns give different photos
+    const idx = new Date().getMinutes() % Math.min(data.results.length, 5);
+    return data.results[idx].urls.regular + '&w=1200&q=80';
+  }
+  throw new Error('Could not find a suitable photo. Try a different industry.');
+}
 
-        <button type="button" class="template-tile is-selected" data-template="chevron">
-          <div class="template-preview">
-            <div class="tp-chevron" id="tp-chevron-1"></div>
-            <div class="tp-bar"     id="tp-bar-1"></div>
-          </div>
-          <div class="template-name">Chevron</div>
-          <div class="template-check">✓</div>
-        </button>
+// ── Upload base64 logo to Placid file storage ─────────────
+// If the logo is a base64 data URL (uploaded file), we upload it
+// to Placid's servers and get back a public HTTPS URL that
+// Placid can use when rendering the template.
+async function uploadLogoToPlacid(base64DataUrl) {
+  const matches = base64DataUrl.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+  if (!matches) throw new Error('Invalid image data — please use a logo URL instead.');
 
-        <button type="button" class="template-tile" data-template="half_circle">
-          <div class="template-preview">
-            <div class="tp-half-circle" id="tp-half-circle-1"></div>
-            <div class="tp-bar"        id="tp-bar-2"></div>
-          </div>
-          <div class="template-name">Half Circle</div>
-          <div class="template-check">✓</div>
-        </button>
+  const mimeType = matches[1];
+  const buffer   = Buffer.from(matches[2], 'base64');
+  const ext      = mimeType.split('/')[1] || 'png';
+  const filename = `logo-upload.${ext}`;
+  const boundary = 'FormBoundary' + Date.now().toString(36);
 
-        <button type="button" class="template-tile is-soon" disabled>
-          <div class="template-preview tp-soon"><span>Coming<br>soon</span></div>
-          <div class="template-name">Split Panel</div>
-        </button>
+  const bodyParts = Buffer.concat([
+    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: ${mimeType}\r\n\r\n`),
+    buffer,
+    Buffer.from(`\r\n--${boundary}--\r\n`)
+  ]);
 
-        <button type="button" class="template-tile is-soon" disabled>
-          <div class="template-preview tp-soon"><span>Coming<br>soon</span></div>
-          <div class="template-name">Minimal</div>
-        </button>
+  const res  = await fetch('https://api.placid.app/api/rest/files', {
+    method:  'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.PLACID_API_TOKEN}`,
+      'Content-Type':  `multipart/form-data; boundary=${boundary}`
+    },
+    body: bodyParts
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Logo upload to Placid failed.');
+  return data.url; // public HTTPS URL hosted by Placid
+}
 
-      </div>
-    </div>
+// ── Placid image generation ───────────────────────────────
+async function generateImage(templateId, brandColor, photoUrl, logoUrl) {
+  const template = TEMPLATES[templateId];
+  if (!template) throw new Error(`Unknown template: ${templateId}`);
 
-    <!-- STEP 5: Rep name -->
-    <div class="step">
-      <div class="step-label">Step 5 — Your details</div>
-      <div class="field-group">
-        <label class="field-label" for="rep-name">Your name <span class="field-optional">Optional — shown as presenter on the cover</span></label>
-        <input type="text" id="rep-name" class="field-input" maxlength="80" placeholder="e.g. Glen Brown, Salesbuildr">
-      </div>
-    </div>
+  // Ensure 8-digit hex (add FF alpha for full opacity)
+  const hex8 = brandColor.replace('#', '').padEnd(6, '0').slice(0, 6).toUpperCase() + 'FF';
+  const color = '#' + hex8;
 
-    <div class="form-footer">
-      <button type="button" id="generate-btn" class="generate-btn">Generate Cover Page →</button>
-      <p class="form-note">Takes about 15 seconds — we find the photo, apply the branding, and render your cover page.</p>
-    </div>
+  const layers = {
+    photo: { image: photoUrl },
+    logo:  { image: logoUrl  }
+  };
+  for (const layer of template.colorLayers) {
+    layers[layer] = { background_color: color };
+  }
 
-    <div id="form-error" class="form-error" hidden></div>
+  const res  = await fetch(PLACID_API, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.PLACID_API_TOKEN}` },
+    body:    JSON.stringify({ template_uuid: template.uuid, layers })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || `Placid error ${res.status}`);
 
-  </section>
+  // Poll for completion (max 8 seconds)
+  let imageUrl = data.image_url;
+  if (!imageUrl && data.polling_url) {
+    for (let i = 0; i < 8; i++) {
+      await new Promise(r => setTimeout(r, 1000));
+      const poll     = await fetch(data.polling_url, { headers: { 'Authorization': `Bearer ${process.env.PLACID_API_TOKEN}` } });
+      const pollData = await poll.json();
+      if (pollData.image_url) { imageUrl = pollData.image_url; break; }
+    }
+  }
+  if (!imageUrl) throw new Error('Image generation timed out — please try again.');
+  return imageUrl;
+}
 
-  <!-- ===================================================
-       VIEW 2: Working
-       =================================================== -->
-  <section id="working-view" hidden>
-    <div class="working-inner">
-      <div class="spinner"></div>
-      <p class="working-title" id="working-title">Finding the perfect photo&hellip;</p>
-      <p class="working-sub"  id="working-sub">Searching Unsplash for your industry</p>
-    </div>
-  </section>
+// ── Build Salesbuildr overlay HTML ────────────────────────
+// Uses topTemplate=null, middleTemplate=null, bottomTemplate=content
+// The white rounded rectangle sits in the lower-middle of the image,
+// so we use bottomTemplate with top-heavy padding to sit inside the panel.
+function buildOverlay(brandColor) {
+  const html = `<div style="text-align:center;width:100%;">
+  <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+  <h2 style="font-size:22pt;font-weight:700;color:${brandColor};font-family:'Segoe UI',Arial,sans-serif;margin:0 0 10px 0;line-height:1.2;">{{quote.title}}</h2>
+  <p style="font-size:11pt;color:#333333;font-family:'Segoe UI',Arial,sans-serif;margin:3px 0;">Prepared for {{contact.firstName}} {{contact.lastName}}</p>
+  <p style="font-size:10pt;color:#666666;font-family:'Segoe UI',Arial,sans-serif;margin:3px 0;">Presented by {{owner.fullName}}</p>
+</div>`;
+  return html;
+}
 
-  <!-- ===================================================
-       VIEW 3: Result
-       =================================================== -->
-  <section id="result-view" hidden>
+function buildOverlayZones(brandColor) {
+  return {
+    topTemplate:    null,
+    middleTemplate: buildOverlay(brandColor),
+    bottomTemplate: null
+  };
+}
 
-    <div class="result-header">
-      <div>
-        <div class="result-kicker">Cover Page Ready</div>
-        <h1 class="result-title" id="result-title"></h1>
-      </div>
-      <button type="button" id="restart-btn" class="secondary-btn">← Start Over</button>
-    </div>
+// ── Main handler ──────────────────────────────────────────
+exports.handler = async (event) => {
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'POST required.' }) };
+  }
 
-    <div class="result-layout">
+  let body;
+  try { body = JSON.parse(event.body); }
+  catch (e) { return { statusCode: 400, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'Invalid JSON.' }) }; }
 
-      <!-- Cover page preview -->
-      <div class="cover-preview-wrap">
-        <img id="cover-preview" class="cover-preview" src="" alt="Generated cover page">
-      </div>
+  const { action } = body;
+  const ok200 = (data) => ({ statusCode: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: true, ...data }) });
+  const err   = (msg, code = 500) => ({ statusCode: code, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: msg }) });
 
-      <!-- Actions -->
-      <div class="result-actions">
+  // ── ACTION: extract-color ──────────────────────────────
+  if (action === 'extract-color') {
+    const { websiteUrl } = body;
+    if (!websiteUrl) return err('websiteUrl required.', 400);
+    const color = await extractBrandColor(websiteUrl);
+    return ok200({ color, found: !!color });
+  }
 
-        <div class="action-card">
-          <div class="action-card-title">📥 Download PNG</div>
-          <p class="action-card-desc">Save the cover page as a high-resolution PNG — upload it to Salesbuildr's Cover Page section and add your variable overlays there.</p>
-          <a id="download-btn" class="action-btn action-btn-download" download>Download Cover Page</a>
-        </div>
+  // ── ACTION: photos — return 4 Unsplash options ────────────
+  if (action === 'photos') {
+    const { industry } = body;
+    try {
+      const keyword = INDUSTRY_KEYWORDS[industry] || INDUSTRY_KEYWORDS.office;
+      const page    = Math.max(1, parseInt(body.page) || 1);
+      const params  = new URLSearchParams({
+        query:       keyword,
+        orientation: 'portrait',
+        per_page:    '4',
+        page:        page,
+        client_id:   process.env.UNSPLASH_ACCESS_KEY
+      });
+      const res  = await fetch(`${UNSPLASH_API}?${params}`);
+      const data = await res.json();
+      if (!data.results || data.results.length === 0) return err('No photos found for this industry.');
 
-        <div class="action-card">
-          <div class="action-card-title">⚡ Save to Widget Library</div>
-          <p class="action-card-desc">Push directly to your Salesbuildr template library as an image widget with variable overlays pre-wired — ready to drag into any quote.</p>
+      // Return 4 varied results — thumbnail for display, regular for generation
+      const photos = data.results.map(p => ({
+        id:        p.id,
+        thumb:     p.urls.small,
+        full:      p.urls.regular + '&w=1200&q=80',
+        alt:       p.alt_description || 'Professional photo',
+        credit:    p.user.name
+      }));
+      return ok200({ photos });
+    } catch (e) {
+      return err(e.message);
+    }
+  }
 
-          <!-- Connect section -->
-          <div class="mini-connect" id="mini-connect">
-            <button type="button" class="mini-connect-toggle" id="mini-toggle">
-              Connect Salesbuildr <span class="mini-arrow" id="mini-arrow">▼</span>
-            </button>
-            <div class="mini-connect-body" id="mini-body" hidden>
-              <div class="mini-fields">
-                <div class="mini-field">
-                  <label class="mini-label">API Key <span class="mini-where">Admin → Integrations</span></label>
-                  <input type="password" id="sb-api-key" class="mini-input" placeholder="Your API key" autocomplete="off">
-                </div>
-                <div class="mini-field">
-                  <label class="mini-label">Integration Key <span class="mini-where">Provided by Salesbuildr</span></label>
-                  <input type="password" id="sb-int-key" class="mini-input" placeholder="Your integration key" autocomplete="off">
-                </div>
-              </div>
-              <label class="mini-remember"><input type="checkbox" id="sb-remember"> Remember on this device</label>
-            </div>
-          </div>
+  // ── ACTION: start (phase 1 — Unsplash + kick off Placid) ─
+  if (action === 'start') {
+    const { templateId, brandColor, logoUrl, industry } = body;
+    if (!brandColor) return err('brandColor required.', 400);
+    if (!logoUrl)    return err('logoUrl required.', 400);
 
-          <button type="button" id="push-btn" class="action-btn action-btn-push">Save to Salesbuildr →</button>
-          <div id="push-result" class="push-result" hidden></div>
-        </div>
+    try {
+      // If logo is a base64 data URL (file upload), host it on Placid first
+      let resolvedLogoUrl = logoUrl;
+      if (logoUrl && logoUrl.startsWith('data:')) {
+        resolvedLogoUrl = await uploadLogoToPlacid(logoUrl);
+      }
 
-      </div>
-    </div>
+      // Use pre-selected photo if provided, otherwise fetch from Unsplash
+      const photoUrl = body.photoUrl || await getPhoto(industry || 'generic');
+      const template = TEMPLATES[templateId || 'chevron'];
+      if (!template) return err('Unknown template.', 400);
 
-  </section>
+      const hex8 = brandColor.replace('#', '').padEnd(6,'0').slice(0,6).toUpperCase() + 'FF';
+      const color = '#' + hex8;
+      const layers = { photo: { image: photoUrl }, logo: { image: resolvedLogoUrl } };
+      for (const layer of template.colorLayers) layers[layer] = { background_color: color };
 
-  <footer class="tag">First Impression · Branded demo cover pages in seconds.</footer>
+      const res  = await fetch(PLACID_API, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.PLACID_API_TOKEN}` },
+        body:    JSON.stringify({ template_uuid: template.uuid, layers })
+      });
+      const data = await res.json();
+      if (!res.ok) return err(data.message || `Placid error ${res.status}`);
 
-</div>
-<script src="first-impression.js"></script>
-</body>
-</html>
+      // Return immediately — client will poll
+      return ok200({ imageId: data.id, photoUrl, status: data.status, imageUrl: data.image_url || null });
+    } catch (e) {
+      return err(e.message);
+    }
+  }
+
+  // ── ACTION: poll (phase 2 — check if Placid is done) ──
+  if (action === 'poll') {
+    const { imageId } = body;
+    if (!imageId) return err('imageId required.', 400);
+    try {
+      const res  = await fetch(`https://api.placid.app/api/rest/images/${imageId}`, {
+        headers: { 'Authorization': `Bearer ${process.env.PLACID_API_TOKEN}` }
+      });
+      const data = await res.json();
+      return ok200({
+        ready:    data.status === 'finished' && !!data.image_url,
+        imageUrl: data.image_url || null,
+        status:   data.status
+      });
+    } catch (e) {
+      return err(e.message);
+    }
+  }
+
+  // ── ACTION: push ───────────────────────────────────────
+  if (action === 'push') {
+    const { imageUrl, companyName, brandColor, apiKey, integrationKey } = body;
+    if (!apiKey || !integrationKey) return err('Salesbuildr credentials required.', 401);
+    if (!imageUrl)                  return err('imageUrl required.', 400);
+
+    const zones = buildOverlayZones(brandColor || '#1a1a1a');
+    const name  = companyName ? `${companyName} – Cover Page` : 'Cover Page';
+
+    try {
+      const res = await fetch(SB_BASE, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'api-key': apiKey, 'integration-key': integrationKey },
+        body:    JSON.stringify({
+          name,
+          widget: {
+            type:           'image',
+            hidden:         false,
+            locked:         false,
+            attachments:    [],
+            image:          { ref: imageUrl, source: imageUrl, mediaType: 'image' },
+            topTemplate:    zones.topTemplate,
+            middleTemplate: zones.middleTemplate,
+            bottomTemplate: zones.bottomTemplate
+          },
+          order: 950
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) return err(data.message || `Salesbuildr error ${res.status}`);
+      return ok200({ salesbuildrId: data.id, name });
+    } catch (e) {
+      return err(e.message);
+    }
+  }
+
+  return err('Unknown action.', 400);
+};
