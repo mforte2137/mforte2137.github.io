@@ -867,22 +867,23 @@ function qqAvailBadge(p) {
 // ── Render web-search suggestions (zero catalog match fallback) ──
 function renderQQSuggestions(data, isLoading) {
   const wrap = $('qqSuggestionsWrap');
-  if (!wrap) return;
+  const body = $('qqSuggestionsBody');
+  if (!wrap || !body) { console.error('[QQ] qqSuggestionsWrap or qqSuggestionsBody not found'); return; }
+
+  wrap.classList.remove('hidden');
 
   if (isLoading) {
-    wrap.innerHTML = '<div class="qq-suggest-loading"><div class="spinner-sm"></div> Searching the web for matching products…</div>';
-    wrap.classList.remove('hidden');
+    body.innerHTML = '<div class="qq-suggest-loading"><div class="spinner-sm"></div> Searching the web for matching products…</div>';
     return;
   }
 
   const suggestions = data?.suggestions || [];
   if (suggestions.length === 0) {
-    wrap.innerHTML = '<div class="qq-suggest-none">No matching products found online. Try rephrasing your request or contact your distributor directly.</div>';
-    wrap.classList.remove('hidden');
+    body.innerHTML = '<div class="qq-suggest-none">No matching products found online. Try rephrasing your request or contact your distributor directly.</div>';
     return;
   }
 
-  wrap.innerHTML = suggestions.map(s => `
+  body.innerHTML = suggestions.map(s => `
     <div class="qq-suggest-item">
       <div class="qq-suggest-header">
         <span class="qq-suggest-name">${esc(s.name)}</span>
@@ -900,7 +901,6 @@ function renderQQSuggestions(data, isLoading) {
       </div>
     </div>`).join('');
 
-  wrap.classList.remove('hidden');
 }
 
 function qqCopyMpn(btn, mpn) {
@@ -927,6 +927,7 @@ function renderQQProducts(products, request) {
   $('qqCreateResult').classList.add('hidden');
   $('qqUnmatched').classList.add('hidden');
   $('qqSuggestionsWrap')?.classList.add('hidden');
+  const qqSB = $('qqSuggestionsBody'); if (qqSB) qqSB.innerHTML = '';
 
   const list = $('qqProductList');
 
