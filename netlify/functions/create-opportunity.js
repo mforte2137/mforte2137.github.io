@@ -431,7 +431,13 @@ exports.handler = async (event) => {
               || nameLower.includes('sleeve') || nameLower.includes('topload') || haystackCompact.includes('topload')
               || nameLower.includes('briefcase') || nameLower.includes('cable')
               || nameLower.includes('charger') || nameLower.includes('adapter')
-              || nameLower.includes('mouse') || nameLower.includes('keyboard');
+              || nameLower.includes('mouse') || nameLower.includes('keyboard')
+              || nameLower.includes('patch panel') || haystackCompact.includes('patchpanel')
+              || nameLower.includes('patch') || nameLower.includes('rackmount')
+              || nameLower.includes('rack mount') || nameLower.includes('keystone')
+              || nameLower.includes('headset') || nameLower.includes('headphone')
+              || nameLower.includes('speaker') || nameLower.includes('webcam')
+              || nameLower.includes('monitor') || nameLower.includes('display');
             if (!isAccessory) score -= 3;
           }
         }
