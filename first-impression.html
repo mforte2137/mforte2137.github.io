@@ -133,16 +133,28 @@
 
         <!-- Focal point control — appears after a photo is selected -->
         <div id="focal-control" class="focal-control" hidden>
-          <div class="focal-label">
-            <span>Photo position</span>
-            <span id="focal-value-label" class="focal-value-label">Centre</span>
+          <div class="focal-inner">
+            <!-- Live crop preview — portrait thumbnail showing exactly what will be used -->
+            <div class="focal-preview-wrap">
+              <div class="focal-preview-label">Cover crop preview</div>
+              <div class="focal-preview-viewport" id="focal-viewport">
+                <img id="focal-preview-img" class="focal-preview-img" src="" alt="">
+              </div>
+            </div>
+            <!-- Slider -->
+            <div class="focal-slider-wrap">
+              <div class="focal-slider-header">
+                <span class="focal-slider-title">Reposition photo</span>
+                <span id="focal-value-label" class="focal-value-label">Centre</span>
+              </div>
+              <div class="focal-track-wrap">
+                <span class="focal-end-label">Top</span>
+                <input type="range" id="focal-slider" class="focal-slider" min="0" max="100" value="50" step="5">
+                <span class="focal-end-label">Bottom</span>
+              </div>
+              <p class="focal-hint">Drag to shift the photo up or down within the cover. The preview updates live.</p>
+            </div>
           </div>
-          <div class="focal-track-wrap">
-            <span class="focal-end-label">Top</span>
-            <input type="range" id="focal-slider" class="focal-slider" min="0" max="100" value="50" step="5">
-            <span class="focal-end-label">Bottom</span>
-          </div>
-          <p class="focal-hint">Drag to reposition the photo within the cover — useful if faces or key details are being cropped.</p>
         </div>
       </div>
       <div id="photo-loading" class="photo-loading" hidden>
