@@ -335,11 +335,14 @@ exports.handler = async (event) => {
 Given a customer product request and a catalog of products, return the IDs of the best matching products.
 
 Rules:
-- Match products that the customer is clearly asking for
-- Include close alternatives if the exact model isn't available (e.g. similar spec laptop)
-- Exclude products that are clearly unrelated to the request
+- Match products the customer is CLEARLY asking for based on brand, size, model, and specs
+- Respect brand constraints strictly — if the customer says Dell, do not return Lenovo or HP
+- Respect size constraints strictly — if the customer says 16 inch, do not return 14 inch
+- Only include alternatives from a different brand or size if NO matching products exist at all
+- Exclude demo, refurbished, or excess stock items unless explicitly requested
+- Exclude products that are unrelated to the request
 - Never include services, software licenses, or recurring billing items
-- Return at most 8 product IDs
+- Return at most 6 product IDs, ordered best match first
 - Return ONLY a JSON array of ID strings, nothing else. Example: ["id1","id2","id3"]`,
           messages: [{
             role: 'user',
