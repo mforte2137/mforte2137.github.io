@@ -125,18 +125,31 @@ function updateFocalPreview(sliderVal) {
   const imgNW = focalPreviewImg.naturalWidth  || 1;
   const imgNH = focalPreviewImg.naturalHeight || 1;
 
-  // Scale image so its width fills the viewport (same as cover page behaviour)
-  const scale      = vpW / imgNW;
-  const scaledH    = imgNH * scale;
-  const renderedH  = Math.max(scaledH, vpH);
+  // Strategy: scale so the image is tall enough to scroll meaningfully.
+  // Scale by width first; if the result isn't taller than the viewport, scale by height instead.
+  const scaleByW   = vpW / imgNW;
+  const heightIfW  = imgNH * scaleByW;
 
-  // Focal point: 0 = top of image flush top, 1 = bottom flush bottom
-  const maxOffset  = renderedH - vpH;
-  const topOffset  = -(maxOffset * (sliderVal / 100));
+  let renderW, renderH;
+  if (heightIfW >= vpH * 1.3) {
+    // Portrait-ish image — width-fill gives enough height to scroll
+    renderW = vpW;
+    renderH = heightIfW;
+  } else {
+    // Landscape image — scale so height is 2× the viewport so scrolling is obvious
+    const scaleByH = (vpH * 2) / imgNH;
+    renderW = imgNW * scaleByH;
+    renderH = vpH * 2;
+  }
 
-  focalPreviewImg.style.width  = vpW + 'px';
-  focalPreviewImg.style.height = renderedH + 'px';
+  const maxOffset = renderH - vpH;
+  const topOffset = -(maxOffset * (sliderVal / 100));
+
+  focalPreviewImg.style.width  = renderW + 'px';
+  focalPreviewImg.style.height = renderH + 'px';
   focalPreviewImg.style.top    = topOffset + 'px';
+  // Centre horizontally if wider than viewport
+  focalPreviewImg.style.left   = renderW > vpW ? ((vpW - renderW) / 2) + 'px' : '0px';
 }
 
 function focalLabel(v) {
@@ -276,12 +289,14 @@ async function runDebackground(imageEl, originalSrc) {
 debgUseBtn.addEventListener('click', () => {
   if (!debgCleanDataUrl) return;
   logoDataUrl      = debgCleanDataUrl;
-  logoFileUploaded = true;   // treat as uploaded data so it goes via Placid file upload
+  logoFileUploaded = true;
   debgUseBtn.textContent = '✓ Cleaned version in use';
   debgUseBtn.disabled    = true;
   debgSkipBtn.disabled   = true;
-  // Update the visible preview to the cleaned version
-  logoPreviewImg.src = debgCleanDataUrl;
+  // Update visible preview — clear onload first so it doesn't reset logoFileUploaded
+  logoPreviewImg.onload  = null;
+  logoPreviewImg.src     = debgCleanDataUrl;
+  logoPreviewArea.hidden = false;
 });
 
 debgSkipBtn.addEventListener('click', () => {
