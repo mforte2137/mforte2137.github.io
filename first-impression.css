@@ -218,7 +218,7 @@ header.top .brand { font-weight: 700; color: var(--ink); }
   letter-spacing: 0.08em; color: var(--mute);
 }
 .focal-preview-viewport {
-  width: 80px; height: 110px;   /* portrait ratio matching cover page */
+  width: 80px; height: 140px;   /* portrait ratio — taller = more scroll range visible */
   overflow: hidden; position: relative;
   border: 2px solid var(--ink); flex-shrink: 0;
   background: var(--paper-alt);
