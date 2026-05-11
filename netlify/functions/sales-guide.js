@@ -337,24 +337,16 @@ Write a short, professional cover note for the quote.`;
           'anthropic-beta': 'web-search-2025-03-05'
         },
         body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1024,
+          max_tokens: 800,
           tools: [
             { type: 'web_search_20250305', name: 'web_search' },
             SUGGEST_PRODUCTS_TOOL
           ],
           tool_choice: { type: 'auto' },
-          system: `You are a product research assistant for an MSP (IT services company).
-The rep has requested a product that is not in their local catalog.
-Search the web to find 2-3 real, currently available commercial products that match the request.
-Focus on products commonly sold by MSPs and IT resellers.
-The MPN (Manufacturer Part Number) is critical — it must be accurate as the rep will use it to import the product.
-Use the suggest_products tool to return your findings.`,
+          system: 'You are a product research assistant for an MSP. Find real commercial products with accurate MPNs. Be concise. Use the suggest_products tool.',
           messages: [{
             role: 'user',
-            content: `Find real products matching this request: "${request}"
-
-Search for the products and return 2-3 options with accurate MPNs using the suggest_products tool.`
+            content: `Find 2-3 real products matching this request: "${request}". Search the web and return accurate MPNs using the suggest_products tool.`
           }]
         })
       });
