@@ -42,7 +42,11 @@ const photoLoading     = document.getElementById('photo-loading');
 const photoCredit      = document.getElementById('photo-credit');
 let   selectedPhotoUrl = '';
 let   photoPage        = 1;
+let   photoFocalPoint  = 0.5;   // 0.0 = top, 1.0 = bottom, 0.5 = centre
 const repNameInput   = document.getElementById('rep-name');
+const focalControl   = document.getElementById('focal-control');
+const focalSlider    = document.getElementById('focal-slider');
+const focalValueLabel= document.getElementById('focal-value-label');
 const generateBtn    = document.getElementById('generate-btn');
 const formError      = document.getElementById('form-error');
 const restartBtn     = document.getElementById('restart-btn');
@@ -103,6 +107,22 @@ function updateTemplatePreview(color) {
   document.querySelectorAll('.tp-half-circle').forEach(el => el.style.background = color);
 }
 
+// ── Focal point slider ────────────────────────────────────
+function focalLabel(v) {
+  if (v <= 10) return 'Very Top';
+  if (v <= 25) return 'Top';
+  if (v <= 40) return 'Upper';
+  if (v <= 60) return 'Centre';
+  if (v <= 75) return 'Lower';
+  if (v <= 90) return 'Bottom';
+  return 'Very Bottom';
+}
+focalSlider.addEventListener('input', () => {
+  const v         = parseInt(focalSlider.value);
+  photoFocalPoint = v / 100;
+  focalValueLabel.textContent = focalLabel(v);
+});
+
 // ── Photo picker ──────────────────────────────────────────
 async function fetchPhotos() {
   findPhotosBtn.disabled    = true;
@@ -146,6 +166,11 @@ function renderPhotos(photos) {
       tile.classList.add('is-selected');
       selectedPhotoUrl = photo.full;
       photoCredit.textContent = `Photo by ${photo.credit} on Unsplash`;
+      // Show focal point control and reset to centre
+      focalSlider.value   = 50;
+      photoFocalPoint     = 0.5;
+      focalValueLabel.textContent = 'Centre';
+      focalControl.hidden = false;
     });
     photoGrid.appendChild(tile);
   });
@@ -153,7 +178,7 @@ function renderPhotos(photos) {
 
 findPhotosBtn.addEventListener('click', () => { photoPage = 1; fetchPhotos(); });
 morePhotosBtn.addEventListener('click', () => { photoPage++; fetchPhotos(); });
-industrySelect.addEventListener('change', () => { photoPicker.hidden = true; selectedPhotoUrl = ''; photoPage = 1; });
+industrySelect.addEventListener('change', () => { photoPicker.hidden = true; selectedPhotoUrl = ''; photoPage = 1; focalControl.hidden = true; });
 
 // ── Template selection ────────────────────────────────────
 document.querySelectorAll('.template-tile:not(.is-soon)').forEach(tile => {
@@ -309,6 +334,7 @@ generateBtn.addEventListener('click', async () => {
         brandColor,
         logoUrl,
         photoUrl:   selectedPhotoUrl,
+        focalPoint: photoFocalPoint,
         industry,
         companyName
       })
@@ -427,6 +453,9 @@ restartBtn.addEventListener('click', () => {
   logoPreviewArea.hidden  = true;
   logoUploadName.hidden   = true;
   pushResult.hidden       = true;
+  focalControl.hidden     = true;
+  focalSlider.value       = 50;
+  photoFocalPoint         = 0.5;
   pushBtn.classList.remove('is-done');
   pushBtn.disabled        = false;
   pushBtn.textContent     = 'Save to Salesbuildr →';
