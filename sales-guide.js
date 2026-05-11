@@ -812,6 +812,10 @@ async function doQQCatalogSearch() {
 
     // 4. If zero matches — fire web search for suggestions instead of cover note
     if (products.length === 0) {
+      // Hide the "no products matched / try simpler terms" hint — suggestions panel replaces it
+      const noMatchHint = $('qqProductList');
+      if (noMatchHint) noMatchHint.innerHTML = '';
+      $('qqMatchSub').textContent = 'No matches in your catalog — searching the web…';
       renderQQSuggestions(null, true); // show loading state
       try {
         const suggestRes = await fetch('/api/sales-guide', {
@@ -932,7 +936,7 @@ function renderQQProducts(products, request) {
   const list = $('qqProductList');
 
   if (products.length === 0) {
-    list.innerHTML = '<div class="opp-contact-none"><strong>No products matched.</strong><br>Tips: try simpler terms (e.g. "monitor" or "dock" instead of full descriptions). Services like monitoring are excluded — Quick Quote is for hardware and one-time products only.</div>';
+    list.innerHTML = ''; // cleared — suggestions panel takes over for zero matches
     $('qqMatchSub').textContent = 'No matches found';
     $('qqProductTotal').classList.add('hidden');
     return;
