@@ -100,6 +100,7 @@ function updateTemplatePreview(color) {
   // Live-update the template tile preview with the chosen colour
   document.querySelectorAll('.tp-chevron').forEach(el => el.style.borderLeftColor = color);
   document.querySelectorAll('.tp-bar').forEach(el => el.style.background = color);
+  document.querySelectorAll('.tp-half-circle').forEach(el => el.style.background = color);
 }
 
 // ── Photo picker ──────────────────────────────────────────
