@@ -810,7 +810,24 @@ async function doQQCatalogSearch() {
     $('qqResultsWrap').classList.remove('hidden');
     $('qqResultsWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    // 4. Fill cover note when ready
+    // 4. If zero matches — fire web search for suggestions instead of cover note
+    if (products.length === 0) {
+      renderQQSuggestions(null, true); // show loading state
+      try {
+        const suggestRes = await fetch('/api/sales-guide', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'suggest-products', request })
+        });
+        const suggestData = await suggestRes.json();
+        renderQQSuggestions(suggestData.ok ? suggestData : null, false);
+      } catch (e) {
+        renderQQSuggestions(null, false);
+      }
+      return; // skip cover note
+    }
+
+    // 5. Fill cover note when ready (only if products were found)
     $('qqCoverText').textContent = 'Writing cover note…';
     const coverData = await coverPromise;
     if (coverData.ok && coverData.cover_note) {
@@ -847,6 +864,56 @@ function qqAvailBadge(p) {
   return '';
 }
 
+// ── Render web-search suggestions (zero catalog match fallback) ──
+function renderQQSuggestions(data, isLoading) {
+  const wrap = $('qqSuggestionsWrap');
+  if (!wrap) return;
+
+  if (isLoading) {
+    wrap.innerHTML = '<div class="qq-suggest-loading"><div class="spinner-sm"></div> Searching the web for matching products…</div>';
+    wrap.classList.remove('hidden');
+    return;
+  }
+
+  const suggestions = data?.suggestions || [];
+  if (suggestions.length === 0) {
+    wrap.innerHTML = '<div class="qq-suggest-none">No matching products found online. Try rephrasing your request or contact your distributor directly.</div>';
+    wrap.classList.remove('hidden');
+    return;
+  }
+
+  wrap.innerHTML = suggestions.map(s => `
+    <div class="qq-suggest-item">
+      <div class="qq-suggest-header">
+        <span class="qq-suggest-name">${esc(s.name)}</span>
+        ${s.approx_price ? `<span class="qq-suggest-price">${esc(s.approx_price)}</span>` : ''}
+      </div>
+      <div class="qq-suggest-desc">${esc(s.description)}</div>
+      <div class="qq-suggest-meta">
+        <span class="qq-suggest-mfr">${esc(s.manufacturer)}</span>
+        ${s.mpn ? `
+          <button class="qq-mpn-btn" onclick="qqCopyMpn(this, '${esc(s.mpn)}')">
+            <span class="qq-mpn-label">MPN</span>
+            <span class="qq-mpn-value">${esc(s.mpn)}</span>
+            <span class="qq-mpn-copy">Copy</span>
+          </button>` : ''}
+      </div>
+    </div>`).join('');
+
+  wrap.classList.remove('hidden');
+}
+
+function qqCopyMpn(btn, mpn) {
+  navigator.clipboard?.writeText(mpn).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = mpn; ta.style.cssText = 'position:fixed;opacity:0;';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+  const copySpan = btn.querySelector('.qq-mpn-copy');
+  if (copySpan) { copySpan.textContent = 'Copied!'; setTimeout(() => copySpan.textContent = 'Copy', 2000); }
+}
+
 function renderQQProducts(products, request) {
   qqMatchedProducts = [];
   qqSelectedCompany = null;
@@ -859,6 +926,7 @@ function renderQQProducts(products, request) {
   $('qqQuoteStep').classList.add('hidden');
   $('qqCreateResult').classList.add('hidden');
   $('qqUnmatched').classList.add('hidden');
+  $('qqSuggestionsWrap')?.classList.add('hidden');
 
   const list = $('qqProductList');
 
