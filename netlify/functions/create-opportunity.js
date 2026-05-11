@@ -344,8 +344,8 @@ exports.handler = async (event) => {
         // Networking infrastructure
         patch:    ['patch', 'panel', 'keystone', 'punchdown'],
         panel:    ['patch', 'panel', 'keystone', 'punchdown'],
-        unifi:    ['unifi', 'ubiquiti', 'u6', 'uap', 'udm', 'usw'],
-        ubiquiti: ['unifi', 'ubiquiti', 'u6', 'uap', 'udm', 'usw'],
+        unifi:    ['unifi', 'ubiquiti'],
+        ubiquiti: ['unifi', 'ubiquiti'],
       };
 
       // Expand keywords with synonyms
@@ -433,11 +433,9 @@ exports.handler = async (event) => {
               || nameLower.includes('charger') || nameLower.includes('adapter')
               || nameLower.includes('mouse') || nameLower.includes('keyboard')
               || nameLower.includes('patch panel') || haystackCompact.includes('patchpanel')
-              || nameLower.includes('patch') || nameLower.includes('rackmount')
-              || nameLower.includes('rack mount') || nameLower.includes('keystone')
+              || nameLower.includes('patch') || nameLower.includes('keystone')
               || nameLower.includes('headset') || nameLower.includes('headphone')
-              || nameLower.includes('speaker') || nameLower.includes('webcam')
-              || nameLower.includes('monitor') || nameLower.includes('display');
+              || nameLower.includes('speaker') || nameLower.includes('webcam');
             if (!isAccessory) score -= 3;
           }
         }
