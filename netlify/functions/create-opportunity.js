@@ -294,218 +294,102 @@ exports.handler = async (event) => {
     }
 
     // ── search-products ─────────────────────────────────────
-    // Catalog search for Quick Quote mode.
-    // Fetches the full catalog and scores products client-side
-    // against keywords extracted from the plain-language request.
-    // The Salesbuildr ?query= param is unreliable for PSA items,
-    // so we pull everything and rank by keyword match score.
+    // Claude Haiku-powered catalog matching for Quick Quote.
+    // Fetches full catalog, sends product names + request to Haiku,
+    // which returns the IDs of the best matching products.
+    // This replaces keyword scoring — Claude understands semantics.
     if (action === 'search-products') {
-      const { query, keywords } = body;
-      if (!query && (!keywords || keywords.length === 0)) return err('query required.', 400);
+      const { query } = body;
+      if (!query) return err('query required.', 400);
 
-      // Single fetch — Salesbuildr API doesn't support pagination params (page= or offset=).
-      // size=500 returns whatever the API allows in one call.
+      // 1. Fetch full catalog
       const res  = await fetch(`${BASE}/product?size=500`, { headers });
       const data = res.ok ? await res.json() : {};
       const all  = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
 
-      // Score every product against the keyword list sent from the client
-      const kws = Array.isArray(keywords) && keywords.length > 0
-        ? keywords
-        : (query || '').toLowerCase().split(/\s+/)
-            .filter(w => w.length > 2 && !['one','two','three','four','five','six','seven','eight','nine','ten'].includes(w));
-
-      // Exclude services, labor, bundles, and unlisted items.
-      // listed:false means the rep has hidden it from their catalog — don't quote it.
-      const hardwareOnly = all.filter(p => {
+      // 2. Filter to listed, non-service, non-bundle products only
+      const hardware = all.filter(p => {
         const t = (p.productType || p.type || '').toLowerCase();
         if (t === 'service' || t === 'labor' || t === 'bundle') return false;
-        if (p.listed === false) return false;  // confirmed field name from API
+        if (p.listed === false) return false;
         return true;
       });
 
-      // Synonym expansion — common customer terms → catalog terms
-      // e.g. "dock" → also search "docking", "station", "hub"
-      const synonyms = {
-        dock:     ['dock', 'docking', 'station', 'hub'],
-        monitor:  ['monitor', 'display', 'screen'],
-        laptop:   ['laptop', 'notebook', 'portable'],
-        phone:    ['phone', 'handset', 'voip', 'telephone'],
-        printer:  ['printer', 'mfp', 'multifunction'],
-        keyboard: ['keyboard', 'kbd'],
-        mouse:    ['mouse', 'pointer'],
-        headset:  ['headset', 'headphone', 'earphone'],
-        cable:    ['cable', 'lead', 'connector'],
-        switch:   ['switch', 'swh'],
-        server:   ['server', 'srv'],
-        // Carry cases — reps say "bag", products say "backpack", "briefcase", "topload", "sleeve"
-        bag:      ['bag', 'backpack', 'briefcase', 'topload', 'sleeve', 'satchel', 'tote'],
-        backpack: ['bag', 'backpack', 'briefcase', 'topload', 'sleeve', 'satchel', 'tote'],
-        // Networking infrastructure
-        patch:    ['patch', 'panel', 'keystone', 'punchdown'],
-        panel:    ['patch', 'panel', 'keystone', 'punchdown'],
-        unifi:    ['unifi', 'ubiquiti'],
-        ubiquiti: ['unifi', 'ubiquiti'],
-      };
+      if (hardware.length === 0) return ok({ products: [], catalogSize: all.length, matched: 0 });
 
-      // Expand keywords with synonyms
-      const expandedKws = new Set(kws);
-      for (const kw of kws) {
-        for (const [base, syns] of Object.entries(synonyms)) {
-          if (kw.includes(base) || base.includes(kw)) {
-            syns.forEach(s => expandedKws.add(s));
-          }
-        }
-      }
-      const allKws = [...expandedKws];
+      // 3. Build a compact product list for Haiku — id + name only to minimise tokens
+      const catalogList = hardware.map(p => `${p.id}|||${p.name}`).join('\n');
 
-      const requestLower = (query || '').toLowerCase();
+      // 4. Ask Haiku to match the request against the catalog
+      const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 512,
+          system: `You are a product catalog matching assistant for an MSP (IT services company).
+Given a customer product request and a catalog of products, return the IDs of the best matching products.
 
-      // Detect what broad categories the request is about
-      const wantsLaptop   = requestLower.includes('laptop') || requestLower.includes('notebook');
-      const wantsMonitor  = requestLower.includes('monitor') || requestLower.includes('display') || requestLower.includes('screen');
-      const wantsDock     = requestLower.includes('dock') || requestLower.includes('docking') || requestLower.includes('station');
-      const wantsPhone    = requestLower.includes('phone') || requestLower.includes('voip') || requestLower.includes('handset')
-                         || requestLower.includes('yealink') || requestLower.includes('snom') || requestLower.includes('poly')
-                         || requestLower.includes('cisco') || requestLower.includes('t54') || requestLower.includes('t57');
-      const wantsDell     = requestLower.includes('dell');
-      const wantsLenovo   = requestLower.includes('lenovo');
-      const wantsHp       = requestLower.includes('hp') || requestLower.includes('elitebook') || requestLower.includes('probook');
+Rules:
+- Match products that the customer is clearly asking for
+- Include close alternatives if the exact model isn't available (e.g. similar spec laptop)
+- Exclude products that are clearly unrelated to the request
+- Never include services, software licenses, or recurring billing items
+- Return at most 8 product IDs
+- Return ONLY a JSON array of ID strings, nothing else. Example: ["id1","id2","id3"]`,
+          messages: [{
+            role: 'user',
+            content: `Customer request: "${query}"
 
-      // Detect model numbers — high-signal tokens like "510", "p7", "t54w", "g5"
-      // Model keywords: tokens with digits that look like model numbers (e.g. "510", "t54w", "g5")
-      // Exclude pure storage/RAM sizes like "512", "256", "16gb" — these match too many products
-      const modelKws = allKws.filter(k => {
-        if (/^\d+$/.test(k) && k.length <= 4) return false;  // pure number like "510", "512" — ambiguous
-        if (/^\d+(gb|tb|mb)$/i.test(k)) return false;         // storage size like "512gb", "16gb"
-        return /[0-9]/.test(k);                                 // alphanumeric model like "t54w", "p7", "g5"
+Product catalog (format: ID|||Name):
+${catalogList}
+
+Return a JSON array of the IDs of matching products. Return [] if nothing matches.`
+          }]
+        })
       });
 
-      // Detect brand keywords from the request
-      const knownBrands = ['dell','lenovo','hp','jabra','yealink','snom','poly','cisco',
-        'logitech','bose','samsung','lg','adesso','epos','plantronics','apple','startech',
-        'kingston','sandisk','microsoft','philips','axis','creative','asus','acer','sony',
-        'ubiquiti','unifi','netgear','tplink','zyxel','fortinet','meraki','aruba','ruckus',
-        'targus','kensington','brother','epson','canon','xerox','zebra'];
-      const brandKws = allKws.filter(k => knownBrands.includes(k.toLowerCase()));
+      const aiData = await aiRes.json();
+      const aiText = aiData?.content?.[0]?.text?.trim() || '[]';
 
-      function scoreProduct(p) {
-        const nameLower = (p.name || '').toLowerCase();
-        const mfr       = (p.manufacturer || '').toLowerCase();
-        const haystackRaw = [
-          p.name || '', p.shortDescription || '', p.manufacturer || '', p.mpn || '', p.ean || ''
-        ].join(' ').toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
-        // Also build a space-collapsed version so "top load" matches keyword "topload"
-        const haystackCompact = haystackRaw.replace(/ /g, '');
-        const haystack = haystackRaw;
-
-        let score = 0;
-
-        // Model number match — very high signal (+6 each)
-        for (const kw of modelKws) {
-          if (haystack.includes(kw) || haystackCompact.includes(kw)) score += 6;
-        }
-
-        // Brand match — reward products from a requested brand (+4)
-        for (const bk of brandKws) {
-          if (mfr.includes(bk) || nameLower.startsWith(bk) || nameLower.includes(bk)) score += 4;
-        }
-
-        // General category keywords — lower weight
-        for (const kw of allKws) {
-          if (modelKws.includes(kw) || brandKws.includes(kw)) continue;
-          const k = kw.replace(/[^a-z0-9]/g, '');
-          if (!k || k.length < 3) continue;
-          if (haystack.includes(k) || haystackCompact.includes(k)) score += k.length > 5 ? 2 : 1;
-        }
-
-        // Off-brand penalty — only penalise when the product is in the same category
-        // as the requested brand. Don't penalise accessories/bags from other brands
-        // just because the rep also asked for a Jabra or Dell item.
-        if (brandKws.length > 0) {
-          const fromRequestedBrand = brandKws.some(bk => mfr.includes(bk) || nameLower.includes(bk));
-          if (!fromRequestedBrand) {
-            // Only penalise if this product looks like it competes with the branded item
-            // (i.e. it's also a laptop, phone, speaker, monitor — not an accessory/bag)
-            const isAccessory = nameLower.includes('bag') || nameLower.includes('backpack')
-              || nameLower.includes('sleeve') || nameLower.includes('topload') || haystackCompact.includes('topload')
-              || nameLower.includes('briefcase') || nameLower.includes('cable')
-              || nameLower.includes('charger') || nameLower.includes('adapter')
-              || nameLower.includes('mouse') || nameLower.includes('keyboard')
-              || nameLower.includes('patch panel') || haystackCompact.includes('patchpanel')
-              || nameLower.includes('patch') || nameLower.includes('keystone')
-              || nameLower.includes('headset') || nameLower.includes('headphone')
-              || nameLower.includes('speaker') || nameLower.includes('webcam');
-            if (!isAccessory) score -= 3;
-          }
-        }
-
-        // Category mismatch penalties
-        const isPhone    = nameLower.includes('voip') || nameLower.includes('sip-') || /phone/.test(nameLower) || nameLower.includes('handset');
-        const isAIO      = nameLower.includes('all-in-one') || nameLower.includes('neo 50a');
-        const isCharger  = nameLower.includes('charger') || nameLower.includes('wall charger') || nameLower.includes('power adapter');
-        const isRefurb   = nameLower.startsWith('refurb') || nameLower.startsWith('excess') || nameLower.includes('demo ');
-        const isWorkstation = nameLower.includes('workstation') || /thinkpad p/.test(nameLower);
-        const isDrive    = nameLower.includes('hard drive') || nameLower.includes('internal drive') || nameLower.includes('hdd') || /\bsas\b/.test(nameLower);
-        const isCommercialAudio = nameLower.includes('pa system') || nameLower.includes('ip speaker') || nameLower.includes('soundbar') || nameLower.includes('edgemax');
-        const wantsLargeMonitor = wantsMonitor && (requestLower.includes('27') || requestLower.includes('24') || requestLower.includes('32'));
-        const isSmallMonitor    = wantsLargeMonitor && (nameLower.includes('13.') || nameLower.includes('15.') || nameLower.includes('portable'));
-
-        if (isPhone && !wantsPhone)   score -= 8;
-        if (isAIO && (wantsMonitor || wantsLaptop)) score -= 6;
-        if (isCharger)                score -= 6;
-        if (isDrive && !requestLower.includes('drive') && !requestLower.includes('storage')) score -= 7;
-        if (isSmallMonitor)           score -= 5;
-        if (isRefurb)                 score -= 4;
-        if (isWorkstation && wantsLaptop && !requestLower.includes('workstation')) score -= 4;
-        if (isCommercialAudio && !requestLower.includes('pa') && !requestLower.includes('soundbar')) score -= 5;
-
-        return score;
+      // 5. Parse the returned IDs safely
+      let matchedIds = [];
+      try {
+        const parsed = JSON.parse(aiText);
+        if (Array.isArray(parsed)) matchedIds = parsed.filter(id => typeof id === 'string');
+      } catch {
+        // Haiku occasionally wraps in markdown — strip and retry
+        const stripped = aiText.replace(/```json?|```/g, '').trim();
+        try { matchedIds = JSON.parse(stripped); } catch { matchedIds = []; }
       }
 
-      // Per-product adaptive threshold:
-      // A product that matched a brand or model keyword must score 5+ (strong match).
-      // A product that only matched generic category keywords needs just 2+ (weak match ok).
-      // This handles mixed requests like "Jabra speaker and a laptop bag" — the bag
-      // has no brand/model so it qualifies at 2, while the Jabra needs a strong match at 5.
-      function meetsThreshold(p, score) {
-        if (score <= 0) return false;
-        const nameLower = (p.name || '').toLowerCase();
-        const mfr       = (p.manufacturer || '').toLowerCase();
-        const hay       = (nameLower + ' ' + mfr).replace(/[^a-z0-9 ]/g, ' ');
-        const hitsBrand = brandKws.some(bk => hay.includes(bk));
-        const hitsModel = modelKws.some(mk => hay.includes(mk));
-        return (hitsBrand || hitsModel) ? score >= 5 : score >= 2;
-      }
+      // 6. Look up full product details for matched IDs
+      const idSet = new Set(matchedIds);
+      const matched = hardware
+        .filter(p => idSet.has(p.id))
+        .sort((a, b) => matchedIds.indexOf(a.id) - matchedIds.indexOf(b.id)) // preserve Haiku's order
+        .map(p => ({
+          id:     p.id,
+          name:   p.name || p.description || 'Unknown',
+          price:  p.sellPrice ?? p.price ?? p.recurringPrice ?? p.unitPrice ?? 0,
+          type:   p.productType || p.type || 'product',
+          unit:   (() => {
+            const t = (p.productType || p.type || '').toLowerCase();
+            if (t === 'bundle') return 'month';
+            return (p.unit || p.term || '').toLowerCase();
+          })(),
+          vendor: p.manufacturer || '',
+          sku:    p.mpn || p.ean || '',
+          listed: p.listed ?? null,
+        }));
 
-      const scored = hardwareOnly
-        .map(p => ({ p, score: scoreProduct(p) }))
-        .filter(({ p, score }) => meetsThreshold(p, score))
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 12);
-
-      const products = scored.map(({ p, score }) => ({
-        id:          p.id,
-        name:        p.name || p.description || 'Unknown',
-        price:       p.sellPrice ?? p.price ?? p.recurringPrice ?? p.unitPrice ?? 0,
-        type:        p.productType || p.type || 'product',
-        unit:        (() => {
-          const t = (p.productType || p.type || '').toLowerCase();
-          if (t === 'bundle') return 'month';
-          return (p.unit || p.term || '').toLowerCase();
-        })(),
-        vendor:      p.manufacturer || '',
-        sku:         p.mpn || p.ean || '',
-        listed:      p.listed ?? null,  // confirmed API field — false = hidden from catalog
-        _rawAvail:   `listed:${p.listed}`,
-        _score:      score
-      }));
-
-      // Debug: expose raw field names from first result so we know what the API actually returns
-      const debugFields = scored[0] ? Object.keys(scored[0].p) : [];
-
-      return ok({ products, catalogSize: all.length, matched: products.length });
+      return ok({ products: matched, catalogSize: all.length, matched: matched.length });
     }
+
 
         return err('Unknown action.', 400);
 
