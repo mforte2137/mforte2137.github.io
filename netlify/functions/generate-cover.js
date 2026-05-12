@@ -23,6 +23,11 @@ const TEMPLATES = {
     uuid:        'su7f9dcxtokvs',
     name:        'Half Circle',
     colorLayers: ['half_circle', 'accent_bar']
+  },
+  top_bar: {
+    uuid:        '6upetkewtuvkp',
+    name:        'Top Bar',
+    colorLayers: ['bar_bottom', 'accent_bar']
   }
   // future templates added here:
   // split:    { uuid: '...', name: 'Split Panel', colorLayers: ['color_panel'] },
