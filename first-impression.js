@@ -9,8 +9,6 @@ const LS_REP_NAME = 'fi_rep_name';
 // ── State ─────────────────────────────────────────────────
 let generatedImageUrl = '';
 let selectedTemplate  = 'chevron';
-let logoDataUrl       = '';   // base64 if file uploaded
-let logoFileUploaded  = false;
 
 // ── DOM ───────────────────────────────────────────────────
 const formView    = document.getElementById('form-view');
@@ -31,8 +29,6 @@ const previewLogoBtn = document.getElementById('preview-logo-btn');
 const logoPreviewArea= document.getElementById('logo-preview-area');
 const logoPreviewImg = document.getElementById('logo-preview-img');
 const logoClearBtn   = document.getElementById('logo-preview-clear');
-const logoUpload     = document.getElementById('logo-upload');
-const logoUploadName = document.getElementById('logo-upload-name');
 const industrySelect   = document.getElementById('industry');
 const findPhotosBtn    = document.getElementById('find-photos-btn');
 const photoPicker      = document.getElementById('photo-picker');
@@ -285,31 +281,15 @@ previewLogoBtn.addEventListener('click', () => {
   };
   logoPreviewImg.onload = () => {
     logoPreviewArea.hidden = false;
-    logoFileUploaded = false;
   };
 });
 
 logoClearBtn.addEventListener('click', () => {
   logoPreviewArea.hidden = true;
   logoUrlInput.value     = '';
-  logoFileUploaded       = false;
-  logoUploadName.hidden  = true;
 });
 
 // ── Logo file upload ──────────────────────────────────────
-logoUpload.addEventListener('change', () => {
-  const file = logoUpload.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    logoDataUrl      = e.target.result;
-    logoFileUploaded = true;
-    logoUploadName.textContent = `✓ ${file.name}`;
-    logoUploadName.hidden      = false;
-    logoPreviewArea.hidden     = true;
-  };
-  reader.readAsDataURL(file);
-});
 
 // ── Connect section toggle ────────────────────────────────
 miniToggle.addEventListener('click', () => {
@@ -338,8 +318,8 @@ function validate() {
     showFormError('Please enter a valid brand colour (e.g. #1a4da0).');
     colorHex.focus(); return false;
   }
-  if (!logoFileUploaded && !logoUrlInput.value.trim()) {
-    showFormError('Please provide the prospect\'s logo — either a URL or an uploaded file.');
+  if (!logoUrlInput.value.trim()) {
+    showFormError('Please provide the prospect\'s logo URL.');
     logoUrlInput.focus(); return false;
   }
   if (!selectedPhotoUrl) {
@@ -365,24 +345,9 @@ generateBtn.addEventListener('click', async () => {
   const companyName    = companyInput.value.trim();
   const brandColor     = colorHex.value.trim().startsWith('#') ? colorHex.value.trim() : '#' + colorHex.value.trim();
   const industry       = industrySelect.value;
-  let   logoUrl        = logoFileUploaded ? logoDataUrl : logoUrlInput.value.trim();
+  const logoUrl        = logoUrlInput.value.trim();
 
   try {
-    // If logo is a file upload (base64), send it to Placid first to get a public URL.
-    // This avoids Netlify's request body size limit on the main generate call.
-    if (logoFileUploaded && logoUrl.startsWith('data:')) {
-      workTitle.textContent = 'Uploading logo…';
-      workSub.textContent   = 'Hosting your logo file — just a moment';
-      const uploadRes  = await fetch('/api/generate-cover', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ action: 'upload-logo', logoData: logoUrl })
-      });
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok || !uploadData.ok) throw new Error(uploadData.error || 'Logo upload failed.');
-      logoUrl = uploadData.logoUrl;
-    }
-
     // Phase 1 — find photo + start Placid generation
     workTitle.textContent = 'Generating your cover page…';
     workSub.textContent   = 'Applying branding and compositing the image — usually 15 seconds';
@@ -396,7 +361,6 @@ generateBtn.addEventListener('click', async () => {
         brandColor,
         logoUrl,
         photoUrl:   selectedPhotoUrl,
-        focalPoint: photoFocalPoint,
         industry,
         companyName
       })
@@ -510,10 +474,7 @@ pushBtn.addEventListener('click', async () => {
 // ── Restart ───────────────────────────────────────────────
 restartBtn.addEventListener('click', () => {
   generatedImageUrl = '';
-  logoDataUrl       = '';
-  logoFileUploaded  = false;
   logoPreviewArea.hidden  = true;
-  logoUploadName.hidden   = true;
   pushResult.hidden       = true;
   focalControl.hidden     = true;
   focalSlider.value       = 50;
