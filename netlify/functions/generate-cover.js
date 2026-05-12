@@ -268,12 +268,17 @@ exports.handler = async (event) => {
       };
       for (const layer of template.colorLayers) layers[layer] = { background_color: color };
 
+      const placidPayload = JSON.stringify({ template_uuid: template.uuid, layers });
+      console.log('Placid request:', placidPayload);
+
       const res  = await fetch(PLACID_API, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.PLACID_API_TOKEN}` },
-        body:    JSON.stringify({ template_uuid: template.uuid, layers })
+        body:    placidPayload
       });
       const data = await res.json();
+      console.log('Placid response status:', res.status);
+      console.log('Placid response body:', JSON.stringify(data));
       if (!res.ok) return err(data.message || `Placid error ${res.status}`);
 
       // Return immediately — client will poll
