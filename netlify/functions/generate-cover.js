@@ -257,15 +257,13 @@ exports.handler = async (event) => {
 
       // Use pre-selected photo if provided, otherwise fetch from Unsplash
       const photoUrl   = body.photoUrl || await getPhoto(industry || 'generic');
-      const focalPoint = (typeof body.focalPoint === 'number' && body.focalPoint >= 0 && body.focalPoint <= 1)
-        ? body.focalPoint : 0.5;
       const template = TEMPLATES[templateId || 'chevron'];
       if (!template) return err('Unknown template.', 400);
 
       const hex8 = brandColor.replace('#', '').padEnd(6,'0').slice(0,6).toUpperCase() + 'FF';
       const color = '#' + hex8;
       const layers = {
-        photo: { image: photoUrl, focal_point: { x: 0.5, y: focalPoint } },
+        photo: { image: photoUrl },
         logo:  { image: resolvedLogoUrl }
       };
       for (const layer of template.colorLayers) layers[layer] = { background_color: color };
