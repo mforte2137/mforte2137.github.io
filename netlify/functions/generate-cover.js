@@ -242,6 +242,18 @@ exports.handler = async (event) => {
     }
   }
 
+  // ── ACTION: upload-logo ────────────────────────────────
+  if (action === 'upload-logo') {
+    const { logoData } = body;
+    if (!logoData) return err('logoData required.', 400);
+    try {
+      const url = await uploadLogoToPlacid(logoData);
+      return ok200({ logoUrl: url });
+    } catch (e) {
+      return err(e.message);
+    }
+  }
+
   // ── ACTION: start (phase 1 — Unsplash + kick off Placid) ─
   if (action === 'start') {
     const { templateId, brandColor, logoUrl, industry } = body;
