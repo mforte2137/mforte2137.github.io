@@ -242,6 +242,18 @@ exports.handler = async (event) => {
     }
   }
 
+  // ── ACTION: upload-logo ────────────────────────────────
+  if (action === 'upload-logo') {
+    const { logoData } = body;
+    if (!logoData) return err('logoData required.', 400);
+    try {
+      const url = await uploadLogoToPlacid(logoData);
+      return ok200({ logoUrl: url });
+    } catch (e) {
+      return err(e.message);
+    }
+  }
+
   // ── ACTION: start (phase 1 — Unsplash + kick off Placid) ─
   if (action === 'start') {
     const { templateId, brandColor, logoUrl, industry } = body;
@@ -249,11 +261,8 @@ exports.handler = async (event) => {
     if (!logoUrl)    return err('logoUrl required.', 400);
 
     try {
-      // If logo is a base64 data URL (file upload), host it on Placid first
-      let resolvedLogoUrl = logoUrl;
-      if (logoUrl && logoUrl.startsWith('data:')) {
-        resolvedLogoUrl = await uploadLogoToPlacid(logoUrl);
-      }
+      // logo is always a URL at this point — base64 uploads handled via upload-logo action
+      const resolvedLogoUrl = logoUrl;
 
       // Use pre-selected photo if provided, otherwise fetch from Unsplash
       const photoUrl   = body.photoUrl || await getPhoto(industry || 'generic');
@@ -268,17 +277,12 @@ exports.handler = async (event) => {
       };
       for (const layer of template.colorLayers) layers[layer] = { background_color: color };
 
-      const placidPayload = JSON.stringify({ template_uuid: template.uuid, layers });
-      console.log('Placid request:', placidPayload);
-
       const res  = await fetch(PLACID_API, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.PLACID_API_TOKEN}` },
-        body:    placidPayload
+        body:    JSON.stringify({ template_uuid: template.uuid, layers })
       });
       const data = await res.json();
-      console.log('Placid response status:', res.status);
-      console.log('Placid response body:', JSON.stringify(data));
       if (!res.ok) return err(data.message || `Placid error ${res.status}`);
 
       // Return immediately — client will poll
