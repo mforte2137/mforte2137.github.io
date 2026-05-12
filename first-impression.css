@@ -261,6 +261,11 @@ header.top .brand { font-weight: 700; color: var(--ink); }
   clip-path: inset(0 50% 0 0);  /* show left half only — dome faces left, flat edge flush right */
   transition: background 0.3s;
 }
+.tp-top-bar {
+  position: absolute; top: 0; left: 0; right: 0; height: 8px;
+  background: #cccccc;
+  transition: background 0.3s;
+}
 .tp-soon {
   display: flex; align-items: center; justify-content: center;
   font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
