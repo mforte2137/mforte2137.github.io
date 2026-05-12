@@ -368,6 +368,21 @@ generateBtn.addEventListener('click', async () => {
   let   logoUrl        = logoFileUploaded ? logoDataUrl : logoUrlInput.value.trim();
 
   try {
+    // If logo is a file upload (base64), send it to Placid first to get a public URL.
+    // This avoids Netlify's request body size limit on the main generate call.
+    if (logoFileUploaded && logoUrl.startsWith('data:')) {
+      workTitle.textContent = 'Uploading logo…';
+      workSub.textContent   = 'Hosting your logo file — just a moment';
+      const uploadRes  = await fetch('/api/generate-cover', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ action: 'upload-logo', logoData: logoUrl })
+      });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok || !uploadData.ok) throw new Error(uploadData.error || 'Logo upload failed.');
+      logoUrl = uploadData.logoUrl;
+    }
+
     // Phase 1 — find photo + start Placid generation
     workTitle.textContent = 'Generating your cover page…';
     workSub.textContent   = 'Applying branding and compositing the image — usually 15 seconds';
