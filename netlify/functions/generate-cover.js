@@ -95,39 +95,6 @@ async function getPhoto(industry) {
   throw new Error('Could not find a suitable photo. Try a different industry.');
 }
 
-// ── Upload base64 logo to Placid file storage ─────────────
-// If the logo is a base64 data URL (uploaded file), we upload it
-// to Placid's servers and get back a public HTTPS URL that
-// Placid can use when rendering the template.
-async function uploadLogoToPlacid(base64DataUrl) {
-  const matches = base64DataUrl.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
-  if (!matches) throw new Error('Invalid image data — please use a logo URL instead.');
-
-  const mimeType = matches[1];
-  const buffer   = Buffer.from(matches[2], 'base64');
-  const ext      = mimeType.split('/')[1] || 'png';
-  const filename = `logo-upload.${ext}`;
-  const boundary = 'FormBoundary' + Date.now().toString(36);
-
-  const bodyParts = Buffer.concat([
-    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: ${mimeType}\r\n\r\n`),
-    buffer,
-    Buffer.from(`\r\n--${boundary}--\r\n`)
-  ]);
-
-  const res  = await fetch('https://api.placid.app/api/rest/files', {
-    method:  'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.PLACID_API_TOKEN}`,
-      'Content-Type':  `multipart/form-data; boundary=${boundary}`
-    },
-    body: bodyParts
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Logo upload to Placid failed.');
-  return data.url; // public HTTPS URL hosted by Placid
-}
-
 // ── Placid image generation ───────────────────────────────
 async function generateImage(templateId, brandColor, photoUrl, logoUrl) {
   const template = TEMPLATES[templateId];
@@ -237,18 +204,6 @@ exports.handler = async (event) => {
         credit:    p.user.name
       }));
       return ok200({ photos });
-    } catch (e) {
-      return err(e.message);
-    }
-  }
-
-  // ── ACTION: upload-logo ────────────────────────────────
-  if (action === 'upload-logo') {
-    const { logoData } = body;
-    if (!logoData) return err('logoData required.', 400);
-    try {
-      const url = await uploadLogoToPlacid(logoData);
-      return ok200({ logoUrl: url });
     } catch (e) {
       return err(e.message);
     }
