@@ -242,18 +242,6 @@ exports.handler = async (event) => {
     }
   }
 
-  // ── ACTION: upload-logo ────────────────────────────────
-  if (action === 'upload-logo') {
-    const { logoData } = body;
-    if (!logoData) return err('logoData required.', 400);
-    try {
-      const url = await uploadLogoToPlacid(logoData);
-      return ok200({ logoUrl: url });
-    } catch (e) {
-      return err(e.message);
-    }
-  }
-
   // ── ACTION: start (phase 1 — Unsplash + kick off Placid) ─
   if (action === 'start') {
     const { templateId, brandColor, logoUrl, industry } = body;
@@ -261,7 +249,7 @@ exports.handler = async (event) => {
     if (!logoUrl)    return err('logoUrl required.', 400);
 
     try {
-      // logo is always a URL at this point — base64 uploads handled via upload-logo action
+      // logo is always a URL — file uploads are sent as base64 via the start action directly
       const resolvedLogoUrl = logoUrl;
 
       // Use pre-selected photo if provided, otherwise fetch from Unsplash
