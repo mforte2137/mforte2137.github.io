@@ -65,27 +65,6 @@
           <img id="logo-preview-img" src="" alt="Logo preview" class="logo-preview-img">
           <button type="button" id="logo-preview-clear" class="logo-clear-btn">✕</button>
         </div>
-
-        <!-- Background removal — appears when a white-background logo is detected -->
-        <div id="debg-strip" class="debg-strip" hidden>
-          <div class="debg-alert">⚠ White background detected — this may look like a box on the cover page.</div>
-          <div class="debg-previews">
-            <div class="debg-swatch">
-              <div class="debg-swatch-label">Original</div>
-              <div class="debg-swatch-img-wrap debg-checker"><img id="debg-before" class="debg-img" alt="Original logo"></div>
-            </div>
-            <div class="debg-arrow">→</div>
-            <div class="debg-swatch">
-              <div class="debg-swatch-label">Background removed</div>
-              <div class="debg-swatch-img-wrap debg-checker"><img id="debg-after" class="debg-img" alt="Logo with background removed"></div>
-            </div>
-          </div>
-          <div class="debg-actions">
-            <button type="button" id="debg-use-btn"  class="debg-btn debg-btn-use">Use cleaned version ✓</button>
-            <button type="button" id="debg-skip-btn" class="debg-btn debg-btn-skip">Keep original</button>
-          </div>
-          <canvas id="debg-canvas" hidden></canvas>
-        </div>
         <p class="field-hint" style="margin-top:8px;">No URL? <label for="logo-upload" class="upload-link">Upload a file instead</label></p>
         <input type="file" id="logo-upload" accept="image/*" hidden>
         <div id="logo-upload-name" class="logo-upload-name" hidden></div>
