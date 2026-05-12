@@ -195,6 +195,7 @@ function renderPhotos(photos) {
   photoGrid.innerHTML = '';
   selectedPhotoUrl    = '';
   photoCredit.textContent = '';
+  photoLoading.hidden = true;  // belt-and-suspenders — always hide spinner when rendering
 
   photos.forEach(photo => {
     const tile = document.createElement('div');
