@@ -523,12 +523,27 @@ generateBtn.addEventListener('click', async () => {
   clearFormError();
   showView('working');
 
-  const companyName = companyInput.value.trim();
-  const brandColor  = colorHex.value.trim().startsWith('#') ? colorHex.value.trim() : '#' + colorHex.value.trim();
-  const industry    = industrySelect.value;
-  const logoUrl     = logoFileUploaded ? logoDataUrl : logoUrlInput.value.trim();
+  const companyName    = companyInput.value.trim();
+  const brandColor     = colorHex.value.trim().startsWith('#') ? colorHex.value.trim() : '#' + colorHex.value.trim();
+  const industry       = industrySelect.value;
+  let   logoUrl        = logoFileUploaded ? logoDataUrl : logoUrlInput.value.trim();
 
   try {
+    // If logo is base64 (uploaded or cleaned), upload it to Placid first
+    // to get a public URL — avoids hitting Netlify's request body size limit
+    if (logoUrl && logoUrl.startsWith('data:')) {
+      workTitle.textContent = 'Uploading logo…';
+      workSub.textContent   = 'Hosting your logo so it can be used in the cover page';
+      const uploadRes  = await fetch('/api/generate-cover', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ action: 'upload-logo', logoData: logoUrl })
+      });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok || !uploadData.ok) throw new Error(uploadData.error || 'Logo upload failed.');
+      logoUrl = uploadData.logoUrl;  // replace base64 with public Placid URL
+    }
+
     // Phase 1 — find photo + start Placid generation
     workTitle.textContent = 'Generating your cover page…';
     workSub.textContent   = 'Applying branding and compositing the image — usually 15 seconds';
