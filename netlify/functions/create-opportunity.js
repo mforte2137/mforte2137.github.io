@@ -403,6 +403,41 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
     }
 
 
+        // ── create-product ──────────────────────────────────────
+    // Creates a new product in the MSP's Salesbuildr catalog
+    // from a web-search suggestion. Uses the hardcoded Guided
+    // category ID so it appears in Quick Quote searches.
+    if (action === 'create-product') {
+      const { name, mpn, vendor, price, shortDescription } = body;
+      if (!name) return err('Product name required.', 400);
+
+      const GUIDED_CATEGORY_ID = 'liITjFCEzoS9aVOHpC1A';
+
+      const payload = {
+        name,
+        categoryId:   GUIDED_CATEGORY_ID,
+        productType:  'product',
+        listed:       true,
+        labels:       ['guided'],
+      };
+      if (mpn)              payload.mpn              = mpn;
+      if (vendor)           payload.vendor           = vendor;
+      // Send approximate web price as 'cost' so Salesbuildr applies the
+      // category markup to derive the sell price. Rep should hit 'Fetch info'
+      // in Salesbuildr to overwrite with real distributor cost if available.
+      if (price)            payload.cost             = parseFloat(price) || 0;
+      if (shortDescription) payload.shortDescription = shortDescription;
+
+      const res  = await fetch(`${BASE}/product`, {
+        method:  'POST',
+        headers,
+        body:    JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) return err(data?.message || data?.error || 'Failed to create product.');
+      return ok({ product: data });
+    }
+
         return err('Unknown action.', 400);
 
   } catch (e) {
