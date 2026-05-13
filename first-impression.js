@@ -98,13 +98,8 @@ colorHex.addEventListener('input', () => {
   }
 });
 
-function updateTemplatePreview(color) {
-  // Live-update the template tile preview with the chosen colour
-  document.querySelectorAll('.tp-chevron').forEach(el => el.style.borderLeftColor = color);
-  document.querySelectorAll('.tp-bar').forEach(el => el.style.background = color);
-  document.querySelectorAll('.tp-half-circle').forEach(el => el.style.background = color);
-  document.querySelectorAll('.tp-top-bar').forEach(el => el.style.background = color);
-  document.querySelectorAll('.tp-modern-rect').forEach(el => el.style.background = color);
+function updateTemplatePreview() {
+  // Template thumbnails use a fixed neutral — they show layout shape, not brand colour
 }
 
 // ── Focal point slider ────────────────────────────────────
