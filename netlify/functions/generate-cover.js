@@ -24,14 +24,17 @@ const TEMPLATES = {
     name:        'Half Circle',
     colorLayers: ['half_circle', 'accent_bar']
   },
-  top_bar: {
+  corporate: {
     uuid:        '6upetkewtuvkp',
-    name:        'Top Bar',
+    name:        'Corporate',
     colorLayers: ['bar_bottom', 'accent_bar']
+  },
+  modern: {
+    uuid:        '1xwzoe6a2m3wa',
+    name:        'Modern',
+    colorLayers: ['rectangle']
   }
   // future templates added here:
-  // split:    { uuid: '...', name: 'Split Panel', colorLayers: ['color_panel'] },
-  // minimal:  { uuid: '...', name: 'Minimal',    colorLayers: ['accent_stripe'] }
 };
 
 // Photo category → Unsplash search keyword mapping (all tech-focused)
