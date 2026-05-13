@@ -266,6 +266,23 @@ header.top .brand { font-weight: 700; color: var(--ink); }
   background: #cccccc;
   transition: background 0.3s;
 }
+/* Modern template — rectangle with cropped lower-right corner */
+.tp-modern-rect {
+  position: absolute; left: -6px; top: 50%; transform: translateY(-50%);
+  width: 70px; height: 44px;
+  background: #cccccc;
+  /* cropped corner via clip-path: cut lower-right corner */
+  clip-path: polygon(0 0, 100% 0, 100% 65%, 78% 100%, 0 100%);
+  transition: background 0.3s;
+}
+/* White dot grid sits on the right edge of the rectangle */
+.tp-modern-dots {
+  position: absolute; left: 48px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px;
+  background-image: radial-gradient(circle, #fff 1.5px, transparent 1.5px);
+  background-size: 5px 5px;
+  background-color: transparent;
+}
 .tp-soon {
   display: flex; align-items: center; justify-content: center;
   font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
