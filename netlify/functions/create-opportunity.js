@@ -438,7 +438,13 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
         body:    JSON.stringify(payload)
       });
       const data = await res.json();
-      if (!res.ok) return err(data?.message || data?.error || 'Failed to create product.');
+      if (!res.ok) {
+        // Return full API error as a string so client can display it
+        const errMsg = typeof data?.message === 'string' ? data.message
+          : typeof data?.error === 'string' ? data.error
+          : JSON.stringify(data);
+        return err(`SB API error ${res.status}: ${errMsg}`);
+      }
       return ok({ product: data });
     }
 
