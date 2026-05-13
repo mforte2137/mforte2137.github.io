@@ -432,21 +432,17 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
       if (price)            payload.cost             = parseFloat(price) || 0;
       if (shortDescription) payload.shortDescription = shortDescription;
 
-      const res  = await fetch(`${BASE}/product`, {
+      const res      = await fetch(`${BASE}/product`, {
         method:  'POST',
         headers,
         body:    JSON.stringify(payload)
       });
-      const data = await res.json();
+      const rawText = await res.text();
       if (!res.ok) {
-        // Salesbuildr validation errors come back in various shapes — extract all detail
-        const errMsg = typeof data?.message === 'string' ? data.message
-          : Array.isArray(data?.message) ? data.message.join(', ')
-          : typeof data?.error === 'string' ? data.error
-          : Array.isArray(data?.errors) ? data.errors.map(e => e.message || JSON.stringify(e)).join(', ')
-          : JSON.stringify(data).slice(0, 300);
-        return err(`SB ${res.status}: ${errMsg}`);
+        // Return the raw response text so we can see exactly what SB is saying
+        return err(`SB ${res.status}: ${rawText.slice(0, 500)}`);
       }
+      const data = JSON.parse(rawText);
       return ok({ product: data });
     }
 
