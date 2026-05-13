@@ -439,11 +439,13 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
       });
       const data = await res.json();
       if (!res.ok) {
-        // Return full API error as a string so client can display it
+        // Salesbuildr validation errors come back in various shapes — extract all detail
         const errMsg = typeof data?.message === 'string' ? data.message
+          : Array.isArray(data?.message) ? data.message.join(', ')
           : typeof data?.error === 'string' ? data.error
-          : JSON.stringify(data);
-        return err(`SB API error ${res.status}: ${errMsg}`);
+          : Array.isArray(data?.errors) ? data.errors.map(e => e.message || JSON.stringify(e)).join(', ')
+          : JSON.stringify(data).slice(0, 300);
+        return err(`SB ${res.status}: ${errMsg}`);
       }
       return ok({ product: data });
     }
