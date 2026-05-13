@@ -420,10 +420,9 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
 
       const payload = {
         name,
-        categoryId:   GUIDED_CATEGORY_ID,
-        productType:  'product',
-        listed:       true,
-        labels:       ['guided'],
+        categoryId:  GUIDED_CATEGORY_ID,
+        productType: 'product',
+        listed:      true,
       };
       if (mpn)              payload.mpn              = mpn;
       if (vendor)           payload.vendor           = vendor;
