@@ -810,22 +810,27 @@ async function doQQCatalogSearch() {
     $('qqResultsWrap').classList.remove('hidden');
     $('qqResultsWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    // 4. Zero matches — web search only
+    // 4. Zero matches — web search + cover note
     if (products.length === 0) {
       const noMatchHint = $('qqProductList');
       if (noMatchHint) noMatchHint.innerHTML = '';
       $('qqMatchSub').textContent = 'No matches in your catalog — searching the web…';
       renderQQSuggestions(null, true);
-      try {
-        const suggestRes = await fetch('/api/sales-guide', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'suggest-products', request })
-        });
-        const suggestData = await suggestRes.json();
-        renderQQSuggestions(suggestData.ok ? suggestData : null, false);
-      } catch (e) {
-        renderQQSuggestions(null, false);
+      // Run web search and cover note in parallel
+      const suggestPromise = fetch('/api/sales-guide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'suggest-products', request })
+      }).then(r => r.json()).catch(() => ({ ok: false }));
+
+      const [suggestData, coverData] = await Promise.all([suggestPromise, coverPromise]);
+      renderQQSuggestions(suggestData.ok ? suggestData : null, false);
+
+      // Show cover note even for zero catalog matches
+      if (coverData.ok && coverData.cover_note) {
+        $('qqCoverText').textContent = coverData.cover_note;
+      } else {
+        $('qqCoverText').textContent = '(Cover note unavailable.)';
       }
       return;
     }
@@ -978,8 +983,11 @@ async function qqAddToCatalog(btn, idx) {
     btn.style.color = '#fff';
 
     if (resultEl) {
-      resultEl.innerHTML = 'Added to catalog &amp; included in quote below &nbsp;·&nbsp; <em>Open in Salesbuildr and hit Fetch info to get real distributor pricing before sending the quote</em>';
-      resultEl.style.color = 'var(--good)';
+      resultEl.textContent = '';
+      const msg = document.createElement('span');
+      msg.innerHTML = 'Added &amp; included in quote below &nbsp;·&nbsp; <em>Open in Salesbuildr → hit Fetch info for real pricing</em>';
+      msg.style.color = 'var(--good)';
+      resultEl.appendChild(msg);
     }
 
     // Add to matched products so it's included in the quote
