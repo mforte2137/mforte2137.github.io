@@ -242,8 +242,11 @@ header.top .brand { font-weight: 700; color: var(--ink); }
 .template-preview {
   height: 90px; background: var(--paper-alt); position: relative; overflow: hidden;
 }
+.template-preview-img {
+  height: 200px;
+}
 .template-preview-img img {
-  width: 100%; height: 100%; object-fit: cover; object-position: top; display: block;
+  width: 100%; height: 100%; object-fit: contain; object-position: top; display: block;
 }
 .tp-chevron {
   position: absolute; left: -20px; top: 50%; transform: translateY(-50%);
