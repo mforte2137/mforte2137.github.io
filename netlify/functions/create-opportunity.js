@@ -308,11 +308,12 @@ exports.handler = async (event) => {
       const catalogData = catalogRes.ok ? await catalogRes.json() : {};
       const all = catalogData?.results || catalogData?.data || catalogData?.items || (Array.isArray(catalogData) ? catalogData : []);
 
-      // 2. Filter to listed, non-service, non-bundle products only
+      // 2. Filter to non-service, non-bundle products only.
+      // Only exclude listed===false (explicitly unlisted); listed===null/undefined is allowed.
       const hardware = all.filter(p => {
         const t = (p.productType || p.type || '').toLowerCase();
         if (t === 'service' || t === 'labor' || t === 'bundle') return false;
-        if (p.listed === false) return false;
+        if (p.listed === false) return false;  // explicitly unlisted only
         return true;
       });
 
@@ -363,28 +364,27 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
 
       const aiData = await aiRes.json();
 
-      // Debug — surface what Haiku actually returned
-      const aiDebug = {
-        stop_reason: aiData.stop_reason,
-        content_types: (aiData.content || []).map(b => b.type),
-        text_preview: aiData.content?.find(b => b.type === 'text')?.text?.slice(0, 200) || null,
-        error: aiData.error || null
-      };
-
       const aiText = aiData?.content?.[0]?.text?.trim() || '[]';
 
       // 5. Parse the returned IDs safely
+      // Haiku sometimes wraps JSON in markdown fences and adds explanatory text.
+      // Strategy: strip fences, find the JSON array anywhere in the text, extract IDs.
       let matchedIds = [];
       try {
-        const parsed = JSON.parse(aiText);
-        if (Array.isArray(parsed)) matchedIds = parsed.filter(id => typeof id === 'string');
+        // Strip markdown fences first
+        const stripped = aiText.replace(/```json?\s*/gi, '').replace(/```/g, '').trim();
+        // Find JSON array anywhere in the response (Haiku sometimes adds text after it)
+        const arrayMatch = stripped.match(/\[([^\]]*?)\]/);
+        if (arrayMatch) {
+          const parsed = JSON.parse(arrayMatch[0]);
+          if (Array.isArray(parsed)) matchedIds = parsed.filter(id => typeof id === 'string' && id.length > 5);
+        }
       } catch {
-        // Haiku occasionally wraps in markdown — strip and retry
-        const stripped = aiText.replace(/```json?|```/g, '').trim();
-        try { matchedIds = JSON.parse(stripped); } catch { matchedIds = []; }
+        matchedIds = [];
       }
 
       // 6. Look up full product details for matched IDs
+      // Search ALL hardware (not just trimmed list) so Haiku IDs always resolve
       const idSet = new Set(matchedIds);
       const matched = hardware
         .filter(p => idSet.has(p.id))
@@ -404,7 +404,7 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
           listed: p.listed ?? null,
         }));
 
-      return ok({ products: matched, catalogSize: all.length, matched: matched.length, _aiDebug: aiDebug });
+      return ok({ products: matched, catalogSize: all.length, matched: matched.length });
     }
 
 
