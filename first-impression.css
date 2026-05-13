@@ -247,33 +247,28 @@ header.top .brand { font-weight: 700; color: var(--ink); }
   width: 0; height: 0;
   border-top: 50px solid transparent;
   border-bottom: 50px solid transparent;
-  border-left: 60px solid #cccccc;
-  transition: border-left-color 0.3s;
+  border-left: 60px solid #5a7fa8;
 }
 .tp-bar {
-  position: absolute; bottom: 0; left: 0; right: 0; height: 8px; background: #cccccc;
-  transition: background 0.3s;
+  position: absolute; bottom: 0; left: 0; right: 0; height: 8px; background: #5a7fa8;
 }
 .tp-half-circle {
   position: absolute; right: -18px; top: 50%; transform: translateY(-50%);
   width: 80px; height: 80px; border-radius: 50%;
-  background: #cccccc;
+  background: #5a7fa8;
   clip-path: inset(0 50% 0 0);  /* show left half only — dome faces left, flat edge flush right */
-  transition: background 0.3s;
 }
 .tp-top-bar {
   position: absolute; top: 0; left: 0; right: 0; height: 8px;
-  background: #cccccc;
-  transition: background 0.3s;
+  background: #5a7fa8;
 }
 /* Modern template — rectangle with cropped lower-right corner */
 .tp-modern-rect {
   position: absolute; left: -6px; top: 50%; transform: translateY(-50%);
   width: 70px; height: 44px;
-  background: #cccccc;
+  background: #5a7fa8;
   /* cropped corner via clip-path: cut lower-right corner */
   clip-path: polygon(0 0, 100% 0, 100% 65%, 78% 100%, 0 100%);
-  transition: background 0.3s;
 }
 /* White dot grid sits on the right edge of the rectangle */
 .tp-modern-dots {
