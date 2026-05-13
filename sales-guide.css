@@ -553,3 +553,34 @@ body { font-family: var(--sans); background: var(--paper); color: var(--ink); fo
 .qq-mpn-label { font-size: 10px; opacity: .7; font-weight: 400; }
 .qq-mpn-value { font-family: 'Consolas','Courier New',monospace; }
 .qq-mpn-copy  { font-size: 10px; opacity: .8; border-left: 1px solid rgba(255,255,255,.3); padding-left: 6px; }
+
+/* Add to catalog button */
+.qq-add-btn {
+  font: 600 12px var(--sans);
+  background: none;
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
+  border-radius: 7px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all .12s;
+  white-space: nowrap;
+}
+.qq-add-btn:hover:not(:disabled) { background: rgba(37,99,235,.08); }
+.qq-add-btn:disabled { opacity: .6; cursor: not-allowed; }
+.qq-add-result {
+  font-size: 11px;
+  color: var(--mute);
+  font-style: italic;
+}
+
+/* Just-added product row highlight */
+.qq-just-added {
+  border-color: rgba(37,99,235,.4) !important;
+  background: rgba(37,99,235,.04) !important;
+  animation: qq-pop-in .3s ease;
+}
+@keyframes qq-pop-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
