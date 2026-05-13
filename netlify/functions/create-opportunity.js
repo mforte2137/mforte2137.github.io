@@ -302,19 +302,11 @@ exports.handler = async (event) => {
       const { query } = body;
       if (!query) return err('query required.', 400);
 
-      // 1. Fetch full catalog — two parallel pages using confirmed 'from' pagination param
-      const [r1, r2] = await Promise.all([
-        fetch(`${BASE}/product?size=200&from=0`,   { headers }),
-        fetch(`${BASE}/product?size=200&from=200`, { headers })
-      ]);
-      const [d1, d2] = await Promise.all([
-        r1.ok ? r1.json() : Promise.resolve({}),
-        r2.ok ? r2.json() : Promise.resolve({})
-      ]);
-      const p1  = d1?.results || d1?.data || d1?.items || (Array.isArray(d1) ? d1 : []);
-      const p2  = d2?.results || d2?.data || d2?.items || (Array.isArray(d2) ? d2 : []);
-      // Dedupe by id in case pages overlap
-      const all = [...new Map([...p1, ...p2].map(p => [p.id, p])).values()];
+      // 1. Fetch full catalog — single call, size=500
+      // Two-page parallel fetch caused timeouts; single fetch is more reliable.
+      const catalogRes  = await fetch(`${BASE}/product?size=500`, { headers });
+      const catalogData = catalogRes.ok ? await catalogRes.json() : {};
+      const all = catalogData?.results || catalogData?.data || catalogData?.items || (Array.isArray(catalogData) ? catalogData : []);
 
       // 2. Filter to listed, non-service, non-bundle products only
       const hardware = all.filter(p => {
@@ -327,7 +319,11 @@ exports.handler = async (event) => {
       if (hardware.length === 0) return ok({ products: [], catalogSize: all.length, matched: 0 });
 
       // 3. Build a compact product list for Haiku — id + name only to minimise tokens
-      const catalogList = hardware.map(p => `${p.id}|||${p.name}`).join('\n');
+      // Trim to 300 items max before sending to Haiku — reduces token count
+      // and keeps the call well within the 10s Netlify timeout.
+      // Items are already filtered to listed hardware only.
+      const trimmed     = hardware.slice(0, 300);
+      const catalogList = trimmed.map(p => p.id + '|||' + (p.name || '').slice(0, 80)).join('\n');
 
       // 4. Ask Haiku to match the request against the catalog
       const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
@@ -366,6 +362,15 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
       });
 
       const aiData = await aiRes.json();
+
+      // Debug — surface what Haiku actually returned
+      const aiDebug = {
+        stop_reason: aiData.stop_reason,
+        content_types: (aiData.content || []).map(b => b.type),
+        text_preview: aiData.content?.find(b => b.type === 'text')?.text?.slice(0, 200) || null,
+        error: aiData.error || null
+      };
+
       const aiText = aiData?.content?.[0]?.text?.trim() || '[]';
 
       // 5. Parse the returned IDs safely
@@ -399,7 +404,7 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
           listed: p.listed ?? null,
         }));
 
-      return ok({ products: matched, catalogSize: all.length, matched: matched.length });
+      return ok({ products: matched, catalogSize: all.length, matched: matched.length, _aiDebug: aiDebug });
     }
 
 
