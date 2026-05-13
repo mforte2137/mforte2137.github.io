@@ -425,7 +425,8 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
         listed:      true,
       };
       if (mpn)              payload.mpn              = mpn;
-      if (vendor)           payload.vendor           = vendor;
+      // vendor omitted — SB requires a vendorId (lookup), not a vendor name string.
+      // Rep can assign vendor manually in Salesbuildr after creation.
       // Send approximate web price as 'cost' so Salesbuildr applies the
       // category markup to derive the sell price. Rep should hit 'Fetch info'
       // in Salesbuildr to overwrite with real distributor cost if available.
