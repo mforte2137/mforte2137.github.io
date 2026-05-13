@@ -203,6 +203,28 @@ const SUGGEST_PRODUCTS_TOOL = {
   }
 };
 
+
+// ── Find missing items tool schema ───────────────────────
+const FIND_MISSING_TOOL = {
+  name: 'report_missing_items',
+  description: 'Report which parts of the customer request were not covered by catalog matches',
+  input_schema: {
+    type: 'object',
+    properties: {
+      missing_items: {
+        type: 'array',
+        description: 'Specific product requests not covered by the catalog matches — each as a clear search phrase',
+        items: { type: 'string' }
+      },
+      all_covered: {
+        type: 'boolean',
+        description: 'True if all requested items were found in the catalog matches'
+      }
+    },
+    required: ['missing_items', 'all_covered']
+  }
+};
+
 // ── Main handler ──────────────────────────────────────────
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -370,6 +392,46 @@ Write a short, professional cover note for the quote.`;
         suggestions:      tool.input.suggestions || [],
         not_found_reason: tool.input.not_found_reason || ''
       });
+    } catch (e) { return err(e.message); }
+  }
+
+    // ── ACTION: find-missing ─────────────────────────────────
+  // Given a customer request and the catalog products that matched,
+  // asks Haiku to identify what parts of the request weren't covered.
+  // Used to trigger web search for the unmatched portion only.
+  if (action === 'find-missing') {
+    const { request, matchedNames } = body;
+    if (!request) return err('Request required.', 400);
+
+    const matchedList = Array.isArray(matchedNames) && matchedNames.length > 0
+      ? matchedNames.map((n, i) => `${i+1}. ${n}`).join('\n')
+      : 'None';
+
+    try {
+      const res = await fetch(ANTHROPIC_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 300,
+          tools: [FIND_MISSING_TOOL],
+          tool_choice: { type: 'tool', name: 'report_missing_items' },
+          system: 'You are a product matching assistant. Determine if the catalog matches fully cover the customer request.',
+          messages: [{
+            role: 'user',
+            content: `Customer request: "${request}"
+
+Products found in catalog:
+${matchedList}
+
+Do the catalog matches cover everything the customer asked for? If not, what specific items are still missing? Use the report_missing_items tool.`
+          }]
+        })
+      });
+      const data = await res.json();
+      const tool = Array.isArray(data.content) ? data.content.find(b => b.type === 'tool_use') : null;
+      if (!tool) return ok({ missing_items: [], all_covered: true });
+      return ok({ missing_items: tool.input.missing_items || [], all_covered: tool.input.all_covered ?? true });
     } catch (e) { return err(e.message); }
   }
 
