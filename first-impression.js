@@ -104,6 +104,7 @@ function updateTemplatePreview(color) {
   document.querySelectorAll('.tp-bar').forEach(el => el.style.background = color);
   document.querySelectorAll('.tp-half-circle').forEach(el => el.style.background = color);
   document.querySelectorAll('.tp-top-bar').forEach(el => el.style.background = color);
+  document.querySelectorAll('.tp-modern-rect').forEach(el => el.style.background = color);
 }
 
 // ── Focal point slider ────────────────────────────────────
