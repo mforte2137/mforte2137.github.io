@@ -1291,6 +1291,7 @@ async function doQQCreateQuote() {
       opportunityId: qqSelectedOpportunity.id,
       title,
       products: selected.map(p => ({ id: p.id, quantity: p.qty })),
+      quickQuote: true,  // triggers Quick Quote template
       apiKey,
       integrationKey: intKey
     });
@@ -1316,6 +1317,22 @@ async function doQQCreateQuote() {
   }
   $('qqCreateResult').classList.remove('hidden');
 }
+
+// ── Copy cover letter button ─────────────────────────────
+$('qqCopyCoverBtn')?.addEventListener('click', () => {
+  const text = $('qqCoverText')?.textContent || '';
+  if (!text || text === 'Writing cover note…') return;
+  navigator.clipboard?.writeText(text).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0;';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+  const btn = $('qqCopyCoverBtn');
+  const orig = btn.textContent;
+  btn.textContent = '✓ Copied!';
+  setTimeout(() => btn.textContent = orig, 2000);
+});
 
 // ── Init ──────────────────────────────────────────────────
 initCredentials();
