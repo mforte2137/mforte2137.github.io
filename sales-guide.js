@@ -932,7 +932,8 @@ function renderQQSuggestions(data, isLoading) {
           data-name="${esc(s.name)}"
           data-mpn="${esc(s.mpn || '')}"
           data-vendor="${esc(s.manufacturer || '')}"
-          data-desc="${esc(s.description || '')}">
+          data-desc="${esc(s.description || '')}"
+          data-price="${typeof s.approx_price === 'number' ? s.approx_price : 0}">
           + Add to my catalog
         </button>
         <span class="qq-add-result" id="qq-add-result-${i}"></span>
@@ -966,11 +967,13 @@ async function qqAddToCatalog(btn, idx) {
   const resultEl = document.getElementById('qq-add-result-' + idx);
 
   try {
+    const approxPrice = parseFloat(btn.dataset.price) || 0;
     const res = await callCreateOpp('create-product', {
       name:             btn.dataset.name,
       mpn:              btn.dataset.mpn    || undefined,
       vendor:           btn.dataset.vendor || undefined,
       shortDescription: btn.dataset.desc   || undefined,
+      price:            approxPrice || undefined,
       apiKey,
       integrationKey:   intKey
     });
@@ -994,10 +997,11 @@ async function qqAddToCatalog(btn, idx) {
     qqInjectAddedProduct({
       id:     newProduct.id,
       name:   newProduct.name || btn.dataset.name,
-      price:  newProduct.price || 0,
+      price:  approxPrice,  // use web price for display — SB will calculate real sell price via markup
       unit:   '',
       vendor: newProduct.vendor || btn.dataset.vendor || '',
       sku:    newProduct.mpn   || btn.dataset.mpn    || '',
+      approx: true,  // flag to show "approx." label
     });
 
   } catch (e) {
@@ -1024,7 +1028,7 @@ function qqInjectAddedProduct(product) {
     '<div class="opp-svc-info">' +
       '<span class="opp-svc-name">' + esc(product.name) + '</span>' +
       '<div class="opp-svc-meta">' +
-        (product.price > 0 ? '<span class="opp-svc-price">$' + product.price.toFixed(2) + uLabel + ' each</span>' : '<span class="opp-svc-price">Price on request</span>') +
+        (product.price > 0 ? '<span class="opp-svc-price">' + (product.approx ? '~$' : '$') + product.price.toFixed(2) + uLabel + ' each' + (product.approx ? ' (approx.)' : '') + '</span>' : '<span class="opp-svc-price">Price on request</span>') +
         (product.vendor ? '<span class="opp-svc-badge extra">' + esc(product.vendor) + '</span>' : '') +
         (product.sku    ? '<span class="opp-svc-badge extra">' + esc(product.sku) + '</span>' : '') +
         '<span class="opp-svc-badge matched">Just added</span>' +
