@@ -272,10 +272,13 @@ exports.handler = async (event) => {
 
     // ── create-quote ────────────────────────────────────────
     if (action === 'create-quote') {
-      const { opportunityId, title, templateId, widgets } = body;
+      const { opportunityId, title, templateId, widgets, quickQuote } = body;
       if (!opportunityId) return err('opportunityId required.', 400);
 
-      const resolvedTemplateId = templateId || null;
+      // Quick Quote always uses the dedicated hardware template.
+      // Discovery quotes use whatever templateId is passed (or account default).
+      const QUICK_QUOTE_TEMPLATE_ID = 'NZsmr3u1XK30TWTx0zzn';
+      const resolvedTemplateId = quickQuote ? QUICK_QUOTE_TEMPLATE_ID : (templateId || null);
       const { products } = body; // array of {id, quantity}
 
       const payload = { opportunityId, title: title || 'Proposal' };
@@ -430,7 +433,9 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
       // Send approximate web price as 'cost' so Salesbuildr applies the
       // category markup to derive the sell price. Rep should hit 'Fetch info'
       // in Salesbuildr to overwrite with real distributor cost if available.
-      if (price)            payload.cost             = parseFloat(price) || 0;
+      // price is now a number from Claude — use directly as cost.
+      // Salesbuildr applies the Guided category markup to derive sell price.
+      if (price && !isNaN(parseFloat(price))) payload.cost = parseFloat(price);
       if (shortDescription) payload.shortDescription = shortDescription;
 
       const res      = await fetch(`${BASE}/product`, {
