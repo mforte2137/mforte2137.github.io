@@ -186,7 +186,7 @@ const SUGGEST_PRODUCTS_TOOL = {
             name:         { type: 'string', description: 'Full commercial product name' },
             manufacturer: { type: 'string', description: 'Manufacturer / brand name' },
             mpn:          { type: 'string', description: 'Manufacturer Part Number — must be accurate' },
-            approx_price: { type: 'string', description: 'Approximate retail price e.g. "$299 USD"' },
+            approx_price: { type: 'number', description: 'Approximate retail price as a single number in USD — no currency symbol, no range. e.g. 29.99' },
             description:  { type: 'string', description: 'One sentence: what it is and why it fits the request' }
           },
           required: ['name', 'manufacturer', 'mpn', 'description']
