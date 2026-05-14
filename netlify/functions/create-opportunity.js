@@ -435,8 +435,12 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
       // in Salesbuildr to overwrite with real distributor cost if available.
       // price is now a number from Claude — use directly as cost.
       // Salesbuildr applies the Guided category markup to derive sell price.
-      if (price && !isNaN(parseFloat(price))) payload.cost = parseFloat(price);
-      if (shortDescription) payload.shortDescription = shortDescription;
+      const parsedPrice = price && !isNaN(parseFloat(price)) ? parseFloat(price) : 0;
+      if (parsedPrice > 0) payload.cost = parsedPrice;
+
+      // Build short description with pricing warning if no distributor link
+      const pricingNote = parsedPrice > 0 ? ` | ⚠ Approx. cost $${parsedPrice.toFixed(2)} USD — verify pricing before sending quote` : ' | ⚠ No pricing set — verify before sending quote';
+      payload.shortDescription = (shortDescription || '') + pricingNote;
 
       const res      = await fetch(`${BASE}/product`, {
         method:  'POST',
