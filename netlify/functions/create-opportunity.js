@@ -437,10 +437,8 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
       // Salesbuildr applies the Guided category markup to derive sell price.
       const parsedPrice = price && !isNaN(parseFloat(price)) ? parseFloat(price) : 0;
       if (parsedPrice > 0) payload.cost = parsedPrice;
-
-      // Build short description with pricing warning if no distributor link
-      const pricingNote = parsedPrice > 0 ? ` | ⚠ Approx. cost $${parsedPrice.toFixed(2)} USD — verify pricing before sending quote` : ' | ⚠ No pricing set — verify before sending quote';
-      payload.shortDescription = (shortDescription || '') + pricingNote;
+      // shortDescription sent clean — no warnings in SB product record
+      if (shortDescription) payload.shortDescription = shortDescription;
 
       const res      = await fetch(`${BASE}/product`, {
         method:  'POST',
