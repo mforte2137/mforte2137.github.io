@@ -997,18 +997,38 @@ async function qqAddToCatalog(btn, idx) {
     qqInjectAddedProduct({
       id:     newProduct.id,
       name:   newProduct.name || btn.dataset.name,
-      price:  approxPrice,  // use web price for display — SB will calculate real sell price via markup
+      price:  approxPrice,
       unit:   '',
       vendor: newProduct.vendor || btn.dataset.vendor || '',
       sku:    newProduct.mpn   || btn.dataset.mpn    || '',
-      approx: true,  // flag to show "approx." label
+      approx: true,
     });
+
+    // Show pricing notice in the app — only in UI, nothing goes to SB
+    qqShowPricingNotice(approxPrice);
 
   } catch (e) {
     btn.disabled = false;
     btn.textContent = '+ Add to my catalog';
     if (resultEl) { resultEl.textContent = e.message; resultEl.style.color = '#dc2626'; }
   }
+}
+
+// Show a non-intrusive pricing notice when a web product is added
+function qqShowPricingNotice(approxPrice) {
+  // Remove any existing notice first
+  document.getElementById('qqPricingNotice')?.remove();
+
+  const notice = document.createElement('div');
+  notice.id = 'qqPricingNotice';
+  notice.style.cssText = 'margin-top:8px;padding:8px 12px;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;font-size:12px;color:#92400e;display:flex;align-items:center;gap:8px;';
+  notice.innerHTML = '⚠ ' +
+    (approxPrice > 0
+      ? 'Approximate cost $' + approxPrice.toFixed(2) + ' used — Salesbuildr will apply your category markup to set the sell price. Open the product and hit <strong>Fetch info</strong> to get real distributor pricing if available.'
+      : 'No cost set — open the product in Salesbuildr to set pricing before sending this quote.');
+
+  const list = $('qqProductList');
+  if (list) list.parentElement.insertBefore(notice, list.nextSibling);
 }
 
 // Inject a newly-created product into the matched products list
@@ -1076,6 +1096,7 @@ function renderQQProducts(products, request) {
   $('qqCreateResult').classList.add('hidden');
   $('qqUnmatched').classList.add('hidden');
   $('qqSuggestionsWrap')?.classList.add('hidden');
+  document.getElementById('qqPricingNotice')?.remove();
   const qqSB = $('qqSuggestionsBody'); if (qqSB) qqSB.innerHTML = '';
 
   const list = $('qqProductList');
