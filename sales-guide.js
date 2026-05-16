@@ -289,6 +289,57 @@ function briefTeaser(text) {
   return first.length > 10 ? first : text.slice(0, 120) + (text.length > 120 ? '…' : '');
 }
 
+// ── Render categorised line items (Execution mode Phase A) ──
+const LINE_ITEM_TYPE_CONFIG = {
+  hardware: { label: 'Hardware',         icon: '🔧', color: 'var(--accent)',  hint: 'Physical products — will be matched against your catalog' },
+  service:  { label: 'Managed Services', icon: '⚡', color: 'var(--good)',   hint: 'Recurring services — will be matched against your catalog' },
+  labor:    { label: 'Professional Services / Labor', icon: '👷', color: '#7c3aed', hint: 'Installation and project labor — will be matched against your catalog' },
+  software: { label: 'Software & Licenses', icon: '💿', color: '#0891b2',  hint: 'Software licenses and subscriptions' },
+  unknown:  { label: 'Needs Review',    icon: '❓', color: 'var(--warn)',   hint: 'Claude could not determine the type — review manually' },
+};
+
+function renderLineItems(items) {
+  const container = $('lineItemsList');
+  if (!container) return;
+
+  // Group by type
+  const groups = {};
+  for (const item of items) {
+    const t = item.type || 'unknown';
+    if (!groups[t]) groups[t] = [];
+    groups[t].push(item);
+  }
+
+  const typeOrder = ['service', 'labor', 'software', 'hardware', 'unknown'];
+  let html = '';
+
+  for (const type of typeOrder) {
+    if (!groups[type]) continue;
+    const cfg = LINE_ITEM_TYPE_CONFIG[type];
+    html += `<div class="li-group">
+      <div class="li-group-header">
+        <span class="li-group-icon">${cfg.icon}</span>
+        <span class="li-group-label">${cfg.label}</span>
+        <span class="li-group-count">${groups[type].length} item${groups[type].length !== 1 ? 's' : ''}</span>
+        <span class="li-group-hint">${cfg.hint}</span>
+      </div>
+      ${groups[type].map(item => `
+        <div class="li-item">
+          <div class="li-item-name">${esc(item.name)}</div>
+          <div class="li-item-meta">
+            ${item.mpn ? `<span class="li-mpn">MPN: ${esc(item.mpn)}</span>` : ''}
+            ${item.manufacturer ? `<span class="li-mfr">${esc(item.manufacturer)}</span>` : ''}
+            <span class="li-qty">Qty: ${item.quantity || 1}</span>
+            <span class="li-unit li-unit-${item.unit || 'one-time'}">${esc(item.unit || 'one-time')}</span>
+          </div>
+          ${item.description ? `<div class="li-desc">${esc(item.description)}</div>` : ''}
+        </div>`).join('')}
+    </div>`;
+  }
+
+  container.innerHTML = html;
+}
+
 function renderResults(mode, title, rec) {
   $('resultsMode').textContent  = mode === 'discovery' ? '🔍 Discovery Mode' : '⚡ Execution Mode';
   $('resultsTitle').textContent = title;
@@ -302,6 +353,20 @@ function renderResults(mode, title, rec) {
     gapsSection.classList.remove('hidden');
   } else if (gapsSection) {
     gapsSection.classList.add('hidden');
+  }
+
+  // Line items — show categorised spec items in execution mode
+  const lineItemsSection = $('lineItemsSection');
+  if (mode === 'execution' && lineItemsSection) {
+    const items = rec.line_items || [];
+    if (items.length > 0) {
+      renderLineItems(items);
+      lineItemsSection.classList.remove('hidden');
+    } else {
+      lineItemsSection.classList.add('hidden');
+    }
+  } else if (lineItemsSection) {
+    lineItemsSection.classList.add('hidden');
   }
 
   // Recommended approach — bullets
