@@ -294,6 +294,16 @@ function renderResults(mode, title, rec) {
   $('resultsTitle').textContent = title;
   $('coachingText').textContent = rec.coaching_insight || '';
 
+  // Spec gaps — show only in execution mode when gaps exist
+  const gapsSection = $('specGapsSection');
+  const gaps = rec.spec_gaps || [];
+  if (mode === 'execution' && gaps.length > 0 && gapsSection) {
+    $('specGapsList').innerHTML = gaps.map(g => `<li>${esc(g)}</li>`).join('');
+    gapsSection.classList.remove('hidden');
+  } else if (gapsSection) {
+    gapsSection.classList.add('hidden');
+  }
+
   // Recommended approach — bullets
   const summaryEl = $('summaryText');
   const bullets = rec.solution_bullets || (rec.buyer_summary ? [rec.buyer_summary] : [rec.solution_summary || '']);
@@ -635,7 +645,7 @@ specFileInput?.addEventListener('change', () => {
 
 async function parseSpecFile(file) {
   const ext = file.name.split('.').pop().toLowerCase();
-  if (!['xlsx','xls','docx'].includes(ext)) {
+  if (!['xlsx','xls','docx','csv'].includes(ext)) {
     showSpecStatus(`Unsupported file type: .${ext} — use .xlsx or .docx`, true);
     return;
   }
@@ -645,7 +655,26 @@ async function parseSpecFile(file) {
   try {
     let text = '';
 
-    if (ext === 'xlsx' || ext === 'xls') {
+    if (ext === 'csv') {
+      // CSV — read as plain text, format as pipe-separated rows for Claude
+      const rawText = await file.text();
+      const lines = rawText.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length === 0) { showSpecStatus('CSV appears to be empty.', true); return; }
+      // Keep header + data rows, join cells with | for readability
+      text = lines.map(line => {
+        // Handle quoted CSV fields
+        const cols = [];
+        let cur = '', inQuote = false;
+        for (const ch of line) {
+          if (ch === '"') { inQuote = !inQuote; }
+          else if (ch === ',' && !inQuote) { cols.push(cur.trim()); cur = ''; }
+          else { cur += ch; }
+        }
+        cols.push(cur.trim());
+        return cols.join('  |  ');
+      }).join('\n');
+
+    } else if (ext === 'xlsx' || ext === 'xls') {
       const buf  = await file.arrayBuffer();
       const wb   = XLSX.read(new Uint8Array(buf), { type:'array', cellText:true, cellDates:true });
       const parts = [];
