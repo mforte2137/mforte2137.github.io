@@ -275,10 +275,15 @@ exports.handler = async (event) => {
       const { opportunityId, title, templateId, widgets, quickQuote } = body;
       if (!opportunityId) return err('opportunityId required.', 400);
 
-      // Quick Quote always uses the dedicated hardware template.
-      // Discovery quotes use whatever templateId is passed (or account default).
-      const QUICK_QUOTE_TEMPLATE_ID = 'NZsmr3u1XK30TWTx0zzn';
-      const resolvedTemplateId = quickQuote ? QUICK_QUOTE_TEMPLATE_ID : (templateId || null);
+      // Template routing:
+      // quickQuote = true  → Quick Quote hardware template
+      // execution  = true  → Guided sales template with cover page
+      // Discovery          → account default (no templateId sent)
+      const QUICK_QUOTE_TEMPLATE_ID  = 'NZsmr3u1XK30TWTx0zzn';
+      const GUIDED_SALES_TEMPLATE_ID = 'xp7NZIjjh9KzQZPzREuV';
+      const resolvedTemplateId = quickQuote ? QUICK_QUOTE_TEMPLATE_ID
+        : body.executionQuote   ? GUIDED_SALES_TEMPLATE_ID
+        : (templateId || null);
       const { products } = body; // array of {id, quantity}
 
       const payload = { opportunityId, title: title || 'Proposal' };
