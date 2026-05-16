@@ -49,6 +49,7 @@ Your job is to take the technical spec provided and:
 2. Spot the strongest "why now" angle in the spec
 3. Give the rep a coaching insight for the sales conversation
 4. Produce specific, outcome-focused briefs for all 5 proposal widgets
+5. Categorise EVERY line item into: hardware (physical products with MPNs like firewalls, switches, laptops, cables, patch panels), service (recurring managed services like MDR, monitoring, NOC), labor (professional services / installation hours), software (licenses or subscriptions), or unknown
 
 The Buyer Decision Journey framework:
 W1: Situation — show you understand their world
@@ -144,8 +145,29 @@ const EXECUTE_TOOL = {
       },
       spec_gaps: {
         type: 'array',
-        description: 'Items in the spec that are unclear, missing detail, or could not be confidently translated — e.g. vague labor codes, missing quantities, ambiguous line items. Each as a short plain-language note. Leave empty if spec is complete.',
+        description: 'Items in the spec that are unclear, missing detail, or could not be confidently translated. Each as a short plain-language note. Leave empty if spec is complete.',
         items: { type: 'string' }
+      },
+      line_items: {
+        type: 'array',
+        description: 'Every line item from the spec, categorised by type. Include ALL rows — nothing should be omitted.',
+        items: {
+          type: 'object',
+          properties: {
+            name:        { type: 'string',  description: 'Product or service name from the spec' },
+            mpn:         { type: 'string',  description: 'Manufacturer part number if present in the spec' },
+            manufacturer:{ type: 'string',  description: 'Manufacturer or vendor name if present' },
+            quantity:    { type: 'number',  description: 'Quantity from the spec — default to 1 if not specified' },
+            unit:        { type: 'string',  description: 'Billing unit: one-time, monthly, hourly, or annual' },
+            type:        {
+              type: 'string',
+              enum: ['hardware', 'service', 'labor', 'software', 'unknown'],
+              description: 'hardware = physical product with MPN (firewall, switch, laptop, cable); service = recurring managed service (MDR, monitoring, NOC); labor = professional services / installation hours; software = license or subscription without hardware; unknown = cannot determine'
+            },
+            description: { type: 'string',  description: 'Brief plain-language description of what this item is' }
+          },
+          required: ['name', 'quantity', 'unit', 'type']
+        }
       }
     },
     required: ['coaching_insight', 'buyer_summary', 'w1_situation', 'w2_urgency', 'w3_trust', 'w4_outcome', 'w5_investment']
@@ -301,7 +323,7 @@ Translate this into buyer language and generate widget briefs for a compelling p
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1500,
+          max_tokens: 2500,
           system: EXECUTE_SYSTEM,
           tools: [EXECUTE_TOOL],
           tool_choice: { type: 'tool', name: 'submit_execution_recommendation' },
