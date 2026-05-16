@@ -55,11 +55,24 @@
         </label>
         <p class="field-hint">Industry and rough size — this shapes the language of every widget.</p>
         <div class="field-row">
-          <input type="text" id="f-business" name="business" class="field-input" maxlength="100"
-            placeholder="e.g. Dental practice, law firm, manufacturer, accountancy" required>
+          <select id="f-business" name="business" class="field-input field-select" required>
+            <option value="">Select industry…</option>
+            <option value="Healthcare / Medical">Healthcare / Medical</option>
+            <option value="Legal / Law firm">Legal / Law firm</option>
+            <option value="Financial / Accounting">Financial / Accounting</option>
+            <option value="Manufacturing / Industrial">Manufacturing / Industrial</option>
+            <option value="Professional Services">Professional Services</option>
+            <option value="Retail / Commerce">Retail / Commerce</option>
+            <option value="Education">Education</option>
+            <option value="Non-profit">Non-profit</option>
+            <option value="Technology / IT">Technology / IT</option>
+            <option value="Other / General business">Other / General business</option>
+          </select>
           <input type="text" id="f-size" name="size" class="field-input field-input-sm" maxlength="60"
             placeholder="Team size (e.g. 25 staff)">
         </div>
+        <input type="text" id="f-business-other" class="field-input" maxlength="100"
+          placeholder="Describe the business type…" style="display:none; margin-top:8px;">
       </div>
 
       <div class="optional-divider">
