@@ -26,6 +26,13 @@ const SERVICES = [
     description: 'Cybersecurity solution — layered protection including next-generation endpoint detection and response (EDR), email security and anti-phishing, multi-factor authentication, security awareness training, and dark web monitoring. Designed to meet cyber insurance requirements and protect against modern ransomware and phishing threats.'
   },
   {
+    id:          'email-security',
+    name:        'Email Security',
+    subtitle:    'Anti-spam & phishing protection',
+    icon:        '✉️',
+    description: 'Standalone email security solution — advanced anti-spam, anti-phishing, and malware filtering layered in front of Microsoft 365 or Google Workspace. Includes impersonation and business email compromise (BEC) protection, sandboxed attachment analysis, link rewriting, and quarantine management. Often sold separately from a full cybersecurity stack where the customer already has basic endpoint protection but their inbox remains the primary attack vector.'
+  },
+  {
     id:          'network',
     name:        'Network Infrastructure',
     subtitle:    'Upgrade & modernisation',
@@ -33,11 +40,25 @@ const SERVICES = [
     description: 'Network infrastructure upgrade — replacement and modernisation of the existing network including next-generation firewall, managed switches, structured cabling, and wireless access points. Includes a site survey to document the current environment before any work begins, with all installation carried out after hours to minimise disruption.'
   },
   {
+    id:          'azure',
+    name:        'Microsoft Azure / Intune',
+    subtitle:    'Entra ID, Intune & cloud infra',
+    icon:        '🔷',
+    description: 'Microsoft Azure, Entra ID, and Intune deployment — configuring and managing Microsoft\'s cloud identity and device management platform. Includes Entra ID (Azure AD) tenant configuration, conditional access policies, Intune mobile device and application management (MDM/MAM), and Azure infrastructure provisioning. Provides centralised control over who can access what, from which devices, with enforced compliance policies — independent of physical location.'
+  },
+  {
     id:          'cloud',
     name:        'Cloud Migration',
     subtitle:    'Azure / AWS / hosted',
     icon:        '⚡',
     description: 'Cloud server migration — moving on-premises servers and workloads to a hosted cloud environment. Includes assessment of current infrastructure, migration planning, data transfer with minimal downtime, security configuration, and post-migration support. Reduces hardware overhead while improving reliability, scalability, and remote access.'
+  },
+  {
+    id:          'sdwan',
+    name:        'SD-WAN',
+    subtitle:    'Multi-site network modernisation',
+    icon:        '🌐',
+    description: 'SD-WAN (Software-Defined Wide Area Network) — replacing expensive MPLS circuits and legacy WAN infrastructure with a cloud-managed, policy-driven network that intelligently routes traffic across broadband, 4G/5G, and existing leased lines. Includes centralised management across all sites, application-aware traffic prioritisation, built-in failover, and direct cloud breakout for Microsoft 365 and SaaS applications. Typically delivers significant cost savings over MPLS while improving performance and resilience for multi-site businesses.'
   },
   {
     id:          'backup',
@@ -66,6 +87,13 @@ const SERVICES = [
     subtitle:    'Device refresh & lifecycle',
     icon:        '🖨️',
     description: 'Hardware as a Service (HaaS) — replacing ageing desktops, laptops, servers, and peripherals under a predictable monthly subscription rather than large upfront capital spend. Includes hardware procurement, configuration and deployment, warranty and repair coverage, and end-of-life asset disposal. Devices are refreshed on a fixed cycle so the customer always runs current, supported equipment without budget shocks.'
+  },
+  {
+    id:          'procurement',
+    name:        'IT Procurement',
+    subtitle:    'Device lifecycle & vendor mgmt',
+    icon:        '🛒',
+    description: 'IT procurement and device lifecycle management — handling one-off and ongoing hardware and software purchasing on behalf of the customer. Includes vendor sourcing, competitive pricing, warranty registration, asset tracking, and coordinated end-of-life disposal. Distinct from HaaS in that it covers ad-hoc purchases, mixed-fleet environments, and software licensing renewals rather than a fixed subscription refresh cycle. Removes the burden of managing multiple vendor relationships and ensures procurement decisions align with the wider IT strategy.'
   },
   {
     id:          'faas',
