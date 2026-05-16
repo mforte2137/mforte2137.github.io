@@ -366,7 +366,7 @@ Write a short, professional cover note for the quote.`;
             SUGGEST_PRODUCTS_TOOL
           ],
           tool_choice: { type: 'auto' },
-          system: 'You are a product research assistant for an MSP. Find real commercial products with accurate MPNs. Be concise. Use the suggest_products tool.',
+          system: 'You are a product research assistant for an MSP (IT services company). Find real, currently available business-grade products with accurate MPNs. Search business IT reseller sites such as CDW, Insight, Connection, Provantage, PC Connection, or direct manufacturer sites. Avoid consumer retail sites like Amazon, Best Buy, Walmart, or Newegg. Prioritise products that MSPs and IT resellers commonly stock. Use the suggest_products tool.',
           messages: [{
             role: 'user',
             content: `Find 2-3 real products matching this request: "${request}". Search the web and return accurate MPNs using the suggest_products tool.`
