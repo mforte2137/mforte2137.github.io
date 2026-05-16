@@ -459,6 +459,150 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
       return ok({ product: data });
     }
 
+        // ── match-spec-items ────────────────────────────────────
+    // Phase B — Execution mode catalog matching.
+    // Takes categorised line items from Claude's spec analysis
+    // and matches them against the MSP's Salesbuildr catalog.
+    // Services/labor: fuzzy name match
+    // Hardware/software: Haiku semantic match (same as Quick Quote)
+    if (action === 'match-spec-items') {
+      const { items } = body;  // array of line_items from Claude
+      if (!Array.isArray(items) || items.length === 0) return err('items required.', 400);
+
+      // 1. Fetch full catalog
+      const catRes  = await fetch(`${BASE}/product?size=500`, { headers });
+      const catData = catRes.ok ? await catRes.json() : {};
+      const all     = catData?.results || catData?.data || catData?.items || (Array.isArray(catData) ? catData : []);
+
+      // Filter to listed, non-bundle products only
+      const catalog = all.filter(p => {
+        const t = (p.productType || p.type || '').toLowerCase();
+        if (t === 'bundle') return false;
+        if (p.listed === false) return false;
+        return true;
+      });
+
+      const catalogMap = new Map(catalog.map(p => [p.id, p]));
+
+      // Helper: simple fuzzy name match for services/labor
+      function fuzzyMatch(itemName, catalogItems) {
+        const needle = itemName.toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
+        const needleWords = needle.split(/\s+/).filter(w => w.length > 3);
+        let best = null, bestScore = 0;
+        for (const p of catalogItems) {
+          const hay = (p.name || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
+          let score = 0;
+          for (const w of needleWords) {
+            if (hay.includes(w)) score += w.length > 6 ? 3 : 2;
+          }
+          if (score > bestScore) { bestScore = score; best = p; }
+        }
+        return bestScore >= 4 ? best : null;
+      }
+
+      // Helper: format product for response
+      function formatProduct(p) {
+        return {
+          id:     p.id,
+          name:   p.name || '',
+          price:  p.sellPrice ?? p.price ?? p.recurringPrice ?? 0,
+          type:   p.productType || p.type || 'product',
+          unit:   (() => {
+            const t = (p.productType || p.type || '').toLowerCase();
+            if (t === 'bundle') return 'month';
+            return (p.unit || p.term || '').toLowerCase();
+          })(),
+          vendor: p.manufacturer || '',
+          sku:    p.mpn || p.ean || '',
+          listed: p.listed ?? null,
+        };
+      }
+
+      // Split items by type
+      const serviceItems  = items.filter(i => i.type === 'service' || i.type === 'labor');
+      const hardwareItems = items.filter(i => i.type === 'hardware' || i.type === 'software' || i.type === 'unknown');
+
+      const matched   = [];  // { specItem, catalogProduct, qty }
+      const unmatched = [];  // { specItem } — needs web search
+
+      // 2. Match services/labor by fuzzy name
+      const serviceProducts = catalog.filter(p => {
+        const t = (p.productType || p.type || '').toLowerCase();
+        return t === 'service' || t === 'labor';
+      });
+
+      for (const item of serviceItems) {
+        const found = fuzzyMatch(item.name, serviceProducts);
+        if (found) {
+          matched.push({ specItem: item, catalogProduct: formatProduct(found), qty: item.quantity || 1 });
+        } else {
+          // Try against full catalog as fallback
+          const fallback = fuzzyMatch(item.name, catalog);
+          if (fallback) {
+            matched.push({ specItem: item, catalogProduct: formatProduct(fallback), qty: item.quantity || 1 });
+          } else {
+            unmatched.push({ specItem: item });
+          }
+        }
+      }
+
+      // 3. Match hardware/software via Haiku if any exist
+      if (hardwareItems.length > 0) {
+        const catalogList = catalog.slice(0, 300).map(p => p.id + '|||' + (p.name || '').slice(0, 80)).join('
+');
+        const itemList    = hardwareItems.map((item, i) => `${i}: ${item.name}${item.mpn ? ' (MPN: ' + item.mpn + ')' : ''}`).join('
+');
+
+        try {
+          const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': process.env.ANTHROPIC_API_KEY,
+              'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify({
+              model: 'claude-haiku-4-5-20251001',
+              max_tokens: 600,
+              system: 'You are a product catalog matching assistant. Match requested items to catalog products by name and MPN. Return ONLY a JSON object mapping item index to catalog product ID, or null if no match. Example: {"0":"catalogId1","2":"catalogId3"}. No markdown, no explanation.',
+              messages: [{
+                role: 'user',
+                content: `Match these requested items to the catalog:
+
+REQUESTED:
+${itemList}
+
+CATALOG (id|||name):
+${catalogList}
+
+Return JSON object mapping index to catalog ID, null for no match.`
+              }]
+            })
+          });
+          const aiData = await aiRes.json();
+          const aiText = (aiData?.content?.[0]?.text || '{}').replace(/```json?|```/g, '').trim();
+          // Extract JSON object from response
+          const objMatch = aiText.match(/\{[\s\S]*?\}/);
+          const idMap = objMatch ? JSON.parse(objMatch[0]) : {};
+
+          for (let i = 0; i < hardwareItems.length; i++) {
+            const item     = hardwareItems[i];
+            const catalogId = idMap[String(i)];
+            if (catalogId && catalogMap.has(catalogId)) {
+              matched.push({ specItem: item, catalogProduct: formatProduct(catalogMap.get(catalogId)), qty: item.quantity || 1 });
+            } else {
+              unmatched.push({ specItem: item });
+            }
+          }
+        } catch (e) {
+          // On Haiku failure, put all hardware in unmatched
+          hardwareItems.forEach(item => unmatched.push({ specItem: item }));
+        }
+      }
+
+      return ok({ matched, unmatched, catalogSize: all.length });
+    }
+
         return err('Unknown action.', 400);
 
   } catch (e) {
