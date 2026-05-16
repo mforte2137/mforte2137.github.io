@@ -141,6 +141,11 @@ const EXECUTE_TOOL = {
       billing_shape: {
         type: 'string',
         description: 'Brief note on the billing shape — e.g. primarily one-time project, monthly recurring services, or mixed'
+      },
+      spec_gaps: {
+        type: 'array',
+        description: 'Items in the spec that are unclear, missing detail, or could not be confidently translated — e.g. vague labor codes, missing quantities, ambiguous line items. Each as a short plain-language note. Leave empty if spec is complete.',
+        items: { type: 'string' }
       }
     },
     required: ['coaching_insight', 'buyer_summary', 'w1_situation', 'w2_urgency', 'w3_trust', 'w4_outcome', 'w5_investment']
