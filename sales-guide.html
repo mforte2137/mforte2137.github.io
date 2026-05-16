@@ -215,24 +215,17 @@
 
         <!-- File upload option -->
         <div class="spec-upload" id="specUploadZone">
-          <input type="file" id="specFile" accept=".xlsx,.xls,.docx" hidden>
+          <input type="file" id="specFile" accept=".xlsx,.xls,.docx,.csv" hidden>
           <div class="spec-upload-inner" id="specUploadInner">
             <span class="spec-upload-icon">📎</span>
-            <span class="spec-upload-label">Drop an <strong>.xlsx</strong> or <strong>.docx</strong> here, or <label for="specFile" class="spec-upload-link">browse</label></span>
-            <span class="spec-upload-hint">We'll extract the content and populate the field below</span>
+            <span class="spec-upload-label">Drop an <strong>.xlsx</strong>, <strong>.docx</strong>, or <strong>.csv</strong> here, or <label for="specFile" class="spec-upload-link">browse</label></span>
+            <span class="spec-upload-hint">We'll extract the content and populate the field below — Excel, Word, or CSV</span>
           </div>
           <div id="specFileStatus" class="spec-file-status hidden"></div>
         </div>
 
-        <label class="q-label" for="exec-spec" style="margin-top:14px;">Or paste / type the spec directly</label>
-        <textarea id="exec-spec" rows="10" class="spec-input" placeholder="e.g.
-- Sophos XGS 136 next-gen firewall + 3yr Xstream Protection license
-- 1x Ubiquiti USW-48-PoE managed switch
-- 3x Ubiquiti U6 Pro wireless access points
-- After-hours installation (approx 8 hrs engineer, 4 hrs senior engineer)
-- Sophos MDR — Managed Detection &amp; Response (monthly)
-- Network monitoring and management (monthly)
-- 1yr hardware warranty support included"></textarea>
+        <label class="q-label" for="exec-spec" style="margin-top:14px;">Or describe the solution in your own words</label>
+        <textarea id="exec-spec" rows="10" class="spec-input" placeholder="Paste the confirmed spec, upload a file above, or describe the solution in plain language — e.g. 'Replace aging network infrastructure for a 30-user law firm. New firewall, managed switch, 3 access points, after-hours installation. Add MDR and network monitoring as monthly services.'"></textarea>
         <div class="char-counter"><span id="specCount">0</span> characters</div>
       </div>
     </div>
@@ -403,6 +396,15 @@
       <div class="coaching-body">
         <div class="coaching-label">Sales coaching insight</div>
         <p class="coaching-text" id="coachingText"></p>
+      </div>
+    </div>
+
+    <!-- Spec gaps — execution mode only, shown when Claude flags unclear items -->
+    <div id="specGapsSection" class="spec-gaps-card hidden">
+      <div class="spec-gaps-icon">⚠</div>
+      <div class="spec-gaps-body">
+        <div class="spec-gaps-label">Spec gaps — clarify before sending</div>
+        <ul id="specGapsList" class="spec-gaps-list"></ul>
       </div>
     </div>
 
