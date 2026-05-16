@@ -599,3 +599,33 @@ body { font-family: var(--sans); background: var(--paper); color: var(--ink); fo
 .spec-gaps-label { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #b45309; margin-bottom: 6px; }
 .spec-gaps-list  { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
 .spec-gaps-list li { font-size: 13px; color: #78350f; line-height: 1.5; }
+
+/* ── Line items — execution mode Phase A ─────────────────── */
+.li-group { margin-bottom: 16px; }
+.li-group-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; background: var(--paper-alt);
+  border: 1px solid var(--rule); border-radius: 8px 8px 0 0;
+  font-size: 13px;
+}
+.li-group-icon  { font-size: 16px; }
+.li-group-label { font-weight: 700; color: var(--ink); }
+.li-group-count { font-size: 11px; color: var(--mute); background: var(--rule); padding: 1px 7px; border-radius: 10px; }
+.li-group-hint  { font-size: 11px; color: var(--mute); font-style: italic; margin-left: auto; }
+.li-item {
+  padding: 10px 14px;
+  border: 1px solid var(--rule); border-top: none;
+  background: #fff;
+}
+.li-item:last-child { border-radius: 0 0 8px 8px; }
+.li-item-name { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+.li-item-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 3px; }
+.li-mpn  { font-size: 11px; font-family: 'Consolas','Courier New',monospace; background: var(--paper-alt); padding: 1px 6px; border-radius: 4px; color: var(--ink-soft); }
+.li-mfr  { font-size: 11px; color: var(--mute); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.li-qty  { font-size: 11px; color: var(--mute); }
+.li-unit { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px; text-transform: uppercase; letter-spacing: .06em; }
+.li-unit-monthly  { background: rgba(5,150,105,.1);  color: var(--good); }
+.li-unit-one-time { background: var(--paper-alt);    color: var(--mute); border: 1px solid var(--rule); }
+.li-unit-hourly   { background: rgba(124,58,237,.1); color: #7c3aed; }
+.li-unit-annual   { background: rgba(37,99,235,.1);  color: var(--accent); }
+.li-desc { font-size: 12px; color: var(--ink-soft); line-height: 1.4; margin-top: 2px; }
