@@ -61,6 +61,27 @@ const SERVICES = [
     description: 'New client onboarding — transitioning an existing business onto our managed services platform. Includes full environment discovery and documentation, deployment of monitoring and management tooling, security baseline configuration, and a technology alignment review to identify immediate risks and longer-term improvement opportunities.'
   },
   {
+    id:          'haas',
+    name:        'Hardware as a Service',
+    subtitle:    'Device refresh & lifecycle',
+    icon:        '🖨️',
+    description: 'Hardware as a Service (HaaS) — replacing ageing desktops, laptops, servers, and peripherals under a predictable monthly subscription rather than large upfront capital spend. Includes hardware procurement, configuration and deployment, warranty and repair coverage, and end-of-life asset disposal. Devices are refreshed on a fixed cycle so the customer always runs current, supported equipment without budget shocks.'
+  },
+  {
+    id:          'faas',
+    name:        'Firewall as a Service',
+    subtitle:    'Cloud-delivered network security',
+    icon:        '🔥',
+    description: 'Firewall as a Service (FWaaS) — replacing on-premises firewall appliances with a cloud-delivered, fully managed network security platform. Includes next-generation threat prevention, DNS filtering, application-aware policy controls, and centralised management across all sites and remote users. No hardware to maintain, with automatic updates ensuring protection against emerging threats without scheduled maintenance windows.'
+  },
+  {
+    id:          'voip',
+    name:        'VoIP / UCaaS',
+    subtitle:    'Cloud phone & unified comms',
+    icon:        '📞',
+    description: 'VoIP and Unified Communications as a Service (UCaaS) — replacing legacy on-premises phone systems with a cloud-hosted platform that combines voice calling, video conferencing, instant messaging, and presence in a single application. Includes number porting, handset or softphone deployment, call routing and hunt group configuration, voicemail-to-email, and ongoing management. Staff can make and receive calls from any device, from any location, on a predictable per-user monthly cost.'
+  },
+  {
     id:          'custom',
     name:        'Custom Project',
     subtitle:    "I'll describe it myself",
