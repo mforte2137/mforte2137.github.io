@@ -70,6 +70,7 @@ header.top .brand { font-weight: 700; color: var(--ink); }
 .field-input::placeholder, .field-textarea::placeholder { color: var(--mute); font-size: 14px; }
 .field-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; }
 .field-input-sm { width: 180px; }
+.field-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6758' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; cursor: pointer; }
 .field-counter { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 11px; color: var(--mute); text-align: right; margin-top: 5px; }
 
 /* ── Service picker ── */
