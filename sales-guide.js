@@ -1692,10 +1692,17 @@ async function selectOpportunity(opp) {
     $('oppQuoteTitle').value = `${opp.name} — Proposal`;
   }
 
-  // Load guided catalog and show service selection
-  $('oppServiceStep').classList.remove('hidden');
-  $('oppServiceStep').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  loadGuidedCatalog();
+  // Execution mode — skip guided catalog, go straight to quote step
+  // Discovery mode — load guided catalog for service selection
+  if (currentMode === 'execution') {
+    $('oppServiceStep').classList.add('hidden');
+    $('oppStep3').classList.remove('hidden');
+    $('oppStep3').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } else {
+    $('oppServiceStep').classList.remove('hidden');
+    $('oppServiceStep').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    loadGuidedCatalog();
+  }
 
   $('changeOppBtn')?.addEventListener('click', () => {
     selectedOppOpportunity = null;
@@ -2101,6 +2108,7 @@ async function doConnectOpportunity() {
       setOppWorking(serviceCount > 0 ? `Creating quote with ${serviceCount} service${serviceCount !== 1 ? 's' : ''}…` : 'Creating draft quote…');
       const quoteTitle   = $('oppQuoteTitle').value.trim() || opp.name;
       const quotePayload = { opportunityId: opp.id, title: quoteTitle, ...creds };
+      if (currentMode === 'execution') quotePayload.executionQuote = true;
       if (selectedServices.length > 0) quotePayload.products = selectedServices;
       const quoteRes     = await callCreateOpp('create-quote', quotePayload);
       quoteCreated       = quoteRes.ok;
