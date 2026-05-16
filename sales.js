@@ -438,9 +438,15 @@ form.addEventListener('submit', async (e) => {
   e.preventDefault(); hideError();
   if (!validateForm()) return;
 
+  const bizSelect = document.getElementById('f-business');
+  const bizOther  = document.getElementById('f-business-other');
+  const bizVal    = bizSelect.value === 'Other / General business'
+                    ? (bizOther.value.trim() || 'Other / General business')
+                    : bizSelect.value.trim();
+
   const fields = {
     solution: solutionField.value.trim(),
-    business: document.getElementById('f-business').value.trim(),
+    business: bizVal,
     size:     document.getElementById('f-size').value.trim(),
     trigger:  triggerField.value.trim(),
     outcomes: outcomesField.value.trim(),
@@ -590,13 +596,31 @@ function appendErrorCard(widgetId,message) {
   card.appendChild(header); card.appendChild(detail); individualWidgets.appendChild(card);
 }
 function getCurrentFields() {
-  return { solution:solutionField.value.trim(), business:document.getElementById('f-business').value.trim(), size:document.getElementById('f-size').value.trim(), trigger:triggerField.value.trim(), outcomes:outcomesField.value.trim(), urgency:urgencyField.value.trim() };
+  const bizSelect = document.getElementById('f-business');
+  const bizOther  = document.getElementById('f-business-other');
+  const bizVal    = bizSelect.value === 'Other / General business'
+                    ? (bizOther.value.trim() || 'Other / General business')
+                    : bizSelect.value.trim();
+  return { solution:solutionField.value.trim(), business:bizVal, size:document.getElementById('f-size').value.trim(), trigger:triggerField.value.trim(), outcomes:outcomesField.value.trim(), urgency:urgencyField.value.trim() };
 }
 async function copyHtml(html,btn) {
   try{ await navigator.clipboard.writeText(html); }catch{ const ta=document.createElement('textarea'); ta.value=html; ta.style.cssText='position:fixed;opacity:0;'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
   btn.textContent='Copied!'; btn.classList.add('is-copied');
   setTimeout(()=>{ btn.textContent='Copy HTML'; btn.classList.remove('is-copied'); },2500);
 }
+
+// ── Business type — reveal free-text when "Other" selected ──
+(function () {
+  const select = document.getElementById('f-business');
+  const other  = document.getElementById('f-business-other');
+  if (!select || !other) return;
+  select.addEventListener('change', () => {
+    const isOther = select.value === 'Other / General business';
+    other.style.display = isOther ? 'block' : 'none';
+    other.required = isOther;
+    if (!isOther) other.value = '';
+  });
+})();
 
 // ── Init ──────────────────────────────────────────────────
 initServiceTiles();
