@@ -460,163 +460,59 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
     }
 
         // ── match-spec-items ────────────────────────────────────
-    // Phase B — Execution mode catalog matching.
-    // Takes categorised line items from Claude's spec analysis
-    // and matches them against the MSP's Salesbuildr catalog.
-    // Services/labor: fuzzy name match
-    // Hardware/software: Haiku semantic match (same as Quick Quote)
-    if (action === 'match-spec-items') {
-      const { items } = body;  // array of line_items from Claude
-      if (!Array.isArray(items) || items.length === 0) return err('items required.', 400);
+        // Execution mode: faithful to the design desk spec.
+        // Match every item by exact ID (mpn/internalProductId/ean/externalIdentifier).
+        // Found → add to quote. Not found → needsImport list with MPN for rep to import.
+        // No fuzzy matching. No web search. The spec IS the source of truth.
+        if (action === 'match-spec-items') {
+          const { items } = body;
+          if (!Array.isArray(items) || items.length === 0) return err('items required.', 400);
 
-      // 1. Fetch full catalog
-      const catRes  = await fetch(`${BASE}/product?size=500`, { headers });
-      const catData = catRes.ok ? await catRes.json() : {};
-      const all     = catData?.results || catData?.data || catData?.items || (Array.isArray(catData) ? catData : []);
+          // Fetch full catalog once
+          const catRes  = await fetch(`${BASE}/product?size=500`, { headers });
+          const catData = catRes.ok ? await catRes.json() : {};
+          const all     = catData?.results || catData?.data || catData?.items || (Array.isArray(catData) ? catData : []);
+          const catalog = all.filter(p => p.listed !== false);
 
-      // Filter to listed, non-bundle products only
-      const catalog = all.filter(p => {
-        const t = (p.productType || p.type || '').toLowerCase();
-        if (t === 'bundle') return false;
-        if (p.listed === false) return false;
-        return true;
-      });
+          // Exact ID match across all identifier fields
+          function matchById(specMpn) {
+            if (!specMpn) return null;
+            const needle = specMpn.toLowerCase().replace(/[^a-z0-9-]/g, '');
+            return catalog.find(p =>
+              [p.mpn, p.internalProductId, p.ean, p.externalIdentifier]
+                .filter(Boolean)
+                .map(v => v.toLowerCase().replace(/[^a-z0-9-]/g, ''))
+                .some(v => v === needle)
+            ) || null;
+          }
 
-      const catalogMap = new Map(catalog.map(p => [p.id, p]));
+          function fmt(p) {
+            return {
+              id:     p.id,
+              name:   p.name || '',
+              price:  p.price ?? p.recurringPrice ?? 0,
+              type:   (p.productType || '').toLowerCase(),
+              unit:   (p.unit || p.term || '').toLowerCase(),
+              vendor: p.manufacturer || p.vendor || '',
+              sku:    p.mpn || p.internalProductId || p.ean || '',
+            };
+          }
 
-      // Helper: fuzzy name match — requires multiple meaningful keyword matches
-      // High threshold prevents brand-only matches (e.g. "Tripp Lite" matching any Tripp Lite product)
-      function fuzzyMatch(itemName, catalogItems) {
-        const needle = itemName.toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
-        // Extract meaningful words — skip brand names alone, require product-type words
-        const stopBrands = new Set(['tripp','lite','startech','ubiquiti','unifi','sophos','eaton',
-          'hp','dell','lenovo','cisco','netgear','zyxel','fortinet','aruba','internal']);
-        const needleWords = needle.split(/\s+/).filter(w => w.length > 3 && !stopBrands.has(w));
-        if (needleWords.length === 0) return null; // no meaningful words to match on
+          const matched     = [];  // in catalog → goes to quote
+          const needsImport = [];  // not in catalog → rep imports by MPN
 
-        let best = null, bestScore = 0;
-        for (const p of catalogItems) {
-          const hay = (p.name || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
-          let score = 0;
-          let distinctHits = 0;
-          for (const w of needleWords) {
-            if (hay.includes(w)) {
-              score += w.length > 6 ? 3 : 2;
-              distinctHits++;
+          for (const item of items) {
+            const found = matchById(item.mpn);
+            if (found) {
+              matched.push({ specItem: item, catalogProduct: fmt(found), qty: item.quantity || 1 });
+            } else {
+              needsImport.push({ specItem: item });
             }
           }
-          // Must have at least 2 distinct keyword hits to avoid single-word brand matches
-          if (distinctHits >= 2 && score > bestScore) { bestScore = score; best = p; }
-        }
-        // High threshold — score of 8+ means at least 2-3 meaningful word matches
-        return bestScore >= 8 ? best : null;
-      }
 
-      // Helper: format product for response
-      function formatProduct(p) {
-        return {
-          id:     p.id,
-          name:   p.name || '',
-          price:  p.sellPrice ?? p.price ?? p.recurringPrice ?? 0,
-          type:   p.productType || p.type || 'product',
-          unit:   (() => {
-            const t = (p.productType || p.type || '').toLowerCase();
-            if (t === 'bundle') return 'month';
-            return (p.unit || p.term || '').toLowerCase();
-          })(),
-          vendor: p.manufacturer || '',
-          sku:    p.mpn || p.internalProductId || p.ean || '',
-          listed: p.listed ?? null,
-        };
-      }
-
-      // Split items by type
-      const serviceItems  = items.filter(i => i.type === 'service' || i.type === 'labor');
-      const hardwareItems = items.filter(i => i.type === 'hardware' || i.type === 'software' || i.type === 'unknown');
-
-      const matched   = [];  // { specItem, catalogProduct, qty }
-      const unmatched = [];  // { specItem } — needs web search
-
-      // 2. Match services/labor by fuzzy name
-      const serviceProducts = catalog.filter(p => {
-        const t = (p.productType || p.type || '').toLowerCase();
-        return t === 'service' || t === 'labor';
-      });
-
-      for (const item of serviceItems) {
-        let found = null;
-
-        // First try internal ID match (design desk often uses SB internal codes as MPN)
-        if (item.mpn) {
-          const mpnLower = item.mpn.toLowerCase().replace(/[^a-z0-9-]/g, '');
-          found = catalog.find(p => {
-            const ids = [
-              p.mpn || '', p.internalProductId || '',
-              p.ean || '', p.externalIdentifier || ''
-            ].map(v => v.toLowerCase().replace(/[^a-z0-9-]/g, '')).filter(Boolean);
-            return ids.some(id => id === mpnLower);
-          }) || null;
+          return ok({ matched, needsImport, catalogSize: catalog.length });
         }
 
-        // Then try fuzzy name match
-        if (!found) found = fuzzyMatch(item.name, serviceProducts);
-
-        // Fallback: fuzzy against full catalog
-        if (!found) found = fuzzyMatch(item.name, catalog);
-
-        if (found) {
-          matched.push({ specItem: item, catalogProduct: formatProduct(found), qty: item.quantity || 1 });
-        } else {
-          unmatched.push({ specItem: item });
-        }
-      }
-
-      // 3. Match hardware/software — MPN-first then fuzzy name match
-      // MPN exact match is highly accurate; fuzzy is a fallback with high threshold.
-      for (const item of hardwareItems) {
-        let found = null;
-
-        // Try ID/MPN match — checks mpn, internalProductId, ean, and externalIdentifier
-        // Design desk often uses internal SB codes (e.g. LABOR-INSTALL-NET, MDR-MONTHLY)
-        // which are stored in internalProductId, not mpn
-        if (item.mpn) {
-          const mpnLower = item.mpn.toLowerCase().replace(/[^a-z0-9-]/g, '');
-          found = catalog.find(p => {
-            const ids = [
-              p.mpn || '',
-              p.internalProductId || '',
-              p.ean || '',
-              p.externalIdentifier || ''
-            ].map(v => v.toLowerCase().replace(/[^a-z0-9-]/g, '')).filter(Boolean);
-            return ids.some(id => id === mpnLower);
-          }) || null;
-        }
-
-        // Fallback: fuzzy name match (high threshold — see fuzzyMatch function)
-        if (!found) {
-          found = fuzzyMatch(item.name, catalog);
-        }
-
-        // Sanity check — if matched product name shares no meaningful words with spec item, reject it
-        if (found) {
-          const specWords = item.name.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 4);
-          const catWords  = (found.name || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/);
-          const overlap   = specWords.filter(w => catWords.includes(w)).length;
-          if (specWords.length > 0 && overlap === 0) {
-            found = null; // no word overlap — reject the match
-          }
-        }
-
-        if (found) {
-          matched.push({ specItem: item, catalogProduct: formatProduct(found), qty: item.quantity || 1 });
-        } else {
-          unmatched.push({ specItem: item });
-        }
-      }
-
-
-      return ok({ matched, unmatched, catalogSize: all.length });
-    }
 
         return err('Unknown action.', 400);
 
