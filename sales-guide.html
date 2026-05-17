@@ -233,8 +233,36 @@
     <div class="q-card">
       <div class="q-body">
         <label class="q-label">Customer context <span class="optional-tag">Optional but useful</span></label>
-        <p class="q-hint">A sentence about who the customer is and what they care about — helps Claude frame the proposal for the right audience.</p>
-        <input type="text" id="exec-context" class="q-input" maxlength="200" placeholder="e.g. Law firm, 15 staff, had a phishing incident last month, compliance audit in Q1">
+        <p class="q-hint">Helps Claude frame the W1–W5 narrative for the right audience and urgency. The more you add, the sharper the output.</p>
+
+        <div class="q-row" style="margin-bottom:10px;">
+          <select id="exec-industry" class="q-select">
+            <option value="">Industry (optional)…</option>
+            <option value="Healthcare / Medical">Healthcare / Medical</option>
+            <option value="Legal / Law firm">Legal / Law firm</option>
+            <option value="Financial / Accounting">Financial / Accounting</option>
+            <option value="Manufacturing / Industrial">Manufacturing / Industrial</option>
+            <option value="Professional Services">Professional Services</option>
+            <option value="Retail / Commerce">Retail / Commerce</option>
+            <option value="Education">Education</option>
+            <option value="Non-profit">Non-profit</option>
+            <option value="Technology / IT">Technology / IT</option>
+            <option value="Other / General business">Other / General business</option>
+          </select>
+          <input type="number" id="exec-staff" class="q-num-input" min="1" placeholder="Staff count">
+        </div>
+
+        <label class="q-label" style="margin-bottom:6px;font-size:13px;">Why are they buying?</label>
+        <div class="chips-wrap" id="chips-exec-reason">
+          <button class="chip" data-val="Hardware reaching end of life — devices, servers or network equipment aging out">Hardware EOL</button>
+          <button class="chip" data-val="Recent security incident — ransomware, breach or phishing attack">Security incident</button>
+          <button class="chip" data-val="Compliance or cyber insurance requirement — audit deadline or policy renewal">Compliance / insurance</button>
+          <button class="chip" data-val="New client onboarding — first engagement with this MSP">New client onboarding</button>
+          <button class="chip" data-val="Office move or business expansion — new location or growing headcount">Office move / expansion</button>
+          <button class="chip" data-val="Replacing underperforming MSP or in-house IT">Replacing current IT</button>
+          <button class="chip" data-val="Proactive upgrade — leadership investing ahead of risk">Proactive upgrade</button>
+        </div>
+        <input type="text" class="other-input" id="other-exec-reason" placeholder="Other reason — describe…" style="margin-top:6px;">
       </div>
     </div>
 
