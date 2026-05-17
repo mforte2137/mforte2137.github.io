@@ -291,45 +291,45 @@ function briefTeaser(text) {
 
 // ═══════════════════════════════════════════════════════════
 // EXECUTION MODE — PHASE B: Catalog matching + quote lines
+// Simple, faithful to design desk spec. No fuzzy. No web search.
 // ═══════════════════════════════════════════════════════════
 
-let execMatchedProducts = [];  // [{id, name, price, unit, qty, specItem}]
+let execMatchedProducts = [];  // confirmed catalog matches to include in quote
 
 async function execMatchCatalog(lineItems) {
   const apiKey = $('oppApiKey')?.value.trim() || localStorage.getItem(LS_API_KEY) || '';
   const intKey = $('oppIntKey')?.value.trim() || localStorage.getItem(LS_INT_KEY) || '';
-
-  const wrap = $('execQuoteLinesWrap');
+  const wrap   = $('execQuoteLinesWrap');
   if (!wrap) return;
 
+  wrap.classList.remove('hidden');
+
   if (!apiKey || !intKey) {
-    // No creds yet — show the panel with a prompt to enter credentials
-    wrap.classList.remove('hidden');
-    $('execQuoteLinesSub').textContent = 'Enter your API credentials in the Connect panel below to match items against your catalog';
+    $('execQuoteLinesSub').textContent = 'Enter your API credentials in the Connect panel below to match items';
     return;
   }
 
-  wrap.classList.remove('hidden');
   $('execMatchWorking').classList.remove('hidden');
   $('execQuoteLinesSub').textContent = 'Matching spec items against your catalog…';
   execMatchedProducts = [];
 
   try {
-    const res  = await callCreateOpp('match-spec-items', { items: lineItems, apiKey, integrationKey: intKey });
+    const res = await callCreateOpp('match-spec-items', { items: lineItems, apiKey, integrationKey: intKey });
     $('execMatchWorking').classList.add('hidden');
-
     if (!res.ok) throw new Error(res.error || 'Matching failed');
 
-    const matched   = res.matched   || [];
-    const unmatched = res.unmatched || [];
+    const matched     = res.matched     || [];
+    const needsImport = res.needsImport || [];
+    const total       = matched.length + needsImport.length;
 
     renderExecMatchedItems(matched);
-    await renderExecUnmatchedItems(unmatched);
+    renderExecNeedsImport(needsImport);
 
-    const total = matched.length + unmatched.length;
-    $('execQuoteLinesSub').textContent = `${matched.length} of ${total} items matched in your catalog${unmatched.length > 0 ? ' — ' + unmatched.length + ' not found (suggestions below)' : ' — all items found'}`;
+    $('execQuoteLinesSub').textContent = matched.length === total
+      ? `All ${total} spec items found in your catalog — ready to quote`
+      : `${matched.length} of ${total} items in your catalog · ${needsImport.length} need importing (see below)`;
 
-  } catch (e) {
+  } catch(e) {
     $('execMatchWorking').classList.add('hidden');
     $('execQuoteLinesSub').textContent = 'Catalog match failed — check your API credentials in the Connect panel';
     console.error('[Exec Phase B]', e);
@@ -339,14 +339,12 @@ async function execMatchCatalog(lineItems) {
 function renderExecMatchedItems(matched) {
   const list = $('execMatchedList');
   if (!list) return;
+  execMatchedProducts = [];
 
   list.innerHTML = matched.map(({ specItem, catalogProduct, qty }) => {
     const uLabel = unitLabel(catalogProduct.unit);
     const price  = catalogProduct.price || 0;
     const line   = price * qty;
-    const typeColor = specItem.type === 'service' ? 'matched'
-      : specItem.type === 'labor'   ? 'optional'
-      : 'extra';
     return `
       <label class="opp-svc-item is-matched">
         <input type="checkbox" class="opp-svc-check exec-svc-check"
@@ -358,124 +356,91 @@ function renderExecMatchedItems(matched) {
           <span class="opp-svc-name">${esc(catalogProduct.name)}</span>
           <div class="opp-svc-meta">
             ${price > 0 ? `<span class="opp-svc-price">$${price.toFixed(2)}${uLabel} each</span>` : ''}
-            <span class="opp-svc-badge ${typeColor}">${esc(specItem.type)}</span>
+            <span class="opp-svc-badge ${specItem.type === 'service' ? 'matched' : specItem.type === 'labor' ? 'optional' : 'extra'}">${esc(specItem.type)}</span>
             ${catalogProduct.vendor ? `<span class="opp-svc-badge extra">${esc(catalogProduct.vendor)}</span>` : ''}
           </div>
-          <div style="font-size:11px;color:var(--mute);margin-top:2px;">From spec: ${esc(specItem.name)}</div>
+          <div style="font-size:11px;color:var(--mute);margin-top:2px;">Spec: ${esc(specItem.name)}${specItem.mpn ? ' · MPN: ' + esc(specItem.mpn) : ''}</div>
         </div>
         <div class="opp-svc-qty-wrap">
           <label>Qty</label>
-          <input type="number" class="opp-svc-qty" value="${qty}" min="1" max="999">
+          <input type="number" class="opp-svc-qty" value="${qty}" min="1" max="9999">
         </div>
         <span class="opp-svc-line-total">${price > 0 ? '$' + line.toFixed(2) + uLabel : 'Price on request'}</span>
       </label>`;
   }).join('');
 
-  // Wire up listeners and update total
   list.querySelectorAll('.exec-svc-check, .opp-svc-qty').forEach(el => {
     el.addEventListener('change', updateExecTotal);
     el.addEventListener('input',  updateExecTotal);
   });
   updateExecTotal();
-
-  // Store matched products for quote creation
-  execMatchedProducts = matched.map(({ catalogProduct, qty }) => ({
-    id: catalogProduct.id, name: catalogProduct.name,
-    price: catalogProduct.price, qty, unit: catalogProduct.unit
-  }));
 }
 
-async function renderExecUnmatchedItems(unmatched) {
+function renderExecNeedsImport(needsImport) {
   const wrap = $('execUnmatchedWrap');
-  if (!wrap || unmatched.length === 0) {
-    wrap?.classList.add('hidden');
+  if (!wrap) return;
+
+  if (needsImport.length === 0) {
+    wrap.classList.add('hidden');
     return;
   }
 
   wrap.classList.remove('hidden');
-  wrap.innerHTML = `<div class="qq-suggestions">
-    <div class="section-header">
-      <span class="section-icon">🌐</span>
-      <div>
-        <div class="section-title">Not in your catalog — suggestions from the web</div>
-        <div class="section-sub">These spec items weren't found — Claude is searching for alternatives with MPNs</div>
+  wrap.innerHTML = `
+    <div class="exec-import-panel">
+      <div class="exec-import-header">
+        <span class="exec-import-icon">📦</span>
+        <div>
+          <div class="exec-import-title">Not in your catalog — import before quoting</div>
+          <div class="exec-import-sub">These items were spec'd by the design desk. Copy the MPN and import from the Salesbuildr marketplace, then re-run this spec.</div>
+        </div>
       </div>
-    </div>
-    <div id="execSuggestionsBody"><div class="qq-suggest-loading"><div class="spinner-sm"></div> Searching the web…</div></div>
-  </div>`;
-
-  // Fire web search for all unmatched items combined
-  const requestStr = unmatched.map(u => u.specItem.name + (u.specItem.mpn ? ' MPN:' + u.specItem.mpn : '')).join(', ');
-  try {
-    const res = await fetch('/api/sales-guide', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'suggest-products', request: requestStr })
-    });
-    const data = await res.json();
-    const body = document.getElementById('execSuggestionsBody');
-    if (!body) return;
-
-    if (data.ok && data.suggestions?.length > 0) {
-      body.innerHTML = data.suggestions.map((s, i) => `
-        <div class="qq-suggest-item" id="exec-suggest-${i}">
-          <div class="qq-suggest-header">
-            <span class="qq-suggest-name">${esc(s.name)}</span>
-            ${typeof s.approx_price === 'number' ? `<span class="qq-suggest-price">~$${s.approx_price.toFixed(2)}</span>` : ''}
-          </div>
-          <div class="qq-suggest-desc">${esc(s.description)}</div>
-          <div class="qq-suggest-meta">
-            <span class="qq-suggest-mfr">${esc(s.manufacturer || '')}</span>
-            ${s.mpn ? `<button class="qq-mpn-btn" onclick="qqCopyMpn(this,'${esc(s.mpn)}')">
-              <span class="qq-mpn-label">MPN</span>
-              <span class="qq-mpn-value">${esc(s.mpn)}</span>
-              <span class="qq-mpn-copy">Copy</span>
-            </button>` : ''}
-            <button class="qq-add-btn" onclick="execAddToCatalog(this,${i})"
-              data-name="${esc(s.name)}"
-              data-mpn="${esc(s.mpn||'')}"
-              data-vendor="${esc(s.manufacturer||'')}"
-              data-desc="${esc(s.description||'')}"
-              data-price="${typeof s.approx_price === 'number' ? s.approx_price : 0}">
-              + Add to my catalog
-            </button>
-            <span class="qq-add-result" id="exec-add-result-${i}"></span>
-          </div>
-        </div>`).join('');
-    } else {
-      body.innerHTML = '<div class="qq-suggest-none">No web suggestions found — add these items manually in Salesbuildr.</div>';
-    }
-  } catch (e) {
-    const body = document.getElementById('execSuggestionsBody');
-    if (body) body.innerHTML = '<div class="qq-suggest-none">Web search unavailable — add items manually.</div>';
-  }
+      <div class="exec-import-list">
+        ${needsImport.map(({ specItem }) => `
+          <div class="exec-import-item">
+            <div class="exec-import-name">${esc(specItem.name)}</div>
+            <div class="exec-import-meta">
+              ${specItem.manufacturer ? `<span class="exec-import-mfr">${esc(specItem.manufacturer)}</span>` : ''}
+              ${specItem.mpn ? `
+                <button class="qq-mpn-btn" onclick="qqCopyMpn(this,'${esc(specItem.mpn)}')">
+                  <span class="qq-mpn-label">MPN</span>
+                  <span class="qq-mpn-value">${esc(specItem.mpn)}</span>
+                  <span class="qq-mpn-copy">Copy</span>
+                </button>` : '<span class="exec-import-nompn">No MPN in spec</span>'}
+              <span class="exec-import-type">${esc(specItem.type)}</span>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
 }
 
 function updateExecTotal() {
   let monthly = 0, oneTime = 0, count = 0;
   execMatchedProducts = [];
+
   $('execMatchedList')?.querySelectorAll('.opp-svc-item').forEach(row => {
-    const check   = row.querySelector('.exec-svc-check');
-    const qty     = parseInt(row.querySelector('.opp-svc-qty')?.value) || 1;
-    const price   = parseFloat(check?.dataset.price) || 0;
-    const uSuffix = check?.dataset.unit || '';
-    const line    = price * qty;
-    const lineEl  = row.querySelector('.opp-svc-line-total');
-    if (lineEl) lineEl.textContent = price > 0 ? `$${line.toFixed(2)}${uSuffix}` : 'Price on request';
+    const check  = row.querySelector('.exec-svc-check');
+    const qty    = parseInt(row.querySelector('.opp-svc-qty')?.value) || 1;
+    const price  = parseFloat(check?.dataset.price) || 0;
+    const suffix = check?.dataset.unit || '';
+    const line   = price * qty;
+    const lineEl = row.querySelector('.opp-svc-line-total');
+    if (lineEl) lineEl.textContent = price > 0 ? `$${line.toFixed(2)}${suffix}` : 'Price on request';
     row.style.opacity = check?.checked ? '1' : '0.5';
     if (check?.checked) {
       count++;
-      if (uSuffix === '/mo') monthly += line;
-      else if (uSuffix === '/yr') monthly += line / 12;
+      if (suffix === '/mo') monthly += line;
+      else if (suffix === '/yr') monthly += line / 12;
       else oneTime += line;
       execMatchedProducts.push({ id: check.dataset.id, name: check.dataset.name, qty, price });
     }
   });
+
   const totalEl = $('execQuoteTotal');
   if (count > 0 && totalEl) {
     const parts = [];
     if (monthly > 0) parts.push(`<strong>$${monthly.toFixed(2)}/mo</strong> recurring`);
-    if (oneTime > 0) parts.push(`<strong>$${oneTime.toFixed(2)}</strong> one-time`);
+    if (oneTime  > 0) parts.push(`<strong>$${oneTime.toFixed(2)}</strong> one-time`);
     totalEl.innerHTML = `<span>${count} item${count !== 1 ? 's' : ''} selected</span><span>${parts.join(' &nbsp;·&nbsp; ')}</span>`;
     totalEl.classList.remove('hidden');
   } else if (totalEl) {
@@ -483,37 +448,7 @@ function updateExecTotal() {
   }
 }
 
-async function execAddToCatalog(btn, idx) {
-  const apiKey = $('oppApiKey')?.value.trim() || localStorage.getItem(LS_API_KEY) || '';
-  const intKey = $('oppIntKey')?.value.trim() || localStorage.getItem(LS_INT_KEY) || '';
-  if (!apiKey || !intKey) {
-    const el = document.getElementById('exec-add-result-' + idx);
-    if (el) { el.textContent = 'Enter API credentials in the Connect panel first'; el.style.color = '#dc2626'; }
-    return;
-  }
-  btn.disabled = true; btn.textContent = 'Adding…';
-  const resultEl = document.getElementById('exec-add-result-' + idx);
-  const approxPrice = parseFloat(btn.dataset.price) || 0;
-  try {
-    const res = await callCreateOpp('create-product', {
-      name: btn.dataset.name, mpn: btn.dataset.mpn || undefined,
-      shortDescription: btn.dataset.desc || undefined,
-      price: approxPrice || undefined, apiKey, integrationKey: intKey
-    });
-    if (!res.ok) throw new Error(res.error || 'Failed');
-    btn.textContent = '✓ Added'; btn.style.background = 'var(--good)'; btn.style.color = '#fff';
-    if (resultEl) { resultEl.textContent = 'Added — open in Salesbuildr and hit Fetch info for real pricing'; resultEl.style.color = 'var(--good)'; }
-    qqInjectAddedProduct({ id: res.product.id, name: res.product.name || btn.dataset.name, price: approxPrice, unit: '', vendor: '', sku: btn.dataset.mpn || '', approx: true });
-    // Also add to execMatchedProducts for quote creation
-    execMatchedProducts.push({ id: res.product.id, name: res.product.name || btn.dataset.name, qty: 1, price: approxPrice });
-    updateExecTotal();
-  } catch (e) {
-    btn.disabled = false; btn.textContent = '+ Add to my catalog';
-    if (resultEl) { resultEl.textContent = e.message; resultEl.style.color = '#dc2626'; }
-  }
-}
-
-// ── Render categorised line items (Execution mode Phase A) ──
+// ── Render categorised line items (Execution mode Phase A) ──// ── Render categorised line items (Execution mode Phase A) ──
 const LINE_ITEM_TYPE_CONFIG = {
   hardware: { label: 'Hardware',         icon: '🔧', color: 'var(--accent)',  hint: 'Physical products — will be matched against your catalog' },
   service:  { label: 'Managed Services', icon: '⚡', color: 'var(--good)',   hint: 'Recurring services — will be matched against your catalog' },
