@@ -629,3 +629,28 @@ body { font-family: var(--sans); background: var(--paper); color: var(--ink); fo
 .li-unit-hourly   { background: rgba(124,58,237,.1); color: #7c3aed; }
 .li-unit-annual   { background: rgba(37,99,235,.1);  color: var(--accent); }
 .li-desc { font-size: 12px; color: var(--ink-soft); line-height: 1.4; margin-top: 2px; }
+
+/* ── Execution mode — needs import panel ─────────────────── */
+.exec-import-panel {
+  border: 1.5px solid #fed7aa;
+  border-left: 5px solid #f97316;
+  border-radius: 10px;
+  background: #fff7ed;
+  padding: 16px 20px;
+}
+.exec-import-header {
+  display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px;
+}
+.exec-import-icon  { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+.exec-import-title { font-size: 13px; font-weight: 700; color: #c2410c; }
+.exec-import-sub   { font-size: 12px; color: #9a3412; margin-top: 3px; line-height: 1.4; }
+.exec-import-list  { display: flex; flex-direction: column; gap: 8px; }
+.exec-import-item  {
+  background: #fff; border: 1px solid #fed7aa; border-radius: 8px;
+  padding: 10px 14px; display: flex; flex-direction: column; gap: 5px;
+}
+.exec-import-name  { font-size: 13px; font-weight: 600; color: var(--ink); }
+.exec-import-meta  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.exec-import-mfr   { font-size: 11px; font-weight: 700; color: var(--mute); text-transform: uppercase; letter-spacing: .04em; }
+.exec-import-type  { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; background: var(--paper-alt); color: var(--mute); padding: 1px 7px; border-radius: 10px; }
+.exec-import-nompn { font-size: 11px; color: #dc2626; font-style: italic; }
