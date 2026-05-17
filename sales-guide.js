@@ -1820,6 +1820,17 @@ function initCreateOppPanel() {
   $('oppWidgetNotice').classList.toggle('hidden', !hasWidgets);
 
   $('createOppWrap').classList.remove('hidden');
+
+  // Update step number and template note based on current mode
+  const stepNum = document.getElementById('oppQuoteStepNum');
+  const templateNote = document.getElementById('oppTemplateNote');
+  if (currentMode === 'execution') {
+    if (stepNum) stepNum.textContent = '3';
+    if (templateNote) templateNote.innerHTML = 'Uses the <strong>Guided Sales Template</strong> with cover page — includes the full proposal narrative.';
+  } else {
+    if (stepNum) stepNum.textContent = '4';
+    if (templateNote) templateNote.innerHTML = 'Uses your account default template — set your <strong>Guided Sales Template</strong> as default and it applies automatically.';
+  }
 }
 
 // ── Toggle panel ──────────────────────────────────────────
