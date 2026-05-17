@@ -329,16 +329,24 @@ async function execMatchCatalog(lineItems) {
     $('execMatchWorking').classList.add('hidden');
     if (!res.ok) throw new Error(res.error || 'Matching failed');
 
-    const matched     = res.matched     || [];
-    const needsImport = res.needsImport || [];
-    const total       = matched.length + needsImport.length;
+    const results = res.results || [];
+    const matched = res.matched || [];
+    const created = res.created || [];
+    const failed  = res.failed  || [];
+    const total   = results.length;
 
-    renderExecMatchedItems(matched);
-    renderExecNeedsImport(needsImport);
+    // All successful items (matched + created) go into the quote list
+    const allGood = results.filter(r => r.status === 'matched' || r.status === 'created');
+    renderExecMatchedItems(allGood);
 
-    $('execQuoteLinesSub').textContent = matched.length === total
-      ? `All ${total} spec items found in your catalog — ready to quote`
-      : `${matched.length} of ${total} items in your catalog · ${needsImport.length} need importing (see below)`;
+    // Show failed items separately if any
+    renderExecFailed(failed);
+
+    const sub = [];
+    if (matched.length > 0) sub.push(`${matched.length} matched from catalog`);
+    if (created.length > 0) sub.push(`${created.length} created in catalog`);
+    if (failed.length  > 0) sub.push(`${failed.length} failed — check credentials`);
+    $('execQuoteLinesSub').textContent = sub.join(' · ') || 'No items to process';
 
   } catch(e) {
     $('execMatchWorking').classList.add('hidden');
@@ -352,7 +360,7 @@ function renderExecMatchedItems(matched) {
   if (!list) return;
   execMatchedProducts = [];
 
-  list.innerHTML = matched.map(({ specItem, catalogProduct, qty }) => {
+  list.innerHTML = matched.map(({ specItem, catalogProduct, qty, status }) => {
     const uLabel = unitLabel(catalogProduct.unit);
     const price  = catalogProduct.price || 0;
     const line   = price * qty;
@@ -367,7 +375,7 @@ function renderExecMatchedItems(matched) {
           <span class="opp-svc-name">${esc(catalogProduct.name)}</span>
           <div class="opp-svc-meta">
             ${price > 0 ? `<span class="opp-svc-price">$${price.toFixed(2)}${uLabel} each</span>` : ''}
-            <span class="opp-svc-badge ${specItem.type === 'service' ? 'matched' : specItem.type === 'labor' ? 'optional' : 'extra'}">${esc(specItem.type)}</span>
+            <span class="opp-svc-badge ${status === 'created' ? 'optional' : 'matched'}">${status === 'created' ? 'new' : esc(specItem.type)}</span>
             ${catalogProduct.vendor ? `<span class="opp-svc-badge extra">${esc(catalogProduct.vendor)}</span>` : ''}
           </div>
           <div style="font-size:11px;color:var(--mute);margin-top:2px;">Spec: ${esc(specItem.name)}${specItem.mpn ? ' · MPN: ' + esc(specItem.mpn) : ''}</div>
@@ -387,11 +395,11 @@ function renderExecMatchedItems(matched) {
   updateExecTotal();
 }
 
-function renderExecNeedsImport(needsImport) {
+function renderExecFailed(failed) {
   const wrap = $('execUnmatchedWrap');
   if (!wrap) return;
 
-  if (needsImport.length === 0) {
+  if (!failed || failed.length === 0) {
     wrap.classList.add('hidden');
     return;
   }
@@ -400,25 +408,24 @@ function renderExecNeedsImport(needsImport) {
   wrap.innerHTML = `
     <div class="exec-import-panel">
       <div class="exec-import-header">
-        <span class="exec-import-icon">📦</span>
+        <span class="exec-import-icon">⚠️</span>
         <div>
-          <div class="exec-import-title">Not in your catalog — import before quoting</div>
-          <div class="exec-import-sub">These items were spec'd by the design desk. Copy the MPN and import from the Salesbuildr marketplace, then re-run this spec.</div>
+          <div class="exec-import-title">${failed.length} item${failed.length !== 1 ? 's' : ''} could not be created</div>
+          <div class="exec-import-sub">These items failed to create in Salesbuildr — add them manually or re-run after checking your API credentials.</div>
         </div>
       </div>
       <div class="exec-import-list">
-        ${needsImport.map(({ specItem }) => `
+        ${failed.map(({ specItem, error }) => `
           <div class="exec-import-item">
             <div class="exec-import-name">${esc(specItem.name)}</div>
             <div class="exec-import-meta">
-              ${specItem.manufacturer ? `<span class="exec-import-mfr">${esc(specItem.manufacturer)}</span>` : ''}
-              ${specItem.mpn ? `
-                <button class="qq-mpn-btn" onclick="qqCopyMpn(this,'${esc(specItem.mpn)}')">
-                  <span class="qq-mpn-label">MPN</span>
-                  <span class="qq-mpn-value">${esc(specItem.mpn)}</span>
-                  <span class="qq-mpn-copy">Copy</span>
-                </button>` : '<span class="exec-import-nompn">No MPN in spec</span>'}
+              ${specItem.mpn ? `<button class="qq-mpn-btn" onclick="qqCopyMpn(this,'${esc(specItem.mpn)}')">
+                <span class="qq-mpn-label">MPN</span>
+                <span class="qq-mpn-value">${esc(specItem.mpn)}</span>
+                <span class="qq-mpn-copy">Copy</span>
+              </button>` : ''}
               <span class="exec-import-type">${esc(specItem.type)}</span>
+              ${error ? `<span style="font-size:11px;color:#dc2626;">${esc(error)}</span>` : ''}
             </div>
           </div>`).join('')}
       </div>
