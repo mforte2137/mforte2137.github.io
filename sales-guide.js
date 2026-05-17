@@ -254,11 +254,20 @@ $('discGenerateBtn')?.addEventListener('click', async () => {
 // ── Execution generate ────────────────────────────────────
 $('execGenerateBtn')?.addEventListener('click', async () => {
   clearError('execError');
-  const spec    = $('exec-spec')?.value.trim() || '';
-  const context = $('exec-context')?.value.trim() || '';
+  const spec = $('exec-spec')?.value.trim() || '';
 
   if (!spec) { showError('execError', 'Please paste the confirmed solution specification.'); return; }
   if (spec.length < 50) { showError('execError', 'The spec looks too brief — add more detail for a better result.'); return; }
+
+  // Build structured customer context from dropdowns + chips
+  const industry = $('exec-industry')?.value || '';
+  const staff    = $('exec-staff')?.value    || '';
+  const reasons  = getChipValues('chips-exec-reason');
+  const contextParts = [];
+  if (industry) contextParts.push(industry);
+  if (staff)    contextParts.push(`${staff} staff`);
+  if (reasons)  contextParts.push(reasons);
+  const context = contextParts.join(', ');
 
   setWorking('Translating to buyer language…', 'Claude is reading the technical spec and building your proposal narrative');
   showSection('working-view');
@@ -274,7 +283,9 @@ $('execGenerateBtn')?.addEventListener('click', async () => {
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Translation failed');
     currentRec = normaliseRec(data.recommendation);
-    renderResults('execution', context || 'Proposal Spec', currentRec);
+    // Use industry + reason as title if no company name
+    const title = [industry, reasons ? '— ' + reasons.split(';')[0].trim() : ''].filter(Boolean).join(' ') || 'Proposal Spec';
+    renderResults('execution', context || title, currentRec);
   } catch (e) {
     showSection('execution-view');
     showError('execError', e.message || 'Something went wrong. Please try again.');
@@ -619,7 +630,7 @@ $('genWidgetsBtn')?.addEventListener('click', async () => {
   const briefs = currentRec.widget_briefs;
   const fields = {
     solution:  currentRec.solution_summary || currentRec.buyer_summary || '',
-    business:  $('q-industry')?.value || $('exec-context')?.value || '',
+    business:  $('q-industry')?.value || $('exec-industry')?.value || '',
     size:      $('q-staff')?.value || '',
     trigger:   briefs.w2 || '',
     outcomes:  briefs.w4 || '',
