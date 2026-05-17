@@ -155,8 +155,8 @@ const EXECUTE_TOOL = {
           type: 'object',
           properties: {
             name:        { type: 'string',  description: 'Product or service name from the spec' },
-            mpn:         { type: 'string',  description: 'Manufacturer part number if present in the spec' },
-            manufacturer:{ type: 'string',  description: 'Manufacturer or vendor name if present' },
+            mpn:         { type: 'string',  description: 'The product identifier from the spec — this could be a manufacturer part number (e.g. XGS136, USW-48-POE) OR an internal service code (e.g. LABOR-INSTALL-NET, MDR-MONTHLY, NET-MON-MONTHLY). Always populate this from whatever code or identifier appears in the spec — never leave it empty if an identifier exists.' },
+            manufacturer:{ type: 'string',  description: 'Manufacturer or vendor name (e.g. Sophos, Ubiquiti, Tripp Lite). For internal services use the vendor column value if present.' },
             quantity:    { type: 'number',  description: 'Quantity from the spec — default to 1 if not specified' },
             unit:        { type: 'string',  description: 'Billing unit: one-time, monthly, hourly, or annual' },
             type:        {
