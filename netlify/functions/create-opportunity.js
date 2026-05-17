@@ -484,20 +484,32 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
 
       const catalogMap = new Map(catalog.map(p => [p.id, p]));
 
-      // Helper: simple fuzzy name match for services/labor
+      // Helper: fuzzy name match — requires multiple meaningful keyword matches
+      // High threshold prevents brand-only matches (e.g. "Tripp Lite" matching any Tripp Lite product)
       function fuzzyMatch(itemName, catalogItems) {
         const needle = itemName.toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
-        const needleWords = needle.split(/\s+/).filter(w => w.length > 3);
+        // Extract meaningful words — skip brand names alone, require product-type words
+        const stopBrands = new Set(['tripp','lite','startech','ubiquiti','unifi','sophos','eaton',
+          'hp','dell','lenovo','cisco','netgear','zyxel','fortinet','aruba','internal']);
+        const needleWords = needle.split(/\s+/).filter(w => w.length > 3 && !stopBrands.has(w));
+        if (needleWords.length === 0) return null; // no meaningful words to match on
+
         let best = null, bestScore = 0;
         for (const p of catalogItems) {
           const hay = (p.name || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
           let score = 0;
+          let distinctHits = 0;
           for (const w of needleWords) {
-            if (hay.includes(w)) score += w.length > 6 ? 3 : 2;
+            if (hay.includes(w)) {
+              score += w.length > 6 ? 3 : 2;
+              distinctHits++;
+            }
           }
-          if (score > bestScore) { bestScore = score; best = p; }
+          // Must have at least 2 distinct keyword hits to avoid single-word brand matches
+          if (distinctHits >= 2 && score > bestScore) { bestScore = score; best = p; }
         }
-        return bestScore >= 4 ? best : null;
+        // High threshold — score of 8+ means at least 2-3 meaningful word matches
+        return bestScore >= 8 ? best : null;
       }
 
       // Helper: format product for response
@@ -513,7 +525,7 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
             return (p.unit || p.term || '').toLowerCase();
           })(),
           vendor: p.manufacturer || '',
-          sku:    p.mpn || p.ean || '',
+          sku:    p.mpn || p.internalProductId || p.ean || '',
           listed: p.listed ?? null,
         };
       }
@@ -532,37 +544,67 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
       });
 
       for (const item of serviceItems) {
-        const found = fuzzyMatch(item.name, serviceProducts);
+        let found = null;
+
+        // First try internal ID match (design desk often uses SB internal codes as MPN)
+        if (item.mpn) {
+          const mpnLower = item.mpn.toLowerCase().replace(/[^a-z0-9-]/g, '');
+          found = catalog.find(p => {
+            const ids = [
+              p.mpn || '', p.internalProductId || '',
+              p.ean || '', p.externalIdentifier || ''
+            ].map(v => v.toLowerCase().replace(/[^a-z0-9-]/g, '')).filter(Boolean);
+            return ids.some(id => id === mpnLower);
+          }) || null;
+        }
+
+        // Then try fuzzy name match
+        if (!found) found = fuzzyMatch(item.name, serviceProducts);
+
+        // Fallback: fuzzy against full catalog
+        if (!found) found = fuzzyMatch(item.name, catalog);
+
         if (found) {
           matched.push({ specItem: item, catalogProduct: formatProduct(found), qty: item.quantity || 1 });
         } else {
-          // Try against full catalog as fallback
-          const fallback = fuzzyMatch(item.name, catalog);
-          if (fallback) {
-            matched.push({ specItem: item, catalogProduct: formatProduct(fallback), qty: item.quantity || 1 });
-          } else {
-            unmatched.push({ specItem: item });
-          }
+          unmatched.push({ specItem: item });
         }
       }
 
       // 3. Match hardware/software — MPN-first then fuzzy name match
-      // Fast, no external API call needed — MPN matching is highly accurate for hardware.
+      // MPN exact match is highly accurate; fuzzy is a fallback with high threshold.
       for (const item of hardwareItems) {
         let found = null;
 
-        // Try MPN exact match first (most reliable for hardware)
+        // Try ID/MPN match — checks mpn, internalProductId, ean, and externalIdentifier
+        // Design desk often uses internal SB codes (e.g. LABOR-INSTALL-NET, MDR-MONTHLY)
+        // which are stored in internalProductId, not mpn
         if (item.mpn) {
-          const mpnLower = item.mpn.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const mpnLower = item.mpn.toLowerCase().replace(/[^a-z0-9-]/g, '');
           found = catalog.find(p => {
-            const catMpn = (p.mpn || p.ean || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-            return catMpn && catMpn === mpnLower;
+            const ids = [
+              p.mpn || '',
+              p.internalProductId || '',
+              p.ean || '',
+              p.externalIdentifier || ''
+            ].map(v => v.toLowerCase().replace(/[^a-z0-9-]/g, '')).filter(Boolean);
+            return ids.some(id => id === mpnLower);
           }) || null;
         }
 
-        // Fallback: fuzzy name match against full catalog
+        // Fallback: fuzzy name match (high threshold — see fuzzyMatch function)
         if (!found) {
           found = fuzzyMatch(item.name, catalog);
+        }
+
+        // Sanity check — if matched product name shares no meaningful words with spec item, reject it
+        if (found) {
+          const specWords = item.name.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 4);
+          const catWords  = (found.name || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/);
+          const overlap   = specWords.filter(w => catWords.includes(w)).length;
+          if (specWords.length > 0 && overlap === 0) {
+            found = null; // no word overlap — reject the match
+          }
         }
 
         if (found) {
