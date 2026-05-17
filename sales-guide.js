@@ -2375,8 +2375,10 @@ async function doConnectOpportunity() {
       } else {
         if (selectedServices.length > 0) quotePayload.products = selectedServices;
       }
-      const quoteRes     = await callCreateOpp('create-quote', quotePayload);
-      quoteCreated       = quoteRes.ok;
+      console.log('[Exec] quote payload products:', quotePayload.products?.length, quotePayload.products?.slice(0,3));
+      const quoteRes = await callCreateOpp('create-quote', quotePayload);
+      quoteCreated   = quoteRes.ok;
+      if (!quoteRes.ok) throw new Error(quoteRes.error || 'Quote creation failed');
     }
 
     // Success
