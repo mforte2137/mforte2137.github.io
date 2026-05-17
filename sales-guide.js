@@ -524,9 +524,9 @@ function renderResults(mode, title, rec) {
 
   // Spec gaps — show only in execution mode when gaps exist
   const gapsSection = $('specGapsSection');
-  const gaps = rec.spec_gaps || [];
+  const gaps = Array.isArray(rec.spec_gaps) ? rec.spec_gaps : [];
   if (mode === 'execution' && gaps.length > 0 && gapsSection) {
-    $('specGapsList').innerHTML = gaps.map(g => `<li>${esc(g)}</li>`).join('');
+    $('specGapsList').innerHTML = gaps.map(g => `<li>${esc(String(g))}</li>`).join('');
     gapsSection.classList.remove('hidden');
   } else if (gapsSection) {
     gapsSection.classList.add('hidden');
