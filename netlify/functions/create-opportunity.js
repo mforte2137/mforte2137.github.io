@@ -460,13 +460,16 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
     }
 
         // ── match-spec-items ────────────────────────────────────
-        // Execution mode: faithful to the design desk spec.
-        // Match every item by exact ID (mpn/internalProductId/ean/externalIdentifier).
-        // Found → add to quote. Not found → needsImport list with MPN for rep to import.
-        // No fuzzy matching. No web search. The spec IS the source of truth.
+        // Execution mode: faithful to design desk spec.
+        // Every item in the spec ends up in the quote:
+        //   - Matched in catalog → use existing product ID
+        //   - Not matched → auto-create in catalog with MPN → use new ID
+        // No fuzzy. No web search. Complete and frictionless.
         if (action === 'match-spec-items') {
           const { items } = body;
           if (!Array.isArray(items) || items.length === 0) return err('items required.', 400);
+
+          const GUIDED_CATEGORY_ID = 'liITjFCEzoS9aVOHpC1A';
 
           // Fetch full catalog once
           const catRes  = await fetch(`${BASE}/product?size=500`, { headers });
@@ -477,11 +480,11 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
           // Exact ID match across all identifier fields
           function matchById(specMpn) {
             if (!specMpn) return null;
-            const needle = specMpn.toLowerCase().replace(/[^a-z0-9-]/g, '');
+            const needle = specMpn.toLowerCase().replace(/[^a-z0-9-/]/g, '');
             return catalog.find(p =>
               [p.mpn, p.internalProductId, p.ean, p.externalIdentifier]
                 .filter(Boolean)
-                .map(v => v.toLowerCase().replace(/[^a-z0-9-]/g, ''))
+                .map(v => v.toLowerCase().replace(/[^a-z0-9-/]/g, ''))
                 .some(v => v === needle)
             ) || null;
           }
@@ -495,24 +498,84 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
               unit:   (p.unit || p.term || '').toLowerCase(),
               vendor: p.manufacturer || p.vendor || '',
               sku:    p.mpn || p.internalProductId || p.ean || '',
+              isNew:  false,
             };
           }
 
-          const matched     = [];  // in catalog → goes to quote
-          const needsImport = [];  // not in catalog → rep imports by MPN
+          const results = [];  // all items — matched or newly created
 
           for (const item of items) {
+            // 1. Try catalog match first
             const found = matchById(item.mpn);
             if (found) {
-              matched.push({ specItem: item, catalogProduct: fmt(found), qty: item.quantity || 1 });
-            } else {
-              needsImport.push({ specItem: item });
+              results.push({
+                specItem:       item,
+                catalogProduct: fmt(found),
+                qty:            item.quantity || 1,
+                status:         'matched'
+              });
+              continue;
+            }
+
+            // 2. Not found — auto-create in Salesbuildr catalog
+            try {
+              const payload = {
+                name:       item.name,
+                categoryId: GUIDED_CATEGORY_ID,
+                listed:     false,  // unlisted until rep reviews
+              };
+              // Add MPN if it looks like a real product code (not 'INTERNAL')
+              if (item.mpn && item.mpn.toUpperCase() !== 'INTERNAL') {
+                payload.mpn = item.mpn;
+              }
+              if (item.description) payload.shortDescription = item.description.slice(0, 200);
+
+              const createRes  = await fetch(`${BASE}/product`, { method: 'POST', headers, body: JSON.stringify(payload) });
+              const createData = await createRes.json();
+
+              if (createRes.ok && createData?.id) {
+                results.push({
+                  specItem:       item,
+                  catalogProduct: {
+                    id:     createData.id,
+                    name:   createData.name || item.name,
+                    price:  0,
+                    type:   '',
+                    unit:   (item.unit || '').toLowerCase(),
+                    vendor: item.manufacturer || '',
+                    sku:    item.mpn || '',
+                    isNew:  true,  // flag so UI can show "newly created" badge
+                  },
+                  qty:    item.quantity || 1,
+                  status: 'created'
+                });
+              } else {
+                // Creation failed — still include in results but flag it
+                results.push({
+                  specItem: item,
+                  catalogProduct: null,
+                  qty:    item.quantity || 1,
+                  status: 'failed',
+                  error:  createData?.message || 'Could not create product'
+                });
+              }
+            } catch(e) {
+              results.push({
+                specItem: item,
+                catalogProduct: null,
+                qty:    item.quantity || 1,
+                status: 'failed',
+                error:  e.message
+              });
             }
           }
 
-          return ok({ matched, needsImport, catalogSize: catalog.length });
-        }
+          const matched = results.filter(r => r.status === 'matched');
+          const created = results.filter(r => r.status === 'created');
+          const failed  = results.filter(r => r.status === 'failed');
 
+          return ok({ results, matched, created, failed, catalogSize: catalog.length });
+        }
 
         return err('Unknown action.', 400);
 
