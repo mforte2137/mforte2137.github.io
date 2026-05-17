@@ -546,59 +546,32 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
         }
       }
 
-      // 3. Match hardware/software via Haiku if any exist
-      if (hardwareItems.length > 0) {
-        const catalogList = catalog.slice(0, 300).map(p => p.id + '|||' + (p.name || '').slice(0, 80)).join('
-');
-        const itemList    = hardwareItems.map((item, i) => `${i}: ${item.name}${item.mpn ? ' (MPN: ' + item.mpn + ')' : ''}`).join('
-');
+      // 3. Match hardware/software — MPN-first then fuzzy name match
+      // Fast, no external API call needed — MPN matching is highly accurate for hardware.
+      for (const item of hardwareItems) {
+        let found = null;
 
-        try {
-          const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': process.env.ANTHROPIC_API_KEY,
-              'anthropic-version': '2023-06-01'
-            },
-            body: JSON.stringify({
-              model: 'claude-haiku-4-5-20251001',
-              max_tokens: 600,
-              system: 'You are a product catalog matching assistant. Match requested items to catalog products by name and MPN. Return ONLY a JSON object mapping item index to catalog product ID, or null if no match. Example: {"0":"catalogId1","2":"catalogId3"}. No markdown, no explanation.',
-              messages: [{
-                role: 'user',
-                content: `Match these requested items to the catalog:
+        // Try MPN exact match first (most reliable for hardware)
+        if (item.mpn) {
+          const mpnLower = item.mpn.toLowerCase().replace(/[^a-z0-9]/g, '');
+          found = catalog.find(p => {
+            const catMpn = (p.mpn || p.ean || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            return catMpn && catMpn === mpnLower;
+          }) || null;
+        }
 
-REQUESTED:
-${itemList}
+        // Fallback: fuzzy name match against full catalog
+        if (!found) {
+          found = fuzzyMatch(item.name, catalog);
+        }
 
-CATALOG (id|||name):
-${catalogList}
-
-Return JSON object mapping index to catalog ID, null for no match.`
-              }]
-            })
-          });
-          const aiData = await aiRes.json();
-          const aiText = (aiData?.content?.[0]?.text || '{}').replace(/```json?|```/g, '').trim();
-          // Extract JSON object from response
-          const objMatch = aiText.match(/\{[\s\S]*?\}/);
-          const idMap = objMatch ? JSON.parse(objMatch[0]) : {};
-
-          for (let i = 0; i < hardwareItems.length; i++) {
-            const item     = hardwareItems[i];
-            const catalogId = idMap[String(i)];
-            if (catalogId && catalogMap.has(catalogId)) {
-              matched.push({ specItem: item, catalogProduct: formatProduct(catalogMap.get(catalogId)), qty: item.quantity || 1 });
-            } else {
-              unmatched.push({ specItem: item });
-            }
-          }
-        } catch (e) {
-          // On Haiku failure, put all hardware in unmatched
-          hardwareItems.forEach(item => unmatched.push({ specItem: item }));
+        if (found) {
+          matched.push({ specItem: item, catalogProduct: formatProduct(found), qty: item.quantity || 1 });
+        } else {
+          unmatched.push({ specItem: item });
         }
       }
+
 
       return ok({ matched, unmatched, catalogSize: all.length });
     }
