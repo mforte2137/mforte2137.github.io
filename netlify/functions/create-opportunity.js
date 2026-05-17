@@ -522,7 +522,7 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
               const payload = {
                 name:       item.name,
                 categoryId: GUIDED_CATEGORY_ID,
-                listed:     false,  // unlisted until rep reviews
+                listed:     true,   // must be listed to appear in quotes
               };
               // Add MPN if it looks like a real product code (not 'INTERNAL')
               if (item.mpn && item.mpn.toUpperCase() !== 'INTERNAL') {
