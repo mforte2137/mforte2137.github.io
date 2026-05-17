@@ -1,778 +1,626 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sales Guide — Salesbuildr</title>
-  <link rel="stylesheet" href="sales-guide.css">
-</head>
-<body>
-<div class="container">
-
-  <header class="top">
-    <span class="brand">Salesbuildr</span>
-    <span>Sales Guide</span>
-  </header>
-
-  <!-- Save/Resume banner -->
-  <div id="resumeBanner" class="resume-banner hidden">
-    <div class="resume-inner">
-      <span class="resume-icon">💾</span>
-      <div class="resume-text">
-        <strong id="resumeTitle">Saved session found</strong>
-        <span id="resumeSubtitle"></span>
-      </div>
-      <div class="resume-actions">
-        <button type="button" id="resumeBtn" class="btn-resume">Resume →</button>
-        <button type="button" id="dismissBtn" class="btn-dismiss">Dismiss</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Hero -->
-  <div class="hero">
-    <h1>Build the right proposal,<br>for the right customer.</h1>
-    <p class="hero-sub">Start with the customer's problem — not your product catalog. The Sales Guide helps you build a buyer-focused proposal that moves a business owner to yes.</p>
-  </div>
-
-  <!-- ── MODE SELECTOR ── -->
-  <div id="mode-view" class="mode-selector mode-selector-3">
-    <button type="button" class="mode-card" data-mode="discovery" id="btnDiscovery">
-      <div class="mode-icon">🔍</div>
-      <div class="mode-label">Discovery</div>
-      <div class="mode-sub">"I just got a call"</div>
-      <div class="mode-desc">You know there's a problem. Answer 6 questions and we'll build your recommendation, hardware checklist, and proposal — ready to complete after the site visit.</div>
-      <div class="mode-cta">Start Discovery →</div>
-    </button>
-    <div class="mode-divider">or</div>
-    <button type="button" class="mode-card" data-mode="execution" id="btnExecution">
-      <div class="mode-icon">⚡</div>
-      <div class="mode-label">Execution</div>
-      <div class="mode-sub">"I have the spec, I need the proposal"</div>
-      <div class="mode-desc">The design desk has done the work. Paste the confirmed spec — hardware list, services, scope — and we'll translate it into a buyer proposal that closes deals.</div>
-      <div class="mode-cta">Start Execution →</div>
-    </button>
-    <div class="mode-divider">or</div>
-    <button type="button" class="mode-card" data-mode="quickquote" id="btnQuickQuote">
-      <div class="mode-icon">🛒</div>
-      <div class="mode-label">Quick Quote</div>
-      <div class="mode-sub">"I have a specific product request"</div>
-      <div class="mode-desc">Customer asked for something specific — monitors, laptops, a dock. Describe what they need, we'll find it in your catalog and build the quote instantly.</div>
-      <div class="mode-cta">Start Quick Quote →</div>
-    </button>
-  </div>
-
-  <!-- ── DISCOVERY FORM ── -->
-  <section id="discovery-view" hidden>
-    <div class="form-header">
-      <button type="button" class="back-btn" id="discBackBtn">← Change mode</button>
-      <h2>🔍 Discovery <span class="mode-tag">"I just got a call"</span></h2>
-      <p class="form-lead">Answer these six questions about the customer and their situation. The more specific you are, the more useful the output.</p>
-    </div>
-
-    <div class="q-card">
-      <div class="q-num">1</div>
-      <div class="q-body">
-        <label class="q-label">What's their biggest challenge right now?</label>
-        <p class="q-hint">Pick the one that best describes the primary pain — not the symptom, the underlying problem.</p>
-        <div class="chips-wrap" id="chips-challenge">
-          <button class="chip" data-val="Unreliable IT — constant outages and slow systems">Unreliable IT</button>
-          <button class="chip" data-val="Security concerns — worried about breach or ransomware">Security concerns</button>
-          <button class="chip" data-val="Compliance pressure — audit, insurance, or regulation deadline">Compliance pressure</button>
-          <button class="chip" data-val="Growing team — IT can't keep up with headcount">Growing team</button>
-          <button class="chip" data-val="Bad current MSP — underperforming provider they want to replace">Bad current MSP</button>
-          <button class="chip" data-val="No IT support — they've been managing it themselves">No IT support</button>
-          <button class="chip" data-val="Recent incident — ransomware, breach, or major failure">Recent incident</button>
-        </div>
-        <input type="text" class="other-input" id="other-challenge" placeholder="Other — describe the challenge…">
-      </div>
-    </div>
-
-    <div class="q-card">
-      <div class="q-num">2</div>
-      <div class="q-body">
-        <label class="q-label">What kind of business are they?</label>
-        <p class="q-hint">Industry and size shapes the language and the risk profile.</p>
-        <div class="q-row">
-          <select id="q-industry" class="q-select">
-            <option value="">Select industry…</option>
-            <option value="Healthcare / Medical">Healthcare / Medical</option>
-            <option value="Legal / Law firm">Legal / Law firm</option>
-            <option value="Financial / Accounting">Financial / Accounting</option>
-            <option value="Manufacturing / Industrial">Manufacturing / Industrial</option>
-            <option value="Professional Services">Professional Services</option>
-            <option value="Retail / Commerce">Retail / Commerce</option>
-            <option value="Education">Education</option>
-            <option value="Non-profit">Non-profit</option>
-            <option value="Technology / IT">Technology / IT</option>
-            <option value="Other / General business">Other / General business</option>
-          </select>
-          <input type="number" id="q-staff" class="q-num-input" min="1" placeholder="Staff count">
-        </div>
-        <input type="text" class="other-input" id="q-company" placeholder="Customer company name (optional — used in output)">
-      </div>
-    </div>
-
-    <div class="q-card">
-      <div class="q-num">3</div>
-      <div class="q-body">
-        <label class="q-label">What triggered this conversation?</label>
-        <p class="q-hint">The trigger is often the strongest urgency angle in the proposal.</p>
-        <div class="chips-wrap" id="chips-trigger">
-          <button class="chip" data-val="Something broke or failed">Something broke</button>
-          <button class="chip" data-val="Security incident or phishing attack">Security incident</button>
-          <button class="chip" data-val="Hardware aging or reaching end of life — devices, servers or network equipment">Hardware aging / EOL</button>
-          <button class="chip" data-val="Leadership exploring AI tools or Microsoft Copilot — productivity or competitive pressure">AI / Copilot interest</button>
-          <button class="chip" data-val="Compliance audit or deadline coming up">Compliance deadline</button>
-          <button class="chip" data-val="New leadership reviewing IT">New leadership</button>
-          <button class="chip" data-val="Current contract or MSP agreement ending">Contract renewal</button>
-          <button class="chip" data-val="Proactive outreach — they reached out first">Proactive outreach</button>
-          <button class="chip" data-val="Referral from existing customer">Referral</button>
-        </div>
-        <input type="text" class="other-input" id="other-trigger" placeholder="Other — describe the trigger…">
-      </div>
-    </div>
-
-    <div class="q-card">
-      <div class="q-num">4</div>
-      <div class="q-body">
-        <label class="q-label">What outcome matters most to the decision-maker?</label>
-        <p class="q-hint">This is what the CFO or business owner actually cares about — not what the IT manager cares about.</p>
-        <div class="chips-wrap" id="chips-outcome">
-          <button class="chip" data-val="Less downtime and more reliable systems">Less downtime</button>
-          <button class="chip" data-val="Confidence that they're protected from cyber threats">Security confidence</button>
-          <button class="chip" data-val="Pass a compliance audit or cyber insurance renewal">Pass an audit</button>
-          <button class="chip" data-val="Lower and more predictable IT costs">Lower IT costs</button>
-          <button class="chip" data-val="IT that can support a growing team without friction">Support growth</button>
-          <button class="chip" data-val="Peace of mind — IT just works and someone else handles it">Peace of mind</button>
-          <button class="chip" data-val="Protect the business reputation and client relationships">Protect reputation</button>
-        </div>
-        <input type="text" class="other-input" id="other-outcome" placeholder="Other — what matters most to them?">
-      </div>
-    </div>
-
-    <div class="q-card">
-      <div class="q-num">5</div>
-      <div class="q-body">
-        <label class="q-label">What are they comparing you against?</label>
-        <p class="q-hint">Your biggest competitor is usually inertia — doing nothing.</p>
-        <div class="chips-wrap" id="chips-comparison" data-single="true">
-          <button class="chip" data-val="Doing nothing — the biggest competitor is inertia">Doing nothing</button>
-          <button class="chip" data-val="Managing IT internally with their own staff">In-house IT</button>
-          <button class="chip" data-val="A competing MSP they're also talking to">Competitor MSP</button>
-          <button class="chip" data-val="Their current MSP they're considering staying with">Current incumbent</button>
-          <button class="chip" data-val="First time buying managed IT — no direct comparison">First time buying</button>
-        </div>
-        <input type="text" class="other-input" id="other-comparison" placeholder="Other — what's the alternative they're considering?">
-      </div>
-    </div>
-
-    <div class="q-card">
-      <div class="q-num">6</div>
-      <div class="q-body">
-        <label class="q-label">What's the shape of this engagement?</label>
-        <p class="q-hint">Pick the closest match — you can select more than one.</p>
-        <div class="chips-wrap" id="chips-shape">
-          <button class="chip" data-val="Fully managed services — ongoing monthly relationship">Fully managed services</button>
-          <button class="chip" data-val="Network infrastructure upgrade — firewall, switches, wireless and cabling">Network infrastructure</button>
-          <button class="chip" data-val="Endpoint refresh — aging laptops, desktops or Windows 10 end of life">Endpoint / device refresh</button>
-          <button class="chip" data-val="Server or on-prem infrastructure EOL — server replacement or cloud migration">Server / on-prem EOL</button>
-          <button class="chip" data-val="VoIP or phone system upgrade — Teams Voice, hosted PBX or UCaaS">VoIP / phone system</button>
-          <button class="chip" data-val="Project work plus ongoing managed services">Project + ongoing managed</button>
-          <button class="chip" data-val="Security-first — EDR, email security, backup, monitoring">Security-first</button>
-          <button class="chip" data-val="Compliance-driven — HIPAA, NIST, cyber insurance">Compliance-driven</button>
-          <button class="chip" data-val="Standalone backup &amp; disaster recovery — post-incident or cyber insurance requirement">Backup &amp; DR</button>
-          <button class="chip" data-val="Microsoft Copilot or AI readiness project — Copilot for M365, AI assessment or adoption">Copilot / AI project</button>
-          <button class="chip" data-val="New client onboarding — first engagement">New client onboarding</button>
-          <button class="chip" data-val="Microsoft 365 or Azure migration">Cloud / M365 migration</button>
-        </div>
-        <input type="text" class="other-input" id="other-shape" placeholder="Other — describe the engagement…">
-      </div>
-    </div>
-
-    <div class="form-footer">
-      <button type="button" id="discGenerateBtn" class="btn-generate">Build My Recommendation →</button>
-      <div class="footer-note">
-        <button type="button" id="saveSessionBtn" class="btn-save">💾 Save &amp; Resume Later</button>
-        <span class="footer-hint">Your answers are saved to this device — come back after the site visit to complete the proposal.</span>
-      </div>
-    </div>
-    <div id="discError" class="form-error hidden"></div>
-  </section>
-
-  <!-- ── EXECUTION FORM ── -->
-  <section id="execution-view" hidden>
-    <div class="form-header">
-      <button type="button" class="back-btn" id="execBackBtn">← Change mode</button>
-      <h2>⚡ Execution <span class="mode-tag">"I have the spec, I need the proposal"</span></h2>
-      <p class="form-lead">Paste the confirmed solution below — hardware list, services, project scope, whatever the design desk or senior engineer put together. We'll translate it into a proposal that moves the customer to yes.</p>
-    </div>
-
-    <div class="q-card">
-      <div class="q-body">
-        <label class="q-label">Confirmed solution specification</label>
-        <p class="q-hint">Upload the design desk spreadsheet or document, or paste the spec directly. Technical language is fine — we'll handle the translation.</p>
-
-        <!-- File upload option -->
-        <div class="spec-upload" id="specUploadZone">
-          <input type="file" id="specFile" accept=".xlsx,.xls,.docx,.csv" hidden>
-          <div class="spec-upload-inner" id="specUploadInner">
-            <span class="spec-upload-icon">📎</span>
-            <span class="spec-upload-label">Drop an <strong>.xlsx</strong>, <strong>.docx</strong>, or <strong>.csv</strong> here, or <label for="specFile" class="spec-upload-link">browse</label></span>
-            <span class="spec-upload-hint">We'll extract the content and populate the field below — Excel, Word, or CSV</span>
-          </div>
-          <div id="specFileStatus" class="spec-file-status hidden"></div>
-        </div>
-
-        <label class="q-label" for="exec-spec" style="margin-top:14px;">Or describe the solution in your own words</label>
-        <textarea id="exec-spec" rows="10" class="spec-input" placeholder="Paste the confirmed spec, upload a file above, or describe the solution in plain language — e.g. 'Replace aging network infrastructure for a 30-user law firm. New firewall, managed switch, 3 access points, after-hours installation. Add MDR and network monitoring as monthly services.'"></textarea>
-        <div class="char-counter"><span id="specCount">0</span> characters</div>
-      </div>
-    </div>
-
-    <div class="q-card">
-      <div class="q-body">
-        <label class="q-label">Customer context <span class="optional-tag">Optional but useful</span></label>
-        <p class="q-hint">A sentence about who the customer is and what they care about — helps Claude frame the proposal for the right audience.</p>
-        <input type="text" id="exec-context" class="q-input" maxlength="200" placeholder="e.g. Law firm, 15 staff, had a phishing incident last month, compliance audit in Q1">
-      </div>
-    </div>
-
-    <div class="form-footer">
-      <button type="button" id="execGenerateBtn" class="btn-generate">Translate to Proposal →</button>
-    </div>
-    <div id="execError" class="form-error hidden"></div>
-  </section>
-
-  <!-- ── QUICK QUOTE FORM ── -->
-  <section id="quickquote-view" hidden>
-    <div class="form-header">
-      <button type="button" class="back-btn" id="qqBackBtn">← Change mode</button>
-      <h2>🛒 Quick Quote <span class="mode-tag">"I have a specific product request"</span></h2>
-      <p class="form-lead">Describe what the customer needs in plain language — we'll search your Salesbuildr catalog, match the products, and you can create a quote in seconds.</p>
-    </div>
-
-    <div class="q-card">
-      <div class="q-body">
-        <label class="q-label">What does the customer need?</label>
-        <p class="q-hint">Plain language is fine — product names, quantities, model preferences. The more specific the better.</p>
-        <textarea id="qq-request" rows="5" class="spec-input" placeholder="e.g. Two 27-inch monitors, a USB-C dock, and a wireless keyboard and mouse for a new Dell laptop setup. Customer prefers Dell or LG for the screens."></textarea>
-        <div class="char-counter"><span id="qqCount">0</span> characters</div>
-      </div>
-    </div>
-
-    <div class="q-card">
-      <div class="q-body">
-        <label class="q-label">Your API credentials</label>
-        <p class="q-hint">Used to search your Salesbuildr product catalog and create the quote.</p>
-        <div class="sb-fields" style="margin-bottom:8px;">
-          <div class="sb-field">
-            <label class="sb-label">API Key <span class="sb-where">Admin → Integrations</span></label>
-            <input type="password" id="qqApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
-          </div>
-          <div class="sb-field">
-            <label class="sb-label">Integration Key <span class="sb-where">Provided by Salesbuildr</span></label>
-            <input type="password" id="qqIntKey" class="sb-input" placeholder="Your integration key" autocomplete="new-password">
-          </div>
-        </div>
-        <label class="sb-remember"><input type="checkbox" id="qqRemember"> Remember on this device</label>
-      </div>
-    </div>
-
-    <div class="form-footer">
-      <button type="button" id="qqSearchBtn" class="btn-generate">Search My Catalog →</button>
-    </div>
-    <div id="qqError" class="form-error hidden"></div>
-
-    <!-- Product results -->
-    <div id="qqResultsWrap" class="hidden" style="margin-top:24px;">
-
-      <div class="result-section">
-        <div class="section-header">
-          <span class="section-icon">📦</span>
-          <div>
-            <div class="section-title">Matched products</div>
-            <div class="section-sub" id="qqMatchSub">Review and adjust quantities before creating the quote</div>
-          </div>
-        </div>
-        <div id="qqProductList" class="opp-service-list"></div>
-        <div id="qqProductTotal" class="opp-service-total hidden"></div>
-        <div id="qqUnmatched" class="opp-svc-unmatched hidden" style="margin-top:10px;"></div>
-      </div>
-
-      <!-- Web search suggestions — only shown when catalog returns zero matches -->
-      <div id="qqSuggestionsWrap" class="qq-suggestions hidden">
-        <div class="section-header">
-          <span class="section-icon">🌐</span>
-          <div>
-            <div class="section-title">Not in your catalog — suggestions from the web</div>
-            <div class="section-sub">Copy the MPN and import from the Salesbuildr marketplace</div>
-          </div>
-        </div>
-        <div id="qqSuggestionsBody"></div>
-      </div>
-
-
-      <div class="result-section" id="qqCoverSection">
-        <div class="section-header">
-          <span class="section-icon">✉️</span>
-          <div>
-            <div class="section-title">Cover note</div>
-            <div class="section-sub">Copy and paste into the cover letter widget in your Salesbuildr quote</div>
-          </div>
-          <button type="button" id="qqCopyCoverBtn" class="btn-secondary" style="margin-left:auto;white-space:nowrap;">📋 Copy</button>
-        </div>
-        <div id="qqCoverText" style="font-size:14px;color:var(--ink);line-height:1.7;white-space:pre-wrap;"></div>
-      </div>
-
-      <div class="result-section" id="qqConnectSection">
-        <div class="section-header">
-          <span class="section-icon">🚀</span>
-          <div>
-            <div class="section-title">Create quote in Salesbuildr</div>
-            <div class="section-sub">Find the opportunity and create a draft quote with the selected products</div>
-          </div>
-        </div>
-
-        <div class="opp-step" style="margin-bottom:12px;">
-          <div class="opp-step-hd"><span class="opp-step-num">1</span> Find company</div>
-          <div class="opp-search-row">
-            <input type="text" id="qqCompanyName" class="sb-input" placeholder="Type company name…" maxlength="80">
-            <button type="button" id="qqCompanySearchBtn" class="btn-opp-action">Search →</button>
-          </div>
-          <div id="qqCompanyResults" class="opp-company-results hidden"></div>
-          <div id="qqCompanySelected" class="opp-company-selected hidden"></div>
-        </div>
-
-        <div class="opp-step hidden" id="qqOppStep">
-          <div class="opp-step-hd"><span class="opp-step-num">2</span> Select opportunity</div>
-          <p class="opp-step-hint">Select the opportunity to attach this quote to.</p>
-          <div id="qqOppList" class="opp-company-results hidden"></div>
-          <div id="qqOppSelected" class="opp-company-selected hidden"></div>
-        </div>
-
-        <div class="opp-step hidden" id="qqQuoteStep">
-          <div class="opp-step-hd"><span class="opp-step-num">3</span> Create quote</div>
-          <div class="opp-field" style="margin-bottom:10px;">
-            <label class="sb-label">Quote title</label>
-            <input type="text" id="qqQuoteTitle" class="sb-input" maxlength="120" placeholder="e.g. Acme Corp — Monitor &amp; Peripherals">
-          </div>
-          <button type="button" id="qqCreateQuoteBtn" class="btn-opp-create">Create Draft Quote →</button>
-          <div id="qqCreateWorking" class="opp-working hidden">
-            <div class="spinner-sm"></div>
-            <span id="qqCreateWorkingMsg">Creating quote…</span>
-          </div>
-          <div id="qqCreateResult" class="hidden" style="margin-top:10px;"></div>
-        </div>
-
-      </div>
-    </div>
-
-  </section>
-
-  <!-- ── WORKING STATE ── -->
-  <section id="working-view" hidden>
-    <div class="working-inner">
-      <div class="spinner"></div>
-      <p class="working-title" id="workingTitle">Analyzing the opportunity…</p>
-      <p class="working-sub" id="workingSub">Claude is reading the customer situation and building your recommendation</p>
-    </div>
-  </section>
-
-  <!-- ── RESULTS VIEW ── -->
-  <section id="results-view" hidden>
-
-    <div class="results-header">
-      <div>
-        <div class="results-kicker" id="resultsMode"></div>
-        <h2 class="results-title" id="resultsTitle"></h2>
-      </div>
-      <button type="button" id="startOverBtn" class="back-btn">← Start over</button>
-    </div>
-
-    <!-- Coaching insight — the key sales moment -->
-    <div class="coaching-card" id="coachingCard">
-      <div class="coaching-icon">💡</div>
-      <div class="coaching-body">
-        <div class="coaching-label">Sales coaching insight</div>
-        <p class="coaching-text" id="coachingText"></p>
-      </div>
-    </div>
-
-    <!-- Spec gaps — execution mode only, shown when Claude flags unclear items -->
-    <div id="specGapsSection" class="spec-gaps-card hidden">
-      <div class="spec-gaps-icon">⚠</div>
-      <div class="spec-gaps-body">
-        <div class="spec-gaps-label">Spec gaps — clarify before sending</div>
-        <ul id="specGapsList" class="spec-gaps-list"></ul>
-      </div>
-    </div>
-
-    <!-- Line items — execution mode Phase A categorisation -->
-    <div id="lineItemsSection" class="result-section hidden">
-      <div class="section-header">
-        <span class="section-icon">📋</span>
-        <div>
-          <div class="section-title">Spec line items — categorised</div>
-          <div class="section-sub">Claude has categorised every item from your spec. Phase B will match these against your catalog.</div>
-        </div>
-      </div>
-      <div id="lineItemsList"></div>
-    </div>
-
-    <!-- Solution summary -->
-    <div class="summary-card" id="summaryCard">
-      <div class="summary-label">Recommended approach</div>
-      <p class="summary-text" id="summaryText"></p>
-    </div>
-
-    <!-- Hardware checklist (Discovery only, if hardware needed) -->
-    <div id="hardwareSection" class="result-section hidden">
-      <div class="section-header">
-        <span class="section-icon">🔧</span>
-        <div>
-          <div class="section-title">Hardware checklist — confirm at site visit</div>
-          <div class="section-sub">These components need to be specified before you can finalise the quote. Use this list at the site survey.</div>
-        </div>
-      </div>
-      <div id="hardwareList" class="hardware-list"></div>
-      <div class="hardware-note">After the site visit, use the <strong>Special Bid Converter</strong> to import distributor pricing directly into Salesbuildr.</div>
-    </div>
-
-    <!-- Services recommended -->
-    <div id="servicesSection" class="result-section hidden">
-      <div class="section-header">
-        <span class="section-icon">⚡</span>
-        <div>
-          <div class="section-title">Recommended service framework</div>
-          <div class="section-sub">Industry-standard services for this engagement — map these to your catalog items</div>
-        </div>
-      </div>
-      <div id="servicesList" class="services-list"></div>
-    </div>
-
-    <!-- Widget briefs preview -->
-    <div class="result-section">
-      <div class="section-header">
-        <span class="section-icon">📄</span>
-        <div>
-          <div class="section-title">Proposal narrative — W1 to W5</div>
-          <div class="section-sub">These briefs drive the five buyer-journey widgets. Click "Generate Widgets" to build them.</div>
-        </div>
-      </div>
-      <div id="widgetBriefs" class="widget-briefs"></div>
-    </div>
-
-    <!-- Execution quote lines — Phase B catalog matching -->
-    <div id="execQuoteLinesWrap" class="hidden" style="margin-top:8px;">
-      <div class="result-section">
-        <div class="section-header">
-          <span class="section-icon">🛒</span>
-          <div>
-            <div class="section-title">Quote line items</div>
-            <div class="section-sub" id="execQuoteLinesSub">Matching spec items against your catalog…</div>
-          </div>
-          <div id="execMatchWorking" class="action-working hidden" style="margin-left:auto;">
-            <div class="spinner-sm"></div>
-            <span>Matching catalog…</span>
-          </div>
-        </div>
-        <div id="execMatchedList" class="opp-service-list"></div>
-        <div id="execQuoteTotal" class="opp-service-total hidden"></div>
-        <div id="execUnmatchedWrap" class="hidden" style="margin-top:12px;"></div>
-      </div>
-    </div>
-
-    <!-- Widget generation options -->
-    <div class="widget-options">
-      <div>
-        <div class="widget-opt-label">Widget mode</div>
-        <div class="widget-mode-toggle">
-          <label class="mode-radio"><input type="radio" name="widgetMode" value="combined" checked> Combined — 1 widget, all 5 sections</label>
-          <label class="mode-radio"><input type="radio" name="widgetMode" value="individual"> Individual — 5 separate widgets</label>
-        </div>
-      </div>
-      <div>
-        <div class="widget-opt-label">Color theme</div>
-        <div class="guide-color-row">
-          <input type="color" id="guideColorPicker" class="guide-color-picker" value="#2563eb">
-          <input type="text"  id="guideColorHex"    class="guide-hex-input" maxlength="7" value="#2563eb">
-          <div class="guide-presets">
-            <button class="guide-preset active" style="background:#0d2d5e;" data-color="#0d2d5e" title="Navy"></button>
-            <button class="guide-preset" style="background:#2563eb;" data-color="#2563eb" title="Blue"></button>
-            <button class="guide-preset" style="background:#059669;" data-color="#059669" title="Green"></button>
-            <button class="guide-preset" style="background:#7c3aed;" data-color="#7c3aed" title="Purple"></button>
-            <button class="guide-preset" style="background:#dc2626;" data-color="#dc2626" title="Red"></button>
-            <button class="guide-preset" style="background:#b45309;" data-color="#b45309" title="Gold"></button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Three output actions -->
-    <div class="output-actions">
-      <div class="action-card" id="actionWidgets">
-        <div class="action-icon">🧩</div>
-        <div class="action-title">Generate Proposal Widgets</div>
-        <div class="action-desc">Build all 5 buyer-journey widgets based on this recommendation — ready to paste into Salesbuildr.</div>
-        <button type="button" id="genWidgetsBtn" class="btn-action btn-primary-action">Generate 5 Widgets →</button>
-        <div id="widgetsWorking" class="action-working hidden">
-          <div class="spinner-sm"></div>
-          <span id="widgetsWorkingMsg">Generating widget 1 of 5…</span>
-        </div>
-        <div id="widgetsResult" class="action-result hidden"></div>
-      </div>
-
-      <div class="action-card">
-        <div class="action-icon">📋</div>
-        <div class="action-title">Open Project Scope Builder</div>
-        <div class="action-desc">Pre-load the Scope Builder with the right project type based on this recommendation.</div>
-        <button type="button" id="openScopeBtn" class="btn-action">Open Scope Builder →</button>
-      </div>
-
-      <div class="action-card">
-        <div class="action-icon">💰</div>
-        <div class="action-title">Build ROI Case</div>
-        <div class="action-desc">Open the ROI Builder pre-filled with this customer's profile and the strongest value angle.</div>
-        <button type="button" id="openRoiBtn" class="btn-action">Open ROI Builder →</button>
-      </div>
-    </div>
-
-    <!-- Salesbuildr widget push (shown after widgets generated) -->
-    <div id="widgetOutput" class="widget-output hidden">
-
-      <div class="out-tabs">
-        <button class="out-tab is-active" data-pane="preview">Preview</button>
-        <button class="out-tab" data-pane="code">HTML Code</button>
-      </div>
-      <iframe id="previewFrame" class="preview-frame" sandbox="allow-same-origin allow-scripts"></iframe>
-      <textarea id="htmlCode" class="html-code" readonly spellcheck="false"></textarea>
-
-      <div class="push-row">
-        <button type="button" id="copyWidgetsBtn" class="btn-secondary">📋 Copy HTML</button>
-        <div class="sb-connect" id="sbConnect">
-          <button type="button" class="sb-toggle" id="sbToggle">⚡ Save to Salesbuildr <span class="sb-arrow" id="sbArrow">▼</span></button>
-          <div class="sb-body" id="sbBody" hidden>
-            <div class="sb-fields">
-              <div class="sb-field">
-                <label class="sb-label">API Key <span class="sb-where">Admin → Integrations</span></label>
-                <input type="password" id="sbApiKey" class="sb-input" autocomplete="new-password" placeholder="Your API key">
-              </div>
-              <div class="sb-field">
-                <label class="sb-label">Integration Key <span class="sb-where">Provided by Salesbuildr</span></label>
-                <input type="password" id="sbIntKey" class="sb-input" autocomplete="new-password" placeholder="Your integration key">
-              </div>
-            </div>
-            <div class="sb-row">
-              <label class="sb-remember"><input type="checkbox" id="sbRemember"> Remember on this device</label>
-              <input type="text" id="sbPrefix" class="sb-prefix" maxlength="40" placeholder="Optional label e.g. Acme Corp">
-              <button type="button" id="sbPushBtn" class="btn-push" disabled>Save to Salesbuildr →</button>
-            </div>
-            <div id="sbResult" class="sb-result hidden"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- ── CREATE IN SALESBUILDR (Phase 2) ── -->
-    <div class="create-opp-wrap hidden" id="createOppWrap">
-      <button type="button" class="create-opp-toggle" id="createOppToggle">
-        <div class="create-opp-hd">
-          <span class="create-opp-icon">🚀</span>
-          <div>
-            <div class="create-opp-title">Connect to Salesbuildr</div>
-            <div class="create-opp-sub">Link this recommendation to an existing opportunity and create a draft quote</div>
-          </div>
-        </div>
-        <span class="sb-arrow" id="createOppArrow">▼</span>
-      </button>
-
-      <div class="create-opp-body hidden" id="createOppBody">
-
-        <!-- Credentials -->
-        <div class="opp-creds">
-          <div class="sb-fields">
-            <div class="sb-field">
-              <label class="sb-label">API Key <span class="sb-where">Admin → Integrations</span></label>
-              <input type="password" id="oppApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
-            </div>
-            <div class="sb-field">
-              <label class="sb-label">Integration Key <span class="sb-where">Provided by Salesbuildr</span></label>
-              <input type="password" id="oppIntKey" class="sb-input" placeholder="Your integration key" autocomplete="new-password">
-            </div>
-          </div>
-          <label class="sb-remember"><input type="checkbox" id="oppRemember"> Remember on this device</label>
-        </div>
-
-        <!-- Step 1: Company -->
-        <div class="opp-step" id="oppStep1">
-          <div class="opp-step-hd"><span class="opp-step-num">1</span> Find company</div>
-          <div class="opp-search-row">
-            <input type="text" id="oppCompanyName" class="sb-input" placeholder="Type company name…" maxlength="80">
-            <button type="button" id="oppSearchBtn" class="btn-opp-action">Search →</button>
-          </div>
-          <div id="oppCompanyResults" class="opp-company-results hidden"></div>
-          <div id="oppCompanySelected" class="opp-company-selected hidden"></div>
-        </div>
-
-        <!-- Step 2: Select existing opportunity -->
-        <div class="opp-step hidden" id="oppStep2">
-          <div class="opp-step-hd"><span class="opp-step-num">2</span> Select opportunity</div>
-          <p class="opp-step-hint">Select the opportunity you already created in Salesbuildr or Autotask. The Sales Brief will be added to its Description.</p>
-          <div id="oppOppList" class="opp-company-results hidden"></div>
-          <div id="oppOppSelected" class="opp-company-selected hidden"></div>
-        </div>
-
-        <!-- Step 3: Services to include -->
-        <div class="opp-step hidden" id="oppServiceStep">
-          <div class="opp-step-hd"><span class="opp-step-num">3</span> Services to include</div>
-          <p class="opp-step-hint">Matched from your guided catalog — check what to add to the quote.</p>
-          <div id="oppServiceList" class="opp-service-list"></div>
-          <div id="oppServiceTotal" class="opp-service-total hidden"></div>
-        </div>
-
-        <!-- Step 4: Quote -->
-        <div class="opp-step hidden" id="oppStep3">
-          <button type="button" class="opp-brief-toggle" id="oppBriefToggle">
-            <span id="oppBriefToggleLabel">▶ Preview Sales Brief</span>
-            <span class="opp-brief-hint">Will be saved to the opportunity Description</span>
-          </button>
-          <div class="opp-brief-preview hidden" id="oppBriefPreview">
-            <pre id="oppBriefText" class="brief-pre"></pre>
-          </div>
-
-          <div class="opp-step-hd" style="margin-top:16px;"><span class="opp-step-num">4</span> Quote <span class="opp-optional">optional</span></div>
-          <div id="oppWidgetNotice" class="hidden" style="font-size:12px;color:#92400e;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;margin-bottom:8px;">
-            ✦ Widgets generated — use <strong>Save to Salesbuildr</strong> above to push them to your library, then open the quote, click <strong>+</strong> and add them from your widget library.
-          </div>
-          <label class="opp-check-label">
-            <input type="checkbox" id="oppCreateQuote" checked> Create a draft quote
-          </label>
-          <div id="oppQuoteFields" class="opp-quote-fields">
-            <div class="opp-field" style="margin-top:10px;">
-              <label class="sb-label">Quote title</label>
-              <input type="text" id="oppQuoteTitle" class="sb-input" maxlength="120">
-            </div>
-            <p class="opp-template-note">Uses your account default template — set your <strong>Guided Sales Template</strong> as default and it applies automatically.</p>
-          </div>
-
-          <div class="opp-create-row">
-            <button type="button" id="oppCreateBtn" class="btn-opp-create">Connect to Salesbuildr →</button>
-          </div>
-          <div id="oppCreateWorking" class="opp-working hidden">
-            <div class="spinner-sm"></div>
-            <span id="oppWorkingMsg">Working…</span>
-          </div>
-          <div id="oppCreateResult" class="hidden"></div>
-        </div>
-
-      </div>
-    </div>
-
-
-    <!-- ── CREATE IN SALESBUILDR (Phase 2) ── -->
-    <div class="create-opp-wrap hidden" id="createOppWrap">
-      <button type="button" class="create-opp-toggle" id="createOppToggle">
-        <div class="create-opp-hd">
-          <span class="create-opp-icon">🚀</span>
-          <div>
-            <div class="create-opp-title">Connect to Salesbuildr</div>
-            <div class="create-opp-sub">Link this recommendation to an existing opportunity and create a draft quote</div>
-          </div>
-        </div>
-        <span class="sb-arrow" id="createOppArrow">▼</span>
-      </button>
-
-      <div class="create-opp-body hidden" id="createOppBody">
-
-        <!-- Credentials -->
-        <div class="opp-creds">
-          <div class="sb-fields">
-            <div class="sb-field">
-              <label class="sb-label">API Key <span class="sb-where">Admin → Integrations</span></label>
-              <input type="password" id="oppApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
-            </div>
-            <div class="sb-field">
-              <label class="sb-label">Integration Key <span class="sb-where">Provided by Salesbuildr</span></label>
-              <input type="password" id="oppIntKey" class="sb-input" placeholder="Your integration key" autocomplete="new-password">
-            </div>
-          </div>
-          <label class="sb-remember"><input type="checkbox" id="oppRemember"> Remember on this device</label>
-        </div>
-
-        <!-- Step 1: Company -->
-        <div class="opp-step" id="oppStep1">
-          <div class="opp-step-hd"><span class="opp-step-num">1</span> Find company</div>
-          <div class="opp-search-row">
-            <input type="text" id="oppCompanyName" class="sb-input" placeholder="Type company name…" maxlength="80">
-            <button type="button" id="oppSearchBtn" class="btn-opp-action">Search →</button>
-          </div>
-          <div id="oppCompanyResults" class="opp-company-results hidden"></div>
-          <div id="oppCompanySelected" class="opp-company-selected hidden"></div>
-        </div>
-
-        <!-- Step 2: Select existing opportunity -->
-        <div class="opp-step hidden" id="oppStep2">
-          <div class="opp-step-hd"><span class="opp-step-num">2</span> Select opportunity</div>
-          <p class="opp-step-hint">Select the opportunity you already created in Salesbuildr or Autotask. The Sales Brief will be added to its Description.</p>
-          <div id="oppOppList" class="opp-company-results hidden"></div>
-          <div id="oppOppSelected" class="opp-company-selected hidden"></div>
-        </div>
-
-        <!-- Step 3: Services to include -->
-        <div class="opp-step hidden" id="oppServiceStep">
-          <div class="opp-step-hd"><span class="opp-step-num">3</span> Services to include</div>
-          <p class="opp-step-hint">Matched from your guided catalog — check what to add to the quote.</p>
-          <div id="oppServiceList" class="opp-service-list"></div>
-          <div id="oppServiceTotal" class="opp-service-total hidden"></div>
-        </div>
-
-        <!-- Step 4: Quote -->
-        <div class="opp-step hidden" id="oppStep3">
-          <button type="button" class="opp-brief-toggle" id="oppBriefToggle">
-            <span id="oppBriefToggleLabel">▶ Preview Sales Brief</span>
-            <span class="opp-brief-hint">Will be saved to the opportunity Description</span>
-          </button>
-          <div class="opp-brief-preview hidden" id="oppBriefPreview">
-            <pre id="oppBriefText" class="brief-pre"></pre>
-          </div>
-
-          <div class="opp-step-hd" style="margin-top:16px;"><span class="opp-step-num">4</span> Quote <span class="opp-optional">optional</span></div>
-          <div id="oppWidgetNotice" class="hidden" style="font-size:12px;color:#92400e;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;margin-bottom:8px;">
-            ✦ Widgets generated — use <strong>Save to Salesbuildr</strong> above to push them to your library, then open the quote, click <strong>+</strong> and add them from your widget library.
-          </div>
-          <label class="opp-check-label">
-            <input type="checkbox" id="oppCreateQuote" checked> Create a draft quote
-          </label>
-          <div id="oppQuoteFields" class="opp-quote-fields">
-            <div class="opp-field" style="margin-top:10px;">
-              <label class="sb-label">Quote title</label>
-              <input type="text" id="oppQuoteTitle" class="sb-input" maxlength="120">
-            </div>
-            <p class="opp-template-note">Uses your account default template — set your <strong>Guided Sales Template</strong> as default and it applies automatically.</p>
-          </div>
-
-          <div class="opp-create-row">
-            <button type="button" id="oppCreateBtn" class="btn-opp-create">Connect to Salesbuildr →</button>
-          </div>
-          <div id="oppCreateWorking" class="opp-working hidden">
-            <div class="spinner-sm"></div>
-            <span id="oppWorkingMsg">Working…</span>
-          </div>
-          <div id="oppCreateResult" class="hidden"></div>
-        </div>
-
-      </div>
-    </div>
-
-
-  </section>
-
-</div>
-<footer class="site-footer">Sales Guide · Salesbuildr — Guided selling for MSP teams</footer>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-<script src="sales-guide.js"></script>
-</body>
-</html>
+// =========================================================
+// create-opportunity.js — Netlify function
+// Path: /api/create-opportunity
+//
+// Phase 2 — Guided Sales CRM integration
+//
+// Actions:
+//   search-company     — find existing Salesbuildr companies
+//   create-company     — create a new prospect company
+//   upsert-opportunity — create/update opportunity with Sales Brief
+//   create-quote       — create a draft quote against the opportunity
+//
+// Credentials come from the REQUEST BODY — never env vars.
+// =========================================================
+
+const BASE = 'https://portal.us1-salesbuildr.com/public-api';
+
+function sbHeaders(apiKey, intKey) {
+  return {
+    'Content-Type': 'application/json',
+    'api-key': apiKey,
+    'integration-key': intKey
+  };
+}
+
+function ok(data) {
+  return {
+    statusCode: 200,
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    body: JSON.stringify({ ok: true, ...data })
+  };
+}
+
+function err(msg, code = 200) {
+  return {
+    statusCode: code,
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    body: JSON.stringify({ ok: false, error: msg })
+  };
+}
+
+exports.handler = async (event) => {
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type' } };
+  }
+  if (event.httpMethod !== 'POST') return err('POST required.', 405);
+
+  let body;
+  try { body = JSON.parse(event.body); }
+  catch { return err('Invalid JSON.', 400); }
+
+  const { action, apiKey, integrationKey } = body;
+
+  // Ping — warm-up call, no credentials needed
+  if (action === 'ping') return { statusCode: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: true, pong: true }) };
+
+  if (!apiKey || !integrationKey) return err('API credentials required.', 400);
+
+  const headers = sbHeaders(apiKey, integrationKey);
+
+  try {
+
+    // ── search-company ──────────────────────────────────────
+    if (action === 'search-company') {
+      const { name } = body;
+      if (!name) return err('Company name required.', 400);
+
+      const res  = await fetch(`${BASE}/company?query=${encodeURIComponent(name)}&size=8`, { headers });
+      const data = await res.json();
+
+      // Handle all possible response shapes from Salesbuildr:
+      //   { data: [...] }  |  { items: [...] }  |  { results: [...] }
+      //   plain array [...]  |  single object {...}
+      let companies = [];
+      if (Array.isArray(data))              companies = data;
+      else if (Array.isArray(data?.data))   companies = data.data;
+      else if (Array.isArray(data?.items))  companies = data.items;
+      else if (Array.isArray(data?.results))companies = data.results;
+      else if (data?.id)                    companies = [data]; // single object returned
+
+      // Expose the raw response keys for debugging when nothing found
+      const debugShape = companies.length === 0
+        ? { _rawKeys: Object.keys(data || {}), _isArray: Array.isArray(data) }
+        : {};
+
+      return ok({ companies, ...debugShape });
+    }
+
+    // ── ping ────────────────────────────────────────────────
+    if (action === 'ping') return ok({ pong: true });
+
+    // ── fetch-guided-catalog ─────────────────────────────────
+    // Returns all products/services tagged 'guided' from the
+    // MSP's Salesbuildr catalog — the curated set for guided sales.
+    if (action === 'fetch-guided-catalog') {
+      // Fetch all products unfiltered — server-side label filter unreliable for PSA items.
+      // Filter client-side by checking labels array contains 'guided'.
+      const res  = await fetch(`${BASE}/product?size=100`, { headers });
+      const data = res.ok ? await res.json() : {};
+      const all  = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
+
+      // Client-side label filter
+      const guided = all.filter(p => {
+        const lbls = p.labels || [];
+        return Array.isArray(lbls)
+          ? lbls.some(l => (typeof l === 'string' ? l : l?.name || l?.value || '').toLowerCase() === 'guided')
+          : false;
+      });
+
+      const catalog = guided.map(p => ({
+        id:     p.id,
+        name:   p.name || p.description || 'Unknown',
+        price:  p.sellPrice ?? p.price ?? p.recurringPrice ?? p.unitPrice ?? 0,
+        type:   p.productType || p.type || 'product',
+        labels: Array.isArray(p.labels) ? p.labels.map(l => typeof l === 'string' ? l : (l?.name || '')).filter(Boolean) : [],
+        unit:   (() => {
+          const t = (p.productType || p.type || '').toLowerCase();
+          if (t === 'bundle') return 'month'; // bundles are monthly recurring
+          return (p.unit || p.term || '').toLowerCase();
+        })(),
+      }));
+
+      // Debug to confirm what labels look like
+      const debug = {
+        totalFetched: all.length,
+        guidedFound:  guided.length,
+        firstLabels:  all[0]?.labels ?? 'n/a',
+      };
+
+      return ok({ catalog, _debug: debug });
+    }
+
+    // ── get-opportunity ─────────────────────────────────────
+    // Fetches full OpportunityResponseDto so we can echo back
+    // all existing IDs (contact, owner, stage, category) when
+    // updating the description — avoids "field required" errors.
+    if (action === 'get-opportunity') {
+      const { opportunityId } = body;
+      if (!opportunityId) return err('opportunityId required.', 400);
+      const res  = await fetch(`${BASE}/opportunity/${opportunityId}`, { headers });
+      const data = res.ok ? await res.json() : {};
+      if (!res.ok) return err(data?.message || 'Failed to fetch opportunity.');
+      return ok({ opportunity: data });
+    }
+
+    // ── search-opportunity ──────────────────────────────────
+    // Find existing opportunities for a company so the rep
+    // can connect the Sales Guide to one they already created.
+    if (action === 'search-opportunity') {
+      const { companyId } = body;
+      if (!companyId) return err('companyId required.', 400);
+
+      const res  = await fetch(`${BASE}/opportunity?filters=${encodeURIComponent('company.id:' + companyId)}&size=20`, { headers });
+      const data = res.ok ? await res.json() : {};
+      const opps = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
+      return ok({ opportunities: opps });
+    }
+
+    // ── fetch-opp-fields ────────────────────────────────────
+    // Tries multiple field name variants for each dropdown —
+    // returns the first one that comes back with data.
+    if (action === 'fetch-opp-fields') {
+      const results = {};
+
+      // Categories — confirmed working field name
+      try {
+        const res  = await fetch(`${BASE}/field/opportunity-category`, { headers });
+        const data = res.ok ? await res.json() : {};
+        results.categories = (data?.values || []).filter(v => !v.deleted);
+      } catch { results.categories = []; }
+
+      // Pipeline stages — try the same naming pattern that worked for category
+      try {
+        const candidates = ['opportunity-stage', 'opportunity-pipeline-stage', 'pipeline-stage', 'pipelineStage'];
+        results.pipelineStages = [];
+        for (const name of candidates) {
+          const res  = await fetch(`${BASE}/field/${encodeURIComponent(name)}`, { headers });
+          const data = res.ok ? await res.json() : {};
+          const vals = (data?.values || []).filter(v => !v.deleted);
+          if (vals.length > 0) { results.pipelineStages = vals; break; }
+        }
+      } catch { results.pipelineStages = []; }
+
+      // Owners — quote list returns full QuoteResponseDto with owner nested object.
+      // Response shape confirmed from OpenAPI: { results: [...], total: N }
+      try {
+        const res    = await fetch(`${BASE}/quote?size=20`, { headers });
+        const data   = res.ok ? await res.json() : {};
+        // Quote list uses 'results' key — not 'data' or 'items'
+        const quotes = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
+        const ownerMap = new Map();
+        quotes.forEach(q => {
+          const o = q.owner || q.createdBy;
+          if (o?.id) {
+            ownerMap.set(o.id, {
+              id:           o.id,
+              displayValue: o.name || o.email || o.id,
+              extId:        o.externalIdentifier || o.email || null
+            });
+          }
+        });
+        results.owners = [...ownerMap.values()];
+      } catch { results.owners = []; }
+
+      return ok(results);
+    }
+
+    // ── search-contact ──────────────────────────────────────
+    if (action === 'search-contact') {
+      const { companyId } = body;
+      if (!companyId) return err('companyId required.', 400);
+
+      const res  = await fetch(`${BASE}/contact?filters=${encodeURIComponent('company.id:' + companyId)}&size=20`, { headers });
+      const data = await res.json();
+
+      let contacts = [];
+      if (Array.isArray(data))              contacts = data;
+      else if (Array.isArray(data?.data))   contacts = data.data;
+      else if (Array.isArray(data?.items))  contacts = data.items;
+      else if (Array.isArray(data?.results))contacts = data.results;
+      else if (data?.id)                    contacts = [data];
+
+      return ok({ contacts });
+    }
+
+    // ── create-company ──────────────────────────────────────
+    if (action === 'create-company') {
+      const { name } = body;
+      if (!name) return err('Company name required.', 400);
+
+      // Generate a short reference number (SG + 6-digit timestamp suffix)
+      const number = 'SG-' + Date.now().toString().slice(-6);
+
+      const res  = await fetch(`${BASE}/company`, {
+        method:  'POST',
+        headers,
+        body:    JSON.stringify({ name, number, type: 'prospect' })
+      });
+      const data = await res.json();
+
+      if (!res.ok) return err(data?.message || data?.error || 'Failed to create company.');
+      return ok({ company: data });
+    }
+
+    // ── upsert-opportunity ──────────────────────────────────
+    if (action === 'upsert-opportunity') {
+      // Updates description of an EXISTING opportunity using its real
+      // externalIdentifier (AT record ID). Never creates new records —
+      // avoids the PSA sync issue caused by fake ext IDs.
+      const { name, description, extId, companyId, contactId, ownerId, pipelineStageId, categoryId } = body;
+      if (!extId) return err('extId required.', 400);
+
+      // Echo back all existing field IDs so Salesbuildr doesn't
+      // treat missing fields as intentional removals
+      const payload = { name: name || 'Opportunity', description };
+      if (companyId)       payload.companyId       = companyId;
+      if (contactId)       payload.contactId       = contactId;
+      if (ownerId)         payload.ownerId         = ownerId;
+      if (pipelineStageId) payload.pipelineStageId = pipelineStageId;
+      if (categoryId)      payload.categoryId      = categoryId;
+
+      const res  = await fetch(`${BASE}/opportunity/ext/${encodeURIComponent(extId)}`, {
+        method:  'PUT',
+        headers,
+        body:    JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (!res.ok) return err(data?.message || data?.error || 'Failed to create opportunity.');
+      return ok({ opportunity: data });
+    }
+
+    // ── create-quote ────────────────────────────────────────
+    if (action === 'create-quote') {
+      const { opportunityId, title, templateId, widgets, quickQuote } = body;
+      if (!opportunityId) return err('opportunityId required.', 400);
+
+      // Template routing:
+      // quickQuote = true  → Quick Quote hardware template
+      // execution  = true  → Guided sales template with cover page
+      // Discovery          → account default (no templateId sent)
+      const QUICK_QUOTE_TEMPLATE_ID  = 'NZsmr3u1XK30TWTx0zzn';
+      const GUIDED_SALES_TEMPLATE_ID = 'xp7NZIjjh9KzQZPzREuV';
+      const resolvedTemplateId = quickQuote ? QUICK_QUOTE_TEMPLATE_ID
+        : body.executionQuote   ? GUIDED_SALES_TEMPLATE_ID
+        : (templateId || null);
+      const { products } = body; // array of {id, quantity}
+
+      const payload = { opportunityId, title: title || 'Proposal' };
+      if (resolvedTemplateId) payload.templateId = resolvedTemplateId;
+      if (Array.isArray(products) && products.length > 0) payload.products = products;
+
+      const res  = await fetch(`${BASE}/quote`, {
+        method:  'POST',
+        headers,
+        body:    JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (!res.ok) return err(data?.message || data?.error || 'Failed to create quote.');
+      return ok({ quote: data });
+    }
+
+    // ── search-products ─────────────────────────────────────
+    // Claude Haiku-powered catalog matching for Quick Quote.
+    // Fetches full catalog, sends product names + request to Haiku,
+    // which returns the IDs of the best matching products.
+    // This replaces keyword scoring — Claude understands semantics.
+    if (action === 'search-products') {
+      const { query } = body;
+      if (!query) return err('query required.', 400);
+
+      // 1. Fetch full catalog — single call, size=500
+      // Two-page parallel fetch caused timeouts; single fetch is more reliable.
+      const catalogRes  = await fetch(`${BASE}/product?size=500`, { headers });
+      const catalogData = catalogRes.ok ? await catalogRes.json() : {};
+      const all = catalogData?.results || catalogData?.data || catalogData?.items || (Array.isArray(catalogData) ? catalogData : []);
+
+      // 2. Filter to non-service, non-bundle products only.
+      // Only exclude listed===false (explicitly unlisted); listed===null/undefined is allowed.
+      const hardware = all.filter(p => {
+        const t = (p.productType || p.type || '').toLowerCase();
+        if (t === 'service' || t === 'labor' || t === 'bundle') return false;
+        if (p.listed === false) return false;  // explicitly unlisted only
+        return true;
+      });
+
+      if (hardware.length === 0) return ok({ products: [], catalogSize: all.length, matched: 0 });
+
+      // 3. Build a compact product list for Haiku — id + name only to minimise tokens
+      // Trim to 300 items max before sending to Haiku — reduces token count
+      // and keeps the call well within the 10s Netlify timeout.
+      // Items are already filtered to listed hardware only.
+      const trimmed     = hardware.slice(0, 300);
+      const catalogList = trimmed.map(p => p.id + '|||' + (p.name || '').slice(0, 80)).join('\n');
+
+      // 4. Ask Haiku to match the request against the catalog
+      const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 512,
+          system: `You are a product catalog matching assistant for an MSP (IT services company).
+Given a customer product request and a catalog of products, return the IDs of the best matching products.
+
+Rules:
+- Match products the customer is CLEARLY asking for based on brand, size, model, and specs
+- Respect brand constraints strictly — if the customer says Dell, do not return Lenovo or HP
+- Respect size constraints strictly — if the customer says 16 inch, do not return 14 inch
+- Only include alternatives from a different brand or size if NO matching products exist at all
+- Exclude demo, refurbished, or excess stock items unless explicitly requested
+- Exclude products that are unrelated to the request
+- Never include services, software licenses, or recurring billing items
+- Return at most 6 product IDs, ordered best match first
+- Return ONLY a JSON array of ID strings, nothing else. Example: ["id1","id2","id3"]`,
+          messages: [{
+            role: 'user',
+            content: `Customer request: "${query}"
+
+Product catalog (format: ID|||Name):
+${catalogList}
+
+Return a JSON array of the IDs of matching products. Return [] if nothing matches.`
+          }]
+        })
+      });
+
+      const aiData = await aiRes.json();
+
+      const aiText = aiData?.content?.[0]?.text?.trim() || '[]';
+
+      // 5. Parse the returned IDs safely
+      // Haiku sometimes wraps JSON in markdown fences and adds explanatory text.
+      // Strategy: strip fences, find the JSON array anywhere in the text, extract IDs.
+      let matchedIds = [];
+      try {
+        // Strip markdown fences first
+        const stripped = aiText.replace(/```json?\s*/gi, '').replace(/```/g, '').trim();
+        // Find JSON array anywhere in the response (Haiku sometimes adds text after it)
+        const arrayMatch = stripped.match(/\[([^\]]*?)\]/);
+        if (arrayMatch) {
+          const parsed = JSON.parse(arrayMatch[0]);
+          if (Array.isArray(parsed)) matchedIds = parsed.filter(id => typeof id === 'string' && id.length > 5);
+        }
+      } catch {
+        matchedIds = [];
+      }
+
+      // 6. Look up full product details for matched IDs
+      // Search ALL hardware (not just trimmed list) so Haiku IDs always resolve
+      const idSet = new Set(matchedIds);
+      const matched = hardware
+        .filter(p => idSet.has(p.id))
+        .sort((a, b) => matchedIds.indexOf(a.id) - matchedIds.indexOf(b.id)) // preserve Haiku's order
+        .map(p => ({
+          id:     p.id,
+          name:   p.name || p.description || 'Unknown',
+          price:  p.sellPrice ?? p.price ?? p.recurringPrice ?? p.unitPrice ?? 0,
+          type:   p.productType || p.type || 'product',
+          unit:   (() => {
+            const t = (p.productType || p.type || '').toLowerCase();
+            if (t === 'bundle') return 'month';
+            return (p.unit || p.term || '').toLowerCase();
+          })(),
+          vendor: p.manufacturer || '',
+          sku:    p.mpn || p.ean || '',
+          listed: p.listed ?? null,
+        }));
+
+      return ok({ products: matched, catalogSize: all.length, matched: matched.length });
+    }
+
+
+        // ── create-product ──────────────────────────────────────
+    // Creates a new product in the MSP's Salesbuildr catalog
+    // from a web-search suggestion. Uses the hardcoded Guided
+    // category ID so it appears in Quick Quote searches.
+    if (action === 'create-product') {
+      const { name, mpn, vendor, price, shortDescription } = body;
+      if (!name) return err('Product name required.', 400);
+
+      const GUIDED_CATEGORY_ID = 'liITjFCEzoS9aVOHpC1A';
+
+      const payload = {
+        name,
+        categoryId:  GUIDED_CATEGORY_ID,
+        productType: 'product',
+        listed:      true,
+      };
+      if (mpn)              payload.mpn              = mpn;
+      // vendor omitted — SB requires a vendorId (lookup), not a vendor name string.
+      // Rep can assign vendor manually in Salesbuildr after creation.
+      // Send approximate web price as 'cost' so Salesbuildr applies the
+      // category markup to derive the sell price. Rep should hit 'Fetch info'
+      // in Salesbuildr to overwrite with real distributor cost if available.
+      // price is now a number from Claude — use directly as cost.
+      // Salesbuildr applies the Guided category markup to derive sell price.
+      const parsedPrice = price && !isNaN(parseFloat(price)) ? parseFloat(price) : 0;
+      if (parsedPrice > 0) payload.cost = parsedPrice;
+      // shortDescription sent clean — no warnings in SB product record
+      if (shortDescription) payload.shortDescription = shortDescription;
+
+      const res      = await fetch(`${BASE}/product`, {
+        method:  'POST',
+        headers,
+        body:    JSON.stringify(payload)
+      });
+      const rawText = await res.text();
+      if (!res.ok) {
+        // Return the raw response text so we can see exactly what SB is saying
+        return err(`SB ${res.status}: ${rawText.slice(0, 500)}`);
+      }
+      const data = JSON.parse(rawText);
+      return ok({ product: data });
+    }
+
+        // ── match-spec-items ────────────────────────────────────
+    // Phase B — Execution mode catalog matching.
+    // Takes categorised line items from Claude's spec analysis
+    // and matches them against the MSP's Salesbuildr catalog.
+    // Services/labor: fuzzy name match
+    // Hardware/software: Haiku semantic match (same as Quick Quote)
+    if (action === 'match-spec-items') {
+      const { items } = body;  // array of line_items from Claude
+      if (!Array.isArray(items) || items.length === 0) return err('items required.', 400);
+
+      // 1. Fetch full catalog
+      const catRes  = await fetch(`${BASE}/product?size=500`, { headers });
+      const catData = catRes.ok ? await catRes.json() : {};
+      const all     = catData?.results || catData?.data || catData?.items || (Array.isArray(catData) ? catData : []);
+
+      // Filter to listed, non-bundle products only
+      const catalog = all.filter(p => {
+        const t = (p.productType || p.type || '').toLowerCase();
+        if (t === 'bundle') return false;
+        if (p.listed === false) return false;
+        return true;
+      });
+
+      const catalogMap = new Map(catalog.map(p => [p.id, p]));
+
+      // Helper: fuzzy name match — requires multiple meaningful keyword matches
+      // High threshold prevents brand-only matches (e.g. "Tripp Lite" matching any Tripp Lite product)
+      function fuzzyMatch(itemName, catalogItems) {
+        const needle = itemName.toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
+        // Extract meaningful words — skip brand names alone, require product-type words
+        const stopBrands = new Set(['tripp','lite','startech','ubiquiti','unifi','sophos','eaton',
+          'hp','dell','lenovo','cisco','netgear','zyxel','fortinet','aruba','internal']);
+        const needleWords = needle.split(/\s+/).filter(w => w.length > 3 && !stopBrands.has(w));
+        if (needleWords.length === 0) return null; // no meaningful words to match on
+
+        let best = null, bestScore = 0;
+        for (const p of catalogItems) {
+          const hay = (p.name || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ');
+          let score = 0;
+          let distinctHits = 0;
+          for (const w of needleWords) {
+            if (hay.includes(w)) {
+              score += w.length > 6 ? 3 : 2;
+              distinctHits++;
+            }
+          }
+          // Must have at least 2 distinct keyword hits to avoid single-word brand matches
+          if (distinctHits >= 2 && score > bestScore) { bestScore = score; best = p; }
+        }
+        // High threshold — score of 8+ means at least 2-3 meaningful word matches
+        return bestScore >= 8 ? best : null;
+      }
+
+      // Helper: format product for response
+      function formatProduct(p) {
+        return {
+          id:     p.id,
+          name:   p.name || '',
+          price:  p.sellPrice ?? p.price ?? p.recurringPrice ?? 0,
+          type:   p.productType || p.type || 'product',
+          unit:   (() => {
+            const t = (p.productType || p.type || '').toLowerCase();
+            if (t === 'bundle') return 'month';
+            return (p.unit || p.term || '').toLowerCase();
+          })(),
+          vendor: p.manufacturer || '',
+          sku:    p.mpn || p.internalProductId || p.ean || '',
+          listed: p.listed ?? null,
+        };
+      }
+
+      // Split items by type
+      const serviceItems  = items.filter(i => i.type === 'service' || i.type === 'labor');
+      const hardwareItems = items.filter(i => i.type === 'hardware' || i.type === 'software' || i.type === 'unknown');
+
+      const matched   = [];  // { specItem, catalogProduct, qty }
+      const unmatched = [];  // { specItem } — needs web search
+
+      // 2. Match services/labor by fuzzy name
+      const serviceProducts = catalog.filter(p => {
+        const t = (p.productType || p.type || '').toLowerCase();
+        return t === 'service' || t === 'labor';
+      });
+
+      for (const item of serviceItems) {
+        let found = null;
+
+        // First try internal ID match (design desk often uses SB internal codes as MPN)
+        if (item.mpn) {
+          const mpnLower = item.mpn.toLowerCase().replace(/[^a-z0-9-]/g, '');
+          found = catalog.find(p => {
+            const ids = [
+              p.mpn || '', p.internalProductId || '',
+              p.ean || '', p.externalIdentifier || ''
+            ].map(v => v.toLowerCase().replace(/[^a-z0-9-]/g, '')).filter(Boolean);
+            return ids.some(id => id === mpnLower);
+          }) || null;
+        }
+
+        // Then try fuzzy name match
+        if (!found) found = fuzzyMatch(item.name, serviceProducts);
+
+        // Fallback: fuzzy against full catalog
+        if (!found) found = fuzzyMatch(item.name, catalog);
+
+        if (found) {
+          matched.push({ specItem: item, catalogProduct: formatProduct(found), qty: item.quantity || 1 });
+        } else {
+          unmatched.push({ specItem: item });
+        }
+      }
+
+      // 3. Match hardware/software — MPN-first then fuzzy name match
+      // MPN exact match is highly accurate; fuzzy is a fallback with high threshold.
+      for (const item of hardwareItems) {
+        let found = null;
+
+        // Try ID/MPN match — checks mpn, internalProductId, ean, and externalIdentifier
+        // Design desk often uses internal SB codes (e.g. LABOR-INSTALL-NET, MDR-MONTHLY)
+        // which are stored in internalProductId, not mpn
+        if (item.mpn) {
+          const mpnLower = item.mpn.toLowerCase().replace(/[^a-z0-9-]/g, '');
+          found = catalog.find(p => {
+            const ids = [
+              p.mpn || '',
+              p.internalProductId || '',
+              p.ean || '',
+              p.externalIdentifier || ''
+            ].map(v => v.toLowerCase().replace(/[^a-z0-9-]/g, '')).filter(Boolean);
+            return ids.some(id => id === mpnLower);
+          }) || null;
+        }
+
+        // Fallback: fuzzy name match (high threshold — see fuzzyMatch function)
+        if (!found) {
+          found = fuzzyMatch(item.name, catalog);
+        }
+
+        // Sanity check — if matched product name shares no meaningful words with spec item, reject it
+        if (found) {
+          const specWords = item.name.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 4);
+          const catWords  = (found.name || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/);
+          const overlap   = specWords.filter(w => catWords.includes(w)).length;
+          if (specWords.length > 0 && overlap === 0) {
+            found = null; // no word overlap — reject the match
+          }
+        }
+
+        if (found) {
+          matched.push({ specItem: item, catalogProduct: formatProduct(found), qty: item.quantity || 1 });
+        } else {
+          unmatched.push({ specItem: item });
+        }
+      }
+
+
+      return ok({ matched, unmatched, catalogSize: all.length });
+    }
+
+        return err('Unknown action.', 400);
+
+  } catch (e) {
+    return err(e.message || 'Unexpected server error.');
+  }
+};
