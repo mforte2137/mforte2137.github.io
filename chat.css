@@ -546,6 +546,22 @@ html, body {
 }
 
 /* =============================================
+   WRITE ARTICLE PANEL
+============================================= */
+.write-article-body {
+  padding: 16px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.write-article-hint {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+
+/* =============================================
    DOCS TAB — SECTIONS
 ============================================= */
 .docs-section-label {
