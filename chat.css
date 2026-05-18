@@ -475,12 +475,32 @@ html, body {
 .doc-gap-block.hidden { display: none; }
 
 .doc-gap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--amber);
   margin-bottom: 8px;
+}
+
+.copy-btn-gap {
+  border-color: rgba(184, 122, 0, 0.3);
+  color: var(--amber);
+  font-size: 10px;
+  padding: 3px 10px;
+}
+
+.copy-btn-gap:hover {
+  border-color: var(--amber) !important;
+  color: var(--amber) !important;
+}
+
+.copy-btn-gap.copied {
+  border-color: var(--green) !important;
+  color: var(--green) !important;
 }
 
 .doc-gap-text {
