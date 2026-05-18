@@ -226,6 +226,41 @@
               </div>
             </div>
             <div class="output-text" id="docsSearchOutputText"></div>
+            <div class="doc-gap-block hidden" id="docsSearchGap">
+              <div class="doc-gap-header">
+                <span>The Gap</span>
+                <button class="copy-btn copy-btn-gap" data-target="docsSearchGapText">Copy gap</button>
+              </div>
+              <div class="doc-gap-text" id="docsSearchGapText"></div>
+            </div>
+          </div>
+
+          <!-- Write Article -->
+          <div class="output-block hidden" id="writeArticlePanel">
+            <div class="output-header">
+              <span class="output-label">Write KB Article</span>
+            </div>
+            <div class="write-article-body">
+              <p class="write-article-hint">Optionally describe what you know about this feature — how it works, where to find it, what it does. Leave blank to let AI draft from the gap description alone.</p>
+              <textarea class="field-textarea short" id="writeArticleContext" placeholder="e.g. 'Users and Devices is found under Whitespace settings. It controls whether Whitespace counts per-user or per-device licences when calculating coverage gaps...'"></textarea>
+              <div class="input-row" style="margin-top:12px;">
+                <div></div>
+                <button class="btn-primary" id="writeArticleBtn">
+                  <span class="btn-text">Draft Article</span>
+                  <span class="btn-loader hidden">...</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="output-block hidden" id="articleOutput">
+            <div class="output-header">
+              <span class="output-label">Draft KB Article</span>
+              <div class="output-actions">
+                <button class="copy-btn" data-target="articleOutputText">Copy article</button>
+              </div>
+            </div>
+            <div class="output-text" id="articleOutputText"></div>
           </div>
 
           <div class="docs-divider"></div>
