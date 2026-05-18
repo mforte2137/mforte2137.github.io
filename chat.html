@@ -1,610 +1,347 @@
-/* =============================================
-   SALESBUILDR SUPPORT TOOL
-   chat.js
-============================================= */
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Salesbuildr Support Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="chat.css" />
+</head>
+<body>
 
-// ─── API PROXY ────────────────────────────────
-// Calls go to the Netlify function which holds the key server-side.
-// No API key needed in the frontend code.
+  <div class="app">
 
-// ─── DEFAULT INSTRUCTIONS ────────────────────
-const DEFAULT_INSTRUCTIONS = `You are a support assistant for Salesbuildr, a B2B sales platform for MSPs and IT resellers.
-
-PRODUCT CONTEXT:
-Salesbuildr helps managed service providers and IT resellers create quotes, manage opportunities, connect to distributors, and give customers a self-service storefront. The main modules are: Opportunities, Quotes, Products, Storefront, Whitespace, Post-Sale, Companies, Contacts, Distributors, Integrations, and Admin.
-
-Documentation is at https://help.salesbuildr.com/
-
-RULES FOR ALL RESPONSES:
-- Never use double dashes (--) anywhere in your output. This is a clear sign of AI writing.
-- Write in a natural, direct, human tone. Avoid AI-sounding phrases and corporate filler.
-- Never use customer names or end-customer data unless absolutely necessary.
-- When referring to the customer in tickets, they should be able to refer to themselves as "We".
-- Check the documentation at help.salesbuildr.com if a customer asks something that is clearly explained there, and reference the relevant article.
-
-TICKET FORMATTING:
-- Bug titles follow the pattern: [Area]: [Short description]
-  Example: "Opportunity: UDF value not persisted on opportunity creation - requires second save"
-- Add a blank line after every element (description, steps to reproduce, expected behaviour, impact, recording link).
-- Avoid dense blocks of text. Keep it scannable.
-- Do not include customer names or end-customer data.
-
-DOCUMENTATION GAPS:
-- When a support case required explaining platform behaviour not clearly documented, flag the gap.
-- Always check the relevant help article at help.salesbuildr.com before suggesting updates.
-- Format gap reports as:
-  Article title + URL
-  Where: exact location within the article
-  What to write: full copy-ready insertion text, matching the article's tone and heading style.`;
-
-// ─── STATE ────────────────────────────────────
-let instructions = localStorage.getItem('sb_instructions') || DEFAULT_INSTRUCTIONS;
-
-// ─── HISTORY ──────────────────────────────────
-const HISTORY_KEY = 'sb_history';
-const HISTORY_MAX = 10;
-
-function loadHistory() {
-  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
-  catch { return []; }
-}
-
-function saveToHistory(type, label, text) {
-  const history = loadHistory();
-  history.unshift({
-    id:    Date.now(),
-    type,
-    label,
-    text,
-    time:  new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
-  });
-  if (history.length > HISTORY_MAX) history.splice(HISTORY_MAX);
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-}
-
-function renderHistory() {
-  const history = loadHistory();
-  const list    = document.getElementById('historyList');
-  if (!history.length) {
-    list.innerHTML = '<div class="history-empty">No history yet. Outputs will appear here.</div>';
-    return;
-  }
-  list.innerHTML = history.map(item => `
-    <div class="history-item" data-id="${item.id}">
-      <div class="history-item-meta">
-        <span class="history-item-type">${item.type}</span>
-        <span class="history-item-time">${item.time}</span>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-dot"></span>
+        <span class="brand-name">Support<br/>Tool</span>
       </div>
-      <div class="history-item-preview">${item.label}</div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="reply">
+          <span class="nav-icon">↩</span>
+          <span class="nav-label">Reply</span>
+        </button>
+        <button class="nav-item" data-tab="ticket">
+          <span class="nav-icon">⬡</span>
+          <span class="nav-label">Ticket</span>
+        </button>
+        <button class="nav-item" data-tab="docs">
+          <span class="nav-icon">◎</span>
+          <span class="nav-label">Docs</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <button class="settings-btn" id="historyBtn">
+          <span>◷</span>
+          <span>History</span>
+        </button>
+        <button class="settings-btn" id="settingsBtn">
+          <span>⚙</span>
+          <span>Instructions</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main">
+
+      <!-- REPLY TAB -->
+      <section class="tab-panel active" id="tab-reply">
+        <div class="panel-header">
+          <div class="panel-header-row">
+            <div>
+              <h1 class="panel-title">Draft Reply</h1>
+              <p class="panel-subtitle">Paste a customer conversation and get a ready-to-send response.</p>
+            </div>
+            <button class="btn-clear" id="replyClearBtn">Clear</button>
+          </div>
+        </div>
+
+        <div class="panel-body">
+          <div class="input-group">
+            <label class="field-label">Conversation</label>
+            <textarea class="field-textarea tall" id="replyConversation" placeholder="Paste the customer conversation here..."></textarea>
+          </div>
+
+          <div class="input-group">
+            <label class="field-label">Context notes <span class="field-optional">(optional)</span></label>
+            <textarea class="field-textarea short" id="replyContext" placeholder="Any extra framing — e.g. 'customer is on trial', 'this is a repeat issue'..."></textarea>
+          </div>
+
+          <div class="input-row">
+            <div class="input-group inline">
+              <label class="field-label">Tone</label>
+              <select class="field-select" id="replyTone">
+                <option value="standard">Standard</option>
+                <option value="brief">Brief</option>
+                <option value="detailed">Detailed</option>
+              </select>
+            </div>
+            <button class="btn-primary" id="replyBtn">
+              <span class="btn-text">Generate Reply</span>
+              <span class="btn-loader hidden">...</span>
+            </button>
+          </div>
+
+          <div class="output-block hidden" id="replyOutput">
+            <div class="output-header">
+              <span class="output-label">Draft Response</span>
+              <div class="output-actions">
+                <button class="copy-btn" data-target="replyOutputText">Copy</button>
+              </div>
+            </div>
+            <div class="output-text" id="replyOutputText"></div>
+            <div class="doc-gap-block hidden" id="replyDocGap">
+              <div class="doc-gap-header">
+                <span>Documentation Gap Detected</span>
+                <button class="copy-btn copy-btn-gap" data-target="replyDocGapText">Copy</button>
+              </div>
+              <div class="doc-gap-text" id="replyDocGapText"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TICKET TAB -->
+      <section class="tab-panel" id="tab-ticket">
+        <div class="panel-header">
+          <div class="panel-header-row">
+            <div>
+              <h1 class="panel-title">Draft Ticket</h1>
+              <p class="panel-subtitle">Create a Jira-ready bug or feature request ticket.</p>
+            </div>
+            <button class="btn-clear" id="ticketClearBtn">Clear</button>
+          </div>
+        </div>
+
+        <div class="panel-body">
+          <div class="input-row flush">
+            <label class="field-label">Type</label>
+            <div class="toggle-group">
+              <button class="toggle-btn active" data-type="bug">Bug</button>
+              <button class="toggle-btn" data-type="feature">Feature Request</button>
+            </div>
+          </div>
+          <input type="hidden" id="ticketType" value="bug" />
+
+          <div class="input-group">
+            <label class="field-label">Area</label>
+            <select class="field-select" id="ticketArea">
+              <option value="">Select area...</option>
+              <option>Opportunities</option>
+              <option>Quotes</option>
+              <option>Products</option>
+              <option>Storefront</option>
+              <option>Whitespace</option>
+              <option>Post-Sale</option>
+              <option>Companies</option>
+              <option>Contacts</option>
+              <option>Distributors</option>
+              <option>Integrations</option>
+              <option>Admin</option>
+              <option>Dashboard</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label class="field-label">Short description</label>
+            <input class="field-input" id="ticketShortDesc" type="text" placeholder="e.g. UDF value not persisted on opportunity creation" />
+          </div>
+
+          <div class="input-group">
+            <label class="field-label">Details / conversation</label>
+            <textarea class="field-textarea tall" id="ticketDetails" placeholder="Paste the conversation or describe the issue in detail..."></textarea>
+          </div>
+
+          <div class="input-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="ticketAlsoReply" />
+              <span>Also draft a customer reply</span>
+            </label>
+            <button class="btn-primary" id="ticketBtn">
+              <span class="btn-text">Generate Ticket</span>
+              <span class="btn-loader hidden">...</span>
+            </button>
+          </div>
+
+          <div class="output-block hidden" id="ticketOutput">
+            <div class="output-header">
+              <span class="output-label">Ticket Draft</span>
+              <div class="output-actions">
+                <button class="copy-btn" data-target="ticketOutputText">Copy</button>
+              </div>
+            </div>
+            <div class="output-text" id="ticketOutputText"></div>
+          </div>
+
+          <div class="output-block hidden" id="ticketReplyOutput">
+            <div class="output-header">
+              <span class="output-label">Customer Reply</span>
+              <div class="output-actions">
+                <button class="copy-btn" data-target="ticketReplyOutputText">Copy</button>
+              </div>
+            </div>
+            <div class="output-text" id="ticketReplyOutputText"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DOCS TAB -->
+      <section class="tab-panel" id="tab-docs">
+        <div class="panel-header">
+          <div class="panel-header-row">
+            <div>
+              <h1 class="panel-title">Docs</h1>
+              <p class="panel-subtitle">Search for existing documentation or detect gaps in coverage.</p>
+            </div>
+            <button class="btn-clear" id="docsClearBtn">Clear</button>
+          </div>
+        </div>
+
+        <div class="panel-body">
+
+          <!-- Doc Search -->
+          <div class="docs-section-label">Search Documentation</div>
+          <div class="input-group">
+            <label class="field-label">Topic or question</label>
+            <input class="field-input" id="docsSearchQuery" type="text" placeholder="e.g. 'users and device settings', 'how to create a quote'..." />
+          </div>
+          <div class="input-row">
+            <div></div>
+            <button class="btn-primary" id="docsSearchBtn">
+              <span class="btn-text">Search Docs</span>
+              <span class="btn-loader hidden">...</span>
+            </button>
+          </div>
+          <div class="output-block hidden" id="docsSearchOutput">
+            <div class="output-header">
+              <span class="output-label">Search Results</span>
+              <div class="output-actions">
+                <button class="copy-btn" data-target="docsSearchOutputText">Copy</button>
+              </div>
+            </div>
+            <div class="output-text" id="docsSearchOutputText"></div>
+            <div class="doc-gap-block hidden" id="docsSearchGap">
+              <div class="doc-gap-header">
+                <span>The Gap</span>
+                <button class="copy-btn copy-btn-gap" data-target="docsSearchGapText">Copy gap</button>
+              </div>
+              <div class="doc-gap-text" id="docsSearchGapText"></div>
+            </div>
+          </div>
+
+          <!-- Write Article -->
+          <div class="output-block hidden" id="writeArticlePanel">
+            <div class="output-header">
+              <span class="output-label">Write KB Article</span>
+            </div>
+            <div class="write-article-body">
+              <p class="write-article-hint">Optionally describe what you know about this feature — how it works, where to find it, what it does. Leave blank to let AI draft from the gap description alone.</p>
+              <textarea class="field-textarea short" id="writeArticleContext" placeholder="e.g. 'Users and Devices is found under Whitespace settings. It controls whether Whitespace counts per-user or per-device licences when calculating coverage gaps...'"></textarea>
+              <div class="input-row" style="margin-top:12px;">
+                <div></div>
+                <button class="btn-primary" id="writeArticleBtn">
+                  <span class="btn-text">Draft Article</span>
+                  <span class="btn-loader hidden">...</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="output-block hidden" id="articleOutput">
+            <div class="output-header">
+              <span class="output-label">Draft KB Article</span>
+              <div class="output-actions">
+                <button class="copy-btn" data-target="articleOutputText">Copy article</button>
+              </div>
+            </div>
+            <div class="output-text" id="articleOutputText"></div>
+          </div>
+
+          <div class="docs-divider"></div>
+
+          <!-- Gap Detection -->
+          <div class="docs-section-label">Detect Documentation Gap</div>
+          <div class="input-group">
+            <label class="field-label">Support explanation</label>
+            <textarea class="field-textarea tall" id="docsConversation" placeholder="Paste the explanation or support case where you had to fill in a gap the docs didn't cover..."></textarea>
+          </div>
+
+          <div class="input-group">
+            <label class="field-label">Suspected article <span class="field-optional">(optional)</span></label>
+            <input class="field-input" id="docsArticleUrl" type="text" placeholder="https://help.salesbuildr.com/..." />
+          </div>
+
+          <div class="input-row">
+            <div></div>
+            <button class="btn-primary" id="docsBtn">
+              <span class="btn-text">Detect Gap</span>
+              <span class="btn-loader hidden">...</span>
+            </button>
+          </div>
+
+          <div class="output-block hidden" id="docsOutput">
+            <div class="output-header">
+              <span class="output-label">Gap Report</span>
+              <div class="output-actions">
+                <button class="copy-btn" data-target="docsOutputText">Copy</button>
+              </div>
+            </div>
+            <div class="output-text" id="docsOutputText"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- History drawer -->
+  <div class="drawer-overlay hidden" id="historyOverlay"></div>
+  <aside class="drawer hidden" id="historyDrawer">
+    <div class="drawer-header">
+      <h2 class="drawer-title">History</h2>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-secondary" id="historyClearAll">Clear all</button>
+        <button class="drawer-close" id="historyClose">✕</button>
+      </div>
     </div>
-  `).join('');
-
-  list.querySelectorAll('.history-item').forEach(el => {
-    el.addEventListener('click', () => {
-      const id   = parseInt(el.dataset.id);
-      const item = loadHistory().find(h => h.id === id);
-      if (!item) return;
-      openHistoryDetail(item);
-    });
-  });
-}
-
-// ─── TABS ─────────────────────────────────────
-document.querySelectorAll('.nav-item').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-  });
-});
-
-// ─── TICKET TYPE TOGGLE ───────────────────────
-document.querySelectorAll('.toggle-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('ticketType').value = btn.dataset.type;
-  });
-});
-
-// ─── CLEAR BUTTONS ────────────────────────────
-document.getElementById('replyClearBtn').addEventListener('click', () => {
-  document.getElementById('replyConversation').value = '';
-  document.getElementById('replyContext').value = '';
-  document.getElementById('replyTone').value = 'standard';
-  document.getElementById('replyOutput').classList.add('hidden');
-  document.getElementById('replyDocGap').classList.add('hidden');
-});
-
-document.getElementById('ticketClearBtn').addEventListener('click', () => {
-  document.getElementById('ticketArea').value = '';
-  document.getElementById('ticketShortDesc').value = '';
-  document.getElementById('ticketDetails').value = '';
-  document.getElementById('ticketAlsoReply').checked = false;
-  document.getElementById('ticketOutput').classList.add('hidden');
-  document.getElementById('ticketReplyOutput').classList.add('hidden');
-  // Reset toggle to Bug
-  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector('.toggle-btn[data-type="bug"]').classList.add('active');
-  document.getElementById('ticketType').value = 'bug';
-});
-
-document.getElementById('docsClearBtn').addEventListener('click', () => {
-  document.getElementById('docsSearchQuery').value = '';
-  document.getElementById('docsConversation').value = '';
-  document.getElementById('docsArticleUrl').value = '';
-  document.getElementById('docsSearchOutput').classList.add('hidden');
-  document.getElementById('docsOutput').classList.add('hidden');
-});
-
-// ─── HISTORY DRAWER ───────────────────────────
-const historyDrawer  = document.getElementById('historyDrawer');
-const historyOverlay = document.getElementById('historyOverlay');
-
-function openHistoryDrawer() {
-  renderHistory();
-  historyDrawer.classList.remove('hidden');
-  historyOverlay.classList.remove('hidden');
-}
-
-function closeHistoryDrawer() {
-  historyDrawer.classList.add('hidden');
-  historyOverlay.classList.add('hidden');
-}
-
-document.getElementById('historyBtn').addEventListener('click', openHistoryDrawer);
-document.getElementById('historyClose').addEventListener('click', closeHistoryDrawer);
-document.getElementById('historyOverlay').addEventListener('click', closeHistoryDrawer);
-
-document.getElementById('historyClearAll').addEventListener('click', () => {
-  if (confirm('Clear all history?')) {
-    localStorage.removeItem(HISTORY_KEY);
-    renderHistory();
-  }
-});
-
-// ─── HISTORY DETAIL DRAWER ────────────────────
-const historyDetailDrawer  = document.getElementById('historyDetailDrawer');
-const historyDetailOverlay = document.getElementById('historyDetailOverlay');
-
-function openHistoryDetail(item) {
-  document.getElementById('historyDetailTitle').textContent = item.type + ' — ' + item.time;
-  document.getElementById('historyDetailText').textContent  = item.text;
-  historyDetailDrawer.classList.remove('hidden');
-  historyDetailOverlay.classList.remove('hidden');
-}
-
-function closeHistoryDetail() {
-  historyDetailDrawer.classList.add('hidden');
-  historyDetailOverlay.classList.add('hidden');
-}
-
-document.getElementById('historyDetailClose').addEventListener('click', closeHistoryDetail);
-document.getElementById('historyDetailOverlay').addEventListener('click', closeHistoryDetail);
-
-document.getElementById('historyDetailCopy').addEventListener('click', () => {
-  const text = document.getElementById('historyDetailText').textContent;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById('historyDetailCopy');
-    btn.textContent = 'Copied!';
-    btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
-  });
-});
-
-// ─── INSTRUCTIONS DRAWER ─────────────────────
-const drawer          = document.getElementById('instructionsDrawer');
-const drawerOverlay   = document.getElementById('drawerOverlay');
-const drawerClose     = document.getElementById('drawerClose');
-const settingsBtn     = document.getElementById('settingsBtn');
-const instructionsTxt = document.getElementById('instructionsText');
-const instructionsSave  = document.getElementById('instructionsSave');
-const instructionsReset = document.getElementById('instructionsReset');
-
-function openDrawer() {
-  instructionsTxt.value = instructions;
-  drawer.classList.remove('hidden');
-  drawerOverlay.classList.remove('hidden');
-}
-
-function closeDrawer() {
-  drawer.classList.add('hidden');
-  drawerOverlay.classList.add('hidden');
-}
-
-settingsBtn.addEventListener('click', openDrawer);
-drawerClose.addEventListener('click', closeDrawer);
-drawerOverlay.addEventListener('click', closeDrawer);
-
-instructionsSave.addEventListener('click', () => {
-  instructions = instructionsTxt.value;
-  localStorage.setItem('sb_instructions', instructions);
-  closeDrawer();
-});
-
-instructionsReset.addEventListener('click', () => {
-  if (confirm('Reset instructions to default?')) {
-    instructions = DEFAULT_INSTRUCTIONS;
-    localStorage.setItem('sb_instructions', instructions);
-    instructionsTxt.value = instructions;
-  }
-});
-
-// ─── COPY BUTTONS ─────────────────────────────
-document.querySelectorAll('.copy-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const target = document.getElementById(btn.dataset.target);
-    if (!target) return;
-    navigator.clipboard.writeText(target.innerText).then(() => {
-      btn.textContent = 'Copied!';
-      btn.classList.add('copied');
-      setTimeout(() => {
-        btn.textContent = 'Copy';
-        btn.classList.remove('copied');
-      }, 2000);
-    });
-  });
-});
-
-// ─── API CALL ─────────────────────────────────
-async function callClaude(userPrompt) {
-  const response = await fetch('/.netlify/functions/claude', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 1500,
-      system: instructions,
-      messages: [{ role: 'user', content: userPrompt }]
-    })
-  });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.error?.message || `API error ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data.content?.[0]?.text || '';
-}
-
-// ─── LOADING STATE ────────────────────────────
-function setLoading(btn, loading) {
-  const textEl   = btn.querySelector('.btn-text');
-  const loaderEl = btn.querySelector('.btn-loader');
-  btn.disabled = loading;
-  textEl.classList.toggle('hidden', loading);
-  loaderEl.classList.toggle('hidden', !loading);
-}
-
-// ─── REPLY TAB ────────────────────────────────
-document.getElementById('replyBtn').addEventListener('click', async () => {
-  const conversation = document.getElementById('replyConversation').value.trim();
-  const context      = document.getElementById('replyContext').value.trim();
-  const tone         = document.getElementById('replyTone').value;
-  const btn          = document.getElementById('replyBtn');
-
-  if (!conversation) { alert('Please paste a conversation first.'); return; }
-
-  const toneMap = {
-    brief:    'Keep the reply concise — 2 to 3 short paragraphs maximum.',
-    standard: 'Write a clear, complete reply at a natural length.',
-    detailed: 'Write a thorough, detailed reply covering all aspects of the issue.'
-  };
-
-  const prompt = `A customer has sent the following conversation. Draft a reply I can send to them.
-
-CONVERSATION:
-${conversation}
-${context ? `\nEXTRA CONTEXT:\n${context}` : ''}
-
-TONE: ${toneMap[tone]}
-
-Also, if this conversation reveals a gap in the Salesbuildr documentation (something the docs don't clearly explain), include a DOCUMENTATION GAP section at the end using exactly this format:
-
-DOCUMENTATION GAP DETECTED
-Article: [title and URL]
-Where: [exact location in the article]
-What to write: [full copy-ready insertion text]
-
-If there is no documentation gap, do not include that section at all.`;
-
-  setLoading(btn, true);
-
-  try {
-    const result = await callClaude(prompt);
-
-    const gapMarker = 'DOCUMENTATION GAP DETECTED';
-    const gapIndex  = result.indexOf(gapMarker);
-    let replyText = result;
-    let gapText   = '';
-
-    if (gapIndex !== -1) {
-      replyText = result.slice(0, gapIndex).trim();
-      gapText   = result.slice(gapIndex + gapMarker.length).trim();
-    }
-
-    const outputBlock = document.getElementById('replyOutput');
-    const outputText  = document.getElementById('replyOutputText');
-    const docGapBlock = document.getElementById('replyDocGap');
-    const docGapText  = document.getElementById('replyDocGapText');
-
-    outputText.innerText = replyText;
-    outputBlock.classList.remove('hidden');
-
-    if (gapText) {
-      docGapText.innerText = gapText;
-      docGapBlock.classList.remove('hidden');
-    } else {
-      docGapBlock.classList.add('hidden');
-    }
-
-    outputBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    saveToHistory('Reply', conversation.slice(0, 80) + (conversation.length > 80 ? '...' : ''), replyText);
-
-  } catch (e) {
-    alert('Error: ' + e.message);
-  } finally {
-    setLoading(btn, false);
-  }
-});
-
-// ─── TICKET TAB ───────────────────────────────
-document.getElementById('ticketBtn').addEventListener('click', async () => {
-  const type       = document.getElementById('ticketType').value;
-  const area       = document.getElementById('ticketArea').value;
-  const shortDesc  = document.getElementById('ticketShortDesc').value.trim();
-  const details    = document.getElementById('ticketDetails').value.trim();
-  const alsoReply  = document.getElementById('ticketAlsoReply').checked;
-  const btn        = document.getElementById('ticketBtn');
-
-  if (!area)      { alert('Please select an area.'); return; }
-  if (!shortDesc) { alert('Please enter a short description.'); return; }
-  if (!details)   { alert('Please provide details or paste a conversation.'); return; }
-
-  const typeLabel = type === 'bug' ? 'Bug' : 'Feature Request';
-
-  const prompt = `Draft a Jira ${typeLabel} ticket based on the following.
-
-Area: ${area}
-Short description: ${shortDesc}
-Details / conversation:
-${details}
-
-FORMAT THE TICKET EXACTLY AS FOLLOWS:
-
-Title: ${area}: ${shortDesc}
-
-Type: ${typeLabel}
-
-Description:
-[2-3 sentence overview of the issue or request, written from the customer's perspective. The customer should be able to refer to themselves as "We".]
-
-${type === 'bug' ? `Steps to Reproduce:
-[Numbered steps]
-
-Expected Behaviour:
-[What should happen]
-
-Actual Behaviour:
-[What actually happens]
-
-Impact:
-[Business or workflow impact]` : `Use Case:
-[Why this is needed, from the customer's perspective]
-
-Proposed Solution:
-[What the customer is asking for]
-
-Expected Benefit:
-[What would improve for the customer]`}
-
-Leave a blank line after every section. Do not include customer names or end-customer data.
-${alsoReply ? '\nAfter the ticket, add a section clearly separated by the marker CUSTOMER_REPLY_START, then write a reply I can send to the customer about this issue or request.' : ''}`;
-
-  setLoading(btn, true);
-
-  try {
-    const result = await callClaude(prompt);
-
-    const ticketOutput     = document.getElementById('ticketOutput');
-    const ticketOutputText = document.getElementById('ticketOutputText');
-    const replyOutput      = document.getElementById('ticketReplyOutput');
-    const replyOutputText  = document.getElementById('ticketReplyOutputText');
-
-    const replyMarker = 'CUSTOMER_REPLY_START';
-    const replyIndex  = result.indexOf(replyMarker);
-
-    let ticketText = result;
-    let replyText  = '';
-
-    if (replyIndex !== -1) {
-      ticketText = result.slice(0, replyIndex).trim();
-      replyText  = result.slice(replyIndex + replyMarker.length).trim();
-    }
-
-    ticketOutputText.innerText = ticketText;
-    ticketOutput.classList.remove('hidden');
-
-    if (alsoReply && replyText) {
-      replyOutputText.innerText = replyText;
-      replyOutput.classList.remove('hidden');
-    } else {
-      replyOutput.classList.add('hidden');
-    }
-
-    ticketOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    saveToHistory('Ticket (' + typeLabel + ')', area + ': ' + shortDesc, ticketText);
-
-  } catch (e) {
-    alert('Error: ' + e.message);
-  } finally {
-    setLoading(btn, false);
-  }
-});
-
-// ─── DOCS SEARCH ──────────────────────────────
-document.getElementById('docsSearchBtn').addEventListener('click', async () => {
-  const query = document.getElementById('docsSearchQuery').value.trim();
-  const btn   = document.getElementById('docsSearchBtn');
-
-  if (!query) { alert('Please enter a topic or question to search.'); return; }
-
-  const prompt = `A support agent wants to know whether Salesbuildr's documentation covers a specific topic.
-
-QUERY: "${query}"
-
-Please check https://help.salesbuildr.com/ and tell me:
-1. Whether documentation exists on this topic
-2. The title and URL of any relevant articles
-3. A brief summary of what each article covers
-4. Whether there are any obvious gaps or things not covered
-
-If there is a documentation gap, include a section at the very end using EXACTLY this marker and format:
-
-THE GAP
-[A concise, plain-English description of what is missing from the documentation — what questions it doesn't answer, what behaviour it doesn't explain. Written so it can be forwarded to a developer or used as a brief for writing a new article.]
-
-If there is no gap, do not include the THE GAP section.
-
-Be direct and specific. If you find relevant articles, list them clearly with their URLs. If nothing exists on this topic, say so plainly.`;
-
-  setLoading(btn, true);
-
-  // Reset downstream panels
-  document.getElementById('docsSearchGap').classList.add('hidden');
-  document.getElementById('writeArticlePanel').classList.add('hidden');
-  document.getElementById('articleOutput').classList.add('hidden');
-  document.getElementById('writeArticleContext').value = '';
-
-  try {
-    const result = await callClaude(prompt);
-
-    const outputBlock = document.getElementById('docsSearchOutput');
-    const outputText  = document.getElementById('docsSearchOutputText');
-    const gapBlock    = document.getElementById('docsSearchGap');
-    const gapText     = document.getElementById('docsSearchGapText');
-    const writePanel  = document.getElementById('writeArticlePanel');
-
-    // Parse out THE GAP section
-    const gapMarker = 'THE GAP';
-    const gapIndex  = result.indexOf(gapMarker);
-    let searchText = result;
-    let gapContent = '';
-
-    if (gapIndex !== -1) {
-      searchText = result.slice(0, gapIndex).trim();
-      gapContent = result.slice(gapIndex + gapMarker.length).trim();
-    }
-
-    outputText.innerText = searchText;
-    outputBlock.classList.remove('hidden');
-
-    if (gapContent) {
-      gapText.innerText = gapContent;
-      gapBlock.classList.remove('hidden');
-      writePanel.classList.remove('hidden');
-    }
-
-    outputBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    saveToHistory('Doc Search', query, searchText + (gapContent ? '\n\nTHE GAP\n' + gapContent : ''));
-
-  } catch (e) {
-    alert('Error: ' + e.message);
-  } finally {
-    setLoading(btn, false);
-  }
-});
-
-// ─── WRITE KB ARTICLE ─────────────────────────
-document.getElementById('writeArticleBtn').addEventListener('click', async () => {
-  const gapText      = document.getElementById('docsSearchGapText').innerText.trim();
-  const searchText   = document.getElementById('docsSearchOutputText').innerText.trim();
-  const context      = document.getElementById('writeArticleContext').value.trim();
-  const query        = document.getElementById('docsSearchQuery').value.trim();
-  const btn          = document.getElementById('writeArticleBtn');
-
-  const prompt = `Write a help centre article for Salesbuildr's knowledge base on the following topic.
-
-TOPIC: ${query}
-
-DOCUMENTATION GAP (what is missing):
-${gapText}
-
-EXISTING DOCS CONTEXT:
-${searchText}
-
-${context ? `ADDITIONAL CONTEXT FROM SUPPORT AGENT:\n${context}` : 'No additional context provided — draft the article based on the gap description and your knowledge of the platform.'}
-
-Write a complete, publish-ready KB article. Follow these rules:
-- Match the tone and style of help.salesbuildr.com — clear, direct, practical
-- Use a logical structure: brief intro, then step-by-step or section-by-section explanation
-- Use ## for section headings, numbered lists for steps, bullet points for options
-- Do not use double dashes (--)
-- Do not invent specific UI details you are not certain about — if unsure, write "[confirm with dev]" as a placeholder
-- End with a note on where to find this in the platform if known
-
-Output the article only — no preamble, no meta-commentary.`;
-
-  setLoading(btn, true);
-
-  try {
-    const result = await callClaude(prompt);
-
-    const articleOutput = document.getElementById('articleOutput');
-    const articleText   = document.getElementById('articleOutputText');
-
-    articleText.innerText = result;
-    articleOutput.classList.remove('hidden');
-    articleOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    saveToHistory('KB Article Draft', query, result);
-
-  } catch (e) {
-    alert('Error: ' + e.message);
-  } finally {
-    setLoading(btn, false);
-  }
-});
-document.getElementById('docsBtn').addEventListener('click', async () => {
-  const conversation = document.getElementById('docsConversation').value.trim();
-  const articleUrl   = document.getElementById('docsArticleUrl').value.trim();
-  const btn          = document.getElementById('docsBtn');
-
-  if (!conversation) { alert('Please paste a support explanation first.'); return; }
-
-  const prompt = `A support agent had to explain platform behaviour to a customer that was not clearly covered in the Salesbuildr documentation.
-
-EXPLANATION / CASE:
-${conversation}
-
-${articleUrl ? `The suspected help article is: ${articleUrl}` : 'Check https://help.salesbuildr.com/ to find the most relevant article.'}
-
-Identify the documentation gap and provide a gap report using EXACTLY this format:
-
-Article: [title and full URL]
-Where: [exact location — e.g. "after the X section, before the Y subsection"]
-What to write: [full copy-ready insertion text, formatted consistently with the article — same heading levels, tone, and structure]
-
-If the gap spans multiple articles, address each one separately.
-Do not suggest restructuring existing content unless strictly necessary. Prefer clean insertions.`;
-
-  setLoading(btn, true);
-
-  try {
-    const result = await callClaude(prompt);
-
-    const docsOutput     = document.getElementById('docsOutput');
-    const docsOutputText = document.getElementById('docsOutputText');
-
-    docsOutputText.innerText = result;
-    docsOutput.classList.remove('hidden');
-    docsOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    saveToHistory('Doc Gap', conversation.slice(0, 80) + (conversation.length > 80 ? '...' : ''), result);
-
-  } catch (e) {
-    alert('Error: ' + e.message);
-  } finally {
-    setLoading(btn, false);
-  }
-});
+    <p class="drawer-hint">Last 10 outputs across all tabs. Click any entry to view in full.</p>
+    <div class="history-list" id="historyList"></div>
+  </aside>
+
+  <!-- History detail drawer -->
+  <div class="drawer-overlay hidden" id="historyDetailOverlay"></div>
+  <aside class="drawer hidden" id="historyDetailDrawer">
+    <div class="drawer-header">
+      <h2 class="drawer-title" id="historyDetailTitle">Entry</h2>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="copy-btn" id="historyDetailCopy">Copy</button>
+        <button class="drawer-close" id="historyDetailClose">✕</button>
+      </div>
+    </div>
+    <div class="history-detail-text" id="historyDetailText"></div>
+  </aside>
+
+  <!-- Instructions drawer -->
+  <div class="drawer-overlay hidden" id="drawerOverlay"></div>
+  <aside class="drawer hidden" id="instructionsDrawer">
+    <div class="drawer-header">
+      <h2 class="drawer-title">Instructions</h2>
+      <button class="drawer-close" id="drawerClose">✕</button>
+    </div>
+    <p class="drawer-hint">This context is sent with every request. Update it as your product knowledge grows.</p>
+    <textarea class="drawer-textarea" id="instructionsText"></textarea>
+    <div class="drawer-footer">
+      <button class="btn-secondary" id="instructionsReset">Reset to default</button>
+      <button class="btn-primary" id="instructionsSave">Save</button>
+    </div>
+  </aside>
+
+  <script src="chat.js"></script>
+</body>
+</html>
