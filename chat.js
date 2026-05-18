@@ -40,6 +40,55 @@ DOCUMENTATION GAPS:
 // ─── STATE ────────────────────────────────────
 let instructions = localStorage.getItem('sb_instructions') || DEFAULT_INSTRUCTIONS;
 
+// ─── HISTORY ──────────────────────────────────
+const HISTORY_KEY = 'sb_history';
+const HISTORY_MAX = 10;
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveToHistory(type, label, text) {
+  const history = loadHistory();
+  history.unshift({
+    id:    Date.now(),
+    type,
+    label,
+    text,
+    time:  new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+  });
+  if (history.length > HISTORY_MAX) history.splice(HISTORY_MAX);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
+
+function renderHistory() {
+  const history = loadHistory();
+  const list    = document.getElementById('historyList');
+  if (!history.length) {
+    list.innerHTML = '<div class="history-empty">No history yet. Outputs will appear here.</div>';
+    return;
+  }
+  list.innerHTML = history.map(item => `
+    <div class="history-item" data-id="${item.id}">
+      <div class="history-item-meta">
+        <span class="history-item-type">${item.type}</span>
+        <span class="history-item-time">${item.time}</span>
+      </div>
+      <div class="history-item-preview">${item.label}</div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.history-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const id   = parseInt(el.dataset.id);
+      const item = loadHistory().find(h => h.id === id);
+      if (!item) return;
+      openHistoryDetail(item);
+    });
+  });
+}
+
 // ─── TABS ─────────────────────────────────────
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -59,11 +108,96 @@ document.querySelectorAll('.toggle-btn').forEach(btn => {
   });
 });
 
+// ─── CLEAR BUTTONS ────────────────────────────
+document.getElementById('replyClearBtn').addEventListener('click', () => {
+  document.getElementById('replyConversation').value = '';
+  document.getElementById('replyContext').value = '';
+  document.getElementById('replyTone').value = 'standard';
+  document.getElementById('replyOutput').classList.add('hidden');
+  document.getElementById('replyDocGap').classList.add('hidden');
+});
+
+document.getElementById('ticketClearBtn').addEventListener('click', () => {
+  document.getElementById('ticketArea').value = '';
+  document.getElementById('ticketShortDesc').value = '';
+  document.getElementById('ticketDetails').value = '';
+  document.getElementById('ticketAlsoReply').checked = false;
+  document.getElementById('ticketOutput').classList.add('hidden');
+  document.getElementById('ticketReplyOutput').classList.add('hidden');
+  // Reset toggle to Bug
+  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.toggle-btn[data-type="bug"]').classList.add('active');
+  document.getElementById('ticketType').value = 'bug';
+});
+
+document.getElementById('docsClearBtn').addEventListener('click', () => {
+  document.getElementById('docsSearchQuery').value = '';
+  document.getElementById('docsConversation').value = '';
+  document.getElementById('docsArticleUrl').value = '';
+  document.getElementById('docsSearchOutput').classList.add('hidden');
+  document.getElementById('docsOutput').classList.add('hidden');
+});
+
+// ─── HISTORY DRAWER ───────────────────────────
+const historyDrawer  = document.getElementById('historyDrawer');
+const historyOverlay = document.getElementById('historyOverlay');
+
+function openHistoryDrawer() {
+  renderHistory();
+  historyDrawer.classList.remove('hidden');
+  historyOverlay.classList.remove('hidden');
+}
+
+function closeHistoryDrawer() {
+  historyDrawer.classList.add('hidden');
+  historyOverlay.classList.add('hidden');
+}
+
+document.getElementById('historyBtn').addEventListener('click', openHistoryDrawer);
+document.getElementById('historyClose').addEventListener('click', closeHistoryDrawer);
+document.getElementById('historyOverlay').addEventListener('click', closeHistoryDrawer);
+
+document.getElementById('historyClearAll').addEventListener('click', () => {
+  if (confirm('Clear all history?')) {
+    localStorage.removeItem(HISTORY_KEY);
+    renderHistory();
+  }
+});
+
+// ─── HISTORY DETAIL DRAWER ────────────────────
+const historyDetailDrawer  = document.getElementById('historyDetailDrawer');
+const historyDetailOverlay = document.getElementById('historyDetailOverlay');
+
+function openHistoryDetail(item) {
+  document.getElementById('historyDetailTitle').textContent = item.type + ' — ' + item.time;
+  document.getElementById('historyDetailText').textContent  = item.text;
+  historyDetailDrawer.classList.remove('hidden');
+  historyDetailOverlay.classList.remove('hidden');
+}
+
+function closeHistoryDetail() {
+  historyDetailDrawer.classList.add('hidden');
+  historyDetailOverlay.classList.add('hidden');
+}
+
+document.getElementById('historyDetailClose').addEventListener('click', closeHistoryDetail);
+document.getElementById('historyDetailOverlay').addEventListener('click', closeHistoryDetail);
+
+document.getElementById('historyDetailCopy').addEventListener('click', () => {
+  const text = document.getElementById('historyDetailText').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('historyDetailCopy');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+});
+
 // ─── INSTRUCTIONS DRAWER ─────────────────────
-const drawer         = document.getElementById('instructionsDrawer');
-const drawerOverlay  = document.getElementById('drawerOverlay');
-const drawerClose    = document.getElementById('drawerClose');
-const settingsBtn    = document.getElementById('settingsBtn');
+const drawer          = document.getElementById('instructionsDrawer');
+const drawerOverlay   = document.getElementById('drawerOverlay');
+const drawerClose     = document.getElementById('drawerClose');
+const settingsBtn     = document.getElementById('settingsBtn');
 const instructionsTxt = document.getElementById('instructionsText');
 const instructionsSave  = document.getElementById('instructionsSave');
 const instructionsReset = document.getElementById('instructionsReset');
@@ -117,9 +251,7 @@ document.querySelectorAll('.copy-btn').forEach(btn => {
 async function callClaude(userPrompt) {
   const response = await fetch('/.netlify/functions/claude', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'claude-sonnet-4-5',
       max_tokens: 1500,
@@ -183,7 +315,6 @@ If there is no documentation gap, do not include that section at all.`;
   try {
     const result = await callClaude(prompt);
 
-    // Split out doc gap if present
     const gapMarker = 'DOCUMENTATION GAP DETECTED';
     const gapIndex  = result.indexOf(gapMarker);
     let replyText = result;
@@ -194,10 +325,10 @@ If there is no documentation gap, do not include that section at all.`;
       gapText   = result.slice(gapIndex + gapMarker.length).trim();
     }
 
-    const outputBlock   = document.getElementById('replyOutput');
-    const outputText    = document.getElementById('replyOutputText');
-    const docGapBlock   = document.getElementById('replyDocGap');
-    const docGapText    = document.getElementById('replyDocGapText');
+    const outputBlock = document.getElementById('replyOutput');
+    const outputText  = document.getElementById('replyOutputText');
+    const docGapBlock = document.getElementById('replyDocGap');
+    const docGapText  = document.getElementById('replyDocGapText');
 
     outputText.innerText = replyText;
     outputBlock.classList.remove('hidden');
@@ -210,6 +341,8 @@ If there is no documentation gap, do not include that section at all.`;
     }
 
     outputBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    saveToHistory('Reply', conversation.slice(0, 80) + (conversation.length > 80 ? '...' : ''), replyText);
+
   } catch (e) {
     alert('Error: ' + e.message);
   } finally {
@@ -275,10 +408,10 @@ ${alsoReply ? '\nAfter the ticket, add a section clearly separated by the marker
   try {
     const result = await callClaude(prompt);
 
-    const ticketOutput      = document.getElementById('ticketOutput');
-    const ticketOutputText  = document.getElementById('ticketOutputText');
-    const replyOutput       = document.getElementById('ticketReplyOutput');
-    const replyOutputText   = document.getElementById('ticketReplyOutputText');
+    const ticketOutput     = document.getElementById('ticketOutput');
+    const ticketOutputText = document.getElementById('ticketOutputText');
+    const replyOutput      = document.getElementById('ticketReplyOutput');
+    const replyOutputText  = document.getElementById('ticketReplyOutputText');
 
     const replyMarker = 'CUSTOMER_REPLY_START';
     const replyIndex  = result.indexOf(replyMarker);
@@ -302,6 +435,8 @@ ${alsoReply ? '\nAfter the ticket, add a section clearly separated by the marker
     }
 
     ticketOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    saveToHistory('Ticket (' + typeLabel + ')', area + ': ' + shortDesc, ticketText);
+
   } catch (e) {
     alert('Error: ' + e.message);
   } finally {
@@ -309,7 +444,46 @@ ${alsoReply ? '\nAfter the ticket, add a section clearly separated by the marker
   }
 });
 
-// ─── DOCS TAB ─────────────────────────────────
+// ─── DOCS SEARCH ──────────────────────────────
+document.getElementById('docsSearchBtn').addEventListener('click', async () => {
+  const query = document.getElementById('docsSearchQuery').value.trim();
+  const btn   = document.getElementById('docsSearchBtn');
+
+  if (!query) { alert('Please enter a topic or question to search.'); return; }
+
+  const prompt = `A support agent wants to know whether Salesbuildr's documentation covers a specific topic.
+
+QUERY: "${query}"
+
+Please check https://help.salesbuildr.com/ and tell me:
+1. Whether documentation exists on this topic
+2. The title and URL of any relevant articles
+3. A brief summary of what each article covers
+4. Whether there are any obvious gaps or things not covered
+
+Be direct and specific. If you find relevant articles, list them clearly with their URLs. If nothing exists on this topic, say so plainly.`;
+
+  setLoading(btn, true);
+
+  try {
+    const result = await callClaude(prompt);
+
+    const outputBlock = document.getElementById('docsSearchOutput');
+    const outputText  = document.getElementById('docsSearchOutputText');
+
+    outputText.innerText = result;
+    outputBlock.classList.remove('hidden');
+    outputBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    saveToHistory('Doc Search', query, result);
+
+  } catch (e) {
+    alert('Error: ' + e.message);
+  } finally {
+    setLoading(btn, false);
+  }
+});
+
+// ─── DOCS GAP DETECTION ───────────────────────
 document.getElementById('docsBtn').addEventListener('click', async () => {
   const conversation = document.getElementById('docsConversation').value.trim();
   const articleUrl   = document.getElementById('docsArticleUrl').value.trim();
@@ -337,12 +511,15 @@ Do not suggest restructuring existing content unless strictly necessary. Prefer 
 
   try {
     const result = await callClaude(prompt);
+
     const docsOutput     = document.getElementById('docsOutput');
     const docsOutputText = document.getElementById('docsOutputText');
 
     docsOutputText.innerText = result;
     docsOutput.classList.remove('hidden');
     docsOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    saveToHistory('Doc Gap', conversation.slice(0, 80) + (conversation.length > 80 ? '...' : ''), result);
+
   } catch (e) {
     alert('Error: ' + e.message);
   } finally {
