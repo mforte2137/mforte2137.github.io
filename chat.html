@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Salesbuildr Support Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="chat.css" />
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-dot"></span>
+        <span class="brand-name">Support<br/>Tool</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="reply">
+          <span class="nav-icon">↩</span>
+          <span class="nav-label">Reply</span>
+        </button>
+        <button class="nav-item" data-tab="ticket">
+          <span class="nav-icon">⬡</span>
+          <span class="nav-label">Ticket</span>
+        </button>
+        <button class="nav-item" data-tab="docs">
+          <span class="nav-icon">◎</span>
+          <span class="nav-label">Docs</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <button class="settings-btn" id="settingsBtn" title="Instructions">
+          <span>⚙</span>
+          <span>Instructions</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main">
+
+      <!-- REPLY TAB -->
+      <section class="tab-panel active" id="tab-reply">
+        <div class="panel-header">
+          <h1 class="panel-title">Draft Reply</h1>
+          <p class="panel-subtitle">Paste a customer conversation and get a ready-to-send response.</p>
+        </div>
+
+        <div class="panel-body">
+          <div class="input-group">
+            <label class="field-label">Conversation</label>
+            <textarea class="field-textarea tall" id="replyConversation" placeholder="Paste the customer conversation here..."></textarea>
+          </div>
+
+          <div class="input-group">
+            <label class="field-label">Context notes <span class="field-optional">(optional)</span></label>
+            <textarea class="field-textarea short" id="replyContext" placeholder="Any extra framing — e.g. 'customer is on trial', 'this is a repeat issue'..."></textarea>
+          </div>
+
+          <div class="input-row">
+            <div class="input-group inline">
+              <label class="field-label">Tone</label>
+              <select class="field-select" id="replyTone">
+                <option value="standard">Standard</option>
+                <option value="brief">Brief</option>
+                <option value="detailed">Detailed</option>
+              </select>
+            </div>
+            <button class="btn-primary" id="replyBtn">
+              <span class="btn-text">Generate Reply</span>
+              <span class="btn-loader hidden">...</span>
+            </button>
+          </div>
+
+          <div class="output-block hidden" id="replyOutput">
+            <div class="output-header">
+              <span class="output-label">Draft Response</span>
+              <div class="output-actions">
+                <button class="copy-btn" data-target="replyOutputText">Copy</button>
+              </div>
+            </div>
+            <div class="output-text" id="replyOutputText"></div>
+            <div class="doc-gap-block hidden" id="replyDocGap">
+              <div class="doc-gap-header">Documentation Gap Detected</div>
+              <div class="doc-gap-text" id="replyDocGapText"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TICKET TAB -->
+      <section class="tab-panel" id="tab-ticket">
+        <div class="panel-header">
+          <h1 class="panel-title">Draft Ticket</h1>
+          <p class="panel-subtitle">Create a Jira-ready bug or feature request ticket.</p>
+        </div>
+
+        <div class="panel-body">
+          <div class="input-row flush">
+            <label class="field-label">Type</label>
+            <div class="toggle-group">
+              <button class="toggle-btn active" data-type="bug">Bug</button>
+              <button class="toggle-btn" data-type="feature">Feature Request</button>
+            </div>
+          </div>
+          <input type="hidden" id="ticketType" value="bug" />
+
+          <div class="input-group">
+            <label class="field-label">Area</label>
+            <select class="field-select" id="ticketArea">
+              <option value="">Select area...</option>
+              <option>Opportunities</option>
+              <option>Quotes</option>
+              <option>Products</option>
+              <option>Storefront</option>
+              <option>Whitespace</option>
+              <option>Post-Sale</option>
+              <option>Companies</option>
+              <option>Contacts</option>
+              <option>Distributors</option>
+              <option>Integrations</option>
+              <option>Admin</option>
+              <option>Dashboard</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label class="field-label">Short description</label>
+            <input class="field-input" id="ticketShortDesc" type="text" placeholder="e.g. UDF value not persisted on opportunity creation" />
+          </div>
+
+          <div class="input-group">
+            <label class="field-label">Details / conversation</label>
+            <textarea class="field-textarea tall" id="ticketDetails" placeholder="Paste the conversation or describe the issue in detail..."></textarea>
+          </div>
+
+          <div class="input-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="ticketAlsoReply" />
+              <span>Also draft a customer reply</span>
+            </label>
+            <button class="btn-primary" id="ticketBtn">
+              <span class="btn-text">Generate Ticket</span>
+              <span class="btn-loader hidden">...</span>
+            </button>
+          </div>
+
+          <div class="output-block hidden" id="ticketOutput">
+            <div class="output-header">
+              <span class="output-label">Ticket Draft</span>
+              <div class="output-actions">
+                <button class="copy-btn" data-target="ticketOutputText">Copy</button>
+              </div>
+            </div>
+            <div class="output-text" id="ticketOutputText"></div>
+          </div>
+
+          <div class="output-block hidden" id="ticketReplyOutput">
+            <div class="output-header">
+              <span class="output-label">Customer Reply</span>
+              <div class="output-actions">
+                <button class="copy-btn" data-target="ticketReplyOutputText">Copy</button>
+              </div>
+            </div>
+            <div class="output-text" id="ticketReplyOutputText"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DOCS TAB -->
+      <section class="tab-panel" id="tab-docs">
+        <div class="panel-header">
+          <h1 class="panel-title">Docs Gap</h1>
+          <p class="panel-subtitle">Paste an explanation you gave a customer — get copy-ready KB insertion text.</p>
+        </div>
+
+        <div class="panel-body">
+          <div class="input-group">
+            <label class="field-label">Support explanation</label>
+            <textarea class="field-textarea tall" id="docsConversation" placeholder="Paste the explanation or support case where you had to fill in a gap the docs didn't cover..."></textarea>
+          </div>
+
+          <div class="input-group">
+            <label class="field-label">Suspected article <span class="field-optional">(optional)</span></label>
+            <input class="field-input" id="docsArticleUrl" type="text" placeholder="https://help.salesbuildr.com/..." />
+          </div>
+
+          <div class="input-row">
+            <div></div>
+            <button class="btn-primary" id="docsBtn">
+              <span class="btn-text">Detect Gap</span>
+              <span class="btn-loader hidden">...</span>
+            </button>
+          </div>
+
+          <div class="output-block hidden" id="docsOutput">
+            <div class="output-header">
+              <span class="output-label">Gap Report</span>
+              <div class="output-actions">
+                <button class="copy-btn" data-target="docsOutputText">Copy</button>
+              </div>
+            </div>
+            <div class="output-text" id="docsOutputText"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Instructions drawer -->
+  <div class="drawer-overlay hidden" id="drawerOverlay"></div>
+  <aside class="drawer hidden" id="instructionsDrawer">
+    <div class="drawer-header">
+      <h2 class="drawer-title">Instructions</h2>
+      <button class="drawer-close" id="drawerClose">✕</button>
+    </div>
+    <p class="drawer-hint">This context is sent with every request. Update it as your product knowledge grows.</p>
+    <textarea class="drawer-textarea" id="instructionsText"></textarea>
+    <div class="drawer-footer">
+      <button class="btn-secondary" id="instructionsReset">Reset to default</button>
+      <button class="btn-primary" id="instructionsSave">Save</button>
+    </div>
+  </aside>
+
+  <script src="chat.js"></script>
+</body>
+</html>
