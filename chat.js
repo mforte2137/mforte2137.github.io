@@ -132,10 +132,12 @@ document.getElementById('ticketClearBtn').addEventListener('click', () => {
 
 document.getElementById('docsClearBtn').addEventListener('click', () => {
   document.getElementById('docsSearchQuery').value = '';
-  document.getElementById('docsConversation').value = '';
-  document.getElementById('docsArticleUrl').value = '';
   document.getElementById('docsSearchOutput').classList.add('hidden');
-  document.getElementById('docsOutput').classList.add('hidden');
+  document.getElementById('docsSearchGap').classList.add('hidden');
+  document.getElementById('writeArticlePanel').classList.add('hidden');
+  document.getElementById('writeArticleContext').value = '';
+  document.getElementById('articleOutput').classList.add('hidden');
+  document.getElementById('articleRendered').innerHTML = '';
 });
 
 // ─── HISTORY DRAWER ───────────────────────────
@@ -461,20 +463,54 @@ Please check https://help.salesbuildr.com/ and tell me:
 3. A brief summary of what each article covers
 4. Whether there are any obvious gaps or things not covered
 
+If there is a documentation gap, include a section at the very end using EXACTLY this marker and format:
+
+THE GAP
+[A concise, plain-English description of what is missing from the documentation — what questions it doesn't answer, what behaviour it doesn't explain. Written so it can be forwarded to a developer or used as a brief for writing a new article.]
+
+If there is no gap, do not include the THE GAP section.
+
 Be direct and specific. If you find relevant articles, list them clearly with their URLs. If nothing exists on this topic, say so plainly.`;
 
   setLoading(btn, true);
+
+  // Reset downstream panels
+  document.getElementById('docsSearchGap').classList.add('hidden');
+  document.getElementById('writeArticlePanel').classList.add('hidden');
+  document.getElementById('articleOutput').classList.add('hidden');
+  document.getElementById('writeArticleContext').value = '';
 
   try {
     const result = await callClaude(prompt);
 
     const outputBlock = document.getElementById('docsSearchOutput');
     const outputText  = document.getElementById('docsSearchOutputText');
+    const gapBlock    = document.getElementById('docsSearchGap');
+    const gapText     = document.getElementById('docsSearchGapText');
+    const writePanel  = document.getElementById('writeArticlePanel');
 
-    outputText.innerText = result;
+    // Parse out THE GAP section
+    const gapMarker = 'THE GAP';
+    const gapIndex  = result.indexOf(gapMarker);
+    let searchText = result;
+    let gapContent = '';
+
+    if (gapIndex !== -1) {
+      searchText = result.slice(0, gapIndex).trim();
+      gapContent = result.slice(gapIndex + gapMarker.length).trim();
+    }
+
+    outputText.innerText = searchText;
     outputBlock.classList.remove('hidden');
+
+    if (gapContent) {
+      gapText.innerText = gapContent;
+      gapBlock.classList.remove('hidden');
+      writePanel.classList.remove('hidden');
+    }
+
     outputBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    saveToHistory('Doc Search', query, result);
+    saveToHistory('Doc Search', query, searchText + (gapContent ? '\n\nTHE GAP\n' + gapContent : ''));
 
   } catch (e) {
     alert('Error: ' + e.message);
@@ -483,46 +519,122 @@ Be direct and specific. If you find relevant articles, list them clearly with th
   }
 });
 
-// ─── DOCS GAP DETECTION ───────────────────────
-document.getElementById('docsBtn').addEventListener('click', async () => {
-  const conversation = document.getElementById('docsConversation').value.trim();
-  const articleUrl   = document.getElementById('docsArticleUrl').value.trim();
-  const btn          = document.getElementById('docsBtn');
+// ─── MARKDOWN TO HTML ─────────────────────────
+function markdownToHtml(md) {
+  // Store code blocks
+  const codeBlocks = [];
+  md = md.replace(/`([^`]+)`/g, (_, code) => {
+    codeBlocks.push(`<code>${code.replace(/</g,'&lt;')}</code>`);
+    return `%%CODE${codeBlocks.length - 1}%%`;
+  });
 
-  if (!conversation) { alert('Please paste a support explanation first.'); return; }
+  // Highlight [confirm with dev] placeholders
+  md = md.replace(/\[confirm with dev\]/gi, '<span class="placeholder-note">[confirm with dev]</span>');
 
-  const prompt = `A support agent had to explain platform behaviour to a customer that was not clearly covered in the Salesbuildr documentation.
+  const lines = md.split('\n');
+  let html = '';
+  let inUl = false, inOl = false;
 
-EXPLANATION / CASE:
-${conversation}
+  const closeList = () => {
+    if (inUl) { html += '</ul>'; inUl = false; }
+    if (inOl) { html += '</ol>'; inOl = false; }
+  };
 
-${articleUrl ? `The suspected help article is: ${articleUrl}` : 'Check https://help.salesbuildr.com/ to find the most relevant article.'}
+  lines.forEach(line => {
+    if (/^### (.+)/.test(line))      { closeList(); html += `<h3>${line.slice(4).trim()}</h3>`; }
+    else if (/^## (.+)/.test(line))  { closeList(); html += `<h2>${line.slice(3).trim()}</h2>`; }
+    else if (/^# (.+)/.test(line))   { closeList(); html += `<h1>${line.slice(2).trim()}</h1>`; }
+    else if (/^\d+\. (.+)/.test(line)) {
+      if (inUl) { html += '</ul>'; inUl = false; }
+      if (!inOl) { html += '<ol>'; inOl = true; }
+      html += `<li>${inline(line.replace(/^\d+\. /, ''))}</li>`;
+    }
+    else if (/^[-*] (.+)/.test(line)) {
+      if (inOl) { html += '</ol>'; inOl = false; }
+      if (!inUl) { html += '<ul>'; inUl = true; }
+      html += `<li>${inline(line.slice(2).trim())}</li>`;
+    }
+    else if (line.trim() === '') { closeList(); html += ''; }
+    else { closeList(); html += `<p>${inline(line)}</p>`; }
+  });
 
-Identify the documentation gap and provide a gap report using EXACTLY this format:
+  closeList();
 
-Article: [title and full URL]
-Where: [exact location — e.g. "after the X section, before the Y subsection"]
-What to write: [full copy-ready insertion text, formatted consistently with the article — same heading levels, tone, and structure]
+  // Restore code blocks
+  html = html.replace(/%%CODE(\d+)%%/g, (_, i) => codeBlocks[parseInt(i)]);
 
-If the gap spans multiple articles, address each one separately.
-Do not suggest restructuring existing content unless strictly necessary. Prefer clean insertions.`;
+  return html;
+}
+
+function inline(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+}
+
+// ─── WRITE KB ARTICLE ─────────────────────────
+document.getElementById('writeArticleBtn').addEventListener('click', async () => {
+  const gapText    = document.getElementById('docsSearchGapText').innerText.trim();
+  const searchText = document.getElementById('docsSearchOutputText').innerText.trim();
+  const context    = document.getElementById('writeArticleContext').value.trim();
+  const query      = document.getElementById('docsSearchQuery').value.trim();
+  const btn        = document.getElementById('writeArticleBtn');
+
+  const prompt = `Write a help centre article for Salesbuildr's knowledge base on the following topic.
+
+TOPIC: ${query}
+
+DOCUMENTATION GAP (what is missing):
+${gapText}
+
+EXISTING DOCS CONTEXT:
+${searchText}
+
+${context ? `NOTES FROM SUPPORT AGENT (use these as your primary source of truth):\n${context}` : 'No additional notes provided — draft based on the gap description. Use [confirm with dev] for any specific UI steps or details you are not certain about.'}
+
+Write a complete, publish-ready KB article in Markdown. Rules:
+- Use # for the article title, ## for section headings, ### for sub-headings if needed
+- Use numbered lists for steps, bullet points for options or lists
+- Bold key terms or UI labels with **bold**
+- Do not use double dashes (--)
+- Where you are not certain of specific UI details, write [confirm with dev] as an inline placeholder
+- Keep the tone clear, direct and practical — match the style of help.salesbuildr.com
+- Output Markdown only — no preamble, no commentary`;
 
   setLoading(btn, true);
 
   try {
     const result = await callClaude(prompt);
 
-    const docsOutput     = document.getElementById('docsOutput');
-    const docsOutputText = document.getElementById('docsOutputText');
+    // Store raw markdown for copying
+    const articleOutput  = document.getElementById('articleOutput');
+    const articleRendered = document.getElementById('articleRendered');
 
-    docsOutputText.innerText = result;
-    docsOutput.classList.remove('hidden');
-    docsOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    saveToHistory('Doc Gap', conversation.slice(0, 80) + (conversation.length > 80 ? '...' : ''), result);
+    articleRendered.innerHTML = markdownToHtml(result);
+    articleOutput.classList.remove('hidden');
+    articleOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // Wire copy button to plain text version
+    const copyBtn = document.getElementById('articleCopyBtn');
+    copyBtn._rawMarkdown = result;
+
+    saveToHistory('KB Article Draft', query, result);
 
   } catch (e) {
     alert('Error: ' + e.message);
   } finally {
     setLoading(btn, false);
   }
+});
+
+// Article copy button (copies raw markdown, not rendered HTML)
+document.getElementById('articleCopyBtn').addEventListener('click', function() {
+  const text = this._rawMarkdown || document.getElementById('articleRendered').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    this.textContent = 'Copied!';
+    this.classList.add('copied');
+    setTimeout(() => { this.textContent = 'Copy article'; this.classList.remove('copied'); }, 2000);
+  });
 });
