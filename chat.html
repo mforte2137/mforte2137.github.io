@@ -36,7 +36,11 @@
       </nav>
 
       <div class="sidebar-bottom">
-        <button class="settings-btn" id="settingsBtn" title="Instructions">
+        <button class="settings-btn" id="historyBtn">
+          <span>◷</span>
+          <span>History</span>
+        </button>
+        <button class="settings-btn" id="settingsBtn">
           <span>⚙</span>
           <span>Instructions</span>
         </button>
@@ -49,8 +53,13 @@
       <!-- REPLY TAB -->
       <section class="tab-panel active" id="tab-reply">
         <div class="panel-header">
-          <h1 class="panel-title">Draft Reply</h1>
-          <p class="panel-subtitle">Paste a customer conversation and get a ready-to-send response.</p>
+          <div class="panel-header-row">
+            <div>
+              <h1 class="panel-title">Draft Reply</h1>
+              <p class="panel-subtitle">Paste a customer conversation and get a ready-to-send response.</p>
+            </div>
+            <button class="btn-clear" id="replyClearBtn">Clear</button>
+          </div>
         </div>
 
         <div class="panel-body">
@@ -101,8 +110,13 @@
       <!-- TICKET TAB -->
       <section class="tab-panel" id="tab-ticket">
         <div class="panel-header">
-          <h1 class="panel-title">Draft Ticket</h1>
-          <p class="panel-subtitle">Create a Jira-ready bug or feature request ticket.</p>
+          <div class="panel-header-row">
+            <div>
+              <h1 class="panel-title">Draft Ticket</h1>
+              <p class="panel-subtitle">Create a Jira-ready bug or feature request ticket.</p>
+            </div>
+            <button class="btn-clear" id="ticketClearBtn">Clear</button>
+          </div>
         </div>
 
         <div class="panel-body">
@@ -180,11 +194,44 @@
       <!-- DOCS TAB -->
       <section class="tab-panel" id="tab-docs">
         <div class="panel-header">
-          <h1 class="panel-title">Docs Gap</h1>
-          <p class="panel-subtitle">Paste an explanation you gave a customer — get copy-ready KB insertion text.</p>
+          <div class="panel-header-row">
+            <div>
+              <h1 class="panel-title">Docs</h1>
+              <p class="panel-subtitle">Search for existing documentation or detect gaps in coverage.</p>
+            </div>
+            <button class="btn-clear" id="docsClearBtn">Clear</button>
+          </div>
         </div>
 
         <div class="panel-body">
+
+          <!-- Doc Search -->
+          <div class="docs-section-label">Search Documentation</div>
+          <div class="input-group">
+            <label class="field-label">Topic or question</label>
+            <input class="field-input" id="docsSearchQuery" type="text" placeholder="e.g. 'users and device settings', 'how to create a quote'..." />
+          </div>
+          <div class="input-row">
+            <div></div>
+            <button class="btn-primary" id="docsSearchBtn">
+              <span class="btn-text">Search Docs</span>
+              <span class="btn-loader hidden">...</span>
+            </button>
+          </div>
+          <div class="output-block hidden" id="docsSearchOutput">
+            <div class="output-header">
+              <span class="output-label">Search Results</span>
+              <div class="output-actions">
+                <button class="copy-btn" data-target="docsSearchOutputText">Copy</button>
+              </div>
+            </div>
+            <div class="output-text" id="docsSearchOutputText"></div>
+          </div>
+
+          <div class="docs-divider"></div>
+
+          <!-- Gap Detection -->
+          <div class="docs-section-label">Detect Documentation Gap</div>
           <div class="input-group">
             <label class="field-label">Support explanation</label>
             <textarea class="field-textarea tall" id="docsConversation" placeholder="Paste the explanation or support case where you had to fill in a gap the docs didn't cover..."></textarea>
@@ -217,6 +264,33 @@
 
     </main>
   </div>
+
+  <!-- History drawer -->
+  <div class="drawer-overlay hidden" id="historyOverlay"></div>
+  <aside class="drawer hidden" id="historyDrawer">
+    <div class="drawer-header">
+      <h2 class="drawer-title">History</h2>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-secondary" id="historyClearAll">Clear all</button>
+        <button class="drawer-close" id="historyClose">✕</button>
+      </div>
+    </div>
+    <p class="drawer-hint">Last 10 outputs across all tabs. Click any entry to view in full.</p>
+    <div class="history-list" id="historyList"></div>
+  </aside>
+
+  <!-- History detail drawer -->
+  <div class="drawer-overlay hidden" id="historyDetailOverlay"></div>
+  <aside class="drawer hidden" id="historyDetailDrawer">
+    <div class="drawer-header">
+      <h2 class="drawer-title" id="historyDetailTitle">Entry</h2>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="copy-btn" id="historyDetailCopy">Copy</button>
+        <button class="drawer-close" id="historyDetailClose">✕</button>
+      </div>
+    </div>
+    <div class="history-detail-text" id="historyDetailText"></div>
+  </aside>
 
   <!-- Instructions drawer -->
   <div class="drawer-overlay hidden" id="drawerOverlay"></div>
