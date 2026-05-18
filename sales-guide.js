@@ -329,23 +329,25 @@ async function execMatchCatalog(lineItems) {
     $('execMatchWorking').classList.add('hidden');
     if (!res.ok) throw new Error(res.error || 'Matching failed');
 
-    const results = res.results || [];
-    const matched = res.matched || [];
-    const created = res.created || [];
-    const failed  = res.failed  || [];
-    const total   = results.length;
+    const results        = res.results        || [];
+    const matched        = res.matched        || [];
+    const created        = res.created        || [];
+    const failed         = res.failed         || [];
+    const catalogMissing = res.catalogMissing || [];
+    const total          = results.length + catalogMissing.length;
 
     // All successful items (matched + created) go into the quote list
     const allGood = results.filter(r => r.status === 'matched' || r.status === 'created');
     renderExecMatchedItems(allGood);
 
-    // Show failed items separately if any
-    renderExecFailed(failed);
+    // Show catalog-missing services as warning, failed items as error
+    renderExecFailed(failed, catalogMissing);
 
     const sub = [];
-    if (matched.length > 0) sub.push(`${matched.length} matched from catalog`);
-    if (created.length > 0) sub.push(`${created.length} created in catalog`);
-    if (failed.length  > 0) sub.push(`${failed.length} failed — check credentials`);
+    if (matched.length        > 0) sub.push(`${matched.length} matched from catalog`);
+    if (created.length        > 0) sub.push(`${created.length} hardware created`);
+    if (catalogMissing.length > 0) sub.push(`${catalogMissing.length} services not found in catalog`);
+    if (failed.length         > 0) sub.push(`${failed.length} failed`);
     $('execQuoteLinesSub').textContent = sub.join(' · ') || 'No items to process';
 
   } catch(e) {
@@ -395,23 +397,58 @@ function renderExecMatchedItems(matched) {
   updateExecTotal();
 }
 
-function renderExecFailed(failed) {
+function renderExecFailed(failed, catalogMissing) {
   const wrap = $('execUnmatchedWrap');
   if (!wrap) return;
 
-  if (!failed || failed.length === 0) {
+  const hasFailed  = failed  && failed.length  > 0;
+  const hasMissing = catalogMissing && catalogMissing.length > 0;
+
+  if (!hasFailed && !hasMissing) {
     wrap.classList.add('hidden');
     return;
   }
 
   wrap.classList.remove('hidden');
-  wrap.innerHTML = `
+  let html = '';
+
+  // Services/labor not found in catalog — rep needs to add them
+  if (hasMissing) {
+    html += `
+    <div class="exec-import-panel" style="margin-bottom:10px;">
+      <div class="exec-import-header">
+        <span class="exec-import-icon">⚡</span>
+        <div>
+          <div class="exec-import-title">${catalogMissing.length} service${catalogMissing.length !== 1 ? 's' : ''} not found in your catalog</div>
+          <div class="exec-import-sub">These services/labor items should be in your catalog — check the product names or ask your admin to add them, then re-run this spec.</div>
+        </div>
+      </div>
+      <div class="exec-import-list">
+        ${catalogMissing.map(({ specItem }) => `
+          <div class="exec-import-item">
+            <div class="exec-import-name">${esc(specItem.name)}</div>
+            <div class="exec-import-meta">
+              ${specItem.mpn ? `<button class="qq-mpn-btn" onclick="qqCopyMpn(this,'${esc(specItem.mpn)}')">
+                <span class="qq-mpn-label">ID</span>
+                <span class="qq-mpn-value">${esc(specItem.mpn)}</span>
+                <span class="qq-mpn-copy">Copy</span>
+              </button>` : '<span class="exec-import-nompn">No ID in spec</span>'}
+              <span class="exec-import-type">${esc(specItem.type)}</span>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Hardware/software that failed to create
+  if (hasFailed) {
+    html += `
     <div class="exec-import-panel">
       <div class="exec-import-header">
         <span class="exec-import-icon">⚠️</span>
         <div>
           <div class="exec-import-title">${failed.length} item${failed.length !== 1 ? 's' : ''} could not be created</div>
-          <div class="exec-import-sub">These items failed to create in Salesbuildr — add them manually or re-run after checking your API credentials.</div>
+          <div class="exec-import-sub">These items failed — add them manually in Salesbuildr or re-run after checking your credentials.</div>
         </div>
       </div>
       <div class="exec-import-list">
@@ -430,6 +467,9 @@ function renderExecFailed(failed) {
           </div>`).join('')}
       </div>
     </div>`;
+  }
+
+  wrap.innerHTML = html;
 }
 
 function updateExecTotal() {
