@@ -131,6 +131,9 @@ html, body {
   padding: 0 12px;
   border-top: 1px solid var(--border);
   padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .settings-btn {
@@ -183,6 +186,13 @@ html, body {
   border-bottom: 1px solid var(--border);
 }
 
+.panel-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 .panel-title {
   font-size: 22px;
   font-weight: 600;
@@ -194,6 +204,31 @@ html, body {
 .panel-subtitle {
   font-size: 13px;
   color: var(--text2);
+}
+
+/* =============================================
+   CLEAR BUTTON
+============================================= */
+.btn-clear {
+  padding: 7px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text3);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.btn-clear:hover {
+  border-color: var(--border2);
+  color: var(--text);
+  background: var(--bg2);
 }
 
 /* =============================================
@@ -469,7 +504,7 @@ html, body {
   padding: 14px 16px;
   border-radius: var(--radius);
   background: var(--amber-dim);
-  border: 1px solid rgba(245, 166, 35, 0.3);
+  border: 1px solid rgba(184, 122, 0, 0.2);
 }
 
 .doc-gap-block.hidden { display: none; }
@@ -511,6 +546,24 @@ html, body {
 }
 
 /* =============================================
+   DOCS TAB — SECTIONS
+============================================= */
+.docs-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  padding-bottom: 4px;
+}
+
+.docs-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0 4px;
+}
+
+/* =============================================
    LOADER
 ============================================= */
 .btn-loader {
@@ -526,12 +579,12 @@ html, body {
 }
 
 /* =============================================
-   INSTRUCTIONS DRAWER
+   DRAWERS (shared base)
 ============================================= */
 .drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.18);
   z-index: 100;
   backdrop-filter: blur(2px);
 }
@@ -541,8 +594,8 @@ html, body {
   top: 0;
   right: 0;
   height: 100vh;
-  width: 420px;
-  background: var(--bg2);
+  width: 460px;
+  background: var(--bg);
   border-left: 1px solid var(--border);
   z-index: 101;
   display: flex;
@@ -590,7 +643,7 @@ html, body {
 
 .drawer-textarea {
   flex: 1;
-  background: var(--bg3);
+  background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text);
@@ -610,6 +663,80 @@ html, body {
   justify-content: flex-end;
   gap: 10px;
   padding-top: 16px;
+}
+
+/* =============================================
+   HISTORY DRAWER
+============================================= */
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-item {
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.history-item:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.history-item-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.history-item-type {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.history-item-time {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.history-item-preview {
+  font-size: 12px;
+  color: var(--text2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text3);
+  font-size: 13px;
+}
+
+/* =============================================
+   HISTORY DETAIL DRAWER
+============================================= */
+.history-detail-text {
+  flex: 1;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding-top: 8px;
 }
 
 /* =============================================
