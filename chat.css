@@ -503,7 +503,7 @@ html, body {
   margin: 0 20px 20px;
   padding: 14px 16px;
   border-radius: var(--radius);
-  background: var(--amber-dim);
+  background: #fffbf2;
   border: 1px solid rgba(184, 122, 0, 0.2);
 }
 
@@ -559,6 +559,112 @@ html, body {
   font-size: 12px;
   color: var(--text2);
   line-height: 1.6;
+}
+
+/* =============================================
+   RICH TEXT ARTICLE OUTPUT
+============================================= */
+.article-rendered {
+  padding: 24px 28px 28px;
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: var(--text);
+}
+
+.article-rendered h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+}
+
+.article-rendered h2 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 24px 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.article-rendered h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 16px 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.article-rendered p {
+  margin: 0 0 12px;
+}
+
+.article-rendered ul,
+.article-rendered ol {
+  margin: 0 0 12px 20px;
+}
+
+.article-rendered li {
+  margin-bottom: 4px;
+}
+
+.article-rendered strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.article-rendered code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--bg3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+.article-rendered a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.article-rendered a:hover {
+  text-decoration: underline;
+}
+
+.article-rendered .placeholder-note {
+  display: inline-block;
+  background: var(--amber-dim);
+  border: 1px solid rgba(184,122,0,0.25);
+  color: var(--amber);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+}
+
+.btn-copy-article {
+  padding: 4px 12px;
+  border-radius: 5px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-copy-article:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-copy-article.copied {
+  border-color: var(--green);
+  color: var(--green);
 }
 
 /* =============================================
