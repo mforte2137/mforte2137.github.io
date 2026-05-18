@@ -3,11 +3,9 @@
    chat.js
 ============================================= */
 
-// ─── API KEY ──────────────────────────────────
-// Set your Anthropic API key here, or store it
-// in a meta tag: <meta name="x-api-key" content="sk-ant-...">
-const API_KEY_META = document.querySelector('meta[name="x-api-key"]');
-const API_KEY = API_KEY_META ? API_KEY_META.getAttribute('content') : '';
+// ─── API PROXY ────────────────────────────────
+// Calls go to the Netlify function which holds the key server-side.
+// No API key needed in the frontend code.
 
 // ─── DEFAULT INSTRUCTIONS ────────────────────
 const DEFAULT_INSTRUCTIONS = `You are a support assistant for Salesbuildr, a B2B sales platform for MSPs and IT resellers.
@@ -117,13 +115,10 @@ document.querySelectorAll('.copy-btn').forEach(btn => {
 
 // ─── API CALL ─────────────────────────────────
 async function callClaude(userPrompt) {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch('/.netlify/functions/claude', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
