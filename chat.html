@@ -197,7 +197,7 @@
           <div class="panel-header-row">
             <div>
               <h1 class="panel-title">Docs</h1>
-              <p class="panel-subtitle">Search for existing documentation or detect gaps in coverage.</p>
+              <p class="panel-subtitle">Check if documentation exists, identify gaps, and draft new articles.</p>
             </div>
             <button class="btn-clear" id="docsClearBtn">Clear</button>
           </div>
@@ -205,11 +205,11 @@
 
         <div class="panel-body">
 
-          <!-- Doc Search -->
-          <div class="docs-section-label">Search Documentation</div>
+          <!-- Step 1: Search -->
+          <div class="docs-section-label">Step 1 — Search Documentation</div>
           <div class="input-group">
             <label class="field-label">Topic or question</label>
-            <input class="field-input" id="docsSearchQuery" type="text" placeholder="e.g. 'users and device settings', 'how to create a quote'..." />
+            <input class="field-input" id="docsSearchQuery" type="text" placeholder="e.g. 'change font size in a widget', 'user and device settings'..." />
           </div>
           <div class="input-row">
             <div></div>
@@ -218,6 +218,8 @@
               <span class="btn-loader hidden">...</span>
             </button>
           </div>
+
+          <!-- Search result -->
           <div class="output-block hidden" id="docsSearchOutput">
             <div class="output-header">
               <span class="output-label">Search Results</span>
@@ -226,23 +228,24 @@
               </div>
             </div>
             <div class="output-text" id="docsSearchOutputText"></div>
+            <!-- Gap callout -->
             <div class="doc-gap-block hidden" id="docsSearchGap">
               <div class="doc-gap-header">
-                <span>The Gap</span>
+                <span>The Gap — copy this to share with devs</span>
                 <button class="copy-btn copy-btn-gap" data-target="docsSearchGapText">Copy gap</button>
               </div>
               <div class="doc-gap-text" id="docsSearchGapText"></div>
             </div>
           </div>
 
-          <!-- Write Article -->
+          <!-- Step 2: Write article (shown after search if gap found) -->
           <div class="output-block hidden" id="writeArticlePanel">
             <div class="output-header">
-              <span class="output-label">Write KB Article</span>
+              <span class="output-label">Step 2 — Draft Article from Your Notes</span>
             </div>
             <div class="write-article-body">
-              <p class="write-article-hint">Optionally describe what you know about this feature — how it works, where to find it, what it does. Leave blank to let AI draft from the gap description alone.</p>
-              <textarea class="field-textarea short" id="writeArticleContext" placeholder="e.g. 'Users and Devices is found under Whitespace settings. It controls whether Whitespace counts per-user or per-device licences when calculating coverage gaps...'"></textarea>
+              <p class="write-article-hint">You know the product — jot down the rough details and Claude will turn them into a polished help article. Don't worry about structure or wording, just capture what you know.</p>
+              <textarea class="field-textarea tall" id="writeArticleContext" placeholder="e.g. 'Font size can be changed in the widget editor. Click the text block, select the text, and use the toolbar that appears above the content area. Options include: Heading, Paragraph, Inline. Bold, italic and underline also available. No custom CSS needed.'"></textarea>
               <div class="input-row" style="margin-top:12px;">
                 <div></div>
                 <button class="btn-primary" id="writeArticleBtn">
@@ -253,47 +256,17 @@
             </div>
           </div>
 
+          <!-- Article output — rich text rendered -->
           <div class="output-block hidden" id="articleOutput">
             <div class="output-header">
               <span class="output-label">Draft KB Article</span>
               <div class="output-actions">
-                <button class="copy-btn" data-target="articleOutputText">Copy article</button>
+                <button class="btn-copy-article" id="articleCopyBtn">Copy article</button>
               </div>
             </div>
-            <div class="output-text" id="articleOutputText"></div>
+            <div class="article-rendered" id="articleRendered"></div>
           </div>
 
-          <div class="docs-divider"></div>
-
-          <!-- Gap Detection -->
-          <div class="docs-section-label">Detect Documentation Gap</div>
-          <div class="input-group">
-            <label class="field-label">Support explanation</label>
-            <textarea class="field-textarea tall" id="docsConversation" placeholder="Paste the explanation or support case where you had to fill in a gap the docs didn't cover..."></textarea>
-          </div>
-
-          <div class="input-group">
-            <label class="field-label">Suspected article <span class="field-optional">(optional)</span></label>
-            <input class="field-input" id="docsArticleUrl" type="text" placeholder="https://help.salesbuildr.com/..." />
-          </div>
-
-          <div class="input-row">
-            <div></div>
-            <button class="btn-primary" id="docsBtn">
-              <span class="btn-text">Detect Gap</span>
-              <span class="btn-loader hidden">...</span>
-            </button>
-          </div>
-
-          <div class="output-block hidden" id="docsOutput">
-            <div class="output-header">
-              <span class="output-label">Gap Report</span>
-              <div class="output-actions">
-                <button class="copy-btn" data-target="docsOutputText">Copy</button>
-              </div>
-            </div>
-            <div class="output-text" id="docsOutputText"></div>
-          </div>
         </div>
       </section>
 
