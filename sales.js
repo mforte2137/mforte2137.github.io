@@ -546,32 +546,61 @@ function showCombinedWidget(widgets) {
 }
 
 // ── Push to Salesbuildr ───────────────────────────────────
+// Keep button label in sync with send-mode radio
+document.querySelectorAll('input[name="sb-mode"]').forEach(radio => {
+  radio.addEventListener('change', updatePushBtnLabel);
+});
+function updatePushBtnLabel() {
+  const mode = document.querySelector('input[name="sb-mode"]:checked')?.value || 'individual';
+  sbPushBtn.textContent = mode === 'combined' ? 'Save 1 Combined Widget →' : 'Save 5 Widgets →';
+}
+
 sbPushBtn.addEventListener('click', async () => {
   const apiKey=sbApiKey.value.trim(), intKey=sbIntKey.value.trim();
   if (!apiKey||!intKey) return;
   if (sbRemember.checked) { localStorage.setItem(LS_API_KEY,apiKey); localStorage.setItem(LS_INT_KEY,intKey); }
   else { localStorage.removeItem(LS_API_KEY); localStorage.removeItem(LS_INT_KEY); }
-  sbPushBtn.disabled=true; sbPushBtn.textContent='Saving…'; sbResult.hidden=true;
+
+  const mode = document.querySelector('input[name="sb-mode"]:checked')?.value || 'individual';
+  sbPushBtn.disabled=true;
+  sbPushBtn.textContent = mode === 'combined' ? 'Saving…' : 'Saving…';
+  sbResult.hidden=true;
 
   const prefix  = sbPrefix.value.trim();
   const cleanup = sbReplace.checked;
+
+  // Build the payload depending on mode
+  let payload;
+  if (mode === 'combined') {
+    const combinedHtml = buildCombinedHtml(generatedWidgets);
+    const combinedTitle = (document.getElementById('output-title').textContent || 'Buyer Journey') + ' — Complete';
+    payload = {
+      widgets:        [{ id: 'combined', title: combinedTitle, html: combinedHtml }],
+      prefix,
+      apiKey,
+      integrationKey: intKey,
+      cleanup
+    };
+  } else {
+    payload = {
+      widgets:        generatedWidgets,
+      prefix,
+      apiKey,
+      integrationKey: intKey,
+      cleanup
+    };
+  }
 
   let res;
   try {
     res = await fetch('/api/push-widgets', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
-        widgets:        generatedWidgets,   // all 5 individual widgets
-        prefix,
-        apiKey,
-        integrationKey: intKey,
-        cleanup                             // delete previous set first if checked
-      })
+      body:    JSON.stringify(payload)
     });
   } catch(e) {
     showSbResult(false,'Could not reach the server.');
-    sbPushBtn.disabled=false; sbPushBtn.textContent='Save 5 Widgets →'; return;
+    sbPushBtn.disabled=false; updatePushBtnLabel(); return;
   }
 
   let data; try { data=await res.json(); } catch { data={}; }
@@ -579,12 +608,16 @@ sbPushBtn.addEventListener('click', async () => {
   if (data.successCount > 0) {
     const deletedMsg = data.deleted > 0 ? ` (${data.deleted} previous widget${data.deleted>1?'s':''} replaced)` : '';
     const partialMsg = data.successCount < data.total ? ` — ${data.total - data.successCount} failed` : '';
-    showSbResult(true, `${data.successCount} of 5 widgets saved to Salesbuildr${deletedMsg}${partialMsg}. Each starts a new page in the PDF.`);
-    sbPushBtn.textContent='✓ Saved to Salesbuildr'; sbPushBtn.classList.add('is-done');
+    const savedLabel = mode === 'combined'
+      ? `1 combined widget saved to Salesbuildr${deletedMsg}. Contains all 5 buyer-journey sections.`
+      : `${data.successCount} of 5 widgets saved to Salesbuildr${deletedMsg}${partialMsg}. Each starts a new page in the PDF.`;
+    showSbResult(true, savedLabel);
+    sbPushBtn.textContent = mode === 'combined' ? '✓ Combined Widget Saved' : '✓ Saved to Salesbuildr';
+    sbPushBtn.classList.add('is-done');
   } else {
     const err = (data.results&&data.results[0]&&data.results[0].error)||data.error||'Unknown error';
     showSbResult(false,`Save failed: ${err}`);
-    sbPushBtn.disabled=false; sbPushBtn.textContent='Save 5 Widgets →';
+    sbPushBtn.disabled=false; updatePushBtnLabel();
   }
 });
 function showSbResult(ok,msg){ sbResult.textContent=msg; sbResult.className='sb-result'+(ok?'':' is-error'); sbResult.hidden=false; }
