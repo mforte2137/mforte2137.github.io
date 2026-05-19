@@ -299,6 +299,18 @@ header.top .brand { font-weight: 700; color: var(--ink); }
 .sb-connect-body { padding: 20px 22px; border-top: 1px solid var(--rule); }
 .sb-connect-hint { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: var(--mute); margin-bottom: 18px; line-height: 1.5; }
 .sb-connect-hint em { font-style: normal; font-weight: 600; color: var(--ink-soft); }
+
+/* ── Send mode toggle ── */
+.sb-mode-group { margin-bottom: 20px; }
+.sb-mode-label { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 10px; }
+.sb-mode-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sb-mode-option { display: flex; cursor: pointer; }
+.sb-mode-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+.sb-mode-card { display: flex; flex-direction: column; gap: 4px; width: 100%; padding: 12px 14px; border: 2px solid var(--rule); background: #fff; transition: border-color 0.15s, background 0.15s; }
+.sb-mode-option input:checked + .sb-mode-card { border-color: var(--ink); background: var(--paper-alt); }
+.sb-mode-card:hover { border-color: var(--ink-soft); }
+.sb-mode-title { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 700; color: var(--ink); }
+.sb-mode-desc  { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 12px; color: var(--mute); line-height: 1.45; }
 .sb-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
 .sb-label  { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 12px; font-weight: 700; color: var(--ink); display: block; margin-bottom: 6px; }
 .sb-where  { font-weight: 400; color: var(--mute); font-size: 11px; letter-spacing: 0.02em; }
@@ -364,6 +376,7 @@ footer.tag     { margin-top: 64px; font-family: 'Inter', 'Helvetica Neue', Arial
   .theme-grid    { grid-template-columns: repeat(2, 1fr); }
   .custom-row    { grid-template-columns: 1fr; }
   .sb-fields     { grid-template-columns: 1fr; }
+  .sb-mode-options { grid-template-columns: 1fr; }
   .combined-card-header { flex-direction: column; align-items: flex-start; }
   .chips-row     { gap: 6px; }
   .urgency-hints { flex-direction: column; align-items: flex-start; }
