@@ -217,6 +217,26 @@ exports.handler = async (event) => {
     }
   }
 
+  // ── ACTION: proxy-logo ─────────────────────────────────
+  // Fetches a logo URL server-side to bypass browser CORS restrictions
+  if (action === 'proxy-logo') {
+    const { logoUrl } = body;
+    if (!logoUrl) return err('logoUrl required.', 400);
+    try {
+      const res = await fetch(logoUrl, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FirstImpression/1.0)' },
+        signal: AbortSignal.timeout(8000)
+      });
+      if (!res.ok) return err(`Could not fetch logo (${res.status}).`);
+      const contentType = res.headers.get('content-type') || 'image/png';
+      const buffer = await res.arrayBuffer();
+      const base64 = Buffer.from(buffer).toString('base64');
+      return ok200({ dataUrl: `data:${contentType};base64,${base64}` });
+    } catch (e) {
+      return err('Could not fetch logo from that URL. Check the address and try again.');
+    }
+  }
+
   // ── ACTION: start (phase 1 — Unsplash + kick off Placid) ─
   if (action === 'start') {
     const { templateId, brandColor, logoUrl, industry } = body;
