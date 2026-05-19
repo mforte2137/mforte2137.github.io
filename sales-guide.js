@@ -269,7 +269,7 @@ $('execGenerateBtn')?.addEventListener('click', async () => {
   if (reasons)  contextParts.push(reasons);
   const context = contextParts.join(', ');
 
-  setWorking('Translating to buyer language…', 'Claude is reading the technical spec and building your proposal narrative');
+  setWorking('Building your proposal…', 'Claude is reading the spec and translating it into buyer language');
   showSection('working-view');
 
   try {
@@ -558,7 +558,7 @@ function renderLineItems(items) {
 }
 
 function renderResults(mode, title, rec) {
-  $('resultsMode').textContent  = mode === 'discovery' ? '🔍 Discovery Mode' : '⚡ Execution Mode';
+  $('resultsMode').textContent  = mode === 'discovery' ? '🔍 Discovery Mode' : '📐 Spec to Proposal';
   $('resultsTitle').textContent = title;
   $('coachingText').textContent = rec.coaching_insight || '';
 
