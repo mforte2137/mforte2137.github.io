@@ -250,16 +250,22 @@ document.querySelectorAll('.copy-btn').forEach(btn => {
 });
 
 // ─── API CALL ─────────────────────────────────
-async function callClaude(userPrompt) {
+async function callClaude(userPrompt, options = {}) {
+  const payload = {
+    model: 'claude-sonnet-4-5',
+    max_tokens: 1500,
+    system: instructions,
+    messages: [{ role: 'user', content: userPrompt }]
+  };
+
+  if (options.webSearch) {
+    payload.use_web_search = true;
+  }
+
   const response = await fetch('/.netlify/functions/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 1500,
-      system: instructions,
-      messages: [{ role: 'user', content: userPrompt }]
-    })
+    body: JSON.stringify(payload)
   });
 
   if (!response.ok) {
@@ -453,24 +459,26 @@ document.getElementById('docsSearchBtn').addEventListener('click', async () => {
 
   if (!query) { alert('Please enter a topic or question to search.'); return; }
 
-  const prompt = `A support agent wants to know whether Salesbuildr's documentation covers a specific topic.
+  const prompt = `A support agent wants to know whether Salesbuildr's knowledge base covers a specific topic.
 
 QUERY: "${query}"
 
-Please check https://help.salesbuildr.com/ and tell me:
-1. Whether documentation exists on this topic
-2. The title and URL of any relevant articles
-3. A brief summary of what each article covers
-4. Whether there are any obvious gaps or things not covered
+The Salesbuildr knowledge base is at: https://salesbuildr.featurebase.app/en/help
+All articles are nested under that URL. Search it and any linked articles to answer the following:
 
-If there is a documentation gap, include a section at the very end using EXACTLY this marker and format:
+1. Does an article exist on this topic? If yes, give the exact title and full URL.
+2. What does the article cover? Give a brief summary.
+3. Is anything missing or unclear that a customer might still need to know?
+
+If no article exists on this topic, say so clearly and describe what the gap is.
+
+At the very end, if there is a documentation gap, include a section using EXACTLY this marker:
 
 THE GAP
-[A concise, plain-English description of what is missing from the documentation — what questions it doesn't answer, what behaviour it doesn't explain. Written so it can be forwarded to a developer or used as a brief for writing a new article.]
+[A concise plain-English description of what is missing — written so it can be forwarded to a developer or used as a brief for writing a new article.]
 
-If there is no gap, do not include the THE GAP section.
-
-Be direct and specific. If you find relevant articles, list them clearly with their URLs. If nothing exists on this topic, say so plainly.`;
+If there is no gap, do not include THE GAP section at all.
+Only include URLs you have actually found by searching — do not guess or construct URLs.`;
 
   setLoading(btn, true);
 
@@ -478,10 +486,11 @@ Be direct and specific. If you find relevant articles, list them clearly with th
   document.getElementById('docsSearchGap').classList.add('hidden');
   document.getElementById('writeArticlePanel').classList.add('hidden');
   document.getElementById('articleOutput').classList.add('hidden');
+  document.getElementById('articleRendered').innerHTML = '';
   document.getElementById('writeArticleContext').value = '';
 
   try {
-    const result = await callClaude(prompt);
+    const result = await callClaude(prompt, { webSearch: true });
 
     const outputBlock = document.getElementById('docsSearchOutput');
     const outputText  = document.getElementById('docsSearchOutputText');
@@ -489,7 +498,6 @@ Be direct and specific. If you find relevant articles, list them clearly with th
     const gapText     = document.getElementById('docsSearchGapText');
     const writePanel  = document.getElementById('writeArticlePanel');
 
-    // Parse out THE GAP section
     const gapMarker = 'THE GAP';
     const gapIndex  = result.indexOf(gapMarker);
     let searchText = result;
