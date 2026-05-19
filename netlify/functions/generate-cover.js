@@ -217,6 +217,66 @@ exports.handler = async (event) => {
     }
   }
 
+  // ── ACTION: website-photos ─────────────────────────────
+  // Extracts images from the prospect's website via extract.pics API
+  // Filters to images >= 1000px wide, returns up to 12
+  if (action === 'website-photos') {
+    const { websiteUrl } = body;
+    if (!websiteUrl) return err('websiteUrl required.', 400);
+    try {
+      // Start extraction
+      const startRes  = await fetch('https://api.extract.pics/v0/extractions', {
+        method:  'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.EXTRACT_API}`,
+          'Content-Type':  'application/json'
+        },
+        body: JSON.stringify({ url: websiteUrl })
+      });
+      const startData = await startRes.json();
+      if (!startRes.ok) return err(startData.message || 'Could not start extraction.');
+      const id = startData.data.id;
+
+      // Poll until done (max 20 seconds)
+      let images = [];
+      for (let i = 0; i < 20; i++) {
+        await new Promise(r => setTimeout(r, 1000));
+        const pollRes  = await fetch(`https://api.extract.pics/v0/extractions/${id}`, {
+          headers: { 'Authorization': `Bearer ${process.env.EXTRACT_API}` }
+        });
+        const pollData = await pollRes.json();
+        if (pollData.data.status === 'done') {
+          images = pollData.data.images || [];
+          break;
+        }
+        if (pollData.data.status === 'error') return err('Image extraction failed.');
+      }
+
+      // Filter: >= 1000px wide, skip SVGs, deduplicate by URL
+      const seen = new Set();
+      const filtered = images
+        .filter(img => {
+          if (!img.url || seen.has(img.url)) return false;
+          if (img.url.toLowerCase().endsWith('.svg')) return false;
+          if ((img.width || 0) < 1000) return false;
+          seen.add(img.url);
+          return true;
+        })
+        .slice(0, 12)
+        .map(img => ({
+          url:   img.url,
+          thumb: img.url,  // use same URL for thumb — browser will scale it down
+          width: img.width,
+          height: img.height,
+          alt:   img.alt || img.url.split('/').pop() || 'Website photo'
+        }));
+
+      return ok200({ photos: filtered });
+    } catch (e) {
+      return err(e.message);
+    }
+  }
+
   // ── ACTION: proxy-logo ─────────────────────────────────
   // Fetches a logo URL server-side to bypass browser CORS restrictions
   if (action === 'proxy-logo') {
