@@ -98,6 +98,29 @@
         </div>
       </div>
 
+      <!-- Website photos option -->
+      <div class="website-photos-strip" id="website-photos-strip">
+        <div class="website-photos-or">or</div>
+        <button type="button" id="website-photos-btn" class="website-photos-btn">Use photos from their website →</button>
+        <p class="field-hint" id="website-photos-hint" hidden>Uses the website URL from Step 1.</p>
+      </div>
+
+      <!-- Website photo picker — appears after clicking Use website photos -->
+      <div id="website-photo-picker" hidden>
+        <div class="website-photo-header">
+          <span class="website-photo-title">Photos from their website</span>
+          <button type="button" id="website-photos-back-btn" class="website-photos-back-btn">← Back to Unsplash</button>
+        </div>
+        <div class="photo-grid" id="website-photo-grid"></div>
+        <div id="website-photo-loading" class="photo-loading" hidden>
+          <div class="spinner-sm"></div>
+          <span>Scanning their website for photos…</span>
+        </div>
+        <div id="website-photo-empty" class="website-photo-empty" hidden>
+          No large photos found on their website. Try Unsplash instead.
+        </div>
+      </div>
+
       <!-- Photo picker — appears after clicking Find Photos -->
       <div id="photo-picker" hidden>
         <div class="photo-grid" id="photo-grid">
