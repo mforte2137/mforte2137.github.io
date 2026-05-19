@@ -36,9 +36,15 @@ const photoGrid        = document.getElementById('photo-grid');
 const morePhotosBtn    = document.getElementById('more-photos-btn');
 const photoLoading     = document.getElementById('photo-loading');
 const photoCredit      = document.getElementById('photo-credit');
+const websitePhotosBtn      = document.getElementById('website-photos-btn');
+const websitePhotoPicker    = document.getElementById('website-photo-picker');
+const websitePhotoGrid      = document.getElementById('website-photo-grid');
+const websitePhotoLoading   = document.getElementById('website-photo-loading');
+const websitePhotoEmpty     = document.getElementById('website-photo-empty');
+const websitePhotosBackBtn  = document.getElementById('website-photos-back-btn');
 let   selectedPhotoUrl = '';
 let   photoPage        = 1;
-let   photoFocalPoint  = 0.5;   // 0.0 = top, 1.0 = bottom, 0.5 = centre
+let   photoFocalPoint  = 0.5;
 const repNameInput   = document.getElementById('rep-name');
 const focalControl    = document.getElementById('focal-control');
 const focalSlider     = document.getElementById('focal-slider');
@@ -216,6 +222,76 @@ function renderPhotos(photos) {
 findPhotosBtn.addEventListener('click', () => { photoPage = 1; fetchPhotos(); });
 morePhotosBtn.addEventListener('click', () => { photoPage++; fetchPhotos(); });
 industrySelect.addEventListener('change', () => { photoPicker.hidden = true; selectedPhotoUrl = ''; photoPage = 1; focalControl.hidden = true; });
+
+// ── Website photos (extract.pics) ─────────────────────────
+websitePhotosBtn.addEventListener('click', async () => {
+  const url = websiteInput.value.trim();
+  if (!url) {
+    showFormError('Please enter their website URL in Step 1 first.');
+    websiteInput.focus();
+    return;
+  }
+
+  // Hide Unsplash picker, show website picker
+  photoPicker.hidden        = true;
+  focalControl.hidden       = true;
+  websitePhotoPicker.hidden = false;
+  websitePhotoGrid.innerHTML = '';
+  websitePhotoEmpty.hidden  = true;
+  websitePhotoLoading.hidden = false;
+  selectedPhotoUrl = '';
+
+  try {
+    const res  = await fetch('/api/generate-cover', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ action: 'website-photos', websiteUrl: url })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'Could not extract photos.');
+
+    websitePhotoLoading.hidden = true;
+
+    if (!data.photos || data.photos.length === 0) {
+      websitePhotoEmpty.hidden = false;
+      return;
+    }
+
+    // Render into the website photo grid (reuse photo-thumb style)
+    data.photos.forEach(photo => {
+      const tile = document.createElement('button');
+      tile.type      = 'button';
+      tile.className = 'photo-thumb';
+      tile.innerHTML = `<img src="${photo.thumb}" alt="${photo.alt}" loading="lazy">`;
+      tile.addEventListener('click', () => {
+        document.querySelectorAll('#website-photo-grid .photo-thumb').forEach(t => t.classList.remove('is-selected'));
+        tile.classList.add('is-selected');
+        selectedPhotoUrl = photo.url;
+        photoCredit.textContent = '';
+        // Show focal control
+        focalSlider.value   = 50;
+        photoFocalPoint     = 0.5;
+        focalValueLabel.textContent = 'Centre';
+        focalPreviewImg.src = photo.thumb;
+        focalPreviewImg.onload = () => updateFocalPreview(50);
+        focalControl.hidden = false;
+      });
+      websitePhotoGrid.appendChild(tile);
+    });
+
+  } catch (e) {
+    websitePhotoLoading.hidden = true;
+    websitePhotoEmpty.hidden   = false;
+    websitePhotoEmpty.textContent = e.message || 'Could not load photos from their website.';
+  }
+});
+
+websitePhotosBackBtn.addEventListener('click', () => {
+  websitePhotoPicker.hidden = true;
+  websitePhotoEmpty.hidden  = true;
+  selectedPhotoUrl          = '';
+  focalControl.hidden       = true;
+});
 
 // ── Template selection ────────────────────────────────────
 document.querySelectorAll('.template-tile:not(.is-soon)').forEach(tile => {
@@ -499,9 +575,12 @@ restartBtn.addEventListener('click', () => {
   generatedImageUrl = '';
   logoPreviewArea.hidden  = true;
   pushResult.hidden       = true;
-  focalControl.hidden     = true;
-  focalSlider.value       = 50;
-  photoFocalPoint         = 0.5;
+  focalControl.hidden       = true;
+  focalSlider.value         = 50;
+  photoFocalPoint           = 0.5;
+  websitePhotoPicker.hidden = true;
+  websitePhotoGrid.innerHTML = '';
+  websitePhotoEmpty.hidden  = true;
   pushBtn.classList.remove('is-done');
   pushBtn.disabled        = false;
   pushBtn.textContent     = 'Save to Salesbuildr →';
