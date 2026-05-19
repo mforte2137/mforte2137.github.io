@@ -66,7 +66,7 @@
 
         <!-- ── AI Gap Analysis Panel ── -->
         <div class="ai-panel" id="aiPanel">
-            <h2>🤖 AI Gap Analysis</h2>
+            <h2 id="aiPanelTitle">🤖 AI Gap Analysis — Full KB</h2>
             <p class="ai-subtitle">
                 Compares your KB issues against the
                 <a href="https://salesbuildr.featurebase.app/en/help" target="_blank">Salesbuildr Help Centre</a>
@@ -74,7 +74,7 @@
             </p>
 
             <div class="ai-actions">
-                <button class="btn btn-ai" onclick="runGapAnalysis()">Run Gap Analysis</button>
+                <button class="btn btn-ai" onclick="runGapAnalysis()">Run Full KB Analysis</button>
             </div>
 
             <div class="ai-result" id="aiResult" style="margin-top:16px; display:none;"></div>
@@ -174,12 +174,13 @@
                         <div id="uploadedFiles"></div>
                     </div>
 
-                    <div style="display:flex;gap:15px;margin-top:20px;">
+                    <div style="display:flex;gap:15px;margin-top:20px;flex-wrap:wrap;align-items:center;">
                         <button class="btn btn-primary" onclick="saveIssue()">
                             <span id="saveButtonText">Save Issue</span>
                             <div class="loading" id="saveLoading" style="display:none;margin-left:10px;"></div>
                         </button>
                         <button class="btn btn-secondary" onclick="hideAddForm()">Cancel</button>
+                        <button class="btn btn-ai" onclick="checkFormIssueGap()">🤖 Check Gap</button>
                     </div>
                 </div>
             </div>
