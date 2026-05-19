@@ -267,18 +267,44 @@ function showExtractStatus(ok, msg) {
 }
 
 // ── Logo URL preview ──────────────────────────────────────
-previewLogoBtn.addEventListener('click', () => {
+previewLogoBtn.addEventListener('click', async () => {
   const url = logoUrlInput.value.trim();
   if (!url) { logoUrlInput.focus(); return; }
-  logoPreviewImg.crossOrigin = 'anonymous';
-  logoPreviewImg.src = url;
-  logoPreviewImg.onerror = () => {
-    logoPreviewArea.hidden = true;
-    showFormError('Could not load logo from that URL. Check the address or upload a file instead.');
-  };
-  logoPreviewImg.onload = () => {
+
+  previewLogoBtn.disabled   = true;
+  previewLogoBtn.textContent = 'Loading…';
+
+  // Try direct load first
+  const directOk = await new Promise((resolve) => {
+    const tmp = new Image();
+    tmp.onload  = () => resolve(true);
+    tmp.onerror = () => resolve(false);
+    tmp.src = url;
+  });
+
+  if (directOk) {
+    logoPreviewImg.src     = url;
     logoPreviewArea.hidden = false;
-  };
+  } else {
+    // Fall back to server-side proxy (bypasses CORS)
+    try {
+      const res  = await fetch('/api/generate-cover', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ action: 'proxy-logo', logoUrl: url })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error);
+      logoPreviewImg.src     = data.dataUrl;
+      logoPreviewArea.hidden = false;
+    } catch (e) {
+      logoPreviewArea.hidden = true;
+      showFormError('Could not load logo from that URL. Check the address and try again.');
+    }
+  }
+
+  previewLogoBtn.disabled   = false;
+  previewLogoBtn.textContent = 'Preview';
 });
 
 logoClearBtn.addEventListener('click', () => {
