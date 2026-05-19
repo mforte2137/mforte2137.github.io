@@ -290,6 +290,7 @@ function renderKB(issues = knowledgeBase) {
                 <div class="kb-actions">
                     <button class="btn btn-secondary btn-small" onclick="editIssue('${issue.id}')">Edit</button>
                     <button class="btn btn-danger btn-small" onclick="deleteIssue('${issue.id}')">Delete</button>
+                    <button class="btn btn-ai btn-small" onclick="checkSingleIssueGap('${issue.id}')">🤖 Check Gap</button>
                     <span style="color:#64748b;font-size:0.8rem;margin-left:10px;">
                         ${issue.updatedAt !== issue.createdAt ? 'Updated' : 'Created'}: ${new Date(issue.updatedAt || issue.createdAt).toLocaleDateString()}
                     </span>
@@ -356,34 +357,103 @@ function importData(event) {
 
 const HELP_CENTER_URL = 'https://salesbuildr.featurebase.app/en/help';
 
+// Open panel and optionally set a heading
+function openAiPanel(title) {
+    const panel = document.getElementById('aiPanel');
+    panel.style.display = 'block';
+    if (title) document.getElementById('aiPanelTitle').textContent = title;
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function toggleAiPanel() {
     const panel = document.getElementById('aiPanel');
     const isHidden = panel.style.display === 'none' || panel.style.display === '';
-    panel.style.display = isHidden ? 'block' : 'none';
-    if (isHidden) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (isHidden) {
+        openAiPanel('🤖 AI Gap Analysis — Full KB');
+    } else {
+        panel.style.display = 'none';
+    }
 }
 
-async function runGapAnalysis() {
-    if (knowledgeBase.length === 0) {
+// Called from the KB list "Check Gap" button
+function checkSingleIssueGap(id) {
+    const issue = knowledgeBase.find(i => i.id === id);
+    if (!issue) return;
+    openAiPanel(`🤖 Gap Check — "${issue.title}"`);
+    runGapAnalysis(issue);
+}
+
+// Called from the form "Check Gap" button (uses live form values)
+function checkFormIssueGap() {
+    const title       = document.getElementById('issueTitle').value.trim();
+    const category    = document.getElementById('issueCategory').value;
+    const description = document.getElementById('issueDescription').value.trim();
+    const solution    = document.getElementById('issueSolution').value.trim();
+
+    if (!title) {
+        showError('Please enter at least a title before checking the gap.');
+        return;
+    }
+
+    const liveIssue = { title, category, description, solution };
+    openAiPanel(`🤖 Gap Check — "${title}"`);
+    runGapAnalysis(liveIssue);
+}
+
+// Core analysis — pass a single issue object, or nothing for full KB mode
+async function runGapAnalysis(singleIssue = null) {
+    if (!singleIssue && knowledgeBase.length === 0) {
         showError('No issues in your KB yet. Add some issues first!');
         return;
     }
 
-    const resultEl    = document.getElementById('aiResult');
-    const draftPanel  = document.getElementById('aiArticleDraft');
+    const resultEl   = document.getElementById('aiResult');
+    const draftPanel = document.getElementById('aiArticleDraft');
     draftPanel.style.display = 'none';
-
-    resultEl.className = 'ai-result loading-state';
-    resultEl.style.display = 'flex';
-    resultEl.innerHTML = '<div class="loading"></div> Analysing your KB against the Salesbuildr help centre…';
     document.getElementById('draftControls').style.display = 'none';
 
-    // Build a compact summary of current KB issues
-    const kbSummary = knowledgeBase.map(i =>
-        `• [${i.category}] ${i.title}${i.solution ? ' (has solution)' : ' (NO SOLUTION YET)'}`
-    ).join('\n');
+    resultEl.className     = 'ai-result loading-state';
+    resultEl.style.display = 'flex';
+    resultEl.innerHTML     = '<div class="loading"></div> Checking against the Salesbuildr help centre…';
 
-    const prompt = `You are a support documentation expert for Salesbuildr, a B2B quoting and sales tool.
+    let prompt;
+
+    if (singleIssue) {
+        // ── Single-issue mode ──
+        const issueDetail = [
+            `Title: ${singleIssue.title}`,
+            singleIssue.category    ? `Category: ${singleIssue.category}`       : '',
+            singleIssue.description ? `Description: ${singleIssue.description}` : '',
+            singleIssue.solution    ? `Current solution notes: ${singleIssue.solution}` : '(no solution recorded yet)'
+        ].filter(Boolean).join('\n');
+
+        prompt = `You are a support documentation expert for Salesbuildr, a B2B quoting and sales tool for MSPs.
+
+The public Salesbuildr Help Centre is at: ${HELP_CENTER_URL}
+
+I have the following support issue in our internal KB:
+
+${issueDetail}
+
+Please:
+1. Assess whether this issue is likely already covered by an existing help centre article (based on common SaaS documentation patterns for quoting/proposal tools).
+2. If it IS covered — describe what the article likely says and suggest I link to it.
+3. If it is NOT covered (a gap) — confirm it's a documentation opportunity and suggest what a help article for this issue should cover.
+4. Either way, suggest whether I should write or update a help article and give a one-paragraph article outline.
+
+Format your response with these headings:
+## 📖 Help Centre Coverage Assessment
+## 📝 Recommended Article Outline
+
+Be specific and actionable.`;
+
+    } else {
+        // ── Full KB mode ──
+        const kbSummary = knowledgeBase.map(i =>
+            `• [${i.category}] ${i.title}${i.solution ? ' (has solution)' : ' (NO SOLUTION YET)'}`
+        ).join('\n');
+
+        prompt = `You are a support documentation expert for Salesbuildr, a B2B quoting and sales tool.
 
 Here are the issues currently recorded in our internal Knowledge Base:
 
@@ -392,7 +462,7 @@ ${kbSummary}
 The public Salesbuildr Help Centre is at: ${HELP_CENTER_URL}
 
 Please analyse this KB and:
-1. Identify which issues likely already have coverage in the help centre (based on common SaaS documentation patterns for quoting/proposal tools).
+1. Identify which issues likely already have coverage in the help centre.
 2. Identify GAPS – issues that probably don't have a help article and represent real documentation opportunities.
 3. Suggest the top 3 KB articles that should be written, with a one-line rationale for each.
 
@@ -402,6 +472,7 @@ Format your response clearly with these headings:
 ## 📝 Top 3 Recommended Articles to Write
 
 Keep it concise and actionable.`;
+    }
 
     try {
         const response = await fetch('/.netlify/functions/kb-claude', {
@@ -424,18 +495,17 @@ Keep it concise and actionable.`;
         }
 
         const text = data.content?.map(b => b.text || '').join('\n') || 'No response received.';
-        resultEl.className   = 'ai-result';
+        resultEl.className     = 'ai-result';
         resultEl.style.display = 'block';
-        resultEl.innerHTML   = formatMarkdown(text);
-
-        // Store the analysis text for article drafting
+        resultEl.innerHTML     = formatMarkdown(text);
         resultEl.dataset.analysis = text;
+
         document.getElementById('draftControls').style.display = 'block';
 
     } catch (err) {
-        resultEl.className   = 'ai-result';
+        resultEl.className     = 'ai-result';
         resultEl.style.display = 'block';
-        resultEl.textContent = '⚠️ Failed to reach Claude API. Make sure your CLAUDE_API_KEY is configured in Netlify and a proxy function is set up (see README). Error: ' + err.message;
+        resultEl.textContent   = '⚠️ Failed to reach Claude API: ' + err.message;
     }
 }
 
