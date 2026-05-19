@@ -479,7 +479,7 @@ Keep it concise and actionable.`;
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                model: 'claude-sonnet-4-20250514',
+                model: 'claude-sonnet-4-6',
                 max_tokens: 1000,
                 messages: [{ role: 'user', content: prompt }]
             })
@@ -543,7 +543,7 @@ Return ONLY the article content, ready to publish.`;
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                model: 'claude-sonnet-4-20250514',
+                model: 'claude-sonnet-4-6',
                 max_tokens: 1000,
                 messages: [{ role: 'user', content: prompt }]
             })
