@@ -10,57 +10,105 @@
   --font-display: 'Syne', sans-serif;
   --font-body: 'DM Sans', sans-serif;
 
-  /* Default scheme: Slate Pro */
-  --scheme-1: #1a2332;
-  --scheme-2: #2563eb;
-  --scheme-3: #0ea5e9;
-  --scheme-4: #10b981;
+  /* Default scheme: Light Corporate (white background) */
+  --scheme-1: #2563eb;
+  --scheme-2: #059669;
+  --scheme-3: #7c3aed;
+  --scheme-4: #d97706;
   --scheme-accent: #f59e0b;
 
-  --bg-app: #0f1623;
-  --bg-panel: #151e2d;
-  --bg-card: #1c2840;
-  --bg-card-hover: #223152;
-  --bg-surface: #243047;
-  --bg-input: #1a2535;
+  --bg-app: #f1f5f9;
+  --bg-panel: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
+  --bg-surface: #f1f5f9;
+  --bg-input: #f8fafc;
 
-  --border: rgba(255,255,255,0.08);
-  --border-active: rgba(255,255,255,0.18);
+  --border: rgba(0,0,0,0.09);
+  --border-active: rgba(0,0,0,0.20);
 
-  --text-primary: #f0f4ff;
-  --text-secondary: #8b9dc3;
-  --text-muted: #4a5a7a;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
 
-  --shadow-card: 0 4px 24px rgba(0,0,0,0.4);
-  --shadow-panel: 0 8px 40px rgba(0,0,0,0.5);
+  --shadow-card: 0 4px 24px rgba(0,0,0,0.08);
+  --shadow-panel: 0 8px 40px rgba(0,0,0,0.10);
   --radius: 12px;
   --radius-sm: 8px;
   --radius-lg: 16px;
 
   /* Table col colors (default) */
   --col-1: #2563eb;
-  --col-2: #10b981;
+  --col-2: #059669;
   --col-3: #8b5cf6;
   --col-4: #f59e0b;
   --col-5: #ef4444;
 }
 
-/* Color Scheme Variants */
-.scheme-slate-pro { --col-1:#2563eb; --col-2:#0ea5e9; --col-3:#10b981; --col-4:#8b5cf6; }
-.scheme-orange-fire { --col-1:#ea580c; --col-2:#16a34a; --col-3:#7c3aed; --col-4:#1d4ed8; }
-.scheme-purple-pro { --col-1:#7c3aed; --col-2:#2563eb; --col-3:#0891b2; --col-4:#059669; }
-.scheme-teal-corp { --col-1:#0d9488; --col-2:#2563eb; --col-3:#7c3aed; --col-4:#dc2626; }
-.scheme-midnight { --col-1:#334155; --col-2:#475569; --col-3:#64748b; --col-4:#94a3b8; }
-.scheme-msp-classic { --col-1:#1e40af; --col-2:#065f46; --col-3:#7e22ce; --col-4:#c2410c; }
-
-/* Light mode surface override for scheme-light */
+/* ── Color Scheme Variants ─────────────────────────────────── */
+/* Light schemes (white/light background) */
 .scheme-light-corp {
   --bg-app: #f1f5f9; --bg-panel: #ffffff; --bg-card: #ffffff;
   --bg-card-hover: #f8fafc; --bg-surface: #f1f5f9; --bg-input: #f8fafc;
-  --border: rgba(0,0,0,0.08); --border-active: rgba(0,0,0,0.18);
+  --border: rgba(0,0,0,0.09); --border-active: rgba(0,0,0,0.20);
   --text-primary: #0f172a; --text-secondary: #475569; --text-muted: #94a3b8;
-  --shadow-card: 0 4px 24px rgba(0,0,0,0.08);
+  --shadow-card: 0 4px 24px rgba(0,0,0,0.08); --shadow-panel: 0 8px 40px rgba(0,0,0,0.10);
   --col-1:#2563eb; --col-2:#059669; --col-3:#7c3aed; --col-4:#d97706;
+}
+
+.scheme-slate-pro {
+  --bg-app: #f8fafc; --bg-panel: #ffffff; --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9; --bg-surface: #f1f5f9; --bg-input: #f8fafc;
+  --border: rgba(0,0,0,0.09); --border-active: rgba(0,0,0,0.20);
+  --text-primary: #0f172a; --text-secondary: #475569; --text-muted: #94a3b8;
+  --shadow-card: 0 2px 16px rgba(0,0,0,0.07); --shadow-panel: 0 4px 32px rgba(0,0,0,0.09);
+  --col-1:#2563eb; --col-2:#0ea5e9; --col-3:#10b981; --col-4:#8b5cf6;
+}
+
+.scheme-orange-fire {
+  --bg-app: #fff8f5; --bg-panel: #ffffff; --bg-card: #ffffff;
+  --bg-card-hover: #fff4ee; --bg-surface: #fff8f5; --bg-input: #ffffff;
+  --border: rgba(0,0,0,0.09); --border-active: rgba(0,0,0,0.20);
+  --text-primary: #1a0a00; --text-secondary: #57534e; --text-muted: #a8a29e;
+  --shadow-card: 0 2px 16px rgba(0,0,0,0.07); --shadow-panel: 0 4px 32px rgba(0,0,0,0.09);
+  --col-1:#ea580c; --col-2:#16a34a; --col-3:#7c3aed; --col-4:#1d4ed8;
+}
+
+.scheme-purple-pro {
+  --bg-app: #faf8ff; --bg-panel: #ffffff; --bg-card: #ffffff;
+  --bg-card-hover: #f5f0ff; --bg-surface: #faf8ff; --bg-input: #ffffff;
+  --border: rgba(0,0,0,0.09); --border-active: rgba(0,0,0,0.20);
+  --text-primary: #1e1030; --text-secondary: #5b4d7a; --text-muted: #a59cc0;
+  --shadow-card: 0 2px 16px rgba(0,0,0,0.07); --shadow-panel: 0 4px 32px rgba(0,0,0,0.09);
+  --col-1:#7c3aed; --col-2:#2563eb; --col-3:#0891b2; --col-4:#059669;
+}
+
+.scheme-teal-corp {
+  --bg-app: #f0fdfb; --bg-panel: #ffffff; --bg-card: #ffffff;
+  --bg-card-hover: #e6faf7; --bg-surface: #f0fdfb; --bg-input: #ffffff;
+  --border: rgba(0,0,0,0.09); --border-active: rgba(0,0,0,0.20);
+  --text-primary: #0d2b27; --text-secondary: #3d6b65; --text-muted: #7fb5ae;
+  --shadow-card: 0 2px 16px rgba(0,0,0,0.07); --shadow-panel: 0 4px 32px rgba(0,0,0,0.09);
+  --col-1:#0d9488; --col-2:#2563eb; --col-3:#7c3aed; --col-4:#dc2626;
+}
+
+.scheme-msp-classic {
+  --bg-app: #f0f4ff; --bg-panel: #ffffff; --bg-card: #ffffff;
+  --bg-card-hover: #e8eeff; --bg-surface: #f0f4ff; --bg-input: #ffffff;
+  --border: rgba(0,0,0,0.09); --border-active: rgba(0,0,0,0.20);
+  --text-primary: #0f1f4a; --text-secondary: #3d5280; --text-muted: #8fa0c8;
+  --shadow-card: 0 2px 16px rgba(0,0,0,0.07); --shadow-panel: 0 4px 32px rgba(0,0,0,0.09);
+  --col-1:#1e40af; --col-2:#065f46; --col-3:#7e22ce; --col-4:#c2410c;
+}
+
+/* Dark scheme */
+.scheme-midnight {
+  --bg-app: #0f1623; --bg-panel: #151e2d; --bg-card: #1c2840;
+  --bg-card-hover: #223152; --bg-surface: #243047; --bg-input: #1a2535;
+  --border: rgba(255,255,255,0.08); --border-active: rgba(255,255,255,0.18);
+  --text-primary: #f0f4ff; --text-secondary: #8b9dc3; --text-muted: #4a5a7a;
+  --shadow-card: 0 4px 24px rgba(0,0,0,0.4); --shadow-panel: 0 8px 40px rgba(0,0,0,0.5);
+  --col-1:#334155; --col-2:#475569; --col-3:#64748b; --col-4:#94a3b8;
 }
 
 /* ── Reset & Base ───────────────────────────────────────────── */
