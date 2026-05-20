@@ -908,9 +908,18 @@ async function callClaude(systemPrompt, userMsg) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ system: systemPrompt, userMsg })
   });
-  if (!res.ok) throw new Error('API error ' + res.status);
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => '');
+    throw new Error('Proxy error ' + res.status + ': ' + errBody.slice(0, 200));
+  }
   const data = await res.json();
-  return data.text || '';
+  // Log the raw response so we can debug future issues easily
+  console.debug('[Matrix AI] raw response:', data);
+  if (!data.text) {
+    console.error('[Matrix AI] unexpected response shape:', data);
+    throw new Error('Empty response from AI — check Netlify function logs');
+  }
+  return data.text;
 }
 
 /* AI 1: Generate matrix from description */
