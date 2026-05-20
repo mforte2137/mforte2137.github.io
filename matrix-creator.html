@@ -41,19 +41,18 @@
           </div>
         </div>
       </div>
-
       <div class="gallery-filters" id="filter-chips"></div>
-
       <div class="template-grid" id="template-grid"></div>
     </div>
 
     <!-- ════════════════════════════════════════════════════════
-         EDITOR VIEW
+         EDITOR VIEW  —  3-column layout
+         Left: controls | Center: canvas | Right: AI panel
     ═══════════════════════════════════════════════════════════ -->
     <div class="view" id="view-editor">
       <div class="editor-layout">
 
-        <!-- ── Sidebar ──────────────────────────────────────── -->
+        <!-- ── LEFT SIDEBAR: Controls ────────────────────────── -->
         <aside class="editor-sidebar">
 
           <!-- Color Scheme -->
@@ -66,7 +65,8 @@
           <div class="sidebar-section">
             <div class="sidebar-section-title">Column Colors</div>
             <div class="col-color-list" id="col-color-list"></div>
-            <button class="btn btn-ghost btn-sm mt-2" id="btn-add-col-toolbar" style="width:100%;justify-content:center;border:1px dashed var(--border)">
+            <button class="btn btn-ghost btn-sm mt-2" id="btn-add-col-toolbar"
+                    style="width:100%;justify-content:center;border:1px dashed var(--border)">
               + Add Column
             </button>
           </div>
@@ -79,10 +79,10 @@
               Double-click any cell to cycle through options.
             </div>
             <div class="cell-style-grid">
-              <button class="cell-style-btn" data-val="yes" title="Yes / Included">✓</button>
-              <button class="cell-style-btn" data-val="no" title="No / Not included">✕</button>
+              <button class="cell-style-btn" data-val="yes"  title="Yes / Included">✓</button>
+              <button class="cell-style-btn" data-val="no"   title="No / Not included">✕</button>
               <button class="cell-style-btn" data-val="partial" title="Partial / Coming soon">◐</button>
-              <button class="cell-style-btn" data-val="" title="Custom text" 
+              <button class="cell-style-btn" data-val=""     title="Custom text"
                       onclick="promptCellText()">T</button>
             </div>
           </div>
@@ -91,63 +91,22 @@
           <div class="sidebar-section">
             <div class="sidebar-section-title">Table Structure</div>
             <div class="structure-controls">
-              <button class="btn btn-secondary btn-sm" id="btn-add-row-toolbar" style="width:100%;justify-content:flex-start">
+              <button class="btn btn-secondary btn-sm" id="btn-add-row-toolbar"
+                      style="width:100%;justify-content:flex-start">
                 + Add Feature Row
               </button>
             </div>
           </div>
 
-          <!-- AI Features -->
-          <div class="sidebar-section">
-            <div class="sidebar-section-title" style="color:var(--col-2)">✦ AI Features</div>
-            <div class="ai-panel" style="padding:0">
-              <textarea class="ai-prompt-area" id="ai-prompt"
-                placeholder="Describe a comparison matrix, product names, or select a cell to enhance..."></textarea>
-
-              <div id="ai-loading" class="ai-loading" style="display:none">
-                <div class="ai-spinner"></div>
-                <span>Thinking...</span>
-              </div>
-
-              <div class="ai-actions">
-                <button class="ai-action-btn" id="btn-ai-generate">
-                  <span class="ai-icon">⚡</span>
-                  <span>Generate from Description</span>
-                </button>
-                <button class="ai-action-btn" id="btn-ai-suggest-rows">
-                  <span class="ai-icon">✦</span>
-                  <span>Suggest Feature Rows</span>
-                </button>
-                <button class="ai-action-btn" id="btn-ai-benefit">
-                  <span class="ai-icon">✎</span>
-                  <span>Rewrite Cell as Benefit</span>
-                </button>
-                <button class="ai-action-btn" id="btn-ai-competitive">
-                  <span class="ai-icon">⊕</span>
-                  <span>Competitive Fill</span>
-                </button>
-              </div>
-
-              <div style="margin-top:10px;padding:8px;background:rgba(14,165,233,0.06);border-radius:6px;border:1px solid rgba(14,165,233,0.15);">
-                <div style="font-size:10px;font-weight:700;color:var(--col-2);letter-spacing:0.08em;margin-bottom:4px;">AI TIPS</div>
-                <div style="font-size:11px;color:var(--text-muted);line-height:1.5;">
-                  <b style="color:var(--text-secondary)">Generate:</b> "M365 Business Basic vs Standard vs Premium for a dental office"<br>
-                  <b style="color:var(--text-secondary)">Competitive:</b> "Datto vs Veeam vs Acronis backup"<br>
-                  <b style="color:var(--text-secondary)">Benefit:</b> Click any text cell, then rewrite it
-                </div>
-              </div>
-            </div>
-          </div>
-
         </aside>
 
-        <!-- ── Editor Main ───────────────────────────────────── -->
+        <!-- ── CENTER: Editor canvas ──────────────────────────── -->
         <div class="editor-main">
 
-          <!-- Toolbar -->
+          <!-- Toolbar: title + export actions -->
           <div class="editor-toolbar">
             <div class="editor-title-area">
-              <input type="text" class="editor-title-input" id="editor-title" 
+              <input type="text" class="editor-title-input" id="editor-title"
                      placeholder="Matrix title..." spellcheck="false">
             </div>
             <div class="toolbar-actions">
@@ -157,37 +116,119 @@
               <button class="btn sb-btn btn-sm" id="btn-send-salesbuildr">
                 ↑ Send to Salesbuildr
               </button>
+              <!-- AI panel toggle (mobile / collapsed) -->
+              <button class="btn btn-ghost btn-sm ai-panel-toggle" id="btn-toggle-ai"
+                      title="Toggle AI Assistant">✦ AI</button>
             </div>
           </div>
 
-          <!-- Canvas -->
+          <!-- Canvas: matrix lives here -->
           <div class="editor-canvas">
-
-            <!-- Live Matrix Preview -->
             <div class="matrix-wrapper" id="matrix-wrapper">
               <!-- Rendered by JS -->
             </div>
+          </div>
 
-            <!-- Export Panel -->
-            <div class="export-panel" id="export-panel">
-              <div class="export-panel-title">
-                ⎘ Export
-              </div>
-              <div class="export-tabs">
-                <div class="export-tab active" data-tab="html">HTML (TinyMCE-ready)</div>
-                <div class="export-tab" data-tab="info">Usage Notes</div>
-              </div>
-              <div id="export-tab-html">
-                <div class="export-code" id="export-code"></div>
-                <div class="export-actions">
-                  <button class="btn btn-primary btn-sm" onclick="copyHtml()">⎘ Copy HTML</button>
-                  <button class="btn sb-btn btn-sm" onclick="sendToSalesbuildr()">↑ Send to Salesbuildr</button>
+        </div>
+
+        <!-- ── RIGHT PANEL: AI Assistant ─────────────────────── -->
+        <aside class="ai-panel-sidebar" id="ai-panel-sidebar">
+
+          <!-- Panel header -->
+          <div class="ai-panel-header">
+            <div class="ai-panel-title">
+              <span class="ai-star">✦</span>
+              AI Assistant
+            </div>
+            <button class="ai-panel-close" id="btn-close-ai" title="Collapse">×</button>
+          </div>
+
+          <!-- Prompt area -->
+          <div class="ai-panel-body">
+            <div class="ai-prompt-section">
+              <label class="ai-prompt-label">Describe what you need</label>
+              <textarea class="ai-prompt-area" id="ai-prompt"
+                placeholder="e.g. M365 Business Basic vs Standard vs Premium for a dental office..."></textarea>
+            </div>
+
+            <!-- Loading indicator -->
+            <div id="ai-loading" class="ai-loading" style="display:none">
+              <div class="ai-spinner"></div>
+              <span>Thinking...</span>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="ai-actions">
+              <button class="ai-action-btn" id="btn-ai-generate">
+                <span class="ai-action-icon">⚡</span>
+                <div class="ai-action-text">
+                  <span class="ai-action-title">Generate from Description</span>
+                  <span class="ai-action-sub">Build a full matrix from your prompt</span>
                 </div>
+              </button>
+              <button class="ai-action-btn" id="btn-ai-competitive">
+                <span class="ai-action-icon">⊕</span>
+                <div class="ai-action-text">
+                  <span class="ai-action-title">Competitive Fill</span>
+                  <span class="ai-action-sub">Enter product names to compare</span>
+                </div>
+              </button>
+              <button class="ai-action-btn" id="btn-ai-suggest-rows">
+                <span class="ai-action-icon">✦</span>
+                <div class="ai-action-text">
+                  <span class="ai-action-title">Suggest Feature Rows</span>
+                  <span class="ai-action-sub">Add relevant rows to current matrix</span>
+                </div>
+              </button>
+              <button class="ai-action-btn" id="btn-ai-benefit">
+                <span class="ai-action-icon">✎</span>
+                <div class="ai-action-text">
+                  <span class="ai-action-title">Rewrite Cell as Benefit</span>
+                  <span class="ai-action-sub">Select a text cell first</span>
+                </div>
+              </button>
+            </div>
+
+            <!-- Divider -->
+            <div class="ai-divider"></div>
+
+            <!-- AI Tips -->
+            <div class="ai-tips-block">
+              <div class="ai-tips-title">Quick Tips</div>
+              <div class="ai-tip">
+                <span class="ai-tip-icon">⚡</span>
+                <span><b>Generate:</b> "Compare Silver Gold Platinum managed IT tiers for a 50-user law firm"</span>
+              </div>
+              <div class="ai-tip">
+                <span class="ai-tip-icon">⊕</span>
+                <span><b>Competitive:</b> "Datto vs Veeam vs Acronis backup"</span>
+              </div>
+              <div class="ai-tip">
+                <span class="ai-tip-icon">✎</span>
+                <span><b>Benefit:</b> Click any text cell, then hit Rewrite</span>
+              </div>
+              <div class="ai-tip">
+                <span class="ai-tip-icon">✦</span>
+                <span><b>Suggest:</b> Open any template and add more rows instantly</span>
+              </div>
+            </div>
+
+            <!-- Divider -->
+            <div class="ai-divider"></div>
+
+            <!-- AI Result History -->
+            <div class="ai-history-block">
+              <div class="ai-tips-title">Last AI Action</div>
+              <div id="ai-last-result" class="ai-last-result">
+                <span class="ai-last-empty">No actions yet — try one of the buttons above</span>
               </div>
             </div>
 
           </div>
-        </div>
+          <!-- end ai-panel-body -->
+
+        </aside>
+        <!-- end ai-panel-sidebar -->
 
       </div>
     </div>
@@ -200,7 +241,7 @@
 <div class="modal-backdrop" id="modal-backdrop">
   <div class="modal">
     <div class="modal-title" id="modal-title">Modal</div>
-    <div class="modal-sub" id="modal-sub"></div>
+    <div class="modal-sub"   id="modal-sub"></div>
     <div id="modal-body"></div>
     <div class="modal-footer" id="modal-footer"></div>
   </div>
@@ -209,37 +250,16 @@
 <!-- ── Toast Container ───────────────────────────────────────── -->
 <div class="toast-container" id="toast-container"></div>
 
-<!-- ── Inline helper for text cell prompt ───────────────────── -->
 <script>
 function promptCellText() {
-  if (!window._state || !window._state.selectedCell) {
-    // fallback
-    const val = prompt('Enter cell text value:');
-    if (val !== null && val.trim()) {
-      if (typeof setCellValue === 'function') setCellValue(val.trim());
-    }
-    return;
+  const val = prompt('Enter cell text (e.g. "24/7", "10GB", "Advanced"):');
+  if (val !== null && val.trim() !== '') {
+    if (typeof setCellValue === 'function') setCellValue(val.trim());
   }
-  const val = prompt('Enter cell text value:');
-  if (val !== null && val.trim()) setCellValue(val.trim());
 }
 </script>
 
 <script src="matrix-creator.js"></script>
-
-<!-- patch promptCellText to use state after JS loads -->
-<script>
-(function(){
-  const orig = window.promptCellText;
-  window.promptCellText = function() {
-    const val = prompt('Enter cell text (e.g. "24/7", "10GB", "Advanced"):');
-    if (val !== null && val.trim() !== '') {
-      if (typeof setCellValue === 'function') setCellValue(val.trim());
-      else console.warn('setCellValue not ready');
-    }
-  };
-})();
-</script>
 
 </body>
 </html>
