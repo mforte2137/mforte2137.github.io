@@ -491,6 +491,31 @@ body {
 .cell-check.check-no      { background: rgba(239,68,68,0.08);   color: rgba(239,68,68,0.55); font-size: 10px; }
 .cell-text-val { font-size: 12px; font-weight: 500; color: var(--text-secondary); line-height: 1.3; }
 
+/* Editable text cells */
+.matrix-cell-text { cursor: text; }
+
+.cell-text-editable {
+  display: inline-block;
+  min-width: 36px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  outline: none;
+  cursor: text;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+}
+.cell-text-editable:hover {
+  border-color: var(--border-active);
+  background: var(--bg-surface);
+}
+.cell-text-editable:focus {
+  border-color: var(--col-1);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.10);
+}
+
 /* Add row / col */
 .add-row-btn {
   width: 100%; padding: 8px; background: transparent;
