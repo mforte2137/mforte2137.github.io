@@ -252,13 +252,13 @@ const TEMPLATES = [
 const CATEGORIES = ['All', 'Microsoft 365', 'Managed Services', 'Security', 'Backup & DR', 'Cloud', 'Telecom', 'Custom'];
 
 const COLOR_SCHEMES = [
-  { id: 'scheme-slate-pro', name: 'Slate Pro', swatches: ['#2563eb','#0ea5e9','#10b981','#8b5cf6'] },
-  { id: 'scheme-orange-fire', name: 'MSP Orange', swatches: ['#ea580c','#16a34a','#7c3aed','#1d4ed8'] },
+  { id: 'scheme-light-corp', name: 'Light Corp', swatches: ['#2563eb','#059669','#7c3aed','#d97706'] },
+  { id: 'scheme-slate-pro',  name: 'Slate Blue', swatches: ['#2563eb','#0ea5e9','#10b981','#8b5cf6'] },
+  { id: 'scheme-orange-fire',name: 'MSP Orange', swatches: ['#ea580c','#16a34a','#7c3aed','#1d4ed8'] },
   { id: 'scheme-purple-pro', name: 'Purple Pro', swatches: ['#7c3aed','#2563eb','#0891b2','#059669'] },
-  { id: 'scheme-teal-corp', name: 'Teal Corp', swatches: ['#0d9488','#2563eb','#7c3aed','#dc2626'] },
-  { id: 'scheme-msp-classic', name: 'MSP Classic', swatches: ['#1e40af','#065f46','#7e22ce','#c2410c'] },
-  { id: 'scheme-midnight', name: 'Midnight', swatches: ['#334155','#475569','#64748b','#94a3b8'] },
-  { id: 'scheme-light-corp', name: 'Light Corp', swatches: ['#2563eb','#059669','#7c3aed','#d97706'] }
+  { id: 'scheme-teal-corp',  name: 'Teal Corp',  swatches: ['#0d9488','#2563eb','#7c3aed','#dc2626'] },
+  { id: 'scheme-msp-classic',name: 'MSP Classic',swatches: ['#1e40af','#065f46','#7e22ce','#c2410c'] },
+  { id: 'scheme-midnight',   name: 'Dark Mode',  swatches: ['#334155','#475569','#64748b','#94a3b8'] }
 ];
 
 const CELL_ICONS = {
@@ -272,7 +272,7 @@ const state = {
   view: 'gallery',
   activeTemplate: null,
   activeCategory: 'All',
-  activeScheme: 'scheme-slate-pro',
+  activeScheme: 'scheme-light-corp',
   selectedCell: null,
   aiLoading: false,
   exportTab: 'html'
@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
   bindExportTabs();
   bindModal();
   bindAiActions();
-  setScheme('scheme-slate-pro');
+  setScheme('scheme-light-corp');
 });
 
 function cacheDom() {
