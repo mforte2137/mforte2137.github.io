@@ -118,6 +118,18 @@ const TOOLS = [
     icon: "swap"
   },
   {
+    title: "MSP Matrix Templates",
+    shortLabel: "Matrix Templates",
+    description:
+      "Choose from a library of ready-made comparison matrices — drop the HTML straight into Salesbuildr — or describe what you need and let AI build a custom matrix for you in seconds.",
+    category: "Proposal",
+    url: "https://widgetcreator.netlify.app/matrix-creator.html",
+    badge: "new",
+    updated: "2026-05-20",
+    gradient: "purple",
+    icon: "swap"
+  },
+  {
     title: "Project Tasks → Calculator",
     shortLabel: "Project Calculator",
     description:
