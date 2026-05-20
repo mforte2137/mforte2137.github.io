@@ -15,14 +15,32 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        max_tokens: 2000,
         system,
         messages: [{ role: 'user', content: userMsg }]
       })
     });
 
     const data = await response.json();
+
+    // Surface API errors clearly
+    if (!response.ok) {
+      console.error('[matrix-proxy] Anthropic API error:', data);
+      return {
+        statusCode: response.status,
+        body: JSON.stringify({ error: data.error?.message || 'Anthropic API error' })
+      };
+    }
+
     const text = data.content?.[0]?.text || '';
+
+    if (!text) {
+      console.error('[matrix-proxy] Empty text in response:', JSON.stringify(data));
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'Empty response from Claude', detail: data })
+      };
+    }
 
     return {
       statusCode: 200,
@@ -30,6 +48,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({ text })
     };
   } catch (err) {
+    console.error('[matrix-proxy] Exception:', err);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: err.message })
