@@ -13,9 +13,9 @@ const TEMPLATES = [
     cols: 3,
     rows: 8,
     cols_data: [
-      { label: 'Business Basic', sublabel: '$6/user/mo', color: '#2563eb' },
-      { label: 'Business Standard', sublabel: '$12.50/user/mo', color: '#0891b2' },
-      { label: 'Business Premium', sublabel: '$22/user/mo', color: '#7c3aed' }
+      { label: 'Business Basic', sublabel: '', color: '#2563eb' },
+      { label: 'Business Standard', sublabel: '', color: '#0891b2' },
+      { label: 'Business Premium', sublabel: '', color: '#7c3aed' }
     ],
     features: [
       { label: 'Office Web Apps', cells: ['yes','yes','yes'] },
@@ -36,8 +36,8 @@ const TEMPLATES = [
     cols: 2,
     rows: 7,
     cols_data: [
-      { label: 'Microsoft 365 E3', sublabel: '$36/user/mo', color: '#1d4ed8' },
-      { label: 'Microsoft 365 E5', sublabel: '$57/user/mo', color: '#7c3aed' }
+      { label: 'Microsoft 365 E3', sublabel: '', color: '#1d4ed8' },
+      { label: 'Microsoft 365 E5', sublabel: '', color: '#7c3aed' }
     ],
     features: [
       { label: 'Full Desktop Apps', cells: ['yes','yes'] },
@@ -57,9 +57,9 @@ const TEMPLATES = [
     cols: 3,
     rows: 10,
     cols_data: [
-      { label: 'Silver', sublabel: 'Essentials', color: '#64748b' },
-      { label: 'Gold', sublabel: 'Advanced', color: '#d97706' },
-      { label: 'Platinum', sublabel: 'Complete', color: '#7c3aed' }
+      { label: 'Silver', sublabel: '', color: '#64748b' },
+      { label: 'Gold', sublabel: '', color: '#d97706' },
+      { label: 'Platinum', sublabel: '', color: '#7c3aed' }
     ],
     features: [
       { label: 'Remote Monitoring (RMM)', cells: ['yes','yes','yes'] },
@@ -82,9 +82,9 @@ const TEMPLATES = [
     cols: 3,
     rows: 8,
     cols_data: [
-      { label: 'Essential', sublabel: 'EDR Only', color: '#059669' },
-      { label: 'Advanced', sublabel: 'MDR', color: '#0891b2' },
-      { label: 'Complete', sublabel: 'Full SOC', color: '#dc2626' }
+      { label: 'Essential', sublabel: '', color: '#059669' },
+      { label: 'Advanced', sublabel: '', color: '#0891b2' },
+      { label: 'Complete', sublabel: '', color: '#dc2626' }
     ],
     features: [
       { label: 'Endpoint Protection (EDR)', cells: ['yes','yes','yes'] },
@@ -105,9 +105,9 @@ const TEMPLATES = [
     cols: 3,
     rows: 7,
     cols_data: [
-      { label: 'Starter', sublabel: 'Basic Backup', color: '#0891b2' },
-      { label: 'Business', sublabel: 'BDR', color: '#2563eb' },
-      { label: 'Enterprise', sublabel: 'Full DR', color: '#7c3aed' }
+      { label: 'Starter', sublabel: '', color: '#0891b2' },
+      { label: 'Business', sublabel: '', color: '#2563eb' },
+      { label: 'Enterprise', sublabel: '', color: '#7c3aed' }
     ],
     features: [
       { label: 'Endpoint Backup', cells: ['yes','yes','yes'] },
@@ -127,9 +127,9 @@ const TEMPLATES = [
     cols: 3,
     rows: 6,
     cols_data: [
-      { label: 'M365 Copilot', sublabel: '$30/user/mo', color: '#2563eb' },
-      { label: 'Copilot Studio', sublabel: '$200/tenant/mo', color: '#7c3aed' },
-      { label: 'GitHub Copilot', sublabel: '$19/user/mo', color: '#1f2937' }
+      { label: 'M365 Copilot', sublabel: '', color: '#2563eb' },
+      { label: 'Copilot Studio', sublabel: '', color: '#7c3aed' },
+      { label: 'GitHub Copilot', sublabel: '', color: '#1f2937' }
     ],
     features: [
       { label: 'AI in Word/Excel/PPT', cells: ['yes','no','no'] },
@@ -148,9 +148,9 @@ const TEMPLATES = [
     cols: 3,
     rows: 7,
     cols_data: [
-      { label: 'Basic RMM', sublabel: 'Monitoring', color: '#64748b' },
-      { label: 'Managed Endpoints', sublabel: 'Proactive', color: '#059669' },
-      { label: 'Full UEM', sublabel: 'Intune + Zero Trust', color: '#2563eb' }
+      { label: 'Basic RMM', sublabel: '', color: '#64748b' },
+      { label: 'Managed Endpoints', sublabel: '', color: '#059669' },
+      { label: 'Full UEM', sublabel: '', color: '#2563eb' }
     ],
     features: [
       { label: 'Monitoring & Alerting', cells: ['yes','yes','yes'] },
@@ -170,9 +170,9 @@ const TEMPLATES = [
     cols: 3,
     rows: 6,
     cols_data: [
-      { label: 'Basic VoIP', sublabel: 'Hosted PBX', color: '#0891b2' },
-      { label: 'Teams Voice', sublabel: 'Calling Plans', color: '#2563eb' },
-      { label: 'Enterprise UCaaS', sublabel: 'Full Suite', color: '#7c3aed' }
+      { label: 'Basic VoIP', sublabel: '', color: '#0891b2' },
+      { label: 'Teams Voice', sublabel: '', color: '#2563eb' },
+      { label: 'Enterprise UCaaS', sublabel: '', color: '#7c3aed' }
     ],
     features: [
       { label: 'Local / Toll-Free Numbers', cells: ['yes','yes','yes'] },
@@ -191,9 +191,9 @@ const TEMPLATES = [
     cols: 3,
     rows: 7,
     cols_data: [
-      { label: 'Shared Cloud', sublabel: 'Entry', color: '#64748b' },
-      { label: 'Managed Azure', sublabel: 'IaaS', color: '#0078d4' },
-      { label: 'Dedicated / Private', sublabel: 'Enterprise', color: '#7c3aed' }
+      { label: 'Shared Cloud', sublabel: '', color: '#64748b' },
+      { label: 'Managed Azure', sublabel: '', color: '#0078d4' },
+      { label: 'Dedicated / Private', sublabel: '', color: '#7c3aed' }
     ],
     features: [
       { label: 'Managed Infrastructure', cells: ['no','yes','yes'] },
@@ -213,9 +213,9 @@ const TEMPLATES = [
     cols: 3,
     rows: 7,
     cols_data: [
-      { label: 'Reactive', sublabel: 'Break-Fix', color: '#dc2626' },
-      { label: 'Proactive', sublabel: 'Monitored', color: '#d97706' },
-      { label: 'Fully Managed', sublabel: 'Outsourced NOC', color: '#059669' }
+      { label: 'Reactive', sublabel: '', color: '#dc2626' },
+      { label: 'Proactive', sublabel: '', color: '#d97706' },
+      { label: 'Fully Managed', sublabel: '', color: '#059669' }
     ],
     features: [
       { label: 'Hours of Coverage', cells: ['8×5','8×5','24×7×365'] },
@@ -257,8 +257,7 @@ const COLOR_SCHEMES = [
   { id: 'scheme-orange-fire',name: 'MSP Orange', swatches: ['#ea580c','#16a34a','#7c3aed','#1d4ed8'] },
   { id: 'scheme-purple-pro', name: 'Purple Pro', swatches: ['#7c3aed','#2563eb','#0891b2','#059669'] },
   { id: 'scheme-teal-corp',  name: 'Teal Corp',  swatches: ['#0d9488','#2563eb','#7c3aed','#dc2626'] },
-  { id: 'scheme-msp-classic',name: 'MSP Classic',swatches: ['#1e40af','#065f46','#7e22ce','#c2410c'] },
-  { id: 'scheme-midnight',   name: 'Dark Mode',  swatches: ['#334155','#475569','#64748b','#94a3b8'] }
+  { id: 'scheme-msp-classic',name: 'MSP Classic',swatches: ['#1e40af','#065f46','#7e22ce','#c2410c'] }
 ];
 
 const CELL_ICONS = {
@@ -462,11 +461,11 @@ function renderMatrix() {
                       spellcheck="false"
                       oninput="onColLabelEdit(${ci}, 'label', this.innerText)"
                       onblur="onColLabelEdit(${ci}, 'label', this.innerText)">${col.label}</span>
-                <span class="col-header-sublabel"
+                ${col.sublabel ? `<span class="col-header-sublabel"
                       contenteditable="true"
                       spellcheck="false"
                       oninput="onColLabelEdit(${ci}, 'sublabel', this.innerText)"
-                      onblur="onColLabelEdit(${ci}, 'sublabel', this.innerText)">${col.sublabel || ''}</span>
+                      onblur="onColLabelEdit(${ci}, 'sublabel', this.innerText)">${col.sublabel}</span>` : ''}
               </div>
             </th>`).join('')}
           <th class="add-col-header-cell">
@@ -947,7 +946,8 @@ async function aiGenerateMatrix() {
   try {
     const system = `You are an MSP quoting expert. Generate a comparison matrix.
 CRITICAL: Return a raw JSON object ONLY. No prose, no markdown, no code fences, no explanation.
-Exactly this structure: {"title":"...","desc":"...","cols_data":[{"label":"...","sublabel":"...","color":"#hexcode"}],"features":[{"label":"...","cells":["yes","no","partial","or short text"]}]}
+Exactly this structure: {"title":"...","desc":"...","cols_data":[{"label":"...","sublabel":"","color":"#hexcode"}],"features":[{"label":"...","cells":["yes","no","partial","or short text"]}]}
+Do NOT include pricing or cost in sublabel — leave sublabel as empty string always.
 Use 2-4 columns, 5-10 features. Use real hex color codes. Cells: "yes", "no", "partial", or short text like "24/7" or "10GB".`;
 
     const raw = await callClaude(system, `Generate a MSP service comparison matrix for: ${prompt}`);
@@ -1084,7 +1084,8 @@ async function aiCompetitiveFill() {
     const cols = tpl ? tpl.cols_data.map(c => c.label).join(', ') : '';
     const system = `You are a technology product expert specializing in MSP/IT vendor comparisons.
 CRITICAL: Return a raw JSON object ONLY. No prose, no markdown, no code fences, no explanation.
-Exactly this structure: {"cols_data":[{"label":"...","sublabel":"pricing or version","color":"#hexcode"}],"features":[{"label":"...","cells":["yes","no","partial","or short text"]}]}
+Exactly this structure: {"cols_data":[{"label":"...","sublabel":"","color":"#hexcode"}],"features":[{"label":"...","cells":["yes","no","partial","or short text"]}]}
+Do NOT include pricing or cost in sublabel — leave sublabel as empty string always.
 Use 8-12 features. Use real hex color codes appropriate for each vendor/product brand.`;
 
     const raw = await callClaude(system,
