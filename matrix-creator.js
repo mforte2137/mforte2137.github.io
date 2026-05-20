@@ -870,6 +870,38 @@ function setAiResult(msg) {
     '</div>';
 }
 
+/* ── Robust JSON parser — strips fences, extracts first JSON object/array ── */
+function safeParseJson(raw) {
+  if (!raw || typeof raw !== 'string') throw new Error('Empty response from AI');
+
+  // Step 1: strip markdown code fences (```json ... ``` or ``` ... ```)
+  let text = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+
+  // Step 2: try parsing the whole cleaned string first
+  try { return JSON.parse(text); } catch(e) {}
+
+  // Step 3: extract the first {...} or [...] block from the string
+  const objMatch = text.match(/(\{[\s\S]*\})/);
+  const arrMatch = text.match(/(\[[\s\S]*\])/);
+
+  // Pick whichever comes first in the string
+  let candidate = null;
+  if (objMatch && arrMatch) {
+    candidate = text.indexOf(objMatch[0]) < text.indexOf(arrMatch[0])
+      ? objMatch[0] : arrMatch[0];
+  } else {
+    candidate = (objMatch || arrMatch || [null])[0];
+  }
+
+  if (!candidate) throw new Error('No JSON found in AI response: ' + text.slice(0, 200));
+
+  try { return JSON.parse(candidate); } catch(e) {
+    // Step 4: last resort — remove trailing commas before } or ]
+    const fixed = candidate.replace(/,\s*([\]}])/g, '$1');
+    return JSON.parse(fixed);
+  }
+}
+
 async function callClaude(systemPrompt, userMsg) {
   const res = await fetch('/.netlify/functions/matrix-proxy', {
     method: 'POST',
@@ -888,16 +920,13 @@ async function aiGenerateMatrix() {
 
   setAiLoading(true);
   try {
-    const system = `You are an MSP quoting expert. Generate a comparison matrix as JSON only. 
-No markdown, no backticks, no explanation. Return exactly this structure:
-{"title":"...", "desc":"...", "cols_data":[{"label":"...","sublabel":"...","color":"..."}], 
-"features":[{"label":"...","cells":["yes"|"no"|"partial"|"text value",...]}]}
-Use 2-4 columns, 5-10 features. Colors: hex codes appropriate for corporate SaaS. 
-Cells: use "yes", "no", "partial", or short text like "24/7" or "10GB".`;
+    const system = `You are an MSP quoting expert. Generate a comparison matrix.
+CRITICAL: Return a raw JSON object ONLY. No prose, no markdown, no code fences, no explanation.
+Exactly this structure: {"title":"...","desc":"...","cols_data":[{"label":"...","sublabel":"...","color":"#hexcode"}],"features":[{"label":"...","cells":["yes","no","partial","or short text"]}]}
+Use 2-4 columns, 5-10 features. Use real hex color codes. Cells: "yes", "no", "partial", or short text like "24/7" or "10GB".`;
 
     const raw = await callClaude(system, `Generate a MSP service comparison matrix for: ${prompt}`);
-    const clean = raw.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
+    const parsed = safeParseJson(raw);
 
     parsed.id = 'tpl-ai-' + Date.now();
     parsed.category = 'AI Generated';
@@ -929,13 +958,13 @@ async function aiSuggestRows() {
     const existing = tpl.features.map(f => f.label).join(', ');
     const cols = tpl.cols_data.map(c => c.label).join(', ');
     const system = `You are an MSP services expert. Suggest additional comparison rows for a matrix.
-Return JSON only, no explanation: {"suggestions":[{"label":"...","cells":["yes"|"no"|"partial"|"short text",...]}]}
-Return 3-5 suggestions. Match number of cells to column count.`;
+CRITICAL: Return a raw JSON object ONLY. No prose, no markdown, no code fences, no explanation before or after.
+Exactly this structure: {"suggestions":[{"label":"...","cells":["yes","no","partial","or short text"]}]}
+Return 3-5 suggestions. Match the exact number of cells to the column count provided.`;
 
     const raw = await callClaude(system,
       `Matrix title: "${tpl.title}"\nColumns: ${cols}\nExisting features: ${existing}\nSuggest new feature rows.`);
-    const clean = raw.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
+    const parsed = safeParseJson(raw);
 
     // Show in modal for user to select
     showSuggestionModal(parsed.suggestions);
@@ -1029,15 +1058,13 @@ async function aiCompetitiveFill() {
     const tpl = state.activeTemplate;
     const cols = tpl ? tpl.cols_data.map(c => c.label).join(', ') : '';
     const system = `You are a technology product expert specializing in MSP/IT vendor comparisons.
-Fill in a comparison matrix based on real product capabilities. Return JSON only:
-{"cols_data":[{"label":"...","sublabel":"pricing/version","color":"hex"}], 
-"features":[{"label":"...","cells":["yes"|"no"|"partial"|"short text",...]}]}
-8-12 features. Match products to column colors appropriately.`;
+CRITICAL: Return a raw JSON object ONLY. No prose, no markdown, no code fences, no explanation.
+Exactly this structure: {"cols_data":[{"label":"...","sublabel":"pricing or version","color":"#hexcode"}],"features":[{"label":"...","cells":["yes","no","partial","or short text"]}]}
+Use 8-12 features. Use real hex color codes appropriate for each vendor/product brand.`;
 
     const raw = await callClaude(system,
       `${prompt}. ${cols ? `Current columns: ${cols}.` : ''} Fill a competitive comparison matrix.`);
-    const clean = raw.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
+    const parsed = safeParseJson(raw);
 
     if (tpl) {
       tpl.cols_data = parsed.cols_data;
