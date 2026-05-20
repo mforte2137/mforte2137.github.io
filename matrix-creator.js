@@ -674,35 +674,39 @@ function generateHtml() {
 
   const title = dom.editorTitle.value || tpl.title;
   const colCount = tpl.cols_data.length;
-  const featColW = 180;
-  const dataColW = Math.max(130, Math.floor(780 / colCount));
-  const tableW = featColW + (dataColW * colCount);
+
+  // Scale generously for full-page Salesbuildr rendering.
+  // Feature label col wider to avoid wrapping on long names.
+  // Data cols: minimum 160px, never cramps on wide tables.
+  const featColW = colCount >= 5 ? 200 : 220;
+  const dataColW = colCount >= 6 ? 160 : colCount >= 4 ? 175 : Math.max(175, Math.floor(900 / colCount));
+  const tableW   = Math.max(900, featColW + (dataColW * colCount));
 
   const rows = tpl.features.map((feat, ri) => {
     const rowBg = ri % 2 === 0 ? '#ffffff' : '#f8fafc';
     const cells = feat.cells.map(cellVal =>
-      '<td style="padding:12px 8px;text-align:center;border-top:1px solid #e2e8f0;vertical-align:middle;">' +
+      '<td style="padding:13px 12px;text-align:center;border-top:1px solid #e2e8f0;vertical-align:middle;white-space:nowrap;">' +
       cellHtmlInline(cellVal) + '</td>'
     ).join('');
     return '<tr style="background:' + rowBg + ';">' +
-      '<td style="padding:13px 18px;border-right:1px solid #e2e8f0;border-top:1px solid #e2e8f0;vertical-align:middle;">' +
-      '<span style="font-size:13px;font-weight:600;color:#1e293b;">' + feat.label + '</span></td>' +
+      '<td style="padding:13px 20px;border-right:1px solid #e2e8f0;border-top:1px solid #e2e8f0;vertical-align:middle;width:' + featColW + 'px;">' +
+      '<span style="font-size:13px;font-weight:600;color:#1e293b;white-space:nowrap;">' + feat.label + '</span></td>' +
       cells + '</tr>';
   }).join('');
 
   const headers = tpl.cols_data.map(col => {
     const sub = col.sublabel
-      ? '<span style="display:block;font-size:11px;color:rgba(255,255,255,0.82);margin-top:3px;font-weight:400;">' + col.sublabel + '</span>'
+      ? '<span style="display:block;font-size:11px;color:rgba(255,255,255,0.82);margin-top:3px;font-weight:400;white-space:nowrap;">' + col.sublabel + '</span>'
       : '';
-    return '<th style="background:' + col.color + ';padding:18px 14px;text-align:center;width:' + dataColW + 'px;border-bottom:2px solid ' + col.color + ';">' +
-      '<span style="display:block;font-size:13px;font-weight:800;color:#ffffff;letter-spacing:0.06em;text-transform:uppercase;">' + col.label + '</span>' +
+    return '<th style="background:' + col.color + ';padding:18px 16px;text-align:center;width:' + dataColW + 'px;border-bottom:2px solid ' + col.color + ';white-space:nowrap;">' +
+      '<span style="display:block;font-size:13px;font-weight:800;color:#ffffff;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;">' + col.label + '</span>' +
       sub + '</th>';
   }).join('');
 
   return '<!-- Matrix Creator: ' + title + ' -->\n' +
     '<table cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:' + tableW + 'px;border-collapse:collapse;border-radius:12px;overflow:hidden;font-family:Arial,sans-serif;box-shadow:0 2px 16px rgba(0,0,0,0.10);background:#ffffff;">\n' +
     '  <thead><tr>' +
-    '<th style="background:#f8fafc;padding:16px 18px;text-align:left;width:' + featColW + 'px;border-right:1px solid #e2e8f0;border-bottom:2px solid #e2e8f0;">' +
+    '<th style="background:#f8fafc;padding:16px 20px;text-align:left;width:' + featColW + 'px;border-right:1px solid #e2e8f0;border-bottom:2px solid #e2e8f0;white-space:nowrap;">' +
     '<span style="font-size:10px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:#94a3b8;">FEATURE</span></th>' +
     headers + '</tr></thead>\n' +
     '  <tbody>' + rows + '</tbody>\n</table>';
