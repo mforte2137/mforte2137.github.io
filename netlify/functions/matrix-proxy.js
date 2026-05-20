@@ -14,7 +14,7 @@ exports.handler = async (event) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 2000,
         system,
         messages: [{ role: 'user', content: userMsg }]
@@ -23,7 +23,6 @@ exports.handler = async (event) => {
 
     const data = await response.json();
 
-    // Surface API errors clearly
     if (!response.ok) {
       console.error('[matrix-proxy] Anthropic API error:', data);
       return {
