@@ -659,10 +659,22 @@ function renderSchemeOptions() {
 
 function setScheme(id) {
   state.activeScheme = id;
-  // Remove all scheme classes
+
+  // Apply CSS class to body (controls app chrome / background)
   const classes = COLOR_SCHEMES.map(s => s.id);
   dom.body.classList.remove(...classes);
   dom.body.classList.add(id);
+
+  // Also update the active template's column colors to match the scheme palette.
+  // This is the main visible effect users expect — header colors change with the scheme.
+  const scheme = COLOR_SCHEMES.find(s => s.id === id);
+  if (scheme && state.activeTemplate) {
+    state.activeTemplate.cols_data.forEach((col, i) => {
+      col.color = scheme.swatches[i % scheme.swatches.length];
+    });
+    renderColColorPickers();
+  }
+
   renderSchemeOptions();
   if (state.activeTemplate) renderMatrix();
 }
