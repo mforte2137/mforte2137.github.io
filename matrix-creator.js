@@ -643,44 +643,43 @@ function generateHtml() {
   const colCount = tpl.cols_data.length;
   const featColW = 180;
   const dataColW = Math.max(130, Math.floor(780 / colCount));
+  const tableW = featColW + (dataColW * colCount);
 
-  // Build inline-styled HTML for TinyMCE / Salesbuildr
-  let html = `<!-- Matrix Creator — ${title} -->
-<table cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:${featColW + (dataColW * colCount)}px;border-collapse:collapse;border-radius:12px;overflow:hidden;font-family:'DM Sans',Arial,sans-serif;box-shadow:0 4px 24px rgba(0,0,0,0.15);">
-  <thead>
-    <tr>
-      <th style="background:#1c2840;padding:18px 16px;text-align:left;width:${featColW}px;border-right:1px solid rgba(255,255,255,0.08);">
-        <span style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#4a5a7a;">FEATURE</span>
-      </th>
-      ${tpl.cols_data.map(col => `
-      <th style="background:${col.color};padding:18px 12px;text-align:center;width:${dataColW}px;">
-        <span style="display:block;font-size:14px;font-weight:800;color:#fff;letter-spacing:0.05em;text-transform:uppercase;">${col.label}</span>
-        ${col.sublabel ? `<span style="display:block;font-size:11px;color:rgba(255,255,255,0.75);margin-top:2px;">${col.sublabel}</span>` : ''}
-      </th>`).join('')}
-    </tr>
-  </thead>
-  <tbody>
-    ${tpl.features.map((feat, ri) => `
-    <tr style="background:${ri % 2 === 0 ? '#151e2d' : '#1a2535'};">
-      <td style="padding:13px 16px;border-right:1px solid rgba(255,255,255,0.08);border-top:1px solid rgba(255,255,255,0.06);">
-        <span style="font-size:13px;font-weight:600;color:#f0f4ff;">${feat.label}</span>
-      </td>
-      ${feat.cells.map(cellVal => `
-      <td style="padding:12px 8px;text-align:center;border-top:1px solid rgba(255,255,255,0.06);">
-        ${cellHtmlInline(cellVal)}
-      </td>`).join('')}
-    </tr>`).join('')}
-  </tbody>
-</table>`;
+  const rows = tpl.features.map((feat, ri) => {
+    const rowBg = ri % 2 === 0 ? '#ffffff' : '#f8fafc';
+    const cells = feat.cells.map(cellVal =>
+      '<td style="padding:12px 8px;text-align:center;border-top:1px solid #e2e8f0;vertical-align:middle;">' +
+      cellHtmlInline(cellVal) + '</td>'
+    ).join('');
+    return '<tr style="background:' + rowBg + ';">' +
+      '<td style="padding:13px 18px;border-right:1px solid #e2e8f0;border-top:1px solid #e2e8f0;vertical-align:middle;">' +
+      '<span style="font-size:13px;font-weight:600;color:#1e293b;">' + feat.label + '</span></td>' +
+      cells + '</tr>';
+  }).join('');
 
-  return html;
+  const headers = tpl.cols_data.map(col => {
+    const sub = col.sublabel
+      ? '<span style="display:block;font-size:11px;color:rgba(255,255,255,0.82);margin-top:3px;font-weight:400;">' + col.sublabel + '</span>'
+      : '';
+    return '<th style="background:' + col.color + ';padding:18px 14px;text-align:center;width:' + dataColW + 'px;border-bottom:2px solid ' + col.color + ';">' +
+      '<span style="display:block;font-size:13px;font-weight:800;color:#ffffff;letter-spacing:0.06em;text-transform:uppercase;">' + col.label + '</span>' +
+      sub + '</th>';
+  }).join('');
+
+  return '<!-- Matrix Creator: ' + title + ' -->\n' +
+    '<table cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:' + tableW + 'px;border-collapse:collapse;border-radius:12px;overflow:hidden;font-family:Arial,sans-serif;box-shadow:0 2px 16px rgba(0,0,0,0.10);background:#ffffff;">\n' +
+    '  <thead><tr>' +
+    '<th style="background:#f8fafc;padding:16px 18px;text-align:left;width:' + featColW + 'px;border-right:1px solid #e2e8f0;border-bottom:2px solid #e2e8f0;">' +
+    '<span style="font-size:10px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:#94a3b8;">FEATURE</span></th>' +
+    headers + '</tr></thead>\n' +
+    '  <tbody>' + rows + '</tbody>\n</table>';
 }
 
 function cellHtmlInline(val) {
-  if (val === 'yes') return `<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:rgba(16,185,129,0.15);color:#10b981;font-weight:700;font-size:13px;">✓</span>`;
-  if (val === 'no') return `<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:rgba(239,68,68,0.08);color:rgba(239,68,68,0.5);font-size:10px;">✕</span>`;
-  if (val === 'partial') return `<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:rgba(245,158,11,0.15);color:#f59e0b;font-size:16px;">◐</span>`;
-  return `<span style="font-size:12px;font-weight:500;color:#8b9dc3;">${val}</span>`;
+  if (val === 'yes')     return '<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#10b981;color:#ffffff;font-weight:700;font-size:14px;line-height:1;">&#10003;</span>';
+  if (val === 'no')      return '<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#fee2e2;color:#ef4444;font-size:12px;font-weight:600;line-height:1;">&#10005;</span>';
+  if (val === 'partial') return '<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#fef3c7;color:#d97706;font-size:15px;line-height:1;">&#9680;</span>';
+  return '<span style="font-size:12px;font-weight:600;color:#334155;">' + val + '</span>';
 }
 
 function updateExportCode() {
