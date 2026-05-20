@@ -489,13 +489,15 @@ function renderMatrix() {
                     oninput="onFeatLabelEdit(${ri}, this.innerText)"
                     onblur="onFeatLabelEdit(${ri}, this.innerText)">${feat.label}</span>
             </td>
-            ${feat.cells.map((cellVal, ci) => `
-              <td class="matrix-cell"
+            ${feat.cells.map((cellVal, ci) => {
+              const isText = !['yes','no','partial'].includes(cellVal);
+              return `<td class="matrix-cell ${isText ? 'matrix-cell-text' : ''}"
                   data-row="${ri}" data-col="${ci}"
                   onclick="selectCell(${ri},${ci})"
-                  ondblclick="cycleCell(${ri},${ci})">
-                ${renderCellContent(cellVal, tpl.cols_data[ci].color)}
-              </td>`).join('')}
+                  ondblclick="${isText ? '' : `cycleCell(${ri},${ci})`}">
+                ${renderCellContent(cellVal, ri, ci)}
+              </td>`;
+            }).join('')}
             <td style="background:transparent;border:none;padding:4px 0 4px 6px;">
               <button class="row-delete-btn" onclick="deleteRow(${ri})" title="Delete row">×</button>
             </td>
@@ -509,21 +511,41 @@ function renderMatrix() {
   updateExportCode();
 }
 
-function renderCellContent(val, colColor) {
-  if (val === 'yes') return CELL_ICONS.yes;
-  if (val === 'no') return CELL_ICONS.no;
+function renderCellContent(val, ri, ci) {
+  if (val === 'yes')     return CELL_ICONS.yes;
+  if (val === 'no')      return CELL_ICONS.no;
   if (val === 'partial') return CELL_ICONS.partial;
-  // Text value
-  return `<span class="cell-text-val">${val}</span>`;
+  // Text value — inline editable directly in the cell
+  return `<span class="cell-text-val cell-text-editable"
+               contenteditable="true"
+               spellcheck="false"
+               oninput="onCellTextEdit(${ri},${ci},this.innerText)"
+               onblur="onCellTextEdit(${ri},${ci},this.innerText)"
+               onclick="event.stopPropagation()">${val}</span>`;
 }
 
 /* ── Cell interaction ────────────────────────────────────────── */
 function selectCell(ri, ci) {
-  // Clear previous
+  // Clear previous selection
   document.querySelectorAll('.matrix-cell.selected-cell').forEach(el => el.classList.remove('selected-cell'));
   const el = document.querySelector(`[data-row="${ri}"][data-col="${ci}"]`);
   if (el) el.classList.add('selected-cell');
   state.selectedCell = { ri, ci };
+
+  // If this is a text cell, auto-focus the editable span
+  const textSpan = el && el.querySelector('.cell-text-editable');
+  if (textSpan) {
+    setTimeout(() => {
+      textSpan.focus();
+      // Place cursor at end
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.selectNodeContents(textSpan);
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }, 0);
+  }
 }
 
 function cycleCell(ri, ci) {
@@ -559,6 +581,13 @@ function onColLabelEdit(ci, field, val) {
 
 function onFeatLabelEdit(ri, val) {
   state.activeTemplate.features[ri].label = val;
+  updateExportCode();
+}
+
+function onCellTextEdit(ri, ci, val) {
+  const cleaned = val.trim();
+  if (cleaned === '') return; // Don't allow empty — user must use ✕ button for that
+  state.activeTemplate.features[ri].cells[ci] = cleaned;
   updateExportCode();
 }
 
@@ -1049,6 +1078,7 @@ window.setCellValue = setCellValue;
 window.onTitleEdit = onTitleEdit;
 window.onColLabelEdit = onColLabelEdit;
 window.onFeatLabelEdit = onFeatLabelEdit;
+window.onCellTextEdit = onCellTextEdit;
 window.addRow = addRow;
 window.deleteRow = deleteRow;
 window.addColumn = addColumn;
