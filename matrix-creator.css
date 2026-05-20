@@ -92,14 +92,7 @@
   --shadow-card:0 2px 16px rgba(0,0,0,0.07); --shadow-panel:0 4px 32px rgba(0,0,0,0.09);
   --col-1:#1e40af; --col-2:#065f46; --col-3:#7e22ce; --col-4:#c2410c;
 }
-.scheme-midnight {
-  --bg-app:#0f1623; --bg-panel:#151e2d; --bg-card:#1c2840;
-  --bg-card-hover:#223152; --bg-surface:#243047; --bg-input:#1a2535;
-  --border:rgba(255,255,255,0.08); --border-active:rgba(255,255,255,0.18);
-  --text-primary:#f0f4ff; --text-secondary:#8b9dc3; --text-muted:#4a5a7a;
-  --shadow-card:0 4px 24px rgba(0,0,0,0.4); --shadow-panel:0 8px 40px rgba(0,0,0,0.5);
-  --col-1:#334155; --col-2:#475569; --col-3:#64748b; --col-4:#94a3b8;
-}
+/* Dark Mode scheme removed */
 
 /* ── Reset & Base ────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
