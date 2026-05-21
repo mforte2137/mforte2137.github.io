@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PCG IT — Banner Creator</title>
+  <title>Banner Creator</title>
   <link rel="stylesheet" href="banner.css" />
 </head>
 <body>
@@ -28,6 +28,12 @@
       <h1>Banner Creator <span class="tag">MSP Toolkit</span></h1>
       <div class="topbar-actions">
         <button id="btn-save" class="btn-secondary">💾 Save</button>
+        <div class="export-mode-wrap">
+          <div class="seg-control" id="seg-export">
+            <button class="seg active" data-val="print" title="2481px wide · matches Xara 300dpi">🖨 300 dpi</button>
+            <button class="seg" data-val="web" title="794px wide · fast web use">🌐 96 dpi</button>
+          </div>
+        </div>
         <button id="btn-download" class="btn-primary">⬇ Download PNG</button>
       </div>
     </header>
