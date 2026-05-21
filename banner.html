@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PCG IT — Banner Creator</title>
+  <link rel="stylesheet" href="banner.css" />
+</head>
+<body>
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────── -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-logo">⬡</span>
+      <span>Banner Creator</span>
+    </div>
+    <div class="sidebar-section-label">Recent Banners</div>
+    <div id="recent-list">
+      <p class="empty-note">No saved banners yet.</p>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ──────────────────────────────────────────────── -->
+  <main id="main">
+
+    <!-- TOPBAR -->
+    <header id="topbar">
+      <h1>Banner Creator <span class="tag">MSP Toolkit</span></h1>
+      <div class="topbar-actions">
+        <button id="btn-save" class="btn-secondary">💾 Save</button>
+        <button id="btn-download" class="btn-primary">⬇ Download PNG</button>
+      </div>
+    </header>
+
+    <!-- WORKSPACE -->
+    <div id="workspace">
+
+      <!-- CONTROLS PANEL -->
+      <section id="controls">
+
+        <!-- Company -->
+        <div class="ctrl-group">
+          <label class="ctrl-label">MSP Company Name</label>
+          <input type="text" id="inp-company" placeholder="e.g. Acme IT Solutions" />
+        </div>
+
+        <!-- Banner dimensions -->
+        <div class="ctrl-group">
+          <label class="ctrl-label">Banner Height <span id="height-val" class="val-badge">280px</span></label>
+          <input type="range" id="inp-height" min="120" max="600" value="280" step="4" />
+        </div>
+
+        <!-- Background type -->
+        <div class="ctrl-group">
+          <label class="ctrl-label">Background Style</label>
+          <div class="seg-control" id="seg-bg-type">
+            <button class="seg active" data-val="solid">Solid</button>
+            <button class="seg" data-val="gradient">Gradient</button>
+          </div>
+        </div>
+
+        <!-- Main color -->
+        <div class="ctrl-row">
+          <div class="ctrl-group half">
+            <label class="ctrl-label">Main Color</label>
+            <div class="color-row">
+              <input type="color" id="inp-color1" value="#1a3a5c" />
+              <input type="text"  id="inp-hex1"   value="#1a3a5c" maxlength="7" class="hex-inp" />
+            </div>
+          </div>
+          <div class="ctrl-group half" id="grad-color-wrap" style="display:none">
+            <label class="ctrl-label">Gradient End</label>
+            <div class="color-row">
+              <input type="color" id="inp-color2" value="#0d2035" />
+              <input type="text"  id="inp-hex2"   value="#0d2035" maxlength="7" class="hex-inp" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Accent bands -->
+        <div class="ctrl-group">
+          <label class="ctrl-label">Accent Bands</label>
+          <div class="seg-control" id="seg-accent">
+            <button class="seg active" data-val="none">None</button>
+            <button class="seg" data-val="single">Single</button>
+            <button class="seg" data-val="double">Double</button>
+          </div>
+        </div>
+
+        <div id="accent-controls" style="display:none">
+          <!-- Accent position -->
+          <div class="ctrl-group">
+            <label class="ctrl-label">Band Position</label>
+            <div class="seg-control" id="seg-accent-pos">
+              <button class="seg active" data-val="below">Below</button>
+              <button class="seg" data-val="above">Above</button>
+            </div>
+          </div>
+
+          <!-- Accent 1 -->
+          <div class="ctrl-row">
+            <div class="ctrl-group half">
+              <label class="ctrl-label">Accent 1 Color</label>
+              <div class="color-row">
+                <input type="color" id="inp-accent1" value="#f5a623" />
+                <input type="text"  id="inp-hex-a1"  value="#f5a623" maxlength="7" class="hex-inp" />
+              </div>
+            </div>
+            <div class="ctrl-group half">
+              <label class="ctrl-label">Accent 1 Height <span id="ah1-val" class="val-badge">8px</span></label>
+              <input type="range" id="inp-ah1" min="3" max="40" value="8" />
+            </div>
+          </div>
+
+          <!-- Accent 2 (double only) -->
+          <div id="accent2-wrap" style="display:none">
+            <div class="ctrl-row">
+              <div class="ctrl-group half">
+                <label class="ctrl-label">Accent 2 Color</label>
+                <div class="color-row">
+                  <input type="color" id="inp-accent2" value="#ffffff" />
+                  <input type="text"  id="inp-hex-a2"  value="#ffffff" maxlength="7" class="hex-inp" />
+                </div>
+              </div>
+              <div class="ctrl-group half">
+                <label class="ctrl-label">Accent 2 Height <span id="ah2-val" class="val-badge">4px</span></label>
+                <input type="range" id="inp-ah2" min="2" max="30" value="4" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Logo upload -->
+        <div class="ctrl-group">
+          <label class="ctrl-label">Logo</label>
+          <label class="file-drop" id="logo-drop">
+            <input type="file" id="inp-logo" accept="image/*" />
+            <span id="logo-drop-text">Click or drag to upload logo</span>
+          </label>
+          <div id="logo-controls" style="display:none">
+            <div class="ctrl-row" style="margin-top:10px">
+              <div class="ctrl-group half">
+                <label class="ctrl-label">Width <span id="logo-w-val" class="val-badge">200px</span></label>
+                <input type="range" id="inp-logo-w" min="40" max="700" value="200" />
+              </div>
+              <div class="ctrl-group half">
+                <label class="ctrl-label">Height <span id="logo-h-val" class="val-badge">auto</span></label>
+                <div class="seg-control" id="seg-logo-lock">
+                  <button class="seg active" data-val="locked">⛓ Locked</button>
+                  <button class="seg" data-val="free">Free</button>
+                </div>
+              </div>
+            </div>
+            <div id="logo-h-wrap" style="display:none;margin-top:6px">
+              <label class="ctrl-label">Logo Height <span id="logo-hh-val" class="val-badge">100px</span></label>
+              <input type="range" id="inp-logo-h" min="20" max="500" value="100" />
+            </div>
+            <button class="btn-ghost" id="btn-remove-logo" style="margin-top:8px">✕ Remove Logo</button>
+          </div>
+        </div>
+
+        <!-- Nudge hint -->
+        <div class="hint-box" id="nudge-hint" style="display:none">
+          <strong>Tip:</strong> Click logo on the preview then use <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> to nudge 1 px, hold <kbd>Shift</kbd> for 10 px.
+        </div>
+
+      </section>
+
+      <!-- PREVIEW PANEL -->
+      <section id="preview-panel">
+        <div class="preview-label">Preview <span id="preview-dims"></span></div>
+
+        <!-- Scrollable preview area -->
+        <div id="preview-scroll">
+          <div id="preview-outer">
+            <!-- The actual renderable canvas sits here at 1:1 scale hidden then copied -->
+            <div id="preview-banner">
+              <!-- main band -->
+              <div id="pv-main"></div>
+              <!-- accent bands rendered inside pv-main as flex children -->
+              <!-- logo -->
+              <img id="pv-logo" draggable="false" style="display:none" alt="logo" />
+            </div>
+          </div>
+        </div>
+
+        <p class="preview-note">Drag the logo to position it. Arrow-key nudge when logo is selected.</p>
+      </section>
+
+    </div><!-- /workspace -->
+  </main>
+
+  <script src="banner.js"></script>
+</body>
+</html>
