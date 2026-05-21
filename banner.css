@@ -172,7 +172,10 @@ body {
   letter-spacing: .05em;
   text-transform: uppercase;
 }
-.topbar-actions { display: flex; gap: 10px; }
+.topbar-actions { display: flex; gap: 10px; align-items: center; }
+.export-mode-wrap { display: flex; align-items: center; gap: 6px; }
+.export-mode-wrap .seg-control { background: var(--surface2); }
+.export-mode-wrap .seg { font-size: 11px; padding: 6px 10px; }
 
 /* ── Workspace ───────────────────────────────────── */
 #workspace {
