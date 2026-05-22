@@ -674,10 +674,11 @@ function generateWidget() {
 }
 
 function autoRefresh() {
-  const pre = document.getElementById('htmlOut');
-  if (!pre.textContent.trim()) return;
+  // Only update output if panels are already visible — never auto-show them
+  const panels = document.getElementById('outputPanels');
+  if (!panels || panels.hidden) return;
   const html = generateWidget();
-  pre.textContent = html;
+  document.getElementById('htmlOut').textContent = html;
   document.getElementById('preview').innerHTML = html;
 }
 
@@ -1083,6 +1084,8 @@ sbPushBtn.addEventListener('click', async () => {
   updateCenterHeader();
   renderProjects();
   document.getElementById('outputPanels').hidden = true;
+  document.getElementById('htmlOut').textContent = '';
+  document.getElementById('preview').innerHTML = '';
   document.getElementById('copyBtn').disabled = true;
   await renderTemplateSelect();
   initSbCredentials();
