@@ -362,6 +362,20 @@ pre {
 .ai-send-btn:hover { background: #1d4ed8; }
 .ai-send-btn:disabled { background: var(--line); cursor: not-allowed; }
 
+/* Brand color swatches */
+.brand-swatches { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.brand-swatch {
+  width: 22px; height: 22px; border-radius: 50%; cursor: pointer; flex-shrink: 0;
+  border: 2px solid transparent; transition: transform .12s, border-color .12s;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.brand-swatch:hover { transform: scale(1.15); }
+.brand-swatch.active { border-color: var(--text); transform: scale(1.1); }
+.brand-swatch-custom { border: 2px solid var(--line) !important; }
+.brand-swatch-custom.active { border-color: var(--text) !important; }
+.brand-hex-row { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.brand-hex-row .lp-input { flex: 1; }
+
 /* Toast */
 .toast {
   position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
