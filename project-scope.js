@@ -696,10 +696,10 @@ sbPushBtn.addEventListener('click', async () => {
 // ── Template management ───────────────────────────────────
 // ── Template storage — passphrase-namespaced hybrid ──────────────────────────
 //
-//  WITH passphrase: templates stored in localStorage under a key derived from
-//    the passphrase hash — sb_scope_team_{hash}_v1. Anyone on the same device
-//    who types the same passphrase shares the same template store.
-//    Cross-device sharing uses the existing Export/Import JSON buttons.
+//  WITH passphrase: templates stored server-side via Netlify Blobs through
+//    the /api/scope-templates function, namespaced by passphrase hash.
+//    Any team member on any device who types the same passphrase sees the
+//    same shared templates.
 //
 //  WITHOUT passphrase: falls back to the original localStorage key
 //    "sb_scope_templates_v1" — solo use, per-browser, unchanged behaviour.
@@ -707,8 +707,9 @@ sbPushBtn.addEventListener('click', async () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const LS_TEMPLATES = 'sb_scope_templates_v1';
+const API_ENDPOINT = '/api/scope-templates';
 
-// Returns the active passphrase (trimmed), or '' if none entered.
+// Returns the active passphrase (trimmed), or empty string if none entered.
 function getPassphrase() {
   return (document.getElementById('tmplPassphrase')?.value || '').trim();
 }
@@ -728,25 +729,21 @@ function isTeamMode() { return getPassphrase().length > 0; }
 function localGetAll()       { try { return JSON.parse(localStorage.getItem(LS_TEMPLATES)) || []; } catch { return []; } }
 function localSaveAll(tmpl)  { localStorage.setItem(LS_TEMPLATES, JSON.stringify(tmpl)); }
 
-// ── localStorage helpers (team / passphrase-namespaced) ───────────────────────
-// Team templates are stored under a passphrase-derived key in localStorage.
-// Everyone who types the same passphrase on the same device shares the same
-// template store. Cross-device sharing uses the existing export/import JSON flow.
-function teamKey(hash)       { return `sb_scope_team_${hash}_v1`; }
-function teamGetAll(hash)    { try { return JSON.parse(localStorage.getItem(teamKey(hash))) || []; } catch { return []; } }
-function teamSaveAll(hash, tmpl) { localStorage.setItem(teamKey(hash), JSON.stringify(tmpl)); }
+// ── Netlify Blobs helpers (team / passphrase) ─────────────────────────────────
+async function apiCall(payload) {
+  const res = await fetch(API_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json();
+}
 
-async function teamGetIndex(hash)                  { return teamGetAll(hash).map(t => t.name); }
-async function teamGetTemplate(hash, name)         { return teamGetAll(hash).find(t => t.name === name) || null; }
-async function teamSaveTemplate(hash, name, entry) {
-  const all = teamGetAll(hash);
-  const idx = all.findIndex(t => t.name === name);
-  if (idx >= 0) all[idx] = entry; else all.push(entry);
-  teamSaveAll(hash, all);
-}
-async function teamDeleteTemplate(hash, name) {
-  teamSaveAll(hash, teamGetAll(hash).filter(t => t.name !== name));
-}
+async function teamGetIndex(hash)                  { return apiCall({ method: 'getIndex', hash }); }
+async function teamGetTemplate(hash, name)         { return apiCall({ method: 'getTemplate', hash, name }); }
+async function teamSaveTemplate(hash, name, entry) { return apiCall({ method: 'saveTemplate', hash, name, entry }); }
+async function teamDeleteTemplate(hash, name)      { return apiCall({ method: 'deleteTemplate', hash, name }); }
 
 // ── Prompt helper: ask user whether to enable team sharing ───────────────────
 // Returns true if user enters a passphrase, false if they choose to stay local.
