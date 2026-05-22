@@ -694,7 +694,122 @@ sbPushBtn.addEventListener('click', async () => {
 });
 
 // ── Template management ───────────────────────────────────
+// ── Template storage — passphrase-namespaced hybrid ──────────────────────────
+//
+//  WITH passphrase: keys stored in window.storage (shared=true) under a
+//    namespace derived from the passphrase so different teams can't see each
+//    other's templates.
+//    Index key : "pst:{hash}:index"
+//    Template  : "pst:{hash}:tmpl:{name}"
+//
+//  WITHOUT passphrase: falls back to localStorage (per-browser, solo use),
+//    exactly as the original tool worked.
+//    Index key : "sb_scope_templates_v1"  (legacy key kept for compatibility)
+//
+// ─────────────────────────────────────────────────────────────────────────────
+
 const LS_TEMPLATES = 'sb_scope_templates_v1';
+
+// Returns the active passphrase (trimmed), or '' if none entered.
+function getPassphrase() {
+  return (document.getElementById('tmplPassphrase')?.value || '').trim();
+}
+
+// Simple non-cryptographic hash — good enough to namespace keys.
+function hashPassphrase(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(31, h) + str.charCodeAt(i) | 0;
+  }
+  return Math.abs(h).toString(36);
+}
+
+function isTeamMode() { return getPassphrase().length > 0; }
+
+// ── localStorage helpers (solo / no passphrase) ───────────────────────────────
+function localGetAll()       { try { return JSON.parse(localStorage.getItem(LS_TEMPLATES)) || []; } catch { return []; } }
+function localSaveAll(tmpl)  { localStorage.setItem(LS_TEMPLATES, JSON.stringify(tmpl)); }
+
+// ── window.storage helpers (team / passphrase) ────────────────────────────────
+function teamIndexKey(hash)  { return `pst:${hash}:index`; }
+function teamTmplKey(hash, name) { return `pst:${hash}:tmpl:${name}`; }
+
+async function teamGetIndex(hash) {
+  try {
+    const r = await window.storage.get(teamIndexKey(hash), true);
+    return JSON.parse(r.value);
+  } catch { return []; }
+}
+async function teamSaveIndex(hash, names) {
+  await window.storage.set(teamIndexKey(hash), JSON.stringify(names), true);
+}
+async function teamGetTemplate(hash, name) {
+  try {
+    const r = await window.storage.get(teamTmplKey(hash, name), true);
+    return JSON.parse(r.value);
+  } catch { return null; }
+}
+async function teamSaveTemplate(hash, name, entry) {
+  await window.storage.set(teamTmplKey(hash, name), JSON.stringify(entry), true);
+  const idx = await teamGetIndex(hash);
+  if (!idx.includes(name)) { idx.push(name); await teamSaveIndex(hash, idx); }
+}
+async function teamDeleteTemplate(hash, name) {
+  try { await window.storage.delete(teamTmplKey(hash, name), true); } catch {}
+  const idx = await teamGetIndex(hash);
+  await teamSaveIndex(hash, idx.filter(n => n !== name));
+}
+
+// ── Prompt helper: ask user whether to enable team sharing ───────────────────
+// Returns true if user enters a passphrase, false if they choose to stay local.
+function promptForPassphrase(action = 'use shared templates') {
+  const input = document.getElementById('tmplPassphrase');
+  const phrase = prompt(
+    `No team passphrase is set.\n\nEnter a passphrase to ${action} with your team, ` +
+    `or leave blank and click OK to continue with local (personal) storage.`
+  );
+  if (phrase === null) return false;          // cancelled
+  if (phrase.trim().length > 0) {
+    input.value = phrase.trim();
+    updatePassphraseUI();
+    return true;
+  }
+  return false;   // blank → stay local
+}
+
+// Update the passphrase field visual state.
+function updatePassphraseUI() {
+  const badge = document.getElementById('tmplPassphraseBadge');
+  if (!badge) return;
+  if (isTeamMode()) {
+    badge.textContent = '🔗 Team';
+    badge.style.color = 'var(--good)';
+  } else {
+    badge.textContent = '💾 Local';
+    badge.style.color = 'var(--muted)';
+  }
+}
+
+// ── Unified template API (used by all button handlers) ───────────────────────
+
+async function renderTemplateSelect() {
+  const sel  = document.getElementById('templateSelect');
+  const saved = sel.value;
+
+  if (isTeamMode()) {
+    sel.innerHTML = '<option value="">⏳ Loading team templates…</option>';
+    const hash  = hashPassphrase(getPassphrase());
+    const names = await teamGetIndex(hash);
+    sel.innerHTML = `<option value="">— ${names.length ? 'Team templates' : 'No team templates yet'} —</option>` +
+      names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+    if (saved && names.includes(saved)) sel.value = saved;
+  } else {
+    const all = localGetAll();
+    sel.innerHTML = `<option value="">— ${all.length ? 'My local templates' : 'No local templates yet'} —</option>` +
+      all.map(t => `<option value="${esc(t.name)}">${esc(t.name)}</option>`).join('');
+    if (saved && all.find(t => t.name === saved)) sel.value = saved;
+  }
+}
 
 function captureCurrentState() {
   return {
@@ -725,58 +840,101 @@ function applyState(s) {
   saveState();
 }
 
-function getTemplates()        { try { return JSON.parse(localStorage.getItem(LS_TEMPLATES)) || []; } catch { return []; } }
-function saveTemplates(tmpl)   { localStorage.setItem(LS_TEMPLATES, JSON.stringify(tmpl)); }
-
-function renderTemplateSelect() {
-  const sel   = document.getElementById('templateSelect');
-  const saved = sel.value;
-  const tmpl  = getTemplates();
-  sel.innerHTML = `<option value="">— ${tmpl.length ? 'My saved templates' : 'No saved templates yet'} —</option>` +
-    tmpl.map(t => `<option value="${esc(t.name)}">${esc(t.name)}</option>`).join('');
-  if (saved) sel.value = saved;
-}
-
 // Save as Template
-document.getElementById('saveTemplateBtn').addEventListener('click', () => {
+document.getElementById('saveTemplateBtn').addEventListener('click', async () => {
+  // If no passphrase set, offer team sharing first
+  if (!isTeamMode()) {
+    const goTeam = promptForPassphrase('save templates');
+    if (!goTeam) {
+      // Stay local — continue to local save below
+    }
+    await renderTemplateSelect();
+  }
+
   const def  = document.getElementById('projectTitle').value.trim() || 'My Template';
   const name = prompt('Name this template:', def);
   if (!name?.trim()) return;
-  const trimmed   = name.trim();
-  const templates = getTemplates();
-  const existing  = templates.findIndex(t => t.name === trimmed);
-  const entry     = { name: trimmed, savedAt: new Date().toISOString(), ...captureCurrentState() };
-  if (existing >= 0) {
-    if (!confirm(`Replace existing template "${trimmed}"?`)) return;
-    templates[existing] = entry;
-  } else {
-    templates.push(entry);
+  const trimmed = name.trim();
+  const btn     = document.getElementById('saveTemplateBtn');
+  const entry   = { name: trimmed, savedAt: new Date().toISOString(), ...captureCurrentState() };
+
+  btn.disabled = true;
+  try {
+    if (isTeamMode()) {
+      const hash     = hashPassphrase(getPassphrase());
+      const existing = (await teamGetIndex(hash)).includes(trimmed);
+      if (existing && !confirm(`Replace team template "${trimmed}"?`)) { btn.disabled = false; return; }
+      await teamSaveTemplate(hash, trimmed, entry);
+      showToast(`"${trimmed}" saved for the whole team`);
+    } else {
+      const all      = localGetAll();
+      const existing = all.findIndex(t => t.name === trimmed);
+      if (existing >= 0) {
+        if (!confirm(`Replace local template "${trimmed}"?`)) { btn.disabled = false; return; }
+        all[existing] = entry;
+      } else {
+        all.push(entry);
+      }
+      localSaveAll(all);
+      showToast(`"${trimmed}" saved locally`);
+    }
+    await renderTemplateSelect();
+    document.getElementById('templateSelect').value = trimmed;
+  } catch {
+    showToast('⚠️ Save failed — try again');
+  } finally {
+    btn.disabled = false;
   }
-  saveTemplates(templates);
-  renderTemplateSelect();
-  document.getElementById('templateSelect').value = trimmed;
-  showToast(`"${trimmed}" saved`);
 });
 
 // Load Template
-document.getElementById('loadTemplateBtn').addEventListener('click', () => {
+document.getElementById('loadTemplateBtn').addEventListener('click', async () => {
   const name = document.getElementById('templateSelect').value;
   if (!name) return;
-  const tmpl = getTemplates().find(t => t.name === name);
-  if (!tmpl) return;
-  if (rows.length && !confirm(`Load "${name}"? Your current scope will be replaced.`)) return;
-  applyState(tmpl);
-  showToast(`"${name}" loaded`);
+  const btn  = document.getElementById('loadTemplateBtn');
+  btn.disabled = true;
+  try {
+    let tmpl;
+    if (isTeamMode()) {
+      tmpl = await teamGetTemplate(hashPassphrase(getPassphrase()), name);
+    } else {
+      tmpl = localGetAll().find(t => t.name === name) || null;
+    }
+    if (!tmpl) { showToast('Template not found'); return; }
+    if (rows.length && !confirm(`Load "${name}"? Your current scope will be replaced.`)) return;
+    applyState(tmpl);
+    showToast(`"${name}" loaded`);
+  } catch {
+    showToast('⚠️ Load failed — try again');
+  } finally {
+    btn.disabled = false;
+  }
 });
 
 // Delete Template
-document.getElementById('deleteTemplateBtn').addEventListener('click', () => {
+document.getElementById('deleteTemplateBtn').addEventListener('click', async () => {
   const name = document.getElementById('templateSelect').value;
   if (!name) return;
-  if (!confirm(`Delete template "${name}"?`)) return;
-  saveTemplates(getTemplates().filter(t => t.name !== name));
-  renderTemplateSelect();
-  showToast(`"${name}" deleted`);
+  const isTeam = isTeamMode();
+  const msg = isTeam
+    ? `Delete team template "${name}"? This removes it for everyone.`
+    : `Delete local template "${name}"?`;
+  if (!confirm(msg)) return;
+  const btn  = document.getElementById('deleteTemplateBtn');
+  btn.disabled = true;
+  try {
+    if (isTeam) {
+      await teamDeleteTemplate(hashPassphrase(getPassphrase()), name);
+    } else {
+      localSaveAll(localGetAll().filter(t => t.name !== name));
+    }
+    await renderTemplateSelect();
+    showToast(`"${name}" deleted`);
+  } catch {
+    showToast('⚠️ Delete failed — try again');
+  } finally {
+    btn.disabled = false;
+  }
 });
 
 // Export JSON
@@ -812,7 +970,7 @@ document.getElementById('importInput').addEventListener('change', e => {
 });
 
 // ── Init ──────────────────────────────────────────────────
-(function init() {
+(async function init() {
   // Check if Sales Guide passed a preset via URL param
   const urlPreset = new URLSearchParams(window.location.search).get('preset');
   const hasSaved  = urlPreset ? false : loadState(); // URL preset overrides saved state
@@ -828,6 +986,15 @@ document.getElementById('importInput').addEventListener('change', e => {
     document.getElementById('exclusions').value   = PRESETS.azure.exclusions;
   }
   render();
-  renderTemplateSelect();
+  updatePassphraseUI();
+  await renderTemplateSelect();
   initSbCredentials();
 })();
+
+// ── Passphrase field — live update UI + reload template list ─────────────────
+document.getElementById('tmplPassphrase').addEventListener('input', async () => {
+  updatePassphraseUI();
+  const label = document.getElementById('tmplModeLabel');
+  if (label) label.textContent = isTeamMode() ? '(team — shared)' : '(local)';
+  await renderTemplateSelect();
+});
