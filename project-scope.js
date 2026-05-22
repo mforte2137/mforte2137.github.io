@@ -696,15 +696,13 @@ sbPushBtn.addEventListener('click', async () => {
 // ── Template management ───────────────────────────────────
 // ── Template storage — passphrase-namespaced hybrid ──────────────────────────
 //
-//  WITH passphrase: keys stored in window.storage (shared=true) under a
-//    namespace derived from the passphrase so different teams can't see each
-//    other's templates.
-//    Index key : "pst:{hash}:index"
-//    Template  : "pst:{hash}:tmpl:{name}"
+//  WITH passphrase: templates stored in localStorage under a key derived from
+//    the passphrase hash — sb_scope_team_{hash}_v1. Anyone on the same device
+//    who types the same passphrase shares the same template store.
+//    Cross-device sharing uses the existing Export/Import JSON buttons.
 //
-//  WITHOUT passphrase: falls back to localStorage (per-browser, solo use),
-//    exactly as the original tool worked.
-//    Index key : "sb_scope_templates_v1"  (legacy key kept for compatibility)
+//  WITHOUT passphrase: falls back to the original localStorage key
+//    "sb_scope_templates_v1" — solo use, per-browser, unchanged behaviour.
 //
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -730,34 +728,24 @@ function isTeamMode() { return getPassphrase().length > 0; }
 function localGetAll()       { try { return JSON.parse(localStorage.getItem(LS_TEMPLATES)) || []; } catch { return []; } }
 function localSaveAll(tmpl)  { localStorage.setItem(LS_TEMPLATES, JSON.stringify(tmpl)); }
 
-// ── window.storage helpers (team / passphrase) ────────────────────────────────
-function teamIndexKey(hash)  { return `pst:${hash}:index`; }
-function teamTmplKey(hash, name) { return `pst:${hash}:tmpl:${name}`; }
+// ── localStorage helpers (team / passphrase-namespaced) ───────────────────────
+// Team templates are stored under a passphrase-derived key in localStorage.
+// Everyone who types the same passphrase on the same device shares the same
+// template store. Cross-device sharing uses the existing export/import JSON flow.
+function teamKey(hash)       { return `sb_scope_team_${hash}_v1`; }
+function teamGetAll(hash)    { try { return JSON.parse(localStorage.getItem(teamKey(hash))) || []; } catch { return []; } }
+function teamSaveAll(hash, tmpl) { localStorage.setItem(teamKey(hash), JSON.stringify(tmpl)); }
 
-async function teamGetIndex(hash) {
-  try {
-    const r = await window.storage.get(teamIndexKey(hash), true);
-    return JSON.parse(r.value);
-  } catch { return []; }
-}
-async function teamSaveIndex(hash, names) {
-  await window.storage.set(teamIndexKey(hash), JSON.stringify(names), true);
-}
-async function teamGetTemplate(hash, name) {
-  try {
-    const r = await window.storage.get(teamTmplKey(hash, name), true);
-    return JSON.parse(r.value);
-  } catch { return null; }
-}
+async function teamGetIndex(hash)                  { return teamGetAll(hash).map(t => t.name); }
+async function teamGetTemplate(hash, name)         { return teamGetAll(hash).find(t => t.name === name) || null; }
 async function teamSaveTemplate(hash, name, entry) {
-  await window.storage.set(teamTmplKey(hash, name), JSON.stringify(entry), true);
-  const idx = await teamGetIndex(hash);
-  if (!idx.includes(name)) { idx.push(name); await teamSaveIndex(hash, idx); }
+  const all = teamGetAll(hash);
+  const idx = all.findIndex(t => t.name === name);
+  if (idx >= 0) all[idx] = entry; else all.push(entry);
+  teamSaveAll(hash, all);
 }
 async function teamDeleteTemplate(hash, name) {
-  try { await window.storage.delete(teamTmplKey(hash, name), true); } catch {}
-  const idx = await teamGetIndex(hash);
-  await teamSaveIndex(hash, idx.filter(n => n !== name));
+  teamSaveAll(hash, teamGetAll(hash).filter(t => t.name !== name));
 }
 
 // ── Prompt helper: ask user whether to enable team sharing ───────────────────
