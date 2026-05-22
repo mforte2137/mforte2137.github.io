@@ -13,10 +13,16 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    const store = getStore({ name: 'scope-templates', consistency: 'strong' });
-    const { method, hash, name, entry } = JSON.parse(event.body || '{}');
+    const store = getStore({
+      name: 'scope-templates',
+      consistency: 'strong',
+      siteID: process.env.SITE_ID,
+      token: process.env.NETLIFY_BLOBS_TOKEN
+    });
 
-    // GET — load index or single template
+    const body = JSON.parse(event.body || '{}');
+    const { method, hash, name, entry } = body;
+
     if (method === 'getIndex') {
       const val = await store.get(`index:${hash}`);
       return { statusCode: 200, headers, body: JSON.stringify(val ? JSON.parse(val) : []) };
@@ -27,21 +33,19 @@ exports.handler = async function(event, context) {
       return { statusCode: 200, headers, body: JSON.stringify(val ? JSON.parse(val) : null) };
     }
 
-    // POST — save template
     if (method === 'saveTemplate') {
       await store.set(`tmpl:${hash}:${name}`, JSON.stringify(entry));
       const idxRaw = await store.get(`index:${hash}`);
-      const idx    = idxRaw ? JSON.parse(idxRaw) : [];
-      if (!idx.includes(name)) { idx.push(name); }
+      const idx = idxRaw ? JSON.parse(idxRaw) : [];
+      if (!idx.includes(name)) idx.push(name);
       await store.set(`index:${hash}`, JSON.stringify(idx));
       return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
     }
 
-    // DELETE — remove template
     if (method === 'deleteTemplate') {
       await store.delete(`tmpl:${hash}:${name}`);
       const idxRaw = await store.get(`index:${hash}`);
-      const idx    = idxRaw ? JSON.parse(idxRaw) : [];
+      const idx = idxRaw ? JSON.parse(idxRaw) : [];
       await store.set(`index:${hash}`, JSON.stringify(idx.filter(n => n !== name)));
       return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
     }
@@ -49,7 +53,7 @@ exports.handler = async function(event, context) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Unknown method' }) };
 
   } catch (err) {
-    console.error('scope-templates error:', err);
+    console.error('scope-templates error:', err.message, err.stack);
     return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
   }
 };
