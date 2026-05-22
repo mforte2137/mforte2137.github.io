@@ -44,6 +44,7 @@ function showToast(msg) {
 }
 
 // ── Presets ───────────────────────────────────────────────
+const PRESETS = {
   copilot: {
     title:     'Microsoft Copilot Readiness & Deployment',
     overview:  'This project prepares your Microsoft 365 environment for Copilot, deploys it to a pilot group, and drives adoption across your team. Before Copilot can be activated safely, your tenant data needs to be governed correctly — we handle the sensitivity labelling, SharePoint structure review, and security posture checks that most deployments skip, and that organisations later regret. The result is a Copilot deployment your staff actually use, with your business data protected.',
