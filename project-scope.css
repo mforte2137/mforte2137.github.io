@@ -238,6 +238,7 @@ td textarea:focus { border-color: var(--accent); background: var(--surface); }
 .gf-pill strong { color: var(--text); font-weight: 700; }
 
 /* Output panels */
+.output-panels[hidden] { display: none !important; }
 .output-panels {
   display: grid; grid-template-columns: 1fr 1fr; gap: 0;
   border-top: 1px solid var(--line); height: 340px; flex-shrink: 0;
