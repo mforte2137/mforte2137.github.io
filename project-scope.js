@@ -6,7 +6,74 @@
 // ── Constants ─────────────────────────────────────────────
 const LS_KEY       = 'sb_project_scope_v1';
 const LS_PROJECTS  = 'sb_projects_v1';
-const LS_TEMPLATES = 'sb_scope_templates_v1';
+const LS_BRAND_COLOR = 'sb_brand_color_v1';
+let brandColor = localStorage.getItem(LS_BRAND_COLOR) || '#2563eb';
+
+function saveBrandColor(color) {
+  brandColor = color;
+  localStorage.setItem(LS_BRAND_COLOR, color);
+}
+
+function initBrandColor() {
+  const stored = localStorage.getItem(LS_BRAND_COLOR);
+  if (stored) brandColor = stored;
+  // Mark the matching swatch as active, or custom if no match
+  const swatches = document.querySelectorAll('.brand-swatch:not(.brand-swatch-custom)');
+  let matched = false;
+  swatches.forEach(sw => {
+    const isActive = sw.dataset.color === brandColor;
+    sw.classList.toggle('active', isActive);
+    if (isActive) matched = true;
+  });
+  const customSwatch = document.getElementById('brandCustomSwatch');
+  if (!matched) {
+    customSwatch.classList.add('active');
+    customSwatch.style.background = brandColor;
+    document.getElementById('brandHexRow').style.display = 'flex';
+    document.getElementById('brandHexInput').value = brandColor;
+  } else {
+    customSwatch.classList.remove('active');
+  }
+}
+
+function setupBrandColorListeners() {
+  // Preset swatches
+  document.querySelectorAll('.brand-swatch:not(.brand-swatch-custom)').forEach(sw => {
+    sw.addEventListener('click', () => {
+      document.querySelectorAll('.brand-swatch').forEach(s => s.classList.remove('active'));
+      sw.classList.add('active');
+      saveBrandColor(sw.dataset.color);
+      document.getElementById('brandHexRow').style.display = 'none';
+      document.getElementById('brandCustomSwatch').style.background = 'conic-gradient(red,yellow,lime,aqua,blue,magenta,red)';
+      autoRefresh();
+    });
+  });
+  // Custom swatch — show hex input
+  document.getElementById('brandCustomSwatch').addEventListener('click', () => {
+    document.getElementById('brandHexRow').style.display = 'flex';
+    document.getElementById('brandHexInput').focus();
+  });
+  // Apply custom hex
+  document.getElementById('brandHexApply').addEventListener('click', applyCustomHex);
+  document.getElementById('brandHexInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') applyCustomHex();
+  });
+}
+
+function applyCustomHex() {
+  let val = document.getElementById('brandHexInput').value.trim();
+  if (!val.startsWith('#')) val = '#' + val;
+  if (!/^#[0-9a-fA-F]{6}$/.test(val)) { showToast('Enter a valid 6-digit hex e.g. #2563eb'); return; }
+  document.querySelectorAll('.brand-swatch').forEach(s => s.classList.remove('active'));
+  const customSwatch = document.getElementById('brandCustomSwatch');
+  customSwatch.classList.add('active');
+  customSwatch.style.background = val;
+  saveBrandColor(val);
+  autoRefresh();
+  showToast('Brand color updated');
+}
+
+const LS_TEMPLATES  = 'sb_scope_templates_v1';
 const LS_API_KEY   = 'sb_api_key';
 const LS_INT_KEY   = 'sb_int_key';
 const API_TEMPLATES = '/api/scope-templates';
@@ -648,29 +715,79 @@ function updateSummary() {
 // ── Widget HTML generation ────────────────────────────────
 function generateWidget() {
   const title      = (document.getElementById('projectTitle').value || '').trim();
+  const customer   = (document.getElementById('customerName').value || '').trim();
   const overview   = (document.getElementById('overview').value     || '').trim();
   const exclusions = (document.getElementById('exclusions').value   || '').trim();
   const hpd        = document.getElementById('hoursPerDay').value;
   const showRole   = document.getElementById('showRole').checked;
   const showHours  = document.getElementById('showHours').checked;
   const showNotes  = document.getElementById('showNotes').checked;
-  const included   = rows.map(r => ({ task:(r.task||'').trim(), role:(r.role||'').trim(), notes:(r.notes||'').trim(), hours:num(r.hours) })).filter(r => r.hours > 0 && (r.task || r.role || r.notes));
-  const total      = included.reduce((s, r) => s + r.hours, 0);
-  const duration   = totalDurationStr(total, hpd);
-  const thCols     = ['<th style="text-align:left;padding:8px 10px;border:1px solid #e2e8f0;background:#f8fafc;font-size:13px;">Task</th>'];
-  if (showRole)  thCols.push('<th style="text-align:left;padding:8px 10px;border:1px solid #e2e8f0;background:#f8fafc;font-size:13px;white-space:nowrap;">Role</th>');
-  if (showHours) thCols.push('<th style="text-align:left;padding:8px 10px;border:1px solid #e2e8f0;background:#f8fafc;font-size:13px;white-space:nowrap;">Hours</th>');
-  if (showNotes) thCols.push('<th style="text-align:left;padding:8px 10px;border:1px solid #e2e8f0;background:#f8fafc;font-size:13px;">Notes</th>');
-  const tbRows = included.map(r => {
-    const cells = [`<td style="padding:8px 10px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;"><strong>${esc(r.task)}</strong></td>`];
-    if (showRole)  cells.push(`<td style="padding:8px 10px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;white-space:nowrap;">${esc(r.role)}</td>`);
-    if (showHours) cells.push(`<td style="padding:8px 10px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;white-space:nowrap;">${esc(roundDisp(r.hours))}</td>`);
-    if (showNotes) cells.push(`<td style="padding:8px 10px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;">${esc(r.notes)}</td>`);
-    return `<tr>\n  ${cells.join('\n  ')}\n</tr>`;
-  }).join('\n');
+
+  // Derive a subtle tint (8% opacity) of the brand color for alternating rows
+  // Works by converting hex to rgb and applying rgba
+  function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    return `${r},${g},${b}`;
+  }
+  const brandRgb  = hexToRgb(brandColor);
+  const rowTint   = `rgba(${brandRgb},0.06)`;
+  const totalTint = `rgba(${brandRgb},0.10)`;
+
+  const included = rows
+    .map(r => ({ task:(r.task||'').trim(), role:(r.role||'').trim(), notes:(r.notes||'').trim(), hours:num(r.hours) }))
+    .filter(r => r.hours > 0 && (r.task || r.role || r.notes));
+  const total    = included.reduce((s, r) => s + r.hours, 0);
+  const duration = totalDurationStr(total, hpd);
+  const colCount = 1 + (showRole?1:0) + (showHours?1:0) + (showNotes?1:0);
+
+  // ── Table header row ──
+  const thCols = [`<th style="text-align:left;padding:9px 12px;border:1px solid #e2e8f0;background:${brandColor};color:#ffffff;font-size:13px;font-weight:600;">Task</th>`];
+  if (showRole)  thCols.push(`<th style="text-align:left;padding:9px 12px;border:1px solid #e2e8f0;background:${brandColor};color:#ffffff;font-size:13px;font-weight:600;white-space:nowrap;">Role</th>`);
+  if (showHours) thCols.push(`<th style="text-align:left;padding:9px 12px;border:1px solid #e2e8f0;background:${brandColor};color:#ffffff;font-size:13px;font-weight:600;white-space:nowrap;">Hours</th>`);
+  if (showNotes) thCols.push(`<th style="text-align:left;padding:9px 12px;border:1px solid #e2e8f0;background:${brandColor};color:#ffffff;font-size:13px;font-weight:600;">Notes</th>`);
+
+  // ── Task rows — alternating tint ──
+  const tbRows = included.map((r, i) => {
+    const bg = i % 2 === 1 ? `background:${rowTint};` : '';
+    const cells = [`<td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;${bg}"><strong>${esc(r.task)}</strong></td>`];
+    if (showRole)  cells.push(`<td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;white-space:nowrap;${bg}">${esc(r.role)}</td>`);
+    if (showHours) cells.push(`<td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;white-space:nowrap;${bg}">${esc(roundDisp(r.hours))}</td>`);
+    if (showNotes) cells.push(`<td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;${bg}">${esc(r.notes)}</td>`);
+    return `<tr>${cells.join('')}</tr>`;
+  }).join('\n      ');
+
+  // ── Totals row — brand tint background ──
+  const totalsRow = `<tr>
+    <td colspan="${colCount}" style="padding:9px 12px;border:1px solid #e2e8f0;font-size:13px;background:${totalTint};">
+      <strong style="color:${brandColor};">Total Effort:</strong> <strong>${esc(roundDisp(total))} hours</strong>${duration !== '—' ? `&nbsp;&nbsp;·&nbsp;&nbsp;<strong style="color:${brandColor};">Estimated Duration:</strong> <strong>${esc(duration)}</strong>` : ''}
+    </td>
+  </tr>`;
+
+  // ── Exclusions ──
   const exLines = exclusions.split('\n').map(l => l.trim()).filter(Boolean);
-  const exclusionsHtml = exLines.length > 0 ? `\n<h3 style="margin:20px 0 8px;font-size:15px;color:#0f172a;">What's Not Included</h3>\n<ul style="margin:0;padding-left:20px;font-size:13px;color:#334155;line-height:1.7;">\n  ${exLines.map(l => `<li>${esc(l)}</li>`).join('\n  ')}\n</ul>` : '';
-  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:860px;">\n${title ? `  <h2 style="margin:0 0 14px;font-size:20px;color:#0f172a;">${esc(title)}</h2>\n` : ''}${overview ? `  <h3 style="margin:0 0 6px;font-size:15px;color:#0f172a;">Project Overview</h3>\n  <p style="margin:0 0 18px;font-size:13px;color:#334155;line-height:1.65;">${esc(overview)}</p>\n` : ''}  <h3 style="margin:0 0 8px;font-size:15px;color:#0f172a;">Scope of Work</h3>\n  <table style="width:100%;border-collapse:collapse;font-size:13px;">\n    <thead><tr>${thCols.join('')}</tr></thead>\n    <tbody>\n      ${tbRows || '<tr><td colspan="4" style="padding:10px;border:1px solid #e2e8f0;color:#94a3b8;">No tasks with hours &gt; 0.</td></tr>'}\n    </tbody>\n  </table>\n  <p style="margin:10px 0 0;font-size:13px;color:#334155;"><strong>Total Effort:</strong> ${esc(roundDisp(total))} hours${duration !== '—' ? ` &nbsp;·&nbsp; <strong>Estimated Duration:</strong> ${esc(duration)}` : ''}</p>${exclusionsHtml}\n</div>`.trim();
+  const exclusionsHtml = exLines.length > 0 ? `
+<h3 style="margin:24px 0 8px;font-size:14px;font-weight:700;color:${brandColor};text-transform:uppercase;letter-spacing:.05em;">What's Not Included</h3>
+<ul style="margin:0;padding-left:20px;font-size:13px;color:#334155;line-height:1.8;">
+  ${exLines.map(l => `<li>${esc(l)}</li>`).join('\n  ')}
+</ul>` : '';
+
+  // ── Assemble ──
+  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:860px;color:#0f172a;">
+${title ? `  <h2 style="margin:0 0 4px;font-size:22px;font-weight:700;color:${brandColor};">${esc(title)}</h2>` : ''}
+${customer ? `  <p style="margin:0 0 16px;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;font-weight:600;">${esc(customer)}</p>` : '<br>'}
+${overview ? `  <h3 style="margin:0 0 6px;font-size:13px;font-weight:700;color:${brandColor};text-transform:uppercase;letter-spacing:.05em;">Project Overview</h3>
+  <p style="margin:0 0 20px;font-size:13px;color:#334155;line-height:1.7;border-left:3px solid ${brandColor};padding-left:12px;">${esc(overview)}</p>` : ''}
+  <h3 style="margin:0 0 8px;font-size:13px;font-weight:700;color:${brandColor};text-transform:uppercase;letter-spacing:.05em;">Scope of Work</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr>${thCols.join('')}</tr></thead>
+    <tbody>
+      ${tbRows || `<tr><td colspan="${colCount}" style="padding:10px;border:1px solid #e2e8f0;color:#94a3b8;">No tasks with hours &gt; 0.</td></tr>`}
+      ${totalsRow}
+    </tbody>
+  </table>${exclusionsHtml}
+</div>`.trim();
 }
 
 function autoRefresh() {
@@ -1083,6 +1200,8 @@ sbPushBtn.addEventListener('click', async () => {
   updatePassphraseUI();
   updateCenterHeader();
   renderProjects();
+  initBrandColor();
+  setupBrandColorListeners();
   document.getElementById('outputPanels').hidden = true;
   document.getElementById('htmlOut').textContent = '';
   document.getElementById('preview').innerHTML = '';
