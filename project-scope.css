@@ -97,6 +97,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); font
 /* Salesbuildr inline */
 .sb-arrow-icon { font-size: 10px; margin-left: auto; transition: transform .2s; }
 .sb-arrow-icon.open { transform: rotate(180deg); }
+.sb-inline[hidden] { display: none !important; }
 .sb-inline { padding: 10px 0 4px; display: flex; flex-direction: column; gap: 8px; }
 .sb-fields { display: flex; flex-direction: column; gap: 7px; }
 .sb-field  { display: flex; flex-direction: column; gap: 3px; }
