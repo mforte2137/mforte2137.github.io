@@ -307,9 +307,9 @@ async function teamGetTemplate(hash, name)         { return apiCall({ method: 'g
 async function teamSaveTemplate(hash, name, entry) { return apiCall({ method: 'saveTemplate', hash, name, entry }); }
 async function teamDeleteTemplate(hash, name)      { return apiCall({ method: 'deleteTemplate', hash, name }); }
 
-async function renderTemplateSelect() {
+async function renderTemplateSelect(preserveSelection = true) {
   const sel   = document.getElementById('templateSelect');
-  const saved = sel.value;
+  const saved = preserveSelection ? sel.value : '';
   if (isTeamMode()) {
     sel.innerHTML = '<option value="">⏳ Loading…</option>';
     const hash  = hashPassphrase(getPassphrase());
@@ -1006,7 +1006,7 @@ document.getElementById('deleteTemplateBtn').addEventListener('click', async () 
   try {
     if (isTeam) { await teamDeleteTemplate(hashPassphrase(getPassphrase()), name); }
     else { localSaveAll(localGetAll().filter(t => t.name !== name)); }
-    await renderTemplateSelect(); showToast(`"${name}" deleted`);
+    await renderTemplateSelect(false); showToast(`"${name}" deleted`);
   } catch { showToast('⚠️ Delete failed — try again'); } finally { btn.disabled = false; }
 });
 
@@ -1082,6 +1082,8 @@ sbPushBtn.addEventListener('click', async () => {
   updatePassphraseUI();
   updateCenterHeader();
   renderProjects();
+  document.getElementById('outputPanels').hidden = true;
+  document.getElementById('copyBtn').disabled = true;
   await renderTemplateSelect();
   initSbCredentials();
 })();
