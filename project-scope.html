@@ -4,153 +4,122 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Project Scope Builder</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="project-scope.css">
 </head>
 <body>
-<div class="wrap">
 
-  <header class="top">
-    <div>
-      <h1>Project Scope Builder</h1>
-      <p class="sub">Build a customer-facing project scope with overview, task breakdown, timeline estimate, and exclusions — ready to push directly into Salesbuildr.</p>
+<div class="app-layout">
+
+  <!-- ═══════════════════════════════════════════════════════
+       LEFT PANEL
+  ════════════════════════════════════════════════════════ -->
+  <aside class="left-panel" id="leftPanel">
+
+    <div class="lp-header">
+      <div class="lp-logo">Project Scope Builder</div>
+      <div class="lp-sub">MSP Tools Hub</div>
     </div>
-  </header>
 
-  <!-- ── Settings ── -->
-  <div class="card">
-    <div class="toolbar">
-      <div class="left">
-        <label>
-          Project title
-          <input type="text" id="projectTitle" placeholder="e.g. Azure Cloud Migration">
-        </label>
-        <label>
-          Customer name <span class="opt">(optional)</span>
-          <input type="text" id="customerName" placeholder="e.g. Acme Corp">
-        </label>
-        <label>
-          Hours per day
-          <input type="number" id="hoursPerDay" min="1" step="1" value="8">
-        </label>
+    <!-- Presets -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Load a preset</div>
+      <div class="lp-row">
+        <select id="presetSelect" class="lp-select">
+          <option value="">— Select preset —</option>
+          <option value="azure">☁️ Azure Migration</option>
+          <option value="m365">📧 Microsoft 365 Migration</option>
+          <option value="network">🔌 Network Infrastructure Upgrade</option>
+          <option value="endpoint">💻 Endpoint Refresh</option>
+          <option value="server">🖥️ Server Refresh</option>
+          <option value="voip">📞 VoIP &amp; Communications</option>
+          <option value="onboarding">🤝 New Client Onboarding</option>
+          <option value="security">🛡️ Cybersecurity Assessment</option>
+          <option value="backup">💾 Backup &amp; DR Implementation</option>
+          <option value="copilot">🤖 Microsoft Copilot &amp; AI</option>
+        </select>
+        <button class="lp-icon-btn" id="loadPresetBtn" title="Load preset"><i class="ti ti-arrow-right"></i></button>
       </div>
-      <div class="right">
-        <label>
-          Load a preset
-          <div class="preset-row">
-            <select id="presetSelect">
-              <option value="">— Select preset —</option>
-              <option value="azure">☁️ Azure Migration</option>
-              <option value="m365">📧 Microsoft 365 Migration</option>
-              <option value="network">🔌 Network Infrastructure Upgrade</option>
-              <option value="endpoint">💻 Endpoint Refresh</option>
-              <option value="server">🖥️ Server Refresh</option>
-              <option value="voip">📞 VoIP &amp; Communications</option>
-              <option value="onboarding">🤝 New Client Onboarding</option>
-              <option value="security">🛡️ Cybersecurity Assessment</option>
-              <option value="backup">💾 Backup &amp; DR Implementation</option>
-              <option value="copilot">🤖 Microsoft Copilot &amp; AI</option>
-            </select>
-            <button class="btn primary" id="loadPresetBtn">Load →</button>
-          </div>
-        </label>
+    </div>
 
-        <label>
-          Team passphrase <span class="opt">(optional — enables shared templates)</span>
-          <div class="preset-row">
-            <input type="password" id="tmplPassphrase" placeholder="Enter to share with team" autocomplete="off" style="min-width:200px;">
-            <span id="tmplPassphraseBadge" style="font-size:12px; color:var(--muted); white-space:nowrap;">&#x1F4BE; Local</span>
-          </div>
-        </label>
+    <!-- Current Projects -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Current projects</div>
+      <div class="lp-projects" id="projectList"></div>
+      <button class="lp-new-proj" id="newProjectBtn"><i class="ti ti-plus"></i> New project</button>
+    </div>
 
-        <label>
-          Templates <span id="tmplModeLabel" class="opt">(local)</span>
-          <div class="preset-row">
-            <select id="templateSelect"><option value="">— No saved templates yet —</option></select>
-            <button class="btn primary" id="loadTemplateBtn">Load →</button>
-            <button class="btn danger-sm" id="deleteTemplateBtn" title="Delete selected template">&#x1F5D1;</button>
-          </div>
-        </label>
-
-        <div class="template-actions">
-          <button class="btn" id="saveTemplateBtn">&#x1F4BE; Save as Template</button>
-          <button class="btn" id="exportBtn">⬇ Export JSON</button>
-          <label class="btn" for="importInput" style="cursor:pointer;">⬆ Import JSON</label>
-          <input type="file" id="importInput" accept=".json" style="display:none">
+    <!-- Project Settings -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Project</div>
+      <div class="lp-field">
+        <div class="lp-field-label">Title</div>
+        <input type="text" id="projectTitle" class="lp-input" placeholder="e.g. Azure Cloud Migration">
+      </div>
+      <div class="lp-field-row">
+        <div class="lp-field">
+          <div class="lp-field-label">Customer <span class="lp-opt">(optional)</span></div>
+          <input type="text" id="customerName" class="lp-input" placeholder="e.g. Acme Corp">
         </div>
-
-        <button class="btn danger" id="clearBtn">🧹 Clear all</button>
+        <div class="lp-field lp-field-sm">
+          <div class="lp-field-label">Hrs/day</div>
+          <input type="number" id="hoursPerDay" class="lp-input" min="1" step="1" value="8">
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- ── Project Overview ── -->
-  <div class="card section-card">
-    <h2 class="section-title">Project Overview</h2>
-    <p class="section-hint">A brief description of the engagement — appears at the top of the customer-facing scope. 2–3 sentences is ideal.</p>
-    <textarea id="overview" rows="3" placeholder="e.g. This project covers the migration of your on-premises server infrastructure to Microsoft Azure, delivering improved reliability, scalability, and remote access with minimal disruption to your team."></textarea>
-  </div>
+    <!-- Team -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Team</div>
+      <div class="lp-field">
+        <div class="lp-field-label">Passphrase <span class="lp-opt">(enables shared templates)</span></div>
+        <div class="lp-passrow">
+          <input type="password" id="tmplPassphrase" class="lp-input" placeholder="Enter to share with team" autocomplete="off">
+          <span id="tmplPassphraseBadge" class="lp-badge lp-badge-local">💾 Local</span>
+        </div>
+      </div>
+      <div class="lp-field">
+        <div class="lp-field-label">Templates <span id="tmplModeLabel" class="lp-opt">(local)</span></div>
+        <div class="lp-row">
+          <select id="templateSelect" class="lp-select"><option value="">— No saved templates yet —</option></select>
+          <button class="lp-icon-btn" id="loadTemplateBtn" title="Load template"><i class="ti ti-arrow-right"></i></button>
+          <button class="lp-icon-btn lp-icon-btn-danger" id="deleteTemplateBtn" title="Delete template"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+      <button class="lp-action-btn lp-action-primary" id="saveTemplateBtn"><i class="ti ti-device-floppy"></i> Save as template</button>
+    </div>
 
-  <!-- ── Task Grid ── -->
-  <div class="card section-card">
-    <div class="section-header">
-      <div>
-        <h2 class="section-title">Scope of Work</h2>
-        <p class="section-hint">Rows with 0 hours are excluded from the output. Use Tab to move between fields quickly.</p>
-      </div>
-      <div class="col-toggles">
-        <span class="toggle-label">Show in customer output:</span>
-        <label class="toggle"><input type="checkbox" id="showRole" checked> Role</label>
-        <label class="toggle"><input type="checkbox" id="showHours"> Hours</label>
-        <label class="toggle"><input type="checkbox" id="showNotes" checked> Notes</label>
-      </div>
-    </div>
-    <div class="grid">
-      <table>
-        <thead>
-          <tr>
-            <th class="col-drag"></th>
-            <th class="col-task">Task</th>
-            <th class="col-role">Role</th>
-            <th class="col-hours">Est. Hours</th>
-            <th class="col-dur">Duration (internal)</th>
-            <th class="col-notes">Notes</th>
-            <th class="col-del"></th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-    <div class="grid-footer">
-      <button class="btn" id="addRowBtn">➕ Add row</button>
-      <div class="pills">
-        <div class="pill"><span class="pill-label">Total hours</span><strong id="totalHours">0</strong></div>
-        <div class="pill"><span class="pill-label">Est. duration</span><strong id="totalDuration">—</strong></div>
-        <div class="pill"><span class="pill-label">Rows in scope</span><strong id="includedCount">0</strong></div>
+    <!-- Show in output toggles -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Show in customer output</div>
+      <div class="lp-toggles">
+        <div class="lp-toggle-row">
+          <span>Role</span>
+          <label class="lp-switch"><input type="checkbox" id="showRole" checked><span class="lp-track"></span></label>
+        </div>
+        <div class="lp-toggle-row">
+          <span>Hours</span>
+          <label class="lp-switch"><input type="checkbox" id="showHours"><span class="lp-track"></span></label>
+        </div>
+        <div class="lp-toggle-row">
+          <span>Notes</span>
+          <label class="lp-switch"><input type="checkbox" id="showNotes" checked><span class="lp-track"></span></label>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- ── Exclusions ── -->
-  <div class="card section-card">
-    <h2 class="section-title">What's Not Included</h2>
-    <p class="section-hint">One exclusion per line — appears as a bullet list in the scope output. Helps set expectations and reduce scope creep.</p>
-    <textarea id="exclusions" rows="4" placeholder="Third-party vendor coordination beyond 2 hours&#10;Application code changes or custom development&#10;End-user training (available as a separate engagement)&#10;Hardware procurement costs"></textarea>
-  </div>
-
-  <!-- ── Actions ── -->
-  <div class="card actions-card">
-    <div class="actions-left">
-      <button class="btn good" id="generateBtn">🧩 Generate Scope Widget</button>
-      <button class="btn" id="copyBtn" disabled>📋 Copy HTML</button>
-    </div>
-    <div class="actions-right">
-      <!-- Connect Salesbuildr -->
-      <div class="sb-connect">
-        <button type="button" class="sb-toggle" id="sbToggle">
-          ⚡ Save to Salesbuildr <span class="sb-arrow" id="sbArrow">▼</span>
-        </button>
-        <div class="sb-body" id="sbBody" hidden>
-          <p class="sb-hint">Enter your Salesbuildr credentials — saved to this device when you tick <em>Remember</em>.</p>
+    <!-- Export & Publish -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Export &amp; publish</div>
+      <div class="lp-actions">
+        <button class="lp-action-btn lp-action-good" id="generateBtn"><i class="ti ti-sparkles"></i> Generate scope widget</button>
+        <button class="lp-action-btn" id="copyBtn" disabled><i class="ti ti-copy"></i> Copy HTML</button>
+        <button class="lp-action-btn" id="exportBtn"><i class="ti ti-download"></i> Export JSON</button>
+        <label class="lp-action-btn" for="importInput" style="cursor:pointer;"><i class="ti ti-upload"></i> Import JSON</label>
+        <input type="file" id="importInput" accept=".json" style="display:none">
+        <!-- Salesbuildr inline -->
+        <button class="lp-action-btn lp-action-primary" id="sbToggle"><i class="ti ti-send"></i> Save to Salesbuildr <span id="sbArrow" class="sb-arrow-icon">▼</span></button>
+        <div id="sbBody" class="sb-inline" hidden>
           <div class="sb-fields">
             <div class="sb-field">
               <label class="sb-label">API Key <span class="sb-where">Admin → Integrations</span></label>
@@ -162,31 +131,131 @@
             </div>
           </div>
           <div class="sb-row">
-            <label class="sb-remember"><input type="checkbox" id="sbRemember"> Remember on this device</label>
-            <input type="text" id="sbPrefix" class="sb-prefix" maxlength="40" placeholder="Optional label e.g. Acme Corp">
-            <button type="button" id="sbPushBtn" class="btn good" disabled>Save to Salesbuildr →</button>
+            <label class="sb-remember"><input type="checkbox" id="sbRemember"> Remember</label>
+            <input type="text" id="sbPrefix" class="sb-prefix" maxlength="40" placeholder="Label e.g. Acme Corp">
+            <button type="button" id="sbPushBtn" class="lp-action-btn lp-action-good" disabled>Push →</button>
           </div>
           <div id="sbResult" class="sb-result" hidden></div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ── Output panels ── -->
-  <div class="output">
-    <div class="card panel">
-      <h2 class="panel-title">Generated HTML</h2>
-      <p class="panel-hint">Paste into Salesbuildr via the <strong>&lt;&nbsp;&gt;</strong> Source Code button in TinyMCE.</p>
-      <pre id="htmlOut"></pre>
+    <div class="lp-bottom">
+      <button class="lp-danger-btn" id="clearBtn"><i class="ti ti-trash"></i> Clear project</button>
     </div>
-    <div class="card panel">
-      <h2 class="panel-title">Preview</h2>
-      <p class="panel-hint">Approximate preview — Salesbuildr may apply its own typography.</p>
-      <div class="preview-box" id="preview"></div>
+
+  </aside>
+
+  <!-- ═══════════════════════════════════════════════════════
+       CENTER — MAIN WORKING AREA
+  ════════════════════════════════════════════════════════ -->
+  <main class="center-panel">
+
+    <div class="center-header">
+      <div>
+        <div class="center-title" id="centerTitle">Project Scope Builder</div>
+        <div class="center-sub" id="centerSub">Start by loading a preset or entering your project details</div>
+      </div>
     </div>
-  </div>
+
+    <!-- Overview -->
+    <div class="center-section">
+      <div class="center-sec-label">Project Overview <span class="center-sec-hint">2–3 sentences, customer-facing</span></div>
+      <textarea id="overview" class="center-textarea" rows="3" placeholder="e.g. This project covers the migration of your on-premises server infrastructure to Microsoft Azure, delivering improved reliability, scalability, and remote access with minimal disruption to your team."></textarea>
+    </div>
+
+    <!-- Task grid -->
+    <div class="center-section center-section-grow">
+      <div class="center-sec-label">Scope of Work <span class="center-sec-hint">Rows with 0 hours are excluded from output</span></div>
+      <div class="grid-wrap">
+        <table class="task-table">
+          <thead>
+            <tr>
+              <th class="col-drag"></th>
+              <th class="col-task">Task</th>
+              <th class="col-role">Role</th>
+              <th class="col-hours">Hours</th>
+              <th class="col-dur">Duration</th>
+              <th class="col-notes">Notes</th>
+              <th class="col-del"></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="grid-footer">
+        <button class="gf-btn" id="addRowBtn"><i class="ti ti-plus"></i> Add row</button>
+        <div class="gf-pills">
+          <div class="gf-pill"><span>Total</span><strong id="totalHours">0</strong><span>hrs</span></div>
+          <div class="gf-pill"><span>Duration</span><strong id="totalDuration">—</strong></div>
+          <div class="gf-pill"><span>In scope</span><strong id="includedCount">0</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exclusions -->
+    <div class="center-section">
+      <div class="center-sec-label">What's Not Included <span class="center-sec-hint">One per line — shown as bullet list</span></div>
+      <textarea id="exclusions" class="center-textarea" rows="3" placeholder="Third-party vendor coordination beyond 2 hours&#10;Application code changes or custom development&#10;End-user training (available as a separate engagement)&#10;Hardware procurement costs"></textarea>
+    </div>
+
+    <!-- Output panels — hidden until Generate clicked -->
+    <div class="output-panels" id="outputPanels" hidden>
+      <div class="output-panel">
+        <div class="output-panel-header">
+          <div>
+            <div class="output-panel-title">Generated HTML</div>
+            <div class="output-panel-hint">Paste into Salesbuildr via the <strong>&lt;&nbsp;&gt;</strong> Source Code button in TinyMCE</div>
+          </div>
+          <button class="op-close-btn" id="closeOutputBtn"><i class="ti ti-x"></i></button>
+        </div>
+        <pre id="htmlOut"></pre>
+      </div>
+      <div class="output-panel">
+        <div class="output-panel-title">Preview</div>
+        <div class="output-panel-hint">Approximate preview — Salesbuildr may apply its own typography</div>
+        <div class="preview-box" id="preview"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════
+       RIGHT PANEL — AI ASSISTANT
+  ════════════════════════════════════════════════════════ -->
+  <aside class="ai-panel" id="aiPanel">
+
+    <div class="ai-header">
+      <div>
+        <div class="ai-title-row">
+          <div class="ai-dot"></div>
+          <div class="ai-title">AI Assistant</div>
+        </div>
+        <div class="ai-sub">Generate or review your scope</div>
+      </div>
+    </div>
+
+    <div class="ai-messages" id="aiMessages">
+      <div class="ai-msg ai-msg-assistant">
+        <div class="ai-msg-label">Assistant</div>
+        Hi — I can help two ways. Describe a project and I'll build the full scope, or ask me to review what you've already got.
+        <div class="ai-chips">
+          <div class="ai-chip" data-action="generate">✨ Generate scope from description</div>
+          <div class="ai-chip" data-action="review">🔍 Review my current scope</div>
+          <div class="ai-chip" data-action="adjust">⏱ Adjust for team size / deadline</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-input-wrap">
+      <textarea class="ai-textarea" id="aiInput" placeholder="Describe a project or ask me to review…" rows="2"></textarea>
+      <button class="ai-send-btn" id="aiSendBtn" title="Send"><i class="ti ti-arrow-up"></i></button>
+    </div>
+
+  </aside>
 
 </div>
+
 <div class="toast" id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 <script src="project-scope.js"></script>
