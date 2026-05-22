@@ -16,7 +16,7 @@ exports.handler = async function(event, context) {
     const store = getStore({
       name: 'scope-templates',
       consistency: 'strong',
-      siteID: process.env.SITE_ID,
+      siteID: process.env.BLOBS_SITE_ID,
       token: process.env.NETLIFY_BLOBS_TOKEN
     });
 
