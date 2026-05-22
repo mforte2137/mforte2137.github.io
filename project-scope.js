@@ -1,11 +1,18 @@
 /* =========================================================
-   Project Scope Builder — project-scope.js
+   Project Scope Builder — project-scope.js  (v2)
+   Phases 2 + 3 + 4: three-column layout, projects, AI
    ========================================================= */
 
-const LS_KEY     = 'sb_project_scope_v1';
-const ROLES      = ['PM', 'Senior Engineer', 'Engineer', 'Technician', 'Account Manager'];
-const LS_API_KEY = 'sb_api_key';
-const LS_INT_KEY = 'sb_int_key';
+// ── Constants ─────────────────────────────────────────────
+const LS_KEY       = 'sb_project_scope_v1';
+const LS_PROJECTS  = 'sb_projects_v1';
+const LS_TEMPLATES = 'sb_scope_templates_v1';
+const LS_API_KEY   = 'sb_api_key';
+const LS_INT_KEY   = 'sb_int_key';
+const API_TEMPLATES = '/api/scope-templates';
+const API_AI        = '/api/scope-ai';
+const ROLES = ['PM', 'Senior Engineer', 'Engineer', 'Technician', 'Account Manager'];
+const PROJ_COLORS = ['#3b82f6','#f97316','#8b5cf6','#ec4899','#14b8a6','#f59e0b','#10b981','#6366f1'];
 
 // ── Utilities ─────────────────────────────────────────────
 function esc(str) {
@@ -17,32 +24,26 @@ function roundDisp(n) { return Number.isInteger(n) ? String(n) : n.toFixed(1); }
 function durationStr(hours, hpd) {
   const h = num(hours); const d = Math.max(1, num(hpd));
   if (h <= 0) return '';
-  const raw = h / d;
-  const rounded = Math.ceil(raw * 2) / 2;
+  const raw = h / d; const rounded = Math.ceil(raw * 2) / 2;
   if (rounded % 1 === 0) return `${rounded} day${rounded === 1 ? '' : 's'}`;
-  const lo = Math.floor(rounded);
-  return `${lo}–${lo + 1} days`;
+  return `${Math.floor(rounded)}–${Math.floor(rounded)+1} days`;
 }
 
 function totalDurationStr(totalHours, hpd) {
   const h = num(totalHours); const d = Math.max(1, num(hpd));
   if (h <= 0) return '—';
-  const raw = h / d;
-  const rounded = Math.ceil(raw * 2) / 2;
+  const raw = h / d; const rounded = Math.ceil(raw * 2) / 2;
   if (rounded % 1 === 0) return `${rounded} day${rounded === 1 ? '' : 's'}`;
-  const lo = Math.floor(rounded);
-  return `${lo}–${lo + 1} days`;
+  return `${Math.floor(rounded)}–${Math.floor(rounded)+1} days`;
 }
 
 function showToast(msg) {
   const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 1600);
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 1800);
 }
 
-// ── Preset data ───────────────────────────────────────────
-const PRESETS = {
+// ── Presets ───────────────────────────────────────────────
   copilot: {
     title:     'Microsoft Copilot Readiness & Deployment',
     overview:  'This project prepares your Microsoft 365 environment for Copilot, deploys it to a pilot group, and drives adoption across your team. Before Copilot can be activated safely, your tenant data needs to be governed correctly — we handle the sensitivity labelling, SharePoint structure review, and security posture checks that most deployments skip, and that organisations later regret. The result is a Copilot deployment your staff actually use, with your business data protected.',
@@ -257,23 +258,238 @@ const PRESETS = {
 
 // ── State ─────────────────────────────────────────────────
 let rows = [];
+let currentProjectId = null;
 
 function defaultRow() { return { task:'', role:'', hours:'', notes:'' }; }
 
+// ── Project ID generation ─────────────────────────────────
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+// ── Passphrase / team mode ────────────────────────────────
+function getPassphrase() { return (document.getElementById('tmplPassphrase')?.value || '').trim(); }
+function hashPassphrase(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = Math.imul(31, h) + str.charCodeAt(i) | 0;
+  return Math.abs(h).toString(36);
+}
+function isTeamMode() { return getPassphrase().length > 0; }
+
+function updatePassphraseUI() {
+  const badge = document.getElementById('tmplPassphraseBadge');
+  const label = document.getElementById('tmplModeLabel');
+  if (!badge) return;
+  if (isTeamMode()) {
+    badge.textContent = '🔗 Team';
+    badge.className = 'lp-badge lp-badge-team';
+    if (label) label.textContent = '(team — shared)';
+  } else {
+    badge.textContent = '💾 Local';
+    badge.className = 'lp-badge lp-badge-local';
+    if (label) label.textContent = '(local)';
+  }
+}
+
+// ── Template storage ──────────────────────────────────────
+function localGetAll()       { try { return JSON.parse(localStorage.getItem(LS_TEMPLATES)) || []; } catch { return []; } }
+function localSaveAll(tmpl)  { localStorage.setItem(LS_TEMPLATES, JSON.stringify(tmpl)); }
+
+async function apiCall(payload) {
+  const res = await fetch(API_TEMPLATES, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json();
+}
+async function teamGetIndex(hash)                  { return apiCall({ method: 'getIndex', hash }); }
+async function teamGetTemplate(hash, name)         { return apiCall({ method: 'getTemplate', hash, name }); }
+async function teamSaveTemplate(hash, name, entry) { return apiCall({ method: 'saveTemplate', hash, name, entry }); }
+async function teamDeleteTemplate(hash, name)      { return apiCall({ method: 'deleteTemplate', hash, name }); }
+
+async function renderTemplateSelect() {
+  const sel   = document.getElementById('templateSelect');
+  const saved = sel.value;
+  if (isTeamMode()) {
+    sel.innerHTML = '<option value="">⏳ Loading…</option>';
+    const hash  = hashPassphrase(getPassphrase());
+    const names = await teamGetIndex(hash);
+    sel.innerHTML = `<option value="">— ${names.length ? 'Team templates' : 'No team templates yet'} —</option>` +
+      names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+    if (saved && names.includes(saved)) sel.value = saved;
+  } else {
+    const all = localGetAll();
+    sel.innerHTML = `<option value="">— ${all.length ? 'Local templates' : 'No local templates yet'} —</option>` +
+      all.map(t => `<option value="${esc(t.name)}">${esc(t.name)}</option>`).join('');
+    if (saved && all.find(t => t.name === saved)) sel.value = saved;
+  }
+}
+
+function promptForPassphrase(action = 'use shared templates') {
+  const input = document.getElementById('tmplPassphrase');
+  const phrase = prompt(`No team passphrase set.\n\nEnter a passphrase to ${action} with your team, or leave blank for local storage.`);
+  if (phrase === null) return false;
+  if (phrase.trim().length > 0) { input.value = phrase.trim(); updatePassphraseUI(); return true; }
+  return false;
+}
+
+// ── Projects (Phase 3) ────────────────────────────────────
+function getProjects() { try { return JSON.parse(localStorage.getItem(LS_PROJECTS)) || []; } catch { return []; } }
+function saveProjects(projects) { localStorage.setItem(LS_PROJECTS, JSON.stringify(projects)); }
+
+function captureCurrentState() {
+  return {
+    projectTitle: document.getElementById('projectTitle').value,
+    customerName: document.getElementById('customerName').value,
+    hoursPerDay:  document.getElementById('hoursPerDay').value,
+    overview:     document.getElementById('overview').value,
+    exclusions:   document.getElementById('exclusions').value,
+    showRole:     document.getElementById('showRole').checked,
+    showHours:    document.getElementById('showHours').checked,
+    showNotes:    document.getElementById('showNotes').checked,
+    rows:         rows.map(r => ({ ...r }))
+  };
+}
+
+function autoSaveCurrentProject() {
+  if (!currentProjectId) return;
+  const projects = getProjects();
+  const idx = projects.findIndex(p => p.id === currentProjectId);
+  if (idx < 0) return;
+  projects[idx] = { ...projects[idx], ...captureCurrentState(), updatedAt: new Date().toISOString() };
+  saveProjects(projects);
+}
+
+function renderProjects() {
+  const list = document.getElementById('projectList');
+  const projects = getProjects();
+  list.innerHTML = '';
+  if (projects.length === 0) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:4px 2px;">No projects yet</div>';
+    return;
+  }
+  projects.forEach((p, i) => {
+    const item = document.createElement('div');
+    item.className = 'lp-proj-item' + (p.id === currentProjectId ? ' active' : '');
+    const color = PROJ_COLORS[i % PROJ_COLORS.length];
+    const isShared = !!p.shared;
+    const totalHrs = (p.rows || []).reduce((s, r) => s + num(r.hours), 0);
+    const ago = p.updatedAt ? relativeTime(p.updatedAt) : 'new';
+    item.innerHTML = `
+      <div class="lp-proj-dot" style="background:${color}"></div>
+      <div class="lp-proj-info">
+        <div class="lp-proj-name">${esc(p.projectTitle || 'Untitled project')}</div>
+        <div class="lp-proj-meta">${esc(p.customerName || '')}${p.customerName ? ' · ' : ''}${totalHrs}h · ${ago}</div>
+      </div>
+      <span class="lp-proj-badge ${isShared ? 'lp-proj-badge-shared' : 'lp-proj-badge-local'}">${isShared ? 'shared' : 'local'}</span>
+      <span class="lp-proj-delete" title="Delete project" data-id="${esc(p.id)}"><i class="ti ti-x"></i></span>
+    `;
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('.lp-proj-delete')) return;
+      switchToProject(p.id);
+    });
+    item.querySelector('.lp-proj-delete').addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteProject(p.id);
+    });
+    list.appendChild(item);
+  });
+}
+
+function relativeTime(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 2) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+function switchToProject(id) {
+  autoSaveCurrentProject();
+  const projects = getProjects();
+  const p = projects.find(proj => proj.id === id);
+  if (!p) return;
+  currentProjectId = id;
+  applyState(p);
+  renderProjects();
+  updateCenterHeader();
+}
+
+function deleteProject(id) {
+  const projects = getProjects();
+  const p = projects.find(proj => proj.id === id);
+  if (!confirm(`Delete project "${p?.projectTitle || 'this project'}"?`)) return;
+  const updated = projects.filter(proj => proj.id !== id);
+  saveProjects(updated);
+  if (currentProjectId === id) {
+    currentProjectId = null;
+    if (updated.length > 0) { switchToProject(updated[0].id); return; }
+    // Start fresh
+    rows = [defaultRow()];
+    document.getElementById('projectTitle').value = '';
+    document.getElementById('customerName').value = '';
+    document.getElementById('overview').value = '';
+    document.getElementById('exclusions').value = '';
+    render(); updateSummary();
+  }
+  renderProjects();
+  showToast('Project deleted');
+}
+
+function saveCurrentAsProject(title) {
+  const projects = getProjects();
+  const state = captureCurrentState();
+  const isShared = isTeamMode();
+  if (currentProjectId) {
+    const idx = projects.findIndex(p => p.id === currentProjectId);
+    if (idx >= 0) {
+      projects[idx] = { ...projects[idx], ...state, updatedAt: new Date().toISOString(), shared: isShared };
+      saveProjects(projects);
+      renderProjects();
+      return;
+    }
+  }
+  const newProj = { id: genId(), ...state, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), shared: isShared };
+  projects.push(newProj);
+  currentProjectId = newProj.id;
+  saveProjects(projects);
+  renderProjects();
+}
+
+function newProject() {
+  autoSaveCurrentProject();
+  currentProjectId = null;
+  rows = [defaultRow()];
+  document.getElementById('projectTitle').value = '';
+  document.getElementById('customerName').value = '';
+  document.getElementById('hoursPerDay').value = '8';
+  document.getElementById('overview').value = '';
+  document.getElementById('exclusions').value = '';
+  document.getElementById('htmlOut').textContent = '';
+  document.getElementById('preview').innerHTML = '';
+  document.getElementById('outputPanels').hidden = true;
+  document.getElementById('copyBtn').disabled = true;
+  render(); updateSummary(); renderProjects(); updateCenterHeader();
+  showToast('New project started');
+}
+
+function updateCenterHeader() {
+  const title    = document.getElementById('projectTitle').value.trim();
+  const customer = document.getElementById('customerName').value.trim();
+  document.getElementById('centerTitle').textContent = title || 'Project Scope Builder';
+  let sub = title ? '' : 'Start by loading a preset or entering your project details';
+  if (title && customer) sub = customer + (isTeamMode() ? ' · 🔗 shared with team' : '');
+  else if (title) sub = isTeamMode() ? '🔗 Shared with team' : '💾 Local project';
+  document.getElementById('centerSub').textContent = sub;
+}
+
 // ── Persistence ───────────────────────────────────────────
 function saveState() {
-  const state = {
-    projectTitle:  document.getElementById('projectTitle').value,
-    customerName:  document.getElementById('customerName').value,
-    hoursPerDay:   document.getElementById('hoursPerDay').value,
-    overview:      document.getElementById('overview').value,
-    exclusions:    document.getElementById('exclusions').value,
-    showRole:      document.getElementById('showRole').checked,
-    showHours:     document.getElementById('showHours').checked,
-    showNotes:     document.getElementById('showNotes').checked,
-    rows
-  };
+  const state = captureCurrentState();
   localStorage.setItem(LS_KEY, JSON.stringify(state));
+  autoSaveCurrentProject();
+  updateCenterHeader();
 }
 
 function loadState() {
@@ -283,10 +499,10 @@ function loadState() {
     const s = JSON.parse(raw);
     if (!s || !Array.isArray(s.rows)) return false;
     document.getElementById('projectTitle').value = s.projectTitle ?? '';
-    document.getElementById('customerName').value = s.customerName  ?? '';
-    document.getElementById('hoursPerDay').value  = s.hoursPerDay   ?? 8;
-    document.getElementById('overview').value     = s.overview      ?? '';
-    document.getElementById('exclusions').value   = s.exclusions    ?? '';
+    document.getElementById('customerName').value = s.customerName ?? '';
+    document.getElementById('hoursPerDay').value  = s.hoursPerDay  ?? 8;
+    document.getElementById('overview').value     = s.overview     ?? '';
+    document.getElementById('exclusions').value   = s.exclusions   ?? '';
     document.getElementById('showRole').checked   = s.showRole  !== false;
     document.getElementById('showHours').checked  = s.showHours === true;
     document.getElementById('showNotes').checked  = s.showNotes !== false;
@@ -295,116 +511,91 @@ function loadState() {
   } catch { return false; }
 }
 
+function applyState(s) {
+  document.getElementById('projectTitle').value = s.projectTitle ?? '';
+  document.getElementById('customerName').value = s.customerName ?? '';
+  document.getElementById('hoursPerDay').value  = s.hoursPerDay  ?? 8;
+  document.getElementById('overview').value     = s.overview     ?? '';
+  document.getElementById('exclusions').value   = s.exclusions   ?? '';
+  document.getElementById('showRole').checked   = s.showRole  !== false;
+  document.getElementById('showHours').checked  = s.showHours === true;
+  document.getElementById('showNotes').checked  = s.showNotes !== false;
+  rows = (s.rows || []).map(r => ({ ...r }));
+  render(); updateSummary(); saveState(); updateCenterHeader();
+}
+
 // ── Render task grid ──────────────────────────────────────
 function render() {
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
   const hpd = document.getElementById('hoursPerDay').value;
-
   rows.forEach((r, idx) => {
     const tr = document.createElement('tr');
-
-    // Drag handle
     tr.dataset.idx = idx;
+
     const tdDrag = document.createElement('td'); tdDrag.className = 'col-drag';
     tdDrag.innerHTML = '<div class="drag-handle" title="Drag to reorder">⠿</div>';
 
-    // Task
     const tdTask = document.createElement('td'); tdTask.className = 'col-task';
     const inTask = document.createElement('input'); inTask.type = 'text'; inTask.value = r.task || ''; inTask.placeholder = 'Task description';
     inTask.addEventListener('input', e => { rows[idx].task = e.target.value; saveState(); autoRefresh(); });
     tdTask.appendChild(inTask);
 
-    // Role
     const tdRole = document.createElement('td'); tdRole.className = 'col-role';
     tdRole.appendChild(buildRoleSelect(r.role, idx));
 
-    // Hours
     const tdHours = document.createElement('td'); tdHours.className = 'col-hours';
     const inHours = document.createElement('input'); inHours.type = 'number'; inHours.min = '0'; inHours.step = '0.5'; inHours.value = r.hours || ''; inHours.placeholder = '0';
     inHours.addEventListener('input', e => { rows[idx].hours = e.target.value; updateSummary(); saveState(); autoRefresh(); });
     tdHours.appendChild(inHours);
 
-    // Duration (internal)
     const tdDur = document.createElement('td'); tdDur.className = 'col-dur';
     tdDur.textContent = durationStr(r.hours, hpd);
 
-    // Notes
     const tdNotes = document.createElement('td'); tdNotes.className = 'col-notes';
-    const txNotes = document.createElement('textarea'); txNotes.value = r.notes || ''; txNotes.placeholder = 'Notes shown to customer...';
+    const txNotes = document.createElement('textarea'); txNotes.value = r.notes || ''; txNotes.placeholder = 'Notes…';
     txNotes.addEventListener('input', e => { rows[idx].notes = e.target.value; saveState(); autoRefresh(); });
     tdNotes.appendChild(txNotes);
 
-    // Delete
     const tdDel = document.createElement('td'); tdDel.className = 'col-del';
-    const delBtn = document.createElement('button'); delBtn.className = 'btn danger'; delBtn.textContent = '🗑️'; delBtn.title = 'Delete row';
+    const delBtn = document.createElement('button'); delBtn.className = 'del-row-btn'; delBtn.innerHTML = '<i class="ti ti-trash"></i>'; delBtn.title = 'Delete row';
     delBtn.addEventListener('click', () => { rows.splice(idx, 1); render(); updateSummary(); saveState(); autoRefresh(); });
     tdDel.appendChild(delBtn);
 
     tr.append(tdDrag, tdTask, tdRole, tdHours, tdDur, tdNotes, tdDel);
     tbody.appendChild(tr);
   });
-  updateSummary();
-  initSortable();
+  updateSummary(); initSortable();
 }
 
 // ── Role multi-select ─────────────────────────────────────
 function buildRoleSelect(currentRole, idx) {
-  const selected = (currentRole || '').split(' / ').map(r => r.trim()).filter(Boolean);
-  const knownSelected   = selected.filter(r => ROLES.includes(r));
-  const customSelected  = selected.filter(r => !ROLES.includes(r));
-
-  const wrap = document.createElement('div');
-  wrap.className = 'role-select';
-
-  const trigger = document.createElement('button');
-  trigger.type = 'button';
+  const selected       = (currentRole || '').split(' / ').map(r => r.trim()).filter(Boolean);
+  const knownSelected  = selected.filter(r => ROLES.includes(r));
+  const customSelected = selected.filter(r => !ROLES.includes(r));
+  const wrap = document.createElement('div'); wrap.className = 'role-select';
+  const trigger = document.createElement('button'); trigger.type = 'button';
   trigger.className = 'role-trigger' + (selected.length ? '' : ' placeholder');
   trigger.textContent = selected.length ? selected.join(' / ') : 'Select roles…';
-
-  const dropdown = document.createElement('div');
-  dropdown.className = 'role-dropdown';
-  dropdown.hidden = true;
-
+  const dropdown = document.createElement('div'); dropdown.className = 'role-dropdown'; dropdown.hidden = true;
   ROLES.forEach(role => {
-    const label = document.createElement('label');
-    label.className = 'role-option';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.value = role;
-    cb.checked = knownSelected.includes(role);
+    const label = document.createElement('label'); label.className = 'role-option';
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = role; cb.checked = knownSelected.includes(role);
     cb.addEventListener('change', () => updateRoleSelection(dropdown, trigger, idx));
-    label.appendChild(cb);
-    label.appendChild(document.createTextNode(' ' + role));
-    dropdown.appendChild(label);
+    label.appendChild(cb); label.appendChild(document.createTextNode(' ' + role)); dropdown.appendChild(label);
   });
-
-  const divider = document.createElement('div');
-  divider.className = 'role-divider';
-  dropdown.appendChild(divider);
-
-  const customWrap  = document.createElement('div');
-  customWrap.className = 'role-custom-wrap';
-  const customInput = document.createElement('input');
-  customInput.type  = 'text';
-  customInput.className   = 'role-custom';
-  customInput.placeholder = 'Other…';
-  customInput.value       = customSelected.join(' / ');
-  customInput.addEventListener('input',  () => updateRoleSelection(dropdown, trigger, idx));
-  customInput.addEventListener('click',  e  => e.stopPropagation());
-  customWrap.appendChild(customInput);
-  dropdown.appendChild(customWrap);
-
+  const divider = document.createElement('div'); divider.className = 'role-divider'; dropdown.appendChild(divider);
+  const customWrap = document.createElement('div'); customWrap.className = 'role-custom-wrap';
+  const customInput = document.createElement('input'); customInput.type = 'text'; customInput.className = 'role-custom'; customInput.placeholder = 'Other…'; customInput.value = customSelected.join(' / ');
+  customInput.addEventListener('input', () => updateRoleSelection(dropdown, trigger, idx));
+  customInput.addEventListener('click', e => e.stopPropagation());
+  customWrap.appendChild(customInput); dropdown.appendChild(customWrap);
   trigger.addEventListener('click', e => {
     e.stopPropagation();
-    document.querySelectorAll('.role-dropdown').forEach(d => {
-      if (d !== dropdown) d.hidden = true;
-    });
+    document.querySelectorAll('.role-dropdown').forEach(d => { if (d !== dropdown) d.hidden = true; });
     dropdown.hidden = !dropdown.hidden;
   });
-
-  wrap.appendChild(trigger);
-  wrap.appendChild(dropdown);
+  wrap.appendChild(trigger); wrap.appendChild(dropdown);
   return wrap;
 }
 
@@ -417,11 +608,9 @@ function updateRoleSelection(dropdown, trigger, idx) {
   rows[idx].role = roleStr;
   trigger.textContent = roleStr || 'Select roles…';
   trigger.classList.toggle('placeholder', !roleStr);
-  saveState();
-  autoRefresh();
+  saveState(); autoRefresh();
 }
 
-// Close all role dropdowns when clicking outside
 document.addEventListener('click', () => {
   document.querySelectorAll('.role-dropdown').forEach(d => d.hidden = true);
 });
@@ -430,28 +619,20 @@ function initSortable() {
   if (typeof Sortable === 'undefined') return;
   const tbody = document.getElementById('tbody');
   Sortable.create(tbody, {
-    handle:     '.drag-handle',
-    animation:  150,
-    ghostClass: 'row-ghost',
-    dragClass:  'row-drag',
+    handle: '.drag-handle', animation: 150, ghostClass: 'row-ghost', dragClass: 'row-drag',
     onEnd: function() {
-      // Read new DOM order and sync the rows array
       const newRows = [];
       Array.from(tbody.querySelectorAll('tr')).forEach(tr => {
         const idx = parseInt(tr.dataset.idx);
         if (!isNaN(idx)) newRows.push(rows[idx]);
       });
-      rows = newRows;
-      render();    // re-render so all indices and event listeners are correct
-      saveState();
-      autoRefresh();
+      rows = newRows; render(); saveState(); autoRefresh();
     }
   });
 }
 
 function updateSummary() {
   const hpd = document.getElementById('hoursPerDay').value;
-  // Update duration cells
   document.querySelectorAll('#tbody tr').forEach((tr, idx) => {
     const dur = tr.querySelector('.col-dur');
     if (dur) dur.textContent = durationStr(rows[idx]?.hours, hpd);
@@ -465,28 +646,20 @@ function updateSummary() {
 
 // ── Widget HTML generation ────────────────────────────────
 function generateWidget() {
-  const title       = (document.getElementById('projectTitle').value || '').trim();
-  const overview    = (document.getElementById('overview').value     || '').trim();
-  const exclusions  = (document.getElementById('exclusions').value   || '').trim();
-  const hpd         = document.getElementById('hoursPerDay').value;
-  const showRole    = document.getElementById('showRole').checked;
-  const showHours   = document.getElementById('showHours').checked;
-  const showNotes   = document.getElementById('showNotes').checked;
-
-  const included = rows
-    .map(r => ({ task:(r.task||'').trim(), role:(r.role||'').trim(), notes:(r.notes||'').trim(), hours:num(r.hours) }))
-    .filter(r => r.hours > 0 && (r.task || r.role || r.notes));
-
-  const total    = included.reduce((s, r) => s + r.hours, 0);
-  const duration = totalDurationStr(total, hpd);
-
-  // Table headers
-  const thCols = ['<th style="text-align:left;padding:8px 10px;border:1px solid #e2e8f0;background:#f8fafc;font-size:13px;">Task</th>'];
+  const title      = (document.getElementById('projectTitle').value || '').trim();
+  const overview   = (document.getElementById('overview').value     || '').trim();
+  const exclusions = (document.getElementById('exclusions').value   || '').trim();
+  const hpd        = document.getElementById('hoursPerDay').value;
+  const showRole   = document.getElementById('showRole').checked;
+  const showHours  = document.getElementById('showHours').checked;
+  const showNotes  = document.getElementById('showNotes').checked;
+  const included   = rows.map(r => ({ task:(r.task||'').trim(), role:(r.role||'').trim(), notes:(r.notes||'').trim(), hours:num(r.hours) })).filter(r => r.hours > 0 && (r.task || r.role || r.notes));
+  const total      = included.reduce((s, r) => s + r.hours, 0);
+  const duration   = totalDurationStr(total, hpd);
+  const thCols     = ['<th style="text-align:left;padding:8px 10px;border:1px solid #e2e8f0;background:#f8fafc;font-size:13px;">Task</th>'];
   if (showRole)  thCols.push('<th style="text-align:left;padding:8px 10px;border:1px solid #e2e8f0;background:#f8fafc;font-size:13px;white-space:nowrap;">Role</th>');
   if (showHours) thCols.push('<th style="text-align:left;padding:8px 10px;border:1px solid #e2e8f0;background:#f8fafc;font-size:13px;white-space:nowrap;">Hours</th>');
   if (showNotes) thCols.push('<th style="text-align:left;padding:8px 10px;border:1px solid #e2e8f0;background:#f8fafc;font-size:13px;">Notes</th>');
-
-  // Table rows
   const tbRows = included.map(r => {
     const cells = [`<td style="padding:8px 10px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;"><strong>${esc(r.task)}</strong></td>`];
     if (showRole)  cells.push(`<td style="padding:8px 10px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;white-space:nowrap;">${esc(r.role)}</td>`);
@@ -494,37 +667,9 @@ function generateWidget() {
     if (showNotes) cells.push(`<td style="padding:8px 10px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;">${esc(r.notes)}</td>`);
     return `<tr>\n  ${cells.join('\n  ')}\n</tr>`;
   }).join('\n');
-
-  // Exclusions
   const exLines = exclusions.split('\n').map(l => l.trim()).filter(Boolean);
-  const exclusionsHtml = exLines.length > 0 ? `
-<h3 style="margin:20px 0 8px;font-size:15px;color:#0f172a;">What's Not Included</h3>
-<ul style="margin:0;padding-left:20px;font-size:13px;color:#334155;line-height:1.7;">
-  ${exLines.map(l => `<li>${esc(l)}</li>`).join('\n  ')}
-</ul>` : '';
-
-  const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:860px;">
-${title ? `  <h2 style="margin:0 0 14px;font-size:20px;color:#0f172a;">${esc(title)}</h2>` : ''}
-${overview ? `  <h3 style="margin:0 0 6px;font-size:15px;color:#0f172a;">Project Overview</h3>
-  <p style="margin:0 0 18px;font-size:13px;color:#334155;line-height:1.65;">${esc(overview)}</p>` : ''}
-  <h3 style="margin:0 0 8px;font-size:15px;color:#0f172a;">Scope of Work</h3>
-  <table style="width:100%;border-collapse:collapse;font-size:13px;">
-    <thead>
-      <tr>
-        ${thCols.join('\n        ')}
-      </tr>
-    </thead>
-    <tbody>
-      ${tbRows || '<tr><td colspan="4" style="padding:10px;border:1px solid #e2e8f0;color:#94a3b8;">No tasks with hours &gt; 0.</td></tr>'}
-    </tbody>
-  </table>
-  <p style="margin:10px 0 0;font-size:13px;color:#334155;">
-    <strong>Total Effort:</strong> ${esc(roundDisp(total))} hours
-    ${duration !== '—' ? ` &nbsp;·&nbsp; <strong>Estimated Duration:</strong> ${esc(duration)}` : ''}
-  </p>${exclusionsHtml}
-</div>`.trim();
-
-  return html;
+  const exclusionsHtml = exLines.length > 0 ? `\n<h3 style="margin:20px 0 8px;font-size:15px;color:#0f172a;">What's Not Included</h3>\n<ul style="margin:0;padding-left:20px;font-size:13px;color:#334155;line-height:1.7;">\n  ${exLines.map(l => `<li>${esc(l)}</li>`).join('\n  ')}\n</ul>` : '';
+  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:860px;">\n${title ? `  <h2 style="margin:0 0 14px;font-size:20px;color:#0f172a;">${esc(title)}</h2>\n` : ''}${overview ? `  <h3 style="margin:0 0 6px;font-size:15px;color:#0f172a;">Project Overview</h3>\n  <p style="margin:0 0 18px;font-size:13px;color:#334155;line-height:1.65;">${esc(overview)}</p>\n` : ''}  <h3 style="margin:0 0 8px;font-size:15px;color:#0f172a;">Scope of Work</h3>\n  <table style="width:100%;border-collapse:collapse;font-size:13px;">\n    <thead><tr>${thCols.join('')}</tr></thead>\n    <tbody>\n      ${tbRows || '<tr><td colspan="4" style="padding:10px;border:1px solid #e2e8f0;color:#94a3b8;">No tasks with hours &gt; 0.</td></tr>'}\n    </tbody>\n  </table>\n  <p style="margin:10px 0 0;font-size:13px;color:#334155;"><strong>Total Effort:</strong> ${esc(roundDisp(total))} hours${duration !== '—' ? ` &nbsp;·&nbsp; <strong>Estimated Duration:</strong> ${esc(duration)}` : ''}</p>${exclusionsHtml}\n</div>`.trim();
 }
 
 function autoRefresh() {
@@ -535,9 +680,180 @@ function autoRefresh() {
   document.getElementById('preview').innerHTML = html;
 }
 
-// ── Event listeners ───────────────────────────────────────
+// ── AI Assistant (Phase 4) ────────────────────────────────
+let aiPendingMode = null;
 
-// Settings changes
+function addAiMessage(role, html, extraClass = '') {
+  const container = document.getElementById('aiMessages');
+  const div = document.createElement('div');
+  div.className = `ai-msg ai-msg-${role}${extraClass ? ' ' + extraClass : ''}`;
+  if (role === 'assistant') {
+    div.innerHTML = `<div class="ai-msg-label">Assistant</div>${html}`;
+  } else {
+    div.innerHTML = `<div class="ai-msg-label" style="text-align:right">You</div>${html}`;
+  }
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function addAiTyping() {
+  const container = document.getElementById('aiMessages');
+  const div = document.createElement('div');
+  div.className = 'ai-typing'; div.id = 'aiTyping';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function removeAiTyping() {
+  const el = document.getElementById('aiTyping');
+  if (el) el.remove();
+}
+
+async function sendAiMessage(userText, mode) {
+  if (!userText.trim()) return;
+  const btn = document.getElementById('aiSendBtn');
+  btn.disabled = true;
+
+  addAiMessage('user', esc(userText).replace(/\n/g, '<br>'));
+  addAiTyping();
+
+  try {
+    const payload = { mode: mode || 'chat', message: userText };
+    if (mode === 'review' || mode === 'adjust') {
+      payload.currentScope = {
+        ...captureCurrentState(),
+        tasks: rows.map(r => ({ task: r.task, role: r.role, hours: r.hours, notes: r.notes }))
+      };
+    }
+
+    const res  = await fetch(API_AI, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    removeAiTyping();
+
+    if (!res.ok) throw new Error(data.error || 'AI error');
+
+    if (mode === 'generate' && data.tasks) {
+      // Build preview of tasks
+      const taskPreview = data.tasks.slice(0, 5).map(t =>
+        `<div class="ai-task-item"><strong>${esc(t.task)}</strong> — ${esc(t.role)}, ${t.hours}h</div>`
+      ).join('') + (data.tasks.length > 5 ? `<div class="ai-task-item" style="color:var(--muted)">+ ${data.tasks.length - 5} more tasks…</div>` : '');
+
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'ai-msg ai-msg-assistant';
+      msgDiv.innerHTML = `<div class="ai-msg-label">Assistant</div>
+        ${esc(data.message || `Generated ${data.tasks.length} tasks for "${data.projectTitle}"`)}
+        <div class="ai-task-list">${taskPreview}</div>
+        <button class="ai-apply-btn" id="aiApplyGenBtn"><i class="ti ti-check"></i> Apply to scope</button>`;
+      document.getElementById('aiMessages').appendChild(msgDiv);
+      document.getElementById('aiMessages').scrollTop = 99999;
+
+      document.getElementById('aiApplyGenBtn').addEventListener('click', () => {
+        applyState({
+          projectTitle: data.projectTitle || document.getElementById('projectTitle').value,
+          customerName: document.getElementById('customerName').value,
+          hoursPerDay:  document.getElementById('hoursPerDay').value,
+          overview:     data.overview || document.getElementById('overview').value,
+          exclusions:   data.exclusions || document.getElementById('exclusions').value,
+          showRole: true, showHours: false, showNotes: true,
+          rows: data.tasks
+        });
+        saveCurrentAsProject(data.projectTitle);
+        renderProjects();
+        showToast('Scope applied ✓');
+        addAiMessage('assistant', '✅ Scope applied to the editor. Review the tasks and make any adjustments.');
+      });
+
+    } else if ((mode === 'review' || mode === 'adjust') && data.feedback) {
+      const feedbackHtml = (data.feedback || []).map(f =>
+        `<div class="ai-feedback-item ai-feedback-${f.type}">${esc(f.text)}</div>`
+      ).join('');
+
+      let suggestBtn = '';
+      if (data.suggestedTasks && data.suggestedTasks.length > 0) {
+        suggestBtn = `<button class="ai-apply-btn" id="aiApplySugBtn" style="margin-top:6px"><i class="ti ti-plus"></i> Add ${data.suggestedTasks.length} suggested task${data.suggestedTasks.length > 1 ? 's' : ''}</button>`;
+      }
+
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'ai-msg ai-msg-assistant';
+      msgDiv.innerHTML = `<div class="ai-msg-label">Assistant</div>
+        ${esc(data.summary || 'Here\'s my review of your scope:')}
+        <div style="margin-top:8px">${feedbackHtml}</div>
+        ${suggestBtn}`;
+      document.getElementById('aiMessages').appendChild(msgDiv);
+      document.getElementById('aiMessages').scrollTop = 99999;
+
+      if (data.suggestedTasks && data.suggestedTasks.length > 0) {
+        document.getElementById('aiApplySugBtn')?.addEventListener('click', () => {
+          rows.push(...data.suggestedTasks.map(t => ({ task: t.task || '', role: t.role || '', hours: String(t.hours || ''), notes: t.notes || '' })));
+          render(); updateSummary(); saveState();
+          showToast(`Added ${data.suggestedTasks.length} tasks`);
+          addAiMessage('assistant', `✅ Added ${data.suggestedTasks.length} task${data.suggestedTasks.length > 1 ? 's' : ''} to your scope.`);
+        });
+      }
+
+    } else {
+      // Chat / plain text
+      addAiMessage('assistant', esc(data.text || '').replace(/\n/g, '<br>'));
+    }
+
+  } catch (err) {
+    removeAiTyping();
+    const errDiv = document.createElement('div');
+    errDiv.className = 'ai-msg-error';
+    errDiv.textContent = '⚠️ ' + (err.message || 'Something went wrong. Please try again.');
+    document.getElementById('aiMessages').appendChild(errDiv);
+  } finally {
+    btn.disabled = false;
+    aiPendingMode = null;
+  }
+}
+
+// AI send button
+document.getElementById('aiSendBtn').addEventListener('click', () => {
+  const input = document.getElementById('aiInput');
+  const text  = input.value.trim();
+  if (!text) return;
+  const mode = aiPendingMode || 'chat';
+  input.value = '';
+  sendAiMessage(text, mode);
+});
+
+document.getElementById('aiInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('aiSendBtn').click(); }
+});
+
+// AI suggestion chips
+document.querySelectorAll('.ai-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const action = chip.dataset.action;
+    const input  = document.getElementById('aiInput');
+    if (action === 'generate') {
+      aiPendingMode = 'generate';
+      input.placeholder = 'Describe the project (e.g. "Migrate 3-server office to Azure, 6 weeks, small team")';
+      input.focus();
+      addAiMessage('assistant', 'Describe the project and I\'ll generate a full scope with tasks, roles, and hour estimates.');
+    } else if (action === 'review') {
+      aiPendingMode = 'review';
+      addAiMessage('assistant', 'I\'ll review your current scope. Add any specific concerns or just send a message to begin.');
+      input.placeholder = 'Any specific concerns? Or just press send to review…';
+      input.value = 'Please review my current scope';
+      input.focus();
+    } else if (action === 'adjust') {
+      aiPendingMode = 'adjust';
+      input.placeholder = 'e.g. "We only have 2 engineers and 4 weeks"';
+      input.focus();
+      addAiMessage('assistant', 'Tell me about your constraints (team size, deadline, budget) and I\'ll suggest adjustments.');
+    }
+  });
+});
+
+// ── Event listeners ───────────────────────────────────────
 ['projectTitle','customerName','overview','exclusions'].forEach(id => {
   document.getElementById(id).addEventListener('input', () => { saveState(); autoRefresh(); });
 });
@@ -559,32 +875,22 @@ document.getElementById('loadPresetBtn').addEventListener('click', () => {
   document.getElementById('exclusions').value   = p.exclusions;
   document.getElementById('htmlOut').textContent = '';
   document.getElementById('preview').innerHTML   = '';
+  document.getElementById('outputPanels').hidden = true;
   document.getElementById('copyBtn').disabled    = true;
-  render();
-  saveState();
-  showToast(`Loaded: ${p.title}`);
+  render(); saveState(); showToast(`Loaded: ${p.title}`);
+  saveCurrentAsProject(p.title); renderProjects();
 });
 
+// New project
+document.getElementById('newProjectBtn').addEventListener('click', newProject);
+
 // Add row
-document.getElementById('addRowBtn').addEventListener('click', () => {
-  rows.push(defaultRow()); render(); saveState();
-});
+document.getElementById('addRowBtn').addEventListener('click', () => { rows.push(defaultRow()); render(); saveState(); });
 
 // Clear
 document.getElementById('clearBtn').addEventListener('click', () => {
-  if (!confirm('Clear everything and start fresh?')) return;
-  rows = [defaultRow()];
-  document.getElementById('projectTitle').value  = '';
-  document.getElementById('customerName').value  = '';
-  document.getElementById('overview').value      = '';
-  document.getElementById('exclusions').value    = '';
-  document.getElementById('htmlOut').textContent = '';
-  document.getElementById('preview').innerHTML   = '';
-  document.getElementById('copyBtn').disabled    = true;
-  sbPushBtn.textContent = 'Save to Salesbuildr →';
-  sbPushBtn.disabled    = !(sbApiKey.value.trim() && sbIntKey.value.trim());
-  sbResult.hidden       = true;
-  render(); saveState(); showToast('Cleared');
+  if (!confirm('Clear this project and start fresh?')) return;
+  newProject();
 });
 
 // Generate
@@ -592,9 +898,14 @@ document.getElementById('generateBtn').addEventListener('click', () => {
   const html = generateWidget();
   document.getElementById('htmlOut').textContent = html;
   document.getElementById('preview').innerHTML   = html;
+  document.getElementById('outputPanels').hidden = false;
   document.getElementById('copyBtn').disabled    = false;
-  showToast('Widget generated');
-  saveState();
+  showToast('Widget generated'); saveState();
+});
+
+// Close output
+document.getElementById('closeOutputBtn').addEventListener('click', () => {
+  document.getElementById('outputPanels').hidden = true;
 });
 
 // Copy
@@ -613,7 +924,92 @@ document.getElementById('copyBtn').addEventListener('click', async () => {
   }
 });
 
-// ── Salesbuildr connect & push ────────────────────────────
+// Export JSON
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const state = captureCurrentState();
+  const slug  = (state.projectTitle || 'scope').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const json  = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), ...state }, null, 2);
+  const a     = document.createElement('a');
+  a.href      = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+  a.download  = `${slug}.json`; a.click(); URL.revokeObjectURL(a.href);
+});
+
+// Import JSON
+document.getElementById('importInput').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!Array.isArray(data.rows)) throw new Error('Not a valid scope file');
+      if (rows.length && !confirm(`Import "${data.projectTitle || file.name}"? Current scope will be replaced.`)) return;
+      applyState(data); showToast(`Imported: ${data.projectTitle || file.name}`);
+      saveCurrentAsProject(data.projectTitle); renderProjects();
+    } catch { alert('Could not read this file — make sure it is a valid scope JSON export.'); }
+  };
+  reader.readAsText(file); e.target.value = '';
+});
+
+// Passphrase
+document.getElementById('tmplPassphrase').addEventListener('input', async () => {
+  updatePassphraseUI();
+  await renderTemplateSelect();
+  updateCenterHeader();
+});
+
+// Template buttons
+document.getElementById('saveTemplateBtn').addEventListener('click', async () => {
+  if (!isTeamMode()) { const goTeam = promptForPassphrase('save templates'); if (!goTeam) {} await renderTemplateSelect(); }
+  const def  = document.getElementById('projectTitle').value.trim() || 'My Template';
+  const name = prompt('Name this template:', def);
+  if (!name?.trim()) return;
+  const trimmed = name.trim();
+  const btn   = document.getElementById('saveTemplateBtn');
+  const entry = { name: trimmed, savedAt: new Date().toISOString(), ...captureCurrentState() };
+  btn.disabled = true;
+  try {
+    if (isTeamMode()) {
+      const hash = hashPassphrase(getPassphrase());
+      const existing = (await teamGetIndex(hash)).includes(trimmed);
+      if (existing && !confirm(`Replace team template "${trimmed}"?`)) { btn.disabled = false; return; }
+      await teamSaveTemplate(hash, trimmed, entry);
+      showToast(`"${trimmed}" saved for the team`);
+    } else {
+      const all = localGetAll(); const existing = all.findIndex(t => t.name === trimmed);
+      if (existing >= 0) { if (!confirm(`Replace local template "${trimmed}"?`)) { btn.disabled = false; return; } all[existing] = entry; } else { all.push(entry); }
+      localSaveAll(all); showToast(`"${trimmed}" saved locally`);
+    }
+    await renderTemplateSelect(); document.getElementById('templateSelect').value = trimmed;
+  } catch { showToast('⚠️ Save failed — try again'); } finally { btn.disabled = false; }
+});
+
+document.getElementById('loadTemplateBtn').addEventListener('click', async () => {
+  const name = document.getElementById('templateSelect').value; if (!name) return;
+  const btn  = document.getElementById('loadTemplateBtn'); btn.disabled = true;
+  try {
+    let tmpl;
+    if (isTeamMode()) { tmpl = await teamGetTemplate(hashPassphrase(getPassphrase()), name); }
+    else { tmpl = localGetAll().find(t => t.name === name) || null; }
+    if (!tmpl) { showToast('Template not found'); return; }
+    if (rows.length && !confirm(`Load "${name}"? Current scope will be replaced.`)) return;
+    applyState(tmpl); showToast(`"${name}" loaded`);
+    saveCurrentAsProject(tmpl.projectTitle); renderProjects();
+  } catch { showToast('⚠️ Load failed — try again'); } finally { btn.disabled = false; }
+});
+
+document.getElementById('deleteTemplateBtn').addEventListener('click', async () => {
+  const name = document.getElementById('templateSelect').value; if (!name) return;
+  const isTeam = isTeamMode();
+  if (!confirm(isTeam ? `Delete team template "${name}"? This removes it for everyone.` : `Delete local template "${name}"?`)) return;
+  const btn = document.getElementById('deleteTemplateBtn'); btn.disabled = true;
+  try {
+    if (isTeam) { await teamDeleteTemplate(hashPassphrase(getPassphrase()), name); }
+    else { localSaveAll(localGetAll().filter(t => t.name !== name)); }
+    await renderTemplateSelect(); showToast(`"${name}" deleted`);
+  } catch { showToast('⚠️ Delete failed — try again'); } finally { btn.disabled = false; }
+});
+
+// ── Salesbuildr ───────────────────────────────────────────
 const sbToggleBtn = document.getElementById('sbToggle');
 const sbArrow     = document.getElementById('sbArrow');
 const sbBody      = document.getElementById('sbBody');
@@ -629,17 +1025,13 @@ function initSbCredentials() {
   const savedInt = localStorage.getItem(LS_INT_KEY);
   if (savedApi) sbApiKey.value = savedApi;
   if (savedInt) sbIntKey.value = savedInt;
-  if (savedApi && savedInt) { sbRemember.checked = true; }
+  if (savedApi && savedInt) sbRemember.checked = true;
   updateSbBtn();
 }
-
-function updateSbBtn() {
-  sbPushBtn.disabled = !(sbApiKey.value.trim() && sbIntKey.value.trim());
-}
+function updateSbBtn() { sbPushBtn.disabled = !(sbApiKey.value.trim() && sbIntKey.value.trim()); }
 
 sbToggleBtn.addEventListener('click', () => {
-  const open = !sbBody.hidden;
-  sbBody.hidden = open;
+  const open = !sbBody.hidden; sbBody.hidden = open;
   sbArrow.classList.toggle('open', !open);
 });
 sbApiKey.addEventListener('input', updateSbBtn);
@@ -647,318 +1039,32 @@ sbIntKey.addEventListener('input', updateSbBtn);
 
 sbPushBtn.addEventListener('click', async () => {
   const html = document.getElementById('htmlOut').textContent.trim();
-  if (!html) {
-    showToast('Generate the widget first');
-    document.getElementById('generateBtn').click();
-    return;
-  }
-
-  const apiKey = sbApiKey.value.trim();
-  const intKey = sbIntKey.value.trim();
+  if (!html) { showToast('Generate the widget first'); document.getElementById('generateBtn').click(); return; }
+  const apiKey = sbApiKey.value.trim(); const intKey = sbIntKey.value.trim();
   if (!apiKey || !intKey) return;
-
   if (sbRemember.checked) { localStorage.setItem(LS_API_KEY, apiKey); localStorage.setItem(LS_INT_KEY, intKey); }
   else { localStorage.removeItem(LS_API_KEY); localStorage.removeItem(LS_INT_KEY); }
-
-  sbPushBtn.disabled    = true;
-  sbPushBtn.textContent = 'Saving…';
-  sbResult.hidden       = true;
-
+  sbPushBtn.disabled = true; sbPushBtn.textContent = 'Saving…'; sbResult.hidden = true;
   const title  = (document.getElementById('projectTitle').value || 'Project Scope').trim();
   const prefix = sbPrefix.value.trim();
-  const widget = { id: 'project-scope', title, html };
-
   try {
-    const res  = await fetch('/api/push-widgets', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ widgets:[widget], prefix, apiKey, integrationKey:intKey })
-    });
+    const res  = await fetch('/api/push-widgets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ widgets:[{ id:'project-scope', title, html }], prefix, apiKey, integrationKey:intKey }) });
     const data = await res.json();
     if (data.successCount > 0) {
-      sbResult.textContent = `✓ Saved as "${prefix ? prefix + ' – ' : ''}${title}" in your Salesbuildr widget library.`;
-      sbResult.className   = 'sb-result ok';
-      sbResult.hidden      = false;
-      sbPushBtn.textContent = '✓ Saved';
-    } else {
-      const err = (data.results?.[0]?.error) || data.error || 'Unknown error';
-      throw new Error(err);
-    }
+      sbResult.textContent = `✓ Saved as "${prefix ? prefix + ' – ' : ''}${title}" in Salesbuildr.`;
+      sbResult.className = 'sb-result ok'; sbResult.hidden = false; sbPushBtn.textContent = '✓ Saved';
+    } else { throw new Error((data.results?.[0]?.error) || data.error || 'Unknown error'); }
   } catch (e) {
-    sbResult.textContent = `✕ ${e.message}`;
-    sbResult.className   = 'sb-result error';
-    sbResult.hidden      = false;
-    sbPushBtn.disabled    = false;
-    sbPushBtn.textContent = 'Save to Salesbuildr →';
+    sbResult.textContent = `✕ ${e.message}`; sbResult.className = 'sb-result error'; sbResult.hidden = false;
+    sbPushBtn.disabled = false; sbPushBtn.textContent = 'Push →';
   }
-});
-
-// ── Template management ───────────────────────────────────
-// ── Template storage — passphrase-namespaced hybrid ──────────────────────────
-//
-//  WITH passphrase: templates stored server-side via Netlify Blobs through
-//    the /api/scope-templates function, namespaced by passphrase hash.
-//    Any team member on any device who types the same passphrase sees the
-//    same shared templates.
-//
-//  WITHOUT passphrase: falls back to the original localStorage key
-//    "sb_scope_templates_v1" — solo use, per-browser, unchanged behaviour.
-//
-// ─────────────────────────────────────────────────────────────────────────────
-
-const LS_TEMPLATES = 'sb_scope_templates_v1';
-const API_ENDPOINT = '/api/scope-templates';
-
-// Returns the active passphrase (trimmed), or empty string if none entered.
-function getPassphrase() {
-  return (document.getElementById('tmplPassphrase')?.value || '').trim();
-}
-
-// Simple non-cryptographic hash — good enough to namespace keys.
-function hashPassphrase(str) {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) {
-    h = Math.imul(31, h) + str.charCodeAt(i) | 0;
-  }
-  return Math.abs(h).toString(36);
-}
-
-function isTeamMode() { return getPassphrase().length > 0; }
-
-// ── localStorage helpers (solo / no passphrase) ───────────────────────────────
-function localGetAll()       { try { return JSON.parse(localStorage.getItem(LS_TEMPLATES)) || []; } catch { return []; } }
-function localSaveAll(tmpl)  { localStorage.setItem(LS_TEMPLATES, JSON.stringify(tmpl)); }
-
-// ── Netlify Blobs helpers (team / passphrase) ─────────────────────────────────
-async function apiCall(payload) {
-  const res = await fetch(API_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  if (!res.ok) throw new Error(`API error ${res.status}`);
-  return res.json();
-}
-
-async function teamGetIndex(hash)                  { return apiCall({ method: 'getIndex', hash }); }
-async function teamGetTemplate(hash, name)         { return apiCall({ method: 'getTemplate', hash, name }); }
-async function teamSaveTemplate(hash, name, entry) { return apiCall({ method: 'saveTemplate', hash, name, entry }); }
-async function teamDeleteTemplate(hash, name)      { return apiCall({ method: 'deleteTemplate', hash, name }); }
-
-// ── Prompt helper: ask user whether to enable team sharing ───────────────────
-// Returns true if user enters a passphrase, false if they choose to stay local.
-function promptForPassphrase(action = 'use shared templates') {
-  const input = document.getElementById('tmplPassphrase');
-  const phrase = prompt(
-    `No team passphrase is set.\n\nEnter a passphrase to ${action} with your team, ` +
-    `or leave blank and click OK to continue with local (personal) storage.`
-  );
-  if (phrase === null) return false;          // cancelled
-  if (phrase.trim().length > 0) {
-    input.value = phrase.trim();
-    updatePassphraseUI();
-    return true;
-  }
-  return false;   // blank → stay local
-}
-
-// Update the passphrase field visual state.
-function updatePassphraseUI() {
-  const badge = document.getElementById('tmplPassphraseBadge');
-  if (!badge) return;
-  if (isTeamMode()) {
-    badge.textContent = '🔗 Team';
-    badge.style.color = 'var(--good)';
-  } else {
-    badge.textContent = '💾 Local';
-    badge.style.color = 'var(--muted)';
-  }
-}
-
-// ── Unified template API (used by all button handlers) ───────────────────────
-
-async function renderTemplateSelect() {
-  const sel  = document.getElementById('templateSelect');
-  const saved = sel.value;
-
-  if (isTeamMode()) {
-    sel.innerHTML = '<option value="">⏳ Loading team templates…</option>';
-    const hash  = hashPassphrase(getPassphrase());
-    const names = await teamGetIndex(hash);
-    sel.innerHTML = `<option value="">— ${names.length ? 'Team templates' : 'No team templates yet'} —</option>` +
-      names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
-    if (saved && names.includes(saved)) sel.value = saved;
-  } else {
-    const all = localGetAll();
-    sel.innerHTML = `<option value="">— ${all.length ? 'My local templates' : 'No local templates yet'} —</option>` +
-      all.map(t => `<option value="${esc(t.name)}">${esc(t.name)}</option>`).join('');
-    if (saved && all.find(t => t.name === saved)) sel.value = saved;
-  }
-}
-
-function captureCurrentState() {
-  return {
-    projectTitle: document.getElementById('projectTitle').value,
-    customerName: document.getElementById('customerName').value,
-    hoursPerDay:  document.getElementById('hoursPerDay').value,
-    overview:     document.getElementById('overview').value,
-    exclusions:   document.getElementById('exclusions').value,
-    showRole:     document.getElementById('showRole').checked,
-    showHours:    document.getElementById('showHours').checked,
-    showNotes:    document.getElementById('showNotes').checked,
-    rows:         rows.map(r => ({ ...r }))
-  };
-}
-
-function applyState(s) {
-  document.getElementById('projectTitle').value = s.projectTitle ?? '';
-  document.getElementById('customerName').value = s.customerName ?? '';
-  document.getElementById('hoursPerDay').value  = s.hoursPerDay  ?? 8;
-  document.getElementById('overview').value     = s.overview     ?? '';
-  document.getElementById('exclusions').value   = s.exclusions   ?? '';
-  document.getElementById('showRole').checked   = s.showRole  !== false;
-  document.getElementById('showHours').checked  = s.showHours === true;
-  document.getElementById('showNotes').checked  = s.showNotes !== false;
-  rows = (s.rows || []).map(r => ({ ...r }));
-  render();
-  updateTotals();
-  saveState();
-}
-
-// Save as Template
-document.getElementById('saveTemplateBtn').addEventListener('click', async () => {
-  // If no passphrase set, offer team sharing first
-  if (!isTeamMode()) {
-    const goTeam = promptForPassphrase('save templates');
-    if (!goTeam) {
-      // Stay local — continue to local save below
-    }
-    await renderTemplateSelect();
-  }
-
-  const def  = document.getElementById('projectTitle').value.trim() || 'My Template';
-  const name = prompt('Name this template:', def);
-  if (!name?.trim()) return;
-  const trimmed = name.trim();
-  const btn     = document.getElementById('saveTemplateBtn');
-  const entry   = { name: trimmed, savedAt: new Date().toISOString(), ...captureCurrentState() };
-
-  btn.disabled = true;
-  try {
-    if (isTeamMode()) {
-      const hash     = hashPassphrase(getPassphrase());
-      const existing = (await teamGetIndex(hash)).includes(trimmed);
-      if (existing && !confirm(`Replace team template "${trimmed}"?`)) { btn.disabled = false; return; }
-      await teamSaveTemplate(hash, trimmed, entry);
-      showToast(`"${trimmed}" saved for the whole team`);
-    } else {
-      const all      = localGetAll();
-      const existing = all.findIndex(t => t.name === trimmed);
-      if (existing >= 0) {
-        if (!confirm(`Replace local template "${trimmed}"?`)) { btn.disabled = false; return; }
-        all[existing] = entry;
-      } else {
-        all.push(entry);
-      }
-      localSaveAll(all);
-      showToast(`"${trimmed}" saved locally`);
-    }
-    await renderTemplateSelect();
-    document.getElementById('templateSelect').value = trimmed;
-  } catch {
-    showToast('⚠️ Save failed — try again');
-  } finally {
-    btn.disabled = false;
-  }
-});
-
-// Load Template
-document.getElementById('loadTemplateBtn').addEventListener('click', async () => {
-  const name = document.getElementById('templateSelect').value;
-  if (!name) return;
-  const btn  = document.getElementById('loadTemplateBtn');
-  btn.disabled = true;
-  try {
-    let tmpl;
-    if (isTeamMode()) {
-      tmpl = await teamGetTemplate(hashPassphrase(getPassphrase()), name);
-    } else {
-      tmpl = localGetAll().find(t => t.name === name) || null;
-    }
-    if (!tmpl) { showToast('Template not found'); return; }
-    if (rows.length && !confirm(`Load "${name}"? Your current scope will be replaced.`)) return;
-    applyState(tmpl);
-    showToast(`"${name}" loaded`);
-  } catch {
-    showToast('⚠️ Load failed — try again');
-  } finally {
-    btn.disabled = false;
-  }
-});
-
-// Delete Template
-document.getElementById('deleteTemplateBtn').addEventListener('click', async () => {
-  const name = document.getElementById('templateSelect').value;
-  if (!name) return;
-  const isTeam = isTeamMode();
-  const msg = isTeam
-    ? `Delete team template "${name}"? This removes it for everyone.`
-    : `Delete local template "${name}"?`;
-  if (!confirm(msg)) return;
-  const btn  = document.getElementById('deleteTemplateBtn');
-  btn.disabled = true;
-  try {
-    if (isTeam) {
-      await teamDeleteTemplate(hashPassphrase(getPassphrase()), name);
-    } else {
-      localSaveAll(localGetAll().filter(t => t.name !== name));
-    }
-    await renderTemplateSelect();
-    showToast(`"${name}" deleted`);
-  } catch {
-    showToast('⚠️ Delete failed — try again');
-  } finally {
-    btn.disabled = false;
-  }
-});
-
-// Export JSON
-document.getElementById('exportBtn').addEventListener('click', () => {
-  const state = captureCurrentState();
-  const slug  = (state.projectTitle || 'scope').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const json  = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), ...state }, null, 2);
-  const a     = document.createElement('a');
-  a.href      = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
-  a.download  = `${slug}.json`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-});
-
-// Import JSON
-document.getElementById('importInput').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    try {
-      const data = JSON.parse(ev.target.result);
-      if (!Array.isArray(data.rows)) throw new Error('Not a valid scope file');
-      if (rows.length && !confirm(`Import "${data.projectTitle || file.name}"? Current scope will be replaced.`)) return;
-      applyState(data);
-      showToast(`Imported: ${data.projectTitle || file.name}`);
-    } catch {
-      alert('Could not read this file — make sure it is a valid scope JSON export.');
-    }
-  };
-  reader.readAsText(file);
-  e.target.value = '';
 });
 
 // ── Init ──────────────────────────────────────────────────
 (async function init() {
-  // Check if Sales Guide passed a preset via URL param
   const urlPreset = new URLSearchParams(window.location.search).get('preset');
-  const hasSaved  = urlPreset ? false : loadState(); // URL preset overrides saved state
+  const hasSaved  = urlPreset ? false : loadState();
+
   if (urlPreset && PRESETS[urlPreset]) {
     rows = PRESETS[urlPreset].tasks.map(t => ({ ...t }));
     document.getElementById('projectTitle').value = PRESETS[urlPreset].title;
@@ -970,16 +1076,11 @@ document.getElementById('importInput').addEventListener('change', e => {
     document.getElementById('overview').value     = PRESETS.azure.overview;
     document.getElementById('exclusions').value   = PRESETS.azure.exclusions;
   }
+
   render();
   updatePassphraseUI();
+  updateCenterHeader();
+  renderProjects();
   await renderTemplateSelect();
   initSbCredentials();
 })();
-
-// ── Passphrase field — live update UI + reload template list ─────────────────
-document.getElementById('tmplPassphrase').addEventListener('input', async () => {
-  updatePassphraseUI();
-  const label = document.getElementById('tmplModeLabel');
-  if (label) label.textContent = isTeamMode() ? '(team — shared)' : '(local)';
-  await renderTemplateSelect();
-});
