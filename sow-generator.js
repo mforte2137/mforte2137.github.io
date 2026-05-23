@@ -498,7 +498,7 @@ function generateWidget() {
   }
 
   // Build the document
-  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:740px;color:#0f172a;">
+  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:100%;color:#0f172a;">
 
   <!-- Header — company.name, quote.number and quote.sentAt resolved by Salesbuildr at render time -->
   <div style="background:${brandColor};border-radius:8px 8px 0 0;padding:24px 28px 20px;">
