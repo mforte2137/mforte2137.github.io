@@ -12,7 +12,6 @@ const LS_BRAND_COLOR = 'sb_brand_color_v1';   // Shared with Scope Builder inten
 const LS_TEMPLATES   = 'sb_sow_templates_v1';
 const LS_API_KEY     = 'sb_api_key';           // Shared with Scope Builder
 const LS_INT_KEY     = 'sb_int_key';           // Shared with Scope Builder
-const LS_SOW_NUM     = 'sb_sow_number_v1';
 const API_TEMPLATES  = '/api/sow-templates';
 const API_AI         = '/api/sow-ai';
 const PROJ_COLORS    = ['#3b82f6','#f97316','#8b5cf6','#ec4899','#14b8a6','#f59e0b','#10b981','#6366f1'];
@@ -113,20 +112,6 @@ function applyCustomHex() {
   showToast('Brand color updated');
 }
 
-// ── SOW Number auto-increment ─────────────────────────────
-function getNextSowNumber() {
-  const stored = localStorage.getItem(LS_SOW_NUM);
-  const num = stored ? (parseInt(stored, 10) + 1) : 1;
-  const year = new Date().getFullYear();
-  return `SOW-${year}-${String(num).padStart(3, '0')}`;
-}
-
-function recordSowNumber(num) {
-  // Extract the numeric part and store it
-  const match = num.match(/(\d+)$/);
-  if (match) localStorage.setItem(LS_SOW_NUM, match[1]);
-}
-
 // ── Passphrase / team mode ────────────────────────────────
 function getPassphrase() { return (document.getElementById('tmplPassphrase')?.value || '').trim(); }
 function hashPassphrase(str) {
@@ -200,8 +185,6 @@ function saveProjects(projects) { localStorage.setItem(LS_PROJECTS, JSON.stringi
 function captureCurrentState() {
   return {
     projectTitle:  document.getElementById('projectTitle').value,
-    customerName:  document.getElementById('customerName').value,
-    sowNumber:     document.getElementById('sowNumber').value,
     paymentTerms:  document.getElementById('paymentTerms').value,
     paymentCustom: document.getElementById('paymentCustom').value,
     engagement:    document.getElementById('engagement').value,
@@ -217,8 +200,6 @@ function captureCurrentState() {
 
 function applyState(s) {
   document.getElementById('projectTitle').value   = s.projectTitle  ?? '';
-  document.getElementById('customerName').value   = s.customerName  ?? '';
-  document.getElementById('sowNumber').value      = s.sowNumber     ?? '';
   document.getElementById('paymentTerms').value   = s.paymentTerms  ?? 'on-completion';
   document.getElementById('paymentCustom').value  = s.paymentCustom ?? '';
   document.getElementById('engagement').value     = s.engagement    ?? '';
@@ -281,7 +262,7 @@ function renderProjects() {
       <div class="lp-proj-dot" style="background:${color}"></div>
       <div class="lp-proj-info">
         <div class="lp-proj-name">${esc(p.projectTitle || 'Untitled SOW')}</div>
-        <div class="lp-proj-meta">${esc(p.customerName || '')}${p.customerName ? ' · ' : ''}${esc(p.sowNumber || '')}${p.sowNumber ? ' · ' : ''}${ago}</div>
+        <div class="lp-proj-meta">${ago}</div>
       </div>
       <span class="lp-proj-badge ${isShared ? 'lp-proj-badge-shared' : 'lp-proj-badge-local'}">${isShared ? 'shared' : 'local'}</span>
       <span class="lp-proj-delete" title="Delete project" data-id="${esc(p.id)}"><i class="ti ti-x"></i></span>
@@ -327,11 +308,7 @@ function deleteProject(id) {
 function newProject() {
   autoSaveCurrentProject();
   currentProjectId = null;
-  // Generate a new SOW number
-  const nextNum = getNextSowNumber();
-  document.getElementById('sowNumber').value      = nextNum;
   document.getElementById('projectTitle').value   = '';
-  document.getElementById('customerName').value   = '';
   document.getElementById('paymentTerms').value   = 'on-completion';
   document.getElementById('paymentCustom').value  = '';
   document.getElementById('engagement').value     = '';
@@ -375,13 +352,10 @@ function loadState() {
 
 // ── Center header ─────────────────────────────────────────
 function updateCenterHeader() {
-  const title    = document.getElementById('projectTitle').value.trim();
-  const customer = document.getElementById('customerName').value.trim();
-  const sowNum   = document.getElementById('sowNumber').value.trim();
+  const title = document.getElementById('projectTitle').value.trim();
   document.getElementById('centerTitle').textContent = title || 'SOW Generator';
   let sub = title ? '' : 'Start by loading a preset or describing your engagement to the AI';
-  if (title && customer) sub = customer + (sowNum ? ` · ${sowNum}` : '') + (isTeamMode() ? ' · 🔗 shared' : '');
-  else if (title) sub = isTeamMode() ? '🔗 Shared with team' : '💾 Local project';
+  if (title) sub = isTeamMode() ? '🔗 Shared with team' : '💾 Local project';
   document.getElementById('centerSub').textContent = sub;
 }
 
@@ -466,8 +440,6 @@ function getChangeText() {
 // ── SOW HTML generation ────────────────────────────────────
 function generateWidget() {
   const title        = (document.getElementById('projectTitle').value || '').trim();
-  const customer     = (document.getElementById('customerName').value || '').trim();
-  const sowNumber    = (document.getElementById('sowNumber').value    || '').trim();
   const paymentTerms = document.getElementById('paymentTerms').value;
   const paymentCustom= (document.getElementById('paymentCustom').value || '').trim();
   const engagement   = (document.getElementById('engagement').value   || '').trim();
@@ -476,7 +448,11 @@ function generateWidget() {
   const changeText   = getChangeText();
   const commitment   = (document.getElementById('commitment').value   || '').trim();
   const nextSteps    = (document.getElementById('nextSteps').value    || '').trim();
-  const today        = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+
+  // Salesbuildr variables — resolved at proposal render time
+  const SB_COMPANY  = '{{company.name}}';
+  const SB_REF      = '{{quote.number}}';
+  const SB_DATE     = '{{date quote.sentAt}}';
 
   const brandRgb   = hexToRgb(brandColor);
   const brandTint  = `rgba(${brandRgb},0.07)`;
@@ -524,14 +500,14 @@ function generateWidget() {
   // Build the document
   return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:740px;color:#0f172a;">
 
-  <!-- Header -->
+  <!-- Header — company.name, quote.number and quote.sentAt resolved by Salesbuildr at render time -->
   <div style="background:${brandColor};border-radius:8px 8px 0 0;padding:24px 28px 20px;">
     <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Statement of Work</div>
     <h2 style="margin:0 0 4px;font-size:22px;font-weight:700;color:#ffffff;line-height:1.2;">${esc(title || 'Project Engagement')}</h2>
-    ${customer ? `<div style="font-size:14px;color:rgba(255,255,255,0.85);margin-top:4px;">${esc(customer)}</div>` : ''}
+    <div style="font-size:14px;color:rgba(255,255,255,0.85);margin-top:4px;">${SB_COMPANY}</div>
     <div style="display:flex;gap:20px;margin-top:14px;flex-wrap:wrap;">
-      ${sowNumber ? `<div style="font-size:11px;color:rgba(255,255,255,0.7);"><span style="font-weight:600;color:rgba(255,255,255,0.9);">Reference</span>&nbsp;&nbsp;${esc(sowNumber)}</div>` : ''}
-      <div style="font-size:11px;color:rgba(255,255,255,0.7);"><span style="font-weight:600;color:rgba(255,255,255,0.9);">Prepared</span>&nbsp;&nbsp;${today}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.7);"><span style="font-weight:600;color:rgba(255,255,255,0.9);">Reference</span>&nbsp;&nbsp;${SB_REF}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.7);"><span style="font-weight:600;color:rgba(255,255,255,0.9);">Prepared</span>&nbsp;&nbsp;${SB_DATE}</div>
     </div>
   </div>
 
@@ -1061,7 +1037,7 @@ document.querySelectorAll('.ai-chip').forEach(chip => {
 });
 
 // ── Event listeners ───────────────────────────────────────
-['projectTitle','customerName','sowNumber','engagement','deliverables','howWeWork','commitment','nextSteps','paymentCustom'].forEach(id => {
+['projectTitle','engagement','deliverables','howWeWork','commitment','nextSteps','paymentCustom'].forEach(id => {
   document.getElementById(id)?.addEventListener('input', () => { saveState(); autoRefresh(); updateCenterHeader(); });
 });
 
@@ -1111,9 +1087,6 @@ document.getElementById('generateBtn').addEventListener('click', () => {
   document.getElementById('preview').innerHTML   = html;
   document.getElementById('outputPanels').hidden = false;
   document.getElementById('copyBtn').disabled    = false;
-  // Record SOW number when generating
-  const sowNum = document.getElementById('sowNumber').value.trim();
-  if (sowNum) recordSowNumber(sowNum);
   showToast('SOW generated'); saveState();
 });
 
@@ -1174,8 +1147,6 @@ document.getElementById('tmplPassphrase').addEventListener('input', async () => 
 (async function init() {
   const hasSaved = loadState();
   if (!hasSaved) {
-    // Set a fresh SOW number and default milestones
-    document.getElementById('sowNumber').value = getNextSowNumber();
     milestones = ['Kickoff', 'Discovery & Design', 'Delivery', 'Go Live'];
     renderMilestones();
     updateChangePreview();
