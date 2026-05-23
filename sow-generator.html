@@ -226,21 +226,26 @@
 
     <!-- Output panels — hidden until Generate clicked -->
     <div class="output-panels" id="outputPanels" hidden>
+
+      <!-- Left: HTML source — compact, secondary -->
       <div class="output-panel">
         <div class="output-panel-header">
           <div>
-            <div class="output-panel-title">Generated HTML</div>
-            <div class="output-panel-hint">Paste into Salesbuildr via the <strong>&lt;&nbsp;&gt;</strong> Source Code button in TinyMCE</div>
+            <div class="output-panel-title-secondary">Generated HTML</div>
+            <div class="output-panel-hint">Paste via <strong>&lt;&nbsp;&gt;</strong> Source Code in TinyMCE</div>
           </div>
-          <button class="op-close-btn" id="closeOutputBtn"><i class="ti ti-x"></i></button>
+          <button class="op-close-btn" id="closeOutputBtn" title="Close"><i class="ti ti-x"></i></button>
         </div>
         <pre id="htmlOut"></pre>
       </div>
-      <div class="output-panel">
+
+      <!-- Right: Preview — prominent -->
+      <div class="output-panel-preview">
         <div class="output-panel-title">Preview</div>
         <div class="output-panel-hint">Approximate preview — Salesbuildr may apply its own typography</div>
         <div class="preview-box" id="preview"></div>
       </div>
+
     </div>
 
   </main>
