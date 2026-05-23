@@ -534,6 +534,7 @@ function newProject() {
   document.getElementById('hoursPerDay').value = '8';
   document.getElementById('overview').value = '';
   document.getElementById('exclusions').value = '';
+  document.getElementById('presetSelect').value = '';
   document.getElementById('htmlOut').textContent = '';
   document.getElementById('preview').innerHTML = '';
   document.getElementById('outputPanels').hidden = true;
@@ -1009,6 +1010,7 @@ document.getElementById('addRowBtn').addEventListener('click', () => { rows.push
 // Clear
 document.getElementById('clearBtn').addEventListener('click', () => {
   if (!confirm('Clear this project and start fresh?')) return;
+  localStorage.removeItem(LS_KEY);
   newProject();
 });
 
