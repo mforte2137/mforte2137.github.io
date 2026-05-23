@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOW Generator</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="sow-generator.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ═══════════════════════════════════════════════════════
+       LEFT PANEL
+  ════════════════════════════════════════════════════════ -->
+  <aside class="left-panel" id="leftPanel">
+
+    <div class="lp-header">
+      <div class="lp-logo">SOW Generator</div>
+      <div class="lp-sub">MSP Tools Hub</div>
+    </div>
+
+    <!-- Presets -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Load a preset</div>
+      <div class="lp-row">
+        <select id="presetSelect" class="lp-select">
+          <option value="">— Select preset —</option>
+          <option value="azure">☁️ Azure Migration</option>
+          <option value="m365">📧 Microsoft 365 Migration</option>
+          <option value="network">🔌 Network Infrastructure Upgrade</option>
+          <option value="endpoint">💻 Endpoint Refresh</option>
+          <option value="server">🖥️ Server Refresh</option>
+          <option value="voip">📞 VoIP &amp; Communications</option>
+          <option value="onboarding">🤝 New Client Onboarding</option>
+          <option value="security">🛡️ Cybersecurity Assessment</option>
+          <option value="backup">💾 Backup &amp; DR Implementation</option>
+          <option value="copilot">🤖 Microsoft Copilot &amp; AI</option>
+        </select>
+        <button class="lp-icon-btn" id="loadPresetBtn" title="Load preset"><i class="ti ti-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- Current Projects -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Current projects</div>
+      <div class="lp-projects" id="projectList"></div>
+      <button class="lp-new-proj" id="newProjectBtn"><i class="ti ti-plus"></i> New project</button>
+    </div>
+
+    <!-- Project Settings -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Project</div>
+      <div class="lp-field">
+        <div class="lp-field-label">SOW Number</div>
+        <input type="text" id="sowNumber" class="lp-input" placeholder="e.g. SOW-2026-001">
+      </div>
+      <div class="lp-field">
+        <div class="lp-field-label">Title</div>
+        <input type="text" id="projectTitle" class="lp-input" placeholder="e.g. Azure Cloud Migration">
+      </div>
+      <div class="lp-field">
+        <div class="lp-field-label">Customer <span class="lp-opt">(optional)</span></div>
+        <input type="text" id="customerName" class="lp-input" placeholder="e.g. Acme Corp">
+      </div>
+      <div class="lp-field">
+        <div class="lp-field-label">Payment Terms</div>
+        <select id="paymentTerms" class="lp-select">
+          <option value="on-completion">On completion</option>
+          <option value="50-50">50% upfront, 50% on completion</option>
+          <option value="monthly">Monthly</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <div class="lp-field" id="paymentCustomField" style="display:none;">
+        <div class="lp-field-label">Custom payment terms</div>
+        <input type="text" id="paymentCustom" class="lp-input" placeholder="Describe your terms">
+      </div>
+    </div>
+
+    <!-- Team -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Team</div>
+      <div class="lp-field">
+        <div class="lp-field-label">Passphrase <span class="lp-opt">(enables shared templates)</span></div>
+        <div class="lp-passrow">
+          <input type="password" id="tmplPassphrase" class="lp-input" placeholder="Enter to share with team" autocomplete="off">
+          <span id="tmplPassphraseBadge" class="lp-badge lp-badge-local">💾 Local</span>
+        </div>
+      </div>
+      <div class="lp-field">
+        <div class="lp-field-label">Templates <span id="tmplModeLabel" class="lp-opt">(local)</span></div>
+        <div class="lp-row">
+          <select id="templateSelect" class="lp-select"><option value="">— No saved templates yet —</option></select>
+          <button class="lp-icon-btn" id="loadTemplateBtn" title="Load template"><i class="ti ti-arrow-right"></i></button>
+          <button class="lp-icon-btn lp-icon-btn-danger" id="deleteTemplateBtn" title="Delete template"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+      <button class="lp-action-btn lp-action-primary" id="saveTemplateBtn"><i class="ti ti-device-floppy"></i> Save as template</button>
+    </div>
+
+    <!-- Brand Color -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Brand color</div>
+      <div class="lp-field-label" style="margin-bottom:6px;">Applied to every document you generate</div>
+      <div class="brand-swatches" id="brandSwatches">
+        <div class="brand-swatch active" data-color="#2563eb" style="background:#2563eb;" title="Blue"></div>
+        <div class="brand-swatch" data-color="#059669" style="background:#059669;" title="Green"></div>
+        <div class="brand-swatch" data-color="#7c3aed" style="background:#7c3aed;" title="Purple"></div>
+        <div class="brand-swatch" data-color="#dc2626" style="background:#dc2626;" title="Red"></div>
+        <div class="brand-swatch" data-color="#d97706" style="background:#d97706;" title="Amber"></div>
+        <div class="brand-swatch" data-color="#0891b2" style="background:#0891b2;" title="Teal"></div>
+        <div class="brand-swatch" data-color="#374151" style="background:#374151;" title="Slate"></div>
+        <div class="brand-swatch brand-swatch-custom" id="brandCustomSwatch" data-color="" title="Custom color" style="background: conic-gradient(red,yellow,lime,aqua,blue,magenta,red);"></div>
+      </div>
+      <div class="brand-hex-row" id="brandHexRow" style="display:none;">
+        <span style="font-size:11px;color:var(--muted);">Hex</span>
+        <input type="text" id="brandHexInput" class="lp-input" placeholder="#2563eb" maxlength="7" style="font-family:var(--mono);font-size:11px;">
+        <button class="lp-icon-btn" id="brandHexApply" title="Apply"><i class="ti ti-check"></i></button>
+      </div>
+    </div>
+
+    <!-- Export & Publish -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Export &amp; publish</div>
+      <div class="lp-actions">
+        <button class="lp-action-btn lp-action-good" id="generateBtn"><i class="ti ti-sparkles"></i> Generate SOW document</button>
+        <button class="lp-action-btn" id="copyBtn" disabled><i class="ti ti-copy"></i> Copy HTML</button>
+        <button class="lp-action-btn" id="exportBtn"><i class="ti ti-download"></i> Export JSON</button>
+        <label class="lp-action-btn" for="importInput" style="cursor:pointer;"><i class="ti ti-upload"></i> Import JSON</label>
+        <input type="file" id="importInput" accept=".json" style="display:none">
+        <!-- Salesbuildr inline -->
+        <button class="lp-action-btn lp-action-primary" id="sbToggle"><i class="ti ti-send"></i> Save to Salesbuildr <span id="sbArrow" class="sb-arrow-icon">▼</span></button>
+        <div id="sbBody" class="sb-inline" hidden>
+          <div class="sb-fields">
+            <div class="sb-field">
+              <label class="sb-label">API Key <span class="sb-where">Admin → Integrations</span></label>
+              <input type="password" id="sbApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
+            </div>
+            <div class="sb-field">
+              <label class="sb-label">Integration Key <span class="sb-where">Provided by Salesbuildr</span></label>
+              <input type="password" id="sbIntKey" class="sb-input" placeholder="Your integration key" autocomplete="new-password">
+            </div>
+          </div>
+          <div class="sb-row">
+            <label class="sb-remember"><input type="checkbox" id="sbRemember"> Remember credentials</label>
+            <input type="text" id="sbPrefix" class="sb-prefix" maxlength="40" placeholder="Label e.g. Acme Corp">
+            <button type="button" id="sbPushBtn" class="lp-action-btn lp-action-good" disabled>Push →</button>
+          </div>
+          <div id="sbResult" class="sb-result" hidden></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lp-bottom">
+      <button class="lp-danger-btn" id="clearBtn"><i class="ti ti-trash"></i> Clear project</button>
+    </div>
+
+  </aside>
+
+  <!-- ═══════════════════════════════════════════════════════
+       CENTER — MAIN WORKING AREA
+  ════════════════════════════════════════════════════════ -->
+  <main class="center-panel">
+
+    <div class="center-header">
+      <div>
+        <div class="center-title" id="centerTitle">SOW Generator</div>
+        <div class="center-sub" id="centerSub">Start by loading a preset or describing your engagement to the AI</div>
+      </div>
+    </div>
+
+    <!-- The Engagement -->
+    <div class="center-section">
+      <div class="center-sec-label">The Engagement <span class="center-sec-hint">2–3 sentences — what's happening and why it matters to the customer</span></div>
+      <textarea id="engagement" class="center-textarea" rows="3" placeholder="e.g. Acme Corp is moving their on-premises servers to Microsoft Azure to improve reliability and cut infrastructure costs. This project covers the full migration, configuration, and testing of your cloud environment — with your team involved at every key decision point."></textarea>
+    </div>
+
+    <!-- What We Will Deliver -->
+    <div class="center-section">
+      <div class="center-sec-label">What We Will Deliver <span class="center-sec-hint">Outcomes, not tasks — one per line</span></div>
+      <textarea id="deliverables" class="center-textarea" rows="5" placeholder="A fully migrated, tested Azure environment ready for your team to use&#10;Zero data loss — all files, applications, and settings transferred and verified&#10;A documented environment your team and any future IT partner can understand&#10;Post-project support window so any issues are caught and resolved quickly"></textarea>
+    </div>
+
+    <!-- How We Work Together -->
+    <div class="center-section">
+      <div class="center-sec-label">How We Work Together <span class="center-sec-hint">Communication rhythm, contact, and what you need from the customer</span></div>
+      <textarea id="howWeWork" class="center-textarea" rows="4" placeholder="We'll assign a named project lead who will be your single point of contact throughout. You'll receive a brief weekly update — no jargon, just progress and what's coming next. To keep things on track, we'll need a named contact on your side who can make decisions and is available for a short call each week. We'll flag any risks early rather than surprises late."></textarea>
+    </div>
+
+    <!-- Timeline -->
+    <div class="center-section">
+      <div class="center-sec-label">Timeline <span class="center-sec-hint">3–4 milestones — labels only, no dates</span></div>
+      <div id="milestonesWrap" class="milestones-editor">
+        <!-- Milestone rows injected by JS -->
+      </div>
+      <button class="gf-btn" id="addMilestoneBtn"><i class="ti ti-plus"></i> Add milestone</button>
+    </div>
+
+    <!-- Change Management -->
+    <div class="center-section">
+      <div class="center-sec-label">What Happens If Things Change <span class="center-sec-hint">Plain English — how change requests are handled</span></div>
+      <div class="lp-row" style="margin-bottom:8px;">
+        <select id="changeDropdown" class="lp-select">
+          <option value="discuss">We'll discuss and agree any changes before proceeding</option>
+          <option value="ten-percent">Changes within 10% of scope are included; anything beyond is agreed in writing</option>
+          <option value="custom">Custom text…</option>
+        </select>
+      </div>
+      <textarea id="changeText" class="center-textarea" rows="2" style="display:none;" placeholder="Describe how changes will be handled…"></textarea>
+      <div id="changePreview" class="change-preview"></div>
+    </div>
+
+    <!-- Our Commitment -->
+    <div class="center-section">
+      <div class="center-sec-label">Our Commitment <span class="center-sec-hint">What the customer can count on</span></div>
+      <textarea id="commitment" class="center-textarea" rows="3" placeholder="You'll have a named point of contact for the duration of this project. We'll respond to project-related queries within one business day. Once the project is complete, we provide a 30-day support window at no additional cost — so any issues that surface after go-live are handled as part of this engagement."></textarea>
+    </div>
+
+    <!-- Next Steps -->
+    <div class="center-section">
+      <div class="center-sec-label">Next Steps <span class="center-sec-hint">Call to action — how to proceed</span></div>
+      <textarea id="nextSteps" class="center-textarea" rows="2" placeholder="To proceed, simply reply to this proposal or contact your account manager. We'll schedule a brief kickoff call to confirm the start date and introductions."></textarea>
+    </div>
+
+    <!-- Output panels — hidden until Generate clicked -->
+    <div class="output-panels" id="outputPanels" hidden>
+      <div class="output-panel">
+        <div class="output-panel-header">
+          <div>
+            <div class="output-panel-title">Generated HTML</div>
+            <div class="output-panel-hint">Paste into Salesbuildr via the <strong>&lt;&nbsp;&gt;</strong> Source Code button in TinyMCE</div>
+          </div>
+          <button class="op-close-btn" id="closeOutputBtn"><i class="ti ti-x"></i></button>
+        </div>
+        <pre id="htmlOut"></pre>
+      </div>
+      <div class="output-panel">
+        <div class="output-panel-title">Preview</div>
+        <div class="output-panel-hint">Approximate preview — Salesbuildr may apply its own typography</div>
+        <div class="preview-box" id="preview"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════
+       RIGHT PANEL — AI ASSISTANT
+  ════════════════════════════════════════════════════════ -->
+  <aside class="ai-panel" id="aiPanel">
+
+    <div class="ai-header">
+      <div>
+        <div class="ai-title-row">
+          <div class="ai-dot"></div>
+          <div class="ai-title">AI Assistant</div>
+        </div>
+        <div class="ai-sub">Generate or refine your SOW</div>
+      </div>
+    </div>
+
+    <div class="ai-messages" id="aiMessages">
+      <div class="ai-msg ai-msg-assistant">
+        <div class="ai-msg-label">Assistant</div>
+        I can write your entire SOW from a plain English description, or help improve what you've already written. I can also convert an existing Scope Builder project into a SOW.
+        <div class="ai-chips">
+          <div class="ai-chip" data-action="generate">✨ Generate SOW from description</div>
+          <div class="ai-chip" data-action="review">🔍 Review &amp; improve current SOW</div>
+          <div class="ai-chip" data-action="improve">✏️ Improve a specific section</div>
+          <div class="ai-chip" data-action="convert">🔄 Convert from Scope Builder</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-input-wrap">
+      <textarea class="ai-textarea" id="aiInput" placeholder="Describe your engagement or ask me to review…" rows="2"></textarea>
+      <button class="ai-send-btn" id="aiSendBtn" title="Send"><i class="ti ti-arrow-up"></i></button>
+    </div>
+
+  </aside>
+
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="sow-generator.js"></script>
+</body>
+</html>
