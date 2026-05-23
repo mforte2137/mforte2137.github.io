@@ -228,26 +228,42 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); font
 }
 .change-preview:empty { display: none; }
 
-/* Output panels */
+/* Output panels — preview prominent, HTML secondary */
 .output-panels {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
-  padding: 16px 20px; background: var(--bg);
+  display: grid;
+  grid-template-columns: 280px 1fr;   /* HTML narrow left, preview wide right */
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--bg);
+  align-items: start;
 }
 .output-panels[hidden] { display: none !important; }
-.output-panel { display: flex; flex-direction: column; gap: 8px; min-height: 320px; }
+
+/* Preview panel — primary */
+.output-panel { display: flex; flex-direction: column; gap: 8px; min-height: 400px; }
+.output-panel-preview { display: flex; flex-direction: column; gap: 8px; min-height: 400px; }
+
 .output-panel-header { display: flex; align-items: flex-start; justify-content: space-between; }
 .output-panel-title { font-size: 13px; font-weight: 700; }
-.output-panel-hint  { font-size: 11px; color: var(--muted); line-height: 1.4; margin-bottom: 8px; }
-.op-close-btn { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 15px; padding: 2px; }
+.output-panel-title-secondary { font-size: 11px; font-weight: 600; color: var(--muted); }
+.output-panel-hint  { font-size: 11px; color: var(--muted); line-height: 1.4; margin-bottom: 4px; }
+.op-close-btn { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 15px; padding: 2px; flex-shrink: 0; }
 .op-close-btn:hover { color: var(--text); }
+
+/* HTML source — compact, scrollable, fixed height */
 pre {
-  flex: 1; min-height: 0; margin: 0; padding: 10px; border-radius: 8px;
+  margin: 0; padding: 10px; border-radius: 8px;
   border: 1px solid var(--line); background: #0b1220; color: #e5e7eb;
   font: 11px/1.55 var(--mono); overflow: auto; white-space: pre;
+  height: 260px;   /* fixed, compact */
+  flex-shrink: 0;
 }
+
+/* Preview box — prominent, tall */
 .preview-box {
-  flex: 1; min-height: 0; border: 1px solid var(--line); border-radius: 8px;
-  background: #fff; color: #111; overflow: auto; padding: 14px;
+  flex: 1; min-height: 400px; border: 1px solid var(--line); border-radius: 8px;
+  background: #fff; color: #111; overflow: auto; padding: 20px 24px;
+  box-shadow: var(--shadow);
 }
 
 /* Add milestone button */
