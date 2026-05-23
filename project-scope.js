@@ -774,7 +774,7 @@ function generateWidget() {
 </ul>` : '';
 
   // ── Assemble ──
-  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:860px;color:#0f172a;">
+  return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:100%;color:#0f172a;">
 ${title ? `  <h2 style="margin:0 0 4px;font-size:22px;font-weight:700;color:${brandColor};">${esc(title)}</h2>` : ''}
 ${customer ? `  <p style="margin:0 0 16px;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;font-weight:600;">${esc(customer)}</p>` : '<br>'}
 ${overview ? `  <h3 style="margin:0 0 6px;font-size:13px;font-weight:700;color:${brandColor};text-transform:uppercase;letter-spacing:.05em;">Project Overview</h3>
