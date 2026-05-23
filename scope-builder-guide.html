@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Scope Builder — User Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink:      #0f1923;
+      --ink2:     #2d3f50;
+      --muted:    #6b7c8d;
+      --line:     #e4eaf0;
+      --bg:       #f7f9fb;
+      --surface:  #ffffff;
+      --accent:   #2563eb;
+      --accent2:  #1d4ed8;
+      --good:     #059669;
+      --warn:     #d97706;
+      --serif:    'DM Serif Display', Georgia, serif;
+      --sans:     'DM Sans', system-ui, sans-serif;
+      --mono:     'DM Mono', monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--ink); font-size: 15px; line-height: 1.7; }
+
+    /* ── Page header ── */
+    .page-header {
+      background: var(--ink);
+      color: #fff;
+      padding: 64px 40px 56px;
+      position: relative;
+      overflow: hidden;
+    }
+    .page-header::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 320px; height: 320px;
+      border-radius: 50%;
+      background: rgba(37,99,235,.18);
+      pointer-events: none;
+    }
+    .page-header::after {
+      content: '';
+      position: absolute;
+      bottom: -80px; left: 30%;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: rgba(37,99,235,.1);
+      pointer-events: none;
+    }
+    .header-inner { max-width: 860px; margin: 0 auto; position: relative; z-index: 1; }
+    .header-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.5); margin-bottom: 14px; }
+    .header-title { font-family: var(--serif); font-size: clamp(32px, 5vw, 52px); line-height: 1.1; color: #fff; margin-bottom: 16px; }
+    .header-title span { color: #60a5fa; }
+    .header-desc { font-size: 16px; color: rgba(255,255,255,.7); max-width: 560px; line-height: 1.65; }
+    .header-meta { margin-top: 32px; display: flex; gap: 24px; flex-wrap: wrap; }
+    .header-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+      border-radius: 999px; padding: 6px 14px; font-size: 13px; color: rgba(255,255,255,.8);
+    }
+    .header-badge-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; }
+
+    /* ── Nav ── */
+    .toc-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      padding: 0 40px;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 1px 8px rgba(15,25,35,.06);
+    }
+    .toc-inner { max-width: 860px; margin: 0 auto; display: flex; gap: 0; overflow-x: auto; }
+    .toc-link {
+      display: block; padding: 14px 18px; font-size: 13px; font-weight: 500;
+      color: var(--muted); text-decoration: none; white-space: nowrap;
+      border-bottom: 2px solid transparent; transition: color .15s, border-color .15s;
+    }
+    .toc-link:hover { color: var(--ink); border-color: var(--line); }
+    .toc-link.active { color: var(--accent); border-color: var(--accent); }
+
+    /* ── Content ── */
+    .content { max-width: 860px; margin: 0 auto; padding: 56px 40px 80px; }
+
+    /* ── Sections ── */
+    .guide-section { margin-bottom: 64px; }
+    .section-number { font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--accent); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; }
+    .section-title { font-family: var(--serif); font-size: 28px; color: var(--ink); margin-bottom: 12px; line-height: 1.2; }
+    .section-intro { font-size: 15px; color: var(--ink2); line-height: 1.7; margin-bottom: 28px; max-width: 680px; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: 14px; padding: 24px 28px; margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(15,25,35,.05);
+    }
+    .card-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+    .card-title-icon { font-size: 18px; }
+    .card p { font-size: 14px; color: var(--ink2); line-height: 1.65; }
+    .card p + p { margin-top: 10px; }
+
+    /* Mode cards */
+    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+    .mode-card {
+      border-radius: 14px; padding: 22px 24px; border: 1.5px solid var(--line);
+    }
+    .mode-card.local { border-color: #cbd5e1; background: #f8fafc; }
+    .mode-card.team  { border-color: rgba(5,150,105,.25); background: rgba(5,150,105,.04); }
+    .mode-card-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
+    .mode-card.local .mode-card-label { color: var(--muted); }
+    .mode-card.team  .mode-card-label { color: var(--good); }
+    .mode-card-title { font-family: var(--serif); font-size: 20px; margin-bottom: 10px; }
+    .mode-card p { font-size: 13px; color: var(--ink2); line-height: 1.6; }
+    .mode-card-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 9px; margin-bottom: 12px;
+    }
+    .mode-card.local .mode-card-badge { background: #f1f5f9; color: var(--muted); border: 1px solid var(--line); }
+    .mode-card.team  .mode-card-badge { background: rgba(5,150,105,.1); color: var(--good); border: 1px solid rgba(5,150,105,.25); }
+
+    /* Steps */
+    .steps { display: flex; flex-direction: column; gap: 0; margin-bottom: 28px; }
+    .step { display: flex; gap: 20px; padding: 20px 0; border-bottom: 1px solid var(--line); }
+    .step:last-child { border-bottom: none; }
+    .step-num {
+      width: 32px; height: 32px; border-radius: 50%; background: var(--accent);
+      color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center;
+      justify-content: center; flex-shrink: 0; margin-top: 2px;
+    }
+    .step-body { flex: 1; }
+    .step-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 5px; }
+    .step p { font-size: 13px; color: var(--ink2); line-height: 1.6; }
+
+    /* Callouts */
+    .callout {
+      border-radius: 10px; padding: 16px 20px; margin: 20px 0;
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .callout-tip  { background: rgba(37,99,235,.06); border: 1px solid rgba(37,99,235,.2); }
+    .callout-warn { background: rgba(217,119,6,.07); border: 1px solid rgba(217,119,6,.25); }
+    .callout-good { background: rgba(5,150,105,.06); border: 1px solid rgba(5,150,105,.2); }
+    .callout-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .callout-body { font-size: 13px; color: var(--ink2); line-height: 1.6; }
+    .callout-body strong { color: var(--ink); }
+
+    /* Comparison table */
+    .comp-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+    .comp-table th { background: var(--ink); color: #fff; padding: 11px 16px; text-align: left; font-weight: 600; font-size: 12px; letter-spacing: .04em; }
+    .comp-table th:first-child { width: 36%; }
+    .comp-table td { padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--ink2); vertical-align: top; }
+    .comp-table tr:last-child td { border-bottom: none; }
+    .comp-table tr:nth-child(even) td { background: #f8fafc; }
+    .comp-table .yes { color: var(--good); font-weight: 600; }
+    .comp-table .no  { color: var(--muted); }
+
+    /* UI labels */
+    .ui-label {
+      display: inline-block; font-family: var(--mono); font-size: 11px;
+      background: #f1f5f9; border: 1px solid var(--line); border-radius: 5px;
+      padding: 2px 7px; color: var(--ink); vertical-align: middle;
+    }
+    .badge-local { background: #f1f5f9; color: var(--muted); border: 1px solid var(--line); border-radius: 5px; padding: 1px 7px; font-size: 11px; font-weight: 600; font-family: var(--mono); }
+    .badge-team  { background: rgba(5,150,105,.1); color: var(--good); border: 1px solid rgba(5,150,105,.25); border-radius: 5px; padding: 1px 7px; font-size: 11px; font-weight: 600; font-family: var(--mono); }
+
+    /* FAQ */
+    .faq-item { border-bottom: 1px solid var(--line); padding: 20px 0; }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
+    .faq-a { font-size: 13px; color: var(--ink2); line-height: 1.65; }
+
+    /* Footer */
+    .page-footer { background: var(--ink); color: rgba(255,255,255,.5); text-align: center; padding: 32px 40px; font-size: 13px; }
+
+    @media (max-width: 640px) {
+      .page-header { padding: 40px 20px; }
+      .content { padding: 40px 20px 60px; }
+      .toc-bar { padding: 0 20px; }
+      .mode-grid { grid-template-columns: 1fr; }
+      .comp-table { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="page-header">
+  <div class="header-inner">
+    <div class="header-eyebrow">MSP Tools Hub</div>
+    <h1 class="header-title">Project Scope Builder<br><span>User Guide</span></h1>
+    <p class="header-desc">Everything you need to know about creating project scopes, working as a team, and getting your output into Salesbuildr.</p>
+    <div class="header-meta">
+      <div class="header-badge"><div class="header-badge-dot"></div> Current version</div>
+      <div class="header-badge">🔗 Shared templates supported</div>
+      <div class="header-badge">🤖 AI-assisted scoping</div>
+    </div>
+  </div>
+</header>
+
+<!-- Nav -->
+<nav class="toc-bar">
+  <div class="toc-inner">
+    <a class="toc-link" href="#overview">Overview</a>
+    <a class="toc-link" href="#local-vs-team">Local vs Team</a>
+    <a class="toc-link" href="#setup">First-Time Setup</a>
+    <a class="toc-link" href="#templates">Templates</a>
+    <a class="toc-link" href="#projects">Projects</a>
+    <a class="toc-link" href="#ai">AI Assistant</a>
+    <a class="toc-link" href="#output">Output & Salesbuildr</a>
+    <a class="toc-link" href="#faq">FAQ</a>
+  </div>
+</nav>
+
+<div class="content">
+
+  <!-- Overview -->
+  <section class="guide-section" id="overview">
+    <div class="section-number">01 — Overview</div>
+    <h2 class="section-title">What this tool does</h2>
+    <p class="section-intro">The Project Scope Builder helps you create professional, branded project scopes that can be pushed directly into Salesbuildr quotes. It handles the full workflow — from loading a preset or describing a project in plain English, through building and refining the task list, to generating a polished HTML widget ready for your customer-facing proposal.</p>
+
+    <div class="card">
+      <div class="card-title"><span class="card-title-icon">🗂</span> Three-panel layout</div>
+      <p><strong>Left panel</strong> — all your controls: presets, projects, team settings, brand color, and publishing actions.</p>
+      <p><strong>Center panel</strong> — your working area: project overview, task grid, and exclusions. This is where you build the scope.</p>
+      <p><strong>Right panel</strong> — the AI assistant. Describe a project and it generates a full scope, or ask it to review what you've already built.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-title-icon">🎨</span> Brand color</div>
+      <p>Set your brand color once in the left panel — it applies to every widget you generate. Your table headers, section headings, and accent elements will always match your Salesbuildr branding. It saves automatically so you never need to set it again.</p>
+    </div>
+  </section>
+
+  <!-- Local vs Team -->
+  <section class="guide-section" id="local-vs-team">
+    <div class="section-number">02 — Storage</div>
+    <h2 class="section-title">Local vs Team mode</h2>
+    <p class="section-intro">The tool works in two modes depending on whether you enter a team passphrase. Understanding the difference is important before you start saving templates.</p>
+
+    <div class="mode-grid">
+      <div class="mode-card local">
+        <div class="mode-card-badge">💾 Local</div>
+        <div class="mode-card-title">Solo use</div>
+        <p>No passphrase needed. Templates are saved to your browser on your device. Only you can see them, and only on the machine you saved them on.</p>
+      </div>
+      <div class="mode-card team">
+        <div class="mode-card-badge">🔗 Team</div>
+        <div class="mode-card-title">Team use</div>
+        <p>Enter a shared passphrase. Templates are saved to a shared server store. Anyone on your team who enters the same passphrase sees the same templates — on any device, any browser.</p>
+      </div>
+    </div>
+
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>💾 Local (no passphrase)</th>
+          <th>🔗 Team (with passphrase)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Works without setup</td>
+          <td class="yes">✓ Yes</td>
+          <td class="no">Requires passphrase</td>
+        </tr>
+        <tr>
+          <td>Templates visible to colleagues</td>
+          <td class="no">✗ No</td>
+          <td class="yes">✓ Yes</td>
+        </tr>
+        <tr>
+          <td>Works on any device</td>
+          <td class="no">✗ This browser only</td>
+          <td class="yes">✓ Any device</td>
+        </tr>
+        <tr>
+          <td>Templates survive clearing browser data</td>
+          <td class="no">✗ No</td>
+          <td class="yes">✓ Yes</td>
+        </tr>
+        <tr>
+          <td>Export / Import JSON</td>
+          <td class="yes">✓ Always available</td>
+          <td class="yes">✓ Always available</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-tip">
+      <div class="callout-icon">💡</div>
+      <div class="callout-body"><strong>Which should I use?</strong> If you work alone or are just exploring the tool, Local mode is fine. If two or more people in your organisation will be creating scopes and sharing templates, set up a team passphrase so everyone works from the same library.</div>
+    </div>
+  </section>
+
+  <!-- First-time setup -->
+  <section class="guide-section" id="setup">
+    <div class="section-number">03 — Getting Started</div>
+    <h2 class="section-title">First-time setup</h2>
+    <p class="section-intro">Takes about two minutes. Do this once and the tool remembers your preferences every time.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Set your brand color</div>
+          <p>In the left panel under <strong>Brand color</strong>, click one of the preset swatches or enter a custom hex code to match your Salesbuildr branding. This is saved automatically and applies to every widget you generate.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Enter your team passphrase (team use only)</div>
+          <p>If you work with colleagues, find the <strong>Team passphrase</strong> field in the left panel under <em>Team</em>. Enter the passphrase your organisation has agreed on. The badge will change from <span class="badge-local">💾 Local</span> to <span class="badge-team">🔗 Team</span> confirming you are connected to the shared template store.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Save your Salesbuildr credentials (optional)</div>
+          <p>Click <strong>Save to Salesbuildr</strong> in the left panel, enter your API Key and Integration Key, and tick <strong>Remember credentials</strong>. Your keys are saved to this browser so you only need to do this once per device.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Load a preset or start from scratch</div>
+          <p>Under <strong>Load a preset</strong>, choose a project type that matches your engagement and click the arrow. The tool loads a full task list, overview, and exclusions as a starting point. You can also start with a blank scope using <strong>New project</strong> and let the AI build it from a description.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-warn">
+      <div class="callout-icon">⚠️</div>
+      <div class="callout-body"><strong>Important — team passphrase:</strong> You need to re-enter your passphrase each time you open the tool. It is not stored between sessions by design. Keep your passphrase somewhere your team can access it — a shared password manager or internal wiki works well. If it is lost, your templates are not deleted but will be inaccessible until the passphrase is recovered.</div>
+    </div>
+  </section>
+
+  <!-- Templates -->
+  <section class="guide-section" id="templates">
+    <div class="section-number">04 — Templates</div>
+    <h2 class="section-title">Saving and loading templates</h2>
+    <p class="section-intro">Templates let you save a complete scope — tasks, overview, exclusions, and settings — and reload it as a starting point for future engagements of the same type. They are different from presets: presets are built in, templates are ones you create and own.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Save a template</div>
+          <p>Build or refine a scope until it reflects your standard approach for that project type. Click <strong>Save as template</strong> in the left panel, give it a name, and confirm. If you are in Team mode, it is immediately available to all colleagues using the same passphrase.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Load a template</div>
+          <p>Select a template from the <strong>Templates</strong> dropdown and click the arrow. The current scope will be replaced with the saved template. You will be asked to confirm before anything is overwritten.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Delete a template</div>
+          <p>Select the template from the dropdown and click the 🗑 button. In Team mode, deleting a template removes it for everyone — you will be asked to confirm before this happens.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-good">
+      <div class="callout-icon">✅</div>
+      <div class="callout-body"><strong>Best practice:</strong> Treat templates as your refined, quality-controlled starting points — not rough drafts. Load a preset, adjust it to match how your team actually delivers that project type, then save it as a template. Future scopes for that project type start from your standard, not the generic preset.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-title-icon">📦</span> Export and Import JSON</div>
+      <p>Every scope can be exported as a JSON file using <strong>Export JSON</strong> in the left panel. This is useful for sharing individual scopes outside the team template system, keeping backups, or transferring work between organisations. Use <strong>Import JSON</strong> to load a previously exported file.</p>
+    </div>
+  </section>
+
+  <!-- Projects -->
+  <section class="guide-section" id="projects">
+    <div class="section-number">05 — Projects</div>
+    <h2 class="section-title">Managing current projects</h2>
+    <p class="section-intro">The <strong>Current projects</strong> section in the left panel shows every scope you are actively working on. You can switch between them without losing your work — the tool auto-saves before switching.</p>
+
+    <div class="card">
+      <div class="card-title"><span class="card-title-icon">🔄</span> Switching between projects</div>
+      <p>Click any project in the list to switch to it. Your current project is saved automatically before the switch happens — you will never lose work by switching projects. The active project is highlighted with a blue border.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-title-icon">➕</span> Starting a new project</div>
+      <p>Click <strong>+ New project</strong> at the bottom of the projects list. The current project is saved first, then a blank scope opens. Give it a title and customer name in the left panel to help identify it in the list.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="card-title-icon">🏷</span> Shared vs local projects</div>
+      <p>Each project in the list shows a <span class="badge-team">shared</span> or <span class="badge-local">local</span> badge. A project becomes <em>shared</em> when it is saved while a team passphrase is active. Local projects are visible only on the current device.</p>
+    </div>
+  </section>
+
+  <!-- AI Assistant -->
+  <section class="guide-section" id="ai">
+    <div class="section-number">06 — AI Assistant</div>
+    <h2 class="section-title">Using the AI assistant</h2>
+    <p class="section-intro">The AI assistant lives in the right panel and can generate a complete scope from a plain-English description or review and improve an existing one.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">✨</div>
+        <div class="step-body">
+          <div class="step-title">Generate scope from description</div>
+          <p>Click the <strong>Generate scope from description</strong> chip, then describe the project in plain English — for example: <em>"Migrate a 3-server office to Azure, small team, 6-week deadline."</em> The AI generates a full task list, project overview, and exclusions. Review the preview and click <strong>Apply to scope</strong> to load it into the editor.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">🔍</div>
+        <div class="step-body">
+          <div class="step-title">Review my current scope</div>
+          <p>Click <strong>Review my current scope</strong> to ask the AI to analyse what you have already built. It returns specific feedback — flagging tasks that may be under-estimated, missing items that are typically needed, and anything that could cause scope creep. You can add its suggested tasks directly to the grid with one click.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">⏱</div>
+        <div class="step-body">
+          <div class="step-title">Adjust for team size or deadline</div>
+          <p>Click <strong>Adjust for team / deadline</strong> and describe your constraints — for example: <em>"We only have two engineers and need to complete this in four weeks."</em> The AI reviews your current scope against those constraints and suggests adjustments.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-icon">💡</div>
+      <div class="callout-body"><strong>Tip:</strong> The AI generates a solid starting point but your expertise matters. Always review AI-generated tasks before presenting to a customer — adjust hours to reflect your team's actual delivery pace and remove anything that does not apply to this specific engagement.</div>
+    </div>
+  </section>
+
+  <!-- Output -->
+  <section class="guide-section" id="output">
+    <div class="section-number">07 — Output</div>
+    <h2 class="section-title">Generating output and pushing to Salesbuildr</h2>
+    <p class="section-intro">When your scope is ready, click <strong>Generate scope widget</strong> in the left panel. The HTML output and a live preview appear below the task grid.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Choose what to show</div>
+          <p>Before generating, use the <strong>Show in customer output</strong> toggles to control whether Role, Hours, and Notes appear in the output. Role and Notes are on by default. Hours are off by default — turn them on if your customer needs to see the effort breakdown.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Generate and review the preview</div>
+          <p>Click <strong>Generate scope widget</strong>. Check the <strong>Preview</strong> panel on the right to see how it will look in Salesbuildr. The preview uses your brand color across headers, section titles, and the totals row.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Push to Salesbuildr</div>
+          <p>Click <strong>Save to Salesbuildr</strong> in the left panel, enter an optional label, and click <strong>Push →</strong>. The widget is saved directly to your Salesbuildr account and is immediately available to add to a quote. Alternatively, click <strong>Copy HTML</strong> and paste it manually via the Source Code button in TinyMCE.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="guide-section" id="faq">
+    <div class="section-number">08 — FAQ</div>
+    <h2 class="section-title">Common questions</h2>
+
+    <div class="faq-item">
+      <div class="faq-q">I saved templates before but can't see them now.</div>
+      <div class="faq-a">Check whether you are in Local or Team mode. If you saved templates without a passphrase they are stored locally in your browser — they will not appear when a passphrase is entered. If you saved them in Team mode, make sure you have entered the exact same passphrase used when saving.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">A colleague saved a template but I can't see it.</div>
+      <div class="faq-a">Make sure you are both entering the same passphrase exactly — it is case-sensitive. Once you enter the correct passphrase the badge changes to <span class="badge-team">🔗 Team</span> and the shared templates appear in the dropdown.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">What happens if we forget our team passphrase?</div>
+      <div class="faq-a">Your templates are not deleted — they remain on the server. But they are inaccessible without the passphrase. Keep it in a shared password manager or internal wiki. If the passphrase is genuinely lost, the recovery path is to export any templates individual team members still have locally as JSON files, agree on a new passphrase, and re-import them.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Does the passphrase need to be secure?</div>
+      <div class="faq-a">It does not need to be complex — it is not protecting sensitive financial or personal data. Something memorable and unique to your organisation is ideal. Think of it like a shared Wi-Fi password rather than a banking password.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Can two different organisations use the tool without seeing each other's templates?</div>
+      <div class="faq-a">Yes. Each organisation's templates are completely isolated by their passphrase. There is no way for one organisation to see another's templates unless they know the exact passphrase.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">The preview looks slightly different to what appears in Salesbuildr.</div>
+      <div class="faq-a">The preview is approximate — Salesbuildr applies its own base typography and may render fonts slightly differently. The structure, colors, and content will be correct. For the most accurate view, push to Salesbuildr and preview it in a quote.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Can I use the tool on my phone or tablet?</div>
+      <div class="faq-a">The tool is optimised for desktop use — the three-column layout needs a reasonably wide screen to be comfortable. It will work on a tablet in landscape mode but is not recommended for phones.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Is my data backed up?</div>
+      <div class="faq-a">Team templates are stored server-side and are not affected by browser changes. Local templates and projects are in your browser's localStorage — they can be lost if you clear your browser data. Use <strong>Export JSON</strong> regularly to keep backups of important scopes.</div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="page-footer">
+  Project Scope Builder — MSP Tools Hub
+</footer>
+
+<script>
+  // Highlight active nav item on scroll
+  const sections = document.querySelectorAll('.guide-section');
+  const links    = document.querySelectorAll('.toc-link');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const link = document.querySelector(`.toc-link[href="#${e.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => obs.observe(s));
+</script>
+</body>
+</html>
