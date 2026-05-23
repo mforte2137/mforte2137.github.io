@@ -1088,6 +1088,10 @@ document.getElementById('generateBtn').addEventListener('click', () => {
   document.getElementById('outputPanels').hidden = false;
   document.getElementById('copyBtn').disabled    = false;
   showToast('SOW generated'); saveState();
+  // Scroll output into view — same behaviour as Scope Builder
+  setTimeout(() => {
+    document.getElementById('outputPanels').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 50);
 });
 
 // Close output
