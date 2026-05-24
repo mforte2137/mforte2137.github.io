@@ -208,7 +208,8 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); font
   font-size: 10px; font-weight: 600; color: var(--muted); text-align: left;
   padding: 7px 10px; letter-spacing: .05em; text-transform: uppercase;
 }
-.task-table tbody td { border-bottom: 1px solid rgba(15,23,42,.06); padding: 6px 10px; vertical-align: top; }
+.task-table tbody td { border-bottom: 1px solid rgba(15,23,42,.06); padding: 6px 10px; vertical-align: middle; min-height: 44px; }
+.task-table tbody tr { height: 44px; }
 .task-table tbody tr:last-child td { border-bottom: none; }
 .task-table tbody tr:hover td { background: rgba(15,23,42,.02); }
 .col-drag  { width: 26px; padding: 0 4px !important; }
