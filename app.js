@@ -58,6 +58,18 @@ const TOOLS = [
     icon: "compass"
   },
   {
+    title: "SOW Widget Generator",
+    shortLabel: "SOW Generator",
+    description:
+      "Generate polished, customer-facing Statements of Work from pre-built project presets or let AI write one from scratch — for any project type, ready to drop into Salesbuildr.",
+    category: "Scoping",
+    url: "https://widgetcreator.netlify.app/sow-generator.html",
+    badge: "new",
+    updated: "2026-05-24",
+    gradient: "teal",
+    icon: "checklist"
+  },
+  {
     title: "ROI Builder",
     shortLabel: "ROI Builder",
     description:
@@ -79,6 +91,18 @@ const TOOLS = [
     badge: "",
     updated: "2026-05-01",
     gradient: "rose",
+    icon: "palette"
+  },
+  {
+    title: "Widget Banner Tool",
+    shortLabel: "Banner Tool",
+    description:
+      "Create eye-catching widget banners using your own logos or custom text overlays — no design skills needed. Export straight into Salesbuildr widgets.",
+    category: "Design",
+    url: "https://widgetcreator.netlify.app/banner.html",
+    badge: "new",
+    updated: "2026-05-24",
+    gradient: "amber",
     icon: "palette"
   },
   {
@@ -115,18 +139,6 @@ const TOOLS = [
     badge: "",
     updated: "2026-04-28",
     gradient: "teal",
-    icon: "swap"
-  },
-  {
-    title: "MSP Matrix Templates",
-    shortLabel: "Matrix Templates",
-    description:
-      "Choose from a library of ready-made comparison matrices — drop the HTML straight into Salesbuildr — or describe what you need and let AI build a custom matrix for you in seconds.",
-    category: "Proposal",
-    url: "https://widgetcreator.netlify.app/matrix-creator.html",
-    badge: "new",
-    updated: "2026-05-20",
-    gradient: "purple",
     icon: "swap"
   },
   {
