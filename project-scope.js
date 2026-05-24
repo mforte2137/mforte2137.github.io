@@ -540,6 +540,7 @@ function newProject() {
   document.getElementById('outputPanels').hidden = true;
   document.getElementById('copyBtn').disabled = true;
   render(); updateSummary(); renderProjects(); updateCenterHeader();
+  saveState();  // persist blank state so reload doesn't restore old data
   showToast('New project started');
 }
 
@@ -862,7 +863,7 @@ async function sendAiMessage(userText, mode) {
       // Build preview of tasks
       const taskPreview = data.tasks.slice(0, 5).map(t =>
         `<div class="ai-task-item"><strong>${esc(t.task)}</strong> — ${esc(t.role)}, ${t.hours}h</div>`
-      ).join('') + (data.tasks.length > 5 ? `<div class="ai-task-item" style="color:var(--muted)">+ ${data.tasks.length - 5} more tasks…</div>` : '');
+      ).join('') + (data.tasks.length > 5 ? `<div class="ai-task-item" style="color:var(--accent);font-style:italic;">+ ${data.tasks.length - 5} more tasks — click Apply to see all</div>` : '');
 
       const msgDiv = document.createElement('div');
       msgDiv.className = 'ai-msg ai-msg-assistant';
@@ -955,20 +956,20 @@ document.querySelectorAll('.ai-chip').forEach(chip => {
     const input  = document.getElementById('aiInput');
     if (action === 'generate') {
       aiPendingMode = 'generate';
-      input.placeholder = 'Describe the project (e.g. "Migrate 3-server office to Azure, 6 weeks, small team")';
+      input.value = '';
+      input.placeholder = 'Describe the project (e.g. "M365 for a 15-person office, include Teams and SharePoint")';
       input.focus();
-      addAiMessage('assistant', 'Describe the project and I\'ll generate a full scope with tasks, roles, and hour estimates.');
+      addAiMessage('assistant', 'Describe the project in plain English and I'll generate a full scope — tasks, roles, hours, overview, and exclusions. Then use Review or Adjust to refine it for your team.');
     } else if (action === 'review') {
-      aiPendingMode = 'review';
-      addAiMessage('assistant', 'I\'ll review your current scope. Add any specific concerns or just send a message to begin.');
-      input.placeholder = 'Any specific concerns? Or just press send to review…';
-      input.value = 'Please review my current scope';
-      input.focus();
+      input.value = '';
+      input.placeholder = 'Any specific concerns? Or just press send…';
+      sendAiMessage('Please review my current scope', 'review');
     } else if (action === 'adjust') {
       aiPendingMode = 'adjust';
+      input.value = '';
       input.placeholder = 'e.g. "We only have 2 engineers and 4 weeks"';
       input.focus();
-      addAiMessage('assistant', 'Tell me about your constraints (team size, deadline, budget) and I\'ll suggest adjustments.');
+      addAiMessage('assistant', 'Tell me your constraints — team size, deadline, or budget — and I'll flag anything in the scope that needs adjusting.');
     }
   });
 });
