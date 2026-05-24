@@ -1195,7 +1195,20 @@ sbPushBtn.addEventListener('click', async () => {
     document.getElementById('exclusions').value   = PRESETS[urlPreset].exclusions;
   } else if (!hasSaved) {
     rows = [defaultRow()];
+  } else {
+    // Treat as blank if no meaningful project data — prevents stale state bleeding through
+    const hasTitle = document.getElementById('projectTitle').value.trim();
+    const hasHours = rows.some(r => num(r.hours) > 0);
+    if (!hasTitle && !hasHours) {
+      rows = [defaultRow()];
+      document.getElementById('exclusions').value = '';
+      document.getElementById('overview').value   = '';
+      localStorage.removeItem(LS_KEY);
+    }
   }
+
+  // Always ensure at least one blank row
+  if (!rows.length) rows = [defaultRow()];
 
   render();
   updatePassphraseUI();
