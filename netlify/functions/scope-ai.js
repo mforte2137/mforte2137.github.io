@@ -95,7 +95,14 @@ suggestedTasks should only include NEW tasks to add. Keep feedback items concise
 
     const data = await res.json();
     const raw  = data.content?.[0]?.text || '{}';
-    const clean = raw.replace(/```json|```/g, '').trim();
+    // Strip markdown code fences and any leading/trailing non-JSON content
+    let clean = raw
+      .replace(/```json\s*/gi, '')
+      .replace(/```\s*/g, '')
+      .replace(/^[^{[]*/, '')   // strip anything before first { or [
+      .replace(/[^}\]]*$/, '')  // strip anything after last } or ]
+      .trim();
+    if (!clean) clean = '{}';
     const parsed = JSON.parse(clean);
     return { statusCode: 200, headers, body: JSON.stringify(parsed) };
 
