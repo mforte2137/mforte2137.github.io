@@ -160,19 +160,19 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); font
 .lp-proj-item:hover .lp-proj-delete { opacity: 1; }
 .lp-proj-delete:hover { color: var(--danger); }
 
-.lp-new-proj {
+.lp-clear-btn {
+  font: 600 11px var(--sans); padding: 0 10px; height: 28px; border-radius: 8px;
+  border: 1px solid rgba(220,38,38,.3); background: rgba(220,38,38,.06);
+  color: var(--danger); cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: background .12s;
+}
+.lp-clear-btn:hover { background: rgba(220,38,38,.12); }
   display: flex; align-items: center; gap: 6px; padding: 6px 9px;
   border-radius: 8px; border: 1px dashed rgba(15,23,42,.2); font: 12px var(--sans);
   color: var(--muted); cursor: pointer; background: none; width: 100%; margin-top: 2px;
   transition: border-color .12s, color .12s;
 }
 .lp-new-proj:hover { border-color: var(--accent); color: var(--accent); }
-
-.lp-bottom { margin-top: auto; padding: 10px 14px; border-top: 1px solid var(--line); flex-shrink: 0; }
-.lp-danger-btn {
-  display: flex; align-items: center; gap: 7px; font: 12px var(--sans);
-  color: var(--danger); cursor: pointer; background: none; border: none; padding: 4px 0;
-}
 
 /* ── CENTER PANEL ── */
 .center-panel {
