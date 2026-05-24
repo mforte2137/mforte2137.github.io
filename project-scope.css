@@ -305,7 +305,7 @@ pre {
 
 /* ── AI PANEL ── */
 .ai-panel {
-  display: flex; flex-direction: column; background: var(--surface); overflow: hidden;
+  display: flex; flex-direction: column; background: var(--surface); overflow: hidden; height: 100%;
 }
 .ai-header {
   padding: 13px 14px 10px; border-bottom: 1px solid var(--line);
@@ -317,13 +317,8 @@ pre {
 .ai-title { font-size: 13px; font-weight: 700; color: var(--text); }
 .ai-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-.ai-body {
-  flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;
-}
-.ai-messages {
-  flex: 1; overflow-y: auto; padding: 12px; display: flex;
-  flex-direction: column; gap: 10px; min-height: 0;
-}
+.ai-body { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.ai-messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
 .ai-msg { font-size: 12px; line-height: 1.6; }
 .ai-msg-assistant { background: var(--surface2); border-radius: 10px; padding: 10px 12px; color: var(--text); }
 .ai-msg-user { background: rgba(37,99,235,.1); border-radius: 10px; padding: 10px 12px; color: var(--text); align-self: flex-end; max-width: 88%; }
@@ -362,7 +357,7 @@ pre {
 
 .ai-input-wrap {
   padding: 10px 12px; border-top: 1px solid var(--line);
-  display: flex; gap: 7px; align-items: flex-end; flex-shrink: 0;
+  display: flex; gap: 7px; align-items: flex-end; flex-shrink: 0; background: var(--surface);
 }
 .ai-textarea {
   flex: 1; background: var(--surface2); border: 1px solid var(--line);
