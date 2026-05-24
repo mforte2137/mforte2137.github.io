@@ -1050,13 +1050,11 @@ document.getElementById('loadPresetBtn').addEventListener('click', () => {
   if (!confirm(`Load "${p.title}" preset? Current SOW will be replaced.`)) return;
   applyState({
     projectTitle:   p.title,
-    customerName:   '',
-    sowNumber:      document.getElementById('sowNumber').value, // keep current
     paymentTerms:   p.paymentTerms || 'on-completion',
     paymentCustom:  '',
     engagement:     p.engagement,
     deliverables:   p.deliverables,
-    howWeWork:       p.howWeWork,
+    howWeWork:      p.howWeWork,
     changeDropdown: p.changeDropdown || 'discuss',
     changeText:     '',
     commitment:     p.commitment,
