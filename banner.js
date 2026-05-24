@@ -177,6 +177,7 @@ function setSegActive(el, val) {
 function syncColor(picker, hexInput, key, swatchRowId) {
   const update = (val) => {
     state[key] = val;
+    state._cleared = false;  // any direct color pick exits blank state
     picker.value = val;
     hexInput.value = val;
     if (swatchRowId) highlightSwatch(swatchRowId, val);
@@ -225,7 +226,7 @@ function highlightSwatch(containerId, hex) {
 ───────────────────────────────────────────────── */
 btnClear.addEventListener('click', () => {
   state = defaultState();
-  // reset logo file input
+  state._cleared = true;   // flag: show blank placeholder until user picks a color
   inpLogo.value = '';
   logoDropText.textContent = 'Click or drag to upload logo';
   syncUIFromState();
@@ -482,8 +483,12 @@ function getScale() {
 /* ─────────────────────────────────────────────────
    RENDER PREVIEW
 ───────────────────────────────────────────────── */
-function render() {
-  const isEmpty = !state.logoSrc && !state.textOn && state.color1 === defaultState().color1
+function render(force) {
+  // Show blank/dashed placeholder only immediately after Clear.
+  // force=true (from swatch clicks) always exits the cleared state.
+  if (force) state._cleared = false;
+  const isEmpty = state._cleared === true
+    && !state.logoSrc && !state.textOn
     && state.accentMode === 'none' && !state.shadowOn;
 
   pvBanner.style.width  = A4_W + 'px';
