@@ -17,7 +17,7 @@ let exportMode = 'print';
 ─────────────────────────────────────────────────── */
 const SWATCHES = [
   { hex: '#1a3a5c', label: 'Navy'             },
-  { hex: '#3b5998', label: 'Slate Blue'       },
+  { hex: '#0c8fd9', label: 'Corporate Blue'    },
   { hex: '#007b8a', label: 'Teal'             },
   { hex: '#2d6a4f', label: 'Forest Green'     },
   { hex: '#6b2737', label: 'Burgundy'         },
@@ -206,7 +206,7 @@ function buildSwatches(containerId, pickerEl, hexEl, stateKey) {
       pickerEl.value = sw.hex;
       hexEl.value = sw.hex;
       highlightSwatch(containerId, sw.hex);
-      render();
+      render(true); // force render even if value unchanged (e.g. after Clear)
     });
     row.appendChild(btn);
   });
@@ -597,26 +597,19 @@ async function exportToPNG(overrideMode) {
   const outH = Math.round(state.height * sc);
   const r    = Math.round(state.radius * sc);
 
-  const canvas = document.createElement('canvas');
-  canvas.width  = outW;
-  canvas.height = outH;
-  const ctx = canvas.getContext('2d');
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
+  // ── Step 1: draw banner content onto an off-screen canvas (no shadow) ──
+  const content = document.createElement('canvas');
+  content.width  = outW;
+  content.height = outH;
+  const cc = content.getContext('2d');
+  cc.imageSmoothingEnabled = true;
+  cc.imageSmoothingQuality = 'high';
 
   // Clip to rounded rectangle
   if (r > 0) {
-    ctx.beginPath();
-    ctx.roundRect(0, 0, outW, outH, r);
-    ctx.clip();
-  }
-
-  // Shadow
-  if (state.shadowOn) {
-    ctx.shadowOffsetX = state.shadowX * sc;
-    ctx.shadowOffsetY = state.shadowY * sc;
-    ctx.shadowBlur    = state.shadowBlur * sc;
-    ctx.shadowColor   = state.shadowColor;
+    cc.beginPath();
+    cc.roundRect(0, 0, outW, outH, r);
+    cc.clip();
   }
 
   // Accent heights
@@ -628,33 +621,30 @@ async function exportToPNG(overrideMode) {
 
   // Main background
   if (state.bgType === 'gradient') {
-    const g = ctx.createLinearGradient(0, 0, outW, outH);
+    const g = cc.createLinearGradient(0, 0, outW, outH);
     g.addColorStop(0, state.color1);
     g.addColorStop(1, state.color2);
-    ctx.fillStyle = g;
+    cc.fillStyle = g;
   } else {
-    ctx.fillStyle = state.color1;
+    cc.fillStyle = state.color1;
   }
-  ctx.fillRect(0, mainY, outW, mainH);
-
-  // Turn off shadow for accent / logo / text layers
-  ctx.shadowColor = 'transparent';
+  cc.fillRect(0, mainY, outW, mainH);
 
   // Accent bands
   if (state.accentMode !== 'none') {
     if (state.accentPos === 'below') {
-      ctx.fillStyle = state.accent1;
-      ctx.fillRect(0, mainH, outW, accH1);
+      cc.fillStyle = state.accent1;
+      cc.fillRect(0, mainH, outW, accH1);
       if (state.accentMode === 'double') {
-        ctx.fillStyle = state.accent2;
-        ctx.fillRect(0, mainH + accH1, outW, accH2);
+        cc.fillStyle = state.accent2;
+        cc.fillRect(0, mainH + accH1, outW, accH2);
       }
     } else {
-      ctx.fillStyle = state.accent1;
-      ctx.fillRect(0, 0, outW, accH1);
+      cc.fillStyle = state.accent1;
+      cc.fillRect(0, 0, outW, accH1);
       if (state.accentMode === 'double') {
-        ctx.fillStyle = state.accent2;
-        ctx.fillRect(0, accH1, outW, accH2);
+        cc.fillStyle = state.accent2;
+        cc.fillRect(0, accH1, outW, accH2);
       }
     }
   }
@@ -668,7 +658,7 @@ async function exportToPNG(overrideMode) {
         const dispH = (state.logoLock || !state.logoH)
           ? Math.round(img.naturalHeight * (dispW / img.naturalWidth))
           : Math.round(state.logoH * sc);
-        ctx.drawImage(img, Math.round(state.logoX * sc), Math.round(state.logoY * sc), dispW, dispH);
+        cc.drawImage(img, Math.round(state.logoX * sc), Math.round(state.logoY * sc), dispW, dispH);
         resolve();
       };
       img.onerror = reject;
@@ -678,15 +668,38 @@ async function exportToPNG(overrideMode) {
 
   // Text overlay
   if (state.textOn && state.textStr) {
-    ctx.font = `${state.textWeight} ${Math.round(state.textSize * sc)}px ${state.textFont}`;
-    ctx.fillStyle   = state.textColor;
-    ctx.textAlign   = state.textAlign;
-    ctx.textBaseline = 'top';
+    cc.font = `${state.textWeight} ${Math.round(state.textSize * sc)}px ${state.textFont}`;
+    cc.fillStyle    = state.textColor;
+    cc.textAlign    = state.textAlign;
+    cc.textBaseline = 'top';
     const tx = state.textAlign === 'center' ? outW / 2
              : state.textAlign === 'right'  ? outW - Math.round(state.textX * sc)
              : Math.round(state.textX * sc);
-    ctx.fillText(state.textStr, tx, Math.round(state.textY * sc));
+    cc.fillText(state.textStr, tx, Math.round(state.textY * sc));
   }
+
+  // ── Step 2: composite onto final canvas, applying shadow in one drawImage ──
+  // Add padding around the final canvas so shadow isn't clipped at edges
+  const pad = state.shadowOn ? Math.round((Math.abs(state.shadowX) + Math.abs(state.shadowY) + state.shadowBlur * 2) * sc) : 0;
+  const finalW = outW + pad * 2;
+  const finalH = outH + pad * 2;
+
+  const canvas = document.createElement('canvas');
+  canvas.width  = finalW;
+  canvas.height = finalH;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+
+  if (state.shadowOn) {
+    ctx.shadowOffsetX = state.shadowX  * sc;
+    ctx.shadowOffsetY = state.shadowY  * sc;
+    ctx.shadowBlur    = state.shadowBlur * sc;
+    ctx.shadowColor   = state.shadowColor;
+  }
+
+  // Draw the content (shadow is cast from this single drawImage)
+  ctx.drawImage(content, pad, pad);
 
   const raw = canvas.toDataURL('image/png', 1.0);
   return injectPHYs(raw, m.dpi);
