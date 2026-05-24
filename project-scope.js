@@ -1010,8 +1010,9 @@ document.getElementById('addRowBtn').addEventListener('click', () => { rows.push
 // Clear
 document.getElementById('clearBtn').addEventListener('click', () => {
   if (!confirm('Clear this project and start fresh?')) return;
-  localStorage.removeItem(LS_KEY);
+  currentProjectId = null;  // prevent autoSave writing stale data
   newProject();
+  localStorage.removeItem(LS_KEY);  // remove after newProject so saveState can't restore it
 });
 
 // Generate
