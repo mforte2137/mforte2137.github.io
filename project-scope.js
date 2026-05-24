@@ -959,7 +959,7 @@ document.querySelectorAll('.ai-chip').forEach(chip => {
       input.value = '';
       input.placeholder = 'Describe the project (e.g. "M365 for a 15-person office, include Teams and SharePoint")';
       input.focus();
-      addAiMessage('assistant', 'Describe the project in plain English and I'll generate a full scope — tasks, roles, hours, overview, and exclusions. Then use Review or Adjust to refine it for your team.');
+      addAiMessage('assistant', 'Describe the project in plain English and I\'ll generate a full scope — tasks, roles, hours, overview, and exclusions. Then use Review or Adjust to refine it for your team.');
     } else if (action === 'review') {
       input.value = '';
       input.placeholder = 'Any specific concerns? Or just press send…';
@@ -969,7 +969,7 @@ document.querySelectorAll('.ai-chip').forEach(chip => {
       input.value = '';
       input.placeholder = 'e.g. "We only have 2 engineers and 4 weeks"';
       input.focus();
-      addAiMessage('assistant', 'Tell me your constraints — team size, deadline, or budget — and I'll flag anything in the scope that needs adjusting.');
+      addAiMessage('assistant', 'Tell me your constraints — team size, deadline, or budget — and I\'ll flag anything in the scope that needs adjusting.');
     }
   });
 });
