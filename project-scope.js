@@ -1186,7 +1186,23 @@ sbPushBtn.addEventListener('click', async () => {
 // ── Init ──────────────────────────────────────────────────
 (async function init() {
   const urlPreset = new URLSearchParams(window.location.search).get('preset');
-  const hasSaved  = urlPreset ? false : loadState();
+
+  // Pre-check: if saved state has no title and no hours, wipe it before loading
+  if (!urlPreset) {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) {
+        const s = JSON.parse(raw);
+        const hasTitle = (s.projectTitle || '').trim();
+        const hasHours = (s.rows || []).some(r => num(r.hours) > 0);
+        if (!hasTitle && !hasHours) {
+          localStorage.removeItem(LS_KEY);
+        }
+      }
+    } catch { localStorage.removeItem(LS_KEY); }
+  }
+
+  const hasSaved = urlPreset ? false : loadState();
 
   if (urlPreset && PRESETS[urlPreset]) {
     rows = PRESETS[urlPreset].tasks.map(t => ({ ...t }));
@@ -1195,16 +1211,6 @@ sbPushBtn.addEventListener('click', async () => {
     document.getElementById('exclusions').value   = PRESETS[urlPreset].exclusions;
   } else if (!hasSaved) {
     rows = [defaultRow()];
-  } else {
-    // Treat as blank if no meaningful project data — prevents stale state bleeding through
-    const hasTitle = document.getElementById('projectTitle').value.trim();
-    const hasHours = rows.some(r => num(r.hours) > 0);
-    if (!hasTitle && !hasHours) {
-      rows = [defaultRow()];
-      document.getElementById('exclusions').value = '';
-      document.getElementById('overview').value   = '';
-      localStorage.removeItem(LS_KEY);
-    }
   }
 
   // Always ensure at least one blank row
