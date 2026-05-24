@@ -44,9 +44,11 @@ Role values must be one of: PM, Senior Engineer, Engineer, Technician, Account M
 Hours should be realistic for an MSP engagement.
 Generate 10-16 tasks covering the full project lifecycle.`;
       userPrompt = message;
-    } else if (mode === 'review') {
-      systemPrompt = `You are an expert MSP project scoping assistant reviewing an existing project scope.
+    } else if (mode === 'review' || mode === 'adjust') {
+      const isAdjust = mode === 'adjust';
+      systemPrompt = `You are an expert MSP project scoping assistant ${isAdjust ? 'adjusting a project scope based on team and deadline constraints' : 'reviewing an existing project scope'}.
 Provide clear, actionable feedback. Be specific — name the tasks you're commenting on.
+${isAdjust ? 'Focus on whether the scope is achievable given the stated constraints. Suggest specific hour adjustments, task splits, or removals.' : ''}
 
 You must respond ONLY with valid JSON in this exact format, no preamble or markdown:
 {
@@ -59,9 +61,8 @@ You must respond ONLY with valid JSON in this exact format, no preamble or markd
   ]
 }
 
-suggestedTasks should only include NEW tasks you recommend adding, not existing ones.
-Keep feedback items concise — max 15 words each.`;
-      userPrompt = `Please review this project scope:\n\nProject: ${currentScope?.projectTitle || 'Untitled'}\nCustomer: ${currentScope?.customerName || 'Not specified'}\nHours/day: ${currentScope?.hoursPerDay || 8}\n\nOverview: ${currentScope?.overview || 'None'}\n\nTasks:\n${(currentScope?.tasks || []).map(t => `- ${t.task} (${t.role}, ${t.hours}h): ${t.notes}`).join('\n')}\n\nExclusions:\n${currentScope?.exclusions || 'None'}\n\nUser message: ${message}`;
+suggestedTasks should only include NEW tasks to add. Keep feedback items concise — max 15 words each.`;
+      userPrompt = `Project: ${currentScope?.projectTitle || 'Untitled'}\nCustomer: ${currentScope?.customerName || 'Not specified'}\nHours/day: ${currentScope?.hoursPerDay || 8}\n\nOverview: ${currentScope?.overview || 'None'}\n\nTasks:\n${(currentScope?.tasks || []).map(t => `- ${t.task} (${t.role}, ${t.hours}h): ${t.notes}`).join('\n')}\n\nExclusions:\n${currentScope?.exclusions || 'None'}\n\nUser message: ${message}`;
     } else if (mode === 'chat') {
       systemPrompt = `You are a helpful MSP project scoping assistant. Answer questions about project scoping, effort estimation, and IT project management concisely. Keep responses under 150 words.`;
       userPrompt = message;
