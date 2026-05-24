@@ -39,6 +39,7 @@
           <option value="copilot">🤖 Microsoft Copilot &amp; AI</option>
         </select>
         <button class="lp-icon-btn" id="loadPresetBtn" title="Load preset"><i class="ti ti-arrow-right"></i></button>
+        <button class="lp-clear-btn" id="clearBtn" title="Clear and start fresh">Clear</button>
       </div>
     </div>
 
@@ -143,10 +144,6 @@
           <div id="sbResult" class="sb-result" hidden></div>
         </div>
       </div>
-    </div>
-
-    <div class="lp-bottom">
-      <button class="lp-danger-btn" id="clearBtn"><i class="ti ti-trash"></i> Clear project</button>
     </div>
 
   </aside>
@@ -257,22 +254,24 @@
       </div>
     </div>
 
-    <div class="ai-messages" id="aiMessages">
-      <div class="ai-msg ai-msg-assistant">
-        <div class="ai-msg-label">Assistant</div>
-        I can write your entire SOW from a plain English description, or help improve what you've already written. I can also convert an existing Scope Builder project into a SOW.
-        <div class="ai-chips">
-          <div class="ai-chip" data-action="generate">✨ Generate SOW from description</div>
-          <div class="ai-chip" data-action="review">🔍 Review &amp; improve current SOW</div>
-          <div class="ai-chip" data-action="improve">✏️ Improve a specific section</div>
-          <div class="ai-chip" data-action="convert">🔄 Convert from Scope Builder</div>
+    <div class="ai-body">
+      <div class="ai-messages" id="aiMessages">
+        <div class="ai-msg ai-msg-assistant">
+          <div class="ai-msg-label">Assistant</div>
+          I can write your entire SOW from a plain English description, or help improve what you've already written. I can also convert an existing Scope Builder project into a SOW.
+          <div class="ai-chips">
+            <div class="ai-chip" data-action="generate">✨ Generate SOW from description</div>
+            <div class="ai-chip" data-action="review">🔍 Review &amp; improve current SOW</div>
+            <div class="ai-chip" data-action="improve">✏️ Improve a specific section</div>
+            <div class="ai-chip" data-action="convert">🔄 Convert from Scope Builder</div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="ai-input-wrap">
-      <textarea class="ai-textarea" id="aiInput" placeholder="Describe your engagement or ask me to review…" rows="2"></textarea>
-      <button class="ai-send-btn" id="aiSendBtn" title="Send"><i class="ti ti-arrow-up"></i></button>
+      <div class="ai-input-wrap">
+        <textarea class="ai-textarea" id="aiInput" placeholder="Describe your engagement or ask me to review…" rows="2"></textarea>
+        <button class="ai-send-btn" id="aiSendBtn" title="Send"><i class="ti ti-arrow-up"></i></button>
+      </div>
     </div>
 
   </aside>
