@@ -1193,10 +1193,7 @@ sbPushBtn.addEventListener('click', async () => {
     document.getElementById('overview').value     = PRESETS[urlPreset].overview;
     document.getElementById('exclusions').value   = PRESETS[urlPreset].exclusions;
   } else if (!hasSaved) {
-    rows = PRESETS.azure.tasks.map(t => ({ ...t }));
-    document.getElementById('projectTitle').value = PRESETS.azure.title;
-    document.getElementById('overview').value     = PRESETS.azure.overview;
-    document.getElementById('exclusions').value   = PRESETS.azure.exclusions;
+    rows = [defaultRow()];
   }
 
   render();
