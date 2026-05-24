@@ -317,7 +317,7 @@ pre {
 .ai-title { font-size: 13px; font-weight: 700; color: var(--text); }
 .ai-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-.ai-messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.ai-messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-height: 0; justify-content: flex-start; align-content: flex-start; }
 .ai-msg { font-size: 12px; line-height: 1.6; }
 .ai-msg-assistant { background: var(--surface2); border-radius: 10px; padding: 10px 12px; color: var(--text); }
 .ai-msg-user { background: rgba(37,99,235,.1); border-radius: 10px; padding: 10px 12px; color: var(--text); align-self: flex-end; max-width: 88%; }
