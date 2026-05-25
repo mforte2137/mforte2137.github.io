@@ -798,29 +798,15 @@ objGenerateBtn.addEventListener('click', async () => {
   objWorking.hidden = false;
   objResultWrap.hidden = true;
 
-  const prompt = `You are a senior MSP sales coach. Based on the following proposal context, generate a concise private coaching note for the sales rep listing the 4–6 most likely objections the customer will raise, and a short, practical response to each.
-
-Service: ${fields.solution}
-Customer: ${fields.business}${fields.size ? ', ' + fields.size : ''}${fields.trigger ? '\nTrigger: ' + fields.trigger : ''}${fields.outcomes ? '\nDesired outcomes: ' + fields.outcomes : ''}${fields.urgency ? '\nUrgency: ' + fields.urgency : ''}
-
-Format each objection as:
-OBJECTION: [their likely words]
-RESPONSE: [how to handle it — practical, specific, not generic]
-
-Keep each response to 2–3 sentences. Do not add preamble or sign-off. Start directly with the first objection.`;
-
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
+    const res = await fetch('/api/objections', {
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
+      body:    JSON.stringify({ fields })
     });
     const data = await res.json();
-    const text = data.content?.find(b => b.type === 'text')?.text || '';
+    if (!res.ok || !data.ok) throw new Error(data.error || 'HTTP ' + res.status);
+    const text = data.text || '';
     if (!text) throw new Error('No content returned');
 
     objResult.textContent = text;
