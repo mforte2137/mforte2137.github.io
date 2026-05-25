@@ -1078,6 +1078,230 @@ function syncUIFromState() {
 }
 
 /* ─────────────────────────────────────────────────
+   BRAND EXTRACTOR
+───────────────────────────────────────────────── */
+const beToggle     = $('be-toggle');
+const beBody       = $('be-body');
+const beUrlInp     = $('be-url');
+const beExtractBtn = $('be-extract-btn');
+const beStatus     = $('be-status');
+const beResults    = $('be-results');
+const beColorsRow  = $('be-colors-row');
+const beLogoWrap   = $('be-logo-preview-wrap');
+const beLogoImg    = $('be-logo-preview');
+const beUseLogoBtn = $('be-use-logo');
+const beNotes      = $('be-notes');
+const beApplyAll   = $('be-apply-all');
+
+let beExtracted = { primaryColor: null, secondaryColor: null, logoUrl: null };
+let beSelectedColors = [];  // which color cards user has selected
+
+// Collapse/expand toggle
+beToggle.addEventListener('click', () => {
+  const collapsed = beBody.style.display === 'none';
+  beBody.style.display = collapsed ? '' : 'none';
+  beToggle.textContent = collapsed ? '▲' : '▼';
+});
+
+// Extract button
+beExtractBtn.addEventListener('click', async () => {
+  const url = beUrlInp.value.trim();
+  if (!url) { showBeStatus('Please enter a website URL', true); return; }
+
+  beExtractBtn.disabled = true;
+  beExtractBtn.textContent = '⏳';
+  beResults.style.display = 'none';
+  showBeStatus('Fetching website and analysing brand colors…');
+
+  try {
+    const resp = await fetch('/.netlify/functions/extract-brand', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Extraction failed');
+
+    beExtracted = data;
+    showBeResults(data);
+    beStatus.style.display = 'none';
+
+  } catch (err) {
+    showBeStatus('Could not extract brand data: ' + err.message, true);
+  } finally {
+    beExtractBtn.disabled = false;
+    beExtractBtn.textContent = 'Extract';
+  }
+});
+
+function showBeStatus(msg, isError) {
+  beStatus.textContent = msg;
+  beStatus.className = isError ? 'error' : '';
+  beStatus.style.display = '';
+}
+
+function showBeResults(data) {
+  beColorsRow.innerHTML = '';
+  beSelectedColors = [];
+
+  const colors = [
+    data.primaryColor   ? { hex: data.primaryColor,   label: 'Primary'   } : null,
+    data.secondaryColor ? { hex: data.secondaryColor, label: 'Secondary' } : null,
+  ].filter(Boolean);
+
+  colors.forEach((c, i) => {
+    const card = document.createElement('div');
+    card.className = 'be-color-card' + (i === 0 ? ' selected' : '');
+    if (i === 0) beSelectedColors.push(c.hex);
+
+    const swatch = document.createElement('div');
+    swatch.className = 'be-color-swatch';
+    swatch.style.background = c.hex;
+
+    const hex = document.createElement('div');
+    hex.className = 'be-color-hex';
+    hex.textContent = c.hex;
+
+    const lbl = document.createElement('div');
+    lbl.className = 'be-color-label';
+    lbl.textContent = c.label;
+
+    card.append(swatch, hex, lbl);
+    card.addEventListener('click', () => {
+      card.classList.toggle('selected');
+      if (card.classList.contains('selected')) {
+        if (!beSelectedColors.includes(c.hex)) beSelectedColors.push(c.hex);
+      } else {
+        beSelectedColors = beSelectedColors.filter(h => h !== c.hex);
+      }
+    });
+    beColorsRow.appendChild(card);
+  });
+
+  // Logo preview
+  if (data.logoUrl) {
+    beLogoImg.src = data.logoUrl;
+    beLogoImg.onerror = () => { beLogoWrap.style.display = 'none'; };
+    beLogoImg.onload  = () => { beLogoWrap.style.display = ''; };
+    beLogoWrap.style.display = '';
+  } else {
+    beLogoWrap.style.display = 'none';
+  }
+
+  // Notes + confidence
+  const confClass = data.confidence || 'medium';
+  beNotes.innerHTML = `<span class="be-confidence ${confClass}">${confClass}</span>${data.notes || ''}`;
+
+  beResults.style.display = '';
+}
+
+// Use logo only
+beUseLogoBtn.addEventListener('click', () => {
+  if (beExtracted.logoUrl) loadLogoFromUrl(beExtracted.logoUrl);
+});
+
+// Apply all — colors + logo
+beApplyAll.addEventListener('click', () => {
+  let applied = [];
+
+  if (beSelectedColors.length >= 1) {
+    state.color1 = beSelectedColors[0];
+    state._cleared = false;
+    inpColor1.value = state.color1;
+    inpHex1.value   = state.color1;
+    highlightSwatch('swatches-color1', state.color1);
+    applied.push('primary color');
+  }
+  if (beSelectedColors.length >= 2) {
+    state.color2 = beSelectedColors[1];
+    inpColor2.value = state.color2;
+    inpHex2.value   = state.color2;
+    highlightSwatch('swatches-color2', state.color2);
+    applied.push('secondary color');
+  }
+  if (beExtracted.logoUrl && currentMode === 'logo') {
+    loadLogoFromUrl(beExtracted.logoUrl);
+    applied.push('logo');
+  }
+
+  render();
+  toast(`Applied: ${applied.join(', ') || 'nothing selected'}`);
+});
+
+/* Load a logo from a URL into the banner (no file upload needed) */
+function loadLogoFromUrl(url) {
+  // Proxy through our own function to avoid CORS if needed
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    // Draw to canvas to get a data URL (handles CORS images)
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    try {
+      const dataUrl = c.toDataURL('image/png');
+      state.logoSrc = dataUrl;
+      state.logoW   = Math.min(200, img.naturalWidth);
+      state.logoH   = null;
+      state.logoX   = 40;
+      state.logoY   = Math.round((state.height - state.logoW / (img.naturalWidth / img.naturalHeight)) / 2);
+      inpLogoW.value = state.logoW;
+      logoWVal.textContent = state.logoW + 'px';
+      logoHVal.textContent = 'auto';
+      logoCtrls.style.display = '';
+      nudgeHint.style.display = '';
+      logoDropText.textContent = 'Logo loaded from URL';
+      render();
+      toast('Logo loaded from website');
+    } catch (e) {
+      // CORS tainted — fall back to proxy
+      loadLogoViaProxy(url);
+    }
+  };
+  img.onerror = () => loadLogoViaProxy(url);
+  img.src = url;
+}
+
+/* Proxy fallback — uses existing fetch-image Netlify function */
+async function loadLogoViaProxy(url) {
+  try {
+    showBeStatus('Loading logo via proxy…');
+    const resp = await fetch('/.netlify/functions/fetch-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    if (!resp.ok) throw new Error('Proxy fetch failed');
+    const blob = await resp.blob();
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img2 = new Image();
+      img2.onload = () => {
+        state.logoSrc = ev.target.result;
+        state.logoW   = Math.min(200, img2.naturalWidth);
+        state.logoH   = null;
+        state.logoX   = 40;
+        state.logoY   = Math.round((state.height - state.logoW / (img2.naturalWidth / img2.naturalHeight)) / 2);
+        inpLogoW.value = state.logoW;
+        logoWVal.textContent = state.logoW + 'px';
+        logoCtrls.style.display = '';
+        nudgeHint.style.display = '';
+        logoDropText.textContent = 'Logo loaded from URL';
+        beStatus.style.display = 'none';
+        render();
+        toast('Logo loaded');
+      };
+      img2.src = ev.target.result;
+    };
+    reader.readAsDataURL(blob);
+  } catch (err) {
+    showBeStatus('Logo could not be loaded automatically — please upload manually', true);
+  }
+}
+
+/* ─────────────────────────────────────────────────
    INIT
 ───────────────────────────────────────────────── */
 buildSwatches('swatches-color1',  inpColor1,      inpHex1,       'color1');
