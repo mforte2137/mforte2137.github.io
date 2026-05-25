@@ -247,28 +247,30 @@ exports.handler = async (event) => {
         const pollData = await pollRes.json();
         if (pollData.data.status === 'done') {
           images = pollData.data.images || [];
+          console.log(`extract.pics: ${images.length} images found before filtering`);
           break;
         }
         if (pollData.data.status === 'error') return err('Image extraction failed.');
       }
 
-      // Filter: >= 1000px wide, skip SVGs, deduplicate by URL
+      // Filter: >= 1000px wide OR unknown size, skip SVGs, deduplicate by URL
       const seen = new Set();
       const filtered = images
         .filter(img => {
           if (!img.url || seen.has(img.url)) return false;
           if (img.url.toLowerCase().endsWith('.svg')) return false;
-          if ((img.width || 0) < 1000) return false;
+          const w = img.width || 0;
+          if (w > 0 && w < 1000) return false;  // only reject if we KNOW it's small
           seen.add(img.url);
           return true;
         })
         .slice(0, 12)
         .map(img => ({
-          url:   img.url,
-          thumb: img.url,  // use same URL for thumb — browser will scale it down
-          width: img.width,
+          url:    img.url,
+          thumb:  img.url,
+          width:  img.width,
           height: img.height,
-          alt:   img.alt || img.url.split('/').pop() || 'Website photo'
+          alt:    img.alt || img.url.split('/').pop() || 'Website photo'
         }));
 
       return ok200({ photos: filtered });
