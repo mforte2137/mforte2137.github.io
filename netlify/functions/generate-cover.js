@@ -286,7 +286,7 @@ exports.handler = async (event) => {
           seen.add(img.url);
           return true;
         })
-        .slice(0, 12)
+        .slice(0, 4)
         .map(img => ({
           url:    img.url,
           thumb:  img.url,
