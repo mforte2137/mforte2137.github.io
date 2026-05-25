@@ -208,6 +208,19 @@ const triggerField      = document.getElementById('f-trigger');
 const outcomesField     = document.getElementById('f-outcomes');
 const urgencyField      = document.getElementById('f-urgency');
 
+// New feature refs
+const whyToggle         = document.getElementById('why-toggle');
+const whyBody           = document.getElementById('why-body');
+const whyArrow          = document.getElementById('why-arrow');
+const objToggle         = document.getElementById('obj-toggle');
+const objArrow          = document.getElementById('obj-arrow');
+const objBody           = document.getElementById('obj-body');
+const objGenerateBtn    = document.getElementById('obj-generate-btn');
+const objResultWrap     = document.getElementById('obj-result-wrap');
+const objResult         = document.getElementById('obj-result');
+const objCopyBtn        = document.getElementById('obj-copy-btn');
+const objWorking        = document.getElementById('obj-working');
+
 // ── Service tile builder ──────────────────────────────────
 function initServiceTiles() {
   const grid = document.getElementById('service-grid');
@@ -388,6 +401,13 @@ function restart() {
   sbReplace.checked           = false;
   sbBody.hidden               = true;
   sbArrow.classList.remove('is-open');
+  // Reset objection panel
+  objBody.hidden              = true;
+  objArrow.classList.remove('is-open');
+  objResultWrap.hidden        = true;
+  objResult.textContent       = '';
+  objGenerateBtn.disabled     = false;
+  objGenerateBtn.textContent  = 'Generate Objection Coaching →';
   // Reset service tiles
   document.querySelectorAll('.service-tile').forEach(t => t.classList.remove('is-selected'));
   // Reset chips
@@ -523,9 +543,11 @@ form.addEventListener('submit', async (e) => {
 });
 
 // ── API call ──────────────────────────────────────────────
-async function fetchWidget(fields, widgetId) {
+async function fetchWidget(fields, widgetId, direction) {
   let res;
-  try { res = await fetch('/api/sales-widgets',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({fields,widgetId,colors:selectedColors}) }); }
+  const body = { fields, widgetId, colors: selectedColors };
+  if (direction) body.direction = direction;
+  try { res = await fetch('/api/sales-widgets',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) }); }
   catch(e) { throw new Error('Could not reach the widget generator.'); }
   let data; try { data=await res.json(); } catch(e) { throw new Error('Unexpected response. Status '+res.status); }
   if (!res.ok||!data.ok) throw new Error(data.error||'HTTP '+res.status);
@@ -643,6 +665,7 @@ function appendIndividualCard(widget) {
   pt.addEventListener('click',()=>{ pt.classList.add('is-active'); ct.classList.remove('is-active'); iframe.style.display='block'; textarea.style.display='none'; });
   ct.addEventListener('click',()=>{ ct.classList.add('is-active'); pt.classList.remove('is-active'); iframe.style.display='none'; textarea.style.display='block'; });
   card.appendChild(header); card.appendChild(tabs); card.appendChild(iframe); card.appendChild(textarea);
+  addRegenRow(card, widget);
   individualWidgets.appendChild(card);
 }
 function appendErrorCard(widgetId,message) {
@@ -669,6 +692,156 @@ async function copyHtml(html,btn) {
   btn.textContent='Copied!'; btn.classList.add('is-copied');
   setTimeout(()=>{ btn.textContent='Copy HTML'; btn.classList.remove('is-copied'); },2500);
 }
+
+// ── Why This Works sidebar toggle ────────────────────────
+whyToggle.addEventListener('click', () => {
+  const open = !whyBody.hidden;
+  whyBody.hidden = open;
+  whyArrow.classList.toggle('is-closed', open);
+  whyToggle.setAttribute('aria-expanded', String(!open));
+});
+
+// ── Regen direction presets ───────────────────────────────
+const REGEN_PRESETS = [
+  { value: '',                              label: 'Choose a direction…' },
+  { value: 'Make it more urgent',           label: 'More urgent' },
+  { value: 'Make it shorter and punchier',  label: 'Shorter & punchier' },
+  { value: 'The customer is price-sensitive — emphasise ROI and cost of inaction', label: 'Price-sensitive customer' },
+  { value: 'The customer had a bad experience with a previous MSP — address trust', label: 'Bad previous MSP experience' },
+  { value: 'Make the language more formal and corporate',  label: 'More formal tone' },
+  { value: 'Make the language more conversational',        label: 'More conversational tone' },
+  { value: 'Emphasise compliance and risk reduction',      label: 'Compliance / risk focus' },
+  { value: 'Focus more on business continuity and uptime', label: 'Business continuity focus' },
+  { value: 'custom',                        label: 'Write my own direction…' },
+];
+
+// Injects the regen row into a widget card
+function addRegenRow(card, widget) {
+  const row = document.createElement('div');
+  row.className = 'regen-row';
+
+  // Preset select
+  const sel = document.createElement('select');
+  sel.className = 'regen-select';
+  REGEN_PRESETS.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.value; opt.textContent = p.label;
+    sel.appendChild(opt);
+  });
+
+  // Free-text direction
+  const inp = document.createElement('input');
+  inp.type = 'text'; inp.className = 'regen-input'; inp.maxLength = 200;
+  inp.placeholder = 'Describe what to change…';
+  inp.style.display = 'none';
+
+  sel.addEventListener('change', () => {
+    if (sel.value === 'custom') {
+      inp.style.display = 'block'; inp.focus();
+    } else if (sel.value) {
+      inp.style.display = 'block'; inp.value = sel.value;
+    } else {
+      inp.style.display = 'none'; inp.value = '';
+    }
+  });
+
+  // Regen button
+  const btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'regen-btn'; btn.textContent = '↺ Regenerate';
+
+  btn.addEventListener('click', async () => {
+    const direction = inp.value.trim() || sel.value;
+    if (!direction || direction === 'custom') { inp.focus(); return; }
+
+    btn.disabled = true; btn.textContent = 'Regenerating…'; btn.classList.add('is-working');
+
+    const fields = getCurrentFields();
+    try {
+      const updated = await fetchWidget(fields, widget.id, direction);
+      // Update stored widget
+      const idx = generatedWidgets.findIndex(w => w.id === widget.id);
+      if (idx > -1) generatedWidgets[idx] = updated;
+      Object.assign(widget, updated);
+
+      // Refresh iframe and textarea inside this card
+      const iframe  = card.querySelector('iframe');
+      const textarea = card.querySelector('textarea');
+      if (iframe)  iframe.srcdoc  = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;padding:0;background:#fff;}</style></head><body>${updated.html}</body></html>`;
+      if (textarea) textarea.value = updated.html;
+
+      // Refresh combined widget if it exists
+      if (generatedWidgets.length > 0) showCombinedWidget(generatedWidgets);
+
+      btn.textContent = '✓ Updated'; btn.classList.remove('is-working');
+      setTimeout(() => { btn.disabled = false; btn.textContent = '↺ Regenerate'; }, 2000);
+    } catch(err) {
+      btn.disabled = false; btn.textContent = '↺ Try Again'; btn.classList.remove('is-working');
+    }
+  });
+
+  row.appendChild(sel);
+  row.appendChild(inp);
+  row.appendChild(btn);
+  card.appendChild(row);
+}
+
+// ── Objection Anticipator ─────────────────────────────────
+objToggle.addEventListener('click', () => {
+  const open = !objBody.hidden;
+  objBody.hidden = open;
+  objArrow.classList.toggle('is-open', !open);
+});
+
+objGenerateBtn.addEventListener('click', async () => {
+  const fields = getCurrentFields();
+  objGenerateBtn.disabled = true;
+  objWorking.hidden = false;
+  objResultWrap.hidden = true;
+
+  const prompt = `You are a senior MSP sales coach. Based on the following proposal context, generate a concise private coaching note for the sales rep listing the 4–6 most likely objections the customer will raise, and a short, practical response to each.
+
+Service: ${fields.solution}
+Customer: ${fields.business}${fields.size ? ', ' + fields.size : ''}${fields.trigger ? '\nTrigger: ' + fields.trigger : ''}${fields.outcomes ? '\nDesired outcomes: ' + fields.outcomes : ''}${fields.urgency ? '\nUrgency: ' + fields.urgency : ''}
+
+Format each objection as:
+OBJECTION: [their likely words]
+RESPONSE: [how to handle it — practical, specific, not generic]
+
+Keep each response to 2–3 sentences. Do not add preamble or sign-off. Start directly with the first objection.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.find(b => b.type === 'text')?.text || '';
+    if (!text) throw new Error('No content returned');
+
+    objResult.textContent = text;
+    objResultWrap.hidden = false;
+  } catch(err) {
+    objResult.textContent = 'Could not generate objection coaching. Please try again.';
+    objResultWrap.hidden = false;
+  }
+
+  objWorking.hidden = true;
+  objGenerateBtn.disabled = false;
+  objGenerateBtn.textContent = '↺ Regenerate';
+});
+
+objCopyBtn.addEventListener('click', async () => {
+  const text = objResult.textContent;
+  try { await navigator.clipboard.writeText(text); }
+  catch { const ta=document.createElement('textarea'); ta.value=text; ta.style.cssText='position:fixed;opacity:0;'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
+  objCopyBtn.textContent = '✓ Copied!'; objCopyBtn.classList.add('is-copied');
+  setTimeout(() => { objCopyBtn.textContent = '📋 Copy for Internal Notes'; objCopyBtn.classList.remove('is-copied'); }, 2500);
+});
 
 // ── Business type — reveal free-text when "Other" selected ──
 (function () {
