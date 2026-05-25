@@ -8,7 +8,7 @@
 </head>
 <body>
 
-  <!-- ── SIDEBAR ─────────────────────────────────────────── -->
+  <!-- ── LEFT SIDEBAR — Recent Banners ────────────────── -->
   <aside id="sidebar">
     <div class="sidebar-header">
       <span class="sidebar-logo">⬡</span>
@@ -20,14 +20,13 @@
     </div>
   </aside>
 
-  <!-- ── MAIN ──────────────────────────────────────────────── -->
+  <!-- ── MAIN ──────────────────────────────────────────── -->
   <main id="main">
 
     <!-- TOPBAR -->
     <header id="topbar">
       <div class="topbar-left">
         <h1>Banner Creator <span class="tag">MSP Toolkit</span></h1>
-        <!-- MODE TABS -->
         <div class="mode-tabs">
           <button class="mode-tab active" data-mode="logo" id="tab-logo">🖼 Logo Banner</button>
           <button class="mode-tab" data-mode="header" id="tab-header">✦ Header Banner</button>
@@ -49,65 +48,30 @@
     <!-- WORKSPACE -->
     <div id="workspace">
 
-      <!-- ══ CONTROLS PANEL ══════════════════════════════════ -->
+      <!-- ══ LEFT CONTROLS ══════════════════════════════ -->
       <section id="controls">
 
-        <!-- ── BRAND EXTRACT ─────────────────────────────── -->
-        <div class="brand-extract-panel" id="brand-extract-panel">
-          <div class="be-header">
-            <span class="be-icon">✦</span>
-            <span class="be-title">Brand Extractor</span>
-            <button class="be-toggle" id="be-toggle" title="Collapse">▲</button>
-          </div>
-          <div id="be-body">
-            <p class="be-hint">Paste the client's website URL to auto-extract their brand colors and logo.</p>
-            <div class="be-input-row">
-              <input type="text" id="be-url" placeholder="https://clientwebsite.com" class="be-url-inp" />
-              <button id="be-extract-btn" class="btn-extract">Extract</button>
-            </div>
-            <div id="be-status" style="display:none"></div>
-            <div id="be-results" style="display:none">
-              <div class="be-colors-row" id="be-colors-row"></div>
-              <div id="be-logo-preview-wrap" style="display:none">
-                <div class="be-section-label">Logo found</div>
-                <div class="be-logo-row">
-                  <img id="be-logo-preview" alt="Logo preview" class="be-logo-img" />
-                  <button id="be-use-logo" class="btn-be-action">Use Logo</button>
-                </div>
-              </div>
-              <div class="be-notes" id="be-notes"></div>
-            </div>
-            <button id="be-apply-all" class="btn-be-apply" style="display:none">✓ Apply Secondary Color &amp; Logo</button>
-          </div>
-        </div>
-
-        <!-- Company name (both modes) -->
         <div class="ctrl-group">
           <label class="ctrl-label">MSP Company Name</label>
           <input type="text" id="inp-company" placeholder="e.g. Acme IT Solutions" />
         </div>
 
-        <!-- Banner height (both modes) -->
         <div class="ctrl-group">
           <label class="ctrl-label">Banner Height <span id="height-val" class="val-badge">280px</span></label>
           <input type="range" id="inp-height" min="120" max="600" value="280" step="4" />
         </div>
 
-        <!-- Corner radius (both modes) -->
         <div class="ctrl-group">
           <label class="ctrl-label">Corner Radius <span id="radius-val" class="val-badge">0px</span></label>
           <input type="range" id="inp-radius" min="0" max="40" value="0" step="1" />
         </div>
 
-        <!-- Background style (both modes — header has more options) -->
         <div class="ctrl-group">
           <label class="ctrl-label">Background Style</label>
-          <!-- Logo banner bg options -->
           <div class="seg-control" id="seg-bg-type-logo">
             <button class="seg active" data-val="solid">Solid</button>
             <button class="seg" data-val="gradient">Gradient</button>
           </div>
-          <!-- Header banner bg options -->
           <div class="seg-control" id="seg-bg-type-header" style="display:none">
             <button class="seg active" data-val="solid">Solid</button>
             <button class="seg" data-val="gradient">Linear</button>
@@ -116,7 +80,6 @@
           </div>
         </div>
 
-        <!-- Gradient direction (header linear only) -->
         <div class="ctrl-group" id="grad-dir-wrap" style="display:none">
           <label class="ctrl-label">Gradient Direction</label>
           <div class="seg-control" id="seg-grad-dir">
@@ -126,7 +89,6 @@
           </div>
         </div>
 
-        <!-- Main color (both modes) -->
         <div class="ctrl-group">
           <label class="ctrl-label" id="color1-label">Main Color</label>
           <div class="swatch-row" id="swatches-color1"></div>
@@ -136,7 +98,6 @@
           </div>
         </div>
 
-        <!-- Gradient end / spotlight color -->
         <div class="ctrl-group" id="grad-color-wrap" style="display:none">
           <label class="ctrl-label" id="color2-label">Gradient End Color</label>
           <div class="swatch-row" id="swatches-color2"></div>
@@ -146,7 +107,7 @@
           </div>
         </div>
 
-        <!-- ── BORDER (both modes) ───────────────────────── -->
+        <!-- Border -->
         <div class="ctrl-group">
           <label class="ctrl-label">
             Border
@@ -173,7 +134,7 @@
           </div>
         </div>
 
-        <!-- ── ACCENT BANDS (logo mode only) ────────────── -->
+        <!-- Accent Bands (logo mode only) -->
         <div id="accent-section">
           <div class="ctrl-group">
             <label class="ctrl-label">Accent Bands</label>
@@ -183,7 +144,6 @@
               <button class="seg" data-val="double">Double</button>
             </div>
           </div>
-
           <div id="accent-controls" style="display:none">
             <div class="ctrl-group">
               <label class="ctrl-label">Band Position</label>
@@ -192,7 +152,6 @@
                 <button class="seg" data-val="above">Above</button>
               </div>
             </div>
-
             <div class="ctrl-group">
               <label class="ctrl-label">Accent 1 Color</label>
               <div class="swatch-row" id="swatches-accent1"></div>
@@ -207,7 +166,6 @@
                 </div>
               </div>
             </div>
-
             <div id="accent2-wrap" style="display:none">
               <div class="ctrl-group">
                 <label class="ctrl-label">Accent 2 Color</label>
@@ -225,9 +183,9 @@
               </div>
             </div>
           </div>
-        </div><!-- /accent-section -->
+        </div>
 
-        <!-- ── DROP SHADOW (both modes) ─────────────────── -->
+        <!-- Drop Shadow -->
         <div class="ctrl-group">
           <label class="ctrl-label">
             Drop Shadow
@@ -263,7 +221,7 @@
           </div>
         </div>
 
-        <!-- ── TEXT OVERLAY (both modes) ────────────────── -->
+        <!-- Text Overlay -->
         <div class="ctrl-group">
           <label class="ctrl-label">
             Text Overlay
@@ -322,7 +280,7 @@
           </div>
         </div>
 
-        <!-- ── LOGO UPLOAD (logo mode only) ─────────────── -->
+        <!-- Logo Upload (logo mode only) -->
         <div id="logo-section">
           <div class="ctrl-group">
             <label class="ctrl-label">Logo</label>
@@ -354,7 +312,7 @@
           <div class="hint-box" id="nudge-hint" style="display:none">
             <strong>Tip:</strong> Click logo on preview then <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> to nudge 1px. <kbd>Shift</kbd> = 10px.
           </div>
-        </div><!-- /logo-section -->
+        </div>
 
       </section><!-- /controls -->
 
@@ -376,6 +334,51 @@
 
     </div><!-- /workspace -->
   </main>
+
+  <!-- ── RIGHT SIDEBAR — Brand Extractor ──────────────── -->
+  <aside id="brand-sidebar">
+    <div class="bs-header">
+      <span class="bs-icon">✦</span>
+      <span class="bs-title">Brand Extractor</span>
+    </div>
+    <div class="bs-body">
+      <p class="bs-hint">Paste the client's website URL to auto-extract brand colors and logo.</p>
+
+      <div class="bs-input-row">
+        <input type="text" id="be-url" placeholder="https://clientwebsite.com" class="bs-url-inp" />
+      </div>
+      <button id="be-extract-btn" class="btn-extract-full">✦ Extract Brand</button>
+
+      <div id="be-status" style="display:none"></div>
+
+      <!-- Results -->
+      <div id="be-results" style="display:none">
+
+        <div class="bs-section-label">Brand Colors</div>
+        <div class="bs-colors-row" id="be-colors-row"></div>
+        <p class="bs-sub-hint">Click a color to apply it to the banner.</p>
+
+        <div id="be-logo-preview-wrap" style="display:none">
+          <div class="bs-section-label" style="margin-top:16px">Logo Found</div>
+          <div class="bs-logo-card">
+            <img id="be-logo-preview" alt="Logo preview" class="bs-logo-img" />
+            <button id="be-use-logo" class="btn-be-use">Use Logo</button>
+          </div>
+        </div>
+
+        <div class="bs-notes-wrap">
+          <div class="bs-section-label" style="margin-top:16px">Analysis</div>
+          <div class="be-notes" id="be-notes"></div>
+        </div>
+
+        <div class="bs-actions">
+          <button id="be-apply-all" class="btn-be-apply-full">✓ Apply Secondary &amp; Logo</button>
+          <button id="be-reset" class="btn-be-reset">↺ New Search</button>
+        </div>
+
+      </div><!-- /be-results -->
+    </div><!-- /bs-body -->
+  </aside>
 
   <script src="banner.js"></script>
 </body>
