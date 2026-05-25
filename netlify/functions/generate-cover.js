@@ -253,14 +253,36 @@ exports.handler = async (event) => {
         if (pollData.data.status === 'error') return err('Image extraction failed.');
       }
 
-      // Filter: >= 1000px wide OR unknown size, skip SVGs, deduplicate by URL
+      // Filter using extract.pics recommended logic + our size threshold
       const seen = new Set();
       const filtered = images
         .filter(img => {
           if (!img.url || seen.has(img.url)) return false;
-          if (img.url.toLowerCase().endsWith('.svg')) return false;
-          const w = img.width || 0;
-          if (w > 0 && w < 1000) return false;  // only reject if we KNOW it's small
+
+          const url = img.url.toLowerCase();
+          const alt = (img.alt || '').toLowerCase();
+          const w   = img.width  || 0;
+          const h   = img.height || 0;
+
+          // Skip SVGs
+          if (url.endsWith('.svg')) return false;
+
+          // 1. Keyword check — skip logos, icons, favicons
+          if (url.includes('logo') || url.includes('icon') || url.includes('favicon') ||
+              url.includes('brand') || alt.includes('logo') || alt.includes('icon') ||
+              alt.includes('favicon')) return false;
+
+          // 2. Size — skip if we know it's small (< 200px either dimension)
+          if (w > 0 && w < 200) return false;
+          if (h > 0 && h < 200) return false;
+
+          // 3. Aspect ratio — skip perfect squares (icons/badges) and extreme banners
+          if (w > 0 && h > 0) {
+            if (w === h) return false;                    // perfect square
+            const ratio = w / h;
+            if (ratio > 4 || ratio < 0.25) return false; // extreme banner or tall sliver
+          }
+
           seen.add(img.url);
           return true;
         })
