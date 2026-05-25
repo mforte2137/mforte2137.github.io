@@ -153,6 +153,8 @@ input[type="color"]::-webkit-color-swatch { border: none; border-radius: 3px; }
   border: 2px solid transparent; cursor: pointer;
   transition: transform .12s, border-color .12s; flex-shrink: 0;
 }
+/* white swatch needs a visible border so it shows on white background */
+.swatch[data-hex="#ffffff"] { border-color: var(--border) !important; }
 .swatch:hover { transform: scale(1.2); }
 .swatch.active { border-color: var(--accent); transform: scale(1.15); }
 
