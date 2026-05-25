@@ -52,6 +52,35 @@
       <!-- ══ CONTROLS PANEL ══════════════════════════════════ -->
       <section id="controls">
 
+        <!-- ── BRAND EXTRACT ─────────────────────────────── -->
+        <div class="brand-extract-panel" id="brand-extract-panel">
+          <div class="be-header">
+            <span class="be-icon">✦</span>
+            <span class="be-title">Brand Extractor</span>
+            <button class="be-toggle" id="be-toggle" title="Collapse">▲</button>
+          </div>
+          <div id="be-body">
+            <p class="be-hint">Paste the client's website URL to auto-extract their brand colors and logo.</p>
+            <div class="be-input-row">
+              <input type="text" id="be-url" placeholder="https://clientwebsite.com" class="be-url-inp" />
+              <button id="be-extract-btn" class="btn-extract">Extract</button>
+            </div>
+            <div id="be-status" style="display:none"></div>
+            <div id="be-results" style="display:none">
+              <div class="be-colors-row" id="be-colors-row"></div>
+              <div id="be-logo-preview-wrap" style="display:none">
+                <div class="be-section-label">Logo found</div>
+                <div class="be-logo-row">
+                  <img id="be-logo-preview" alt="Logo preview" class="be-logo-img" />
+                  <button id="be-use-logo" class="btn-be-action">Use Logo</button>
+                </div>
+              </div>
+              <div class="be-notes" id="be-notes"></div>
+              <button id="be-apply-all" class="btn-be-apply">✓ Apply Colors &amp; Logo</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Company name (both modes) -->
         <div class="ctrl-group">
           <label class="ctrl-label">MSP Company Name</label>
