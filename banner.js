@@ -261,6 +261,12 @@ function setMode(mode) {
   tabLogo.classList.toggle('active',   mode === 'logo');
   tabHeader.classList.toggle('active', mode === 'header');
 
+  // Clear the rendered background immediately so old mode's image doesn't persist
+  pvBanner.style.background     = '';
+  pvBanner.style.backgroundSize = '';
+  pvMain.style.background       = '';
+  state._cleared = true;
+
   // bg type selectors
   segBgTypeLogo.style.display   = mode === 'logo'   ? '' : 'none';
   segBgTypeHeader.style.display = mode === 'header' ? '' : 'none';
@@ -271,13 +277,7 @@ function setMode(mode) {
   // logo upload only for logo mode
   logoSection.style.display = mode === 'logo' ? '' : 'none';
 
-  // if switching to header, reset logo-only bgType
-  if (mode === 'header' && state.bgType === 'gradient') {
-    // keep as-is (linear is valid in header too)
-  }
-  if (mode === 'header' && state.bgType === 'solid') {
-    // fine
-  }
+  // reset unsupported bgType when switching to logo mode
   if (mode === 'logo' && (state.bgType === 'spotlight' || state.bgType === 'streaks')) {
     state.bgType = 'solid';
     setSegActive(segBgTypeLogo, 'solid');
