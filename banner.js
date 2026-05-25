@@ -1269,23 +1269,21 @@ function applyLogoDataUrl(dataUrl, nw, nh) {
 async function loadLogoViaProxy(url) {
   try {
     showBeStatus('Loading logo via proxy…');
-    const resp = await fetch('/.netlify/functions/fetch-image', {
+    const resp = await fetch('/.netlify/functions/extract-brand', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ proxyUrl: url }),
     });
     if (!resp.ok) throw new Error('Proxy fetch failed');
-    const blob = await resp.blob();
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const img2 = new Image();
-      img2.onload = () => {
-        applyLogoDataUrl(ev.target.result, img2.naturalWidth, img2.naturalHeight);
-        beStatus.style.display = 'none';
-      };
-      img2.src = ev.target.result;
+    const data = await resp.json();
+    if (!data.dataUrl) throw new Error('No image data returned');
+    const img2 = new Image();
+    img2.onload = () => {
+      applyLogoDataUrl(data.dataUrl, img2.naturalWidth, img2.naturalHeight);
+      beStatus.style.display = 'none';
     };
-    reader.readAsDataURL(blob);
+    img2.onerror = () => showBeStatus('Logo could not load — please upload manually', true);
+    img2.src = data.dataUrl;
   } catch (err) {
     showBeStatus('Logo could not load — please upload manually', true);
   }
