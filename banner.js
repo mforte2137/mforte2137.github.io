@@ -76,7 +76,7 @@ function defaultState() {
     logoX:        40,
     logoY:        40,
     logoSelected: false,
-    _cleared:     false,
+    _cleared:     true,
   };
 }
 
@@ -748,24 +748,24 @@ function render(force) {
   // textX = offset from the alignment anchor (left edge for left, center for center, right edge for right).
   // textY = vertical position. Both are freely draggable/nudgeable.
   if (state.textOn && state.textStr) {
+    // Add border inset so text never overlaps a thick border
+    const bInset = state.borderOn ? state.borderW : 0;
     pvText.style.display     = '';
     pvText.style.fontFamily  = state.textFont;
     pvText.style.fontWeight  = state.textWeight;
     pvText.style.fontSize    = state.textSize + 'px';
     pvText.style.color       = state.textColor;
     pvText.style.textAlign   = state.textAlign;
-    pvText.style.width       = A4_W + 'px';
+    pvText.style.width       = (A4_W - bInset * 2) + 'px';
     pvText.style.top         = state.textY + 'px';
     pvText.style.paddingLeft  = '0px';
     pvText.style.paddingRight = '0px';
-    // For left: left edge + offset. Center: offset from true center. Right: right edge - offset.
     if (state.textAlign === 'left') {
-      pvText.style.left = state.textX + 'px';
+      pvText.style.left = (bInset + state.textX) + 'px';
     } else if (state.textAlign === 'right') {
-      pvText.style.left = (-state.textX) + 'px';
+      pvText.style.left = (bInset - state.textX) + 'px';
     } else {
-      // center — textX nudges the whole block left/right from center
-      pvText.style.left = state.textX + 'px';
+      pvText.style.left = (bInset + state.textX) + 'px';
     }
     pvText.textContent = state.textStr;
   } else {
@@ -863,14 +863,16 @@ async function exportToPNG(overrideMode) {
 
   // Text overlay
   if (state.textOn && state.textStr) {
+    const bInset = state.borderOn ? Math.round(state.borderW * sc) : 0;
     cc.font          = `${state.textWeight} ${Math.round(state.textSize * sc)}px ${state.textFont}`;
     cc.fillStyle     = state.textColor;
     cc.textAlign     = state.textAlign;
     cc.textBaseline  = 'top';
-    // Match preview: left = textX from left, center = textX offset from center, right = textX from right edge
-    const tx = state.textAlign === 'center' ? (outW / 2) + Math.round(state.textX * sc)
-             : state.textAlign === 'right'  ? outW - Math.round(state.textX * sc)
-             : Math.round(state.textX * sc);
+    const tx = state.textAlign === 'center'
+             ? (outW / 2) + Math.round(state.textX * sc)
+             : state.textAlign === 'right'
+             ? (outW - bInset) - Math.round(state.textX * sc)
+             : bInset + Math.round(state.textX * sc);
     cc.fillText(state.textStr, tx, Math.round(state.textY * sc));
   }
 
