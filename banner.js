@@ -1087,7 +1087,6 @@ const beResults    = $('be-results');
 const beColorsRow  = $('be-colors-row');
 const beLogoWrap   = $('be-logo-preview-wrap');
 const beLogoImg    = $('be-logo-preview');
-const beUseLogoBtn = $('be-use-logo');
 const beNotes      = $('be-notes');
 const beApplyAll   = $('be-apply-all');
 const beReset      = $('be-reset');
@@ -1186,14 +1185,16 @@ function showBeResults(data) {
     beColorsRow.appendChild(card);
   });
 
-  // Logo preview
+  // Logo preview — show button only when logo exists
   if (data.logoUrl) {
-    beLogoImg.src    = data.logoUrl;
+    beLogoImg.src     = data.logoUrl;
     beLogoImg.onerror = () => { beLogoWrap.style.display = 'none'; };
     beLogoImg.onload  = () => { beLogoWrap.style.display = ''; };
     beLogoWrap.style.display = '';
+    beApplyAll.style.display = '';   // show Load Logo button
   } else {
     beLogoWrap.style.display = 'none';
+    beApplyAll.style.display = 'none';  // no logo found, hide button
   }
 
   // Notes + confidence badge
@@ -1203,31 +1204,14 @@ function showBeResults(data) {
   beResults.style.display = '';
 }
 
-// Use logo button
-beUseLogoBtn.addEventListener('click', () => {
-  if (beExtracted.logoUrl) {
-    state._cleared = false;
-    loadLogoFromUrl(beExtracted.logoUrl);
-  }
-});
-
-// Apply secondary color + logo together
+// Load Logo onto Banner — the one button for logo
 beApplyAll.addEventListener('click', () => {
-  let applied = [];
-  if (beExtracted.secondaryColor) {
-    state.color2 = beExtracted.secondaryColor;
-    inpColor2.value = state.color2;
-    inpHex2.value   = state.color2;
-    highlightSwatch('swatches-color2', state.color2);
-    applied.push('secondary color');
-  }
   if (beExtracted.logoUrl && currentMode === 'logo') {
     state._cleared = false;
     loadLogoFromUrl(beExtracted.logoUrl);
-    applied.push('logo');
+  } else if (currentMode !== 'logo') {
+    toast('Switch to Logo Banner mode to load a logo');
   }
-  render();
-  toast(applied.length ? `Applied: ${applied.join(' + ')}` : 'Click a color chip first');
 });
 
 /* Load logo from URL directly — CORS-safe with canvas proxy */
