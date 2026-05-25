@@ -348,6 +348,11 @@ kbd {
 .be-color-hex { font-family: 'Courier New', monospace; font-size: 10px; color: var(--text-dim); margin-top: 2px; }
 .be-color-label { font-size: 10px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; }
 
+#be-results {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 .be-section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-dim); margin-bottom: 6px; }
 .be-logo-row { display: flex; align-items: center; gap: 10px; }
 .be-logo-img {
@@ -364,7 +369,14 @@ kbd {
 }
 .btn-be-action:hover { border-color: var(--accent); background: #e8f0fe; }
 
-.be-notes { font-size: 11px; color: var(--text-dim); font-style: italic; line-height: 1.5; padding: 6px 0; }
+.be-notes {
+  font-size: 11px; color: var(--text-dim); font-style: italic; line-height: 1.5;
+  padding: 4px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .be-confidence { display: inline-block; font-size: 9px; font-weight: 700; text-transform: uppercase;
   letter-spacing: .06em; padding: 2px 7px; border-radius: 10px; margin-right: 6px; }
 .be-confidence.high   { background: #d4edda; color: #155724; }
