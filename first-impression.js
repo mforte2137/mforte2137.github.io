@@ -186,7 +186,7 @@ autoBtn.addEventListener('click', async () => {
     const analyseData = await analyseRes.json();
     if (!analyseRes.ok || !analyseData.ok) throw new Error(analyseData.error || 'Could not scan website.');
 
-    const { brandColor, logoUrl, photoUrl } = analyseData;
+    const { brandColor, logoUrl, photoUrl, photo2Url } = analyseData;
     autoBrandColor  = brandColor;
 
     // Extract company name from URL for display
@@ -205,7 +205,7 @@ autoBtn.addEventListener('click', async () => {
     const startRes  = await fetch('/api/generate-cover', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action: 'start-all', brandColor, logoUrl, photoUrl })
+      body:    JSON.stringify({ action: 'start-all', brandColor, logoUrl, photoUrl, photo2Url })
     });
     const startData = await startRes.json();
     if (!startRes.ok || !startData.ok) throw new Error(startData.error || 'Could not start rendering.');
