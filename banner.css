@@ -284,6 +284,101 @@ kbd {
 }
 .btn-ghost-top:hover { color: var(--text); border-color: var(--text-dim); background: var(--surface2); }
 
+/* ── BRAND EXTRACTOR ─────────────────────────────── */
+.brand-extract-panel {
+  background: linear-gradient(135deg, #f0f7ff, #e8f0fe);
+  border: 1px solid #b8d0f0;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.be-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #2275e0, #1a5bbf);
+  color: #fff;
+}
+.be-icon { font-size: 14px; }
+.be-title { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; flex: 1; }
+.be-toggle {
+  background: none; border: none; color: rgba(255,255,255,.7);
+  cursor: pointer; font-size: 11px; padding: 2px 4px;
+  transition: color .15s;
+}
+.be-toggle:hover { color: #fff; }
+#be-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.be-hint { font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+.be-input-row { display: flex; gap: 8px; }
+.be-url-inp {
+  flex: 1; background: #fff; border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text);
+  padding: 8px 10px; font-size: 12px; outline: none;
+  transition: border-color .15s;
+}
+.be-url-inp:focus { border-color: var(--accent); }
+.btn-extract {
+  background: var(--accent); color: #fff; border: none;
+  border-radius: var(--radius); padding: 8px 14px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  white-space: nowrap; transition: opacity .15s;
+  flex-shrink: 0;
+}
+.btn-extract:hover { opacity: .88; }
+.btn-extract:disabled { opacity: .5; cursor: not-allowed; }
+
+#be-status {
+  font-size: 11px; color: var(--text-dim);
+  padding: 6px 10px; background: rgba(34,117,224,.07);
+  border-radius: 6px; text-align: center;
+}
+#be-status.error { color: #c0392b; background: rgba(192,57,43,.07); }
+
+.be-colors-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-start; margin-bottom: 4px; }
+.be-color-card {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  cursor: pointer; padding: 6px 8px;
+  border: 2px solid transparent; border-radius: 8px;
+  transition: border-color .15s, background .15s;
+}
+.be-color-card:hover { background: rgba(34,117,224,.06); border-color: var(--accent); }
+.be-color-card.selected { border-color: var(--accent); background: rgba(34,117,224,.08); }
+.be-color-swatch {
+  width: 40px; height: 40px; border-radius: 8px;
+  border: 1px solid rgba(0,0,0,.1); flex-shrink: 0;
+}
+.be-color-hex { font-family: 'Courier New', monospace; font-size: 10px; color: var(--text-dim); }
+.be-color-label { font-size: 10px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; }
+
+.be-section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-dim); margin-bottom: 6px; }
+.be-logo-row { display: flex; align-items: center; gap: 10px; }
+.be-logo-img {
+  height: 40px; max-width: 120px; object-fit: contain;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: repeating-conic-gradient(#e0e0e0 0% 25%, #fff 0% 50%) 0 0 / 10px 10px;
+  padding: 4px;
+}
+.btn-be-action {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 6px 12px;
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  transition: background .15s, border-color .15s; color: var(--text);
+}
+.btn-be-action:hover { border-color: var(--accent); background: #e8f0fe; }
+
+.be-notes { font-size: 10px; color: var(--text-dim); font-style: italic; line-height: 1.4; }
+.be-confidence { display: inline-block; font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; padding: 2px 6px; border-radius: 10px; margin-right: 4px; }
+.be-confidence.high   { background: #d4edda; color: #155724; }
+.be-confidence.medium { background: #fff3cd; color: #856404; }
+.be-confidence.low    { background: #f8d7da; color: #721c24; }
+
+.btn-be-apply {
+  background: var(--accent); color: #fff; border: none;
+  border-radius: var(--radius); padding: 9px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: opacity .15s; width: 100%; text-align: center;
+}
+.btn-be-apply:hover { opacity: .88; }
+
 /* ── TOAST ───────────────────────────────────────── */
 #toast {
   position: fixed; bottom: 28px; left: 50%;
