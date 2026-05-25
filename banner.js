@@ -1169,12 +1169,19 @@ function showBeResults(data) {
 
     card.append(swatch, hex, lbl);
     card.addEventListener('click', () => {
-      card.classList.toggle('selected');
-      if (card.classList.contains('selected')) {
-        if (!beSelectedColors.includes(c.hex)) beSelectedColors.push(c.hex);
-      } else {
-        beSelectedColors = beSelectedColors.filter(h => h !== c.hex);
-      }
+      // Mark all cards unselected first, then select this one
+      beColorsRow.querySelectorAll('.be-color-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      beSelectedColors = [c.hex];
+
+      // Apply immediately to main color
+      state.color1   = c.hex;
+      state._cleared = false;
+      inpColor1.value = c.hex;
+      inpHex1.value   = c.hex;
+      highlightSwatch('swatches-color1', c.hex);
+      render();
+      toast(`Applied ${c.label}: ${c.hex}`);
     });
     beColorsRow.appendChild(card);
   });
@@ -1194,6 +1201,13 @@ function showBeResults(data) {
   beNotes.innerHTML = `<span class="be-confidence ${confClass}">${confClass}</span>${data.notes || ''}`;
 
   beResults.style.display = '';
+
+  // Scroll the controls panel to show results
+  setTimeout(() => {
+    const ctrl = document.getElementById('controls');
+    if (ctrl) ctrl.scrollTop = 0; // scroll to top so brand panel is fully visible
+    beResults.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 100);
 }
 
 // Use logo only
@@ -1201,24 +1215,16 @@ beUseLogoBtn.addEventListener('click', () => {
   if (beExtracted.logoUrl) loadLogoFromUrl(beExtracted.logoUrl);
 });
 
-// Apply all — colors + logo
+// Apply all — secondary color as gradient end + logo
 beApplyAll.addEventListener('click', () => {
   let applied = [];
 
-  if (beSelectedColors.length >= 1) {
-    state.color1 = beSelectedColors[0];
-    state._cleared = false;
-    inpColor1.value = state.color1;
-    inpHex1.value   = state.color1;
-    highlightSwatch('swatches-color1', state.color1);
-    applied.push('primary color');
-  }
-  if (beSelectedColors.length >= 2) {
-    state.color2 = beSelectedColors[1];
+  if (beSelectedColors.length >= 1 && beExtracted.secondaryColor) {
+    state.color2 = beExtracted.secondaryColor;
     inpColor2.value = state.color2;
     inpHex2.value   = state.color2;
     highlightSwatch('swatches-color2', state.color2);
-    applied.push('secondary color');
+    applied.push('gradient end color');
   }
   if (beExtracted.logoUrl && currentMode === 'logo') {
     loadLogoFromUrl(beExtracted.logoUrl);
@@ -1226,7 +1232,8 @@ beApplyAll.addEventListener('click', () => {
   }
 
   render();
-  toast(`Applied: ${applied.join(', ') || 'nothing selected'}`);
+  if (applied.length) toast(`Applied: ${applied.join(' + ')}`);
+  else toast('Click a color chip to apply it, or use logo button');
 });
 
 /* Load a logo from a URL into the banner (no file upload needed) */
