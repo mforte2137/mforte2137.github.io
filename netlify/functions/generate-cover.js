@@ -299,6 +299,9 @@ Respond ONLY with valid JSON, no markdown:
       // Fallback: if AI found no photo, pick first photo candidate
       if (!photoUrl && photoImages.length > 0) photoUrl = photoImages[0].url;
 
+      // Second photo — different image for variety across templates
+      const photo2Url = photoImages.find(p => p.url !== photoUrl)?.url || photoUrl;
+
       // Fallback: if AI found no logo, pick first logo candidate
       if (!logoUrl && logoImages.length > 0) logoUrl = logoImages[0].url;
 
@@ -306,6 +309,7 @@ Respond ONLY with valid JSON, no markdown:
         brandColor: color || '#1a4da0',
         logoUrl,
         photoUrl,
+        photo2Url,
         hasWebsitePhoto: !!photoUrl
       });
 
@@ -317,17 +321,26 @@ Respond ONLY with valid JSON, no markdown:
   // ── ACTION: start-all ──────────────────────────────────
   // Fire all 4 Placid renders in parallel, return all 4 imageIds
   if (action === 'start-all') {
-    const { brandColor, logoUrl, photoUrl } = body;
+    const { brandColor, logoUrl, photoUrl, photo2Url } = body;
     if (!brandColor || !logoUrl || !photoUrl) return err('brandColor, logoUrl, photoUrl required.', 400);
 
     const hex8 = brandColor.replace('#', '').padEnd(6,'0').slice(0,6).toUpperCase() + 'FF';
     const color = '#' + hex8;
 
+    // Photo assignment: photo1 → chevron + corporate, photo2 → half_circle + modern
+    const photo2 = photo2Url || photoUrl;
+    const photoForTemplate = {
+      chevron:     photoUrl,
+      corporate:   photoUrl,
+      half_circle: photo2,
+      modern:      photo2
+    };
+
     try {
-      // Fire all 4 in parallel
       const results = await Promise.all(
         Object.entries(TEMPLATES).map(async ([templateId, template]) => {
-          const layers = { photo: { image: photoUrl }, logo: { image: logoUrl } };
+          const photo  = photoForTemplate[templateId] || photoUrl;
+          const layers = { photo: { image: photo }, logo: { image: logoUrl } };
           for (const layer of template.colorLayers) layers[layer] = { background_color: color };
 
           const res  = await fetch(PLACID_API, {
