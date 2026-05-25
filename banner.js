@@ -26,6 +26,12 @@ const SWATCHES = [
   { hex: '#be5103', label: 'Corporate Orange' },
 ];
 
+/* Text color swatches — same set plus white at the front */
+const SWATCHES_TEXT = [
+  { hex: '#ffffff', label: 'White'            },
+  ...SWATCHES,
+];
+
 /* ─────────────────────────────────────────────────
    DEFAULT STATE
 ───────────────────────────────────────────────── */
@@ -217,10 +223,11 @@ function syncColor(picker, hexInput, key, swatchRowId) {
 /* ─────────────────────────────────────────────────
    SWATCHES
 ───────────────────────────────────────────────── */
-function buildSwatches(containerId, pickerEl, hexEl, stateKey) {
+function buildSwatches(containerId, pickerEl, hexEl, stateKey, swatchList) {
   const row = $(containerId);
   if (!row) return;
-  SWATCHES.forEach(sw => {
+  const list = swatchList || SWATCHES;
+  list.forEach(sw => {
     const btn = document.createElement('button');
     btn.className = 'swatch';
     btn.title = sw.label;
@@ -410,7 +417,7 @@ inpText.addEventListener('input', () => { state.textStr = inpText.value; render(
 inpFont.addEventListener('change', () => { state.textFont = inpFont.value; render(); });
 initSeg(segFontWeight, val => { state.textWeight = val; render(); });
 inpFontSize.addEventListener('input', () => { state.textSize = +inpFontSize.value; fontSizeVal.textContent = state.textSize + 'px'; render(); });
-initSeg(segTextAlign, val => { state.textAlign = val; render(); });
+initSeg(segTextAlign, val => { state.textAlign = val; state.textX = 0; render(); });
 syncColor(inpTextColor, inpHexText, 'textColor', 'swatches-text');
 
 /* ─────────────────────────────────────────────────
@@ -737,7 +744,9 @@ function render(force) {
     pvLogo.style.display = 'none';
   }
 
-  // Text overlay
+  // Text overlay — full banner width so alignment is meaningful.
+  // textX = offset from the alignment anchor (left edge for left, center for center, right edge for right).
+  // textY = vertical position. Both are freely draggable/nudgeable.
   if (state.textOn && state.textStr) {
     pvText.style.display     = '';
     pvText.style.fontFamily  = state.textFont;
@@ -745,8 +754,19 @@ function render(force) {
     pvText.style.fontSize    = state.textSize + 'px';
     pvText.style.color       = state.textColor;
     pvText.style.textAlign   = state.textAlign;
-    pvText.style.left = state.textX + 'px';
-    pvText.style.top  = state.textY + 'px';
+    pvText.style.width       = A4_W + 'px';
+    pvText.style.top         = state.textY + 'px';
+    pvText.style.paddingLeft  = '0px';
+    pvText.style.paddingRight = '0px';
+    // For left: left edge + offset. Center: offset from true center. Right: right edge - offset.
+    if (state.textAlign === 'left') {
+      pvText.style.left = state.textX + 'px';
+    } else if (state.textAlign === 'right') {
+      pvText.style.left = (-state.textX) + 'px';
+    } else {
+      // center — textX nudges the whole block left/right from center
+      pvText.style.left = state.textX + 'px';
+    }
     pvText.textContent = state.textStr;
   } else {
     pvText.style.display = 'none';
@@ -847,7 +867,8 @@ async function exportToPNG(overrideMode) {
     cc.fillStyle     = state.textColor;
     cc.textAlign     = state.textAlign;
     cc.textBaseline  = 'top';
-    const tx = state.textAlign === 'center' ? outW / 2
+    // Match preview: left = textX from left, center = textX offset from center, right = textX from right edge
+    const tx = state.textAlign === 'center' ? (outW / 2) + Math.round(state.textX * sc)
              : state.textAlign === 'right'  ? outW - Math.round(state.textX * sc)
              : Math.round(state.textX * sc);
     cc.fillText(state.textStr, tx, Math.round(state.textY * sc));
@@ -1062,7 +1083,7 @@ buildSwatches('swatches-color2',  inpColor2,      inpHex2,       'color2');
 buildSwatches('swatches-accent1', inpAccent1,     inpHexA1,      'accent1');
 buildSwatches('swatches-accent2', inpAccent2,     inpHexA2,      'accent2');
 buildSwatches('swatches-border',  inpBorderColor, inpHexBorder,  'borderColor');
-buildSwatches('swatches-text',    inpTextColor,   inpHexText,    'textColor');
+buildSwatches('swatches-text',    inpTextColor,   inpHexText,    'textColor', SWATCHES_TEXT);
 
 highlightSwatch('swatches-color1',  state.color1);
 highlightSwatch('swatches-color2',  state.color2);
