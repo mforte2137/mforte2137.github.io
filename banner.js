@@ -1168,20 +1168,21 @@ function showBeResults(data) {
     lbl.textContent = c.label;
 
     card.append(swatch, hex, lbl);
+    const colorObj = c; // capture explicitly to avoid closure shadowing
     card.addEventListener('click', () => {
       // Mark all cards unselected first, then select this one
-      beColorsRow.querySelectorAll('.be-color-card').forEach(c => c.classList.remove('selected'));
+      beColorsRow.querySelectorAll('.be-color-card').forEach(el => el.classList.remove('selected'));
       card.classList.add('selected');
-      beSelectedColors = [c.hex];
+      beSelectedColors = [colorObj.hex];
 
       // Apply immediately to main color
-      state.color1   = c.hex;
+      state.color1   = colorObj.hex;
       state._cleared = false;
-      inpColor1.value = c.hex;
-      inpHex1.value   = c.hex;
-      highlightSwatch('swatches-color1', c.hex);
+      inpColor1.value = colorObj.hex;
+      inpHex1.value   = colorObj.hex;
+      highlightSwatch('swatches-color1', colorObj.hex);
       render();
-      toast(`Applied ${c.label}: ${c.hex}`);
+      toast(`Applied ${colorObj.label}: ${colorObj.hex}`);
     });
     beColorsRow.appendChild(card);
   });
