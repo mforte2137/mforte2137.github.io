@@ -3,8 +3,14 @@
 // Path: /api/generate-cover
 //
 // Actions:
+//   analyse       — AI-powered: extract colour, logo, photo in one pass
+//   start-all     — fire all 4 Placid renders in parallel
 //   extract-color — fetches prospect website, extracts brand colour
-//   generate      — Unsplash photo + Placid image generation
+//   photos        — Unsplash photo search
+//   website-photos— extract.pics photo extraction
+//   proxy-logo    — server-side logo fetch to bypass CORS
+//   start         — single Placid render (manual mode)
+//   poll          — check Placid render status
 //   push          — creates Salesbuildr image widget template
 // =========================================================
 
@@ -177,6 +183,194 @@ exports.handler = async (event) => {
   const { action } = body;
   const ok200 = (data) => ({ statusCode: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: true, ...data }) });
   const err   = (msg, code = 500) => ({ statusCode: code, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: msg }) });
+
+  // ── ACTION: analyse ────────────────────────────────────
+  // AI-powered single-pass: colour + logo + photo selection
+  if (action === 'analyse') {
+    const { websiteUrl } = body;
+    if (!websiteUrl) return err('websiteUrl required.', 400);
+
+    try {
+      // Run colour extraction and extract.pics in parallel
+      const [color, extractRes] = await Promise.all([
+        extractBrandColor(websiteUrl),
+        fetch('https://api.extract.pics/v0/extractions', {
+          method:  'POST',
+          headers: { 'Authorization': `Bearer ${process.env.EXTRACT_API}`, 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ url: websiteUrl })
+        }).then(r => r.json())
+      ]);
+
+      if (!extractRes.data || !extractRes.data.id) return err('Could not scan website.');
+      const extractId = extractRes.data.id;
+
+      // Poll extract.pics until done (max 20s)
+      let allImages = [];
+      for (let i = 0; i < 20; i++) {
+        await new Promise(r => setTimeout(r, 1000));
+        const poll = await fetch(`https://api.extract.pics/v0/extractions/${extractId}`, {
+          headers: { 'Authorization': `Bearer ${process.env.EXTRACT_API}` }
+        }).then(r => r.json());
+        if (poll.data.status === 'done') { allImages = poll.data.images || []; break; }
+        if (poll.data.status === 'error') return err('Website scan failed.');
+      }
+
+      // Separate logos from photos using keyword filter
+      const seen = new Set();
+      const logoKeywords = ['logo', 'icon', 'favicon', 'brand', 'symbol', 'mark'];
+
+      const logoImages = allImages.filter(img => {
+        if (!img.url || seen.has(img.url)) return false;
+        const url = img.url.toLowerCase();
+        const alt = (img.alt || '').toLowerCase();
+        const isLogo = logoKeywords.some(k => url.includes(k) || alt.includes(k));
+        const w = img.width || 0;
+        const h = img.height || 0;
+        // Logo candidates: keyword match OR small square image
+        if (isLogo || (w > 0 && h > 0 && w === h && w < 500)) {
+          seen.add(img.url);
+          return true;
+        }
+        return false;
+      });
+
+      // Photo candidates (reset seen for separate pass)
+      const seenPhotos = new Set();
+      const photoImages = allImages.filter(img => {
+        if (!img.url || seenPhotos.has(img.url)) return false;
+        const url = img.url.toLowerCase();
+        const alt = (img.alt || '').toLowerCase();
+        if (url.endsWith('.svg')) return false;
+        if (logoKeywords.some(k => url.includes(k) || alt.includes(k))) return false;
+        const w = img.width || 0;
+        const h = img.height || 0;
+        if (w > 0 && w < 200) return false;
+        if (h > 0 && h < 200) return false;
+        if (w > 0 && h > 0) {
+          if (w === h) return false;
+          const ratio = w / h;
+          if (ratio > 4 || ratio < 0.25) return false;
+        }
+        seenPhotos.add(img.url);
+        return true;
+      }).slice(0, 8);
+
+      // Use Haiku to pick the best photo and best logo
+      const haikusPrompt = `You are helping select images for a professional MSP proposal cover page.
+
+Website: ${websiteUrl}
+Brand colour: ${color || 'unknown'}
+
+LOGO CANDIDATES (${logoImages.length} found):
+${logoImages.slice(0, 10).map((img, i) => `${i+1}. URL: ${img.url} | alt: "${img.alt || ''}" | size: ${img.width||'?'}x${img.height||'?'}`).join('\n') || 'None found'}
+
+PHOTO CANDIDATES (${photoImages.length} found):
+${photoImages.map((img, i) => `${i+1}. URL: ${img.url} | alt: "${img.alt || ''}" | size: ${img.width||'?'}x${img.height||'?'}`).join('\n') || 'None found'}
+
+Tasks:
+1. Pick the single best LOGO (prefer transparent PNG, avoid certificates/badges, prefer the main company logo). If none suitable, return null.
+2. Pick the single best PHOTO for a cover page background (prefer professional people/office/tech photos, avoid graphics/slides/logos). If none suitable, return null.
+
+Respond ONLY with valid JSON, no markdown:
+{"logoUrl": "url or null", "photoUrl": "url or null", "photoReason": "one sentence why"}`;
+
+      const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method:  'POST',
+        headers: {
+          'Content-Type':      'application/json',
+          'x-api-key':         process.env.CLAUDE_API_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model:      'claude-haiku-4-5-20251001',
+          max_tokens: 300,
+          messages:   [{ role: 'user', content: haikusPrompt }]
+        })
+      });
+      const aiData = await aiRes.json();
+      let logoUrl = null, photoUrl = null;
+
+      try {
+        const parsed = JSON.parse(aiData.content[0].text);
+        logoUrl  = parsed.logoUrl  || null;
+        photoUrl = parsed.photoUrl || null;
+      } catch (e) { /* AI parse failed — will use fallbacks */ }
+
+      // Fallback: if AI found no photo, pick first photo candidate
+      if (!photoUrl && photoImages.length > 0) photoUrl = photoImages[0].url;
+
+      // Fallback: if AI found no logo, pick first logo candidate
+      if (!logoUrl && logoImages.length > 0) logoUrl = logoImages[0].url;
+
+      return ok200({
+        brandColor: color || '#1a4da0',
+        logoUrl,
+        photoUrl,
+        hasWebsitePhoto: !!photoUrl
+      });
+
+    } catch (e) {
+      return err(e.message);
+    }
+  }
+
+  // ── ACTION: start-all ──────────────────────────────────
+  // Fire all 4 Placid renders in parallel, return all 4 imageIds
+  if (action === 'start-all') {
+    const { brandColor, logoUrl, photoUrl } = body;
+    if (!brandColor || !logoUrl || !photoUrl) return err('brandColor, logoUrl, photoUrl required.', 400);
+
+    const hex8 = brandColor.replace('#', '').padEnd(6,'0').slice(0,6).toUpperCase() + 'FF';
+    const color = '#' + hex8;
+
+    try {
+      // Fire all 4 in parallel
+      const results = await Promise.all(
+        Object.entries(TEMPLATES).map(async ([templateId, template]) => {
+          const layers = { photo: { image: photoUrl }, logo: { image: logoUrl } };
+          for (const layer of template.colorLayers) layers[layer] = { background_color: color };
+
+          const res  = await fetch(PLACID_API, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.PLACID_API_TOKEN}` },
+            body:    JSON.stringify({ template_uuid: template.uuid, layers })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(`Placid error for ${templateId}: ${data.message}`);
+          return { templateId, name: template.name, imageId: data.id, imageUrl: data.image_url || null };
+        })
+      );
+      return ok200({ renders: results });
+    } catch (e) {
+      return err(e.message);
+    }
+  }
+
+  // ── ACTION: poll-all ───────────────────────────────────
+  // Poll multiple imageIds at once, return status of each
+  if (action === 'poll-all') {
+    const { imageIds } = body; // array of {templateId, imageId}
+    if (!imageIds || !imageIds.length) return err('imageIds required.', 400);
+    try {
+      const results = await Promise.all(
+        imageIds.map(async ({ templateId, imageId }) => {
+          const res  = await fetch(`https://api.placid.app/api/rest/images/${imageId}`, {
+            headers: { 'Authorization': `Bearer ${process.env.PLACID_API_TOKEN}` }
+          });
+          const data = await res.json();
+          return {
+            templateId,
+            ready:    data.status === 'finished' && !!data.image_url,
+            imageUrl: data.image_url || null,
+            status:   data.status
+          };
+        })
+      );
+      return ok200({ renders: results });
+    } catch (e) {
+      return err(e.message);
+    }
+  }
 
   // ── ACTION: extract-color ──────────────────────────────
   if (action === 'extract-color') {
