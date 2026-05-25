@@ -1078,10 +1078,8 @@ function syncUIFromState() {
 }
 
 /* ─────────────────────────────────────────────────
-   BRAND EXTRACTOR
+   BRAND EXTRACTOR — right sidebar
 ───────────────────────────────────────────────── */
-const beToggle     = $('be-toggle');
-const beBody       = $('be-body');
 const beUrlInp     = $('be-url');
 const beExtractBtn = $('be-extract-btn');
 const beStatus     = $('be-status');
@@ -1092,16 +1090,10 @@ const beLogoImg    = $('be-logo-preview');
 const beUseLogoBtn = $('be-use-logo');
 const beNotes      = $('be-notes');
 const beApplyAll   = $('be-apply-all');
+const beReset      = $('be-reset');
 
-let beExtracted = { primaryColor: null, secondaryColor: null, logoUrl: null };
-let beSelectedColors = [];  // which color cards user has selected
-
-// Collapse/expand toggle
-beToggle.addEventListener('click', () => {
-  const collapsed = beBody.style.display === 'none';
-  beBody.style.display = collapsed ? '' : 'none';
-  beToggle.textContent = collapsed ? '▲' : '▼';
-});
+let beExtracted    = { primaryColor: null, secondaryColor: null, logoUrl: null };
+let beSelectedColors = [];
 
 // Extract button
 beExtractBtn.addEventListener('click', async () => {
@@ -1109,7 +1101,7 @@ beExtractBtn.addEventListener('click', async () => {
   if (!url) { showBeStatus('Please enter a website URL', true); return; }
 
   beExtractBtn.disabled = true;
-  beExtractBtn.textContent = '⏳';
+  beExtractBtn.textContent = '⏳ Extracting…';
   beResults.style.display = 'none';
   showBeStatus('Fetching website and analysing brand colors…');
 
@@ -1119,25 +1111,32 @@ beExtractBtn.addEventListener('click', async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),
     });
-
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error || 'Extraction failed');
-
     beExtracted = data;
     showBeResults(data);
     beStatus.style.display = 'none';
-
   } catch (err) {
     showBeStatus('Could not extract brand data: ' + err.message, true);
   } finally {
     beExtractBtn.disabled = false;
-    beExtractBtn.textContent = 'Extract';
+    beExtractBtn.textContent = '✦ Extract Brand';
   }
+});
+
+// Reset / new search
+beReset.addEventListener('click', () => {
+  beResults.style.display = 'none';
+  beStatus.style.display  = 'none';
+  beUrlInp.value = '';
+  beExtracted = { primaryColor: null, secondaryColor: null, logoUrl: null };
+  beSelectedColors = [];
+  beUrlInp.focus();
 });
 
 function showBeStatus(msg, isError) {
   beStatus.textContent = msg;
-  beStatus.className = isError ? 'error' : '';
+  beStatus.className   = isError ? 'error' : '';
   beStatus.style.display = '';
 }
 
@@ -1151,7 +1150,7 @@ function showBeResults(data) {
   ].filter(Boolean);
 
   colors.forEach((c, i) => {
-    const card = document.createElement('div');
+    const card   = document.createElement('div');
     card.className = 'be-color-card' + (i === 0 ? ' selected' : '');
     if (i === 0) beSelectedColors.push(c.hex);
 
@@ -1159,18 +1158,18 @@ function showBeResults(data) {
     swatch.className = 'be-color-swatch';
     swatch.style.background = c.hex;
 
-    const hex = document.createElement('div');
-    hex.className = 'be-color-hex';
-    hex.textContent = c.hex;
+    const hexEl = document.createElement('div');
+    hexEl.className = 'be-color-hex';
+    hexEl.textContent = c.hex;
 
     const lbl = document.createElement('div');
     lbl.className = 'be-color-label';
     lbl.textContent = c.label;
 
-    card.append(swatch, hex, lbl);
-    const colorObj = c; // capture explicitly to avoid closure shadowing
+    card.append(swatch, hexEl, lbl);
+
+    const colorObj = c; // explicit capture — prevents closure shadowing bug
     card.addEventListener('click', () => {
-      // Mark all cards unselected first, then select this one
       beColorsRow.querySelectorAll('.be-color-card').forEach(el => el.classList.remove('selected'));
       card.classList.add('selected');
       beSelectedColors = [colorObj.hex];
@@ -1189,7 +1188,7 @@ function showBeResults(data) {
 
   // Logo preview
   if (data.logoUrl) {
-    beLogoImg.src = data.logoUrl;
+    beLogoImg.src    = data.logoUrl;
     beLogoImg.onerror = () => { beLogoWrap.style.display = 'none'; };
     beLogoImg.onload  = () => { beLogoWrap.style.display = ''; };
     beLogoWrap.style.display = '';
@@ -1197,21 +1196,14 @@ function showBeResults(data) {
     beLogoWrap.style.display = 'none';
   }
 
-  // Notes + confidence
+  // Notes + confidence badge
   const confClass = data.confidence || 'medium';
   beNotes.innerHTML = `<span class="be-confidence ${confClass}">${confClass}</span>${data.notes || ''}`;
 
   beResults.style.display = '';
-  beApplyAll.style.display = '';
-
-  // Scroll controls to top so full panel is visible
-  setTimeout(() => {
-    const ctrl = document.getElementById('controls');
-    if (ctrl) ctrl.scrollTop = 0;
-  }, 100);
 }
 
-// Use logo only
+// Use logo button
 beUseLogoBtn.addEventListener('click', () => {
   if (beExtracted.logoUrl) {
     state._cleared = false;
@@ -1219,64 +1211,61 @@ beUseLogoBtn.addEventListener('click', () => {
   }
 });
 
-// Apply all — secondary color as gradient end + logo
+// Apply secondary color + logo together
 beApplyAll.addEventListener('click', () => {
   let applied = [];
-
-  if (beSelectedColors.length >= 1 && beExtracted.secondaryColor) {
+  if (beExtracted.secondaryColor) {
     state.color2 = beExtracted.secondaryColor;
     inpColor2.value = state.color2;
     inpHex2.value   = state.color2;
     highlightSwatch('swatches-color2', state.color2);
-    applied.push('gradient end color');
+    applied.push('secondary color');
   }
   if (beExtracted.logoUrl && currentMode === 'logo') {
+    state._cleared = false;
     loadLogoFromUrl(beExtracted.logoUrl);
     applied.push('logo');
   }
-
   render();
-  if (applied.length) toast(`Applied: ${applied.join(' + ')}`);
-  else toast('Click a color chip to apply it, or use logo button');
+  toast(applied.length ? `Applied: ${applied.join(' + ')}` : 'Click a color chip first');
 });
 
-/* Load a logo from a URL into the banner (no file upload needed) */
+/* Load logo from URL directly — CORS-safe with canvas proxy */
 function loadLogoFromUrl(url) {
-  // Proxy through our own function to avoid CORS if needed
   const img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = () => {
-    // Draw to canvas to get a data URL (handles CORS images)
     const c = document.createElement('canvas');
     c.width = img.naturalWidth; c.height = img.naturalHeight;
-    const ctx = c.getContext('2d');
-    ctx.drawImage(img, 0, 0);
+    c.getContext('2d').drawImage(img, 0, 0);
     try {
       const dataUrl = c.toDataURL('image/png');
-      state.logoSrc  = dataUrl;
-      state._cleared = false;
-      state.logoW   = Math.min(200, img.naturalWidth);
-      state.logoH   = null;
-      state.logoX   = 40;
-      state.logoY   = Math.round((state.height - state.logoW / (img.naturalWidth / img.naturalHeight)) / 2);
-      inpLogoW.value = state.logoW;
-      logoWVal.textContent = state.logoW + 'px';
-      logoHVal.textContent = 'auto';
-      logoCtrls.style.display = '';
-      nudgeHint.style.display = '';
-      logoDropText.textContent = 'Logo loaded from URL';
-      render();
-      toast('Logo loaded from website');
+      applyLogoDataUrl(dataUrl, img.naturalWidth, img.naturalHeight);
     } catch (e) {
-      // CORS tainted — fall back to proxy
-      loadLogoViaProxy(url);
+      loadLogoViaProxy(url); // CORS tainted — use Netlify proxy
     }
   };
   img.onerror = () => loadLogoViaProxy(url);
   img.src = url;
 }
 
-/* Proxy fallback — uses existing fetch-image Netlify function */
+function applyLogoDataUrl(dataUrl, nw, nh) {
+  state.logoSrc  = dataUrl;
+  state._cleared = false;
+  state.logoW    = Math.min(200, nw);
+  state.logoH    = null;
+  state.logoX    = 40;
+  state.logoY    = Math.round((state.height - state.logoW / (nw / nh)) / 2);
+  inpLogoW.value = state.logoW;
+  logoWVal.textContent = state.logoW + 'px';
+  logoHVal.textContent = 'auto';
+  logoCtrls.style.display = '';
+  nudgeHint.style.display = '';
+  logoDropText.textContent = 'Logo loaded from URL';
+  render();
+  toast('Logo loaded');
+}
+
 async function loadLogoViaProxy(url) {
   try {
     showBeStatus('Loading logo via proxy…');
@@ -1291,25 +1280,14 @@ async function loadLogoViaProxy(url) {
     reader.onload = ev => {
       const img2 = new Image();
       img2.onload = () => {
-        state.logoSrc = ev.target.result;
-        state.logoW   = Math.min(200, img2.naturalWidth);
-        state.logoH   = null;
-        state.logoX   = 40;
-        state.logoY   = Math.round((state.height - state.logoW / (img2.naturalWidth / img2.naturalHeight)) / 2);
-        inpLogoW.value = state.logoW;
-        logoWVal.textContent = state.logoW + 'px';
-        logoCtrls.style.display = '';
-        nudgeHint.style.display = '';
-        logoDropText.textContent = 'Logo loaded from URL';
+        applyLogoDataUrl(ev.target.result, img2.naturalWidth, img2.naturalHeight);
         beStatus.style.display = 'none';
-        render();
-        toast('Logo loaded');
       };
       img2.src = ev.target.result;
     };
     reader.readAsDataURL(blob);
   } catch (err) {
-    showBeStatus('Logo could not be loaded automatically — please upload manually', true);
+    showBeStatus('Logo could not load — please upload manually', true);
   }
 }
 
