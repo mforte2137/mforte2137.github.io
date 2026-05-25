@@ -7,16 +7,45 @@ const LS_INT_KEY  = 'sb_int_key';
 const LS_REP_NAME = 'fi_rep_name';
 
 // ── State ─────────────────────────────────────────────────
-let generatedImageUrl = '';
-let selectedTemplate  = 'chevron';
+let generatedImageUrl  = '';
+let selectedTemplate   = 'chevron';
+let autoResults        = {};   // templateId → imageUrl
+let autoSelectedId     = null; // currently selected template in auto result
+let autoCompanyName    = '';
+let autoBrandColor     = '#1a4da0';
 
-// ── DOM ───────────────────────────────────────────────────
-const formView    = document.getElementById('form-view');
-const workingView = document.getElementById('working-view');
-const resultView  = document.getElementById('result-view');
-const workTitle   = document.getElementById('working-title');
-const workSub     = document.getElementById('working-sub');
+// ── DOM — Views ───────────────────────────────────────────
+const formView       = document.getElementById('form-view');
+const workingView    = document.getElementById('working-view');
+const resultAutoView = document.getElementById('result-auto-view');
+const resultView     = document.getElementById('result-view');
+const workTitle      = document.getElementById('working-title');
+const workSub        = document.getElementById('working-sub');
 
+// ── DOM — Auto mode ───────────────────────────────────────
+const autoWebsiteInput   = document.getElementById('auto-website');
+const autoRepInput       = document.getElementById('auto-rep');
+const autoBtn            = document.getElementById('auto-btn');
+const autoError          = document.getElementById('auto-error');
+const resultAutoTitle    = document.getElementById('result-auto-title');
+const coversGrid         = document.getElementById('covers-grid');
+const selectedCoverActions = document.getElementById('selected-cover-actions');
+const selectedCoverImg   = document.getElementById('selected-cover-img');
+const autoDownloadBtn    = document.getElementById('auto-download-btn');
+const autoPushBtn        = document.getElementById('auto-push-btn');
+const autoPushResult     = document.getElementById('auto-push-result');
+const autoMiniToggle     = document.getElementById('auto-mini-toggle');
+const autoMiniArrow      = document.getElementById('auto-mini-arrow');
+const autoMiniBody       = document.getElementById('auto-mini-body');
+const autoSbApiKey       = document.getElementById('auto-sb-api-key');
+const autoSbIntKey       = document.getElementById('auto-sb-int-key');
+const autoSbRemember     = document.getElementById('auto-sb-remember');
+const restartAutoBtn     = document.getElementById('restart-auto-btn');
+const manualToggleBtn    = document.getElementById('manual-toggle-btn');
+const manualSection      = document.getElementById('manual-section');
+
+
+// ── DOM — Manual mode ─────────────────────────────────────
 const companyInput   = document.getElementById('company-name');
 const websiteInput   = document.getElementById('website-url');
 const extractBtn     = document.getElementById('extract-btn');
@@ -70,21 +99,21 @@ const sbRemember = document.getElementById('sb-remember');
 
 // ── Init ──────────────────────────────────────────────────
 function init() {
-  // Restore localStorage values
   const savedApi  = localStorage.getItem(LS_API_KEY);
   const savedInt  = localStorage.getItem(LS_INT_KEY);
   const savedRep  = localStorage.getItem(LS_REP_NAME);
-  if (savedApi) sbApiKey.value = savedApi;
-  if (savedInt) sbIntKey.value = savedInt;
-  if (savedRep) repNameInput.value = savedRep;
-  if (savedApi && savedInt) sbRemember.checked = true;
+  if (savedApi) { sbApiKey.value = savedApi; autoSbApiKey.value = savedApi; }
+  if (savedInt) { sbIntKey.value = savedInt; autoSbIntKey.value = savedInt; }
+  if (savedRep) { repNameInput.value = savedRep; autoRepInput.value = savedRep; }
+  if (savedApi && savedInt) { sbRemember.checked = true; autoSbRemember.checked = true; }
 }
 
 // ── View switching ────────────────────────────────────────
 function showView(name) {
-  formView.hidden    = name !== 'form';
-  workingView.hidden = name !== 'working';
-  resultView.hidden  = name !== 'result';
+  formView.hidden       = name !== 'form';
+  workingView.hidden    = name !== 'working';
+  resultAutoView.hidden = name !== 'result-auto';
+  resultView.hidden     = name !== 'result';
 }
 
 // ── Colour picker sync ────────────────────────────────────
@@ -107,6 +136,246 @@ colorHex.addEventListener('input', () => {
 function updateTemplatePreview() {
   // Template thumbnails use a fixed neutral — they show layout shape, not brand colour
 }
+
+// ── Manual section toggle ─────────────────────────────────
+manualToggleBtn.addEventListener('click', () => {
+  const open = !manualSection.hidden;
+  manualSection.hidden = open;
+  manualToggleBtn.textContent = open ? '⚙ Customise manually ▼' : '⚙ Customise manually ▲';
+});
+
+// ── Auto mode ─────────────────────────────────────────────
+function showAutoError(msg) {
+  autoError.textContent = msg;
+  autoError.hidden = false;
+}
+function clearAutoError() { autoError.hidden = true; }
+
+const TEMPLATE_NAMES = {
+  chevron:     'Chevron',
+  half_circle: 'Half Circle',
+  corporate:   'Corporate',
+  modern:      'Modern'
+};
+
+autoBtn.addEventListener('click', async () => {
+  clearAutoError();
+  const url = autoWebsiteInput.value.trim();
+  if (!url) {
+    showAutoError('Please enter their website URL.');
+    autoWebsiteInput.focus();
+    return;
+  }
+
+  const repName = autoRepInput.value.trim();
+  if (repName) localStorage.setItem(LS_REP_NAME, repName);
+
+  autoBtn.disabled = true;
+  showView('working');
+
+  try {
+    // Step 1 — analyse website
+    workTitle.textContent = 'Scanning their website…';
+    workSub.textContent   = 'Extracting brand colour, logo and photos';
+
+    const analyseRes  = await fetch('/api/generate-cover', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ action: 'analyse', websiteUrl: url })
+    });
+    const analyseData = await analyseRes.json();
+    if (!analyseRes.ok || !analyseData.ok) throw new Error(analyseData.error || 'Could not scan website.');
+
+    const { brandColor, logoUrl, photoUrl } = analyseData;
+    autoBrandColor  = brandColor;
+
+    // Extract company name from URL for display
+    try {
+      autoCompanyName = new URL(url).hostname.replace(/^www\./, '').split('.')[0];
+      autoCompanyName = autoCompanyName.charAt(0).toUpperCase() + autoCompanyName.slice(1);
+    } catch (e) { autoCompanyName = url; }
+
+    if (!logoUrl)  throw new Error('Could not find a logo on their website. Try the manual mode instead.');
+    if (!photoUrl) throw new Error('Could not find a suitable photo on their website or from Unsplash. Try the manual mode instead.');
+
+    // Step 2 — fire all 4 Placid renders
+    workTitle.textContent = 'Rendering all four templates…';
+    workSub.textContent   = 'Applying their branding to each design — usually 15–20 seconds';
+
+    const startRes  = await fetch('/api/generate-cover', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ action: 'start-all', brandColor, logoUrl, photoUrl })
+    });
+    const startData = await startRes.json();
+    if (!startRes.ok || !startData.ok) throw new Error(startData.error || 'Could not start rendering.');
+
+    const renders = startData.renders; // [{templateId, name, imageId, imageUrl}]
+
+    // Step 3 — show result grid immediately, poll for each image
+    resultAutoTitle.textContent = autoCompanyName;
+    coversGrid.innerHTML = '';
+    selectedCoverActions.hidden = true;
+    autoResults = {};
+
+    // Build tiles — show spinner until each image is ready
+    renders.forEach(({ templateId, name, imageId, imageUrl }) => {
+      const tile = document.createElement('div');
+      tile.className = 'cover-tile';
+      tile.dataset.templateId = templateId;
+      tile.innerHTML = `
+        <div class="cover-tile-spinner"><div class="spinner-sm"></div></div>
+        <div class="cover-tile-label">${name}</div>
+        <div class="cover-tile-check">✓</div>
+      `;
+      tile.addEventListener('click', () => selectCover(templateId));
+      coversGrid.appendChild(tile);
+
+      // If already done, populate immediately
+      if (imageUrl) {
+        setTileImage(tile, imageUrl);
+        autoResults[templateId] = imageUrl;
+      }
+    });
+
+    showView('result-auto');
+
+    // Step 4 — poll for any not-yet-ready renders
+    const pending = renders.filter(r => !r.imageUrl);
+    if (pending.length > 0) {
+      for (let i = 0; i < 20; i++) {
+        await new Promise(r => setTimeout(r, 2000));
+        const pollRes  = await fetch('/api/generate-cover', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({
+            action:   'poll-all',
+            imageIds: pending
+              .filter(r => !autoResults[r.templateId])
+              .map(r => ({ templateId: r.templateId, imageId: r.imageId }))
+          })
+        });
+        const pollData = await pollRes.json();
+        if (pollData.ok) {
+          pollData.renders.forEach(({ templateId, ready, imageUrl }) => {
+            if (ready && imageUrl && !autoResults[templateId]) {
+              autoResults[templateId] = imageUrl;
+              const tile = coversGrid.querySelector(`[data-template-id="${templateId}"]`);
+              if (tile) setTileImage(tile, imageUrl);
+            }
+          });
+        }
+        if (Object.keys(autoResults).length === renders.length) break;
+      }
+    }
+
+  } catch (err) {
+    showView('form');
+    showAutoError(err.message || 'Something went wrong. Please try again.');
+  } finally {
+    autoBtn.disabled = false;
+  }
+});
+
+function setTileImage(tile, imageUrl) {
+  const spinner = tile.querySelector('.cover-tile-spinner');
+  if (spinner) {
+    const img = document.createElement('img');
+    img.className = 'cover-tile-img';
+    img.src = imageUrl;
+    img.alt = '';
+    spinner.replaceWith(img);
+  }
+}
+
+function selectCover(templateId) {
+  const imageUrl = autoResults[templateId];
+  if (!imageUrl) return;
+
+  // Update tile selection
+  coversGrid.querySelectorAll('.cover-tile').forEach(t => t.classList.remove('is-selected'));
+  const tile = coversGrid.querySelector(`[data-template-id="${templateId}"]`);
+  if (tile) tile.classList.add('is-selected');
+
+  autoSelectedId = templateId;
+
+  // Show actions panel
+  selectedCoverImg.src         = imageUrl;
+  autoDownloadBtn.href         = imageUrl;
+  autoDownloadBtn.download     = `${autoCompanyName}-${templateId}-cover.png`;
+  autoDownloadBtn.textContent  = '⬇ Download Cover Page';
+  autoPushResult.hidden        = true;
+  autoPushBtn.disabled         = false;
+  autoPushBtn.textContent      = 'Save to Salesbuildr →';
+  autoPushBtn.classList.remove('is-done');
+  selectedCoverActions.hidden  = false;
+  selectedCoverActions.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Auto Salesbuildr connect toggle
+autoMiniToggle.addEventListener('click', () => {
+  const open = !autoMiniBody.hidden;
+  autoMiniBody.hidden = open;
+  autoMiniArrow.classList.toggle('is-open', !open);
+});
+
+// Auto push to Salesbuildr
+autoPushBtn.addEventListener('click', async () => {
+  const apiKey = autoSbApiKey.value.trim();
+  const intKey = autoSbIntKey.value.trim();
+  if (!apiKey || !intKey) {
+    autoMiniBody.hidden = false;
+    autoMiniArrow.classList.add('is-open');
+    autoSbApiKey.focus();
+    return;
+  }
+  if (autoSbRemember.checked) { localStorage.setItem(LS_API_KEY, apiKey); localStorage.setItem(LS_INT_KEY, intKey); }
+  else { localStorage.removeItem(LS_API_KEY); localStorage.removeItem(LS_INT_KEY); }
+
+  autoPushBtn.disabled    = true;
+  autoPushBtn.textContent = 'Saving…';
+  autoPushResult.hidden   = true;
+
+  const imageUrl = autoResults[autoSelectedId];
+  const name     = TEMPLATE_NAMES[autoSelectedId] || autoSelectedId;
+
+  try {
+    const res  = await fetch('/api/generate-cover', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        action: 'push', imageUrl,
+        companyName: autoCompanyName,
+        brandColor:  autoBrandColor,
+        apiKey, integrationKey: intKey
+      })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      autoPushResult.textContent = `✓ Saved as "${data.name}" in your Salesbuildr widget library.`;
+      autoPushResult.className   = 'push-result';
+      autoPushResult.hidden      = false;
+      autoPushBtn.textContent    = '✓ Saved to Salesbuildr';
+      autoPushBtn.classList.add('is-done');
+    } else throw new Error(data.error || 'Push failed.');
+  } catch (err) {
+    autoPushResult.textContent = `✕ ${err.message}`;
+    autoPushResult.className   = 'push-result is-error';
+    autoPushResult.hidden      = false;
+    autoPushBtn.disabled       = false;
+    autoPushBtn.textContent    = 'Save to Salesbuildr →';
+  }
+});
+
+// Restart from auto result
+restartAutoBtn.addEventListener('click', () => {
+  autoResults     = {};
+  autoSelectedId  = null;
+  coversGrid.innerHTML = '';
+  selectedCoverActions.hidden = true;
+  autoPushResult.hidden       = true;
+  showView('form');
+});
 
 // ── Focal point slider ────────────────────────────────────
 // Updates the live crop preview thumbnail to show exactly what
