@@ -1202,18 +1202,21 @@ function showBeResults(data) {
   beNotes.innerHTML = `<span class="be-confidence ${confClass}">${confClass}</span>${data.notes || ''}`;
 
   beResults.style.display = '';
+  beApplyAll.style.display = '';
 
-  // Scroll the controls panel to show results
+  // Scroll controls to top so full panel is visible
   setTimeout(() => {
     const ctrl = document.getElementById('controls');
-    if (ctrl) ctrl.scrollTop = 0; // scroll to top so brand panel is fully visible
-    beResults.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (ctrl) ctrl.scrollTop = 0;
   }, 100);
 }
 
 // Use logo only
 beUseLogoBtn.addEventListener('click', () => {
-  if (beExtracted.logoUrl) loadLogoFromUrl(beExtracted.logoUrl);
+  if (beExtracted.logoUrl) {
+    state._cleared = false;
+    loadLogoFromUrl(beExtracted.logoUrl);
+  }
 });
 
 // Apply all — secondary color as gradient end + logo
@@ -1250,7 +1253,8 @@ function loadLogoFromUrl(url) {
     ctx.drawImage(img, 0, 0);
     try {
       const dataUrl = c.toDataURL('image/png');
-      state.logoSrc = dataUrl;
+      state.logoSrc  = dataUrl;
+      state._cleared = false;
       state.logoW   = Math.min(200, img.naturalWidth);
       state.logoH   = null;
       state.logoX   = 40;
