@@ -290,12 +290,15 @@ kbd {
   border: 1px solid #b8d0f0;
   border-radius: var(--radius);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 .be-header {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 14px;
   background: linear-gradient(135deg, #2275e0, #1a5bbf);
   color: #fff;
+  flex-shrink: 0;
 }
 .be-icon { font-size: 14px; }
 .be-title { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; flex: 1; }
