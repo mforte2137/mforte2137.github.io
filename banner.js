@@ -748,8 +748,8 @@ function render(force) {
   // textX = offset from the alignment anchor (left edge for left, center for center, right edge for right).
   // textY = vertical position. Both are freely draggable/nudgeable.
   if (state.textOn && state.textStr) {
-    // Add border inset so text never overlaps a thick border
-    const bInset = state.borderOn ? state.borderW : 0;
+    // Inset = border width + comfortable breathing room padding
+    const bInset = state.borderOn ? state.borderW + 16 : 16;
     pvText.style.display     = '';
     pvText.style.fontFamily  = state.textFont;
     pvText.style.fontWeight  = state.textWeight;
@@ -863,7 +863,7 @@ async function exportToPNG(overrideMode) {
 
   // Text overlay
   if (state.textOn && state.textStr) {
-    const bInset = state.borderOn ? Math.round(state.borderW * sc) : 0;
+    const bInset = state.borderOn ? Math.round((state.borderW + 16) * sc) : Math.round(16 * sc);
     cc.font          = `${state.textWeight} ${Math.round(state.textSize * sc)}px ${state.textFont}`;
     cc.fillStyle     = state.textColor;
     cc.textAlign     = state.textAlign;
