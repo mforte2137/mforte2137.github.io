@@ -19,206 +19,208 @@
        =================================================== -->
   <section id="form-view">
     <h1 class="big-title">Make it personal.</h1>
-    <p class="big-lead">Enter your prospect's details and we'll generate a branded cover page in their colours — ready to drop into a Salesbuildr demo quote in seconds.</p>
+    <p class="big-lead">Enter your prospect's website and we'll build four branded cover pages — ready to drop into a Salesbuildr demo quote in seconds.</p>
 
-    <!-- STEP 1: Prospect -->
-    <div class="step">
-      <div class="step-label">Step 1 — Who is this for?</div>
-
-      <div class="field-group">
-        <label class="field-label" for="company-name">Prospect company name <span class="field-required">Required</span></label>
-        <input type="text" id="company-name" class="field-input" maxlength="80" placeholder="e.g. Tierney's IT Services">
+    <!-- AUTO MODE -->
+    <div class="auto-card">
+      <div class="auto-card-header">
+        <span class="auto-badge">✦ Auto</span>
+        <span class="auto-card-title">Build all 4 covers in one click</span>
       </div>
+      <p class="auto-card-desc">We'll scan their website, extract their brand colour and logo, find the best photo, and render all four templates — you just pick your favourite.</p>
 
-      <div class="field-group">
-        <label class="field-label" for="website-url">Their website URL <span class="field-optional">Optional — we'll try to extract their brand colour</span></label>
-        <div class="extract-row">
-          <input type="url" id="website-url" class="field-input" placeholder="https://tierneys.com">
-          <button type="button" id="extract-btn" class="extract-btn">Extract colour →</button>
+      <div class="auto-fields">
+        <div class="auto-field">
+          <label class="field-label" for="auto-website">Their website URL <span class="field-required">Required</span></label>
+          <input type="url" id="auto-website" class="field-input" placeholder="https://tierneys.com">
         </div>
-        <p id="extract-status" class="extract-status" hidden></p>
+        <div class="auto-field">
+          <label class="field-label" for="auto-rep">Your name <span class="field-optional">Optional</span></label>
+          <input type="text" id="auto-rep" class="field-input" maxlength="80" placeholder="e.g. Glen Brown, Salesbuildr">
+        </div>
       </div>
+
+      <div class="auto-footer">
+        <button type="button" id="auto-btn" class="auto-btn">Build Cover Pages →</button>
+        <p class="form-note">Takes about 20 seconds — we scan their site, apply the branding, and render all four templates.</p>
+      </div>
+      <div id="auto-error" class="form-error" hidden></div>
     </div>
 
-    <!-- STEP 2: Branding -->
-    <div class="step">
-      <div class="step-label">Step 2 — Their branding</div>
-
-      <div class="field-group">
-        <label class="field-label">Brand colour <span class="field-required">Required</span></label>
-        <p class="field-hint">Auto-extracted from their website, or pick manually. This colours the design elements on the cover page.</p>
-        <div class="color-pick-row">
-          <input type="color" id="brand-color-picker" class="color-picker-lg" value="#1a4da0">
-          <input type="text"  id="brand-color-hex"    class="hex-input-lg" maxlength="7" value="#1a4da0" placeholder="#1a4da0">
-          <div class="color-preview" id="color-preview" style="background:#1a4da0;"></div>
-        </div>
-      </div>
-
-      <div class="field-group">
-        <label class="field-label" for="logo-url">Their logo URL <span class="field-required">Required</span></label>
-        <p class="field-hint">Visit their website, right-click the logo → <em>Copy image address</em>, and paste it here. PNG with transparent background works best.</p>
-        <div class="logo-row">
-          <input type="url" id="logo-url" class="field-input" placeholder="https://tierneys.com/logo.png">
-          <button type="button" id="preview-logo-btn" class="preview-logo-btn">Preview</button>
-        </div>
-        <div id="logo-preview-area" class="logo-preview-area" hidden>
-          <img id="logo-preview-img" src="" alt="Logo preview" class="logo-preview-img">
-          <button type="button" id="logo-preview-clear" class="logo-clear-btn">✕</button>
-        </div>
-        <p class="field-hint" style="margin-top:8px;">Right-click their logo on their website → <em>Copy image address</em> and paste above.</p>
-      </div>
+    <!-- MANUAL / ADVANCED -->
+    <div class="manual-toggle-wrap">
+      <button type="button" id="manual-toggle-btn" class="manual-toggle-btn">⚙ Customise manually ▼</button>
     </div>
 
-    <!-- STEP 3: Photo style -->
-    <div class="step">
-      <div class="step-label">Step 3 — Background photo</div>
-      <div class="field-group">
-        <label class="field-label" for="industry">Industry <span class="field-required">Required</span></label>
-        <p class="field-hint">We search Unsplash for professional photos that suit their sector. Pick your favourite.</p>
-        <div class="industry-row">
-          <select id="industry" class="field-select">
-            <optgroup label="With People">
-              <option value="office">Modern Office &amp; Team</option>
-              <option value="consulting">IT Consulting</option>
-              <option value="technician">Field Technician</option>
-            </optgroup>
-            <optgroup label="Infrastructure &amp; Technology">
-              <option value="datacenter">Data Centre</option>
-              <option value="cloud">Cloud &amp; Infrastructure</option>
-              <option value="network">Network &amp; Connectivity</option>
-              <option value="security">Cybersecurity</option>
-            </optgroup>
-            <optgroup label="Abstract — No People">
-              <option value="abstract_lines">Abstract — Lines &amp; Light</option>
-              <option value="abstract_circuit">Abstract — Circuit &amp; Code</option>
-              <option value="abstract_fiber">Abstract — Fiber &amp; Glow</option>
-            </optgroup>
-          </select>
-          <button type="button" id="find-photos-btn" class="find-photos-btn">Find Photos →</button>
+    <div id="manual-section" hidden>
+
+      <div class="step">
+        <div class="step-label">Step 1 — Who is this for?</div>
+        <div class="field-group">
+          <label class="field-label" for="company-name">Prospect company name <span class="field-required">Required</span></label>
+          <input type="text" id="company-name" class="field-input" maxlength="80" placeholder="e.g. Tierney's IT Services">
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="website-url">Their website URL <span class="field-optional">Optional — we'll try to extract their brand colour</span></label>
+          <div class="extract-row">
+            <input type="url" id="website-url" class="field-input" placeholder="https://tierneys.com">
+            <button type="button" id="extract-btn" class="extract-btn">Extract colour →</button>
+          </div>
+          <p id="extract-status" class="extract-status" hidden></p>
         </div>
       </div>
 
-      <!-- Website photos option -->
-      <div class="website-photos-strip" id="website-photos-strip">
-        <div class="website-photos-or">or</div>
-        <button type="button" id="website-photos-btn" class="website-photos-btn">Use photos from their website →</button>
-        <p class="field-hint" id="website-photos-hint" hidden>Uses the website URL from Step 1.</p>
+      <div class="step">
+        <div class="step-label">Step 2 — Their branding</div>
+        <div class="field-group">
+          <label class="field-label">Brand colour <span class="field-required">Required</span></label>
+          <p class="field-hint">Auto-extracted from their website, or pick manually.</p>
+          <div class="color-pick-row">
+            <input type="color" id="brand-color-picker" class="color-picker-lg" value="#1a4da0">
+            <input type="text"  id="brand-color-hex"    class="hex-input-lg" maxlength="7" value="#1a4da0" placeholder="#1a4da0">
+            <div class="color-preview" id="color-preview" style="background:#1a4da0;"></div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="logo-url">Their logo URL <span class="field-required">Required</span></label>
+          <p class="field-hint">Right-click their logo on their website → <em>Copy image address</em>, and paste it here.</p>
+          <div class="logo-row">
+            <input type="url" id="logo-url" class="field-input" placeholder="https://tierneys.com/logo.png">
+            <button type="button" id="preview-logo-btn" class="preview-logo-btn">Preview</button>
+          </div>
+          <div id="logo-preview-area" class="logo-preview-area" hidden>
+            <img id="logo-preview-img" src="" alt="Logo preview" class="logo-preview-img">
+            <button type="button" id="logo-preview-clear" class="logo-clear-btn">✕</button>
+          </div>
+        </div>
       </div>
 
-      <!-- Website photo picker — appears after clicking Use website photos -->
-      <div id="website-photo-picker" hidden>
-        <div class="website-photo-header">
-          <span class="website-photo-title">Photos from their website</span>
-          <button type="button" id="website-photos-back-btn" class="website-photos-back-btn">← Back to Unsplash</button>
+      <div class="step">
+        <div class="step-label">Step 3 — Background photo</div>
+        <div class="field-group">
+          <label class="field-label" for="industry">Theme <span class="field-required">Required</span></label>
+          <p class="field-hint">We search Unsplash for professional MSP-themed photos. Pick your favourite.</p>
+          <div class="industry-row">
+            <select id="industry" class="field-select">
+              <optgroup label="With People">
+                <option value="office">Modern Office &amp; Team</option>
+                <option value="consulting">IT Consulting</option>
+                <option value="technician">Field Technician</option>
+              </optgroup>
+              <optgroup label="Infrastructure &amp; Technology">
+                <option value="datacenter">Data Centre</option>
+                <option value="cloud">Cloud &amp; Infrastructure</option>
+                <option value="network">Network &amp; Connectivity</option>
+                <option value="security">Cybersecurity</option>
+              </optgroup>
+              <optgroup label="Abstract — No People">
+                <option value="abstract_lines">Abstract — Lines &amp; Light</option>
+                <option value="abstract_circuit">Abstract — Circuit &amp; Code</option>
+                <option value="abstract_fiber">Abstract — Fiber &amp; Glow</option>
+              </optgroup>
+            </select>
+            <button type="button" id="find-photos-btn" class="find-photos-btn">Find Photos →</button>
+          </div>
         </div>
-        <div class="photo-grid" id="website-photo-grid"></div>
-        <div id="website-photo-loading" class="photo-loading" hidden>
+
+        <!-- Website photos option -->
+        <div class="website-photos-strip" id="website-photos-strip">
+          <div class="website-photos-or">or</div>
+          <button type="button" id="website-photos-btn" class="website-photos-btn">Use photos from their website →</button>
+        </div>
+
+        <div id="website-photo-picker" hidden>
+          <div class="website-photo-header">
+            <span class="website-photo-title">Photos from their website</span>
+            <button type="button" id="website-photos-back-btn" class="website-photos-back-btn">← Back to Unsplash</button>
+          </div>
+          <div class="photo-grid" id="website-photo-grid"></div>
+          <div id="website-photo-loading" class="photo-loading" hidden>
+            <div class="spinner-sm"></div>
+            <span>Scanning their website for photos…</span>
+          </div>
+          <div id="website-photo-empty" class="website-photo-empty" hidden>
+            No large photos found on their website. Try Unsplash instead.
+          </div>
+        </div>
+
+        <div id="photo-picker" hidden>
+          <div class="photo-grid" id="photo-grid"></div>
+          <div class="photo-picker-footer">
+            <button type="button" id="more-photos-btn" class="more-photos-btn">Try different photos</button>
+            <span id="photo-credit" class="photo-credit"></span>
+          </div>
+          <div id="focal-control" class="focal-control" hidden>
+            <div class="focal-inner">
+              <div class="focal-preview-wrap">
+                <div class="focal-preview-label">Cover crop preview</div>
+                <div class="focal-preview-viewport" id="focal-viewport">
+                  <img id="focal-preview-img" class="focal-preview-img" src="" alt="">
+                </div>
+              </div>
+              <div class="focal-slider-wrap">
+                <div class="focal-slider-header">
+                  <span class="focal-slider-title">Reposition photo</span>
+                  <span id="focal-value-label" class="focal-value-label">Centre</span>
+                </div>
+                <div class="focal-track-wrap">
+                  <span class="focal-end-label">Top</span>
+                  <input type="range" id="focal-slider" class="focal-slider" min="0" max="100" value="50" step="5">
+                  <span class="focal-end-label">Bottom</span>
+                </div>
+                <p class="focal-hint">Drag to shift the photo up or down within the cover. The preview updates live.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="photo-loading" class="photo-loading" hidden>
           <div class="spinner-sm"></div>
-          <span>Scanning their website for photos…</span>
-        </div>
-        <div id="website-photo-empty" class="website-photo-empty" hidden>
-          No large photos found on their website. Try Unsplash instead.
+          <span>Searching Unsplash…</span>
         </div>
       </div>
 
-      <!-- Photo picker — appears after clicking Find Photos -->
-      <div id="photo-picker" hidden>
-        <div class="photo-grid" id="photo-grid">
-          <!-- Populated by JS -->
-        </div>
-        <div class="photo-picker-footer">
-          <button type="button" id="more-photos-btn" class="more-photos-btn">Try different photos</button>
-          <span id="photo-credit" class="photo-credit"></span>
-        </div>
-
-        <!-- Focal point control — appears after a photo is selected -->
-        <div id="focal-control" class="focal-control" hidden>
-          <div class="focal-inner">
-            <!-- Live crop preview — portrait thumbnail showing exactly what will be used -->
-            <div class="focal-preview-wrap">
-              <div class="focal-preview-label">Cover crop preview</div>
-              <div class="focal-preview-viewport" id="focal-viewport">
-                <img id="focal-preview-img" class="focal-preview-img" src="" alt="">
-              </div>
-            </div>
-            <!-- Slider -->
-            <div class="focal-slider-wrap">
-              <div class="focal-slider-header">
-                <span class="focal-slider-title">Reposition photo</span>
-                <span id="focal-value-label" class="focal-value-label">Centre</span>
-              </div>
-              <div class="focal-track-wrap">
-                <span class="focal-end-label">Top</span>
-                <input type="range" id="focal-slider" class="focal-slider" min="0" max="100" value="50" step="5">
-                <span class="focal-end-label">Bottom</span>
-              </div>
-              <p class="focal-hint">Drag to shift the photo up or down within the cover. The preview updates live.</p>
-            </div>
-          </div>
+      <div class="step">
+        <div class="step-label">Step 4 — Cover page template</div>
+        <div class="field-hint" style="margin-bottom:16px;">Select one template to generate.</div>
+        <div class="template-grid" id="template-grid">
+          <button type="button" class="template-tile is-selected" data-template="chevron">
+            <div class="template-preview template-preview-img"><img src="/images/chevron.png" alt="Chevron template preview"></div>
+            <div class="template-name">Chevron</div>
+            <div class="template-check">✓</div>
+          </button>
+          <button type="button" class="template-tile" data-template="half_circle">
+            <div class="template-preview template-preview-img"><img src="/images/circle.png" alt="Half Circle template preview"></div>
+            <div class="template-name">Half Circle</div>
+            <div class="template-check">✓</div>
+          </button>
+          <button type="button" class="template-tile" data-template="corporate">
+            <div class="template-preview template-preview-img"><img src="/images/corporate.png" alt="Corporate template preview"></div>
+            <div class="template-name">Corporate</div>
+            <div class="template-check">✓</div>
+          </button>
+          <button type="button" class="template-tile" data-template="modern">
+            <div class="template-preview template-preview-img"><img src="/images/modern.png" alt="Modern template preview"></div>
+            <div class="template-name">Modern</div>
+            <div class="template-check">✓</div>
+          </button>
         </div>
       </div>
-      <div id="photo-loading" class="photo-loading" hidden>
-        <div class="spinner-sm"></div>
-        <span>Searching Unsplash…</span>
+
+      <div class="step">
+        <div class="step-label">Step 5 — Your details</div>
+        <div class="field-group">
+          <label class="field-label" for="rep-name">Your name <span class="field-optional">Optional</span></label>
+          <input type="text" id="rep-name" class="field-input" maxlength="80" placeholder="e.g. Glen Brown, Salesbuildr">
+        </div>
       </div>
-    </div>
 
-    <!-- STEP 4: Template -->
-    <div class="step">
-      <div class="step-label">Step 4 — Cover page template</div>
-      <div class="field-hint" style="margin-bottom:16px;">More templates coming soon. Select one to use it.</div>
-      <div class="template-grid" id="template-grid">
-
-        <button type="button" class="template-tile is-selected" data-template="chevron">
-          <div class="template-preview template-preview-img">
-            <img src="/images/chevron.png" alt="Chevron template preview">
-          </div>
-          <div class="template-name">Chevron</div>
-          <div class="template-check">✓</div>
-        </button>
-
-        <button type="button" class="template-tile" data-template="half_circle">
-          <div class="template-preview template-preview-img">
-            <img src="/images/circle.png" alt="Half Circle template preview">
-          </div>
-          <div class="template-name">Half Circle</div>
-          <div class="template-check">✓</div>
-        </button>
-
-        <button type="button" class="template-tile" data-template="corporate">
-          <div class="template-preview template-preview-img">
-            <img src="/images/corporate.png" alt="Corporate template preview">
-          </div>
-          <div class="template-name">Corporate</div>
-          <div class="template-check">✓</div>
-        </button>
-
-        <button type="button" class="template-tile" data-template="modern">
-          <div class="template-preview template-preview-img">
-            <img src="/images/modern.png" alt="Modern template preview">
-          </div>
-          <div class="template-name">Modern</div>
-          <div class="template-check">✓</div>
-        </button>
-
+      <div class="form-footer">
+        <button type="button" id="generate-btn" class="generate-btn">Generate Cover Page →</button>
+        <p class="form-note">Generates the selected template only.</p>
       </div>
-    </div>
+      <div id="form-error" class="form-error" hidden></div>
 
-    <!-- STEP 5: Rep name -->
-    <div class="step">
-      <div class="step-label">Step 5 — Your details</div>
-      <div class="field-group">
-        <label class="field-label" for="rep-name">Your name <span class="field-optional">Optional — shown as presenter on the cover</span></label>
-        <input type="text" id="rep-name" class="field-input" maxlength="80" placeholder="e.g. Glen Brown, Salesbuildr">
-      </div>
-    </div>
-
-    <div class="form-footer">
-      <button type="button" id="generate-btn" class="generate-btn">Generate Cover Page →</button>
-      <p class="form-note">Takes about 15 seconds — we find the photo, apply the branding, and render your cover page.</p>
-    </div>
-
-    <div id="form-error" class="form-error" hidden></div>
+    </div><!-- /manual-section -->
 
   </section>
 
@@ -228,16 +230,75 @@
   <section id="working-view" hidden>
     <div class="working-inner">
       <div class="spinner"></div>
-      <p class="working-title" id="working-title">Finding the perfect photo&hellip;</p>
-      <p class="working-sub"  id="working-sub">Searching Unsplash for your industry</p>
+      <p class="working-title" id="working-title">Scanning their website…</p>
+      <p class="working-sub"  id="working-sub">Extracting brand colour, logo and photos</p>
     </div>
   </section>
 
   <!-- ===================================================
-       VIEW 3: Result
+       VIEW 3: Result — Auto (4 covers)
+       =================================================== -->
+  <section id="result-auto-view" hidden>
+
+    <div class="result-header">
+      <div>
+        <div class="result-kicker">Choose Your Cover Page</div>
+        <h1 class="result-title" id="result-auto-title"></h1>
+      </div>
+      <button type="button" id="restart-auto-btn" class="secondary-btn">← Start Over</button>
+    </div>
+
+    <p class="result-auto-lead">All four templates rendered with their branding. Click one to select it, then download or save to Salesbuildr.</p>
+
+    <!-- 4-up grid -->
+    <div class="covers-grid" id="covers-grid">
+      <!-- Populated by JS -->
+    </div>
+
+    <!-- Selected cover actions — appears when rep clicks a cover -->
+    <div id="selected-cover-actions" class="selected-cover-actions" hidden>
+      <div class="selected-cover-preview-wrap">
+        <img id="selected-cover-img" class="selected-cover-img" src="" alt="">
+      </div>
+      <div class="result-actions">
+        <div class="action-card">
+          <div class="action-card-title">📥 Download PNG</div>
+          <p class="action-card-desc">Save the cover page as a high-resolution PNG.</p>
+          <a id="auto-download-btn" class="action-btn action-btn-download" download>Download Cover Page</a>
+        </div>
+        <div class="action-card">
+          <div class="action-card-title">⚡ Save to Widget Library</div>
+          <p class="action-card-desc">Push directly to your Salesbuildr template library with variable overlays pre-wired.</p>
+          <div class="mini-connect" id="auto-mini-connect">
+            <button type="button" class="mini-connect-toggle" id="auto-mini-toggle">
+              Connect Salesbuildr <span class="mini-arrow" id="auto-mini-arrow">▼</span>
+            </button>
+            <div class="mini-connect-body" id="auto-mini-body" hidden>
+              <div class="mini-fields">
+                <div class="mini-field">
+                  <label class="mini-label">API Key <span class="mini-where">Admin → Integrations</span></label>
+                  <input type="password" id="auto-sb-api-key" class="mini-input" placeholder="Your API key" autocomplete="off">
+                </div>
+                <div class="mini-field">
+                  <label class="mini-label">Integration Key <span class="mini-where">Provided by Salesbuildr</span></label>
+                  <input type="password" id="auto-sb-int-key" class="mini-input" placeholder="Your integration key" autocomplete="off">
+                </div>
+              </div>
+              <label class="mini-remember"><input type="checkbox" id="auto-sb-remember"> Remember on this device</label>
+            </div>
+          </div>
+          <button type="button" id="auto-push-btn" class="action-btn action-btn-push">Save to Salesbuildr →</button>
+          <div id="auto-push-result" class="push-result" hidden></div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ===================================================
+       VIEW 4: Result — Manual (single cover)
        =================================================== -->
   <section id="result-view" hidden>
-
     <div class="result-header">
       <div>
         <div class="result-kicker">Cover Page Ready</div>
@@ -245,28 +306,19 @@
       </div>
       <button type="button" id="restart-btn" class="secondary-btn">← Start Over</button>
     </div>
-
     <div class="result-layout">
-
-      <!-- Cover page preview -->
       <div class="cover-preview-wrap">
         <img id="cover-preview" class="cover-preview" src="" alt="Generated cover page">
       </div>
-
-      <!-- Actions -->
       <div class="result-actions">
-
         <div class="action-card">
           <div class="action-card-title">📥 Download PNG</div>
-          <p class="action-card-desc">Save the cover page as a high-resolution PNG — upload it to Salesbuildr's Cover Page section and add your variable overlays there.</p>
+          <p class="action-card-desc">Save the cover page as a high-resolution PNG.</p>
           <a id="download-btn" class="action-btn action-btn-download" download>Download Cover Page</a>
         </div>
-
         <div class="action-card">
           <div class="action-card-title">⚡ Save to Widget Library</div>
-          <p class="action-card-desc">Push directly to your Salesbuildr template library as an image widget with variable overlays pre-wired — ready to drag into any quote.</p>
-
-          <!-- Connect section -->
+          <p class="action-card-desc">Push directly to your Salesbuildr template library with variable overlays pre-wired.</p>
           <div class="mini-connect" id="mini-connect">
             <button type="button" class="mini-connect-toggle" id="mini-toggle">
               Connect Salesbuildr <span class="mini-arrow" id="mini-arrow">▼</span>
@@ -285,14 +337,11 @@
               <label class="mini-remember"><input type="checkbox" id="sb-remember"> Remember on this device</label>
             </div>
           </div>
-
           <button type="button" id="push-btn" class="action-btn action-btn-push">Save to Salesbuildr →</button>
           <div id="push-result" class="push-result" hidden></div>
         </div>
-
       </div>
     </div>
-
   </section>
 
   <footer class="tag">First Impression · Branded demo cover pages in seconds.</footer>
