@@ -18,6 +18,8 @@
        VIEW 1: Form
        =================================================== -->
   <section id="form-view" class="form-view">
+    <div class="form-layout">
+    <div class="form-main">
     <h1 class="big-title">Build your proposal widgets.</h1>
     <p class="big-lead">Pick a service, fill in the customer context, and we'll generate five buyer-journey widgets ready to paste into Salesbuildr.</p>
 
@@ -192,6 +194,69 @@
       </div>
 
     </form>
+    </div><!-- /.form-main -->
+
+    <!-- ── Why This Works sidebar ── -->
+    <aside class="why-sidebar" id="why-sidebar">
+      <button type="button" class="why-toggle" id="why-toggle" aria-expanded="true">
+        Why this works
+        <span class="why-arrow" id="why-arrow">▲</span>
+      </button>
+      <div class="why-body" id="why-body">
+
+        <div class="why-block why-block-lead">
+          <p class="why-lead-text">Most MSP proposals fail before they're read. Pricing on page one. Legal on page two. The customer hasn't been given a single reason to care yet.</p>
+        </div>
+
+        <div class="why-block">
+          <p class="why-section-title">The 5 widgets, and what each one does for the sale</p>
+          <div class="why-widget-list">
+            <div class="why-widget-item">
+              <span class="why-w-badge">W1</span>
+              <div>
+                <span class="why-w-name">Their Situation</span>
+                <span class="why-w-desc">Shows the customer you've listened. They read their own reality back to them — that alone sets you apart from every other MSP.</span>
+              </div>
+            </div>
+            <div class="why-widget-item">
+              <span class="why-w-badge">W2</span>
+              <div>
+                <span class="why-w-name">Why Now</span>
+                <span class="why-w-desc">Creates urgency without pressure. Connects the cost of inaction to something already happening in their world.</span>
+              </div>
+            </div>
+            <div class="why-widget-item">
+              <span class="why-w-badge">W3</span>
+              <div>
+                <span class="why-w-name">What We Do</span>
+                <span class="why-w-desc">Positions you as the expert. Not a feature list — a clear explanation of the outcome they're buying.</span>
+              </div>
+            </div>
+            <div class="why-widget-item">
+              <span class="why-w-badge">W4</span>
+              <div>
+                <span class="why-w-name">Why Us</span>
+                <span class="why-w-desc">Answers the question every buyer is silently asking. Differentiates on trust and track record, not price.</span>
+              </div>
+            </div>
+            <div class="why-widget-item">
+              <span class="why-w-badge">W5</span>
+              <div>
+                <span class="why-w-name">Next Steps</span>
+                <span class="why-w-desc">Removes the last objection before they sign. Makes it easy to say yes — low friction, clear action.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="why-block why-block-footer">
+          <p class="why-psychology">People buy emotionally and justify logically. The widgets lead with empathy, then evidence, then confidence — in that order, always.</p>
+        </div>
+
+      </div>
+    </aside>
+
+    </div><!-- /.form-layout -->
   </section>
 
   <!-- ===================================================
@@ -297,6 +362,31 @@
           </div>
         </div>
         <div id="sb-result" class="sb-result" hidden></div>
+      </div>
+    </div>
+
+    <!-- 🧠 Objection Anticipator -->
+    <div class="obj-panel" id="obj-panel">
+      <button type="button" class="obj-toggle" id="obj-toggle">
+        <span>🧠 Anticipate objections — your private sales coaching note</span>
+        <span class="obj-arrow" id="obj-arrow">▼</span>
+      </button>
+      <div class="obj-body" id="obj-body" hidden>
+        <p class="obj-hint">Not part of the proposal. Generate a private cheat sheet of likely objections and how to handle them — paste it into the Internal Notes field in Salesbuildr so it's there when you open the quote.</p>
+        <div class="obj-actions-top">
+          <button type="button" id="obj-generate-btn" class="obj-generate-btn">Generate Objection Coaching →</button>
+        </div>
+        <div id="obj-result-wrap" hidden>
+          <div id="obj-result" class="obj-result"></div>
+          <div class="obj-copy-row">
+            <button type="button" id="obj-copy-btn" class="obj-copy-btn">📋 Copy for Internal Notes</button>
+            <span class="obj-copy-hint">Paste into Salesbuildr quote → Internal Notes</span>
+          </div>
+        </div>
+        <div id="obj-working" class="obj-working" hidden>
+          <div class="obj-spinner"></div>
+          <span>Thinking through their likely concerns…</span>
+        </div>
       </div>
     </div>
 
