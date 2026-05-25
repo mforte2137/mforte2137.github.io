@@ -1,11 +1,9 @@
 /* ═══════════════════════════════════════════════════
    extract-brand.js  — Netlify Function
-   Fetches a client website, uses Claude to extract
-   dominant brand colors and logo URL.
+   Two endpoints in one:
+     POST { url }           → extract brand colors + logo URL
+     POST { proxyUrl }      → fetch image bytes and return as base64
    Place in:  netlify/functions/extract-brand.js
-
-   No external dependencies — uses plain Node https.
-   Reads: process.env.CLAUDE_API_KEY
 ═══════════════════════════════════════════════════ */
 
 const https = require('https');
@@ -114,6 +112,35 @@ function resolveUrl(src, base) {
   try { return new URL(src, base).href; } catch { return src; }
 }
 
+/* ── Fetch image bytes and return as base64 data URL ─ */
+function fetchImageAsBase64(url) {
+  return new Promise((resolve, reject) => {
+    const proto = url.startsWith('https') ? https : http;
+    const req = proto.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; BrandExtractor/1.0)',
+        'Accept': 'image/*,*/*',
+      },
+      timeout: 10000,
+    }, res => {
+      if ((res.statusCode === 301 || res.statusCode === 302) && res.headers.location) {
+        return fetchImageAsBase64(res.headers.location).then(resolve).catch(reject);
+      }
+      if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`));
+      const contentType = res.headers['content-type'] || 'image/png';
+      const chunks = [];
+      res.on('data', chunk => chunks.push(chunk));
+      res.on('end', () => {
+        const buffer = Buffer.concat(chunks);
+        const b64 = buffer.toString('base64');
+        resolve({ dataUrl: `data:${contentType};base64,${b64}`, contentType });
+      });
+    });
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
+  });
+}
+
 /* ─────────────────────────────────────────────────
    HANDLER
 ───────────────────────────────────────────────── */
@@ -126,9 +153,26 @@ exports.handler = async (event) => {
 
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
 
+  let body;
+  try { body = JSON.parse(event.body || '{}'); } catch { body = {}; }
+
+  // ── Route: image proxy ─────────────────────────
+  if (body.proxyUrl) {
+    try {
+      const { dataUrl } = await fetchImageAsBase64(body.proxyUrl);
+      return {
+        statusCode: 200,
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dataUrl }),
+      };
+    } catch (err) {
+      return { statusCode: 500, headers, body: JSON.stringify({ error: err.message }) };
+    }
+  }
+
+  // ── Route: brand extraction ────────────────────
   let url;
   try {
-    const body = JSON.parse(event.body || '{}');
     url = (body.url || '').trim();
     if (!url) throw new Error('No URL provided');
     if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
