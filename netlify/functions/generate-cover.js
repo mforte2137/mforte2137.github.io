@@ -215,70 +215,40 @@ exports.handler = async (event) => {
         if (poll.data.status === 'error') return err('Website scan failed.');
       }
 
-      // Separate logos from photos using keyword filter
-      const seen = new Set();
-      // Expanded keyword list — catches more logo URL patterns
+      // Find logo candidates from extracted images
       const logoKeywords = ['logo', 'icon', 'favicon', 'brand', 'symbol', 'mark', 'thumb', 'badge', 'seal', 'crest'];
 
       const logoImages = allImages.filter(img => {
-        if (!img.url || seen.has(img.url)) return false;
+        if (!img.url || img.url.toLowerCase().endsWith('.svg')) return false;
         const url = img.url.toLowerCase();
         const alt = (img.alt || '').toLowerCase();
         const isLogo = logoKeywords.some(k => url.includes(k) || alt.includes(k));
         const w = img.width || 0;
         const h = img.height || 0;
-        // Logo candidates: keyword match OR small square image OR wide-short image (typical logo shape)
         const isTypicalLogoShape = w > 0 && h > 0 && (w === h || (w / h > 2 && h < 300));
-        if (isLogo || isTypicalLogoShape) {
-          seen.add(img.url);
-          return true;
-        }
-        return false;
+        return isLogo || isTypicalLogoShape;
       });
 
-      // Photo candidates (reset seen for separate pass)
-      const seenPhotos = new Set();
-      const photoImages = allImages.filter(img => {
-        if (!img.url || seenPhotos.has(img.url)) return false;
-        const url = img.url.toLowerCase();
-        const alt = (img.alt || '').toLowerCase();
-        if (url.endsWith('.svg')) return false;
-        if (logoKeywords.some(k => url.includes(k) || alt.includes(k))) return false;
-        const w = img.width || 0;
-        const h = img.height || 0;
-        if (w > 0 && w < 200) return false;
-        if (h > 0 && h < 200) return false;
-        if (w > 0 && h > 0) {
-          if (w === h) return false;
-          const ratio = w / h;
-          if (ratio > 4 || ratio < 0.25) return false;
-        }
-        seenPhotos.add(img.url);
-        return true;
-      }).slice(0, 8);
-
-      // Pass ALL images to Haiku — let AI find the logo regardless of URL structure
-      // This handles cases where logo URLs don't contain obvious keywords
+      // Pass all images to Haiku to find the best logo
       const allForAI = allImages.filter(img => img.url && !img.url.toLowerCase().endsWith('.svg')).slice(0, 30);
 
-      // Use Haiku to pick the best photo and best logo
-      const haikusPrompt = `You are helping select images for a professional MSP proposal cover page.
+      // Use Haiku to pick the best logo
+      const haikusPrompt = `You are helping find a company logo for a professional proposal cover page.
 
 Website: ${websiteUrl}
-Brand colour: ${color || 'unknown'}
 
-ALL IMAGES FROM SITE (${allForAI.length} total — includes logos, photos, graphics):
+ALL IMAGES FROM SITE (${allForAI.length} total):
 ${allForAI.map((img, i) => `${i+1}. URL: ${img.url} | alt: "${img.alt || ''}" | size: ${img.width||'?'}x${img.height||'?'}`).join('\n')}
 
-PRE-FILTERED PHOTO CANDIDATES (${photoImages.length} found):
-${photoImages.map((img, i) => `${i+1}. URL: ${img.url} | alt: "${img.alt || ''}" | size: ${img.width||'?'}x${img.height||'?'}`).join('\n') || 'None found'}
-
-Tasks:
-1. Pick the single best LOGO from ALL IMAGES — look for the company's main logo (look for the company name in alt text, or typical logo filenames, or wide/short images). Prefer PNG. Return null if none found.
-2. Pick the single best PHOTO for a cover page background from PRE-FILTERED PHOTO CANDIDATES (prefer professional people/office/tech photos, avoid graphics/badges/certificates). Return null if none suitable.
+Task: Pick the single best logo for the company at ${websiteUrl}.
+- Look for the company's own logo (match domain name in alt text or filename)
+- Prefer PNG over JPG
+- Avoid Microsoft, vendor, or partner logos
+- Avoid certification badges and award images
+- Return null if no suitable logo found
 
 Respond ONLY with valid JSON, no markdown:
-{"logoUrl": "url or null", "photoUrl": "url or null"}`;
+{"logoUrl": "url or null"}`;
 
       const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
         method:  'POST',
@@ -294,76 +264,52 @@ Respond ONLY with valid JSON, no markdown:
         })
       });
       const aiData = await aiRes.json();
-      let logoUrl = null, photoUrl = null;
+      let logoUrl = null;
 
       try {
         const parsed = JSON.parse(aiData.content[0].text);
-        logoUrl  = parsed.logoUrl  || null;
-        photoUrl = parsed.photoUrl || null;
-      } catch (e) { /* AI parse failed — will use fallbacks */ }
-
-      // Fallback: if AI found no photo, pick first photo candidate
-      if (!photoUrl && photoImages.length > 0) photoUrl = photoImages[0].url;
+        logoUrl = parsed.logoUrl || null;
+      } catch (e) { /* AI parse failed — will use fallback */ }
 
       // Fallback: if AI found no logo, pick first logo candidate
       if (!logoUrl && logoImages.length > 0) logoUrl = logoImages[0].url;
 
-      // Second photo — different image for variety across templates
-      let finalPhoto1 = photoUrl;
-      let finalPhoto2 = photoImages.find(p => p.url !== photoUrl)?.url || photoUrl;
+      // Use 4 different Unsplash searches — one per template, guaranteed fetchable
+      const unsplashSearches = {
+        chevron:     'modern office team professional workspace people',
+        half_circle: 'IT consulting meeting technology boardroom professionals',
+        corporate:   'network server data center infrastructure technology',
+        modern:      'cybersecurity digital technology abstract neon'
+      };
 
-      // Verify photos are publicly fetchable (CDN-protected images cause blank renders)
-      async function isPubliclyFetchable(url) {
-        try {
-          const test = await fetch(url, {
-            method: 'HEAD',
-            signal: AbortSignal.timeout(4000),
-            headers: { 'User-Agent': 'Mozilla/5.0' }
+      const unsplashResults = await Promise.all(
+        Object.entries(unsplashSearches).map(async ([templateId, query]) => {
+          const params = new URLSearchParams({
+            query, orientation: 'portrait', per_page: '3',
+            client_id: process.env.UNSPLASH_ACCESS_KEY
           });
-          return test.ok;
-        } catch (e) { return false; }
-      }
+          const res  = await fetch(`${UNSPLASH_API}?${params}`).then(r => r.json()).catch(() => null);
+          const idx  = new Date().getMinutes() % 3;
+          const photo = res?.results?.[idx] || res?.results?.[0];
+          return { templateId, url: photo ? photo.urls.regular + '&w=1200&q=80' : null };
+        })
+      );
 
-      const photo1Ok = finalPhoto1 ? await isPubliclyFetchable(finalPhoto1) : false;
-      const photo2Ok = finalPhoto2 ? await isPubliclyFetchable(finalPhoto2) : false;
-      const logoOk   = logoUrl     ? await isPubliclyFetchable(logoUrl)     : false;
+      // Map results by templateId
+      const photoByTemplate = {};
+      unsplashResults.forEach(({ templateId, url }) => { photoByTemplate[templateId] = url; });
 
-      // If logo is not publicly fetchable, clear it — better to have no logo than a broken render
-      if (!logoOk) logoUrl = null;
-
-      // Fetch Unsplash fallbacks if needed
-      if (!photo1Ok || !photo2Ok) {
-        const [params1, params2] = [
-          'managed IT services technology office professional',
-          'cybersecurity network technology data center'
-        ].map(q => new URLSearchParams({
-          query: q, orientation: 'portrait', per_page: '2',
-          client_id: process.env.UNSPLASH_ACCESS_KEY
-        }));
-        const [uRes1, uRes2] = await Promise.all([
-          !photo1Ok ? fetch(`${UNSPLASH_API}?${params1}`).then(r => r.json()).catch(() => null) : null,
-          !photo2Ok ? fetch(`${UNSPLASH_API}?${params2}`).then(r => r.json()).catch(() => null) : null
-        ]);
-        if (!photo1Ok && uRes1?.results?.[0]) {
-          finalPhoto1 = uRes1.results[0].urls.regular + '&w=1200&q=80';
-          if (finalPhoto2 === photoUrl) finalPhoto2 = (uRes1.results[1] || uRes1.results[0]).urls.regular + '&w=1200&q=80';
-        }
-        if (!photo2Ok && uRes2?.results?.[0]) {
-          finalPhoto2 = uRes2.results[0].urls.regular + '&w=1200&q=80';
-        }
-      }
-
-      // Last resort — if still no photo, use a known good Unsplash image
-      const FALLBACK_PHOTO = 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80';
-      if (!finalPhoto1) finalPhoto1 = FALLBACK_PHOTO;
-      if (!finalPhoto2) finalPhoto2 = FALLBACK_PHOTO;
+      // Fallback if any search failed
+      const FALLBACK = 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80';
+      Object.keys(unsplashSearches).forEach(id => { if (!photoByTemplate[id]) photoByTemplate[id] = FALLBACK; });
 
       return ok200({
-        brandColor: color || '#1a4da0',
+        brandColor:      color || '#1a4da0',
         logoUrl,
-        photoUrl:  finalPhoto1,
-        photo2Url: finalPhoto2,
-        hasWebsitePhoto: photo1Ok
+        photoByTemplate,
+        // Keep photoUrl/photo2Url for backward compat with manual mode
+        photoUrl:  photoByTemplate.chevron,
+        photo2Url: photoByTemplate.half_circle
       });
 
     } catch (e) {
@@ -372,21 +318,19 @@ Respond ONLY with valid JSON, no markdown:
   }
 
   // ── ACTION: start-all ──────────────────────────────────
-  // Fire all 4 Placid renders in parallel, return all 4 imageIds
   if (action === 'start-all') {
-    const { brandColor, logoUrl, photoUrl, photo2Url } = body;
+    const { brandColor, logoUrl, photoUrl, photo2Url, photoByTemplate } = body;
     if (!brandColor || !photoUrl) return err('brandColor and photoUrl required.', 400);
 
     const hex8 = brandColor.replace('#', '').padEnd(6,'0').slice(0,6).toUpperCase() + 'FF';
     const color = '#' + hex8;
 
-    // Photo assignment: photo1 → chevron + corporate, photo2 → half_circle + modern
-    const photo2 = photo2Url || photoUrl;
-    const photoForTemplate = {
+    // Use per-template photos if provided, otherwise fall back to photo1/photo2 split
+    const photoForTemplate = photoByTemplate || {
       chevron:     photoUrl,
       corporate:   photoUrl,
-      half_circle: photo2,
-      modern:      photo2
+      half_circle: photo2Url || photoUrl,
+      modern:      photo2Url || photoUrl
     };
 
     try {
