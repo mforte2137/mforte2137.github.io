@@ -453,38 +453,29 @@ ${alsoReply ? '\nAfter the ticket, add a section clearly separated by the marker
   }
 });
 
+// ─── FEATUREBASE SEARCH ───────────────────────
+async function searchFeaturebase(query) {
+  const response = await fetch('/.netlify/functions/featurebase', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, instructions })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Search error ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.content?.[0]?.text || '';
+}
+
 // ─── DOCS SEARCH ──────────────────────────────
 document.getElementById('docsSearchBtn').addEventListener('click', async () => {
   const query = document.getElementById('docsSearchQuery').value.trim();
   const btn   = document.getElementById('docsSearchBtn');
 
   if (!query) { alert('Please enter a topic or question to search.'); return; }
-
-  const prompt = `A support agent wants to know whether Salesbuildr's knowledge base covers a specific topic.
-
-QUERY: "${query}"
-
-CRITICAL RULES — follow these exactly:
-- ONLY search and report results from https://salesbuildr.featurebase.app/en/help
-- ONLY include URLs that begin with https://salesbuildr.featurebase.app/en/help
-- Do NOT use results from Intercom, help.salesbuildr.com, or any other domain whatsoever
-- If you find content on another domain, ignore it completely
-- If nothing exists at salesbuildr.featurebase.app/en/help on this topic, say the article does not exist — do not fall back to any other source
-
-Search https://salesbuildr.featurebase.app/en/help and answer:
-1. Does an article exist on this topic? If yes, give the exact title and full URL.
-2. What does the article cover? Give a brief summary.
-3. Is anything missing or unclear that a customer might still need to know?
-
-If no article exists on this topic, say so clearly and describe what the gap is.
-
-At the very end, if there is a documentation gap, include a section using EXACTLY this marker:
-
-THE GAP
-[A concise plain-English description of what is missing — written so it can be forwarded to a developer or used as a brief for writing a new article.]
-
-If there is no gap, do not include THE GAP section at all.
-Only include URLs you have actually found at salesbuildr.featurebase.app/en/help — do not guess or construct URLs.`;
 
   setLoading(btn, true);
 
@@ -496,7 +487,7 @@ Only include URLs you have actually found at salesbuildr.featurebase.app/en/help
   document.getElementById('writeArticleContext').value = '';
 
   try {
-    const result = await callClaude(prompt, { webSearch: true });
+    const result = await searchFeaturebase(query);
 
     const outputBlock = document.getElementById('docsSearchOutput');
     const outputText  = document.getElementById('docsSearchOutputText');
@@ -506,8 +497,8 @@ Only include URLs you have actually found at salesbuildr.featurebase.app/en/help
 
     const gapMarker = 'THE GAP';
     const gapIndex  = result.indexOf(gapMarker);
-    let searchText = result;
-    let gapContent = '';
+    let searchText  = result;
+    let gapContent  = '';
 
     if (gapIndex !== -1) {
       searchText = result.slice(0, gapIndex).trim();
