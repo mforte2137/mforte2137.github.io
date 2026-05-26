@@ -326,6 +326,10 @@ Respond ONLY with valid JSON, no markdown:
 
       const photo1Ok = finalPhoto1 ? await isPubliclyFetchable(finalPhoto1) : false;
       const photo2Ok = finalPhoto2 ? await isPubliclyFetchable(finalPhoto2) : false;
+      const logoOk   = logoUrl     ? await isPubliclyFetchable(logoUrl)     : false;
+
+      // If logo is not publicly fetchable, clear it — better to have no logo than a broken render
+      if (!logoOk) logoUrl = null;
 
       // Fetch Unsplash fallbacks if needed
       if (!photo1Ok || !photo2Ok) {
@@ -385,7 +389,8 @@ Respond ONLY with valid JSON, no markdown:
       const results = await Promise.all(
         Object.entries(TEMPLATES).map(async ([templateId, template]) => {
           const photo  = photoForTemplate[templateId] || photoUrl;
-          const layers = { photo: { image: photo }, logo: { image: logoUrl } };
+          const layers = { photo: { image: photo } };
+          if (logoUrl) layers.logo = { image: logoUrl };
           for (const layer of template.colorLayers) layers[layer] = { background_color: color };
 
           const res  = await fetch(PLACID_API, {
@@ -590,10 +595,8 @@ Respond ONLY with valid JSON, no markdown:
 
       const hex8 = brandColor.replace('#', '').padEnd(6,'0').slice(0,6).toUpperCase() + 'FF';
       const color = '#' + hex8;
-      const layers = {
-        photo: { image: photoUrl },
-        logo:  { image: resolvedLogoUrl }
-      };
+      const layers = { photo: { image: photoUrl } };
+      if (resolvedLogoUrl) layers.logo = { image: resolvedLogoUrl };
       for (const layer of template.colorLayers) layers[layer] = { background_color: color };
 
       const res  = await fetch(PLACID_API, {
