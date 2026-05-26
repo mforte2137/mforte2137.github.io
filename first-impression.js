@@ -13,6 +13,8 @@ let autoResults        = {};   // templateId → imageUrl
 let autoSelectedId     = null; // currently selected template in auto result
 let autoCompanyName    = '';
 let autoBrandColor     = '#1a4da0';
+let autoPhotoUrl       = '';
+let autoPhoto2Url      = '';
 
 // ── DOM — Views ───────────────────────────────────────────
 const formView       = document.getElementById('form-view');
@@ -41,6 +43,9 @@ const autoSbApiKey       = document.getElementById('auto-sb-api-key');
 const autoSbIntKey       = document.getElementById('auto-sb-int-key');
 const autoSbRemember     = document.getElementById('auto-sb-remember');
 const restartAutoBtn     = document.getElementById('restart-auto-btn');
+const logoMissingBanner  = document.getElementById('logo-missing-banner');
+const logoMissingInput   = document.getElementById('logo-missing-input');
+const logoMissingBtn     = document.getElementById('logo-missing-btn');
 const manualToggleBtn    = document.getElementById('manual-toggle-btn');
 const manualSection      = document.getElementById('manual-section');
 
@@ -186,8 +191,11 @@ autoBtn.addEventListener('click', async () => {
     const analyseData = await analyseRes.json();
     if (!analyseRes.ok || !analyseData.ok) throw new Error(analyseData.error || 'Could not scan website.');
 
-    const { brandColor, logoUrl, photoUrl, photo2Url } = analyseData;
+    const { brandColor, logoUrl: foundLogoUrl, photoUrl, photo2Url } = analyseData;
     autoBrandColor  = brandColor;
+    autoPhotoUrl    = photoUrl;
+    autoPhoto2Url   = photo2Url || photoUrl;
+    let autoLogoUrl = foundLogoUrl || null;
 
     // Extract company name from URL for display
     try {
@@ -195,8 +203,7 @@ autoBtn.addEventListener('click', async () => {
       autoCompanyName = autoCompanyName.charAt(0).toUpperCase() + autoCompanyName.slice(1);
     } catch (e) { autoCompanyName = url; }
 
-    if (!logoUrl)  throw new Error('Could not find a logo on their website. Try the manual mode instead.');
-    if (!photoUrl) throw new Error('Could not find a suitable photo on their website or from Unsplash. Try the manual mode instead.');
+    if (!photoUrl) throw new Error('Could not find a suitable photo. Try the manual mode instead.');
 
     // Step 2 — fire all 4 Placid renders
     workTitle.textContent = 'Rendering all four templates…';
@@ -205,18 +212,28 @@ autoBtn.addEventListener('click', async () => {
     const startRes  = await fetch('/api/generate-cover', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action: 'start-all', brandColor, logoUrl, photoUrl, photo2Url })
+      body:    JSON.stringify({ action: 'start-all', brandColor, logoUrl: autoLogoUrl, photoUrl, photo2Url })
     });
     const startData = await startRes.json();
     if (!startRes.ok || !startData.ok) throw new Error(startData.error || 'Could not start rendering.');
 
-    const renders = startData.renders; // [{templateId, name, imageId, imageUrl}]
+    const renders = startData.renders;
 
     // Step 3 — show result grid immediately, poll for each image
     resultAutoTitle.textContent = autoCompanyName;
     coversGrid.innerHTML = '';
     selectedCoverActions.hidden = true;
     autoResults = {};
+
+    // Show logo missing banner if no logo was found
+    if (!autoLogoUrl) {
+      logoMissingBanner.hidden = false;
+      logoMissingInput.value   = '';
+      logoMissingBtn.disabled  = false;
+      logoMissingBtn.textContent = 'Add Logo & Re-render →';
+    } else {
+      logoMissingBanner.hidden = true;
+    }
 
     // Build tiles — show spinner until each image is ready
     renders.forEach(({ templateId, name, imageId, imageUrl }) => {
@@ -371,10 +388,93 @@ autoPushBtn.addEventListener('click', async () => {
 restartAutoBtn.addEventListener('click', () => {
   autoResults     = {};
   autoSelectedId  = null;
+  autoPhotoUrl    = '';
+  autoPhoto2Url   = '';
   coversGrid.innerHTML = '';
   selectedCoverActions.hidden = true;
   autoPushResult.hidden       = true;
+  logoMissingBanner.hidden    = true;
   showView('form');
+});
+
+// Logo missing — re-render all covers with the pasted logo URL
+logoMissingBtn.addEventListener('click', async () => {
+  const logoUrl = logoMissingInput.value.trim();
+  if (!logoUrl) { logoMissingInput.focus(); return; }
+
+  logoMissingBtn.disabled    = true;
+  logoMissingBtn.textContent = 'Re-rendering…';
+
+  // Get the photoUrls from the existing renders — reuse same photos
+  // We need to re-fire start-all with the new logo
+  // Pull photoUrl from the working view state isn't available, so store it
+  try {
+    const startRes = await fetch('/api/generate-cover', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        action:    'start-all',
+        brandColor: autoBrandColor,
+        logoUrl,
+        photoUrl:   autoPhotoUrl,
+        photo2Url:  autoPhoto2Url
+      })
+    });
+    const startData = await startRes.json();
+    if (!startRes.ok || !startData.ok) throw new Error(startData.error || 'Re-render failed.');
+
+    // Reset grid spinners
+    autoResults = {};
+    selectedCoverActions.hidden = true;
+    coversGrid.querySelectorAll('.cover-tile').forEach(tile => {
+      const label = tile.querySelector('.cover-tile-label').textContent;
+      tile.innerHTML = `
+        <div class="cover-tile-spinner"><div class="spinner-sm"></div></div>
+        <div class="cover-tile-label">${label}</div>
+        <div class="cover-tile-check">✓</div>
+      `;
+      tile.classList.remove('is-selected');
+      tile.addEventListener('click', () => selectCover(tile.dataset.templateId));
+    });
+
+    logoMissingBanner.hidden = true;
+
+    // Poll for results
+    const pending = startData.renders.filter(r => !r.imageUrl);
+    startData.renders.forEach(r => {
+      if (r.imageUrl) {
+        autoResults[r.templateId] = r.imageUrl;
+        const tile = coversGrid.querySelector(`[data-template-id="${r.templateId}"]`);
+        if (tile) setTileImage(tile, r.imageUrl);
+      }
+    });
+
+    for (let i = 0; i < 20; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      const stillPending = pending.filter(r => !autoResults[r.templateId]);
+      if (!stillPending.length) break;
+      const pollRes  = await fetch('/api/generate-cover', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ action: 'poll-all', imageIds: stillPending.map(r => ({ templateId: r.templateId, imageId: r.imageId })) })
+      });
+      const pollData = await pollRes.json();
+      if (pollData.ok) {
+        pollData.renders.forEach(({ templateId, ready, imageUrl }) => {
+          if (ready && imageUrl && !autoResults[templateId]) {
+            autoResults[templateId] = imageUrl;
+            const tile = coversGrid.querySelector(`[data-template-id="${templateId}"]`);
+            if (tile) setTileImage(tile, imageUrl);
+          }
+        });
+      }
+    }
+
+  } catch (e) {
+    logoMissingBtn.disabled    = false;
+    logoMissingBtn.textContent = 'Add Logo & Re-render →';
+    logoMissingBanner.querySelector('.logo-missing-body strong').textContent = `✕ ${e.message} —`;
+  }
 });
 
 // ── Focal point slider ────────────────────────────────────
