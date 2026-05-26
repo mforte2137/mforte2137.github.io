@@ -28,8 +28,10 @@ const FIELDS = [
   { key: 'Category',     label: 'Category',     required: false },
   { key: 'Unit',         label: 'Unit',         required: false },
   { key: 'Term',         label: 'Term',         required: false },
-  { key: 'Manufacturer', label: 'Manufacturer', required: false },
-  { key: 'Distributor',  label: 'Distributor',  required: false },
+  // Manufacturer/Distributor excluded from UI — Salesbuildr API requires numeric vendorId, not strings.
+  // They are auto-detected and appended to description in bid-push.js instead.
+  { key: 'Manufacturer', label: 'Manufacturer', required: false, pushOnly: true },
+  { key: 'Distributor',  label: 'Distributor',  required: false, pushOnly: true },
   { key: 'Quantity',     label: 'Quantity',     required: false },
 ];
 
@@ -381,6 +383,9 @@ function buildMappingUI() {
   const opts = ['(not mapped)', ...columnHeaders];
 
   FIELDS.forEach(field => {
+    // Skip fields that are handled invisibly (e.g. Manufacturer/Distributor — API rejects string vendor names)
+    if (field.pushOnly) return;
+
     const tr = document.createElement('tr');
 
     // Determine value: AI mapping takes priority over auto-match
@@ -549,7 +554,7 @@ function runConversion() {
 // ── Preview ───────────────────────────────────────────────
 function renderPreview() {
   const sample = convertedData.slice(0, 5);
-  const keys   = FIELDS.map(f => f.key);
+  const keys   = FIELDS.filter(f => !f.pushOnly).map(f => f.key);
   document.getElementById('statsLine').textContent =
     `✓ ${convertedData.length} row${convertedData.length !== 1 ? 's' : ''} ready to import`;
   const wrap  = document.createElement('div'); wrap.className = 'preview-scroll';
@@ -570,7 +575,7 @@ function renderPreview() {
 
 // ── CSV Build & Export ────────────────────────────────────
 function buildCSV() {
-  const keys = FIELDS.map(f => f.key);
+  const keys = FIELDS.filter(f => !f.pushOnly).map(f => f.key);
   const lines = [keys.join(',')];
   convertedData.forEach(row => {
     const cells = keys.map(k => {
