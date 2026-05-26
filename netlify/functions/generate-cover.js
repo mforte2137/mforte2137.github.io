@@ -217,7 +217,8 @@ exports.handler = async (event) => {
 
       // Separate logos from photos using keyword filter
       const seen = new Set();
-      const logoKeywords = ['logo', 'icon', 'favicon', 'brand', 'symbol', 'mark'];
+      // Expanded keyword list — catches more logo URL patterns
+      const logoKeywords = ['logo', 'icon', 'favicon', 'brand', 'symbol', 'mark', 'thumb', 'badge', 'seal', 'crest'];
 
       const logoImages = allImages.filter(img => {
         if (!img.url || seen.has(img.url)) return false;
@@ -226,8 +227,9 @@ exports.handler = async (event) => {
         const isLogo = logoKeywords.some(k => url.includes(k) || alt.includes(k));
         const w = img.width || 0;
         const h = img.height || 0;
-        // Logo candidates: keyword match OR small square image
-        if (isLogo || (w > 0 && h > 0 && w === h && w < 500)) {
+        // Logo candidates: keyword match OR small square image OR wide-short image (typical logo shape)
+        const isTypicalLogoShape = w > 0 && h > 0 && (w === h || (w / h > 2 && h < 300));
+        if (isLogo || isTypicalLogoShape) {
           seen.add(img.url);
           return true;
         }
@@ -255,24 +257,28 @@ exports.handler = async (event) => {
         return true;
       }).slice(0, 8);
 
+      // Pass ALL images to Haiku — let AI find the logo regardless of URL structure
+      // This handles cases where logo URLs don't contain obvious keywords
+      const allForAI = allImages.filter(img => img.url && !img.url.toLowerCase().endsWith('.svg')).slice(0, 30);
+
       // Use Haiku to pick the best photo and best logo
       const haikusPrompt = `You are helping select images for a professional MSP proposal cover page.
 
 Website: ${websiteUrl}
 Brand colour: ${color || 'unknown'}
 
-LOGO CANDIDATES (${logoImages.length} found):
-${logoImages.slice(0, 10).map((img, i) => `${i+1}. URL: ${img.url} | alt: "${img.alt || ''}" | size: ${img.width||'?'}x${img.height||'?'}`).join('\n') || 'None found'}
+ALL IMAGES FROM SITE (${allForAI.length} total — includes logos, photos, graphics):
+${allForAI.map((img, i) => `${i+1}. URL: ${img.url} | alt: "${img.alt || ''}" | size: ${img.width||'?'}x${img.height||'?'}`).join('\n')}
 
-PHOTO CANDIDATES (${photoImages.length} found):
+PRE-FILTERED PHOTO CANDIDATES (${photoImages.length} found):
 ${photoImages.map((img, i) => `${i+1}. URL: ${img.url} | alt: "${img.alt || ''}" | size: ${img.width||'?'}x${img.height||'?'}`).join('\n') || 'None found'}
 
 Tasks:
-1. Pick the single best LOGO (prefer transparent PNG, avoid certificates/badges, prefer the main company logo). If none suitable, return null.
-2. Pick the single best PHOTO for a cover page background (prefer professional people/office/tech photos, avoid graphics/slides/logos). If none suitable, return null.
+1. Pick the single best LOGO from ALL IMAGES — look for the company's main logo (look for the company name in alt text, or typical logo filenames, or wide/short images). Prefer PNG. Return null if none found.
+2. Pick the single best PHOTO for a cover page background from PRE-FILTERED PHOTO CANDIDATES (prefer professional people/office/tech photos, avoid graphics/badges/certificates). Return null if none suitable.
 
 Respond ONLY with valid JSON, no markdown:
-{"logoUrl": "url or null", "photoUrl": "url or null", "photoReason": "one sentence why"}`;
+{"logoUrl": "url or null", "photoUrl": "url or null"}`;
 
       const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
         method:  'POST',
@@ -299,18 +305,70 @@ Respond ONLY with valid JSON, no markdown:
       // Fallback: if AI found no photo, pick first photo candidate
       if (!photoUrl && photoImages.length > 0) photoUrl = photoImages[0].url;
 
+      // Fallback: if AI found no logo, pick first logo candidate
+      if (!logoUrl && logoImages.length > 0) logoUrl = logoImages[0].url;
+
       // Second photo — different image for variety across templates
       const photo2Url = photoImages.find(p => p.url !== photoUrl)?.url || photoUrl;
 
-      // Fallback: if AI found no logo, pick first logo candidate
-      if (!logoUrl && logoImages.length > 0) logoUrl = logoImages[0].url;
+      // Verify photos are publicly fetchable by Placid (CDN-protected images return blank)
+      // Test by doing a HEAD request — if it fails or requires auth, fall back to Unsplash
+      async function isPubliclyFetchable(url) {
+        try {
+          const test = await fetch(url, {
+            method: 'HEAD',
+            signal: AbortSignal.timeout(4000),
+            headers: { 'User-Agent': 'Mozilla/5.0' }
+          });
+          return test.ok;
+        } catch (e) { return false; }
+      }
+
+      // Test photo fetchability; fall back to Unsplash MSP photo if blocked
+      const photoOk  = photoUrl  ? await isPubliclyFetchable(photoUrl)  : false;
+      const photo2Ok = photo2Url ? await isPubliclyFetchable(photo2Url) : false;
+
+      if (!photoOk) {
+        // Fall back to Unsplash
+        const params = new URLSearchParams({
+          query: 'managed IT services technology office professional',
+          orientation: 'portrait', per_page: '4',
+          client_id: process.env.UNSPLASH_ACCESS_KEY
+        });
+        const uRes  = await fetch(`${UNSPLASH_API}?${params}`);
+        const uData = await uRes.json();
+        if (uData.results && uData.results.length > 0) {
+          photoUrl  = uData.results[0].urls.regular + '&w=1200&q=80';
+          photo2Url = (uData.results[1] || uData.results[0]).urls.regular + '&w=1200&q=80'; // reassign
+        }
+      } else if (!photo2Ok && photo2Url !== photoUrl) {
+        // photo2 blocked — reuse photo1 or get a second Unsplash image
+        const params = new URLSearchParams({
+          query: 'cybersecurity network technology',
+          orientation: 'portrait', per_page: '2',
+          client_id: process.env.UNSPLASH_ACCESS_KEY
+        });
+        const uRes  = await fetch(`${UNSPLASH_API}?${params}`);
+        const uData = await uRes.json();
+        const fallback2 = uData.results?.[0]?.urls?.regular
+          ? uData.results[0].urls.regular + '&w=1200&q=80'
+          : photoUrl;
+        // photo2Url is const so we pass a local variable instead
+        return ok200({
+          brandColor: color || '#1a4da0',
+          logoUrl,
+          photoUrl,
+          photo2Url: fallback2,
+          hasWebsitePhoto: true
+        });
+      }
 
       return ok200({
         brandColor: color || '#1a4da0',
         logoUrl,
         photoUrl,
-        photo2Url,
-        hasWebsitePhoto: !!photoUrl
+        photo2Url: photo2Ok ? photo2Url : photoUrl,
+        hasWebsitePhoto: photoOk
       });
 
     } catch (e) {
