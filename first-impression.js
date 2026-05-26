@@ -191,7 +191,7 @@ autoBtn.addEventListener('click', async () => {
     const analyseData = await analyseRes.json();
     if (!analyseRes.ok || !analyseData.ok) throw new Error(analyseData.error || 'Could not scan website.');
 
-    const { brandColor, logoUrl: foundLogoUrl, photoUrl, photo2Url } = analyseData;
+    const { brandColor, logoUrl: foundLogoUrl, photoUrl, photo2Url, photoByTemplate } = analyseData;
     autoBrandColor  = brandColor;
     autoPhotoUrl    = photoUrl;
     autoPhoto2Url   = photo2Url || photoUrl;
@@ -212,7 +212,7 @@ autoBtn.addEventListener('click', async () => {
     const startRes  = await fetch('/api/generate-cover', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action: 'start-all', brandColor, logoUrl: autoLogoUrl, photoUrl, photo2Url })
+      body:    JSON.stringify({ action: 'start-all', brandColor, logoUrl: autoLogoUrl, photoUrl, photo2Url, photoByTemplate })
     });
     const startData = await startRes.json();
     if (!startRes.ok || !startData.ok) throw new Error(startData.error || 'Could not start rendering.');
