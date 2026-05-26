@@ -55,22 +55,10 @@ exports.handler = async function (event) {
     } while (cursor);
 
     if (!articles.length) {
-      // Fetch one raw article to see what the API actually returns for debugging
-      const debugRes = await fetch('https://do.featurebase.app/v2/help_center/articles?limit=1', {
-        headers: {
-          'Authorization':       `Bearer ${fbKey}`,
-          'Featurebase-Version': '2026-01-01.nova'
-        }
-      });
-      const debugData = await debugRes.json();
-
       return {
         statusCode: 200,
         body: JSON.stringify({
-          content: [{
-            type: 'text',
-            text: `No articles matched after filtering. Raw API sample: ${JSON.stringify(debugData).slice(0, 800)}`
-          }]
+          content: [{ type: 'text', text: 'No articles found in the Salesbuildr knowledge base. The KB may be empty or the API key may not have access.' }]
         })
       };
     }
