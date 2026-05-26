@@ -252,7 +252,8 @@ document.querySelectorAll('.copy-btn').forEach(btn => {
 // ─── API CALL ─────────────────────────────────
 async function callClaude(userPrompt, options = {}) {
   const payload = {
-    model: 'claude-sonnet-4-5',
+    // Sonnet for web search (Haiku doesn't support the tool), Haiku for everything else
+    model: options.webSearch ? 'claude-sonnet-4-5' : 'claude-haiku-4-5',
     max_tokens: 1500,
     system: instructions,
     messages: [{ role: 'user', content: userPrompt }]
