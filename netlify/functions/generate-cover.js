@@ -309,10 +309,10 @@ Respond ONLY with valid JSON, no markdown:
       if (!logoUrl && logoImages.length > 0) logoUrl = logoImages[0].url;
 
       // Second photo — different image for variety across templates
-      const photo2Url = photoImages.find(p => p.url !== photoUrl)?.url || photoUrl;
+      let finalPhoto1 = photoUrl;
+      let finalPhoto2 = photoImages.find(p => p.url !== photoUrl)?.url || photoUrl;
 
-      // Verify photos are publicly fetchable by Placid (CDN-protected images return blank)
-      // Test by doing a HEAD request — if it fails or requires auth, fall back to Unsplash
+      // Verify photos are publicly fetchable (CDN-protected images cause blank renders)
       async function isPubliclyFetchable(url) {
         try {
           const test = await fetch(url, {
@@ -324,51 +324,38 @@ Respond ONLY with valid JSON, no markdown:
         } catch (e) { return false; }
       }
 
-      // Test photo fetchability; fall back to Unsplash MSP photo if blocked
-      const photoOk  = photoUrl  ? await isPubliclyFetchable(photoUrl)  : false;
-      const photo2Ok = photo2Url ? await isPubliclyFetchable(photo2Url) : false;
+      const photo1Ok = finalPhoto1 ? await isPubliclyFetchable(finalPhoto1) : false;
+      const photo2Ok = finalPhoto2 ? await isPubliclyFetchable(finalPhoto2) : false;
 
-      if (!photoOk) {
-        // Fall back to Unsplash
-        const params = new URLSearchParams({
-          query: 'managed IT services technology office professional',
-          orientation: 'portrait', per_page: '4',
+      // Fetch Unsplash fallbacks if needed
+      if (!photo1Ok || !photo2Ok) {
+        const [params1, params2] = [
+          'managed IT services technology office professional',
+          'cybersecurity network technology data center'
+        ].map(q => new URLSearchParams({
+          query: q, orientation: 'portrait', per_page: '2',
           client_id: process.env.UNSPLASH_ACCESS_KEY
-        });
-        const uRes  = await fetch(`${UNSPLASH_API}?${params}`);
-        const uData = await uRes.json();
-        if (uData.results && uData.results.length > 0) {
-          photoUrl  = uData.results[0].urls.regular + '&w=1200&q=80';
-          photo2Url = (uData.results[1] || uData.results[0]).urls.regular + '&w=1200&q=80'; // reassign
+        }));
+        const [uRes1, uRes2] = await Promise.all([
+          !photo1Ok ? fetch(`${UNSPLASH_API}?${params1}`).then(r => r.json()) : null,
+          !photo2Ok ? fetch(`${UNSPLASH_API}?${params2}`).then(r => r.json()) : null
+        ]);
+        if (!photo1Ok && uRes1?.results?.[0]) {
+          finalPhoto1 = uRes1.results[0].urls.regular + '&w=1200&q=80';
+          // If photo2 was same as photo1, update it too
+          if (finalPhoto2 === photoUrl) finalPhoto2 = (uRes1.results[1] || uRes1.results[0]).urls.regular + '&w=1200&q=80';
         }
-      } else if (!photo2Ok && photo2Url !== photoUrl) {
-        // photo2 blocked — reuse photo1 or get a second Unsplash image
-        const params = new URLSearchParams({
-          query: 'cybersecurity network technology',
-          orientation: 'portrait', per_page: '2',
-          client_id: process.env.UNSPLASH_ACCESS_KEY
-        });
-        const uRes  = await fetch(`${UNSPLASH_API}?${params}`);
-        const uData = await uRes.json();
-        const fallback2 = uData.results?.[0]?.urls?.regular
-          ? uData.results[0].urls.regular + '&w=1200&q=80'
-          : photoUrl;
-        // photo2Url is const so we pass a local variable instead
-        return ok200({
-          brandColor: color || '#1a4da0',
-          logoUrl,
-          photoUrl,
-          photo2Url: fallback2,
-          hasWebsitePhoto: true
-        });
+        if (!photo2Ok && uRes2?.results?.[0]) {
+          finalPhoto2 = uRes2.results[0].urls.regular + '&w=1200&q=80';
+        }
       }
 
       return ok200({
         brandColor: color || '#1a4da0',
         logoUrl,
-        photoUrl,
-        photo2Url: photo2Ok ? photo2Url : photoUrl,
-        hasWebsitePhoto: photoOk
+        photoUrl:  finalPhoto1,
+        photo2Url: finalPhoto2,
+        hasWebsitePhoto: photo1Ok
       });
 
     } catch (e) {
