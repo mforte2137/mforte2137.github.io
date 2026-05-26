@@ -250,6 +250,18 @@
 
     <p class="result-auto-lead">All four templates rendered with their branding. Click one to select it, then download or save to Salesbuildr.</p>
 
+    <!-- Logo missing warning — shown when auto mode couldn't find/fetch a logo -->
+    <div id="logo-missing-banner" class="logo-missing-banner" hidden>
+      <div class="logo-missing-icon">⚠</div>
+      <div class="logo-missing-body">
+        <strong>Logo not found automatically.</strong> Paste their logo URL below and we'll re-render all four covers with it.
+        <div class="logo-missing-row">
+          <input type="url" id="logo-missing-input" class="logo-missing-input" placeholder="https://example.com/logo.png">
+          <button type="button" id="logo-missing-btn" class="logo-missing-btn">Add Logo & Re-render →</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 4-up grid -->
     <div class="covers-grid" id="covers-grid">
       <!-- Populated by JS -->
