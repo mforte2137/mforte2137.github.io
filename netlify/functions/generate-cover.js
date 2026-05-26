@@ -341,18 +341,22 @@ Respond ONLY with valid JSON, no markdown:
           client_id: process.env.UNSPLASH_ACCESS_KEY
         }));
         const [uRes1, uRes2] = await Promise.all([
-          !photo1Ok ? fetch(`${UNSPLASH_API}?${params1}`).then(r => r.json()) : null,
-          !photo2Ok ? fetch(`${UNSPLASH_API}?${params2}`).then(r => r.json()) : null
+          !photo1Ok ? fetch(`${UNSPLASH_API}?${params1}`).then(r => r.json()).catch(() => null) : null,
+          !photo2Ok ? fetch(`${UNSPLASH_API}?${params2}`).then(r => r.json()).catch(() => null) : null
         ]);
         if (!photo1Ok && uRes1?.results?.[0]) {
           finalPhoto1 = uRes1.results[0].urls.regular + '&w=1200&q=80';
-          // If photo2 was same as photo1, update it too
           if (finalPhoto2 === photoUrl) finalPhoto2 = (uRes1.results[1] || uRes1.results[0]).urls.regular + '&w=1200&q=80';
         }
         if (!photo2Ok && uRes2?.results?.[0]) {
           finalPhoto2 = uRes2.results[0].urls.regular + '&w=1200&q=80';
         }
       }
+
+      // Last resort — if still no photo, use a known good Unsplash image
+      const FALLBACK_PHOTO = 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80';
+      if (!finalPhoto1) finalPhoto1 = FALLBACK_PHOTO;
+      if (!finalPhoto2) finalPhoto2 = FALLBACK_PHOTO;
 
       return ok200({
         brandColor: color || '#1a4da0',
@@ -371,7 +375,7 @@ Respond ONLY with valid JSON, no markdown:
   // Fire all 4 Placid renders in parallel, return all 4 imageIds
   if (action === 'start-all') {
     const { brandColor, logoUrl, photoUrl, photo2Url } = body;
-    if (!brandColor || !logoUrl || !photoUrl) return err('brandColor, logoUrl, photoUrl required.', 400);
+    if (!brandColor || !photoUrl) return err('brandColor and photoUrl required.', 400);
 
     const hex8 = brandColor.replace('#', '').padEnd(6,'0').slice(0,6).toUpperCase() + 'FF';
     const color = '#' + hex8;
@@ -399,10 +403,7 @@ Respond ONLY with valid JSON, no markdown:
             body:    JSON.stringify({ template_uuid: template.uuid, layers })
           });
           const data = await res.json();
-          if (!res.ok) {
-            console.error(`Placid error for ${templateId}:`, JSON.stringify({ template_uuid: template.uuid, layers }), 'Response:', JSON.stringify(data));
-            throw new Error(`Placid error for ${templateId}: ${data.message}`);
-          }
+          if (!res.ok) throw new Error(`Placid error for ${templateId}: ${data.message}`);
           return { templateId, name: template.name, imageId: data.id, imageUrl: data.image_url || null };
         })
       );
