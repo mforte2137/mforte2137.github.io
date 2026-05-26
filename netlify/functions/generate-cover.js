@@ -399,7 +399,10 @@ Respond ONLY with valid JSON, no markdown:
             body:    JSON.stringify({ template_uuid: template.uuid, layers })
           });
           const data = await res.json();
-          if (!res.ok) throw new Error(`Placid error for ${templateId}: ${data.message}`);
+          if (!res.ok) {
+            console.error(`Placid error for ${templateId}:`, JSON.stringify({ template_uuid: template.uuid, layers }), 'Response:', JSON.stringify(data));
+            throw new Error(`Placid error for ${templateId}: ${data.message}`);
+          }
           return { templateId, name: template.name, imageId: data.id, imageUrl: data.image_url || null };
         })
       );
