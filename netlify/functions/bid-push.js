@@ -40,9 +40,9 @@ function toApiProduct(row, categoryId) {
   if (unit) p.unit = unit;
   if (term) p.term = term;
 
-  // Manufacturer preferred; fall back to Distributor as vendor label
-  const vendor = row['Manufacturer']?.toString().trim() || row['Distributor']?.toString().trim();
-  if (vendor) p.vendor = vendor;
+  // NOTE: Salesbuildr's batch API expects vendorId (integer), not a vendor name string.
+  // Manufacturer/Distributor names from the CSV cannot be reliably mapped to IDs here,
+  // so we omit the vendor field. The name is preserved in p.name / p.shortDescription.
 
   return p;
 }
