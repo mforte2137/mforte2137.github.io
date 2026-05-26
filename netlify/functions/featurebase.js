@@ -40,12 +40,14 @@ exports.handler = async function (event) {
 
       // Each article has: id, title, slug, featurebaseUrl, externalUrl, status, collectionId
       for (const article of data.data || []) {
-        // Only include published articles
-        if (article.status === 'published') {
-          articles.push({
-            title: article.title || '(untitled)',
-            url:   article.featurebaseUrl || article.externalUrl || ''
-          });
+        // Include all articles — filter out only explicitly unpublished/draft ones
+        const status = (article.status || '').toLowerCase();
+        if (status === 'draft' || status === 'archived') continue;
+
+        const title = article.title || article.name || '(untitled)';
+        const url   = article.featurebaseUrl || article.externalUrl || '';
+        if (title && url) {
+          articles.push({ title, url });
         }
       }
 
@@ -53,10 +55,22 @@ exports.handler = async function (event) {
     } while (cursor);
 
     if (!articles.length) {
+      // Fetch one raw article to see what the API actually returns for debugging
+      const debugRes = await fetch('https://do.featurebase.app/v2/help_center/articles?limit=1', {
+        headers: {
+          'Authorization':       `Bearer ${fbKey}`,
+          'Featurebase-Version': '2026-01-01.nova'
+        }
+      });
+      const debugData = await debugRes.json();
+
       return {
         statusCode: 200,
         body: JSON.stringify({
-          content: [{ type: 'text', text: 'No published articles found in the Salesbuildr knowledge base.' }]
+          content: [{
+            type: 'text',
+            text: `No articles matched after filtering. Raw API sample: ${JSON.stringify(debugData).slice(0, 800)}`
+          }]
         })
       };
     }
