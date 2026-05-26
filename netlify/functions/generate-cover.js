@@ -275,6 +275,7 @@ Respond ONLY with valid JSON, no markdown:
       if (!logoUrl && logoImages.length > 0) logoUrl = logoImages[0].url;
 
       // Use 4 different Unsplash searches — one per template, guaranteed fetchable
+      // Each uses a distinct query AND a different random offset to ensure variety
       const unsplashSearches = {
         chevron:     'modern office team professional workspace people',
         half_circle: 'IT consulting meeting technology boardroom professionals',
@@ -282,15 +283,23 @@ Respond ONLY with valid JSON, no markdown:
         modern:      'cybersecurity digital technology abstract neon'
       };
 
+      // Generate 4 different random page offsets so reruns give different images
+      const seed = Date.now();
+      const offsets = [0, 1, 2, 3].map(i => (Math.floor(seed / 1000 + i * 37) % 8));
+
       const unsplashResults = await Promise.all(
-        Object.entries(unsplashSearches).map(async ([templateId, query]) => {
+        Object.entries(unsplashSearches).map(async ([templateId, query], i) => {
           const params = new URLSearchParams({
-            query, orientation: 'portrait', per_page: '3',
-            client_id: process.env.UNSPLASH_ACCESS_KEY
+            query,
+            orientation: 'portrait',
+            per_page:    '10',
+            page:        String(Math.floor(offsets[i] / 5) + 1), // page 1 or 2
+            order_by:    'relevant',
+            client_id:   process.env.UNSPLASH_ACCESS_KEY
           });
-          const res  = await fetch(`${UNSPLASH_API}?${params}`).then(r => r.json()).catch(() => null);
-          const idx  = new Date().getMinutes() % 3;
-          const photo = res?.results?.[idx] || res?.results?.[0];
+          const res   = await fetch(`${UNSPLASH_API}?${params}`).then(r => r.json()).catch(() => null);
+          const pool  = res?.results || [];
+          const photo = pool[offsets[i] % Math.max(pool.length, 1)] || pool[0];
           return { templateId, url: photo ? photo.urls.regular + '&w=1200&q=80' : null };
         })
       );
