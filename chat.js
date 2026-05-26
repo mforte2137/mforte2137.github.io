@@ -464,9 +464,14 @@ document.getElementById('docsSearchBtn').addEventListener('click', async () => {
 
 QUERY: "${query}"
 
-The Salesbuildr knowledge base is at: https://salesbuildr.featurebase.app/en/help
-All articles are nested under that URL. Search it and any linked articles to answer the following:
+CRITICAL RULES — follow these exactly:
+- ONLY search and report results from https://salesbuildr.featurebase.app/en/help
+- ONLY include URLs that begin with https://salesbuildr.featurebase.app/en/help
+- Do NOT use results from Intercom, help.salesbuildr.com, or any other domain whatsoever
+- If you find content on another domain, ignore it completely
+- If nothing exists at salesbuildr.featurebase.app/en/help on this topic, say the article does not exist — do not fall back to any other source
 
+Search https://salesbuildr.featurebase.app/en/help and answer:
 1. Does an article exist on this topic? If yes, give the exact title and full URL.
 2. What does the article cover? Give a brief summary.
 3. Is anything missing or unclear that a customer might still need to know?
@@ -479,7 +484,7 @@ THE GAP
 [A concise plain-English description of what is missing — written so it can be forwarded to a developer or used as a brief for writing a new article.]
 
 If there is no gap, do not include THE GAP section at all.
-Only include URLs you have actually found by searching — do not guess or construct URLs.`;
+Only include URLs you have actually found at salesbuildr.featurebase.app/en/help — do not guess or construct URLs.`;
 
   setLoading(btn, true);
 
