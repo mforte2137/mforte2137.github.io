@@ -433,13 +433,43 @@ document.getElementById('ticketBtn').addEventListener('click', async () => {
 
   const typeLabel = type === 'bug' ? 'Bug' : 'Feature Request';
 
-  const prompt = `Draft a Jira ${typeLabel} ticket based on the following.
+  setLoading(btn, true);
+
+  try {
+    // ── Step 1: Search KB to check if this is documented behaviour ────────
+    let kbNote = '';
+    try {
+      const kbRes = await fetch('/.netlify/functions/featurebase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: shortDesc, instructions })
+      });
+      if (kbRes.ok) {
+        const kbData = await kbRes.json();
+        const kbText = kbData.content?.[0]?.text || '';
+        const gapIdx = kbText.indexOf('THE GAP');
+        const kbResult = gapIdx !== -1 ? kbText.slice(0, gapIdx).trim() : kbText.trim();
+        const noArticle = kbResult.toLowerCase().includes('no articles') ||
+                          kbResult.toLowerCase().includes('no published') ||
+                          kbResult.toLowerCase().includes('does not exist');
+        if (!noArticle) kbNote = kbResult;
+      }
+    } catch (_) {
+      // KB check failed silently — ticket still drafts without it
+    }
+
+    // ── Step 2: Draft the ticket, informed by KB result ───────────────────
+    const prompt = `Draft a Jira ${typeLabel} ticket based on the following.
 
 Area: ${area}
 Short description: ${shortDesc}
 Details / conversation:
 ${details}
 
+${kbNote ? `KNOWLEDGE BASE CONTEXT — an article may already cover some of this behaviour:
+${kbNote}
+If this article suggests the reported behaviour is actually documented and expected, note that clearly in the Description so the team can assess before investigating.
+` : ''}
 FORMAT THE TICKET EXACTLY AS FOLLOWS:
 
 Title: ${area}: ${shortDesc}
@@ -447,7 +477,7 @@ Title: ${area}: ${shortDesc}
 Type: ${typeLabel}
 
 Description:
-[2-3 sentence overview of the issue or request, written from the customer's perspective. The customer should be able to refer to themselves as "We".]
+[2-3 sentence overview of the issue or request, written from the customer's perspective. The customer should be able to refer to themselves as "We". If relevant KB articles were found, note them here so the team can check whether this is documented behaviour before investigating.]
 
 ${type === 'bug' ? `Steps to Reproduce:
 [Numbered steps]
@@ -471,9 +501,6 @@ Expected Benefit:
 Leave a blank line after every section. Do not include customer names or end-customer data.
 ${alsoReply ? '\nAfter the ticket, add a section clearly separated by the marker CUSTOMER_REPLY_START, then write a reply I can send to the customer about this issue or request.' : ''}`;
 
-  setLoading(btn, true);
-
-  try {
     const result = await callClaude(prompt);
 
     const ticketOutput     = document.getElementById('ticketOutput');
@@ -500,6 +527,16 @@ ${alsoReply ? '\nAfter the ticket, add a section clearly separated by the marker
       replyOutput.classList.remove('hidden');
     } else {
       replyOutput.classList.add('hidden');
+    }
+
+    // Show KB note as green callout if an article was found
+    const ticketKbBlock = document.getElementById('ticketKbBlock');
+    const ticketKbText  = document.getElementById('ticketKbText');
+    if (kbNote && ticketKbBlock) {
+      ticketKbText.innerText = kbNote;
+      ticketKbBlock.classList.remove('hidden');
+    } else if (ticketKbBlock) {
+      ticketKbBlock.classList.add('hidden');
     }
 
     ticketOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
