@@ -20,24 +20,39 @@
           <span class="brand-mark">◆</span>
           <span class="brand-name">Project Progress</span>
         </div>
-        <button class="btn-primary" id="btn-import-new">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Import Project
-        </button>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button class="btn-ghost" id="btn-sample-report">View Sample Report</button>
+          <button class="btn-primary" id="btn-import-new">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Import Project
+          </button>
+        </div>
       </div>
     </header>
 
     <main class="dashboard-main">
-      <div class="dashboard-hero" id="dashboard-hero">
+      <div class="dashboard-hero">
         <div class="hero-text">
           <h1>Your Projects</h1>
           <p>Track progress and generate executive reports for your customers.</p>
         </div>
       </div>
 
-      <div class="projects-grid" id="projects-grid">
-        <!-- project cards injected here -->
+      <!-- Sample report collapsible -->
+      <div class="sample-report-wrap" id="sample-report-wrap" style="display:none">
+        <div class="sample-report-header" id="sample-report-toggle">
+          <div class="sample-label">
+            <span class="sample-badge">SAMPLE</span>
+            <span>Network Infrastructure Upgrade — Example Report</span>
+          </div>
+          <button class="sample-close-btn" id="btn-close-sample">✕ Close</button>
+        </div>
+        <div class="sample-report-body" id="sample-report-body">
+          <!-- injected by JS -->
+        </div>
       </div>
+
+      <div class="projects-grid" id="projects-grid"></div>
 
       <div class="empty-state" id="empty-state" style="display:none">
         <div class="empty-icon">◈</div>
@@ -89,36 +104,45 @@
       </div>
 
       <div class="tracker-body">
-        <!-- LEFT: Tasks -->
+
+        <!-- CENTRE: Tasks (wider) -->
         <div class="tasks-panel">
           <div class="panel-header">
             <h2>Tasks</h2>
-            <span class="task-count" id="task-count">0 of 0</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="task-count" id="task-count">0 of 0</span>
+              <button class="btn-add-blocker" id="btn-add-task">+ Add Task</button>
+            </div>
           </div>
-          <div class="tasks-list" id="tasks-list">
-            <!-- task rows injected here -->
-          </div>
+          <div class="tasks-list" id="tasks-list"></div>
         </div>
 
-        <!-- RIGHT: Blockers -->
+        <!-- RIGHT: Blockers + Scope Changes + Notes -->
         <div class="blockers-panel">
+
+          <!-- Blockers & Risks -->
           <div class="panel-header">
-            <h2>Blockers & Risks</h2>
+            <h2>Blockers &amp; Risks</h2>
             <button class="btn-add-blocker" id="btn-add-blocker">+ Add</button>
           </div>
-          <div class="blockers-list" id="blockers-list">
-            <!-- blocker cards injected here -->
-          </div>
-          <div class="no-blockers" id="no-blockers">
-            <span>✓</span> No active blockers
-          </div>
+          <div class="blockers-list" id="blockers-list"></div>
+          <div class="no-blockers" id="no-blockers"><span>✓</span> No active blockers</div>
 
-          <!-- Project notes -->
-          <div class="panel-header" style="margin-top:2rem">
+          <!-- Scope Changes -->
+          <div class="panel-header" style="margin-top:1.5rem">
+            <h2>Scope Changes</h2>
+            <button class="btn-add-blocker" id="btn-add-scope">+ Add</button>
+          </div>
+          <div class="blockers-list" id="scope-list"></div>
+          <div class="no-blockers" id="no-scope"><span>✓</span> No scope changes</div>
+
+          <!-- Internal Notes -->
+          <div class="panel-header" style="margin-top:1.5rem">
             <h2>Internal Notes</h2>
           </div>
           <textarea id="project-notes" class="notes-area" placeholder="Add internal notes for this project (not included in customer report)…"></textarea>
         </div>
+
       </div>
     </main>
   </div>
@@ -147,13 +171,11 @@
     </header>
 
     <main class="report-main">
-      <!-- AI generating state -->
       <div class="generating-state" id="generating-state">
         <div class="gen-spinner"></div>
         <p id="gen-message">Analysing project data…</p>
       </div>
 
-      <!-- Report content -->
       <div class="report-wrap" id="report-wrap" style="display:none">
         <div class="report-page" id="report-page">
 
@@ -177,14 +199,14 @@
 
           <div class="report-grid">
 
-            <!-- Block 1: Current Phase -->
+            <!-- ① Current Phase -->
             <div class="report-block block-phase">
               <div class="block-label">① Current Phase</div>
               <div class="phase-narrative" id="rpt-phase-narrative"></div>
               <div class="phase-bar" id="rpt-phase-bar"></div>
             </div>
 
-            <!-- Block 2: Progress -->
+            <!-- ② Overall Progress -->
             <div class="report-block block-progress">
               <div class="block-label">② Overall Progress</div>
               <div class="report-progress-wrap">
@@ -202,27 +224,33 @@
               <div class="report-task-summary" id="rpt-task-summary"></div>
             </div>
 
-            <!-- Block 3: Risks & Blockers -->
+            <!-- ③ Risks & Blockers -->
             <div class="report-block block-risks">
               <div class="block-label">③ Risks &amp; Blockers</div>
               <div id="rpt-blockers-list"></div>
             </div>
 
-            <!-- Block 4: Executive Summary -->
-            <div class="report-block block-summary">
-              <div class="block-label">④ Executive Summary</div>
-              <div class="exec-summary" id="rpt-exec-summary"></div>
-            </div>
-
-            <!-- Block 5: Decisions Needed -->
+            <!-- ④ Decisions Needed -->
             <div class="report-block block-decisions">
-              <div class="block-label">⑤ Decisions &amp; Actions Needed</div>
+              <div class="block-label">④ Decisions &amp; Actions Needed</div>
               <div id="rpt-decisions-list"></div>
             </div>
 
-            <!-- Block 6: Timeline Confidence -->
+            <!-- ⑤ Scope Changes — full width -->
+            <div class="report-block block-scope-changes">
+              <div class="block-label">⑤ Scope Changes</div>
+              <div id="rpt-scope-list"></div>
+            </div>
+
+            <!-- ⑥ Executive Summary -->
+            <div class="report-block block-summary">
+              <div class="block-label">⑥ Executive Summary</div>
+              <div class="exec-summary" id="rpt-exec-summary"></div>
+            </div>
+
+            <!-- ⑦ Outlook -->
             <div class="report-block block-timeline">
-              <div class="block-label">⑥ Outlook</div>
+              <div class="block-label">⑦ Outlook</div>
               <div class="timeline-conf" id="rpt-timeline-conf"></div>
               <div class="outlook-narrative" id="rpt-outlook-narrative"></div>
             </div>
@@ -230,7 +258,7 @@
           </div>
 
           <div class="report-footer">
-            <span>Prepared by your MSP team</span>
+            <span id="rpt-footer-msp">Prepared by your MSP team</span>
             <span id="rpt-footer-date"></span>
           </div>
         </div>
@@ -259,7 +287,6 @@
           </div>
         </label>
         <div class="import-error" id="import-error" style="display:none"></div>
-
         <div class="modal-fields" id="import-meta-fields" style="display:none">
           <div class="field-group">
             <label>Project Title</label>
@@ -318,6 +345,78 @@
     </div>
   </div>
 
+  <!-- Scope Change modal -->
+  <div class="modal-overlay" id="modal-scope">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3 id="scope-modal-title">Add Scope Change</h3>
+        <button class="modal-close" id="modal-scope-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label>Description</label>
+          <textarea id="scope-desc" rows="3" placeholder="Describe the scope change or creep item…"></textarea>
+        </div>
+        <div class="field-group">
+          <label>Type</label>
+          <div class="severity-toggle" id="scope-type-toggle">
+            <button class="sev-btn active" data-type="out-of-scope">Out of Scope</button>
+            <button class="sev-btn" data-type="creep">Project Creep</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Timeline Impact</label>
+          <div class="severity-toggle" id="scope-impact-toggle">
+            <button class="sev-btn active" data-impact="low">Low</button>
+            <button class="sev-btn" data-impact="medium">Medium</button>
+            <button class="sev-btn" data-impact="high">High</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Status</label>
+          <div class="severity-toggle" id="scope-status-toggle">
+            <button class="sev-btn active" data-scopestatus="pending">Pending Discussion</button>
+            <button class="sev-btn" data-scopestatus="approved">Approved</button>
+            <button class="sev-btn" data-scopestatus="absorbed">Absorbed</button>
+            <button class="sev-btn" data-scopestatus="declined">Declined</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-scope-cancel">Cancel</button>
+        <button class="btn-primary" id="btn-scope-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Task modal (add/edit) -->
+  <div class="modal-overlay" id="modal-task">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3 id="task-modal-title">Add Task</h3>
+        <button class="modal-close" id="modal-task-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label>Task Name</label>
+          <input type="text" id="task-name-input" placeholder="e.g. Configure firewall rules" />
+        </div>
+        <div class="field-group">
+          <label>Role</label>
+          <input type="text" id="task-role-input" placeholder="e.g. Senior Engineer" />
+        </div>
+        <div class="field-group">
+          <label>Notes</label>
+          <input type="text" id="task-notes-input" placeholder="e.g. Includes VPN and NAT config" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-task-cancel">Cancel</button>
+        <button class="btn-primary" id="btn-task-save">Save Task</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Edit meta modal -->
   <div class="modal-overlay" id="modal-meta">
     <div class="modal modal-sm">
@@ -363,6 +462,23 @@
       <div class="modal-footer">
         <button class="btn-ghost" id="btn-delete-cancel">Cancel</button>
         <button class="btn-danger" id="btn-delete-confirm">Delete Project</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete task confirm -->
+  <div class="modal-overlay" id="modal-delete-task">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3>Delete Task?</h3>
+        <button class="modal-close" id="modal-delete-task-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-muted)">Remove <strong id="delete-task-name"></strong> from this project?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-delete-task-cancel">Cancel</button>
+        <button class="btn-danger" id="btn-delete-task-confirm">Delete Task</button>
       </div>
     </div>
   </div>
