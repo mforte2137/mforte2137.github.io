@@ -247,6 +247,21 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; }
 }
 .task-action-btn:hover { color: var(--text); background: var(--surface-2); }
 .task-action-btn.del:hover { color: var(--red); }
+
+/* Drag handle */
+.drag-handle {
+  color: var(--border-strong); font-size: 16px; cursor: grab;
+  flex-shrink: 0; padding: 0 2px; margin-top: 1px;
+  user-select: none; transition: color 0.12s;
+  letter-spacing: -2px;
+}
+.drag-handle:hover { color: var(--text-muted); }
+.drag-handle:active { cursor: grabbing; }
+.task-row.dragging { opacity: 0.4; background: var(--accent-light); }
+.task-row.drag-over {
+  background: var(--accent-light);
+  border-top: 2px solid var(--accent);
+}
 .task-note-input {
   width: 100%; margin-top: 6px; padding: 6px 8px;
   border: 1px solid var(--border); border-radius: 6px;
@@ -422,8 +437,25 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; }
   .app-header, .btn-primary, .btn-ghost, .btn-back, #btn-print, #btn-regenerate { display: none !important; }
   body { background: white; }
   .report-main { padding: 0; }
+  .report-wrap { display: block; }
   .report-page { box-shadow: none; border: none; max-width: 100%; border-radius: 0; }
-  .report-masthead, .phase-pill.active, .phase-pill.done, .health-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .report-masthead, .phase-pill.active, .phase-pill.done, .health-badge,
+  .blocker-sev-badge, .scope-item-badge, .scope-type-badge,
+  .timeline-conf { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  /* Prevent blocks being sliced mid-content */
+  .report-block { break-inside: avoid; page-break-inside: avoid; }
+  .report-grid { display: block; }
+  .block-phase, .block-progress { display: inline-block; vertical-align: top; }
+  .block-phase { width: 68%; }
+  .block-progress { width: 30%; margin-left: 1%; }
+  .block-risks, .block-decisions,
+  .block-scope-changes, .block-summary, .block-timeline {
+    display: block; width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+  .scope-changes-grid { grid-template-columns: 1fr 1fr; }
+  .report-footer { display: flex; }
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
