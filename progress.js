@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    MSP Project Progress — progress.js
    Vanilla JS, no framework. LocalStorage persistence.
-   AI reports via Anthropic API (claude-sonnet-4-20250514)
+   AI reports via Anthropic API (claude-haiku-4-5-20251001)
 ═══════════════════════════════════════════════════════ */
 
 'use strict';
@@ -460,20 +460,16 @@ async function generateReport() {
     const response = await fetch(FUNCTION_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1500,
-        messages: [{ role: 'user', content: prompt }]
-      })
+      body: JSON.stringify({ prompt })
     });
 
     if (!response.ok) {
       const err = await response.json();
-      throw new Error(err.error?.message || 'API error — please try again.');
+      throw new Error(err.error || 'API error — please try again.');
     }
 
     const data = await response.json();
-    const rawText = data.content[0].text;
+    const rawText = data.text;
     const report = parseReportJSON(rawText);
 
     clearInterval(msgInterval);
