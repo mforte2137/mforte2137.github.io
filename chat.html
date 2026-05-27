@@ -169,6 +169,16 @@
             </button>
           </div>
 
+          <div class="output-block hidden" id="ticketKbBlock">
+            <div class="output-header">
+              <span class="output-label">KB Article Found — Review Before Raising</span>
+              <div class="output-actions">
+                <button class="copy-btn" data-target="ticketKbText">Copy</button>
+              </div>
+            </div>
+            <div class="output-text kb-found-text" id="ticketKbText"></div>
+          </div>
+
           <div class="output-block hidden" id="ticketOutput">
             <div class="output-header">
               <span class="output-label">Ticket Draft</span>
@@ -215,7 +225,7 @@
             <div></div>
             <button class="btn-primary" id="docsSearchBtn">
               <span class="btn-text">Search Docs</span>
-              <span class="btn-loader hidden">...</span>
+              <span class="btn-loader hidden">Searching KB...</span>
             </button>
           </div>
 
