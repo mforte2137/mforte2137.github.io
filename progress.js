@@ -305,7 +305,10 @@ function renderTasks(p) {
   p.tasks.forEach((task, i) => {
     const row = document.createElement('div');
     row.className = 'task-row' + (task.completed ? ' completed' : '');
+    row.draggable = true;
+    row.dataset.idx = i;
     row.innerHTML = `
+      <div class="drag-handle" title="Drag to reorder">⠿</div>
       <div class="task-checkbox ${task.completed ? 'checked' : ''}" data-idx="${i}"></div>
       <div class="task-info">
         <div class="task-name">${esc(task.task)}</div>
@@ -323,6 +326,37 @@ function renderTasks(p) {
     row.querySelector('[data-note]').addEventListener('click', () => toggleTaskNote(row, i));
     row.querySelector('[data-edit]').addEventListener('click', () => openTaskModal(i));
     row.querySelector('[data-del]').addEventListener('click', () => confirmDeleteTask(i));
+
+    // ── Drag & drop ──────────────────────────────────
+    row.addEventListener('dragstart', e => {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', i);
+      row.classList.add('dragging');
+    });
+    row.addEventListener('dragend', () => {
+      row.classList.remove('dragging');
+      list.querySelectorAll('.task-row').forEach(r => r.classList.remove('drag-over'));
+    });
+    row.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      list.querySelectorAll('.task-row').forEach(r => r.classList.remove('drag-over'));
+      row.classList.add('drag-over');
+    });
+    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+      const toIdx = parseInt(row.dataset.idx);
+      if (fromIdx === toIdx) return;
+      const p2 = getActiveProject();
+      const moved = p2.tasks.splice(fromIdx, 1)[0];
+      p2.tasks.splice(toIdx, 0, moved);
+      p2.updatedAt = new Date().toISOString();
+      save();
+      renderTasks(p2);
+    });
+
     list.appendChild(row);
   });
 }
