@@ -564,6 +564,12 @@ html, body {
   line-height: 1.7;
 }
 
+.kb-found-text {
+  border-left: 3px solid var(--amber);
+  margin: 0;
+  background: #fffbf2;
+}
+
 /* =============================================
    WRITE ARTICLE PANEL
 ============================================= */
