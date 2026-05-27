@@ -302,7 +302,40 @@ document.getElementById('replyBtn').addEventListener('click', async () => {
     detailed: 'Write a thorough, detailed reply covering all aspects of the issue.'
   };
 
-  const prompt = `A customer has sent the following conversation. Draft a reply I can send to them.
+  setLoading(btn, true);
+
+  try {
+    // ── Step 1: Extract the core question from the conversation ───────────
+    const extractPrompt = `Read this customer support conversation and extract the core question or issue in 10 words or less. Return only the question, nothing else.
+
+CONVERSATION:
+${conversation}`;
+
+    const coreQuestion = await callClaude(extractPrompt);
+
+    // ── Step 2: Search Featurebase KB for relevant articles ───────────────
+    let kbContext = '';
+    try {
+      const kbRes = await fetch('/.netlify/functions/featurebase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: coreQuestion, instructions })
+      });
+      if (kbRes.ok) {
+        const kbData = await kbRes.json();
+        const kbText = kbData.content?.[0]?.text || '';
+        // Strip any THE GAP section — we handle that separately below
+        const gapIdx = kbText.indexOf('THE GAP');
+        kbContext = gapIdx !== -1 ? kbText.slice(0, gapIdx).trim() : kbText.trim();
+      }
+    } catch (_) {
+      // KB search failed silently — reply will still be drafted without it
+    }
+
+    // ── Step 3: Draft reply grounded in KB results ────────────────────────
+    const hasKbResults = kbContext && !kbContext.toLowerCase().includes('no articles') && !kbContext.toLowerCase().includes('no published');
+
+    const prompt = `A customer has sent the following conversation. Draft a reply I can send to them.
 
 CONVERSATION:
 ${conversation}
@@ -310,26 +343,43 @@ ${context ? `\nEXTRA CONTEXT:\n${context}` : ''}
 
 TONE: ${toneMap[tone]}
 
-Also, if this conversation reveals a gap in the Salesbuildr documentation (something the docs don't clearly explain), include a DOCUMENTATION GAP section at the end using exactly this format:
+${hasKbResults
+  ? `KNOWLEDGE BASE RESULTS — use these as your primary source of truth for any product details:
+${kbContext}
 
+If a relevant article was found, reference it naturally in your reply (e.g. "You can find full details in our [article title] article here: [url]"). Do not invent product details beyond what the KB results and conversation contain.`
+  : `No matching KB article was found for this query. Draft the best reply you can from the conversation context, but be careful not to invent specific product details you are not certain about.`
+}
+
+At the end of your response, include one of these two sections:
+
+If a relevant KB article was found and referenced:
+KB ARTICLE REFERENCED
+[Article title and URL]
+
+If no relevant article exists in the KB:
 DOCUMENTATION GAP DETECTED
-Article: [title and URL]
-Where: [exact location in the article]
-What to write: [full copy-ready insertion text]
+[A plain-English description of what is missing — what question the docs don't answer]
 
-If there is no documentation gap, do not include that section at all.`;
+Always include exactly one of these two sections.`;
 
-  setLoading(btn, true);
-
-  try {
     const result = await callClaude(prompt);
 
+    // ── Step 4: Parse reply and KB/gap section ────────────────────────────
+    const refMarker = 'KB ARTICLE REFERENCED';
     const gapMarker = 'DOCUMENTATION GAP DETECTED';
-    const gapIndex  = result.indexOf(gapMarker);
+
     let replyText = result;
     let gapText   = '';
+    let refText   = '';
 
-    if (gapIndex !== -1) {
+    const refIndex = result.indexOf(refMarker);
+    const gapIndex = result.indexOf(gapMarker);
+
+    if (refIndex !== -1) {
+      replyText = result.slice(0, refIndex).trim();
+      refText   = result.slice(refIndex + refMarker.length).trim();
+    } else if (gapIndex !== -1) {
       replyText = result.slice(0, gapIndex).trim();
       gapText   = result.slice(gapIndex + gapMarker.length).trim();
     }
@@ -343,7 +393,16 @@ If there is no documentation gap, do not include that section at all.`;
     outputBlock.classList.remove('hidden');
 
     if (gapText) {
+      // No article found — show amber gap callout
       docGapText.innerText = gapText;
+      docGapBlock.querySelector('.doc-gap-header span').textContent = 'Documentation Gap Detected';
+      docGapBlock.classList.remove('kb-found');
+      docGapBlock.classList.remove('hidden');
+    } else if (refText) {
+      // Article found — show green confirmation
+      docGapText.innerText = refText;
+      docGapBlock.querySelector('.doc-gap-header span').textContent = 'KB Article Referenced';
+      docGapBlock.classList.add('kb-found');
       docGapBlock.classList.remove('hidden');
     } else {
       docGapBlock.classList.add('hidden');
