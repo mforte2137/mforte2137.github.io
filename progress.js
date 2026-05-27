@@ -46,6 +46,7 @@ const SAMPLE_PROJECT = {
     { task: 'Core Switch Deployment', role: 'Engineer', completed: true },
     { task: 'Access Switch Deployment', role: 'Engineer', completed: true },
     { task: 'Structured Cabling Installation', role: 'Engineer', completed: true },
+    { task: 'Comms Room Ventilation Remediation', role: 'Engineer', completed: true },
     { task: 'Wireless Access Point Deployment', role: 'Engineer', completed: false },
     { task: 'VLAN & Network Segmentation', role: 'Senior Engineer', completed: false },
     { task: 'WAN / Internet Failover Configuration', role: 'Senior Engineer', completed: false },
@@ -55,13 +56,34 @@ const SAMPLE_PROJECT = {
     { task: 'Network Documentation & Diagrams', role: 'Engineer', completed: false },
     { task: 'Project Management', role: 'PM', completed: false }
   ],
-  blockers: [{ description: 'Discovered a patch panel with many poor terminations.', severity: 'medium', status: 'mitigating' }],
-  scopeChanges: [{ description: 'Customer requested additional wireless coverage in warehouse — not in original scope.', type: 'out-of-scope', impact: 'medium', status: 'pending' }]
+  blockers: [
+    { description: 'Discovered a patch panel with many poor terminations. Re-termination underway.', severity: 'medium', status: 'mitigating' }
+  ],
+  scopeChanges: [
+    {
+      description: 'Warehouse manager desk relocation to opposite wall required two additional network drops and a new network printer connection.',
+      type: 'out-of-scope',
+      impact: 'medium',
+      status: 'approved'
+    },
+    {
+      description: 'Comms room found to have no adequate ventilation on site visit — equipment could not be safely installed without remediation. Cooling unit sourced and fitted before hardware installation proceeded.',
+      type: 'creep',
+      impact: 'high',
+      status: 'absorbed'
+    },
+    {
+      description: 'Customer has requested guest Wi-Fi access in the boardroom and reception area. This was not included in the original scope and will require two additional access points and a separate SSID configuration.',
+      type: 'out-of-scope',
+      impact: 'low',
+      status: 'pending'
+    }
+  ]
 };
 
 const SAMPLE_REPORT = {
   healthStatus: 'healthy',
-  currentPhaseNarrative: 'We have successfully completed the foundation work — your new firewall, core switches, and all cabling infrastructure are now installed and operational. We are currently focused on connecting your wireless access points and configuring network segments, with testing and final reconnection of your devices coming in the next phase.',
+  currentPhaseNarrative: 'All physical infrastructure is now installed and operational — your new firewall, core switches, structured cabling, and wireless access points are in place. We are currently focused on configuring your network logic including security zones, traffic separation, and internet failover. Device reconnection and final testing follow in the next phase.',
   phases: [
     { label: 'Planning & Preparation', status: 'done' },
     { label: 'Hardware Installation', status: 'done' },
@@ -69,11 +91,13 @@ const SAMPLE_REPORT = {
     { label: 'Testing & Validation', status: 'upcoming' },
     { label: 'Handover & Documentation', status: 'upcoming' }
   ],
-  executiveSummary: 'The Network Infrastructure Upgrade for MM Forte is progressing well at 47% completion. We have finished installing all major hardware — your new firewall, switches, and structured cabling are in place and operational. This week we are deploying wireless access points and configuring network security zones; we identified and are correcting some poor cable terminations in the patch panel to ensure long-term reliability. Testing and final device reconnection will follow, with full project completion on track.',
-  decisionsNeeded: [],
+  executiveSummary: 'The Network Infrastructure Upgrade for MM Forte is progressing well at 50% completion. All major hardware has been installed — your firewall, switches, cabling, and wireless access points are in place and operational. During installation we discovered the comms room lacked adequate ventilation; we resolved this immediately by sourcing and fitting a cooling unit so equipment could be safely installed without delaying the project. We are now configuring the network and addressing a patch panel re-termination. One open item requires your attention — see Scope Changes below.',
+  decisionsNeeded: [
+    'Guest Wi-Fi in boardroom and reception — please confirm whether you would like to proceed. We can provide a quote for the two additional access points and configuration work.'
+  ],
   timelineConfidence: 'high',
-  outlookNarrative: 'We remain confident in our timeline. The patch panel issue we discovered is being actively resolved and does not impact the project schedule. All remaining work is on track for completion within the agreed window.',
-  scopeNarrative: '1 item has been identified outside the original agreement and is currently under discussion. A decision is needed before this work can be scheduled.'
+  outlookNarrative: 'We remain on track for completion within the agreed window. The ventilation and patch panel issues have been contained and do not affect the critical path. The pending guest Wi-Fi request will be scheduled separately if approved and will not delay the main project.',
+  scopeNarrative: '3 scope changes have been identified during this project. The warehouse desk network drops have been approved and completed. The comms room ventilation issue was discovered on site and absorbed into the project to keep things moving. Guest Wi-Fi in the boardroom and reception is pending your decision.'
 };
 
 // ─── DASHBOARD ────────────────────────────────────────
