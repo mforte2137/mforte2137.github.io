@@ -18,6 +18,323 @@ let pendingDeleteTaskIdx = null;
 const STORAGE_KEY = 'msp_progress_projects';
 const FUNCTION_URL = '/.netlify/functions/progress-claude';
 
+// ─── PROJECT TEMPLATES ────────────────────────────────
+const TEMPLATES = [
+  {
+    id: 'network-infra',
+    icon: '🌐',
+    title: 'Network Infrastructure Upgrade',
+    overview: 'Full replacement and modernisation of your existing network infrastructure, including next-generation firewall, managed switching, structured cabling, and wireless access points — installed after hours to ensure zero disruption to your team.',
+    tasks: [
+      { task: 'Site Survey & Current Environment Assessment', role: 'Senior Engineer', hours: '8', notes: 'Cabling audit, device inventory, coverage mapping' },
+      { task: 'Network Design & Architecture', role: 'Senior Engineer', hours: '8', notes: 'IP addressing, VLANs, segmentation design' },
+      { task: 'Procurement & Equipment Staging', role: 'PM', hours: '4', notes: 'Order management, pre-configuration' },
+      { task: 'Firewall Installation & Configuration', role: 'Senior Engineer', hours: '12', notes: 'Rules, NAT, VPN, remote access policies' },
+      { task: 'Core Switch Deployment', role: 'Engineer', hours: '8', notes: 'Uplink config, VLAN tagging, redundancy' },
+      { task: 'Access Switch Deployment', role: 'Engineer', hours: '12', notes: 'Port config, PoE, patch panel connections' },
+      { task: 'Structured Cabling Installation', role: 'Engineer', hours: '24', notes: 'Cat6A runs, faceplates, patch panel termination' },
+      { task: 'Wireless Access Point Deployment', role: 'Engineer', hours: '8', notes: 'Controller config, SSID setup, coverage validation' },
+      { task: 'VLAN & Network Segmentation', role: 'Senior Engineer', hours: '8', notes: 'Traffic isolation, guest network, IoT separation' },
+      { task: 'WAN / Internet Failover Configuration', role: 'Senior Engineer', hours: '6', notes: 'Dual-WAN setup or failover routing' },
+      { task: 'Network Testing & Validation', role: 'Senior Engineer', hours: '8', notes: 'Throughput, failover, segmentation testing' },
+      { task: 'Workstation & Printer Reconnection', role: 'Engineer', hours: '8', notes: 'DNS updates, drive mappings, printer config' },
+      { task: 'Network Documentation & Diagrams', role: 'Engineer', hours: '6', notes: 'Topology diagrams, VLAN tables, port mapping' },
+      { task: 'Project Management', role: 'PM', hours: '16', notes: 'Scheduling, vendor coordination, communications' }
+    ]
+  },
+  {
+    id: 'm365-migration',
+    icon: '☁️',
+    title: 'Microsoft 365 Migration',
+    overview: 'Full migration of your email, files, and collaboration tools to Microsoft 365, including Exchange Online, SharePoint, OneDrive, and Teams — with minimal disruption to daily operations.',
+    tasks: [
+      { task: 'Discovery & Tenant Assessment', role: 'Senior Engineer', hours: '6', notes: 'Existing mail system audit, licence sizing, MX review' },
+      { task: 'Microsoft 365 Tenant Setup', role: 'Senior Engineer', hours: '4', notes: 'Domain verification, DNS config, admin accounts' },
+      { task: 'Licence Procurement & Assignment', role: 'PM', hours: '3', notes: 'Licence type selection, user provisioning' },
+      { task: 'Exchange Online Configuration', role: 'Senior Engineer', hours: '8', notes: 'Connectors, spam filtering, retention policies' },
+      { task: 'Email Migration (Staged)', role: 'Engineer', hours: '16', notes: 'Mailbox migration, calendar, contacts sync' },
+      { task: 'MX Cutover', role: 'Senior Engineer', hours: '4', notes: 'DNS changes, final sync, monitoring period' },
+      { task: 'OneDrive & SharePoint Setup', role: 'Senior Engineer', hours: '8', notes: 'Libraries, permissions, folder structure' },
+      { task: 'Teams Deployment & Configuration', role: 'Engineer', hours: '6', notes: 'Channels, policies, guest access settings' },
+      { task: 'Data Migration from File Shares', role: 'Engineer', hours: '12', notes: 'ShareGate or equivalent, permission mapping' },
+      { task: 'Multi-Factor Authentication Rollout', role: 'Senior Engineer', hours: '6', notes: 'Conditional access, authenticator app setup' },
+      { task: 'Endpoint Configuration (Outlook & OneDrive)', role: 'Engineer', hours: '12', notes: 'Profile setup, sync client, autodiscover' },
+      { task: 'User Training & Adoption Session', role: 'Engineer', hours: '8', notes: 'Teams, OneDrive, Outlook best practices' },
+      { task: 'Post-Migration Support Window', role: 'Engineer', hours: '8', notes: 'Hypercare period, issue resolution' },
+      { task: 'Project Management', role: 'PM', hours: '12', notes: 'Cutover coordination, user communications' }
+    ]
+  },
+  {
+    id: 'endpoint-rollout',
+    icon: '💻',
+    title: 'Endpoint Rollout / Device Refresh',
+    overview: 'Deployment of new workstations or laptops across your organisation, including imaging, software installation, data migration, and handover to end users — completed with minimal downtime per user.',
+    tasks: [
+      { task: 'Device Procurement & Inventory', role: 'PM', hours: '4', notes: 'Spec confirmation, order tracking, asset tagging' },
+      { task: 'Golden Image Build', role: 'Senior Engineer', hours: '8', notes: 'OS build, drivers, standard software package' },
+      { task: 'MDM / Intune Enrolment Setup', role: 'Senior Engineer', hours: '6', notes: 'Autopilot config, compliance policies, app deployment' },
+      { task: 'Device Staging & Pre-configuration', role: 'Engineer', hours: '12', notes: 'Image deployment, updates, naming convention' },
+      { task: 'User Data Migration', role: 'Engineer', hours: '16', notes: 'Profile copy, documents, desktop, browser settings' },
+      { task: 'Application Installation & Licensing', role: 'Engineer', hours: '8', notes: 'Line-of-business apps, licence activation' },
+      { task: 'Network & Printer Configuration', role: 'Engineer', hours: '6', notes: 'Drive mappings, default printers, VPN client' },
+      { task: 'User Handover & Orientation', role: 'Engineer', hours: '8', notes: 'Per-user walkthrough, credential handover' },
+      { task: 'Old Device Wipe & Disposal', role: 'Technician', hours: '4', notes: 'Secure wipe, asset register update, disposal log' },
+      { task: 'Post-Rollout Support', role: 'Engineer', hours: '8', notes: 'Issue resolution, software fixes, peripheral setup' },
+      { task: 'Project Management', role: 'PM', hours: '8', notes: 'Schedule coordination, user communications' }
+    ]
+  },
+  {
+    id: 'server-replacement',
+    icon: '🖥️',
+    title: 'Server Replacement',
+    overview: 'Physical or virtual server replacement including data migration, application reconfiguration, and cutover — planned and executed to minimise downtime and risk to your business.',
+    tasks: [
+      { task: 'Current Server Assessment', role: 'Senior Engineer', hours: '6', notes: 'Roles, services, dependencies, storage audit' },
+      { task: 'New Server Specification & Procurement', role: 'PM', hours: '4', notes: 'Hardware spec, vendor quote, lead time management' },
+      { task: 'New Server Build & OS Installation', role: 'Senior Engineer', hours: '8', notes: 'OS install, updates, base configuration' },
+      { task: 'Role Migration — Active Directory / DNS', role: 'Senior Engineer', hours: '8', notes: 'AD transfer, FSMO roles, DNS/DHCP migration' },
+      { task: 'File Share Migration', role: 'Engineer', hours: '10', notes: 'Robocopy / sync, permission replication, DFS update' },
+      { task: 'Application Server Migration', role: 'Senior Engineer', hours: '12', notes: 'Line-of-business app reinstall and config' },
+      { task: 'Backup Configuration', role: 'Senior Engineer', hours: '4', notes: 'Backup agent, schedule, retention, test restore' },
+      { task: 'Monitoring & Alerting Setup', role: 'Engineer', hours: '3', notes: 'RMM agent, disk/CPU/event alerts' },
+      { task: 'Cutover & Validation', role: 'Senior Engineer', hours: '6', notes: 'Final sync, DNS changes, service validation' },
+      { task: 'Old Server Decommission', role: 'Engineer', hours: '4', notes: 'Data wipe, removal, asset register update' },
+      { task: 'Documentation Update', role: 'Engineer', hours: '4', notes: 'Updated network docs, server register, runbook' },
+      { task: 'Project Management', role: 'PM', hours: '8', notes: 'Cutover planning, user communications, scheduling' }
+    ]
+  },
+  {
+    id: 'backup-dr',
+    icon: '🛡️',
+    title: 'Backup & Disaster Recovery Implementation',
+    overview: 'Design and implementation of a robust backup and disaster recovery solution covering your servers, endpoints, and cloud data — with tested recovery procedures and clear documentation.',
+    tasks: [
+      { task: 'Environment & Data Assessment', role: 'Senior Engineer', hours: '6', notes: 'Data volumes, RPO/RTO requirements, existing backup review' },
+      { task: 'BDR Solution Design', role: 'Senior Engineer', hours: '6', notes: 'Solution selection, retention policy, offsite strategy' },
+      { task: 'Backup Software / Appliance Procurement', role: 'PM', hours: '3', notes: 'Vendor selection, licensing, hardware order' },
+      { task: 'Backup Server / Appliance Setup', role: 'Senior Engineer', hours: '6', notes: 'Hardware install, software config, storage allocation' },
+      { task: 'Server Backup Jobs Configuration', role: 'Engineer', hours: '8', notes: 'Full, incremental, retention schedules per server' },
+      { task: 'Endpoint Backup Configuration', role: 'Engineer', hours: '6', notes: 'Agent deployment, folder selection, scheduling' },
+      { task: 'Cloud / Offsite Replication Setup', role: 'Senior Engineer', hours: '6', notes: 'S3 / Azure Blob / BDR vault config, encryption' },
+      { task: 'Microsoft 365 Backup Configuration', role: 'Engineer', hours: '4', notes: 'Exchange, SharePoint, Teams backup coverage' },
+      { task: 'Test Restore — File Level', role: 'Senior Engineer', hours: '4', notes: 'Granular restore validation, timing benchmarks' },
+      { task: 'Test Restore — Full Server / BMR', role: 'Senior Engineer', hours: '6', notes: 'Bare-metal or VM restore test, RTO measurement' },
+      { task: 'Monitoring & Alerting Configuration', role: 'Engineer', hours: '3', notes: 'Backup success/failure alerts, daily reporting' },
+      { task: 'DR Runbook Documentation', role: 'Engineer', hours: '6', notes: 'Step-by-step recovery procedures, contact list' },
+      { task: 'Handover & Team Walkthrough', role: 'Senior Engineer', hours: '3', notes: 'Admin walkthrough, test restore demonstration' },
+      { task: 'Project Management', role: 'PM', hours: '8', notes: 'Scheduling, vendor coordination, sign-off' }
+    ]
+  },
+  {
+    id: 'cyber-audit',
+    icon: '🔒',
+    title: 'Cybersecurity Audit & Remediation',
+    overview: 'Comprehensive audit of your current security posture covering endpoints, identity, email, network, and cloud — followed by prioritised remediation to reduce your risk exposure.',
+    tasks: [
+      { task: 'Security Scoping & Kick-off', role: 'Senior Engineer', hours: '4', notes: 'Scope agreement, asset list, questionnaire' },
+      { task: 'External Vulnerability Scan', role: 'Senior Engineer', hours: '6', notes: 'Public-facing assets, open ports, CVE identification' },
+      { task: 'Internal Network Scan', role: 'Senior Engineer', hours: '6', notes: 'Internal hosts, misconfigurations, lateral movement risks' },
+      { task: 'Endpoint Security Review', role: 'Engineer', hours: '6', notes: 'AV/EDR coverage, patch status, encryption status' },
+      { task: 'Identity & Access Review', role: 'Senior Engineer', hours: '6', notes: 'Admin accounts, stale users, MFA coverage, privilege audit' },
+      { task: 'Email Security Assessment', role: 'Engineer', hours: '4', notes: 'SPF/DKIM/DMARC, filtering, phishing simulation results' },
+      { task: 'Microsoft 365 / Cloud Security Review', role: 'Senior Engineer', hours: '6', notes: 'Secure Score, conditional access, app permissions' },
+      { task: 'Audit Report & Risk Register', role: 'Senior Engineer', hours: '8', notes: 'Findings, risk rating, executive summary, remediation roadmap' },
+      { task: 'Critical Findings Remediation', role: 'Senior Engineer', hours: '12', notes: 'High-priority fixes: patching, MFA, firewall rules' },
+      { task: 'Medium Priority Remediation', role: 'Engineer', hours: '10', notes: 'Password policies, email hardening, endpoint config' },
+      { task: 'Security Awareness Training Setup', role: 'Engineer', hours: '4', notes: 'Platform config, phishing simulation, reporting' },
+      { task: 'Post-Remediation Verification Scan', role: 'Senior Engineer', hours: '4', notes: 'Confirm fixes effective, updated risk register' },
+      { task: 'Project Management', role: 'PM', hours: '10', notes: 'Report delivery, remediation scheduling, sign-off' }
+    ]
+  },
+  {
+    id: 'voip-migration',
+    icon: '📞',
+    title: 'VoIP / Phone System Migration',
+    overview: 'Migration from your existing phone system to a cloud-based VoIP solution — including number porting, handset configuration, call flow setup, and user training — with a managed cutover to avoid missed calls.',
+    tasks: [
+      { task: 'Current System Assessment', role: 'Senior Engineer', hours: '4', notes: 'Call volumes, extensions, hunt groups, IVR mapping' },
+      { task: 'VoIP Platform Selection & Procurement', role: 'PM', hours: '4', notes: 'Vendor evaluation, licencing, DID porting request' },
+      { task: 'Network Readiness Assessment', role: 'Senior Engineer', hours: '4', notes: 'Bandwidth, QoS, firewall SIP rules, VLAN review' },
+      { task: 'QoS & Network Configuration', role: 'Senior Engineer', hours: '6', notes: 'Traffic prioritisation, SIP ALG disable, firewall rules' },
+      { task: 'VoIP Platform Configuration', role: 'Senior Engineer', hours: '10', notes: 'Extensions, ring groups, IVR, voicemail, time routing' },
+      { task: 'Number Porting Coordination', role: 'PM', hours: '4', notes: 'LOA submission, porting timeline management' },
+      { task: 'Handset / Softphone Provisioning', role: 'Engineer', hours: '10', notes: 'Firmware, auto-provision, user assignment' },
+      { task: 'Call Recording & Reporting Setup', role: 'Engineer', hours: '4', notes: 'Recording rules, storage, compliance config' },
+      { task: 'Microsoft Teams Voice Integration', role: 'Senior Engineer', hours: '6', notes: 'Direct routing or operator connect config (if applicable)' },
+      { task: 'Cutover & Number Port Activation', role: 'Senior Engineer', hours: '4', notes: 'Coordinated cutover, monitoring, rollback plan' },
+      { task: 'User Training', role: 'Engineer', hours: '6', notes: 'Handset use, voicemail, softphone, call transfer' },
+      { task: 'Post-Cutover Support Window', role: 'Engineer', hours: '6', notes: 'Hypercare, call quality monitoring, adjustments' },
+      { task: 'Project Management', role: 'PM', hours: '10', notes: 'Porting coordination, scheduling, vendor management' }
+    ]
+  },
+  {
+    id: 'wifi-survey',
+    icon: '📶',
+    title: 'Wi-Fi Survey & Deployment',
+    overview: 'Professional wireless survey, access point deployment, and controller configuration to deliver seamless, secure Wi-Fi coverage across your premises — including guest and IoT network segmentation.',
+    tasks: [
+      { task: 'Pre-Deployment Site Survey', role: 'Senior Engineer', hours: '6', notes: 'Coverage mapping, interference analysis, AP placement plan' },
+      { task: 'Wireless Design & AP Placement Plan', role: 'Senior Engineer', hours: '4', notes: 'Heatmap design, channel plan, hardware spec' },
+      { task: 'Hardware Procurement', role: 'PM', hours: '2', notes: 'Access points, PoE switches, controller licensing' },
+      { task: 'Cabling for AP Drops', role: 'Engineer', hours: '12', notes: 'Cat6A to ceiling positions, patch panel termination' },
+      { task: 'Controller / Cloud Platform Setup', role: 'Senior Engineer', hours: '4', notes: 'Wireless controller config, firmware, management VLAN' },
+      { task: 'Access Point Mounting & Connection', role: 'Engineer', hours: '8', notes: 'Physical installation, PoE confirmation, uplink test' },
+      { task: 'SSID & Security Configuration', role: 'Senior Engineer', hours: '6', notes: 'WPA3, PSK/802.1x, VLAN per SSID, band steering' },
+      { task: 'Guest Network Setup', role: 'Engineer', hours: '4', notes: 'Captive portal, bandwidth limits, isolation config' },
+      { task: 'IoT SSID & Segmentation', role: 'Engineer', hours: '4', notes: 'Separate VLAN, firewall rules for IoT devices' },
+      { task: 'Post-Deployment Validation Survey', role: 'Senior Engineer', hours: '4', notes: 'Coverage test, signal strength, roaming validation' },
+      { task: 'Documentation & Handover', role: 'Engineer', hours: '3', notes: 'AP map, SSID list, admin credentials handover' },
+      { task: 'Project Management', role: 'PM', hours: '6', notes: 'Scheduling, access coordination, sign-off' }
+    ]
+  },
+  {
+    id: 'new-office',
+    icon: '🏢',
+    title: 'New Office IT Setup',
+    overview: 'End-to-end IT setup for a new office location — covering structured cabling, network infrastructure, workstation deployment, telephony, and server or cloud connectivity — ready for day one.',
+    tasks: [
+      { task: 'Site Survey & IT Requirements Scoping', role: 'Senior Engineer', hours: '6', notes: 'Headcount, floorplan, ISP availability, power review' },
+      { task: 'Network Design & Equipment Spec', role: 'Senior Engineer', hours: '6', notes: 'Switch/firewall/AP sizing, rack design, IP plan' },
+      { task: 'Procurement & Logistics', role: 'PM', hours: '6', notes: 'Hardware, cabling materials, ISP order, delivery coordination' },
+      { task: 'Structured Cabling Installation', role: 'Engineer', hours: '24', notes: 'Cat6A runs, patch panels, faceplates, cable management' },
+      { task: 'Rack Build & Core Network Install', role: 'Senior Engineer', hours: '8', notes: 'Firewall, switch stack, UPS, patch panel labelling' },
+      { task: 'ISP Connectivity & WAN Setup', role: 'Senior Engineer', hours: '4', notes: 'ISP handoff, firewall WAN config, speed validation' },
+      { task: 'Wireless Access Point Deployment', role: 'Engineer', hours: '8', notes: 'Mounting, PoE, SSID config, coverage test' },
+      { task: 'Server / NAS Setup (if applicable)', role: 'Senior Engineer', hours: '8', notes: 'Local server or NAS install and configuration' },
+      { task: 'Workstation Deployment', role: 'Engineer', hours: '16', notes: 'Imaging, domain join, user profile, software install' },
+      { task: 'Telephony Setup', role: 'Engineer', hours: '6', notes: 'VoIP handsets, softphones, DDI assignment' },
+      { task: 'Print & Peripheral Setup', role: 'Technician', hours: '4', notes: 'Printers, scanners, shared peripheral config' },
+      { task: 'Connectivity to Head Office / Cloud', role: 'Senior Engineer', hours: '6', notes: 'VPN or SD-WAN, AD integration, file access' },
+      { task: 'Day-One Support & Handover', role: 'Engineer', hours: '8', notes: 'On-site support for go-live day' },
+      { task: 'Project Management', role: 'PM', hours: '16', notes: 'Trades coordination, ISP management, scheduling' }
+    ]
+  },
+  {
+    id: 'azure-migration',
+    icon: '⚡',
+    title: 'Azure / Cloud Migration',
+    overview: 'Migration of on-premises servers, workloads, and data to Microsoft Azure — including infrastructure design, secure connectivity, and optimisation for cost and performance in the cloud.',
+    tasks: [
+      { task: 'Cloud Readiness Assessment', role: 'Senior Engineer', hours: '8', notes: 'Workload inventory, dependency mapping, licencing review' },
+      { task: 'Azure Tenant & Subscription Setup', role: 'Senior Engineer', hours: '4', notes: 'Management groups, subscriptions, RBAC, billing alerts' },
+      { task: 'Landing Zone Design & Deployment', role: 'Senior Engineer', hours: '10', notes: 'VNets, subnets, NSGs, hub-spoke or flat topology' },
+      { task: 'Hybrid Connectivity Setup', role: 'Senior Engineer', hours: '8', notes: 'Site-to-site VPN or ExpressRoute, DNS forwarding' },
+      { task: 'Azure AD / Entra ID Configuration', role: 'Senior Engineer', hours: '6', notes: 'Hybrid join, sync, conditional access, MFA' },
+      { task: 'Server Migration — Wave 1 (Non-Critical)', role: 'Senior Engineer', hours: '16', notes: 'Azure Migrate, replication, test failover' },
+      { task: 'Server Migration — Wave 2 (Production)', role: 'Senior Engineer', hours: '16', notes: 'Production cutover, DNS updates, validation' },
+      { task: 'Storage & Data Migration', role: 'Engineer', hours: '10', notes: 'Azure Files, Blob, AzCopy, access permissions' },
+      { task: 'Backup & Site Recovery Configuration', role: 'Engineer', hours: '6', notes: 'Azure Backup, ASR policy, retention, test restore' },
+      { task: 'Security & Compliance Configuration', role: 'Senior Engineer', hours: '8', notes: 'Defender for Cloud, policy, key vault, logging' },
+      { task: 'Cost Management & Tagging', role: 'Engineer', hours: '4', notes: 'Budget alerts, reserved instances, tagging strategy' },
+      { task: 'Monitoring & Alerting Setup', role: 'Engineer', hours: '4', notes: 'Azure Monitor, Log Analytics, alert rules' },
+      { task: 'Documentation & Knowledge Transfer', role: 'Engineer', hours: '6', notes: 'Architecture diagrams, runbook, admin handover' },
+      { task: 'Project Management', role: 'PM', hours: '16', notes: 'Wave planning, cutover coordination, stakeholder comms' }
+    ]
+  },
+  {
+    id: 'sharepoint',
+    icon: '📁',
+    title: 'SharePoint / Intranet Deployment',
+    overview: 'Design and deployment of a SharePoint Online intranet — including site architecture, document libraries, permissions, and migration of existing file shares — giving your team a modern, organised place to collaborate.',
+    tasks: [
+      { task: 'Requirements & Information Architecture Workshop', role: 'Senior Engineer', hours: '6', notes: 'Site structure, content types, audience mapping' },
+      { task: 'SharePoint Architecture Design', role: 'Senior Engineer', hours: '6', notes: 'Hub sites, site collections, navigation, taxonomy' },
+      { task: 'Hub & Site Collection Build', role: 'Senior Engineer', hours: '8', notes: 'Intranet home, department sites, page layouts' },
+      { task: 'Branding & Theme Configuration', role: 'Engineer', hours: '6', notes: 'Logo, colours, fonts, custom header/footer' },
+      { task: 'Document Library Structure', role: 'Engineer', hours: '8', notes: 'Libraries, metadata columns, content types, views' },
+      { task: 'Permissions & Security Groups', role: 'Senior Engineer', hours: '6', notes: 'AAD groups, site/library/folder permissions, inheritance' },
+      { task: 'File Share Migration', role: 'Engineer', hours: '16', notes: 'ShareGate or Migration Manager, permission mapping' },
+      { task: 'Intranet Content Build', role: 'Engineer', hours: '8', notes: 'News, quick links, org chart, announcements webparts' },
+      { task: 'Search Configuration', role: 'Engineer', hours: '4', notes: 'Promoted results, verticals, managed properties' },
+      { task: 'Microsoft Teams Integration', role: 'Engineer', hours: '4', notes: 'Teams-connected sites, channels tabs, app config' },
+      { task: 'User Training Sessions', role: 'Engineer', hours: '6', notes: 'Navigation, uploading, sharing, co-authoring' },
+      { task: 'Post-Go-Live Support', role: 'Engineer', hours: '6', notes: 'Issue resolution, content fixes, permission adjustments' },
+      { task: 'Project Management', role: 'PM', hours: '10', notes: 'Stakeholder workshops, scheduling, sign-off' }
+    ]
+  },
+  {
+    id: 'new-client',
+    icon: '🤝',
+    title: 'New Client Onboarding',
+    overview: 'Structured onboarding of a new managed services customer — covering environment documentation, tooling deployment, security baselining, and handover to your service desk team.',
+    tasks: [
+      { task: 'Kick-off Meeting & Scope Confirmation', role: 'Account Manager', hours: '2', notes: 'Introductions, service scope, escalation contacts' },
+      { task: 'Environment Discovery & Documentation', role: 'Senior Engineer', hours: '8', notes: 'Network scan, asset inventory, AD audit, cloud tenants' },
+      { task: 'RMM Agent Deployment', role: 'Engineer', hours: '4', notes: 'Agent rollout to all endpoints and servers' },
+      { task: 'Monitoring & Alerting Configuration', role: 'Engineer', hours: '6', notes: 'Disk, CPU, services, event log, uptime monitors' },
+      { task: 'Patch Management Setup', role: 'Engineer', hours: '4', notes: 'Patch policy, approval workflow, maintenance windows' },
+      { task: 'Antivirus / EDR Deployment', role: 'Engineer', hours: '4', notes: 'Agent rollout, policy config, exclusions, reporting' },
+      { task: 'Backup Verification & Configuration', role: 'Senior Engineer', hours: '6', notes: 'Existing backup audit, gaps identified, BDR config' },
+      { task: 'Microsoft 365 Tenant Review', role: 'Senior Engineer', hours: '4', notes: 'Secure Score, MFA status, licencing, admin accounts' },
+      { task: 'Network Infrastructure Documentation', role: 'Engineer', hours: '4', notes: 'Topology diagram, IP register, firewall rule log' },
+      { task: 'Password Manager & Documentation Setup', role: 'Engineer', hours: '3', notes: 'IT Glue / Hudu / equivalent, credentials stored securely' },
+      { task: 'Security Baseline Assessment', role: 'Senior Engineer', hours: '6', notes: 'Gap analysis against baseline, risk register created' },
+      { task: 'Service Desk Handover & Briefing', role: 'Senior Engineer', hours: '3', notes: 'Environment walkthrough, known issues, escalation paths' },
+      { task: 'Customer Welcome & Documentation Handover', role: 'Account Manager', hours: '2', notes: 'Welcome pack, service guide, contact sheet' },
+      { task: 'Project Management', role: 'PM', hours: '8', notes: 'Scheduling, internal comms, milestone tracking' }
+    ]
+  }
+];
+
+let selectedTemplateId = null;
+
+function openTemplateModal() {
+  selectedTemplateId = null;
+  document.getElementById('template-footer').style.display = 'none';
+  document.getElementById('template-customer').value = '';
+  document.getElementById('template-msp').value = '';
+  renderTemplateGrid();
+  document.getElementById('modal-template').classList.add('open');
+}
+
+function renderTemplateGrid() {
+  const grid = document.getElementById('template-grid');
+  grid.innerHTML = '';
+  TEMPLATES.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'template-card' + (t.id === selectedTemplateId ? ' selected' : '');
+    const totalHours = t.tasks.reduce((s, task) => s + (parseFloat(task.hours) || 0), 0);
+    card.innerHTML = `
+      <div class="template-icon">${t.icon}</div>
+      <div class="template-name">${esc(t.title)}</div>
+      <div class="template-meta">${t.tasks.length} tasks · ${totalHours}h estimated</div>`;
+    card.addEventListener('click', () => {
+      selectedTemplateId = t.id;
+      document.getElementById('template-footer').style.display = 'flex';
+      document.getElementById('template-footer').style.alignItems = 'flex-end';
+      document.getElementById('template-footer').style.gap = '1rem';
+      renderTemplateGrid();
+    });
+    grid.appendChild(card);
+  });
+}
+
+function createFromTemplate() {
+  const tmpl = TEMPLATES.find(t => t.id === selectedTemplateId);
+  if (!tmpl) return;
+  const customer = document.getElementById('template-customer').value.trim();
+  const msp = document.getElementById('template-msp').value.trim();
+  const project = {
+    id: 'proj_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    title: tmpl.title,
+    customerName: customer,
+    mspName: msp,
+    overview: tmpl.overview,
+    exclusions: '',
+    tasks: tmpl.tasks.map(t => ({ ...t, completed: false, completionNote: '', actualHours: null })),
+    blockers: [],
+    scopeChanges: [],
+    internalNotes: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  projects.unshift(project);
+  save();
+  document.getElementById('modal-template').classList.remove('open');
+  renderDashboard();
+  openProject(project.id);
+}
+
 // ─── PERSISTENCE ──────────────────────────────────────
 function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); }
 function load() {
@@ -1120,6 +1437,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Dashboard
   document.getElementById('btn-import-new').addEventListener('click', openImportModal);
+  document.getElementById('btn-use-template').addEventListener('click', openTemplateModal);
+  document.getElementById('modal-template-close').addEventListener('click', () => closeModal('modal-template'));
+  document.getElementById('btn-template-create').addEventListener('click', createFromTemplate);
   document.getElementById('btn-import-empty')?.addEventListener('click', openImportModal);
   document.getElementById('btn-sample-report').addEventListener('click', showSampleReport);
   document.getElementById('btn-close-sample').addEventListener('click', hideSampleReport);
