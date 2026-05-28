@@ -10,6 +10,12 @@
 </head>
 <body>
 
+  <!-- Toast notification -->
+  <div id="toast" class="toast" style="display:none">
+    <span id="toast-icon">🎉</span>
+    <span id="toast-message"></span>
+  </div>
+
   <!-- ═══════════════════════════════════════════════════════
        DASHBOARD VIEW
   ═══════════════════════════════════════════════════════ -->
@@ -58,6 +64,18 @@
 
       <div class="projects-grid" id="projects-grid"></div>
 
+      <!-- Completed projects section -->
+      <div id="completed-section" style="display:none">
+        <div class="completed-section-header" id="completed-toggle">
+          <span class="completed-section-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Completed Projects
+          </span>
+          <span class="completed-chevron" id="completed-chevron">▾</span>
+        </div>
+        <div class="completed-grid" id="completed-grid"></div>
+      </div>
+
       <div class="empty-state" id="empty-state" style="display:none">
         <div class="empty-icon">◈</div>
         <h2>No projects yet</h2>
@@ -81,7 +99,7 @@
           <button class="btn-ghost" id="btn-edit-meta">Edit Details</button>
           <button class="btn-primary" id="btn-generate-report">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            Generate Report
+            <span id="btn-generate-label">Generate Report</span>
           </button>
         </div>
       </div>
@@ -104,6 +122,20 @@
             <span id="progress-pct">0%</span>
             <small>complete</small>
           </div>
+        </div>
+      </div>
+
+      <!-- Completion banner (shown when all tasks done) -->
+      <div class="completion-banner" id="completion-banner" style="display:none">
+        <div class="completion-banner-inner">
+          <span class="completion-icon">🎉</span>
+          <div>
+            <div class="completion-title">Project Complete!</div>
+            <div class="completion-sub" id="completion-sub"></div>
+          </div>
+          <button class="btn-primary" id="btn-final-report" style="margin-left:auto">
+            Generate Final Report
+          </button>
         </div>
       </div>
 
