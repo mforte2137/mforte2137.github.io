@@ -22,6 +22,10 @@
         </div>
         <div style="display:flex;gap:10px;align-items:center">
           <button class="btn-ghost" id="btn-sample-report">View Sample Report</button>
+          <button class="btn-ghost" id="btn-use-template">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Use Template
+          </button>
           <button class="btn-primary" id="btn-import-new">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Import Project
@@ -495,6 +499,39 @@
       <div class="modal-footer">
         <button class="btn-ghost" id="btn-delete-task-cancel">Cancel</button>
         <button class="btn-danger" id="btn-delete-task-confirm">Delete Task</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Template picker modal -->
+  <div class="modal-overlay" id="modal-template">
+    <div class="modal modal-template">
+      <div class="modal-header">
+        <div>
+          <h3>Choose a Project Template</h3>
+          <p style="font-size:13px;color:var(--text-muted);margin-top:3px">Select a template to pre-populate tasks, roles, and estimated hours.</p>
+        </div>
+        <button class="modal-close" id="modal-template-close">✕</button>
+      </div>
+      <div class="modal-body" style="padding:0">
+        <div class="template-grid" id="template-grid">
+          <!-- injected by JS -->
+        </div>
+      </div>
+      <div class="modal-footer" id="template-footer" style="display:none">
+        <div style="flex:1">
+          <div class="field-group">
+            <label>Customer Name</label>
+            <input type="text" id="template-customer" placeholder="Acme Corp" />
+          </div>
+        </div>
+        <div style="flex:1">
+          <div class="field-group">
+            <label>Your Company Name</label>
+            <input type="text" id="template-msp" placeholder="Your MSP Name" />
+          </div>
+        </div>
+        <button class="btn-primary" id="btn-template-create">Create Project</button>
       </div>
     </div>
   </div>
