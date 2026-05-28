@@ -114,7 +114,7 @@ const TOOLS = [
     url: "https://widgetcreator.netlify.app/preflight.html",
     badge: "",
     updated: "2026-05-01",
-    gradient: "amber",
+    gradient: "indigo",
     icon: "search"
   },
   {
@@ -138,8 +138,20 @@ const TOOLS = [
     url: "https://widgetcreator.netlify.app/converter.html",
     badge: "",
     updated: "2026-04-28",
-    gradient: "teal",
+    gradient: "cyan",
     icon: "swap"
+  },
+  {
+    title: "Project Reports",
+    shortLabel: "Project Reports",
+    description:
+      "Keep your clients informed of project status with executive-style PDF reports — written in plain, non-technical language they'll actually read.",
+    category: "Scoping",
+    url: "https://widgetcreator.netlify.app/progress.html",
+    badge: "new",
+    updated: "2026-05-28",
+    gradient: "forest",
+    icon: "chart"
   },
   {
     title: "Project Tasks → Calculator",
@@ -254,7 +266,10 @@ const GRADIENTS = {
   rose:    "linear-gradient(135deg, #9f1239 0%, #e11d48 55%, #fb7185 100%)",
   emerald: "linear-gradient(135deg, #065f46 0%, #10b981 55%, #6ee7b7 100%)",
   slate:   "linear-gradient(135deg, #1e293b 0%, #475569 55%, #94a3b8 100%)",
-  sunset:  "linear-gradient(135deg, #be185d 0%, #ec4899 40%, #fb923c 100%)"
+  sunset:  "linear-gradient(135deg, #be185d 0%, #ec4899 40%, #fb923c 100%)",
+  indigo:  "linear-gradient(135deg, #312e81 0%, #4f46e5 55%, #818cf8 100%)",
+  cyan:    "linear-gradient(135deg, #164e63 0%, #0891b2 55%, #67e8f9 100%)",
+  forest:  "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #86efac 100%)"
 };
 
 /* =========================================================
