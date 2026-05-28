@@ -218,8 +218,8 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; }
 /* ── TRACKER BODY — 3 column: tasks wider centre ──── */
 .tracker-body {
   display: grid;
-  grid-template-columns: 1fr 260px;
-  gap: 1.25rem;
+  grid-template-columns: 1fr 420px;
+  gap: 1.5rem;
   align-items: start;
 }
 @media (max-width: 960px) { .tracker-body { grid-template-columns: 1fr; } }
