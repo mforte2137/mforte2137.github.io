@@ -124,6 +124,8 @@ document.getElementById('ticketClearBtn').addEventListener('click', () => {
   document.getElementById('ticketAlsoReply').checked = false;
   document.getElementById('ticketOutput').classList.add('hidden');
   document.getElementById('ticketReplyOutput').classList.add('hidden');
+  document.getElementById('ticketKbBlock').classList.add('hidden');
+  document.getElementById('ticketKbText').innerText = '';
   // Reset toggle to Bug
   document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
   document.querySelector('.toggle-btn[data-type="bug"]').classList.add('active');
@@ -452,7 +454,9 @@ document.getElementById('ticketBtn').addEventListener('click', async () => {
         const noArticle = kbResult.toLowerCase().includes('no articles') ||
                           kbResult.toLowerCase().includes('no published') ||
                           kbResult.toLowerCase().includes('does not exist');
-        if (!noArticle) kbNote = kbResult;
+        // Strip any trailing separator or gap section that leaked through
+        const cleanResult = kbResult.split(/\n---|\n## Documentation Gap/i)[0].trim();
+        if (!noArticle) kbNote = cleanResult;
       }
     } catch (_) {
       // KB check failed silently — ticket still drafts without it
