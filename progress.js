@@ -736,31 +736,57 @@ function showActualHoursPrompt(idx) {
   const row = rows[idx];
   if (!row) return;
   const estimated = parseFloat(p.tasks[idx].hours) || 0;
-  // Find or create the hours row
+  let current = p.tasks[idx].actualHours !== null && p.tasks[idx].actualHours !== undefined
+    ? p.tasks[idx].actualHours : estimated;
+
   let hoursRow = row.querySelector('.task-hours-row');
   if (!hoursRow) {
     hoursRow = document.createElement('div');
     hoursRow.className = 'task-hours-row';
     row.querySelector('.task-info').appendChild(hoursRow);
   }
-  hoursRow.innerHTML = `
-    <span class="hours-chip">Est: ${estimated}h</span>
-    <input class="actual-hours-input" type="number" min="0" step="0.5"
-      value="${estimated}" placeholder="Actual hrs" title="Actual hours spent" />
-    <button class="hours-save-btn">Save</button>
-  `;
-  const input = hoursRow.querySelector('.actual-hours-input');
-  const btn = hoursRow.querySelector('.hours-save-btn');
-  input.select();
-  btn.addEventListener('click', () => {
-    const val = parseFloat(input.value);
-    if (isNaN(val) || val < 0) return;
-    p.tasks[idx].actualHours = val;
-    p.updatedAt = new Date().toISOString();
-    save();
-    renderTasks(p);
-  });
-  input.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click(); });
+
+  function render() {
+    hoursRow.innerHTML = `
+      <span class="hours-chip">Est: ${estimated}h</span>
+      <div class="hours-stepper">
+        <button class="hours-stepper-btn" id="hrs-minus-${idx}">−</button>
+        <div class="hours-stepper-val" contenteditable="true" id="hrs-val-${idx}">${current}</div>
+        <button class="hours-stepper-btn" id="hrs-plus-${idx}">+</button>
+      </div>
+      <button class="hours-save-btn" id="hrs-save-${idx}">Save hours</button>`;
+
+    const valEl = hoursRow.querySelector(`#hrs-val-${idx}`);
+    const saveBtn = hoursRow.querySelector(`#hrs-save-${idx}`);
+
+    hoursRow.querySelector(`#hrs-minus-${idx}`).addEventListener('click', () => {
+      current = Math.max(0, parseFloat(current) - 0.5);
+      current = Math.round(current * 2) / 2;
+      valEl.textContent = current;
+    });
+    hoursRow.querySelector(`#hrs-plus-${idx}`).addEventListener('click', () => {
+      current = parseFloat(current) + 0.5;
+      current = Math.round(current * 2) / 2;
+      valEl.textContent = current;
+    });
+    valEl.addEventListener('blur', () => {
+      const parsed = parseFloat(valEl.textContent);
+      if (!isNaN(parsed) && parsed >= 0) { current = Math.round(parsed * 2) / 2; valEl.textContent = current; }
+      else valEl.textContent = current;
+    });
+    valEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); }
+    });
+    saveBtn.addEventListener('click', () => {
+      const val = parseFloat(valEl.textContent);
+      if (isNaN(val) || val < 0) return;
+      p.tasks[idx].actualHours = val;
+      p.updatedAt = new Date().toISOString();
+      save();
+      renderTasks(p);
+    });
+  }
+  render();
 }
 
 function toggleTaskNote(row, idx) {
@@ -779,21 +805,38 @@ function toggleTaskNote(row, idx) {
     const est = parseFloat(p.tasks[idx].hours) || 0;
     const hoursWrap = document.createElement('div');
     hoursWrap.className = 'task-hours-row';
+    let hval = p.tasks[idx].actualHours !== null && p.tasks[idx].actualHours !== undefined
+      ? p.tasks[idx].actualHours : est;
     hoursWrap.innerHTML = `
-      <span style="font-size:12px;color:var(--text-muted)">Actual hours:</span>
-      <input class="actual-hours-input" type="number" min="0" step="0.5"
-        value="${p.tasks[idx].actualHours ?? est}" placeholder="hrs" style="width:70px" />
-      <button class="hours-save-btn">Save</button>`;
-    const inp = hoursWrap.querySelector('.actual-hours-input');
-    const btn = hoursWrap.querySelector('.hours-save-btn');
-    btn.addEventListener('click', () => {
-      const val = parseFloat(inp.value);
-      p.tasks[idx].actualHours = isNaN(val) ? null : val;
-      p.tasks[idx].completionNote = ta.value.trim();
-      p.updatedAt = new Date().toISOString();
-      save(); renderTasks(p);
-    });
+      <span style="font-size:12px;color:var(--text-muted);white-space:nowrap">Actual hours:</span>
+      <div class="hours-stepper">
+        <button class="hours-stepper-btn" id="tn-minus-${idx}">−</button>
+        <div class="hours-stepper-val" contenteditable="true" id="tn-val-${idx}">${hval}</div>
+        <button class="hours-stepper-btn" id="tn-plus-${idx}">+</button>
+      </div>
+      <button class="hours-save-btn" id="tn-save-${idx}">Save</button>`;
     wrap.appendChild(hoursWrap);
+    // Wire after appended so IDs exist
+    setTimeout(() => {
+      const vEl = document.getElementById(`tn-val-${idx}`);
+      const sBtn = document.getElementById(`tn-save-${idx}`);
+      if (!vEl || !sBtn) return;
+      document.getElementById(`tn-minus-${idx}`).addEventListener('click', () => {
+        hval = Math.max(0, Math.round((parseFloat(vEl.textContent) - 0.5) * 2) / 2);
+        vEl.textContent = hval;
+      });
+      document.getElementById(`tn-plus-${idx}`).addEventListener('click', () => {
+        hval = Math.round((parseFloat(vEl.textContent) + 0.5) * 2) / 2;
+        vEl.textContent = hval;
+      });
+      sBtn.addEventListener('click', () => {
+        const val = parseFloat(vEl.textContent);
+        p.tasks[idx].actualHours = isNaN(val) ? null : val;
+        p.tasks[idx].completionNote = ta.value.trim();
+        p.updatedAt = new Date().toISOString();
+        save(); renderTasks(p);
+      });
+    }, 0);
   }
   ta.addEventListener('blur', () => {
     if (!p.tasks[idx].completed) {
