@@ -331,6 +331,14 @@ function renderTasks(p) {
     row.className = 'task-row' + (task.completed ? ' completed' : '');
     row.draggable = true;
     row.dataset.idx = i;
+    const est = parseFloat(task.hours) || 0;
+    const act = task.actualHours !== undefined && task.actualHours !== null ? task.actualHours : null;
+    const variance = act !== null && est > 0 ? act - est : null;
+    const varClass = variance === null ? 'pending' : variance > 0 ? 'over' : variance < 0 ? 'under' : 'exact';
+    const varLabel = variance === null
+      ? (task.completed ? 'Tap ✎ to log hours' : '')
+      : variance > 0 ? `+${variance.toFixed(1)}h over` : variance < 0 ? `${variance.toFixed(1)}h under` : 'On estimate';
+
     row.innerHTML = `
       <div class="drag-handle" title="Drag to reorder">⠿</div>
       <div class="task-checkbox ${task.completed ? 'checked' : ''}" data-idx="${i}"></div>
@@ -339,9 +347,14 @@ function renderTasks(p) {
         <div class="task-role">${esc(task.role || '')}</div>
         ${task.notes ? `<div class="task-notes-text">${esc(task.notes)}</div>` : ''}
         ${task.completionNote ? `<div class="task-completion-note">✓ ${esc(task.completionNote)}</div>` : ''}
+        ${task.completed ? `<div class="task-hours-row">
+          <span class="hours-chip">Est: ${est}h</span>
+          ${act !== null ? `<span class="hours-chip ${varClass}">Act: ${act}h</span>` : ''}
+          ${varLabel ? `<span class="var-pill ${varClass}">${varLabel}</span>` : ''}
+        </div>` : (est ? `<div class="task-hours-row"><span class="hours-chip">Est: ${est}h</span></div>` : '')}
       </div>
       <div class="task-actions">
-        <button class="task-action-btn" data-note="${i}" title="Add note">✎</button>
+        <button class="task-action-btn" data-note="${i}" title="Add completion note">✎</button>
         <button class="task-action-btn" data-edit="${i}" title="Edit task">⊙</button>
         <button class="task-action-btn del" data-del="${i}" title="Delete task">✕</button>
       </div>`;
@@ -388,27 +401,91 @@ function renderTasks(p) {
 function toggleTask(idx) {
   const p = getActiveProject();
   p.tasks[idx].completed = !p.tasks[idx].completed;
+  // Reset actual hours if unchecking
+  if (!p.tasks[idx].completed) p.tasks[idx].actualHours = null;
   p.updatedAt = new Date().toISOString();
   save();
   renderTasks(p);
   updateProgressRing(p);
   renderDashboard();
+  // If just completed, prompt for actual hours
+  if (p.tasks[idx].completed) showActualHoursPrompt(idx);
+}
+
+function showActualHoursPrompt(idx) {
+  const p = getActiveProject();
+  const list = document.getElementById('tasks-list');
+  const rows = list.querySelectorAll('.task-row');
+  const row = rows[idx];
+  if (!row) return;
+  const estimated = parseFloat(p.tasks[idx].hours) || 0;
+  // Find or create the hours row
+  let hoursRow = row.querySelector('.task-hours-row');
+  if (!hoursRow) {
+    hoursRow = document.createElement('div');
+    hoursRow.className = 'task-hours-row';
+    row.querySelector('.task-info').appendChild(hoursRow);
+  }
+  hoursRow.innerHTML = `
+    <span class="hours-chip">Est: ${estimated}h</span>
+    <input class="actual-hours-input" type="number" min="0" step="0.5"
+      value="${estimated}" placeholder="Actual hrs" title="Actual hours spent" />
+    <button class="hours-save-btn">Save</button>
+  `;
+  const input = hoursRow.querySelector('.actual-hours-input');
+  const btn = hoursRow.querySelector('.hours-save-btn');
+  input.select();
+  btn.addEventListener('click', () => {
+    const val = parseFloat(input.value);
+    if (isNaN(val) || val < 0) return;
+    p.tasks[idx].actualHours = val;
+    p.updatedAt = new Date().toISOString();
+    save();
+    renderTasks(p);
+  });
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click(); });
 }
 
 function toggleTaskNote(row, idx) {
   const p = getActiveProject();
   const existing = row.querySelector('.task-note-input');
   if (existing) { existing.remove(); return; }
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin-top:6px';
   const ta = document.createElement('textarea');
   ta.className = 'task-note-input'; ta.rows = 2;
   ta.placeholder = 'Add a completion note…';
   ta.value = p.tasks[idx].completionNote || '';
+  wrap.appendChild(ta);
+  // If completed, also show hours edit
+  if (p.tasks[idx].completed) {
+    const est = parseFloat(p.tasks[idx].hours) || 0;
+    const hoursWrap = document.createElement('div');
+    hoursWrap.className = 'task-hours-row';
+    hoursWrap.innerHTML = `
+      <span style="font-size:12px;color:var(--text-muted)">Actual hours:</span>
+      <input class="actual-hours-input" type="number" min="0" step="0.5"
+        value="${p.tasks[idx].actualHours ?? est}" placeholder="hrs" style="width:70px" />
+      <button class="hours-save-btn">Save</button>`;
+    const inp = hoursWrap.querySelector('.actual-hours-input');
+    const btn = hoursWrap.querySelector('.hours-save-btn');
+    btn.addEventListener('click', () => {
+      const val = parseFloat(inp.value);
+      p.tasks[idx].actualHours = isNaN(val) ? null : val;
+      p.tasks[idx].completionNote = ta.value.trim();
+      p.updatedAt = new Date().toISOString();
+      save(); renderTasks(p);
+    });
+    wrap.appendChild(hoursWrap);
+  }
   ta.addEventListener('blur', () => {
-    p.tasks[idx].completionNote = ta.value.trim();
-    p.updatedAt = new Date().toISOString();
-    save(); renderTasks(p);
+    if (!p.tasks[idx].completed) {
+      p.tasks[idx].completionNote = ta.value.trim();
+      p.updatedAt = new Date().toISOString();
+      save(); renderTasks(p);
+    }
   });
-  row.querySelector('.task-info').appendChild(ta);
+  row.querySelector('.task-info').appendChild(wrap);
   ta.focus();
 }
 
@@ -730,6 +807,14 @@ async function generateReport() {
   msgEl.textContent = msgs[0];
   const msgInterval = setInterval(() => { msgIdx = (msgIdx + 1) % msgs.length; msgEl.textContent = msgs[msgIdx]; }, 1800);
 
+  // Show tabs bar
+  document.getElementById('report-tabs-bar').style.display = 'block';
+  // Activate client tab
+  document.getElementById('tab-client').classList.add('active');
+  document.getElementById('tab-internal').classList.remove('active');
+  document.getElementById('report-wrap').style.display = '';
+  document.getElementById('internal-wrap').style.display = 'none';
+
   try {
     const prompt = buildReportPrompt(p);
     const response = await fetch(FUNCTION_URL, {
@@ -819,10 +904,195 @@ function parseReportJSON(raw) {
 }
 
 function renderReport(p, report) {
-  // Populate report page using shared buildReportHTML
   document.getElementById('report-wrap').innerHTML = buildReportHTML(p, report);
   document.getElementById('generating-state').style.display = 'none';
+  document.getElementById('report-tabs-bar').style.display = 'block';
   document.getElementById('report-wrap').style.display = 'flex';
+  document.getElementById('internal-wrap').style.display = 'none';
+  // Pre-render internal report in background
+  generateInternalReport();
+  document.getElementById('internal-wrap').style.display = 'none';
+}
+
+// ─── INTERNAL TEAM SUMMARY ───────────────────────────
+function generateInternalReport() {
+  const p = getActiveProject();
+  if (!p) return;
+
+  const total = p.tasks.length;
+  const done = p.tasks.filter(t => t.completed).length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+
+  // Hours calculations
+  const totalEst = p.tasks.reduce((s, t) => s + (parseFloat(t.hours) || 0), 0);
+  const completedWithHours = p.tasks.filter(t => t.completed && t.actualHours !== null && t.actualHours !== undefined);
+  const totalActual = completedWithHours.reduce((s, t) => s + t.actualHours, 0);
+  const totalVariance = completedWithHours.length ? totalActual - completedWithHours.reduce((s,t) => s + (parseFloat(t.hours)||0), 0) : null;
+
+  // Group by role
+  const roles = {};
+  p.tasks.forEach(t => {
+    const role = t.role || 'Unassigned';
+    if (!roles[role]) roles[role] = { est: 0, actual: 0, tasks: [], hasActual: false };
+    roles[role].est += parseFloat(t.hours) || 0;
+    roles[role].tasks.push(t);
+    if (t.completed && t.actualHours !== null && t.actualHours !== undefined) {
+      roles[role].actual += t.actualHours;
+      roles[role].hasActual = true;
+    }
+  });
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  // Summary bar
+  const varClass = totalVariance === null ? '' : totalVariance > 0 ? 'over' : totalVariance < 0 ? 'under' : 'exact';
+  const varDisplay = totalVariance === null ? '—'
+    : totalVariance > 0 ? `+${totalVariance.toFixed(1)}h` : `${totalVariance.toFixed(1)}h`;
+
+  // Task table rows
+  const taskRows = p.tasks.map(t => {
+    const est = parseFloat(t.hours) || 0;
+    const act = (t.completed && t.actualHours !== null && t.actualHours !== undefined) ? t.actualHours : null;
+    const v = act !== null ? act - est : null;
+    const vc = v === null ? 'pending' : v > 0 ? 'over' : v < 0 ? 'under' : 'exact';
+    const vLabel = v === null ? (t.completed ? 'Not logged' : 'Pending') : v > 0 ? `+${v.toFixed(1)}h` : v < 0 ? `${v.toFixed(1)}h` : '±0';
+    return `<tr>
+      <td>${esc(t.task)}</td>
+      <td>${esc(t.role || '—')}</td>
+      <td class="num">${est > 0 ? est + 'h' : '—'}</td>
+      <td class="num">${act !== null ? act + 'h' : '—'}</td>
+      <td class="num"><span class="var-pill ${vc}">${vLabel}</span></td>
+      <td><span style="font-size:11px;color:${t.completed ? 'var(--green)' : 'var(--text-faint)'}">${t.completed ? '✓ Done' : 'Pending'}</span></td>
+    </tr>`;
+  }).join('');
+
+  // Role summary cards
+  const roleCards = Object.entries(roles).map(([role, data]) => {
+    const v = data.hasActual ? data.actual - data.tasks.filter(t=>t.completed && t.actualHours!=null).reduce((s,t)=>s+(parseFloat(t.hours)||0),0) : null;
+    const vc = v === null ? '' : v > 0 ? 'over' : v < 0 ? 'under' : 'exact';
+    const vLabel = v === null ? '' : v > 0 ? `+${v.toFixed(1)}h over` : v < 0 ? `${Math.abs(v).toFixed(1)}h under` : 'On estimate';
+    return `<div class="role-card">
+      <div class="role-card-name">${esc(role)}</div>
+      <div class="role-card-hours">${data.est}h <span style="font-size:14px;color:var(--text-muted)">est</span></div>
+      <div class="role-card-detail">${data.hasActual ? data.actual + 'h actual logged' : 'No actuals logged yet'}</div>
+      ${v !== null ? `<div class="role-card-var"><span class="var-pill ${vc}">${vLabel}</span></div>` : ''}
+    </div>`;
+  }).join('');
+
+  // AI insight — only call if we have enough data
+  const hasMeaningfulData = completedWithHours.length >= 3;
+
+  const html = `
+    <div class="internal-masthead">
+      <div>
+        <div class="report-logo" style="color:rgba(255,255,255,0.4);font-size:12px;letter-spacing:0.08em;margin-bottom:0.5rem">◆ MSP Project Progress</div>
+        <div class="internal-masthead-title">${esc(p.title)}</div>
+        <div class="internal-masthead-sub">${p.customerName ? 'Customer: ' + esc(p.customerName) : ''} ${p.customerName && p.mspName ? '·' : ''} ${p.mspName ? esc(p.mspName) : ''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+        <div class="internal-badge">Internal Use Only</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.3)">${dateStr}</div>
+      </div>
+    </div>
+
+    <div class="internal-summary-bar">
+      <div class="summary-stat">
+        <div class="summary-stat-label">Tasks Complete</div>
+        <div class="summary-stat-value">${done}/${total}</div>
+        <div class="summary-stat-sub">${pct}% of project</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-label">Estimated Hours</div>
+        <div class="summary-stat-value">${totalEst}h</div>
+        <div class="summary-stat-sub">Total quoted</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-label">Actual Hours</div>
+        <div class="summary-stat-value">${totalActual > 0 ? totalActual.toFixed(1) + 'h' : '—'}</div>
+        <div class="summary-stat-sub">${completedWithHours.length} tasks logged</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-label">Variance</div>
+        <div class="summary-stat-value ${varClass}">${varDisplay}</div>
+        <div class="summary-stat-sub">${totalVariance === null ? 'Log actuals to track' : totalVariance > 0 ? 'Over estimate' : totalVariance < 0 ? 'Under estimate' : 'On target'}</div>
+      </div>
+    </div>
+
+    <div class="internal-section">
+      <div class="internal-section-title">By Role</div>
+      <div class="role-summary-grid">${roleCards}</div>
+    </div>
+
+    <div class="internal-section">
+      <div class="internal-section-title">Task Hours Detail</div>
+      <table class="hours-table">
+        <thead>
+          <tr>
+            <th>Task</th><th>Role</th>
+            <th class="num">Estimated</th><th class="num">Actual</th>
+            <th class="num">Variance</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody>${taskRows}</tbody>
+        <tfoot>
+          <tr class="total-row">
+            <td colspan="2"><strong>Project Total</strong></td>
+            <td class="num"><strong>${totalEst}h</strong></td>
+            <td class="num"><strong>${totalActual > 0 ? totalActual.toFixed(1) + 'h' : '—'}</strong></td>
+            <td class="num"><strong>${varDisplay !== '—' ? `<span class="var-pill ${varClass}">${varDisplay}</span>` : '—'}</strong></td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="internal-section" id="internal-ai-section">
+      ${hasMeaningfulData
+        ? '<div class="internal-section-title">AI Insight</div><div class="ai-insight" id="internal-ai-text"><div class="gen-spinner" style="width:20px;height:20px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px"></div> Generating insight…</div>'
+        : '<div class="internal-section-title">AI Insight</div><div class="ai-insight" style="color:var(--text-muted)">Complete and log hours for at least 3 tasks to generate an AI insight on project performance.</div>'
+      }
+    </div>
+
+    <div class="internal-footer">
+      <span>Internal Team Summary — not for distribution</span>
+      <span>${dateStr}</span>
+    </div>`;
+
+  document.getElementById('internal-report').innerHTML = html;
+
+  // Fetch AI insight if we have enough data
+  if (hasMeaningfulData) fetchInternalInsight(p, totalEst, totalActual, totalVariance, roles);
+}
+
+async function fetchInternalInsight(p, totalEst, totalActual, totalVariance, roles) {
+  const overTasks = p.tasks.filter(t => t.completed && t.actualHours !== null && t.actualHours !== undefined && t.actualHours > (parseFloat(t.hours)||0));
+  const underTasks = p.tasks.filter(t => t.completed && t.actualHours !== null && t.actualHours !== undefined && t.actualHours < (parseFloat(t.hours)||0));
+  const roleLines = Object.entries(roles).map(([r, d]) => `${r}: est ${d.est}h, actual ${d.hasActual ? d.actual + 'h' : 'not logged'}`).join('; ');
+
+  const prompt = `You are an MSP project manager reviewing internal project hours data. Write 2-3 sentences maximum as a plain-English insight for the team — no bullet points, no headers. Focus on the most notable variance pattern, which role or task type is running over or under, and one specific actionable recommendation for future quoting. Be direct and specific, not generic.
+
+Project: ${p.title}
+Total estimated: ${totalEst}h | Total actual: ${totalActual.toFixed(1)}h | Variance: ${totalVariance !== null ? (totalVariance > 0 ? '+' : '') + totalVariance.toFixed(1) + 'h' : 'unknown'}
+By role: ${roleLines}
+Most over-budget tasks: ${overTasks.slice(0,3).map(t => t.task + ' (est ' + t.hours + 'h, act ' + t.actualHours + 'h)').join(', ') || 'none'}
+Most under-budget tasks: ${underTasks.slice(0,3).map(t => t.task + ' (est ' + t.hours + 'h, act ' + t.actualHours + 'h)').join(', ') || 'none'}
+
+Write only the insight paragraph, nothing else.`;
+
+  try {
+    const res = await fetch(FUNCTION_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await res.json();
+    const el = document.getElementById('internal-ai-text');
+    if (el) el.textContent = data.text || 'No insight available.';
+  } catch {
+    const el = document.getElementById('internal-ai-text');
+    if (el) el.textContent = 'Could not generate insight — check your connection.';
+  }
 }
 
 // ─── UTILITIES ────────────────────────────────────────
@@ -911,6 +1181,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Report
   document.getElementById('btn-back-tracker').addEventListener('click', () => showView('tracker'));
+
+  // Report tabs
+  document.getElementById('tab-client').addEventListener('click', () => {
+    document.getElementById('tab-client').classList.add('active');
+    document.getElementById('tab-internal').classList.remove('active');
+    document.getElementById('report-wrap').style.display = 'flex';
+    document.getElementById('internal-wrap').style.display = 'none';
+  });
+  document.getElementById('tab-internal').addEventListener('click', () => {
+    document.getElementById('tab-internal').classList.add('active');
+    document.getElementById('tab-client').classList.remove('active');
+    document.getElementById('report-wrap').style.display = 'none';
+    document.getElementById('internal-wrap').style.display = 'flex';
+  });
   document.getElementById('btn-regenerate').addEventListener('click', generateReport);
   document.getElementById('btn-print').addEventListener('click', () => window.print());
 
