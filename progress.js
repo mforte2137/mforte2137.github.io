@@ -489,7 +489,8 @@ function showSampleReport() {
   const body = document.getElementById('sample-report-body');
   wrap.style.display = 'block';
   body.innerHTML = buildReportHTML(SAMPLE_PROJECT, SAMPLE_REPORT);
-  wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Scroll to top of page so sticky close bar is immediately visible
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function hideSampleReport() {
