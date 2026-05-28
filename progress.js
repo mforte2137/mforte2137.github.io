@@ -420,22 +420,37 @@ const SAMPLE_REPORT = {
 // ─── DASHBOARD ────────────────────────────────────────
 function renderDashboard() {
   const grid = document.getElementById('projects-grid');
+  const completedGrid = document.getElementById('completed-grid');
+  const completedSection = document.getElementById('completed-section');
   const empty = document.getElementById('empty-state');
   grid.innerHTML = '';
+  completedGrid.innerHTML = '';
 
-  if (projects.length === 0) { empty.style.display = 'flex'; return; }
+  const active = projects.filter(p => !isProjectComplete(p));
+  const completed = projects.filter(p => isProjectComplete(p));
+
+  if (projects.length === 0) { empty.style.display = 'flex'; completedSection.style.display = 'none'; return; }
   empty.style.display = 'none';
 
-  projects.forEach(p => {
+  function buildCard(p, isCompleted) {
     const total = p.tasks.length;
     const done = p.tasks.filter(t => t.completed).length;
     const pct = total ? Math.round((done / total) * 100) : 0;
     const activeBlockers = (p.blockers || []).filter(b => b.status !== 'resolved');
     const highBlockers = activeBlockers.filter(b => b.severity === 'high');
     const pendingScope = (p.scopeChanges || []).filter(s => s.status === 'pending');
+    const completedDate = p.completedAt
+      ? new Date(p.completedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+      : '';
+    const totalEst = p.tasks.reduce((s, t) => s + (parseFloat(t.hours) || 0), 0);
+    const loggedTasks = p.tasks.filter(t => t.actualHours !== null && t.actualHours !== undefined);
+    const totalAct = loggedTasks.reduce((s, t) => s + t.actualHours, 0);
+    const varStr = loggedTasks.length === total && totalEst > 0
+      ? `${totalAct > totalEst ? '+' : ''}${(totalAct - totalEst).toFixed(1)}h vs estimate`
+      : '';
 
     const card = document.createElement('div');
-    card.className = 'project-card';
+    card.className = 'project-card' + (isCompleted ? ' completed-card' : '');
     card.innerHTML = `
       <div class="card-top">
         <div>
@@ -444,40 +459,72 @@ function renderDashboard() {
         </div>
         <button class="card-menu-btn" data-pid="${p.id}">⋯</button>
       </div>
-      <div class="card-progress-bar-wrap">
-        <div class="card-progress-bar-track">
-          <div class="card-progress-bar-fill" style="width:${pct}%"></div>
+      ${isCompleted ? `
+        <div class="card-meta" style="margin-bottom:0.75rem">
+          <span class="completed-stamp">✓ Complete</span>
+          ${completedDate ? `<span class="completed-date">Delivered ${completedDate}</span>` : ''}
+          ${varStr ? `<span class="card-tag ${totalAct > totalEst ? 'has-blockers' : 'healthy'}">${varStr}</span>` : ''}
+        </div>` : `
+        <div class="card-progress-bar-wrap">
+          <div class="card-progress-bar-track">
+            <div class="card-progress-bar-fill" style="width:${pct}%"></div>
+          </div>
+          <div class="card-progress-info">
+            <span>${done} of ${total} tasks complete</span>
+            <span class="card-pct">${pct}%</span>
+          </div>
         </div>
-        <div class="card-progress-info">
-          <span>${done} of ${total} tasks complete</span>
-          <span class="card-pct">${pct}%</span>
-        </div>
-      </div>
-      <div class="card-meta">
-        ${highBlockers.length ? `<span class="card-tag has-blockers">⚠ ${highBlockers.length} high risk</span>` : ''}
-        ${activeBlockers.length && !highBlockers.length ? `<span class="card-tag has-blockers">${activeBlockers.length} blocker${activeBlockers.length > 1 ? 's' : ''}</span>` : ''}
-        ${pendingScope.length ? `<span class="card-tag has-scope">${pendingScope.length} scope change${pendingScope.length > 1 ? 's' : ''}</span>` : ''}
-        ${activeBlockers.length === 0 && pendingScope.length === 0 ? '<span class="card-tag healthy">✓ On track</span>' : ''}
-        <span class="card-tag">${total} tasks</span>
-      </div>`;
+        <div class="card-meta">
+          ${highBlockers.length ? `<span class="card-tag has-blockers">⚠ ${highBlockers.length} high risk</span>` : ''}
+          ${activeBlockers.length && !highBlockers.length ? `<span class="card-tag has-blockers">${activeBlockers.length} blocker${activeBlockers.length > 1 ? 's' : ''}</span>` : ''}
+          ${pendingScope.length ? `<span class="card-tag has-scope">${pendingScope.length} scope change${pendingScope.length > 1 ? 's' : ''}</span>` : ''}
+          ${activeBlockers.length === 0 && pendingScope.length === 0 ? '<span class="card-tag healthy">✓ On track</span>' : ''}
+          <span class="card-tag">${total} tasks</span>
+        </div>`}`;
 
     card.addEventListener('click', e => {
       if (e.target.closest('.card-menu-btn') || e.target.closest('.card-dropdown')) return;
       openProject(p.id);
     });
-    grid.appendChild(card);
 
     card.querySelector('.card-menu-btn').addEventListener('click', e => {
       e.stopPropagation();
       closeAllDropdowns();
       const dd = document.createElement('div');
       dd.className = 'card-dropdown';
-      dd.innerHTML = `<button data-action="open">Open Project</button><button data-action="delete" class="danger">Delete Project</button>`;
+      dd.innerHTML = `
+        <button data-action="open">Open Project</button>
+        ${isCompleted ? '<button data-action="export">Export Snapshot</button>' : ''}
+        <button data-action="delete" class="danger">Delete Project</button>`;
       dd.querySelector('[data-action="open"]').addEventListener('click', () => openProject(p.id));
+      if (isCompleted) dd.querySelector('[data-action="export"]').addEventListener('click', () => exportSnapshot(p));
       dd.querySelector('[data-action="delete"]').addEventListener('click', () => confirmDelete(p.id));
       card.appendChild(dd);
     });
-  });
+
+    return card;
+  }
+
+  active.forEach(p => grid.appendChild(buildCard(p, false)));
+
+  if (completed.length > 0) {
+    completedSection.style.display = 'block';
+    completed.forEach(p => completedGrid.appendChild(buildCard(p, true)));
+  } else {
+    completedSection.style.display = 'none';
+  }
+}
+
+function exportSnapshot(p) {
+  const snapshot = { ...p, exportedAt: new Date().toISOString(), appVersion: 'progress-v1' };
+  const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (p.title || 'project').replace(/[^a-z0-9]/gi, '-').toLowerCase() + '-snapshot.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Snapshot exported', '💾');
 }
 
 function closeAllDropdowns() { document.querySelectorAll('.card-dropdown').forEach(d => d.remove()); }
@@ -505,8 +552,9 @@ function buildReportHTML(p, report) {
   const offset = circ - (pct / 100) * circ;
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-  const healthMap = { healthy: 'HEALTHY', 'at-risk': 'AT RISK', critical: 'CRITICAL' };
+  const healthMap = { healthy: 'HEALTHY', 'at-risk': 'AT RISK', critical: 'CRITICAL', complete: 'COMPLETE' };
   const healthClass = report.healthStatus || 'healthy';
+  const isComplete = healthClass === 'complete';
 
   // Phase pills
   const phasePills = (report.phases || []).map(ph =>
@@ -604,9 +652,32 @@ function buildReportHTML(p, report) {
           <div class="exec-summary">${esc(report.executiveSummary)}</div>
         </div>
         <div class="report-block block-timeline">
+          ${isComplete && report.deliverySummary ? `
+          <div class="block-label">⑦ Project Summary</div>
+          <div class="project-summary-grid">
+            <div class="summary-fact">
+              <div class="summary-fact-value">${report.deliverySummary.tasksDelivered}</div>
+              <div class="summary-fact-label">Tasks Delivered</div>
+            </div>
+            <div class="summary-fact">
+              <div class="summary-fact-value">${report.deliverySummary.scopeChangesHandled}</div>
+              <div class="summary-fact-label">Scope Changes</div>
+            </div>
+            <div class="summary-fact">
+              <div class="summary-fact-value">${report.deliverySummary.hoursEstimated}h</div>
+              <div class="summary-fact-label">Hours Quoted</div>
+            </div>
+            <div class="summary-fact">
+              <div class="summary-fact-value">${report.deliverySummary.hoursActual ? report.deliverySummary.hoursActual + 'h' : '—'}</div>
+              <div class="summary-fact-label">Hours Actual</div>
+            </div>
+          </div>
+          ${report.deliverySummary.projectInsight ? `<p style="margin-top:1rem;font-size:13px;line-height:1.6;color:var(--text-muted)">${esc(report.deliverySummary.projectInsight)}</p>` : ''}
+          ` : `
           <div class="block-label">⑦ Outlook</div>
           <div class="timeline-conf ${conf}">${confLabels[conf]}</div>
           <div class="outlook-narrative">${esc(report.outlookNarrative)}</div>
+          `}
         </div>
       </div>
       <div class="report-footer">
@@ -635,6 +706,8 @@ function renderTracker() {
   renderBlockers(p);
   renderScopeChanges(p);
   updateProgressRing(p);
+  renderCompletionBanner(p);
+  updateGenerateButton(p);
 }
 
 function renderTasks(p) {
@@ -719,15 +792,61 @@ function renderTasks(p) {
 function toggleTask(idx) {
   const p = getActiveProject();
   p.tasks[idx].completed = !p.tasks[idx].completed;
-  // Reset actual hours if unchecking
   if (!p.tasks[idx].completed) p.tasks[idx].actualHours = null;
   p.updatedAt = new Date().toISOString();
+
+  // Detect project completion
+  if (p.tasks[idx].completed && isProjectComplete(p)) {
+    if (!p.completedAt) {
+      p.completedAt = new Date().toISOString();
+      showToast('Project complete! Time to generate the final report.', '🎉', 6000);
+    }
+  } else if (!p.tasks[idx].completed) {
+    // Unchecked a task — project no longer complete
+    p.completedAt = null;
+  }
+
   save();
   renderTasks(p);
   updateProgressRing(p);
+  renderCompletionBanner(p);
+  updateGenerateButton(p);
   renderDashboard();
-  // If just completed, prompt for actual hours
   if (p.tasks[idx].completed) showActualHoursPrompt(idx);
+}
+
+function renderCompletionBanner(p) {
+  const banner = document.getElementById('completion-banner');
+  const sub = document.getElementById('completion-sub');
+  if (!banner) return;
+  if (isProjectComplete(p)) {
+    banner.style.display = 'block';
+    const dateStr = p.completedAt
+      ? new Date(p.completedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+      : 'today';
+    const totalEst = p.tasks.reduce((s, t) => s + (parseFloat(t.hours) || 0), 0);
+    const logged = p.tasks.filter(t => t.actualHours !== null && t.actualHours !== undefined);
+    const totalAct = logged.reduce((s, t) => s + t.actualHours, 0);
+    const varStr = logged.length
+      ? ` · ${totalAct > totalEst ? '+' : ''}${(totalAct - totalEst).toFixed(1)}h vs estimate`
+      : '';
+    sub.textContent = `All ${p.tasks.length} tasks delivered${varStr} · Completed ${dateStr}`;
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+function updateGenerateButton(p) {
+  const btn = document.getElementById('btn-generate-report');
+  const label = document.getElementById('btn-generate-label');
+  if (!btn || !label) return;
+  if (isProjectComplete(p)) {
+    label.textContent = 'Generate Final Report';
+    btn.style.background = 'var(--green)';
+  } else {
+    label.textContent = 'Generate Report';
+    btn.style.background = '';
+  }
 }
 
 function showActualHoursPrompt(idx) {
@@ -1202,6 +1321,7 @@ async function generateReport() {
 }
 
 function buildReportPrompt(p) {
+  const complete = isProjectComplete(p);
   const total = p.tasks.length;
   const done = p.tasks.filter(t => t.completed).length;
   const pct = total ? Math.round((done / total) * 100) : 0;
@@ -1211,47 +1331,83 @@ function buildReportPrompt(p) {
   const scopeItems = p.scopeChanges || [];
   const pendingScope = scopeItems.filter(s => s.status === 'pending');
 
-  return `You are an expert MSP project communication specialist. Generate an executive project status report in JSON format.
+  // Hours data for completed projects
+  const loggedTasks = p.tasks.filter(t => t.actualHours !== null && t.actualHours !== undefined);
+  const totalEst = p.tasks.reduce((s, t) => s + (parseFloat(t.hours) || 0), 0);
+  const totalAct = loggedTasks.reduce((s, t) => s + t.actualHours, 0);
+  const hoursVarNum = loggedTasks.length ? (totalAct - loggedTasks.reduce((s,t)=>s+(parseFloat(t.hours)||0),0)) : null;
+  const hoursVar = hoursVarNum !== null ? (hoursVarNum >= 0 ? '+' : '') + hoursVarNum.toFixed(1) + 'h' : 'N/A';
+  const completedDate = p.completedAt
+    ? new Date(p.completedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    : 'recently';
 
-PROJECT DATA:
-- Project: ${p.title}
-- Customer: ${p.customerName || 'Not specified'}
-- MSP: ${p.mspName || 'Your MSP'}
-- Progress: ${done} of ${total} tasks complete (${pct}%)
-- Overview: ${p.overview || 'Network infrastructure project.'}
+  if (complete) {
+    return 'You are an expert MSP project communication specialist. Generate a PROJECT COMPLETION executive report in JSON format. This project is 100% complete. Tone: confident, celebratory, professional — a delivery confirmation not a status update.\n\n'
+      + 'PROJECT DATA:\n'
+      + '- Project: ' + p.title + '\n'
+      + '- Customer: ' + (p.customerName || 'Not specified') + '\n'
+      + '- MSP: ' + (p.mspName || 'Your MSP') + '\n'
+      + '- Status: 100% COMPLETE — all ' + total + ' tasks delivered\n'
+      + '- Completed: ' + completedDate + '\n'
+      + '- Total estimated hours: ' + totalEst + 'h\n'
+      + '- Total actual hours logged: ' + (loggedTasks.length ? totalAct + 'h' : 'not fully logged') + '\n'
+      + '- Hours variance: ' + hoursVar + '\n'
+      + '- Overview: ' + (p.overview || 'Network infrastructure project.') + '\n\n'
+      + 'ALL TASKS DELIVERED (' + total + '):\n'
+      + p.tasks.map(t => '✓ ' + t.task).join('\n') + '\n\n'
+      + 'SCOPE CHANGES HANDLED (' + scopeItems.length + '):\n'
+      + (scopeItems.length ? scopeItems.map(s => '[' + s.type.toUpperCase() + '] [' + s.status + '] ' + s.description).join('\n') : 'None') + '\n\n'
+      + 'Respond ONLY with valid JSON, no preamble, no markdown, no backticks:\n'
+      + '{\n'
+      + '  "healthStatus": "complete",\n'
+      + '  "currentPhaseNarrative": "2-3 sentences confirming delivery. Celebratory but professional. Summarise what was delivered.",\n'
+      + '  "phases": [{ "label": "Phase name", "status": "done" }],\n'
+      + '  "executiveSummary": "3-4 sentences. Confirm completion, summarise achievements, mention scope changes handled. Customer-facing, no jargon.",\n'
+      + '  "decisionsNeeded": [],\n'
+      + '  "timelineConfidence": "high",\n'
+      + '  "outlookNarrative": "",\n'
+      + '  "scopeNarrative": "1-2 sentences on how scope changes were handled. Empty string if none.",\n'
+      + '  "deliverySummary": {\n'
+      + '    "tasksDelivered": ' + total + ',\n'
+      + '    "scopeChangesHandled": ' + scopeItems.length + ',\n'
+      + '    "hoursEstimated": ' + totalEst + ',\n'
+      + '    "hoursActual": ' + (loggedTasks.length ? totalAct : 'null') + ',\n'
+      + '    "completedDate": "' + completedDate + '",\n'
+      + '    "projectInsight": "1-2 sentences about what this means for the customer going forward. Focus on business outcome."\n'
+      + '  }\n'
+      + '}\n\n'
+      + 'Rules: all phases must be done. decisionsNeeded must be empty. Write warmly but professionally. projectInsight focuses on business value (e.g. modern secure network supporting growth).';
+  }
 
-COMPLETED TASKS (${completedTasks.length}):
-${completedTasks.length ? completedTasks.map(t => '✓ ' + t).join('\n') : 'None yet'}
+  return 'You are an expert MSP project communication specialist. Generate an executive project status report in JSON format.\n\n'
+    + 'PROJECT DATA:\n'
+    + '- Project: ' + p.title + '\n'
+    + '- Customer: ' + (p.customerName || 'Not specified') + '\n'
+    + '- MSP: ' + (p.mspName || 'Your MSP') + '\n'
+    + '- Progress: ' + done + ' of ' + total + ' tasks complete (' + pct + '%)\n'
+    + '- Overview: ' + (p.overview || 'Network infrastructure project.') + '\n\n'
+    + 'COMPLETED TASKS (' + completedTasks.length + '):\n'
+    + (completedTasks.length ? completedTasks.map(t => '✓ ' + t).join('\n') : 'None yet') + '\n\n'
+    + 'PENDING TASKS (' + pendingTasks.length + '):\n'
+    + (pendingTasks.length ? pendingTasks.slice(0,8).map(t => '• ' + t).join('\n') : 'All complete!') + '\n\n'
+    + 'ACTIVE BLOCKERS (' + activeBlockers.length + '):\n'
+    + (activeBlockers.length ? activeBlockers.map(b => '[' + b.severity.toUpperCase() + '] ' + b.description + ' (' + b.status + ')').join('\n') : 'None') + '\n\n'
+    + 'SCOPE CHANGES (' + scopeItems.length + ' total, ' + pendingScope.length + ' pending):\n'
+    + (scopeItems.length ? scopeItems.map(s => '[' + s.type.toUpperCase() + '] [' + s.impact + ' impact] [' + s.status + '] ' + s.description).join('\n') : 'None') + '\n\n'
+    + 'Respond ONLY with valid JSON — no preamble, no markdown, no backticks:\n'
+    + '{\n'
+    + '  "healthStatus": "healthy" | "at-risk" | "critical",\n'
+    + '  "currentPhaseNarrative": "2-3 sentence plain-English explanation of where the project is. Customer-facing, no jargon.",\n'
+    + '  "phases": [{ "label": "Phase name", "status": "done" | "active" | "upcoming" }],\n'
+    + '  "executiveSummary": "3-4 sentences. Confident, clear, customer-focused. No bullet points.",\n'
+    + '  "decisionsNeeded": ["Customer action needed (if any)"],\n'
+    + '  "timelineConfidence": "high" | "medium" | "low",\n'
+    + '  "outlookNarrative": "1-2 sentences on timeline and outlook.",\n'
+    + '  "scopeNarrative": "1-2 sentences on scope changes. Empty string if none.",\n'
+    + '  "deliverySummary": null\n'
+    + '}\n\n'
+    + 'Rules: phases from task list — done/active/upcoming. decisionsNeeded only if customer action required. healthStatus based on blockers and scope. Write for non-technical business owner. No unexplained acronyms.';
 
-PENDING TASKS (${pendingTasks.length}):
-${pendingTasks.length ? pendingTasks.slice(0, 8).map(t => '• ' + t).join('\n') : 'All complete!'}
-
-ACTIVE BLOCKERS (${activeBlockers.length}):
-${activeBlockers.length ? activeBlockers.map(b => `[${b.severity.toUpperCase()}] ${b.description} (${b.status})`).join('\n') : 'None'}
-
-SCOPE CHANGES (${scopeItems.length} total, ${pendingScope.length} pending):
-${scopeItems.length ? scopeItems.map(s => `[${s.type.toUpperCase()}] [${s.impact} impact] [${s.status}] ${s.description}`).join('\n') : 'None'}
-
-Respond ONLY with a valid JSON object — no preamble, no markdown, no backticks:
-{
-  "healthStatus": "healthy" | "at-risk" | "critical",
-  "currentPhaseNarrative": "2-3 sentence plain-English explanation of where the project is right now. Customer-facing, no jargon.",
-  "phases": [
-    { "label": "Phase name", "status": "done" | "active" | "upcoming" }
-  ],
-  "executiveSummary": "3-4 sentence paragraph. Confident, clear, customer-focused. Mention scope changes if any are pending. No bullet points.",
-  "decisionsNeeded": ["Specific action or decision needed from the customer (if any)"],
-  "timelineConfidence": "high" | "medium" | "low",
-  "outlookNarrative": "1-2 sentences on timeline confidence and outlook.",
-  "scopeNarrative": "1-2 sentences summarising the scope change situation in plain English for the customer. Only include if there are scope changes, otherwise empty string."
-}
-
-Rules:
-- phases: derive 3-5 logical phases from the task list. Mark completed-task phases as "done", current as "active", future as "upcoming".
-- decisionsNeeded: only include if blockers or pending scope items require a customer decision. Empty array if not.
-- healthStatus: healthy if pct>50 and no high blockers and no high-impact pending scope; at-risk if high blockers or high-impact pending scope; critical if severely blocked.
-- timelineConfidence: lower if there are pending scope changes with high impact or active high blockers.
-- Write for a non-technical business owner. Be specific about what was done. Never use acronyms without explaining them.`;
 }
 
 function parseReportJSON(raw) {
@@ -1270,7 +1426,6 @@ function renderReport(p, report) {
   document.getElementById('report-tabs-bar').style.display = 'block';
   document.getElementById('report-wrap').style.display = 'flex';
   document.getElementById('internal-wrap').style.display = 'none';
-  // Pre-render internal report in background
   generateInternalReport();
   document.getElementById('internal-wrap').style.display = 'none';
 }
@@ -1461,6 +1616,19 @@ function esc(str) {
   return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function showToast(message, icon = '✓', duration = 4000) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-message').textContent = message;
+  toast.style.display = 'flex';
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => { toast.style.display = 'none'; }, duration);
+}
+
+function isProjectComplete(p) {
+  return p.tasks.length > 0 && p.tasks.every(t => t.completed);
+}
+
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 // ─── TOGGLE BUTTON GROUPS ─────────────────────────────
@@ -1545,6 +1713,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Report
   document.getElementById('btn-back-tracker').addEventListener('click', () => showView('tracker'));
+  document.getElementById('btn-final-report')?.addEventListener('click', generateReport);
+
+  // Completed section toggle
+  document.getElementById('completed-toggle').addEventListener('click', () => {
+    const grid = document.getElementById('completed-grid');
+    const chevron = document.getElementById('completed-chevron');
+    const collapsed = grid.style.display === 'none';
+    grid.style.display = collapsed ? 'grid' : 'none';
+    chevron.classList.toggle('collapsed', !collapsed);
+  });
 
   // Report tabs
   document.getElementById('tab-client').addEventListener('click', () => {
