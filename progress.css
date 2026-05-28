@@ -1,594 +1,573 @@
-/* ═══════════════════════════════════════════════════════
-   MSP Project Progress — progress.css
-═══════════════════════════════════════════════════════ */
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MSP Project Progress</title>
+  <link rel="stylesheet" href="progress.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <!-- Toast notification -->
+  <div id="toast" class="toast" style="display:none">
+    <span id="toast-icon">🎉</span>
+    <span id="toast-message"></span>
+  </div>
 
-:root {
-  --bg: #f5f4f0;
-  --surface: #ffffff;
-  --surface-2: #f0ede6;
-  --border: #e2ddd4;
-  --border-strong: #c8c2b8;
-  --text: #1a1917;
-  --text-muted: #6b6760;
-  --text-faint: #9e9990;
-  --accent: #2563eb;
-  --accent-light: #dbeafe;
-  --accent-dark: #1d4ed8;
-  --green: #16a34a;
-  --green-light: #dcfce7;
-  --amber: #d97706;
-  --amber-light: #fef3c7;
-  --red: #dc2626;
-  --red-light: #fee2e2;
-  --purple: #7c3aed;
-  --purple-light: #ede9fe;
-  --header-bg: #0f0e0d;
-  --header-text: #f0ede6;
-  --radius: 10px;
-  --radius-lg: 16px;
-  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
-  font-family: 'DM Sans', system-ui, sans-serif;
-}
+  <!-- ═══════════════════════════════════════════════════════
+       DASHBOARD VIEW
+  ═══════════════════════════════════════════════════════ -->
+  <div id="view-dashboard" class="view active">
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="brand">
+          <span class="brand-mark">◆</span>
+          <span class="brand-name">Project Progress</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button class="btn-ghost" id="btn-sample-report">View Sample Report</button>
+          <button class="btn-ghost" id="btn-use-template">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Use Template
+          </button>
+          <button class="btn-primary" id="btn-import-new">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Import Project
+          </button>
+        </div>
+      </div>
+    </header>
 
-body { background: var(--bg); color: var(--text); min-height: 100vh; }
+    <main class="dashboard-main">
+      <div class="dashboard-hero">
+        <div class="hero-text">
+          <h1>Your Projects</h1>
+          <p>Track progress and generate executive reports for your customers.</p>
+        </div>
+      </div>
 
-/* ── VIEWS ─────────────────────────────────────────── */
-.view { display: none; min-height: 100vh; flex-direction: column; width: 100%; }
-.view.active { display: flex; }
+      <!-- Sample report collapsible -->
+      <div class="sample-report-wrap" id="sample-report-wrap" style="display:none">
+        <div class="sample-report-header" id="sample-report-toggle">
+          <div class="sample-label">
+            <span class="sample-badge">SAMPLE</span>
+            <span>Network Infrastructure Upgrade — Example Report</span>
+          </div>
+          <button class="sample-close-btn" id="btn-close-sample">✕ Close</button>
+        </div>
+        <div class="sample-report-body" id="sample-report-body">
+          <!-- injected by JS -->
+        </div>
+      </div>
 
-/* ── APP HEADER ─────────────────────────────────────── */
-.app-header {
-  background: var(--header-bg);
-  position: sticky; top: 0; z-index: 100;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
-}
-.header-inner {
-  max-width: 1280px; margin: 0 auto;
-  padding: 0 2rem; height: 60px;
-  display: flex; align-items: center; justify-content: space-between;
-}
-.brand { display: flex; align-items: center; gap: 10px; }
-.brand-mark { color: var(--accent); font-size: 18px; }
-.brand-name { color: var(--header-text); font-weight: 500; font-size: 15px; letter-spacing: 0.02em; }
-.tracker-header-actions { display: flex; align-items: center; gap: 10px; }
+      <div class="projects-grid" id="projects-grid"></div>
 
-/* ── BUTTONS ─────────────────────────────────────────── */
-.btn-primary {
-  background: var(--accent); color: #fff;
-  border: none; border-radius: var(--radius);
-  padding: 8px 16px; font-size: 14px; font-weight: 500;
-  cursor: pointer; display: flex; align-items: center; gap: 7px;
-  font-family: inherit; transition: background 0.15s, transform 0.1s;
-}
-.btn-primary:hover { background: var(--accent-dark); }
-.btn-primary:active { transform: scale(0.98); }
+      <!-- Completed projects section -->
+      <div id="completed-section" style="display:none">
+        <div class="completed-section-header" id="completed-toggle">
+          <span class="completed-section-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Completed Projects
+          </span>
+          <span class="completed-chevron" id="completed-chevron">▾</span>
+        </div>
+        <div class="completed-grid" id="completed-grid"></div>
+      </div>
 
-.btn-ghost {
-  background: transparent; color: var(--header-text);
-  border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius);
-  padding: 7px 14px; font-size: 14px; font-weight: 400;
-  cursor: pointer; display: flex; align-items: center; gap: 7px;
-  font-family: inherit; transition: background 0.15s, border-color 0.15s;
-}
-.btn-ghost:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.25); }
+      <div class="empty-state" id="empty-state" style="display:none">
+        <div class="empty-icon">◈</div>
+        <h2>No projects yet</h2>
+        <p>Import a project JSON from your scope builder to get started.</p>
+        <button class="btn-primary" id="btn-import-empty">Import your first project</button>
+      </div>
+    </main>
+  </div>
 
-.btn-back {
-  background: transparent; color: rgba(255,255,255,0.6);
-  border: none; border-radius: var(--radius);
-  padding: 8px 0; font-size: 14px; font-weight: 400;
-  cursor: pointer; display: flex; align-items: center; gap: 6px;
-  font-family: inherit; transition: color 0.15s;
-}
-.btn-back:hover { color: var(--header-text); }
+  <!-- ═══════════════════════════════════════════════════════
+       PROJECT TRACKER VIEW
+  ═══════════════════════════════════════════════════════ -->
+  <div id="view-tracker" class="view">
+    <header class="app-header">
+      <div class="header-inner">
+        <button class="btn-back" id="btn-back-dashboard">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          All Projects
+        </button>
+        <div class="tracker-header-actions">
+          <button class="btn-ghost" id="btn-edit-meta">Edit Details</button>
+          <button class="btn-primary" id="btn-generate-report">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <span id="btn-generate-label">Generate Report</span>
+          </button>
+        </div>
+      </div>
+    </header>
 
-.btn-danger {
-  background: var(--red); color: #fff; border: none; border-radius: var(--radius);
-  padding: 8px 16px; font-size: 14px; font-weight: 500;
-  cursor: pointer; font-family: inherit; transition: opacity 0.15s;
-}
-.btn-danger:hover { opacity: 0.88; }
+    <main class="tracker-main">
+      <div class="tracker-overview">
+        <div class="project-title-block">
+          <h1 id="tracker-project-title">Project Name</h1>
+          <p id="tracker-customer-name" class="customer-label"></p>
+        </div>
+        <div class="progress-ring-wrap">
+          <svg class="progress-ring" width="88" height="88" viewBox="0 0 88 88">
+            <circle cx="44" cy="44" r="36" fill="none" stroke="var(--border)" stroke-width="6"/>
+            <circle id="progress-arc" cx="44" cy="44" r="36" fill="none" stroke="var(--accent)" stroke-width="6"
+              stroke-linecap="round" stroke-dasharray="226.2" stroke-dashoffset="226.2"
+              transform="rotate(-90 44 44)"/>
+          </svg>
+          <div class="progress-ring-label">
+            <span id="progress-pct">0%</span>
+            <small>complete</small>
+          </div>
+        </div>
+      </div>
 
-/* ── DASHBOARD ───────────────────────────────────────── */
-.dashboard-main { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2rem; flex: 1; }
-.dashboard-hero { margin-bottom: 2rem; }
-.hero-text h1 { font-size: 28px; font-weight: 600; }
-.hero-text p { color: var(--text-muted); margin-top: 6px; font-size: 15px; }
+      <!-- Completion banner (shown when all tasks done) -->
+      <div class="completion-banner" id="completion-banner" style="display:none">
+        <div class="completion-banner-inner">
+          <span class="completion-icon">🎉</span>
+          <div>
+            <div class="completion-title">Project Complete!</div>
+            <div class="completion-sub" id="completion-sub"></div>
+          </div>
+          <button class="btn-primary" id="btn-final-report" style="margin-left:auto">
+            Generate Final Report
+          </button>
+        </div>
+      </div>
 
-/* ── TEMPLATE MODAL ──────────────────────────────────── */
-.modal-template { max-width: 780px; max-height: 85vh; }
-.template-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 0; overflow-y: auto; max-height: 460px;
-}
-.template-card {
-  padding: 1.25rem 1.5rem; border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border); cursor: pointer;
-  transition: background 0.12s; position: relative;
-}
-.template-card:hover { background: var(--accent-light); }
-.template-card.selected { background: var(--accent-light); border-color: var(--accent); }
-.template-card.selected::after {
-  content: '✓'; position: absolute; top: 10px; right: 12px;
-  width: 20px; height: 20px; background: var(--accent); color: #fff;
-  border-radius: 50%; font-size: 11px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-  line-height: 20px; text-align: center;
-}
-.template-card:nth-child(3n) { border-right: none; }
-.template-icon { font-size: 22px; margin-bottom: 8px; }
-.template-name { font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--text); }
-.template-meta { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
-.template-footer-fields { display: flex; gap: 1rem; flex: 1; }
+      <div class="tracker-body">
 
-/* ── SAMPLE REPORT COLLAPSIBLE ───────────────────────── */
-.sample-report-wrap {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); margin-bottom: 2rem;
-  overflow: hidden; box-shadow: var(--shadow);
-}
-.sample-report-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 1rem 1.5rem; background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
-  position: sticky; top: 60px; z-index: 90;
-}
-.sample-label { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; color: var(--text); }
-.sample-badge {
-  background: var(--accent); color: #fff;
-  font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
-  padding: 2px 8px; border-radius: 99px;
-}
-.sample-close-btn {
-  background: none; border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 5px 12px; font-size: 13px; cursor: pointer; color: var(--text-muted);
-  font-family: inherit; transition: background 0.12s;
-}
-.sample-close-btn:hover { background: var(--border); }
-.sample-report-body { padding: 1.5rem; }
+        <!-- CENTRE: Tasks (wider) -->
+        <div class="tasks-panel">
+          <div class="panel-header">
+            <h2>Tasks</h2>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="task-count" id="task-count">0 of 0</span>
+              <button class="btn-add-blocker" id="btn-add-task">+ Add Task</button>
+            </div>
+          </div>
+          <div class="tasks-list" id="tasks-list"></div>
+        </div>
 
-/* ── PROJECT CARDS ───────────────────────────────────── */
-.projects-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.25rem;
-}
-.project-card {
-  background: var(--surface); border-radius: var(--radius-lg);
-  border: 1px solid var(--border); padding: 1.5rem;
-  cursor: pointer; transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
-  position: relative;
-}
-.project-card:hover { box-shadow: var(--shadow-md); border-color: var(--border-strong); transform: translateY(-2px); }
-.card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem; }
-.card-title { font-size: 16px; font-weight: 600; line-height: 1.3; }
-.card-customer { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
-.card-menu-btn {
-  background: none; border: none; cursor: pointer;
-  color: var(--text-faint); padding: 4px; border-radius: 6px;
-  font-size: 18px; line-height: 1; transition: color 0.15s, background 0.15s; flex-shrink: 0;
-}
-.card-menu-btn:hover { color: var(--text); background: var(--surface-2); }
-.card-progress-bar-wrap { margin-bottom: 0.75rem; }
-.card-progress-bar-track { height: 5px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
-.card-progress-bar-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.4s ease; }
-.card-progress-info { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-top: 6px; }
-.card-pct { font-weight: 600; color: var(--text); }
-.card-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 1rem; }
-.card-tag { font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 99px; border: 1px solid var(--border); color: var(--text-muted); background: var(--surface-2); }
-.card-tag.has-blockers { background: var(--red-light); color: var(--red); border-color: #fca5a5; }
-.card-tag.has-scope { background: var(--purple-light); color: var(--purple); border-color: #c4b5fd; }
-.card-tag.healthy { background: var(--green-light); color: var(--green); border-color: #86efac; }
-.card-dropdown {
-  position: absolute; top: 48px; right: 1.5rem;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); box-shadow: var(--shadow-md);
-  min-width: 160px; z-index: 50; overflow: hidden;
-}
-.card-dropdown button {
-  display: block; width: 100%; text-align: left;
-  padding: 9px 14px; font-size: 13px; font-family: inherit;
-  background: none; border: none; cursor: pointer; color: var(--text); transition: background 0.12s;
-}
-.card-dropdown button:hover { background: var(--surface-2); }
-.card-dropdown button.danger { color: var(--red); }
+        <!-- RIGHT: Blockers + Scope Changes + Notes -->
+        <div class="blockers-panel">
 
-/* ── EMPTY STATE ─────────────────────────────────────── */
-.empty-state { text-align: center; padding: 5rem 2rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; }
-.empty-icon { font-size: 48px; color: var(--border-strong); }
-.empty-state h2 { font-size: 22px; font-weight: 500; }
-.empty-state p { color: var(--text-muted); max-width: 360px; }
+          <!-- Blockers & Risks -->
+          <div class="panel-header">
+            <h2>Blockers &amp; Risks</h2>
+            <button class="btn-add-blocker" id="btn-add-blocker">+ Add</button>
+          </div>
+          <div class="blockers-list" id="blockers-list"></div>
+          <div class="no-blockers" id="no-blockers"><span>✓</span> No active blockers</div>
 
-/* ── TRACKER ─────────────────────────────────────────── */
-.tracker-main { width: 100%; max-width: 1600px; margin: 0 auto; padding: 1.5rem 2.5rem; flex: 1; box-sizing: border-box; }
-.tracker-overview {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 1.5rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border);
-}
-.project-title-block h1 { font-size: 26px; font-weight: 600; }
-.customer-label { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
-.progress-ring-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
-.progress-ring { display: block; }
-.progress-ring-label { position: absolute; text-align: center; display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
-.progress-ring-label span { font-size: 18px; font-weight: 600; }
-.progress-ring-label small { font-size: 10px; color: var(--text-muted); }
+          <!-- Scope Changes -->
+          <div class="panel-header" style="margin-top:1.5rem">
+            <h2>Scope Changes</h2>
+            <button class="btn-add-blocker" id="btn-add-scope">+ Add</button>
+          </div>
+          <div class="blockers-list" id="scope-list"></div>
+          <div class="no-blockers" id="no-scope"><span>✓</span> No scope changes</div>
 
-/* ── TRACKER BODY — 3 column: tasks wider centre ──── */
-.tracker-body {
-  display: grid;
-  grid-template-columns: 1fr 420px;
-  gap: 1.5rem;
-  align-items: start;
-}
-@media (max-width: 960px) { .tracker-body { grid-template-columns: 1fr; } }
+          <!-- Internal Notes -->
+          <div class="panel-header" style="margin-top:1.5rem">
+            <h2>Internal Notes</h2>
+          </div>
+          <textarea id="project-notes" class="notes-area" placeholder="Add internal notes for this project (not included in customer report)…"></textarea>
+        </div>
 
-.tasks-panel {
-  background: var(--surface); border-radius: var(--radius-lg);
-  border: 1px solid var(--border); overflow: hidden; min-width: 0;
-}
-.blockers-panel {
-  background: var(--surface); border-radius: var(--radius-lg);
-  border: 1px solid var(--border); overflow: hidden; min-width: 0;
-}
+      </div>
+    </main>
+  </div>
 
-.panel-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); background: var(--surface);
-}
-.panel-header h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
-.task-count { font-size: 12px; color: var(--text-faint); }
+  <!-- ═══════════════════════════════════════════════════════
+       REPORT VIEW
+  ═══════════════════════════════════════════════════════ -->
+  <div id="view-report" class="view">
+    <header class="app-header report-header">
+      <div class="header-inner">
+        <button class="btn-back" id="btn-back-tracker">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          Back to Tracker
+        </button>
+        <div class="tracker-header-actions">
+          <button class="btn-ghost" id="btn-regenerate">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Regenerate
+          </button>
+          <button class="btn-primary" id="btn-print">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Print / Save PDF
+          </button>
+        </div>
+      </div>
+    </header>
 
-.btn-add-blocker {
-  background: none; border: 1px solid var(--border); border-radius: 6px;
-  padding: 3px 10px; font-size: 12px; font-weight: 500; color: var(--accent);
-  cursor: pointer; font-family: inherit; transition: background 0.12s;
-}
-.btn-add-blocker:hover { background: var(--accent-light); }
+    <main class="report-main">
+      <div class="generating-state" id="generating-state">
+        <div class="gen-spinner"></div>
+        <p id="gen-message">Analysing project data…</p>
+      </div>
 
-/* Task rows */
-.task-row {
-  display: flex; align-items: flex-start; gap: 12px;
-  padding: 12px 1.25rem; border-bottom: 1px solid var(--border); transition: background 0.12s;
-}
-.task-row:last-child { border-bottom: none; }
-.task-row:hover { background: var(--surface-2); }
-.task-row.completed { opacity: 0.55; }
-.task-checkbox {
-  width: 18px; height: 18px; border-radius: 5px;
-  border: 1.5px solid var(--border-strong); background: var(--surface);
-  cursor: pointer; flex-shrink: 0; margin-top: 2px;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s, border-color 0.15s;
-}
-.task-checkbox.checked { background: var(--accent); border-color: var(--accent); }
-.task-checkbox.checked::after { content: '✓'; color: #fff; font-size: 11px; font-weight: 700; }
-.task-info { flex: 1; min-width: 0; }
-.task-name { font-size: 14px; font-weight: 500; line-height: 1.3; }
-.task-row.completed .task-name { text-decoration: line-through; color: var(--text-muted); }
-.task-role { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
-.task-notes-text { font-size: 12px; color: var(--text-faint); margin-top: 3px; }
-.task-completion-note { font-size: 12px; color: var(--green); margin-top: 3px; }
+      <!-- Report tabs -->
+      <div id="report-tabs-bar" style="display:none">
+        <div class="report-tabs">
+          <button class="report-tab active" id="tab-client">Client Executive Report</button>
+          <button class="report-tab" id="tab-internal">Internal Team Summary</button>
+        </div>
+      </div>
 
-/* Hours tracking on completed tasks */
-.task-hours-row {
-  display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap;
-}
-.hours-chip {
-  font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 500;
-  border: 1px solid var(--border); color: var(--text-muted); background: var(--surface-2);
-  white-space: nowrap;
-}
-.hours-chip.over { background: var(--red-light); color: var(--red); border-color: #fca5a5; }
-.hours-chip.under { background: var(--green-light); color: var(--green); border-color: #86efac; }
-.hours-chip.exact { background: var(--accent-light); color: var(--accent); border-color: #93c5fd; }
+      <div class="report-wrap" id="report-wrap" style="display:none">
+        <div class="report-page" id="report-page">
 
-/* Hours stepper — replaces tiny browser spinner */
-.hours-stepper {
-  display: flex; align-items: center; gap: 0;
-  border: 1.5px solid var(--accent); border-radius: 8px; overflow: hidden;
-  background: var(--surface);
-}
-.hours-stepper-btn {
-  width: 32px; height: 32px; border: none; background: var(--surface-2);
-  color: var(--accent); font-size: 18px; font-weight: 500;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: background 0.12s; flex-shrink: 0; line-height: 1;
-  font-family: inherit;
-}
-.hours-stepper-btn:hover { background: var(--accent-light); }
-.hours-stepper-btn:active { background: var(--accent); color: #fff; }
-.hours-stepper-val {
-  min-width: 52px; text-align: center; font-size: 14px; font-weight: 600;
-  color: var(--text); padding: 0 4px; border-left: 1px solid var(--border);
-  border-right: 1px solid var(--border); line-height: 32px;
-  cursor: text;
-}
-.hours-stepper-val:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-.hours-save-btn {
-  background: var(--accent); color: #fff; border: none; border-radius: 8px;
-  padding: 7px 14px; font-size: 13px; font-weight: 500; cursor: pointer;
-  font-family: inherit; transition: background 0.12s; white-space: nowrap;
-  height: 32px; display: flex; align-items: center;
-}
-.hours-save-btn:hover { background: var(--accent-dark); }
-.task-actions { display: flex; gap: 2px; flex-shrink: 0; margin-top: 1px; }
-.task-action-btn {
-  background: none; border: none; cursor: pointer;
-  color: var(--text-faint); font-size: 13px; padding: 3px 5px;
-  border-radius: 4px; transition: color 0.12s, background 0.12s;
-}
-.task-action-btn:hover { color: var(--text); background: var(--surface-2); }
-.task-action-btn.del:hover { color: var(--red); }
+          <div class="report-masthead">
+            <div class="report-masthead-left">
+              <div class="report-logo">◆ MSP Project Progress</div>
+              <h1 id="rpt-project-title" class="report-project-title"></h1>
+              <p id="rpt-customer-name" class="report-customer"></p>
+            </div>
+            <div class="report-masthead-right">
+              <div class="health-badge" id="rpt-health-badge">
+                <span class="health-icon" id="rpt-health-icon">●</span>
+                <div>
+                  <div class="health-label">Project Health</div>
+                  <div class="health-value" id="rpt-health-value">HEALTHY</div>
+                </div>
+              </div>
+              <div class="report-date" id="rpt-date"></div>
+            </div>
+          </div>
 
-/* Drag handle */
-.drag-handle {
-  color: var(--border-strong); font-size: 16px; cursor: grab;
-  flex-shrink: 0; padding: 0 2px; margin-top: 1px;
-  user-select: none; transition: color 0.12s;
-  letter-spacing: -2px;
-}
-.drag-handle:hover { color: var(--text-muted); }
-.drag-handle:active { cursor: grabbing; }
-.task-row.dragging { opacity: 0.4; background: var(--accent-light); }
-.task-row.drag-over {
-  background: var(--accent-light);
-  border-top: 2px solid var(--accent);
-}
-.task-note-input {
-  width: 100%; margin-top: 6px; padding: 6px 8px;
-  border: 1px solid var(--border); border-radius: 6px;
-  font-size: 12px; font-family: inherit; color: var(--text);
-  background: var(--surface-2); resize: none;
-}
+          <div class="report-grid">
 
-/* Blockers & Scope cards */
-.blockers-list { padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
-.blocker-card {
-  border-radius: var(--radius); padding: 10px 12px; border: 1px solid var(--border);
-  display: flex; align-items: flex-start; gap: 10px;
-}
-.blocker-card.sev-high { background: #fff5f5; border-color: #fca5a5; }
-.blocker-card.sev-medium { background: #fffbeb; border-color: #fde68a; }
-.blocker-card.sev-low { background: #f0fdf4; border-color: #86efac; }
-.blocker-card.scope-pending { background: #faf5ff; border-color: #c4b5fd; }
-.blocker-card.scope-approved { background: #f0fdf4; border-color: #86efac; }
-.blocker-card.scope-absorbed { background: #eff6ff; border-color: #93c5fd; }
-.blocker-card.scope-declined { background: #f9fafb; border-color: #d1d5db; }
-.blocker-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
-.sev-high .blocker-dot { background: var(--red); }
-.sev-medium .blocker-dot { background: var(--amber); }
-.sev-low .blocker-dot { background: var(--green); }
-.blocker-body { flex: 1; min-width: 0; }
-.blocker-desc { font-size: 13px; line-height: 1.4; }
-.blocker-meta { display: flex; gap: 8px; margin-top: 5px; align-items: center; flex-wrap: wrap; }
-.blocker-sev-badge, .blocker-status-badge {
-  font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 7px; border-radius: 99px;
-}
-.blocker-sev-badge.high { background: var(--red-light); color: var(--red); }
-.blocker-sev-badge.medium { background: var(--amber-light); color: var(--amber); }
-.blocker-sev-badge.low { background: var(--green-light); color: var(--green); }
-.blocker-status-badge { background: var(--surface-2); color: var(--text-muted); }
-.scope-type-badge { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 7px; border-radius: 99px; background: var(--purple-light); color: var(--purple); }
-.blocker-actions { display: flex; gap: 4px; }
-.blocker-btn { background: none; border: none; cursor: pointer; color: var(--text-faint); padding: 3px; border-radius: 4px; font-size: 13px; transition: color 0.12s; }
-.blocker-btn:hover { color: var(--text); }
-.no-blockers { padding: 1rem 1.25rem; text-align: center; font-size: 13px; color: var(--green); }
-.notes-area {
-  width: 100%; border: none; border-top: 1px solid var(--border);
-  padding: 1rem 1.25rem; font-size: 13px; font-family: inherit;
-  color: var(--text); background: var(--surface-2); resize: vertical; min-height: 90px; outline: none;
-}
-.notes-area::placeholder { color: var(--text-faint); }
+            <!-- ① Current Phase -->
+            <div class="report-block block-phase">
+              <div class="block-label">① Current Phase</div>
+              <div class="phase-narrative" id="rpt-phase-narrative"></div>
+              <div class="phase-bar" id="rpt-phase-bar"></div>
+            </div>
 
-/* ── REPORT TABS ─────────────────────────────────────── */
-.report-tabs {
-  display: flex; gap: 0; border-bottom: 1px solid var(--border);
-  background: var(--surface); max-width: 980px; margin: 0 auto;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  overflow: hidden;
-}
-.report-tab {
-  flex: 1; padding: 14px 20px; font-size: 14px; font-weight: 500;
-  background: none; border: none; cursor: pointer; font-family: inherit;
-  color: var(--text-muted); border-bottom: 2px solid transparent;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
-  text-align: center;
-}
-.report-tab:hover { color: var(--text); background: var(--surface-2); }
-.report-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--surface); }
+            <!-- ② Overall Progress -->
+            <div class="report-block block-progress">
+              <div class="block-label">② Overall Progress</div>
+              <div class="report-progress-wrap">
+                <svg class="report-ring" width="100" height="100" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#e8e6e0" stroke-width="8"/>
+                  <circle id="rpt-arc" cx="50" cy="50" r="40" fill="none" stroke="var(--accent)" stroke-width="8"
+                    stroke-linecap="round" stroke-dasharray="251.3" stroke-dashoffset="251.3"
+                    transform="rotate(-90 50 50)"/>
+                </svg>
+                <div class="report-progress-label">
+                  <span id="rpt-pct-big"></span>
+                  <small>complete</small>
+                </div>
+              </div>
+              <div class="report-task-summary" id="rpt-task-summary"></div>
+            </div>
 
-/* ── REPORT ──────────────────────────────────────────── */
-.report-main { padding: 2rem; background: var(--bg); }
-.generating-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 1.5rem; }
-.gen-spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--border); border-top-color: var(--accent); animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-#gen-message { color: var(--text-muted); font-size: 15px; }
-.report-wrap { display: flex; justify-content: center; }
-.report-page { background: var(--surface); width: 100%; max-width: 980px; border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: var(--shadow-md); overflow: hidden; }
+            <!-- ③ Risks & Blockers -->
+            <div class="report-block block-risks">
+              <div class="block-label">③ Risks &amp; Blockers</div>
+              <div id="rpt-blockers-list"></div>
+            </div>
 
-/* Report masthead */
-.report-masthead { background: var(--header-bg); padding: 2rem 2.5rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 2rem; }
-.report-logo { font-size: 12px; color: rgba(255,255,255,0.4); letter-spacing: 0.08em; margin-bottom: 0.75rem; }
-.report-project-title { font-size: 28px; font-weight: 600; color: #fff; line-height: 1.2; }
-.report-customer { color: rgba(255,255,255,0.5); font-size: 14px; margin-top: 6px; }
-.report-masthead-right { display: flex; flex-direction: column; align-items: flex-end; gap: 1rem; }
-.health-badge { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: var(--radius); background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); }
-.health-icon { font-size: 20px; }
-.health-badge.healthy .health-icon { color: #4ade80; }
-.health-badge.at-risk .health-icon { color: #fbbf24; }
-.health-badge.critical .health-icon { color: #f87171; }
-.health-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); }
-.health-value { font-size: 18px; font-weight: 600; color: #fff; }
-.report-date { font-size: 12px; color: rgba(255,255,255,0.3); }
+            <!-- ④ Decisions Needed -->
+            <div class="report-block block-decisions">
+              <div class="block-label">④ Decisions &amp; Actions Needed</div>
+              <div id="rpt-decisions-list"></div>
+            </div>
 
-/* Report grid — 2 col with scope changes full width */
-.report-grid {
-  display: grid;
-  grid-template-columns: 1fr 220px;
-}
-.report-block { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); }
-.block-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 1rem; }
+            <!-- ⑤ Scope Changes — full width -->
+            <div class="report-block block-scope-changes">
+              <div class="block-label">⑤ Scope Changes</div>
+              <div id="rpt-scope-list"></div>
+            </div>
 
-.block-phase    { grid-column: 1; grid-row: 1; }
-.block-progress { grid-column: 2; grid-row: 1; border-left: 1px solid var(--border); }
-.block-risks    { grid-column: 1; grid-row: 2; }
-.block-decisions { grid-column: 2; grid-row: 2; border-left: 1px solid var(--border); }
-.block-scope-changes { grid-column: 1 / -1; grid-row: 3; } /* full width */
-.block-summary  { grid-column: 1; grid-row: 4; }
-.block-timeline { grid-column: 2; grid-row: 4; border-left: 1px solid var(--border); }
+            <!-- ⑥ Executive Summary -->
+            <div class="report-block block-summary">
+              <div class="block-label">⑥ Executive Summary</div>
+              <div class="exec-summary" id="rpt-exec-summary"></div>
+            </div>
 
-.phase-narrative { font-size: 14px; line-height: 1.65; color: var(--text); }
-.phase-bar { display: flex; gap: 6px; margin-top: 1.25rem; flex-wrap: wrap; }
-.phase-pill { font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--border); color: var(--text-muted); background: var(--surface-2); }
-.phase-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-.phase-pill.done { background: var(--green-light); color: var(--green); border-color: #86efac; }
+            <!-- ⑦ Outlook -->
+            <div class="report-block block-timeline">
+              <div class="block-label">⑦ Outlook</div>
+              <div class="timeline-conf" id="rpt-timeline-conf"></div>
+              <div class="outlook-narrative" id="rpt-outlook-narrative"></div>
+            </div>
 
-.report-progress-wrap { position: relative; display: flex; align-items: center; justify-content: center; margin: 0.5rem 0; }
-.report-ring { display: block; }
-.report-progress-label { position: absolute; text-align: center; display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
-#rpt-pct-big { font-size: 22px; font-weight: 700; }
-.report-progress-label small { font-size: 10px; color: var(--text-muted); }
-.report-task-summary { font-size: 13px; color: var(--text-muted); text-align: center; margin-top: 0.5rem; }
+          </div>
 
-/* Blockers in report */
-.rpt-blocker-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-.rpt-blocker-row:last-child { border-bottom: none; }
-.rpt-blocker-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
-.rpt-blocker-text { font-size: 13px; line-height: 1.45; flex: 1; }
-.rpt-blocker-badges { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
-.no-risks-text { font-size: 14px; color: var(--green); font-weight: 500; }
+          <div class="report-footer">
+            <span id="rpt-footer-msp">Prepared by your MSP team</span>
+            <span id="rpt-footer-date"></span>
+          </div>
+        </div>
+      </div>
 
-/* Scope changes in report — displayed as a table-like grid */
-.scope-changes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-.scope-change-item { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
-.scope-change-item.impact-high { border-left: 3px solid var(--red); }
-.scope-change-item.impact-medium { border-left: 3px solid var(--amber); }
-.scope-change-item.impact-low { border-left: 3px solid var(--green); }
-.scope-item-desc { font-size: 13px; line-height: 1.45; margin-bottom: 6px; }
-.scope-item-badges { display: flex; gap: 6px; flex-wrap: wrap; }
-.scope-item-badge { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 7px; border-radius: 99px; }
-.scope-item-badge.type-oos { background: var(--purple-light); color: var(--purple); }
-.scope-item-badge.type-creep { background: var(--amber-light); color: var(--amber); }
-.scope-item-badge.status-pending { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border); }
-.scope-item-badge.status-approved { background: var(--green-light); color: var(--green); }
-.scope-item-badge.status-absorbed { background: var(--accent-light); color: var(--accent); }
-.scope-item-badge.status-declined { background: #f3f4f6; color: #6b7280; }
-.no-scope-text { font-size: 14px; color: var(--text-muted); }
+      <!-- Internal Team Summary -->
+      <div id="internal-wrap" style="display:none; justify-content:center; padding-top:1.5rem">
+        <div class="internal-report" id="internal-report">
+          <!-- injected by JS -->
+        </div>
+      </div>
 
-.exec-summary { font-size: 14px; line-height: 1.7; color: var(--text); }
+    </main>
+  </div>
 
-.decision-row { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
-.decision-row:last-child { border-bottom: none; }
-.decision-num { width: 20px; height: 20px; background: var(--accent-light); color: var(--accent); border-radius: 50%; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
-.decision-text { font-size: 13px; line-height: 1.45; }
+  <!-- ═══════════════════════════════════════════════════════
+       MODALS
+  ═══════════════════════════════════════════════════════ -->
 
-.timeline-conf { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 99px; font-size: 13px; font-weight: 600; margin-bottom: 0.75rem; }
-.timeline-conf.high { background: var(--green-light); color: var(--green); }
-.timeline-conf.medium { background: var(--amber-light); color: var(--amber); }
-.timeline-conf.low { background: var(--red-light); color: var(--red); }
-.outlook-narrative { font-size: 13px; line-height: 1.6; color: var(--text-muted); }
+  <!-- Import modal -->
+  <div class="modal-overlay" id="modal-import">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Import Project</h3>
+        <button class="modal-close" id="modal-import-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <label class="file-drop" id="file-drop-zone">
+          <input type="file" id="file-input" accept=".json" />
+          <div class="file-drop-inner">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <p>Drop your <strong>project JSON</strong> here</p>
+            <span>or click to browse</span>
+          </div>
+        </label>
+        <div class="import-error" id="import-error" style="display:none"></div>
+        <div class="modal-fields" id="import-meta-fields" style="display:none">
+          <div class="field-group">
+            <label>Project Title</label>
+            <input type="text" id="import-title" placeholder="Network Infrastructure Upgrade" />
+          </div>
+          <div class="field-group">
+            <label>Customer Name</label>
+            <input type="text" id="import-customer" placeholder="Acme Corp" />
+          </div>
+          <div class="field-group">
+            <label>Your Company Name</label>
+            <input type="text" id="import-msp" placeholder="Your MSP Name" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-import-cancel">Cancel</button>
+        <button class="btn-primary" id="btn-import-confirm" disabled>Import Project</button>
+      </div>
+    </div>
+  </div>
 
-.report-footer { background: var(--surface-2); padding: 1rem 2rem; display: flex; justify-content: space-between; font-size: 12px; color: var(--text-faint); border-top: 1px solid var(--border); }
+  <!-- Blocker modal -->
+  <div class="modal-overlay" id="modal-blocker">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3 id="blocker-modal-title">Add Blocker</h3>
+        <button class="modal-close" id="modal-blocker-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label>Description</label>
+          <textarea id="blocker-desc" rows="3" placeholder="Describe the blocker or risk…"></textarea>
+        </div>
+        <div class="field-group">
+          <label>Severity</label>
+          <div class="severity-toggle" id="severity-toggle">
+            <button class="sev-btn" data-sev="low">Low</button>
+            <button class="sev-btn active" data-sev="medium">Medium</button>
+            <button class="sev-btn" data-sev="high">High</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Status</label>
+          <div class="severity-toggle" id="status-toggle">
+            <button class="sev-btn active" data-status="active">Active</button>
+            <button class="sev-btn" data-status="mitigating">Mitigating</button>
+            <button class="sev-btn" data-status="resolved">Resolved</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-blocker-cancel">Cancel</button>
+        <button class="btn-primary" id="btn-blocker-save">Save Blocker</button>
+      </div>
+    </div>
+  </div>
 
-/* ── MODALS ──────────────────────────────────────────── */
-.modal-overlay { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.45); align-items: center; justify-content: center; padding: 1rem; }
-.modal-overlay.open { display: flex; }
-.modal { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: var(--shadow-md); width: 100%; max-width: 540px; max-height: 90vh; display: flex; flex-direction: column; }
-.modal-sm { max-width: 440px; }
-.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); }
-.modal-header h3 { font-size: 16px; font-weight: 600; }
-.modal-close { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 16px; padding: 4px; border-radius: 6px; transition: color 0.12s; }
-.modal-close:hover { color: var(--text); }
-.modal-body { padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
-.modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
-.field-group { display: flex; flex-direction: column; gap: 6px; }
-.field-group label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.field-group input, .field-group textarea {
-  border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 9px 12px; font-size: 14px; font-family: inherit; color: var(--text);
-  background: var(--surface); outline: none; transition: border-color 0.15s; width: 100%;
-}
-.field-group input:focus, .field-group textarea:focus { border-color: var(--accent); }
-.field-group textarea { resize: vertical; }
-.file-drop { display: block; border: 2px dashed var(--border); border-radius: var(--radius-lg); cursor: pointer; transition: border-color 0.15s, background 0.15s; }
-.file-drop:hover, .file-drop.drag-over { border-color: var(--accent); background: var(--accent-light); }
-.file-drop input { display: none; }
-.file-drop-inner { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 2.5rem; color: var(--text-muted); }
-.file-drop-inner p { font-size: 15px; }
-.file-drop-inner span { font-size: 13px; color: var(--text-faint); }
-.import-error { background: var(--red-light); color: var(--red); padding: 10px 14px; border-radius: var(--radius); font-size: 13px; }
-.severity-toggle { display: flex; gap: 6px; flex-wrap: wrap; }
-.sev-btn { flex: 1; min-width: 70px; padding: 7px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; color: var(--text-muted); transition: all 0.12s; }
-.sev-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  <!-- Scope Change modal -->
+  <div class="modal-overlay" id="modal-scope">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3 id="scope-modal-title">Add Scope Change</h3>
+        <button class="modal-close" id="modal-scope-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label>Description</label>
+          <textarea id="scope-desc" rows="3" placeholder="Describe the scope change or creep item…"></textarea>
+        </div>
+        <div class="field-group">
+          <label>Type</label>
+          <div class="severity-toggle" id="scope-type-toggle">
+            <button class="sev-btn active" data-type="out-of-scope">Out of Scope</button>
+            <button class="sev-btn" data-type="creep">Project Creep</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Timeline Impact</label>
+          <div class="severity-toggle" id="scope-impact-toggle">
+            <button class="sev-btn active" data-impact="low">Low</button>
+            <button class="sev-btn" data-impact="medium">Medium</button>
+            <button class="sev-btn" data-impact="high">High</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Status</label>
+          <div class="severity-toggle" id="scope-status-toggle">
+            <button class="sev-btn active" data-scopestatus="pending">Pending Discussion</button>
+            <button class="sev-btn" data-scopestatus="approved">Approved</button>
+            <button class="sev-btn" data-scopestatus="absorbed">Absorbed</button>
+            <button class="sev-btn" data-scopestatus="declined">Declined</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-scope-cancel">Cancel</button>
+        <button class="btn-primary" id="btn-scope-save">Save</button>
+      </div>
+    </div>
+  </div>
 
-/* ── INTERNAL REPORT ─────────────────────────────────── */
-.internal-report { background: var(--surface); max-width: 980px; margin: 0 auto; border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: var(--shadow-md); overflow: hidden; }
-.internal-masthead { background: var(--header-bg); padding: 1.75rem 2.5rem; display: flex; align-items: flex-start; justify-content: space-between; }
-.internal-masthead-title { color: #fff; font-size: 22px; font-weight: 600; margin-top: 0.5rem; }
-.internal-masthead-sub { color: rgba(255,255,255,0.45); font-size: 13px; margin-top: 4px; }
-.internal-badge { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius); padding: 8px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.5); }
-.internal-summary-bar { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--border); }
-.summary-stat { padding: 1.25rem 1.5rem; border-right: 1px solid var(--border); }
-.summary-stat:last-child { border-right: none; }
-.summary-stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); margin-bottom: 6px; }
-.summary-stat-value { font-size: 26px; font-weight: 700; color: var(--text); line-height: 1; }
-.summary-stat-value.over { color: var(--red); }
-.summary-stat-value.under { color: var(--green); }
-.summary-stat-value.exact { color: var(--accent); }
-.summary-stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
-.internal-section { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); }
-.internal-section:last-child { border-bottom: none; }
-.internal-section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-faint); margin-bottom: 1rem; }
-.hours-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.hours-table th { text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); border-bottom: 1px solid var(--border); background: var(--surface-2); }
-.hours-table th.num { text-align: right; }
-.hours-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-.hours-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-.hours-table tr:last-child td { border-bottom: none; }
-.hours-table tr.role-group td { background: var(--surface-2); font-weight: 600; font-size: 12px; color: var(--text-muted); }
-.hours-table tr.total-row td { font-weight: 700; background: var(--surface-2); border-top: 2px solid var(--border-strong); }
-.var-pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; white-space: nowrap; }
-.var-pill.over { background: var(--red-light); color: var(--red); }
-.var-pill.under { background: var(--green-light); color: var(--green); }
-.var-pill.exact { background: var(--accent-light); color: var(--accent); }
-.var-pill.pending { background: var(--surface-2); color: var(--text-faint); }
-.role-summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; }
-.role-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
-.role-card-name { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
-.role-card-hours { font-size: 22px; font-weight: 700; color: var(--text); }
-.role-card-detail { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
-.role-card-var { margin-top: 8px; }
-.ai-insight { background: var(--surface-2); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: var(--radius); padding: 1rem 1.25rem; font-size: 13px; line-height: 1.65; color: var(--text); }
-.internal-footer { background: var(--surface-2); padding: 1rem 2rem; display: flex; justify-content: space-between; font-size: 12px; color: var(--text-faint); border-top: 1px solid var(--border); }
+  <!-- Task modal (add/edit) -->
+  <div class="modal-overlay" id="modal-task">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3 id="task-modal-title">Add Task</h3>
+        <button class="modal-close" id="modal-task-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label>Task Name</label>
+          <input type="text" id="task-name-input" placeholder="e.g. Configure firewall rules" />
+        </div>
+        <div class="field-group">
+          <label>Role</label>
+          <input type="text" id="task-role-input" placeholder="e.g. Senior Engineer" />
+        </div>
+        <div class="field-group">
+          <label>Notes</label>
+          <input type="text" id="task-notes-input" placeholder="e.g. Includes VPN and NAT config" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-task-cancel">Cancel</button>
+        <button class="btn-primary" id="btn-task-save">Save Task</button>
+      </div>
+    </div>
+  </div>
 
-/* ── PRINT ───────────────────────────────────────────── */
-@media print {
-  .app-header, .btn-primary, .btn-ghost, .btn-back, #btn-print, #btn-regenerate { display: none !important; }
-  body { background: white; }
-  .report-main { padding: 0; }
-  .report-wrap { display: block; }
-  .report-page { box-shadow: none; border: none; max-width: 100%; border-radius: 0; }
-  .report-masthead, .phase-pill.active, .phase-pill.done, .health-badge,
-  .blocker-sev-badge, .scope-item-badge, .scope-type-badge,
-  .timeline-conf { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  /* Prevent blocks being sliced mid-content */
-  .report-block { break-inside: avoid; page-break-inside: avoid; }
-  .report-grid { display: block; }
-  .block-phase, .block-progress { display: inline-block; vertical-align: top; }
-  .block-phase { width: 68%; }
-  .block-progress { width: 30%; margin-left: 1%; }
-  .block-risks, .block-decisions,
-  .block-scope-changes, .block-summary, .block-timeline {
-    display: block; width: 100%;
-    border-left: none;
-    border-top: 1px solid var(--border);
-  }
-  .scope-changes-grid { grid-template-columns: 1fr 1fr; }
-  .report-footer { display: flex; }
-}
+  <!-- Edit meta modal -->
+  <div class="modal-overlay" id="modal-meta">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3>Edit Project Details</h3>
+        <button class="modal-close" id="modal-meta-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label>Project Title</label>
+          <input type="text" id="meta-title" />
+        </div>
+        <div class="field-group">
+          <label>Customer Name</label>
+          <input type="text" id="meta-customer" />
+        </div>
+        <div class="field-group">
+          <label>Your Company Name</label>
+          <input type="text" id="meta-msp" />
+        </div>
+        <div class="field-group">
+          <label>Project Overview</label>
+          <textarea id="meta-overview" rows="4"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-meta-cancel">Cancel</button>
+        <button class="btn-primary" id="btn-meta-save">Save Changes</button>
+      </div>
+    </div>
+  </div>
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
+  <!-- Delete confirm modal -->
+  <div class="modal-overlay" id="modal-delete">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3>Delete Project?</h3>
+        <button class="modal-close" id="modal-delete-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-muted)">This will permanently remove <strong id="delete-project-name"></strong> and all its progress data. This cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-delete-cancel">Cancel</button>
+        <button class="btn-danger" id="btn-delete-confirm">Delete Project</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete task confirm -->
+  <div class="modal-overlay" id="modal-delete-task">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3>Delete Task?</h3>
+        <button class="modal-close" id="modal-delete-task-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-muted)">Remove <strong id="delete-task-name"></strong> from this project?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btn-delete-task-cancel">Cancel</button>
+        <button class="btn-danger" id="btn-delete-task-confirm">Delete Task</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Template picker modal -->
+  <div class="modal-overlay" id="modal-template">
+    <div class="modal modal-template">
+      <div class="modal-header">
+        <div>
+          <h3>Choose a Project Template</h3>
+          <p style="font-size:13px;color:var(--text-muted);margin-top:3px">Select a template to pre-populate tasks, roles, and estimated hours.</p>
+        </div>
+        <button class="modal-close" id="modal-template-close">✕</button>
+      </div>
+      <div class="modal-body" style="padding:0">
+        <div class="template-grid" id="template-grid">
+          <!-- injected by JS -->
+        </div>
+      </div>
+      <div class="modal-footer" id="template-footer" style="display:none">
+        <div style="flex:1">
+          <div class="field-group">
+            <label>Customer Name</label>
+            <input type="text" id="template-customer" placeholder="Acme Corp" />
+          </div>
+        </div>
+        <div style="flex:1">
+          <div class="field-group">
+            <label>Your Company Name</label>
+            <input type="text" id="template-msp" placeholder="Your MSP Name" />
+          </div>
+        </div>
+        <button class="btn-primary" id="btn-template-create">Create Project</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="progress.js"></script>
+</body>
+</html>
