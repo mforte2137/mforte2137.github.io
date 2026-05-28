@@ -201,7 +201,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; }
 .empty-state p { color: var(--text-muted); max-width: 360px; }
 
 /* ── TRACKER ─────────────────────────────────────────── */
-.tracker-main { max-width: 1440px; margin: 0 auto; padding: 2rem; flex: 1; }
+.tracker-main { max-width: 100%; margin: 0 auto; padding: 2rem 2.5rem; flex: 1; }
 .tracker-overview {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);
@@ -217,7 +217,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; }
 /* ── TRACKER BODY — 3 column: tasks wider centre ──── */
 .tracker-body {
   display: grid;
-  grid-template-columns: 1fr 300px;
+  grid-template-columns: 1fr 280px;
   gap: 1.5rem;
   align-items: start;
 }
@@ -278,16 +278,34 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; }
 .hours-chip.over { background: var(--red-light); color: var(--red); border-color: #fca5a5; }
 .hours-chip.under { background: var(--green-light); color: var(--green); border-color: #86efac; }
 .hours-chip.exact { background: var(--accent-light); color: var(--accent); border-color: #93c5fd; }
-.actual-hours-input {
-  width: 70px; padding: 3px 7px; border: 1px solid var(--accent);
-  border-radius: 6px; font-size: 12px; font-family: inherit; color: var(--text);
-  background: var(--surface); outline: none;
+
+/* Hours stepper — replaces tiny browser spinner */
+.hours-stepper {
+  display: flex; align-items: center; gap: 0;
+  border: 1.5px solid var(--accent); border-radius: 8px; overflow: hidden;
+  background: var(--surface);
 }
-.actual-hours-input:focus { box-shadow: 0 0 0 2px var(--accent-light); }
+.hours-stepper-btn {
+  width: 32px; height: 32px; border: none; background: var(--surface-2);
+  color: var(--accent); font-size: 18px; font-weight: 500;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.12s; flex-shrink: 0; line-height: 1;
+  font-family: inherit;
+}
+.hours-stepper-btn:hover { background: var(--accent-light); }
+.hours-stepper-btn:active { background: var(--accent); color: #fff; }
+.hours-stepper-val {
+  min-width: 52px; text-align: center; font-size: 14px; font-weight: 600;
+  color: var(--text); padding: 0 4px; border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border); line-height: 32px;
+  cursor: text;
+}
+.hours-stepper-val:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 .hours-save-btn {
-  background: var(--accent); color: #fff; border: none; border-radius: 6px;
-  padding: 3px 10px; font-size: 12px; font-weight: 500; cursor: pointer;
-  font-family: inherit; transition: background 0.12s;
+  background: var(--accent); color: #fff; border: none; border-radius: 8px;
+  padding: 7px 14px; font-size: 13px; font-weight: 500; cursor: pointer;
+  font-family: inherit; transition: background 0.12s; white-space: nowrap;
+  height: 32px; display: flex; align-items: center;
 }
 .hours-save-btn:hover { background: var(--accent-dark); }
 .task-actions { display: flex; gap: 2px; flex-shrink: 0; margin-top: 1px; }
