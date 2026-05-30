@@ -11,7 +11,7 @@ const LS_PROJECTS    = 'sb_sow_projects_v1';
 const LS_BRAND_COLOR = 'sb_brand_color_v1';   // Shared with Scope Builder intentionally
 const LS_TEMPLATES   = 'sb_sow_templates_v1';
 const LS_API_KEY     = 'sb_api_key';           // Shared with Scope Builder
-const LS_INT_KEY     = 'sb_int_key';           // Shared with Scope Builder
+const LS_TENANT_URL  = 'sb_tenant_url';        // Shared across all apps
 const API_TEMPLATES  = '/api/sow-templates';
 const API_AI         = '/api/sow-ai';
 const PROJ_COLORS    = ['#3b82f6','#f97316','#8b5cf6','#ec4899','#14b8a6','#f59e0b','#10b981','#6366f1'];
@@ -565,17 +565,17 @@ function autoRefresh() {
 
 // ── Salesbuildr credentials ───────────────────────────────
 function initSbCredentials() {
-  const savedApi = localStorage.getItem(LS_API_KEY);
-  const savedInt = localStorage.getItem(LS_INT_KEY);
-  if (savedApi) document.getElementById('sbApiKey').value = savedApi;
-  if (savedInt) document.getElementById('sbIntKey').value = savedInt;
-  if (savedApi && savedInt) document.getElementById('sbRemember').checked = true;
+  const savedApi    = localStorage.getItem(LS_API_KEY);
+  const savedTenant = localStorage.getItem(LS_TENANT_URL);
+  if (savedApi)    document.getElementById('sbApiKey').value    = savedApi;
+  if (savedTenant) document.getElementById('sbTenantUrl').value = savedTenant;
+  if (savedApi && savedTenant) document.getElementById('sbRemember').checked = true;
   updateSbBtn();
 }
 function updateSbBtn() {
   document.getElementById('sbPushBtn').disabled = !(
     document.getElementById('sbApiKey').value.trim() &&
-    document.getElementById('sbIntKey').value.trim()
+    document.getElementById('sbTenantUrl').value.trim()
   );
 }
 
@@ -758,21 +758,35 @@ sbToggleBtn.addEventListener('click', () => {
   sbArrow.classList.toggle('open', !open);
 });
 document.getElementById('sbApiKey').addEventListener('input', updateSbBtn);
-document.getElementById('sbIntKey').addEventListener('input', updateSbBtn);
+document.getElementById('sbTenantUrl').addEventListener('input', updateSbBtn);
 
 sbPushBtn.addEventListener('click', async () => {
   const html = document.getElementById('htmlOut').textContent.trim();
   if (!html) { showToast('Generate the document first'); document.getElementById('generateBtn').click(); return; }
-  const apiKey = document.getElementById('sbApiKey').value.trim();
-  const intKey = document.getElementById('sbIntKey').value.trim();
-  if (!apiKey || !intKey) return;
-  if (document.getElementById('sbRemember').checked) { localStorage.setItem(LS_API_KEY, apiKey); localStorage.setItem(LS_INT_KEY, intKey); }
-  else { localStorage.removeItem(LS_API_KEY); localStorage.removeItem(LS_INT_KEY); }
+  const apiKey    = document.getElementById('sbApiKey').value.trim();
+  const tenantUrl = document.getElementById('sbTenantUrl').value.trim();
+  if (!apiKey || !tenantUrl) return;
+  if (document.getElementById('sbRemember').checked) {
+    localStorage.setItem(LS_API_KEY, apiKey);
+    localStorage.setItem(LS_TENANT_URL, tenantUrl);
+  } else {
+    localStorage.removeItem(LS_API_KEY);
+    localStorage.removeItem(LS_TENANT_URL);
+  }
   sbPushBtn.disabled = true; sbPushBtn.textContent = 'Saving…'; sbResult.hidden = true;
   const title  = (document.getElementById('projectTitle').value || 'Statement of Work').trim();
   const prefix = document.getElementById('sbPrefix').value.trim();
   try {
-    const res  = await fetch('/api/push-widgets', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ widgets:[{ id:'sow-document', title, html }], prefix, apiKey, integrationKey:intKey }) });
+    const res  = await fetch('/api/push-widgets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        widgets: [{ id: 'sow-document', title, html }],
+        prefix,
+        apiKey,
+        tenantUrl
+      })
+    });
     const data = await res.json();
     if (data.successCount > 0) {
       sbResult.textContent = `✓ Saved as "${prefix ? prefix + ' – ' : ''}${title}" in Salesbuildr.`;
