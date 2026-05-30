@@ -28,7 +28,7 @@ exports.handler = async (event) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model:      'claude-sonnet-4-6',
+        model:      'claude-haiku-4-5-20251001',
         max_tokens: 2000,
         system:     'You are a cybersecurity consultant writing content for MSP security proposals. Return ONLY valid JSON as instructed. No markdown fences, no preamble, no commentary.',
         messages:   [{ role: 'user', content: body.prompt }]
