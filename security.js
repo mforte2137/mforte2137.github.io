@@ -183,9 +183,8 @@ function buildAssessment() {
 }
 
 function getIdealDefault(ctrl, ig) {
-  // Ideal state is always at least one step above current, capped at implemented
-  if (ig === 1) return ctrl.ig <= 1 ? 'implemented' : 'partial';
-  if (ig === 2) return ctrl.ig <= 2 ? 'implemented' : 'partial';
+  // Ideal state is always Implemented — that is the target regardless of IG tier.
+  // The MSP can manually lower individual controls if there is a specific reason.
   return 'implemented';
 }
 
