@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security Proposal Builder</title>
+  <link rel="stylesheet" href="security.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-left">
+      <span class="app-title">SECURITY PROPOSAL BUILDER</span>
+      <span class="app-subtitle">MSP Framework Assessment Tool</span>
+    </div>
+    <div class="header-right">
+      <span class="step-indicator" id="stepIndicator">STEP 1 OF 5</span>
+    </div>
+  </header>
+
+  <!-- STEP NAV -->
+  <nav class="step-nav">
+    <button class="step-btn active" data-step="1">
+      <span class="step-num">01</span>
+      <span class="step-label">FRAMEWORK</span>
+    </button>
+    <div class="step-connector"></div>
+    <button class="step-btn" data-step="2">
+      <span class="step-num">02</span>
+      <span class="step-label">CLIENT PROFILE</span>
+    </button>
+    <div class="step-connector"></div>
+    <button class="step-btn" data-step="3">
+      <span class="step-num">03</span>
+      <span class="step-label">ASSESSMENT</span>
+    </button>
+    <div class="step-connector"></div>
+    <button class="step-btn" data-step="4">
+      <span class="step-num">04</span>
+      <span class="step-label">THEME</span>
+    </button>
+    <div class="step-connector"></div>
+    <button class="step-btn" data-step="5">
+      <span class="step-num">05</span>
+      <span class="step-label">WIDGETS</span>
+    </button>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="app-main">
+
+    <!-- STEP 1: FRAMEWORK SELECTION -->
+    <section class="step-panel active" id="step1">
+      <div class="panel-header">
+        <h1 class="panel-title">SELECT FRAMEWORK</h1>
+        <p class="panel-desc">Choose the security framework that applies to this client engagement.</p>
+      </div>
+      <div class="framework-grid">
+        <div class="framework-card selected" data-framework="cis">
+          <div class="framework-badge">ACTIVE</div>
+          <div class="framework-icon">&#9632;</div>
+          <div class="framework-name">CIS Controls</div>
+          <div class="framework-version">v8.0</div>
+          <div class="framework-desc">18 Critical Security Controls with Implementation Group tiers. Ideal for most SMB and mid-market clients.</div>
+          <div class="framework-tags">
+            <span class="tag">IG1</span>
+            <span class="tag">IG2</span>
+            <span class="tag">IG3</span>
+          </div>
+        </div>
+        <div class="framework-card coming-soon" data-framework="nist">
+          <div class="framework-badge soon">SOON</div>
+          <div class="framework-icon">&#9633;</div>
+          <div class="framework-name">NIST CSF</div>
+          <div class="framework-version">2.0</div>
+          <div class="framework-desc">Five core functions: Identify, Protect, Detect, Respond, Recover. Flexible risk-based approach.</div>
+          <div class="framework-tags">
+            <span class="tag">Identify</span>
+            <span class="tag">Protect</span>
+            <span class="tag">Detect</span>
+          </div>
+        </div>
+        <div class="framework-card coming-soon" data-framework="cmmc">
+          <div class="framework-badge soon">SOON</div>
+          <div class="framework-icon">&#9633;</div>
+          <div class="framework-name">CMMC</div>
+          <div class="framework-version">2.0</div>
+          <div class="framework-desc">Cybersecurity Maturity Model Certification. Required for DoD contractors. Three maturity levels.</div>
+          <div class="framework-tags">
+            <span class="tag">Level 1</span>
+            <span class="tag">Level 2</span>
+            <span class="tag">Level 3</span>
+          </div>
+        </div>
+        <div class="framework-card coming-soon" data-framework="hipaa">
+          <div class="framework-badge soon">SOON</div>
+          <div class="framework-icon">&#9633;</div>
+          <div class="framework-name">HIPAA</div>
+          <div class="framework-version">Security Rule</div>
+          <div class="framework-desc">Administrative, physical, and technical safeguards for protected health information.</div>
+          <div class="framework-tags">
+            <span class="tag">Admin</span>
+            <span class="tag">Physical</span>
+            <span class="tag">Technical</span>
+          </div>
+        </div>
+        <div class="framework-card coming-soon" data-framework="pci">
+          <div class="framework-badge soon">SOON</div>
+          <div class="framework-icon">&#9633;</div>
+          <div class="framework-name">PCI-DSS</div>
+          <div class="framework-version">v4.0</div>
+          <div class="framework-desc">Payment Card Industry Data Security Standard. Required for organizations handling cardholder data.</div>
+          <div class="framework-tags">
+            <span class="tag">SAQ-A</span>
+            <span class="tag">SAQ-B</span>
+            <span class="tag">Level 1</span>
+          </div>
+        </div>
+        <div class="framework-card coming-soon" data-framework="hitrust">
+          <div class="framework-badge soon">SOON</div>
+          <div class="framework-icon">&#9633;</div>
+          <div class="framework-name">HiTrust</div>
+          <div class="framework-version">CSF r9.6</div>
+          <div class="framework-desc">Healthcare-focused framework combining HIPAA, ISO, NIST, and PCI requirements into one standard.</div>
+          <div class="framework-tags">
+            <span class="tag">e1</span>
+            <span class="tag">i1</span>
+            <span class="tag">r2</span>
+          </div>
+        </div>
+      </div>
+      <div class="step-actions">
+        <button class="btn-primary" id="step1Next">CONTINUE TO CLIENT PROFILE →</button>
+      </div>
+    </section>
+
+    <!-- STEP 2: CLIENT PROFILE -->
+    <section class="step-panel" id="step2">
+      <div class="panel-header">
+        <h1 class="panel-title">CLIENT PROFILE</h1>
+        <p class="panel-desc">This information drives assessment defaults and AI-generated content.</p>
+      </div>
+      <div class="profile-grid">
+        <div class="profile-section">
+          <h2 class="section-label">CLIENT INFORMATION</h2>
+          <div class="form-group">
+            <label class="form-label">CLIENT / ORGANIZATION NAME</label>
+            <input type="text" class="form-input" id="clientName" placeholder="Acme Corporation">
+          </div>
+          <div class="form-group">
+            <label class="form-label">INDUSTRY VERTICAL</label>
+            <select class="form-select" id="clientIndustry">
+              <option value="">Select industry...</option>
+              <option value="healthcare">Healthcare / Medical</option>
+              <option value="finance">Financial Services / Banking</option>
+              <option value="legal">Legal / Law Firm</option>
+              <option value="manufacturing">Manufacturing</option>
+              <option value="retail">Retail / E-Commerce</option>
+              <option value="education">Education / K-12 / Higher Ed</option>
+              <option value="government">Government / Public Sector</option>
+              <option value="defense">Defense / Government Contractor</option>
+              <option value="nonprofit">Non-Profit</option>
+              <option value="professional">Professional Services</option>
+              <option value="technology">Technology / SaaS</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ENGAGEMENT TYPE</label>
+            <select class="form-select" id="engagementType">
+              <option value="assessment">Security Assessment</option>
+              <option value="proposal">New Service Proposal</option>
+              <option value="renewal">Contract Renewal</option>
+              <option value="upgrade">Service Upgrade</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <h2 class="section-label">ORGANIZATION SIZE</h2>
+          <p class="section-hint">Determines the CIS Implementation Group baseline applied to the assessment.</p>
+          <div class="ig-selector">
+            <div class="ig-option selected" data-ig="1">
+              <div class="ig-badge ig1">IG1</div>
+              <div class="ig-info">
+                <div class="ig-title">ESSENTIAL CYBER HYGIENE</div>
+                <div class="ig-users">1 – 100 users</div>
+                <div class="ig-desc">Small to mid-sized enterprises. Limited IT/security expertise. General, non-targeted threats.</div>
+              </div>
+            </div>
+            <div class="ig-option" data-ig="2">
+              <div class="ig-badge ig2">IG2</div>
+              <div class="ig-info">
+                <div class="ig-title">FOUNDATIONAL SECURITY</div>
+                <div class="ig-users">100 – 500 users</div>
+                <div class="ig-desc">Multiple departments, differing risk profiles. Specialized IT staff. Industry-specific threats.</div>
+              </div>
+            </div>
+            <div class="ig-option" data-ig="3">
+              <div class="ig-badge ig3">IG3</div>
+              <div class="ig-info">
+                <div class="ig-title">ADVANCED SECURITY</div>
+                <div class="ig-users">500+ users</div>
+                <div class="ig-desc">Large, complex enterprises. Dedicated security teams. Sophisticated, targeted attacks.</div>
+              </div>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top:20px;">
+            <label class="form-label">APPROXIMATE USER COUNT</label>
+            <input type="number" class="form-input" id="userCount" placeholder="e.g. 45">
+          </div>
+        </div>
+
+        <div class="profile-section full-width">
+          <h2 class="section-label">REGULATORY CONTEXT</h2>
+          <p class="section-hint">Select any applicable regulations. AI-generated content will reference these.</p>
+          <div class="reg-grid">
+            <label class="reg-check"><input type="checkbox" value="hipaa"> HIPAA — Healthcare data</label>
+            <label class="reg-check"><input type="checkbox" value="pci"> PCI-DSS — Payment cards</label>
+            <label class="reg-check"><input type="checkbox" value="cmmc"> CMMC — DoD contracts</label>
+            <label class="reg-check"><input type="checkbox" value="sox"> SOX — Public companies</label>
+            <label class="reg-check"><input type="checkbox" value="glba"> GLBA — Financial institutions</label>
+            <label class="reg-check"><input type="checkbox" value="ferpa"> FERPA — Student records</label>
+            <label class="reg-check"><input type="checkbox" value="state"> State privacy laws</label>
+            <label class="reg-check"><input type="checkbox" value="none"> No specific regulations</label>
+          </div>
+        </div>
+      </div>
+      <div class="step-actions">
+        <button class="btn-secondary" id="step2Back">← BACK</button>
+        <button class="btn-primary" id="step2Next">CONTINUE TO ASSESSMENT →</button>
+      </div>
+    </section>
+
+    <!-- STEP 3: ASSESSMENT -->
+    <section class="step-panel" id="step3">
+      <div class="panel-header">
+        <h1 class="panel-title">CIS CONTROLS ASSESSMENT</h1>
+        <p class="panel-desc">Rate current implementation and target state for each control. Defaults are set for the selected IG level.</p>
+      </div>
+
+      <div class="assessment-legend">
+        <div class="legend-item">
+          <span class="legend-dot dot-none"></span><span>Not Started</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot dot-partial"></span><span>Partial</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot dot-implemented"></span><span>Implemented</span>
+        </div>
+        <div class="legend-sep">|</div>
+        <div class="legend-item">
+          <span class="assessment-progress-label">COMPLETION:</span>
+          <span id="completionPct">0%</span>
+        </div>
+      </div>
+
+      <div class="assessment-table-wrap">
+        <div class="assessment-col-headers">
+          <div class="col-h-num">#</div>
+          <div class="col-h-control">CONTROL DOMAIN</div>
+          <div class="col-h-ig">IG</div>
+          <div class="col-h-state">CURRENT STATE</div>
+          <div class="col-h-state">IDEAL STATE</div>
+          <div class="col-h-notes">NOTES</div>
+        </div>
+        <div id="assessmentRows">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn-secondary" id="step3Back">← BACK</button>
+        <button class="btn-primary" id="step3Next">CONTINUE TO THEME →</button>
+      </div>
+    </section>
+
+    <!-- STEP 4: THEME -->
+    <section class="step-panel" id="step4">
+      <div class="panel-header">
+        <h1 class="panel-title">COLOR THEME</h1>
+        <p class="panel-desc">Set your MSP's brand colors. These will be applied to all generated widgets.</p>
+      </div>
+
+      <div class="theme-layout">
+        <div class="theme-controls">
+          <div class="theme-section">
+            <h2 class="section-label">MSP BRAND COLORS</h2>
+            <div class="color-row">
+              <div class="form-group">
+                <label class="form-label">PRIMARY COLOR</label>
+                <div class="color-input-row">
+                  <input type="color" class="color-swatch" id="primaryColor" value="#1a3a5c">
+                  <input type="text" class="form-input hex-input" id="primaryHex" value="#1a3a5c">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">SECONDARY COLOR</label>
+                <div class="color-input-row">
+                  <input type="color" class="color-swatch" id="secondaryColor" value="#e8840a">
+                  <input type="text" class="form-input hex-input" id="secondaryHex" value="#e8840a">
+                </div>
+              </div>
+            </div>
+
+            <h2 class="section-label" style="margin-top:24px;">PRESET THEMES</h2>
+            <div class="preset-grid">
+              <button class="preset-btn" data-primary="#1a3a5c" data-secondary="#e8840a">
+                <span class="preset-swatch" style="background:#1a3a5c"></span>
+                <span class="preset-swatch" style="background:#e8840a"></span>
+                <span class="preset-name">NAVY / AMBER</span>
+              </button>
+              <button class="preset-btn" data-primary="#1b4332" data-secondary="#52b788">
+                <span class="preset-swatch" style="background:#1b4332"></span>
+                <span class="preset-swatch" style="background:#52b788"></span>
+                <span class="preset-name">FOREST / MINT</span>
+              </button>
+              <button class="preset-btn" data-primary="#2d2d2d" data-secondary="#c9303a">
+                <span class="preset-swatch" style="background:#2d2d2d"></span>
+                <span class="preset-swatch" style="background:#c9303a"></span>
+                <span class="preset-name">CHARCOAL / RED</span>
+              </button>
+              <button class="preset-btn" data-primary="#1a1a2e" data-secondary="#4fc3f7">
+                <span class="preset-swatch" style="background:#1a1a2e"></span>
+                <span class="preset-swatch" style="background:#4fc3f7"></span>
+                <span class="preset-name">MIDNIGHT / CYAN</span>
+              </button>
+              <button class="preset-btn" data-primary="#3a1f5d" data-secondary="#f5a623">
+                <span class="preset-swatch" style="background:#3a1f5d"></span>
+                <span class="preset-swatch" style="background:#f5a623"></span>
+                <span class="preset-name">VIOLET / GOLD</span>
+              </button>
+              <button class="preset-btn" data-primary="#0a3d62" data-secondary="#60a3bc">
+                <span class="preset-swatch" style="background:#0a3d62"></span>
+                <span class="preset-swatch" style="background:#60a3bc"></span>
+                <span class="preset-name">DEEP BLUE / SKY</span>
+              </button>
+            </div>
+
+            <h2 class="section-label" style="margin-top:24px;">MSP NAME (FOR WIDGETS)</h2>
+            <div class="form-group">
+              <input type="text" class="form-input" id="mspName" placeholder="Your MSP Name">
+            </div>
+          </div>
+        </div>
+
+        <div class="theme-preview">
+          <h2 class="section-label">LIVE PREVIEW</h2>
+          <div class="preview-card" id="themePreview">
+            <div class="preview-header" id="previewHeader">
+              <div class="preview-title">SECURITY ASSESSMENT REPORT</div>
+              <div class="preview-sub" id="previewSub">CLIENT NAME · FRAMEWORK · DATE</div>
+            </div>
+            <div class="preview-body">
+              <div class="preview-row">
+                <div class="preview-label">DOMAIN</div>
+                <div class="preview-label">CURRENT</div>
+                <div class="preview-label">TARGET</div>
+                <div class="preview-label">GAP</div>
+              </div>
+              <div class="preview-data-row">
+                <div>Asset Management</div>
+                <div class="preview-pill partial" id="previewPillPartial">PARTIAL</div>
+                <div class="preview-pill impl" id="previewPillImpl">TARGET</div>
+                <div class="preview-pill gap" id="previewPillGap">GAP</div>
+              </div>
+              <div class="preview-data-row">
+                <div>Access Control</div>
+                <div class="preview-pill none">NOT STARTED</div>
+                <div class="preview-pill impl" id="previewPillImpl2">TARGET</div>
+                <div class="preview-pill gap" id="previewPillGap2">HIGH RISK</div>
+              </div>
+              <div class="preview-accent-bar" id="previewAccent"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn-secondary" id="step4Back">← BACK</button>
+        <button class="btn-primary" id="step4Next">GENERATE WIDGETS →</button>
+      </div>
+    </section>
+
+    <!-- STEP 5: WIDGETS -->
+    <section class="step-panel" id="step5">
+      <div class="panel-header">
+        <h1 class="panel-title">GENERATED WIDGETS</h1>
+        <p class="panel-desc">AI-powered proposal content ready for Salesbuildr. Copy HTML or push directly via API.</p>
+      </div>
+
+      <div class="salesbuildr-bar">
+        <div class="sb-creds">
+          <input type="text" class="form-input sb-input" id="sbTenantUrl" placeholder="https://yourcompany.salesbuildr.com">
+          <input type="text" class="form-input sb-input" id="sbApiKey" placeholder="Salesbuildr API Key">
+          <button class="btn-small" id="saveSbCreds">SAVE CREDENTIALS</button>
+        </div>
+        <div class="sb-status" id="sbStatus"></div>
+      </div>
+
+      <div class="widgets-loading" id="widgetsLoading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">GENERATING AI CONTENT...</div>
+        <div class="loading-sub" id="loadingStep">Analyzing assessment data...</div>
+      </div>
+
+      <div class="widgets-container" id="widgetsContainer" style="display:none;">
+
+        <!-- Widget: Executive Summary -->
+        <div class="widget-card" id="wExecSummary">
+          <div class="widget-card-header">
+            <div class="widget-title-row">
+              <span class="widget-label">EXECUTIVE SUMMARY</span>
+              <span class="widget-hint">Audience: C-Suite / Decision Makers</span>
+            </div>
+            <div class="widget-actions">
+              <button class="btn-copy" data-widget="execSummary">COPY HTML</button>
+              <button class="btn-push" data-widget="execSummary">PUSH TO SALESBUILDR</button>
+            </div>
+          </div>
+          <div class="widget-preview" id="prevExecSummary"></div>
+        </div>
+
+        <!-- Widget: Current State -->
+        <div class="widget-card" id="wCurrentState">
+          <div class="widget-card-header">
+            <div class="widget-title-row">
+              <span class="widget-label">CURRENT SECURITY POSTURE</span>
+              <span class="widget-hint">Audience: Technical + Executive</span>
+            </div>
+            <div class="widget-actions">
+              <button class="btn-copy" data-widget="currentState">COPY HTML</button>
+              <button class="btn-push" data-widget="currentState">PUSH TO SALESBUILDR</button>
+            </div>
+          </div>
+          <div class="widget-preview" id="prevCurrentState"></div>
+        </div>
+
+        <!-- Widget: Risk Landscape -->
+        <div class="widget-card" id="wRiskLandscape">
+          <div class="widget-card-header">
+            <div class="widget-title-row">
+              <span class="widget-label">RISK LANDSCAPE</span>
+              <span class="widget-hint">Audience: Executive / Board</span>
+            </div>
+            <div class="widget-actions">
+              <button class="btn-copy" data-widget="riskLandscape">COPY HTML</button>
+              <button class="btn-push" data-widget="riskLandscape">PUSH TO SALESBUILDR</button>
+            </div>
+          </div>
+          <div class="widget-preview" id="prevRiskLandscape"></div>
+        </div>
+
+        <!-- Widget: Gap Analysis -->
+        <div class="widget-card" id="wGapAnalysis">
+          <div class="widget-card-header">
+            <div class="widget-title-row">
+              <span class="widget-label">GAP ANALYSIS</span>
+              <span class="widget-hint">Audience: Technical + Executive</span>
+            </div>
+            <div class="widget-actions">
+              <button class="btn-copy" data-widget="gapAnalysis">COPY HTML</button>
+              <button class="btn-push" data-widget="gapAnalysis">PUSH TO SALESBUILDR</button>
+            </div>
+          </div>
+          <div class="widget-preview" id="prevGapAnalysis"></div>
+        </div>
+
+        <!-- Widget: Ideal State -->
+        <div class="widget-card" id="wIdealState">
+          <div class="widget-card-header">
+            <div class="widget-title-row">
+              <span class="widget-label">IDEAL SECURITY ENVIRONMENT</span>
+              <span class="widget-hint">Audience: Technical + Executive</span>
+            </div>
+            <div class="widget-actions">
+              <button class="btn-copy" data-widget="idealState">COPY HTML</button>
+              <button class="btn-push" data-widget="idealState">PUSH TO SALESBUILDR</button>
+            </div>
+          </div>
+          <div class="widget-preview" id="prevIdealState"></div>
+        </div>
+
+        <!-- Widget: Roadmap -->
+        <div class="widget-card" id="wRoadmap">
+          <div class="widget-card-header">
+            <div class="widget-title-row">
+              <span class="widget-label">RECOMMENDED ROADMAP</span>
+              <span class="widget-hint">Audience: Executive / Stakeholders</span>
+            </div>
+            <div class="widget-actions">
+              <button class="btn-copy" data-widget="roadmap">COPY HTML</button>
+              <button class="btn-push" data-widget="roadmap">PUSH TO SALESBUILDR</button>
+            </div>
+          </div>
+          <div class="widget-preview" id="prevRoadmap"></div>
+        </div>
+
+      </div><!-- /widgets-container -->
+
+      <div class="step-actions" id="widgetStepActions" style="display:none;">
+        <button class="btn-secondary" id="step5Back">← BACK TO ASSESSMENT</button>
+        <button class="btn-primary" id="copyAllBtn">COPY ALL WIDGETS</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script src="security.js"></script>
+</body>
+</html>
