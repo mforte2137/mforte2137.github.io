@@ -450,13 +450,13 @@ function initConnectSection() {
 function initSbCredentials() {
   const savedApi    = localStorage.getItem(LS_API_KEY);
   const savedTenant = localStorage.getItem(LS_TENANT_URL);
-  if (savedApi)    document.getElementById('sbApiKey').value    = savedApi;
-  if (savedTenant) document.getElementById('sbTenantUrl').value = savedTenant;
-  if (savedApi && savedTenant) document.getElementById('sbRemember').checked = true;
+  if (savedApi)    sbApiKey.value    = savedApi;
+  if (savedTenant) sbTenantUrl.value = savedTenant;
+  if (savedApi && savedTenant) sbRemember.checked = true;
   updateSbBtn();
 }
 function updateSbBtn() {
-  document.getElementById('sbPushBtn').disabled = !(
+  document.getElementById('sb-push-btn').disabled = !(
     document.getElementById('sbApiKey').value.trim() &&
     document.getElementById('sbTenantUrl').value.trim()
   );
