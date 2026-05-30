@@ -397,7 +397,7 @@ function buildCurrentStateWidget() {
       : '<td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;"></td>';
     rows += `<tr style="background:${bgColor};">
       <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;font-size:12px;font-weight:bold;white-space:nowrap;color:#8a8680;">${ctrl.id}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;font-size:12px;width:99%;">${ctrl.name}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;font-size:12px;overflow:hidden;">${ctrl.name}</td>
       <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;text-align:center;white-space:nowrap;">
         <span style="background:${igColor};color:white;padding:2px 8px;font-size:10px;font-weight:bold;white-space:nowrap;display:inline-block;">IG${ctrl.ig}</span>
       </td>
@@ -409,13 +409,20 @@ function buildCurrentStateWidget() {
   });
 
   const content = `
-  <table style="width:100%;border-collapse:collapse;table-layout:auto;">
+  <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+    <colgroup>
+      <col style="width:4%;">
+      <col style="width:38%;">
+      <col style="width:7%;">
+      <col style="width:14%;">
+      <col style="width:37%;">
+    </colgroup>
     <tr style="background:#2d2d2d;">
-      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:left;white-space:nowrap;">#</th>
-      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:left;width:99%;">Control Domain</th>
-      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:center;white-space:nowrap;">IG</th>
-      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:center;white-space:nowrap;">Status</th>
-      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:left;white-space:nowrap;">Notes</th>
+      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:left;">#</th>
+      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:left;">Control Domain</th>
+      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:center;">IG</th>
+      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:center;">Status</th>
+      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:left;">Notes</th>
     </tr>
     ${rows}
   </table>`;
@@ -467,7 +474,7 @@ function buildIdealStateWidget() {
     const statusColor = a.ideal === 'implemented' ? '#2d7a4f' : a.ideal === 'partial' ? '#c9830a' : '#999';
     rows += `<tr style="background:${bgColor};">
       <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;font-size:12px;font-weight:bold;white-space:nowrap;color:#8a8680;">${ctrl.id}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;font-size:12px;width:99%;">${ctrl.name}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;font-size:12px;overflow:hidden;">${ctrl.name}</td>
       <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;text-align:center;white-space:nowrap;">
         <span style="background:${statusColor};color:white;padding:3px 10px;font-size:10px;font-weight:bold;white-space:nowrap;display:inline-block;">${SCORE_LABEL[a.ideal].toUpperCase()}</span>
       </td>
