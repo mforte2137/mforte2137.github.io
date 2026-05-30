@@ -70,7 +70,6 @@ let state = {
     primary:   '#1a3a5c',
     secondary: '#e8840a'
   },
-  mspName:     '',
   widgets:     {}   // { execSummary, currentState, gapAnalysis, idealState, riskLandscape, roadmap }
 };
 
@@ -282,12 +281,10 @@ presetBtns.forEach(btn => {
 });
 
 mspName.addEventListener('input', () => {
-  state.mspName = mspName.value.trim();
 });
 
 step4Back.addEventListener('click', () => goToStep(3));
 step4Next.addEventListener('click', () => {
-  state.mspName = mspName.value.trim();
   goToStep(5);
   generateWidgets();
 });
@@ -357,23 +354,33 @@ function computeGaps() {
 const P  = () => state.theme.primary;
 const S  = () => state.theme.secondary;
 const cn = () => state.client.name || 'Your Client';
-const ms = () => state.mspName || 'Your MSP';
 const dt = () => new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
 
 function wrapWidget(title, content) {
+  // {{company.name}} and {{siteTitle}} are Salesbuildr template variables —
+  // they resolve to the client company name and MSP site title at render time.
+  // {{date quote.createdAt}} resolves to the proposal creation date.
+  // {{company.accountManager.fullName}} resolves to the assigned account manager.
   return `<div style="font-family:Arial,Helvetica,sans-serif;width:100%;max-width:100%;color:#1a1a18;">
   <table style="width:100%;border-collapse:collapse;margin-bottom:0;">
-    <tr><td style="background:${P()};color:#ffffff;padding:14px 18px;">
-      <div style="font-size:14px;font-weight:bold;letter-spacing:0.12em;text-transform:uppercase;">${title}</div>
-      <div style="font-size:11px;opacity:0.7;margin-top:3px;letter-spacing:0.06em;">${cn()} &nbsp;·&nbsp; CIS Controls v8 &nbsp;·&nbsp; ${dt()}</div>
-    </td></tr>
+    <tr>
+      <td style="background:${P()};color:#ffffff;padding:14px 18px;">
+        <div style="font-size:14px;font-weight:bold;letter-spacing:0.12em;text-transform:uppercase;">${title}</div>
+        <div style="font-size:11px;opacity:0.7;margin-top:3px;letter-spacing:0.06em;">{{company.name}} &nbsp;·&nbsp; CIS Controls v8 &nbsp;·&nbsp; {{date quote.createdAt}}</div>
+      </td>
+    </tr>
   </table>
   ${content}
   <table style="width:100%;border-collapse:collapse;margin-top:0;">
-    <tr><td style="background:${S()};height:4px;padding:0;"></td></tr>
-    <tr><td style="padding:8px 18px;background:#f5f2eb;font-size:10px;color:#8a8680;letter-spacing:0.08em;">
-      PREPARED BY ${ms().toUpperCase()} &nbsp;·&nbsp; CONFIDENTIAL
-    </td></tr>
+    <tr><td colspan="2" style="background:${S()};height:4px;padding:0;"></td></tr>
+    <tr>
+      <td style="padding:8px 18px;background:#f5f2eb;font-size:10px;color:#8a8680;letter-spacing:0.08em;">
+        PREPARED BY {{siteTitle}} &nbsp;·&nbsp; {{company.accountManager.fullName}} &nbsp;·&nbsp; {{company.accountManager.email}} &nbsp;·&nbsp; CONFIDENTIAL
+      </td>
+      <td style="padding:8px 18px;background:#f5f2eb;text-align:right;">
+        {{image company.accountManager.signature.imageUrl height=30}}
+      </td>
+    </tr>
   </table>
 </div>`;
 }
@@ -576,7 +583,8 @@ function buildFallbackExecSummary(gaps) {
   <table style="width:100%;border-collapse:collapse;">
     <tr>
       <td style="padding:20px 24px;font-size:13px;line-height:1.7;color:#1a1a18;">
-        <p style="margin:0 0 14px 0;">This assessment evaluates <strong>${client}</strong>'s current cybersecurity posture against the CIS Controls v8 framework, targeting ${igLabel} as the baseline standard for an organization of this profile.</p>
+        <p style="margin:0 0 6px 0;font-size:12px;color:#8a8680;letter-spacing:0.08em;">Dear {{contact.firstName}},</p>
+        <p style="margin:0 0 14px 0;">This assessment evaluates <strong>{{company.name}}</strong>'s current cybersecurity posture against the CIS Controls v8 framework, targeting ${igLabel} as the baseline standard for an organization of this profile.</p>
         <p style="margin:0 0 14px 0;">Of the 18 CIS Control domains assessed, <strong>${implemented} controls</strong> are currently meeting or exceeding the target state. The assessment identified <strong>${critical} critical gap${critical !== 1 ? 's' : ''}</strong> and <strong>${high} high-priority gap${high !== 1 ? 's' : ''}</strong> requiring near-term remediation.</p>
         <p style="margin:0;">The recommended security program outlined in this proposal is designed to close identified gaps in a structured, prioritized manner — reducing risk exposure while aligning with industry best practices and applicable regulatory requirements.</p>
       </td>
@@ -628,6 +636,11 @@ APPLICABLE REGULATIONS: ${regs}
 CRITICAL GAPS: ${criticalGaps.join(', ') || 'none'}
 HIGH PRIORITY GAPS: ${highGaps.join(', ') || 'none'}
 CONTROLS MEETING TARGET: ${implemented.join(', ') || 'none yet'}
+
+IMPORTANT: In the execSummary content, use these Salesbuildr template variables literally (do not substitute values — write them exactly as shown):
+- {{contact.firstName}} — for the salutation (e.g. "Dear {{contact.firstName}},")
+- {{company.name}} — wherever you reference the client company name
+- {{quote.title}} — if referencing the proposal title
 
 Generate TWO sections and return them as JSON ONLY (no markdown, no preamble):
 
