@@ -1050,13 +1050,6 @@ importXlsxFile.addEventListener('change', () => {
       const sheet = wb.Sheets[sheetName];
       const rows  = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
 
-      // DEBUG — log first 3 data rows to console so we can see what SheetJS parsed
-      console.log('SheetJS sheet names:', wb.SheetNames);
-      console.log('SheetJS total rows:', rows.length);
-      console.log('SheetJS row 0 (header):', JSON.stringify(rows[0]));
-      console.log('SheetJS row 1:', JSON.stringify(rows[1]));
-      console.log('SheetJS row 2:', JSON.stringify(rows[2]));
-
       // Skip header row, read data rows — r[0] may be number or string so use != not !==
       const dataRows = rows.slice(1).filter(r => r[0] != null && r[0] !== ''); // skip blanks
 
