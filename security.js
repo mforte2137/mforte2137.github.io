@@ -679,53 +679,79 @@ function renderWidgets() {
   });
 }
 
+// ── HELPERS ──────────────────────────────────────────────────
+function copyHtml(html) {
+  if (!html) return;
+  navigator.clipboard.writeText(html).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = html;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+}
+
+// Build the ordered widget array for push-widgets API
+function buildWidgetArray() {
+  const WIDGET_ORDER = [
+    { key: 'execSummary',   title: 'Executive Summary' },
+    { key: 'currentState',  title: 'Current Security Posture' },
+    { key: 'riskLandscape', title: 'Risk Landscape' },
+    { key: 'gapAnalysis',   title: 'Gap Analysis' },
+    { key: 'idealState',    title: 'Ideal Security Environment' },
+    { key: 'roadmap',       title: 'Recommended Roadmap' },
+  ];
+  return WIDGET_ORDER
+    .filter(w => state.widgets[w.key])
+    .map(w => ({ id: w.key, title: w.title, html: state.widgets[w.key] }));
+}
+
+async function pushWidgets(widgetArray, prefix, cleanup = false) {
+  const tenantUrl = sbTenantUrl.value.trim().replace(/\/$/, '');
+  const apiKey    = sbApiKey.value.trim();
+  if (!tenantUrl || !apiKey) {
+    showToast('Enter Salesbuildr credentials first.');
+    return null;
+  }
+  const res = await fetch('/api/push-widgets', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ widgets: widgetArray, prefix, apiKey, tenantUrl, cleanup })
+  });
+  return res.json();
+}
+
 // ── COPY & PUSH ──────────────────────────────────────────────
 document.querySelectorAll('.btn-copy').forEach(btn => {
   btn.addEventListener('click', () => {
     const key = btn.dataset.widget;
-    const html = state.widgets[key];
-    if (!html) return;
-    navigator.clipboard.writeText(html).then(() => {
-      showToast('HTML copied to clipboard.');
-    }).catch(() => {
-      // Fallback
-      const ta = document.createElement('textarea');
-      ta.value = html;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      showToast('HTML copied to clipboard.');
-    });
+    copyHtml(state.widgets[key]);
+    showToast('HTML copied to clipboard.');
   });
 });
 
 document.querySelectorAll('.btn-push').forEach(btn => {
   btn.addEventListener('click', async () => {
-    const tenantUrl = sbTenantUrl.value.trim().replace(/\/$/, '');
-    const apiKey    = sbApiKey.value.trim();
-    if (!tenantUrl || !apiKey) {
-      showToast('Enter Salesbuildr credentials first.');
-      return;
-    }
     const key   = btn.dataset.widget;
+    const title = btn.closest('.widget-card').querySelector('.widget-label').textContent.trim();
     const html  = state.widgets[key];
-    const title = btn.closest('.widget-card').querySelector('.widget-label').textContent;
+    if (!html) return;
 
     btn.textContent = 'PUSHING...';
     btn.disabled    = true;
     try {
-      const res = await fetch('/api/push-widget', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenantUrl, apiKey, title: `${cn()} — ${title}`, html })
-      });
-      const data = await res.json();
-      if (data.ok) {
+      const data = await pushWidgets(
+        [{ id: key, title, html }],
+        cn(),   // prefix = client name
+        false   // no cleanup for single push
+      );
+      if (data && data.ok) {
         showToast(`"${title}" pushed to Salesbuildr.`);
         btn.textContent = '✓ PUSHED';
       } else {
-        showToast(`Push failed: ${data.error}`);
+        const errMsg = data?.results?.[0]?.error || data?.error || 'Unknown error';
+        showToast(`Push failed: ${errMsg}`);
         btn.textContent = 'PUSH TO SALESBUILDR';
       }
     } catch {
@@ -738,10 +764,37 @@ document.querySelectorAll('.btn-push').forEach(btn => {
 
 copyAllBtn.addEventListener('click', () => {
   const all = Object.values(state.widgets).filter(Boolean).join('\n\n');
-  navigator.clipboard.writeText(all).then(() => {
-    showToast('All widgets copied to clipboard.');
-  });
+  copyHtml(all);
+  showToast('All widgets copied to clipboard.');
 });
+
+// Push All button (in salesbuildr bar)
+const pushAllBtn = document.getElementById('pushAllBtn');
+if (pushAllBtn) {
+  pushAllBtn.addEventListener('click', async () => {
+    const widgets = buildWidgetArray();
+    if (!widgets.length) { showToast('No widgets to push yet.'); return; }
+
+    pushAllBtn.textContent = 'PUSHING ALL...';
+    pushAllBtn.disabled    = true;
+    try {
+      const data = await pushWidgets(widgets, cn(), true); // cleanup=true replaces previous set
+      if (data && data.successCount > 0) {
+        showToast(`${data.successCount}/${data.total} widgets pushed to Salesbuildr.`);
+        // Mark all individual push buttons as pushed
+        document.querySelectorAll('.btn-push').forEach(b => b.textContent = '✓ PUSHED');
+        pushAllBtn.textContent = '✓ ALL PUSHED';
+      } else {
+        showToast(`Push failed: ${data?.error || 'Check credentials.'}`);
+        pushAllBtn.textContent = 'PUSH ALL TO SALESBUILDR';
+      }
+    } catch {
+      showToast('Network error — push failed.');
+      pushAllBtn.textContent = 'PUSH ALL TO SALESBUILDR';
+    }
+    pushAllBtn.disabled = false;
+  });
+}
 
 // ── SALESBUILDR CREDS ────────────────────────────────────────
 saveSbCreds.addEventListener('click', () => {
