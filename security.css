@@ -571,11 +571,31 @@ body {
   align-items: center;
 }
 .sb-input { flex: 1; }
+.sb-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
 .sb-status {
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--green);
 }
+.btn-push-all {
+  background: var(--accent-a);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+.btn-push-all:hover { opacity: 0.85; }
+.btn-push-all:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ── LOADING ── */
 .widgets-loading {
