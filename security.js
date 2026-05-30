@@ -386,27 +386,30 @@ function buildCurrentStateWidget() {
     const bgColor = idx % 2 === 0 ? '#ffffff' : '#faf8f4';
     const statusColor = a.current === 'implemented' ? '#2d7a4f' : a.current === 'partial' ? '#c9830a' : '#999';
     const igColor = ctrl.ig === 1 ? '#2d7a4f' : ctrl.ig === 2 ? '#c9830a' : '#c9303a';
+    const notesCell = a.notes
+      ? `<td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;font-size:11px;color:#5a5750;font-style:italic;">${a.notes}</td>`
+      : '<td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;"></td>';
     rows += `<tr style="background:${bgColor};">
-      <td style="padding:9px 12px;border-bottom:1px solid #e8e4dc;font-size:12px;font-weight:bold;width:28px;color:#8a8680;">${ctrl.id}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #e8e4dc;font-size:12px;">${ctrl.name}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #e8e4dc;text-align:center;">
-        <span style="background:${igColor};color:white;padding:2px 7px;font-size:10px;font-weight:bold;">IG${ctrl.ig}</span>
+      <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;font-size:12px;font-weight:bold;white-space:nowrap;color:#8a8680;">${ctrl.id}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;font-size:12px;width:99%;">${ctrl.name}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;text-align:center;white-space:nowrap;">
+        <span style="background:${igColor};color:white;padding:2px 8px;font-size:10px;font-weight:bold;white-space:nowrap;display:inline-block;">IG${ctrl.ig}</span>
       </td>
-      <td style="padding:9px 12px;border-bottom:1px solid #e8e4dc;text-align:center;">
-        <span style="background:${statusColor};color:white;padding:3px 10px;font-size:10px;font-weight:bold;letter-spacing:0.06em;">${SCORE_LABEL[a.current].toUpperCase()}</span>
+      <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;text-align:center;white-space:nowrap;">
+        <span style="background:${statusColor};color:white;padding:3px 10px;font-size:10px;font-weight:bold;white-space:nowrap;display:inline-block;">${SCORE_LABEL[a.current].toUpperCase()}</span>
       </td>
-      ${a.notes ? `<td style="padding:9px 12px;border-bottom:1px solid #e8e4dc;font-size:11px;color:#5a5750;font-style:italic;">${a.notes}</td>` : '<td style="padding:9px 12px;border-bottom:1px solid #e8e4dc;"></td>'}
+      ${notesCell}
     </tr>`;
   });
 
   const content = `
-  <table style="width:100%;border-collapse:collapse;">
+  <table style="width:100%;border-collapse:collapse;table-layout:auto;">
     <tr style="background:#2d2d2d;">
-      <th style="padding:9px 12px;color:#f5f2eb;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;text-align:left;width:28px;">#</th>
-      <th style="padding:9px 12px;color:#f5f2eb;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;text-align:left;">Control Domain</th>
-      <th style="padding:9px 12px;color:#f5f2eb;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;text-align:center;width:60px;">IG</th>
-      <th style="padding:9px 12px;color:#f5f2eb;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;text-align:center;width:120px;">Status</th>
-      <th style="padding:9px 12px;color:#f5f2eb;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;text-align:left;">Notes</th>
+      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:left;white-space:nowrap;">#</th>
+      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:left;width:99%;">Control Domain</th>
+      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:center;white-space:nowrap;">IG</th>
+      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:center;white-space:nowrap;">Status</th>
+      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:left;white-space:nowrap;">Notes</th>
     </tr>
     ${rows}
   </table>`;
@@ -420,15 +423,15 @@ function buildGapAnalysisWidget(gaps) {
     const riskBg = g.risk === 'Critical' ? '#c9303a' : g.risk === 'High' ? '#c9830a' : g.risk === 'Medium' ? '#c9a30a' : '#666';
     const bgColor = idx % 2 === 0 ? '#ffffff' : '#faf8f4';
     rows += `<tr style="background:${bgColor};">
-      <td style="padding:9px 12px;border-bottom:1px solid #e8e4dc;font-size:12px;font-weight:bold;">${g.name}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #e8e4dc;text-align:center;">
-        <span style="background:#999;color:white;padding:3px 8px;font-size:10px;font-weight:bold;">${g.currentLabel.toUpperCase()}</span>
+      <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;font-size:12px;width:99%;">${g.name}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;text-align:center;white-space:nowrap;">
+        <span style="background:#999;color:white;padding:3px 10px;font-size:10px;font-weight:bold;white-space:nowrap;display:inline-block;">${g.currentLabel.toUpperCase()}</span>
       </td>
-      <td style="padding:9px 12px;border-bottom:1px solid #e8e4dc;text-align:center;">
-        <span style="background:${P()};color:white;padding:3px 8px;font-size:10px;font-weight:bold;">${g.idealLabel.toUpperCase()}</span>
+      <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;text-align:center;white-space:nowrap;">
+        <span style="background:${P()};color:white;padding:3px 10px;font-size:10px;font-weight:bold;white-space:nowrap;display:inline-block;">${g.idealLabel.toUpperCase()}</span>
       </td>
-      <td style="padding:9px 12px;border-bottom:1px solid #e8e4dc;text-align:center;">
-        <span style="background:${riskBg};color:white;padding:3px 8px;font-size:10px;font-weight:bold;letter-spacing:0.06em;">${g.risk.toUpperCase()}</span>
+      <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;text-align:center;white-space:nowrap;">
+        <span style="background:${riskBg};color:white;padding:3px 10px;font-size:10px;font-weight:bold;white-space:nowrap;display:inline-block;">${g.risk.toUpperCase()}</span>
       </td>
     </tr>`;
   });
@@ -438,12 +441,12 @@ function buildGapAnalysisWidget(gaps) {
   }
 
   const content = `
-  <table style="width:100%;border-collapse:collapse;">
+  <table style="width:100%;border-collapse:collapse;table-layout:auto;">
     <tr style="background:#2d2d2d;">
-      <th style="padding:9px 12px;color:#f5f2eb;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;text-align:left;">Control Domain</th>
-      <th style="padding:9px 12px;color:#f5f2eb;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;text-align:center;width:120px;">Current</th>
-      <th style="padding:9px 12px;color:#f5f2eb;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;text-align:center;width:120px;">Target</th>
-      <th style="padding:9px 12px;color:#f5f2eb;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;text-align:center;width:100px;">Risk</th>
+      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:left;width:99%;">Control Domain</th>
+      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:center;white-space:nowrap;">Current</th>
+      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:center;white-space:nowrap;">Target</th>
+      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:center;white-space:nowrap;">Risk</th>
     </tr>
     ${rows}
   </table>`;
@@ -457,20 +460,20 @@ function buildIdealStateWidget() {
     const bgColor = idx % 2 === 0 ? '#ffffff' : '#faf8f4';
     const statusColor = a.ideal === 'implemented' ? '#2d7a4f' : a.ideal === 'partial' ? '#c9830a' : '#999';
     rows += `<tr style="background:${bgColor};">
-      <td style="padding:9px 12px;border-bottom:1px solid #e8e4dc;font-size:12px;font-weight:bold;width:28px;color:#8a8680;">${ctrl.id}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #e8e4dc;font-size:12px;">${ctrl.name}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #e8e4dc;text-align:center;">
-        <span style="background:${statusColor};color:white;padding:3px 10px;font-size:10px;font-weight:bold;letter-spacing:0.06em;">${SCORE_LABEL[a.ideal].toUpperCase()}</span>
+      <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;font-size:12px;font-weight:bold;white-space:nowrap;color:#8a8680;">${ctrl.id}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;font-size:12px;width:99%;">${ctrl.name}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;text-align:center;white-space:nowrap;">
+        <span style="background:${statusColor};color:white;padding:3px 10px;font-size:10px;font-weight:bold;white-space:nowrap;display:inline-block;">${SCORE_LABEL[a.ideal].toUpperCase()}</span>
       </td>
     </tr>`;
   });
 
   const content = `
-  <table style="width:100%;border-collapse:collapse;">
+  <table style="width:100%;border-collapse:collapse;table-layout:auto;">
     <tr style="background:#2d2d2d;">
-      <th style="padding:9px 12px;color:#f5f2eb;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;text-align:left;width:28px;">#</th>
-      <th style="padding:9px 12px;color:#f5f2eb;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;text-align:left;">Control Domain</th>
-      <th style="padding:9px 12px;color:#f5f2eb;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;text-align:center;width:130px;">Target State</th>
+      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:left;white-space:nowrap;">#</th>
+      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:left;width:99%;">Control Domain</th>
+      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:center;white-space:nowrap;">Target State</th>
     </tr>
     ${rows}
   </table>`;
@@ -513,7 +516,7 @@ function buildRiskLandscapeWidget(gaps) {
         </div>
       </td>
       <td style="padding:10px 14px;border-bottom:1px solid #e8e4dc;text-align:center;width:15%;">
-        <span style="background:${r.color};color:white;padding:3px 8px;font-size:10px;font-weight:bold;letter-spacing:0.05em;">${r.label}</span>
+        <span style="background:${r.color};color:white;padding:3px 8px;font-size:10px;font-weight:bold;white-space:nowrap;display:inline-block;">${r.label}</span>
       </td>
     </tr>`;
   });
