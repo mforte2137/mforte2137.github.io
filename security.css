@@ -803,3 +803,37 @@ body {
   .col-h-ig, .col-h-notes, .row-ig, .notes-input { display: none; }
   .sb-creds { flex-direction: column; }
 }
+
+/* ── SESSION BUTTONS ── */
+.btn-session {
+  background: transparent;
+  color: #a0a09a;
+  border: 1px solid #444;
+  padding: 5px 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  margin-right: 10px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.btn-session:hover {
+  color: var(--bg);
+  border-color: #888;
+}
+.btn-session-export {
+  color: var(--accent-b);
+  border-color: var(--accent-b);
+}
+.btn-session-export:hover {
+  color: var(--bg);
+  background: var(--accent-b);
+}
+
+/* ── HEADER DIVIDER ── */
+.header-divider {
+  color: #444;
+  margin: 0 4px;
+  font-size: 14px;
+  user-select: none;
+}
