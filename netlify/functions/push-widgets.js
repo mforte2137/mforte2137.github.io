@@ -2,33 +2,44 @@
 // push-widgets.js — Netlify function
 // Path: /api/push-widgets
 //
-// Accepts POST { widgets, prefix, apiKey, integrationKey, cleanup }
+// Accepts POST { widgets, prefix, apiKey, tenantUrl, cleanup }
 //
-// Pushes 5 individual widget templates to Salesbuildr with:
-//   - Standardised naming: [prefix] – W1 · Their Situation etc.
-//   - pageBreak: false on W1, true on W2–W5 (PDF page breaks)
+// tenantUrl: the MSP's Salesbuildr tenant e.g. https://acme.salesbuildr.com
+// apiKey:    generated at Admin → Integrations → API Key in Salesbuildr
+//
+// Pushes individual widget templates to Salesbuildr with:
+//   - Standardised naming: [prefix] – widget title
+//   - pageBreak: false on first widget, true on subsequent (PDF page breaks)
 //   - Optional cleanup: deletes previous templates with same prefix
 //
 // Keys come from the REQUEST BODY — not env vars.
 // =========================================================
 
-const BASE = 'https://portal.us1-salesbuildr.com/public-api/quote-widget-template';
 const ORDER_START = 900;
 
-// Fixed, predictable names regardless of what Claude titled each widget
-const STANDARD_NAMES = {
-  w1: 'W1 · Their Situation',
-  w2: 'W2 · Why Now',
-  w3: 'W3 · Why Trust Us',
-  w4: 'W4 · What They Get',
-  w5: 'W5 · The Investment'
-};
+function getBase(tenantUrl) {
+  // Normalise — strip trailing slash, append API path
+  const base = (tenantUrl || '').trim().replace(/\/+$/, '');
+  return `${base}/public-api/quote-widget-template`;
+}
 
 exports.handler = async (event) => {
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS'
+      },
+      body: ''
+    };
+  }
+
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify({ ok: false, error: 'POST required.' })
     };
   }
@@ -38,33 +49,34 @@ exports.handler = async (event) => {
   catch (e) {
     return {
       statusCode: 400,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify({ ok: false, error: 'Invalid JSON.' })
     };
   }
 
-  const { widgets, prefix, apiKey, integrationKey, cleanup } = body;
+  const { widgets, prefix, apiKey, tenantUrl, cleanup } = body;
 
-  if (!apiKey || !integrationKey) {
+  if (!apiKey || !tenantUrl) {
     return {
       statusCode: 401,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ok: false, error: 'Salesbuildr API credentials required.' })
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ ok: false, error: 'Salesbuildr API key and tenant URL are required.' })
     };
   }
 
   if (!Array.isArray(widgets) || widgets.length === 0) {
     return {
       statusCode: 400,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify({ ok: false, error: 'No widgets provided.' })
     };
   }
 
+  const BASE = getBase(tenantUrl);
+
   const headers = {
-    'Content-Type':    'application/json',
-    'api-key':         apiKey,
-    'integration-key': integrationKey
+    'Content-Type': 'application/json',
+    'api-key':      apiKey
   };
 
   const cleanPrefix  = (prefix || '').trim();
@@ -81,7 +93,6 @@ exports.handler = async (event) => {
           ? allTemplates.filter(t => t.name && t.name.startsWith(searchPrefix))
           : [];
 
-        // Delete each matching template (sequential to avoid rate limits)
         for (const template of matching) {
           try {
             await fetch(`${BASE}/${template.id}`, { method: 'DELETE', headers });
@@ -92,17 +103,18 @@ exports.handler = async (event) => {
         }
       }
     } catch (err) {
-      // Cleanup failure doesn't block creation — we proceed anyway
+      // Cleanup failure doesn't block creation — proceed anyway
     }
   }
 
-  // ── Step 2: Push 5 individual widgets ─────────────────────
+  // ── Step 2: Push widgets ───────────────────────────────────
   const results = [];
 
   for (let i = 0; i < widgets.length; i++) {
-    const widget       = widgets[i];
-    const standardName = STANDARD_NAMES[widget.id] || widget.title || `Widget ${i + 1}`;
-    const name         = cleanPrefix ? `${cleanPrefix} – ${standardName}` : standardName;
+    const widget = widgets[i];
+    const name   = cleanPrefix
+      ? `${cleanPrefix} – ${widget.title || `Widget ${i + 1}`}`
+      : (widget.title || `Widget ${i + 1}`);
 
     try {
       const res = await fetch(BASE, {
@@ -121,7 +133,7 @@ exports.handler = async (event) => {
             attachments:      [],
             choice:           null,
             showSubtotal:     false,
-            pageBreak:        i > 0   // false for W1, true for W2–W5
+            pageBreak:        i > 0   // false for first widget, true for subsequent
           },
           order: ORDER_START + i
         })
