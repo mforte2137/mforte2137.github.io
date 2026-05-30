@@ -52,6 +52,12 @@ const sbApiKey           = document.getElementById('sbApiKey');
 const saveSbCreds        = document.getElementById('saveSbCreds');
 const sbStatus           = document.getElementById('sbStatus');
 const toast              = document.getElementById('toast');
+const exportBtn          = document.getElementById('exportBtn');
+const importBtn          = document.getElementById('importBtn');
+const importFile         = document.getElementById('importFile');
+const exportXlsxBtn      = document.getElementById('exportXlsxBtn');
+const importXlsxBtn      = document.getElementById('importXlsxBtn');
+const importXlsxFile     = document.getElementById('importXlsxFile');
 
 // ── STATE ───────────────────────────────────────────────────
 let state = {
@@ -836,6 +842,260 @@ function showToast(msg) {
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 2800);
 }
+
+// ── SESSION EXPORT / IMPORT ─────────────────────────────────
+const SESSION_VERSION = 1;
+
+exportBtn.addEventListener('click', () => {
+  if (!state.client.name) {
+    showToast('Complete the client profile before exporting.');
+    return;
+  }
+  const payload = {
+    _version:  SESSION_VERSION,
+    _exported: new Date().toISOString(),
+    _client:   state.client.name,
+    state: {
+      framework:  state.framework,
+      client:     state.client,
+      assessment: state.assessment,
+      theme:      state.theme,
+    }
+  };
+  const json        = JSON.stringify(payload, null, 2);
+  const blob        = new Blob([json], { type: 'application/json' });
+  const url         = URL.createObjectURL(blob);
+  const a           = document.createElement('a');
+  const defaultName = `${state.client.name} — Session`;
+  const userLabel   = window.prompt('Name this session file:', defaultName);
+  if (userLabel === null) { URL.revokeObjectURL(url); return; } // cancelled
+  const safeName    = (userLabel.trim() || defaultName).replace(/[^a-z0-9 _\-–—]/gi, '').trim().replace(/\s+/g, '-');
+  a.href            = url;
+  a.download        = `${safeName}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`Session exported: ${a.download}`);
+});
+
+importBtn.addEventListener('click', () => {
+  importFile.value = ''; // reset so same file can be re-imported
+  importFile.click();
+});
+
+importFile.addEventListener('change', () => {
+  const file = importFile.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const payload = JSON.parse(e.target.result);
+      if (!payload.state || !payload.state.assessment || !payload.state.client) {
+        showToast('Invalid session file — missing required data.');
+        return;
+      }
+      // Restore state
+      state.framework  = payload.state.framework  || 'cis';
+      state.client     = payload.state.client;
+      state.assessment = payload.state.assessment;
+      state.theme      = payload.state.theme || { primary: '#1a3a5c', secondary: '#e8840a' };
+
+      // Restore UI
+      applyTheme(state.theme.primary, state.theme.secondary);
+
+      // Restore client profile fields
+      clientName.value     = state.client.name     || '';
+      clientIndustry.value = state.client.industry || '';
+      engagementType.value = state.client.engagement || 'assessment';
+      userCount.value      = state.client.userCount  || '';
+      igOptions.forEach(o => {
+        o.classList.toggle('selected', parseInt(o.dataset.ig) === state.client.ig);
+      });
+      regChecks.forEach(c => {
+        c.checked = (state.client.regulations || []).includes(c.value);
+      });
+
+      // Restore framework selection
+      frameworkCards.forEach(c => {
+        c.classList.toggle('selected', c.dataset.framework === state.framework);
+      });
+
+      // Re-render assessment with restored values
+      renderAssessmentRows();
+
+      showToast(`Session loaded: ${payload._client}`);
+      goToStep(3); // land on assessment so MSP can review
+    } catch (err) {
+      showToast('Could not read session file — is it a valid JSON export?');
+    }
+  };
+  reader.readAsText(file);
+});
+
+// ── SPREADSHEET EXPORT / IMPORT ─────────────────────────────
+const VALID_STATES = ['Not Started', 'Partial', 'Implemented'];
+
+// Normalize whatever the tech typed/selected into our internal values
+function normalizeState(raw) {
+  if (!raw) return 'none';
+  const s = String(raw).trim().toLowerCase();
+  if (s === 'implemented' || s === 'i') return 'implemented';
+  if (s === 'partial' || s === 'p')     return 'partial';
+  return 'none'; // Not Started / blank / anything else
+}
+
+exportXlsxBtn.addEventListener('click', () => {
+  if (!state.client.name) {
+    showToast('Complete the client profile first.');
+    return;
+  }
+
+  const wb  = XLSX.utils.book_new();
+  const ig  = state.client.ig;
+
+  // ── Sheet 1: Instructions ──────────────────────────────────
+  const instrRows = [
+    ['SECURITY ASSESSMENT — TECH QUESTIONNAIRE'],
+    [''],
+    ['Client:', state.client.name],
+    ['Framework:', 'CIS Controls v8'],
+    ['IG Level:', `IG${ig} — ${ig === 1 ? 'Essential (1–100 users)' : ig === 2 ? 'Foundational (100–500 users)' : 'Advanced (500+ users)'}`],
+    ['Date:', new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' })],
+    [''],
+    ['INSTRUCTIONS FOR TECH:'],
+    ['1. Go to the "Assessment" sheet.'],
+    ['2. For each control, select the CURRENT STATE from the dropdown:'],
+    ['   • Not Started — nothing is in place'],
+    ['   • Partial     — some implementation exists but not complete'],
+    ['   • Implemented — fully in place'],
+    ['3. All 18 controls must be completed (default is Not Started).'],
+    ['4. Add optional notes in the Notes column — keep them brief.'],
+    ['5. Save the file and return it to the salesperson for import.'],
+    [''],
+    ['DO NOT change column headers, row order, or control IDs.'],
+  ];
+
+  const instrSheet = XLSX.utils.aoa_to_sheet(instrRows);
+  instrSheet['!cols'] = [{ wch: 18 }, { wch: 60 }];
+  instrSheet['A1'] && (instrSheet['A1'].s = { font: { bold: true, sz: 13 } });
+  XLSX.utils.book_append_sheet(wb, instrSheet, 'Instructions');
+
+  // ── Sheet 2: Assessment ────────────────────────────────────
+  const headerRow = ['ID', 'Control Domain', 'Description', 'IG Level', 'Current State', 'Notes'];
+  const dataRows  = CIS_CONTROLS.map((ctrl, idx) => {
+    const a    = state.assessment[idx];
+    const curr = a.current === 'implemented' ? 'Implemented'
+               : a.current === 'partial'     ? 'Partial'
+               : 'Not Started';
+    return [
+      ctrl.id,
+      ctrl.name,
+      ctrl.desc,
+      `IG${ctrl.ig}`,
+      curr,
+      a.notes || ''
+    ];
+  });
+
+  const assessSheet = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows]);
+
+  // Column widths
+  assessSheet['!cols'] = [
+    { wch: 5  },  // ID
+    { wch: 38 },  // Control Domain
+    { wch: 52 },  // Description
+    { wch: 10 },  // IG Level
+    { wch: 16 },  // Current State
+    { wch: 40 },  // Notes
+  ];
+
+  // Data validation dropdown on Current State column (E2:E19)
+  assessSheet['!dataValidation'] = assessSheet['!dataValidation'] || [];
+  assessSheet['!dataValidation'].push({
+    type: 'list',
+    sqref: 'E2:E19',
+    formula1: '"Not Started,Partial,Implemented"',
+    showDropDown: false,
+    showErrorMessage: true,
+    errorTitle: 'Invalid value',
+    error: 'Please select: Not Started, Partial, or Implemented'
+  });
+
+  XLSX.utils.book_append_sheet(wb, assessSheet, 'Assessment');
+
+  // ── Write file ─────────────────────────────────────────────
+  const defaultName = `${state.client.name} — Security Assessment`;
+  const userLabel   = window.prompt('Name this spreadsheet file:', defaultName);
+  if (userLabel === null) return; // cancelled
+  const safeName = (userLabel.trim() || defaultName).replace(/[^a-z0-9 _\-–—]/gi, '').trim().replace(/\s+/g, '-');
+  XLSX.writeFile(wb, `${safeName}.xlsx`);
+  showToast('Spreadsheet downloaded — send to tech for completion.');
+});
+
+// ── Import spreadsheet (xlsx or csv) ──────────────────────────
+importXlsxBtn.addEventListener('click', () => {
+  importXlsxFile.value = '';
+  importXlsxFile.click();
+});
+
+importXlsxFile.addEventListener('change', () => {
+  const file = importXlsxFile.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb   = XLSX.read(data, { type: 'array' });
+
+      // Find the Assessment sheet (xlsx) or use first sheet (csv)
+      const sheetName = wb.SheetNames.includes('Assessment')
+        ? 'Assessment'
+        : wb.SheetNames[0];
+      const sheet = wb.Sheets[sheetName];
+      const rows  = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+      // Skip header row, read data rows
+      const dataRows = rows.slice(1).filter(r => r[0] !== ''); // skip blanks
+
+      if (dataRows.length < 18) {
+        showToast(`Only ${dataRows.length} rows found — expected 18. Check the file.`);
+        return;
+      }
+
+      // Validate all 18 have a valid state
+      const blanks = [];
+      dataRows.slice(0, 18).forEach((row, idx) => {
+        const raw = String(row[4] || '').trim();
+        if (!raw) blanks.push(idx + 1);
+      });
+
+      if (blanks.length > 0) {
+        showToast(`${blanks.length} control${blanks.length > 1 ? 's' : ''} missing a Current State (rows ${blanks.join(', ')}). All 18 required.`);
+        return;
+      }
+
+      // Apply to assessment state — match by row index (ID order is preserved)
+      let updated = 0;
+      dataRows.slice(0, 18).forEach((row, idx) => {
+        if (idx >= state.assessment.length) return;
+        const newState = normalizeState(row[4]);
+        const newNotes = String(row[5] || '').trim();
+        state.assessment[idx].current = newState;
+        if (newNotes) state.assessment[idx].notes = newNotes;
+        updated++;
+      });
+
+      // Re-render assessment rows with imported values
+      renderAssessmentRows();
+      showToast(`Imported ${updated} controls from spreadsheet.`);
+      goToStep(3); // jump to assessment for review
+    } catch (err) {
+      showToast('Could not read spreadsheet — is it the correct file?');
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
 
 // ── INIT ─────────────────────────────────────────────────────
 function init() {
