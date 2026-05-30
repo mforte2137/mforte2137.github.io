@@ -15,6 +15,13 @@
       <span class="app-subtitle">MSP Framework Assessment Tool</span>
     </div>
     <div class="header-right">
+      <button class="btn-session" id="importBtn" title="Import a saved session file">IMPORT SESSION</button>
+      <button class="btn-session btn-session-export" id="exportBtn" title="Save current session to file">EXPORT SESSION</button>
+      <input type="file" id="importFile" accept=".json" style="display:none;">
+      <span class="header-divider">|</span>
+      <button class="btn-session" id="importXlsxBtn" title="Import tech assessment spreadsheet">IMPORT SPREADSHEET</button>
+      <button class="btn-session btn-session-export" id="exportXlsxBtn" title="Download tech assessment spreadsheet">TECH SPREADSHEET</button>
+      <input type="file" id="importXlsxFile" accept=".xlsx,.csv" style="display:none;">
       <span class="step-indicator" id="stepIndicator">STEP 1 OF 5</span>
     </div>
   </header>
@@ -510,6 +517,7 @@
   <!-- TOAST -->
   <div class="toast" id="toast"></div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="security.js"></script>
 </body>
 </html>
