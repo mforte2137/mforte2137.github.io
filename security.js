@@ -35,7 +35,6 @@ const primaryHex     = document.getElementById('primaryHex');
 const secondaryColor = document.getElementById('secondaryColor');
 const secondaryHex   = document.getElementById('secondaryHex');
 const presetBtns     = document.querySelectorAll('.preset-btn');
-const mspName        = document.getElementById('mspName');
 const previewHeader  = document.getElementById('previewHeader');
 const previewAccent  = document.getElementById('previewAccent');
 const previewSub     = document.getElementById('previewSub');
@@ -284,9 +283,6 @@ secondaryHex.addEventListener('input',   () => { if (/^#[0-9a-f]{6}$/i.test(seco
 
 presetBtns.forEach(btn => {
   btn.addEventListener('click', () => applyTheme(btn.dataset.primary, btn.dataset.secondary));
-});
-
-mspName.addEventListener('input', () => {
 });
 
 step4Back.addEventListener('click', () => goToStep(3));
