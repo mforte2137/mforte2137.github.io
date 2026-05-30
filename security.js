@@ -1048,10 +1048,17 @@ importXlsxFile.addEventListener('change', () => {
         ? 'Assessment'
         : wb.SheetNames[0];
       const sheet = wb.Sheets[sheetName];
-      const rows  = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      const rows  = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
 
-      // Skip header row, read data rows
-      const dataRows = rows.slice(1).filter(r => r[0] !== ''); // skip blanks
+      // DEBUG — log first 3 data rows to console so we can see what SheetJS parsed
+      console.log('SheetJS sheet names:', wb.SheetNames);
+      console.log('SheetJS total rows:', rows.length);
+      console.log('SheetJS row 0 (header):', JSON.stringify(rows[0]));
+      console.log('SheetJS row 1:', JSON.stringify(rows[1]));
+      console.log('SheetJS row 2:', JSON.stringify(rows[2]));
+
+      // Skip header row, read data rows — r[0] may be number or string so use != not !==
+      const dataRows = rows.slice(1).filter(r => r[0] != null && r[0] !== ''); // skip blanks
 
       if (dataRows.length < 18) {
         showToast(`Only ${dataRows.length} rows found — expected 18. Check the file.`);
@@ -1070,6 +1077,9 @@ importXlsxFile.addEventListener('change', () => {
         return;
       }
 
+      // Ensure assessment array is populated — may be empty if Step 2 was skipped
+      if (state.assessment.length === 0) buildAssessment();
+
       // Apply to assessment state — match by row index (ID order is preserved)
       let updated = 0;
       dataRows.slice(0, 18).forEach((row, idx) => {
@@ -1081,9 +1091,14 @@ importXlsxFile.addEventListener('change', () => {
         updated++;
       });
 
+      if (updated === 0) {
+        showToast('No controls were updated — check the spreadsheet format.');
+        return;
+      }
+
       // Re-render assessment rows with imported values
       renderAssessmentRows();
-      showToast(`Imported ${updated} controls from spreadsheet.`);
+      showToast(`✓ Imported ${updated} controls from spreadsheet.`);
       goToStep(3); // jump to assessment for review
     } catch (err) {
       showToast('Could not read spreadsheet — is it the correct file?');
