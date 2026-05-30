@@ -159,7 +159,7 @@ const URGENCY_HINTS = [
 const WIDGET_IDS    = ['w1','w2','w3','w4','w5'];
 const WIDGET_LABELS = { w1:'W1 · Their Situation', w2:'W2 · Why Now', w3:'W3 · Why Trust Us', w4:'W4 · What They Get', w5:'W5 · The Investment' };
 const LS_API_KEY    = 'sb_api_key';
-const LS_INT_KEY    = 'sb_int_key';
+const LS_TENANT_URL = 'sb_tenant_url';
 
 let selectedColors      = { primary:'#0d2d5e', accent:'#1a6fc4', light:'#f0f6ff' };
 let generatedWidgets    = [];
@@ -195,8 +195,8 @@ const individualWidgets = document.getElementById('individual-widgets');
 const sbToggle          = document.getElementById('sb-toggle');
 const sbArrow           = document.getElementById('sb-arrow');
 const sbBody            = document.getElementById('sb-connect-body');
-const sbApiKey          = document.getElementById('sb-api-key');
-const sbIntKey          = document.getElementById('sb-int-key');
+const sbApiKey          = document.getElementById('sbApiKey');
+const sbTenantUrl       = document.getElementById('sbTenantUrl');
 const sbRemember        = document.getElementById('sb-remember');
 const sbReplace         = document.getElementById('sb-replace');
 const sbPrefix          = document.getElementById('sb-prefix');
@@ -447,17 +447,23 @@ individualToggle.addEventListener('click', () => {
 
 // ── Connect Salesbuildr ───────────────────────────────────
 function initConnectSection() {
-  const savedApi = localStorage.getItem(LS_API_KEY);
-  const savedInt = localStorage.getItem(LS_INT_KEY);
-  if (savedApi) sbApiKey.value = savedApi;
-  if (savedInt) sbIntKey.value = savedInt;
-  if (savedApi && savedInt) sbRemember.checked = true;
-  updatePushButton();
+function initSbCredentials() {
+  const savedApi    = localStorage.getItem(LS_API_KEY);
+  const savedTenant = localStorage.getItem(LS_TENANT_URL);
+  if (savedApi)    document.getElementById('sbApiKey').value    = savedApi;
+  if (savedTenant) document.getElementById('sbTenantUrl').value = savedTenant;
+  if (savedApi && savedTenant) document.getElementById('sbRemember').checked = true;
+  updateSbBtn();
 }
-function updatePushButton() { sbPushBtn.disabled = !(sbApiKey.value.trim() && sbIntKey.value.trim()); }
+function updateSbBtn() {
+  document.getElementById('sbPushBtn').disabled = !(
+    document.getElementById('sbApiKey').value.trim() &&
+    document.getElementById('sbTenantUrl').value.trim()
+  );
+}
 sbToggle.addEventListener('click', () => { const open=!sbBody.hidden; sbBody.hidden=open; sbArrow.classList.toggle('is-open',!open); });
-sbApiKey.addEventListener('input', updatePushButton);
-sbIntKey.addEventListener('input', updatePushButton);
+sbApiKey.addEventListener('input', updateSbBtn);
+sbTenantUrl.addEventListener('input', updateSbBtn);
 
 // ── Progress ──────────────────────────────────────────────
 function setProgress(done) {
@@ -578,10 +584,16 @@ function updatePushBtnLabel() {
 }
 
 sbPushBtn.addEventListener('click', async () => {
-  const apiKey=sbApiKey.value.trim(), intKey=sbIntKey.value.trim();
-  if (!apiKey||!intKey) return;
-  if (sbRemember.checked) { localStorage.setItem(LS_API_KEY,apiKey); localStorage.setItem(LS_INT_KEY,intKey); }
-  else { localStorage.removeItem(LS_API_KEY); localStorage.removeItem(LS_INT_KEY); }
+  const apiKey    = document.getElementById('sbApiKey').value.trim();
+  const tenantUrl = document.getElementById('sbTenantUrl').value.trim();
+  if (!apiKey || !tenantUrl) return;
+  if (sbRemember.checked) {
+    localStorage.setItem(LS_API_KEY, apiKey);
+    localStorage.setItem(LS_TENANT_URL, tenantUrl);
+  } else {
+    localStorage.removeItem(LS_API_KEY);
+    localStorage.removeItem(LS_TENANT_URL);
+  }
 
   const mode = document.querySelector('input[name="sb-mode"]:checked')?.value || 'individual';
   sbPushBtn.disabled=true;
@@ -591,24 +603,23 @@ sbPushBtn.addEventListener('click', async () => {
   const prefix  = sbPrefix.value.trim();
   const cleanup = sbReplace.checked;
 
-  // Build the payload depending on mode
   let payload;
   if (mode === 'combined') {
     const combinedHtml = buildCombinedHtml(generatedWidgets);
     const combinedTitle = (document.getElementById('output-title').textContent || 'Buyer Journey') + ' — Complete';
     payload = {
-      widgets:        [{ id: 'combined', title: combinedTitle, html: combinedHtml }],
+      widgets:   [{ id: 'combined', title: combinedTitle, html: combinedHtml }],
       prefix,
       apiKey,
-      integrationKey: intKey,
+      tenantUrl,
       cleanup
     };
   } else {
     payload = {
-      widgets:        generatedWidgets,
+      widgets:   generatedWidgets,
       prefix,
       apiKey,
-      integrationKey: intKey,
+      tenantUrl,
       cleanup
     };
   }
