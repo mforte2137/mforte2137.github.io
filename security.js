@@ -611,9 +611,9 @@ function buildFallbackRoadmap(gaps) {
 
   const content = `
   <table style="width:100%;border-collapse:collapse;">
-    ${critical.length ? `<tr style="background:#2d2d2d;"><td colspan="2" style="padding:9px 14px;color:#f5f2eb;font-size:10px;letter-spacing:0.15em;font-weight:bold;">PHASE 1 — IMMEDIATE (0–90 DAYS)</td></tr>${phaseRows(critical,'CRITICAL','#c9303a')}` : ''}
-    ${high.length ? `<tr style="background:#2d2d2d;"><td colspan="2" style="padding:9px 14px;color:#f5f2eb;font-size:10px;letter-spacing:0.15em;font-weight:bold;">PHASE 2 — SHORT TERM (90–180 DAYS)</td></tr>${phaseRows(high,'HIGH','#c9830a')}` : ''}
-    ${medium.length ? `<tr style="background:#2d2d2d;"><td colspan="2" style="padding:9px 14px;color:#f5f2eb;font-size:10px;letter-spacing:0.15em;font-weight:bold;">PHASE 3 — ONGOING (180+ DAYS)</td></tr>${phaseRows(medium,'MEDIUM','#c9a30a')}` : ''}
+    ${critical.length ? `<tr style="background:${P()};"><td colspan="2" style="padding:11px 14px;color:#ffffff;font-size:11px;letter-spacing:0.12em;font-weight:bold;">PHASE 1 — IMMEDIATE (0–90 DAYS)</td></tr>${phaseRows(critical,'CRITICAL','#c9303a')}` : ''}
+    ${high.length ? `<tr style="background:${P()};"><td colspan="2" style="padding:11px 14px;color:#ffffff;font-size:11px;letter-spacing:0.12em;font-weight:bold;">PHASE 2 — SHORT TERM (90–180 DAYS)</td></tr>${phaseRows(high,'HIGH','#c9830a')}` : ''}
+    ${medium.length ? `<tr style="background:${P()};"><td colspan="2" style="padding:11px 14px;color:#ffffff;font-size:11px;letter-spacing:0.12em;font-weight:bold;">PHASE 3 — ONGOING (180+ DAYS)</td></tr>${phaseRows(medium,'MEDIUM','#c9a30a')}` : ''}
   </table>`;
   return wrapWidget('RECOMMENDED ROADMAP', content);
 }
@@ -627,6 +627,8 @@ async function callAI(gaps) {
   const regs         = state.client.regulations.join(', ') || 'none specified';
 
   const prompt = `You are a cybersecurity consultant writing content for a formal MSP security proposal.
+
+MSP PRIMARY COLOR: ${P()}
 
 CLIENT: ${cn()}
 INDUSTRY: ${state.client.industry || 'not specified'}
@@ -646,7 +648,7 @@ Generate TWO sections and return them as JSON ONLY (no markdown, no preamble):
 
 {
   "execSummary": "<HTML content only — NO outer wrapper, NO table header. Start with a <table> containing 1 <tr><td> with the body content. Use inline styles only. Font: Arial. Write 3 concise executive-facing paragraphs (total ~120 words). Reference the client name, specific critical gaps, and business risk. Professional, direct tone — no fluff.>",
-  "roadmap": "<HTML content only — NO outer wrapper, NO table header. A 3-phase roadmap table with phases as dark header rows and 2-4 action items per phase as body rows. Phase 1 = 0-90 days (critical gaps), Phase 2 = 90-180 days (high gaps + quick wins), Phase 3 = 180+ days (maturity). Each row: action item name + brief 1-sentence rationale. Use inline styles only. Font: Arial. Colors: Phase headers #2d2d2d text #f5f2eb. Alternating row bg #ffffff/#faf8f4.>"
+  "roadmap": "<HTML content only — NO outer wrapper, NO table header. A 3-phase roadmap table with phases as dark header rows and 2-4 action items per phase as body rows. Phase 1 = 0-90 days (critical gaps), Phase 2 = 90-180 days (high gaps + quick wins), Phase 3 = 180+ days (maturity). Each row: action item name + brief 1-sentence rationale. Use inline styles only. Font: Arial. Colors: Phase headers use the MSP primary color (provided as a hex value in the context — use it literally as the background, white #ffffff text). Alternating row bg #ffffff/#faf8f4.>"
 }`;
 
   loadingStep.textContent = 'Waiting for AI response...';
