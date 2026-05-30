@@ -446,7 +446,6 @@ individualToggle.addEventListener('click', () => {
 });
 
 // ── Connect Salesbuildr ───────────────────────────────────
-function initConnectSection() {
 function initSbCredentials() {
   const savedApi    = localStorage.getItem(LS_API_KEY);
   const savedTenant = localStorage.getItem(LS_TENANT_URL);
