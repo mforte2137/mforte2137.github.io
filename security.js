@@ -100,6 +100,149 @@ const CIS_CONTROLS = [
   { id: 18, name: 'Penetration Testing',                        desc: 'Test the effectiveness and resiliency of enterprise assets through simulated attack scenarios.',         ig: 3, defaultIG1: 'none',          defaultIG2: 'none',        defaultIG3: 'partial'     },
 ];
 
+
+// ── NIST CSF 2.0 CONTROLS ────────────────────────────────────
+const NIST_CONTROLS = [
+  { id:1,  name:'Organizational Context',            desc:'Understand the organizational mission, stakeholder expectations, and legal/regulatory requirements that affect cybersecurity.',    domain:'GV', domainLabel:'GOVERN',   defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:2,  name:'Risk Management Strategy',          desc:'Establish, communicate, and monitor cybersecurity risk management priorities, constraints, tolerances, and assumptions.',          domain:'GV', domainLabel:'GOVERN',   defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:3,  name:'Roles & Responsibilities',          desc:'Establish cybersecurity roles, responsibilities, and accountability for the entire workforce and third-party stakeholders.',        domain:'GV', domainLabel:'GOVERN',   defaultS:'partial', defaultM:'partial',      defaultL:'implemented' },
+  { id:4,  name:'Asset Management',                  desc:'Identify and manage assets (data, hardware, software, systems, facilities) commensurate with their importance to the business.',  domain:'ID', domainLabel:'IDENTIFY',  defaultS:'partial', defaultM:'partial',      defaultL:'implemented' },
+  { id:5,  name:'Risk Assessment',                   desc:'Identify, analyze, and prioritize cybersecurity risks to the organization and its assets.',                                         domain:'ID', domainLabel:'IDENTIFY',  defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:6,  name:'Improvement',                       desc:'Identify improvements to cybersecurity risk management based on lessons learned, assessments, and reviews.',                        domain:'ID', domainLabel:'IDENTIFY',  defaultS:'none',    defaultM:'none',         defaultL:'partial'     },
+  { id:7,  name:'Identity Management & Access Control', desc:'Manage identities and credentials for authorized users, services, and hardware. Manage access permissions and authorizations.',domain:'PR', domainLabel:'PROTECT',   defaultS:'partial', defaultM:'implemented',  defaultL:'implemented' },
+  { id:8,  name:'Awareness & Training',              desc:'Provide cybersecurity awareness education and training for all personnel including third parties.',                                  domain:'PR', domainLabel:'PROTECT',   defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:9,  name:'Data Security',                     desc:'Manage data consistent with risk strategy to protect confidentiality, integrity, and availability of information.',                 domain:'PR', domainLabel:'PROTECT',   defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:10, name:'Platform Security',                 desc:'Manage hardware, software, and services in a manner consistent with the organization's risk strategy.',                            domain:'PR', domainLabel:'PROTECT',   defaultS:'partial', defaultM:'partial',      defaultL:'implemented' },
+  { id:11, name:'Technology Infrastructure Resilience', desc:'Manage security architecture, configuration, and operational resilience of technology infrastructure.',                        domain:'PR', domainLabel:'PROTECT',   defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:12, name:'Continuous Monitoring',             desc:'Monitor assets and information to detect anomalies, indicators of compromise, and other potentially adverse events.',               domain:'DE', domainLabel:'DETECT',    defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:13, name:'Adverse Event Analysis',            desc:'Analyze anomalies, indicators of compromise, and other potentially adverse events to characterize incidents.',                      domain:'DE', domainLabel:'DETECT',    defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:14, name:'Incident Management',               desc:'Establish and maintain incident response processes to prepare, detect, analyze, contain, eradicate, and recover from incidents.',   domain:'RS', domainLabel:'RESPOND',   defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:15, name:'Incident Analysis',                 desc:'Conduct investigations to ensure effective response and support forensics and recovery activities.',                                 domain:'RS', domainLabel:'RESPOND',   defaultS:'none',    defaultM:'none',         defaultL:'partial'     },
+  { id:16, name:'Incident Response Reporting',       desc:'Report and communicate incidents to internal and external stakeholders per legal and regulatory requirements.',                      domain:'RS', domainLabel:'RESPOND',   defaultS:'none',    defaultM:'none',         defaultL:'partial'     },
+  { id:17, name:'Mitigation',                        desc:'Perform activities to prevent expansion of an event, mitigate its effects, and resolve the incident.',                              domain:'RS', domainLabel:'RESPOND',   defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:18, name:'Incident Recovery Plan',            desc:'Restore assets and operations affected by cybersecurity incidents using recovery plans and processes.',                              domain:'RC', domainLabel:'RECOVER',   defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:19, name:'Incident Recovery Communication',   desc:'Coordinate restoration activities with internal and external parties including ISACs and coordinating centers.',                    domain:'RC', domainLabel:'RECOVER',   defaultS:'none',    defaultM:'none',         defaultL:'partial'     },
+];
+
+// ── CMMC 2.0 LEVEL 1 CONTROLS ────────────────────────────────
+const CMMC_CONTROLS = [
+  { id:1,  name:'Authorized Access Control',         desc:'Limit system access to authorized users, processes acting on behalf of authorized users, and devices.',                            domain:'AC', domainLabel:'ACCESS CTRL',   defaultS:'partial', defaultM:'partial',      defaultL:'implemented' },
+  { id:2,  name:'Transaction & Function Control',    desc:'Limit system access to the types of transactions and functions that authorized users are permitted to execute.',                    domain:'AC', domainLabel:'ACCESS CTRL',   defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:3,  name:'External Connections',              desc:'Verify and control all connections to external systems.',                                                                            domain:'AC', domainLabel:'ACCESS CTRL',   defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:4,  name:'Control CUI on Devices',            desc:'Control the flow of CUI in accordance with approved authorizations and limit use on portable and mobile devices.',                  domain:'AC', domainLabel:'ACCESS CTRL',   defaultS:'none',    defaultM:'none',         defaultL:'partial'     },
+  { id:5,  name:'Identify & Authenticate Users',     desc:'Identify system users, processes, and devices. Authenticate the identities of those users, processes, or devices before allowing access.', domain:'IA', domainLabel:'IDENTITY',  defaultS:'partial', defaultM:'implemented',  defaultL:'implemented' },
+  { id:6,  name:'Authenticate Devices',              desc:'Authenticate (or verify) the identities of those devices as required.',                                                             domain:'IA', domainLabel:'IDENTITY',      defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:7,  name:'Sanitize / Destroy Media',          desc:'Sanitize or destroy information system media before disposal or reuse to prevent unauthorized disclosure of CUI.',                  domain:'MP', domainLabel:'MEDIA PROT',    defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:8,  name:'Limit Physical Access',             desc:'Limit physical access to organizational systems to authorized individuals.',                                                        domain:'PE', domainLabel:'PHYSICAL',       defaultS:'partial', defaultM:'implemented',  defaultL:'implemented' },
+  { id:9,  name:'Escort Visitors',                   desc:'Escort visitors and monitor visitor activity on premises.',                                                                         domain:'PE', domainLabel:'PHYSICAL',       defaultS:'partial', defaultM:'implemented',  defaultL:'implemented' },
+  { id:10, name:'Audit Physical Access',             desc:'Maintain audit logs of physical access to facilities containing organizational systems.',                                           domain:'PE', domainLabel:'PHYSICAL',       defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:11, name:'Assess Periodically',               desc:'Periodically assess the risk to organizational operations, assets, and individuals resulting from the operation of systems.',       domain:'RA', domainLabel:'RISK ASSESS',   defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:12, name:'Scan for Vulnerabilities',          desc:'Scan for vulnerabilities in organizational systems periodically and remediate identified vulnerabilities in a timely manner.',       domain:'RA', domainLabel:'RISK ASSESS',   defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:13, name:'Security Awareness Training',       desc:'Ensure that personnel are aware of the security risks associated with their activities and applicable policies.',                   domain:'AT', domainLabel:'AWARENESS',     defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:14, name:'Train on Recognized Threats',       desc:'Ensure that personnel are trained to carry out their assigned responsibilities and recognize threats including social engineering.', domain:'AT', domainLabel:'AWARENESS',     defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:15, name:'Configuration Management',          desc:'Establish baseline configurations and inventories of organizational systems and enforce security configuration settings.',          domain:'CM', domainLabel:'CONFIG MGMT',   defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:16, name:'Flaw Remediation',                  desc:'Identify, report, and correct information and system flaws in a timely manner.',                                                    domain:'SI', domainLabel:'SYS INTEG',    defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:17, name:'Malicious Code Protection',         desc:'Provide protection from malicious code at appropriate locations within organizational systems.',                                    domain:'SI', domainLabel:'SYS INTEG',    defaultS:'partial', defaultM:'implemented',  defaultL:'implemented' },
+];
+
+// ── HIPAA SECURITY RULE CONTROLS ─────────────────────────────
+const HIPAA_CONTROLS = [
+  { id:1,  name:'Security Management Process',       desc:'Implement policies and procedures to prevent, detect, contain, and correct security violations. Includes risk analysis and management.', domain:'AD', domainLabel:'ADMIN',    defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:2,  name:'Assigned Security Responsibility',  desc:'Identify the security official responsible for HIPAA security policies and procedures.',                                                   domain:'AD', domainLabel:'ADMIN',    defaultS:'partial', defaultM:'implemented',  defaultL:'implemented' },
+  { id:3,  name:'Workforce Security',                desc:'Implement policies ensuring workforce members have appropriate access to ePHI and preventing unauthorized access.',                        domain:'AD', domainLabel:'ADMIN',    defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:4,  name:'Information Access Management',     desc:'Implement policies for authorizing access to ePHI consistent with applicable requirements and the minimum necessary standard.',           domain:'AD', domainLabel:'ADMIN',    defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:5,  name:'Security Awareness & Training',     desc:'Implement security awareness and training programs for all workforce members including management.',                                       domain:'AD', domainLabel:'ADMIN',    defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:6,  name:'Security Incident Procedures',      desc:'Implement policies and procedures to address security incidents including response and reporting.',                                        domain:'AD', domainLabel:'ADMIN',    defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:7,  name:'Contingency Plan',                  desc:'Establish policies for responding to emergencies that damage systems containing ePHI. Includes backup, DR, and testing.',                 domain:'AD', domainLabel:'ADMIN',    defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:8,  name:'Evaluation',                        desc:'Perform periodic technical and non-technical evaluation of security measures in response to environmental or operational changes.',        domain:'AD', domainLabel:'ADMIN',    defaultS:'none',    defaultM:'none',         defaultL:'partial'     },
+  { id:9,  name:'Business Associate Contracts',      desc:'Obtain satisfactory assurances from business associates handling ePHI through written contracts or arrangements.',                        domain:'AD', domainLabel:'ADMIN',    defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:10, name:'Facility Access Controls',          desc:'Implement policies to limit physical access to systems and facilities while ensuring authorized access is allowed.',                       domain:'PH', domainLabel:'PHYSICAL',  defaultS:'partial', defaultM:'implemented',  defaultL:'implemented' },
+  { id:11, name:'Workstation Use Policy',            desc:'Specify proper functions performed by workstations and the manner in which those functions are performed.',                                domain:'PH', domainLabel:'PHYSICAL',  defaultS:'partial', defaultM:'implemented',  defaultL:'implemented' },
+  { id:12, name:'Workstation Security',              desc:'Implement physical safeguards for all workstations that access ePHI to restrict access to authorized users.',                              domain:'PH', domainLabel:'PHYSICAL',  defaultS:'partial', defaultM:'implemented',  defaultL:'implemented' },
+  { id:13, name:'Device & Media Controls',           desc:'Implement policies for final disposition, reuse, and accountability of hardware and electronic media containing ePHI.',                   domain:'PH', domainLabel:'PHYSICAL',  defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:14, name:'Access Controls',                   desc:'Implement technical policies allowing only authorized persons or software programs to access ePHI.',                                       domain:'TC', domainLabel:'TECHNICAL',  defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:15, name:'Audit Controls',                    desc:'Implement hardware, software, and procedural mechanisms to record and examine activity in systems containing ePHI.',                       domain:'TC', domainLabel:'TECHNICAL',  defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:16, name:'Integrity Controls',                desc:'Implement policies to protect ePHI from improper alteration or destruction and electronic mechanisms to confirm no improper changes.',     domain:'TC', domainLabel:'TECHNICAL',  defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+  { id:17, name:'Person or Entity Authentication',   desc:'Implement procedures to verify that a person or entity seeking access to ePHI is the one claimed.',                                       domain:'TC', domainLabel:'TECHNICAL',  defaultS:'partial', defaultM:'implemented',  defaultL:'implemented' },
+  { id:18, name:'Transmission Security',             desc:'Implement technical security measures to guard against unauthorized access to ePHI transmitted over electronic communications.',          domain:'TC', domainLabel:'TECHNICAL',  defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
+];
+
+// ── FRAMEWORK CONFIG MAP ──────────────────────────────────────
+const FRAMEWORK_CONFIG = {
+  cis: {
+    controls:   () => CIS_CONTROLS,
+    categories: [
+      { label:'Asset & Data Management', ids:[1,2,3] },
+      { label:'Configuration & Access',  ids:[4,5,6] },
+      { label:'Vulnerability & Logging', ids:[7,8] },
+      { label:'Threat Defense',          ids:[9,10,11] },
+      { label:'Network Security',        ids:[12,13] },
+      { label:'People & Process',        ids:[14,15,17] },
+      { label:'Advanced Controls',       ids:[16,18] },
+    ],
+    label:      'CIS Controls v8',
+    badgeLabel: (ctrl) => `IG${ctrl.ig}`,
+    badgeColor: (ctrl) => ctrl.ig === 1 ? '#2d7a4f' : ctrl.ig === 2 ? '#c9830a' : '#c9303a',
+    defaultKey: (ig)   => `defaultIG${ig}`,
+    panelTitle: 'CIS CONTROLS ASSESSMENT',
+    colHeader:  'IG',
+  },
+  nist: {
+    controls:   () => NIST_CONTROLS,
+    categories: [
+      { label:'Govern',   ids:[1,2,3] },
+      { label:'Identify', ids:[4,5,6] },
+      { label:'Protect',  ids:[7,8,9,10,11] },
+      { label:'Detect',   ids:[12,13] },
+      { label:'Respond',  ids:[14,15,16,17] },
+      { label:'Recover',  ids:[18,19] },
+    ],
+    label:      'NIST CSF 2.0',
+    badgeLabel: (ctrl) => ctrl.domain,
+    badgeColor: (ctrl) => ({ GV:'#4a6fa5', ID:'#2d7a4f', PR:'#c9830a', DE:'#8b5cf6', RS:'#c9303a', RC:'#0891b2' })[ctrl.domain] || '#666',
+    defaultKey: (ig)   => ig === 1 ? 'defaultS' : ig === 2 ? 'defaultM' : 'defaultL',
+    panelTitle: 'NIST CSF 2.0 ASSESSMENT',
+    colHeader:  'DOMAIN',
+  },
+  cmmc: {
+    controls:   () => CMMC_CONTROLS,
+    categories: [
+      { label:'Access Control',        ids:[1,2,3,4] },
+      { label:'Identity & Auth',       ids:[5,6] },
+      { label:'Media & Physical',      ids:[7,8,9,10] },
+      { label:'Risk Assessment',       ids:[11,12] },
+      { label:'Awareness & Training',  ids:[13,14] },
+      { label:'Config & Integrity',    ids:[15,16,17] },
+    ],
+    label:      'CMMC 2.0 Level 1',
+    badgeLabel: (ctrl) => ctrl.domain,
+    badgeColor: (ctrl) => ({ AC:'#1a3a5c', IA:'#2d7a4f', MP:'#c9830a', PE:'#8b5cf6', RA:'#c9303a', AT:'#0891b2', CM:'#d97706', SI:'#dc2626' })[ctrl.domain] || '#666',
+    defaultKey: (ig)   => ig === 1 ? 'defaultS' : ig === 2 ? 'defaultM' : 'defaultL',
+    panelTitle: 'CMMC 2.0 LEVEL 1 ASSESSMENT',
+    colHeader:  'DOMAIN',
+  },
+  hipaa: {
+    controls:   () => HIPAA_CONTROLS,
+    categories: [
+      { label:'Admin — Risk & Policy',      ids:[1,2,3] },
+      { label:'Admin — Access & Training',  ids:[4,5,6] },
+      { label:'Admin — Continuity',         ids:[7,8,9] },
+      { label:'Physical Safeguards',        ids:[10,11,12,13] },
+      { label:'Technical Safeguards',       ids:[14,15,16,17,18] },
+    ],
+    label:      'HIPAA Security Rule',
+    badgeLabel: (ctrl) => ctrl.domain,
+    badgeColor: (ctrl) => ({ AD:'#1a3a5c', PH:'#2d7a4f', TC:'#c9830a' })[ctrl.domain] || '#666',
+    defaultKey: (ig)   => ig === 1 ? 'defaultS' : ig === 2 ? 'defaultM' : 'defaultL',
+    panelTitle: 'HIPAA SECURITY RULE ASSESSMENT',
+    colHeader:  'SAFEGUARD',
+  },
+};
+
+// Helper — get active framework config and controls
+function fw()         { return FRAMEWORK_CONFIG[state.framework] || FRAMEWORK_CONFIG.cis; }
+function fwControls() { return fw().controls(); }
+
 // Score map
 const SCORE = { 'none': 0, 'partial': 1, 'implemented': 2 };
 const SCORE_LABEL = { 'none': 'Not Started', 'partial': 'Partial', 'implemented': 'Implemented' };
@@ -120,9 +263,10 @@ function goToStep(n) {
 }
 
 // ── STEP 1 ───────────────────────────────────────────────────
-frameworkCards.forEach(card => {
+// Select all framework cards including newly activated ones
+document.querySelectorAll('.framework-card:not(.coming-soon)').forEach(card => {
   card.addEventListener('click', () => {
-    frameworkCards.forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('.framework-card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
     state.framework = card.dataset.framework;
   });
