@@ -269,6 +269,9 @@ document.querySelectorAll('.framework-card:not(.coming-soon)').forEach(card => {
     document.querySelectorAll('.framework-card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
     state.framework = card.dataset.framework;
+    // Update Step 2 framework label
+    const fwLabelEl = document.getElementById('selectedFwLabel');
+    if (fwLabelEl) fwLabelEl.textContent = fw().label;
   });
 });
 
@@ -1056,9 +1059,11 @@ importFile.addEventListener('change', () => {
       });
 
       // Restore framework selection
-      frameworkCards.forEach(c => {
+      document.querySelectorAll('.framework-card').forEach(c => {
         c.classList.toggle('selected', c.dataset.framework === state.framework);
       });
+      const fwLabelEl = document.getElementById('selectedFwLabel');
+      if (fwLabelEl) fwLabelEl.textContent = fw().label;
 
       // Re-render assessment with restored values
       renderAssessmentRows();
