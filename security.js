@@ -169,35 +169,40 @@ step2Next.addEventListener('click', () => {
 
 // ── STEP 3 ───────────────────────────────────────────────────
 function buildAssessment() {
-  const ig = state.client.ig;
-  const defaultKey = `defaultIG${ig}`;
+  const ig         = state.client.ig;
+  const config     = fw();
+  const defaultKey = config.defaultKey(ig);
+  const controls   = fwControls();
 
   // preserve any existing notes/values
   const existing = {};
   state.assessment.forEach(a => { existing[a.id] = a; });
 
-  state.assessment = CIS_CONTROLS.map(ctrl => ({
+  state.assessment = controls.map(ctrl => ({
     id:      ctrl.id,
     current: existing[ctrl.id]?.current ?? ctrl[defaultKey],
-    ideal:   existing[ctrl.id]?.ideal   ?? getIdealDefault(ctrl, ig),
+    ideal:   existing[ctrl.id]?.ideal   ?? 'implemented',
     notes:   existing[ctrl.id]?.notes   ?? ''
   }));
 
   renderAssessmentRows();
 }
 
-function getIdealDefault(ctrl, ig) {
-  // Ideal state is always Implemented — that is the target regardless of IG tier.
-  // The MSP can manually lower individual controls if there is a specific reason.
-  return 'implemented';
-}
-
 function renderAssessmentRows() {
+  const config   = fw();
+  const controls = fwControls();
+
+  // Update panel title dynamically
+  const panelTitle = document.querySelector('#step3 .panel-title');
+  if (panelTitle) panelTitle.textContent = config.panelTitle;
+  const colHdr = document.querySelector('.col-h-ig');
+  if (colHdr) colHdr.textContent = config.colHeader;
+
   assessmentRows.innerHTML = '';
-  CIS_CONTROLS.forEach((ctrl, idx) => {
-    const a = state.assessment[idx];
-    const igNum = ctrl.ig;
-    const igColor = igNum === 1 ? '#2d7a4f' : igNum === 2 ? '#c9830a' : '#c9303a';
+  controls.forEach((ctrl, idx) => {
+    const a         = state.assessment[idx] || { current: 'none', ideal: 'implemented', notes: '' };
+    const badgeColor = config.badgeColor(ctrl);
+    const badgeText  = config.badgeLabel(ctrl);
 
     const row = document.createElement('div');
     row.className = 'assessment-row';
@@ -208,7 +213,7 @@ function renderAssessmentRows() {
         <div class="row-control-desc">${ctrl.desc}</div>
       </div>
       <div>
-        <span class="row-ig" style="background:${igColor}">IG${igNum}</span>
+        <span class="row-ig" style="background:${badgeColor};font-size:9px;letter-spacing:0.02em;">${badgeText}</span>
       </div>
       <div>
         <select class="state-select val-${a.current}" data-idx="${idx}" data-type="current">
@@ -328,8 +333,9 @@ async function generateWidgets() {
 }
 
 function computeGaps() {
+  const controls = fwControls();
   return state.assessment.map((a, idx) => {
-    const ctrl  = CIS_CONTROLS[idx];
+    const ctrl  = controls[idx];
     const cScore = SCORE[a.current];
     const iScore = SCORE[a.ideal];
     const gap    = iScore - cScore;
@@ -368,7 +374,7 @@ function wrapWidget(title, content) {
     <tr>
       <td style="background:${P()};color:#ffffff;padding:14px 18px;">
         <div style="font-size:14px;font-weight:bold;letter-spacing:0.12em;text-transform:uppercase;">${title}</div>
-        <div style="font-size:11px;opacity:0.7;margin-top:3px;letter-spacing:0.06em;">{{company.name}} &nbsp;·&nbsp; CIS Controls v8 &nbsp;·&nbsp; {{date quote.createdAt}}</div>
+        <div style="font-size:11px;opacity:0.7;margin-top:3px;letter-spacing:0.06em;">{{company.name}} &nbsp;·&nbsp; ${fw().label} &nbsp;·&nbsp; {{date quote.createdAt}}</div>
       </td>
     </tr>
   </table>
@@ -389,11 +395,14 @@ function wrapWidget(title, content) {
 
 function buildCurrentStateWidget() {
   let rows = '';
+  const fwc = fw();
   state.assessment.forEach((a, idx) => {
-    const ctrl = CIS_CONTROLS[idx];
+    const ctrl = fwControls()[idx];
+    if (!ctrl) return;
     const bgColor = idx % 2 === 0 ? '#ffffff' : '#faf8f4';
     const statusColor = a.current === 'implemented' ? '#2d7a4f' : a.current === 'partial' ? '#c9830a' : '#999';
-    const igColor = ctrl.ig === 1 ? '#2d7a4f' : ctrl.ig === 2 ? '#c9830a' : '#c9303a';
+    const badgeColor = fwc.badgeColor(ctrl);
+    const badgeText  = fwc.badgeLabel(ctrl);
     const notesCell = a.notes
       ? `<td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;font-size:11px;color:#5a5750;font-style:italic;">${a.notes}</td>`
       : '<td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;"></td>';
@@ -401,7 +410,7 @@ function buildCurrentStateWidget() {
       <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;font-size:12px;font-weight:bold;white-space:nowrap;color:#8a8680;">${ctrl.id}</td>
       <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;font-size:12px;overflow:hidden;">${ctrl.name}</td>
       <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;text-align:center;white-space:nowrap;">
-        <span style="background:${igColor};color:white;padding:2px 8px;font-size:10px;font-weight:bold;white-space:nowrap;display:inline-block;">IG${ctrl.ig}</span>
+        <span style="background:${badgeColor};color:white;padding:2px 6px;font-size:9px;font-weight:bold;white-space:nowrap;display:inline-block;">${badgeText}</span>
       </td>
       <td style="padding:8px 10px;border-bottom:1px solid #e8e4dc;text-align:center;white-space:nowrap;">
         <span style="background:${statusColor};color:white;padding:3px 10px;font-size:10px;font-weight:bold;white-space:nowrap;display:inline-block;">${SCORE_LABEL[a.current].toUpperCase()}</span>
@@ -496,16 +505,8 @@ function buildIdealStateWidget() {
 }
 
 function buildRiskLandscapeWidget(gaps) {
-  // Heat map: domains as rows, risk level as colored cell
-  const categories = [
-    { label: 'Asset & Data Management', ids: [1, 2, 3] },
-    { label: 'Configuration & Access',  ids: [4, 5, 6] },
-    { label: 'Vulnerability & Logging', ids: [7, 8] },
-    { label: 'Threat Defense',          ids: [9, 10, 11] },
-    { label: 'Network Security',        ids: [12, 13] },
-    { label: 'People & Process',        ids: [14, 15, 17] },
-    { label: 'Advanced Controls',       ids: [16, 18] },
-  ];
+  // Heat map: use framework-specific categories
+  const categories = fw().categories;
 
   function getRisk(ids) {
     const scores = ids.map(id => {
@@ -593,7 +594,7 @@ function buildFallbackExecSummary(gaps) {
     <tr>
       <td style="padding:20px 24px;font-size:13px;line-height:1.7;color:#1a1a18;">
         <p style="margin:0 0 6px 0;font-size:12px;color:#8a8680;letter-spacing:0.08em;">Dear {{contact.firstName}},</p>
-        <p style="margin:0 0 14px 0;">This assessment evaluates <strong>{{company.name}}</strong>'s current cybersecurity posture against the CIS Controls v8 framework, targeting ${igLabel} as the baseline standard for an organization of this profile.</p>
+        <p style="margin:0 0 14px 0;">This assessment evaluates <strong>{{company.name}}</strong>'s current cybersecurity posture against the CIS Controls v8 framework, targeting ${igLabel} as the baseline standard, assessed against ${fw().label}.</p>
         <p style="margin:0 0 14px 0;">Of the 18 CIS Control domains assessed, <strong>${implemented} controls</strong> are currently meeting or exceeding the target state. The assessment identified <strong>${critical} critical gap${critical !== 1 ? 's' : ''}</strong> and <strong>${high} high-priority gap${high !== 1 ? 's' : ''}</strong> requiring near-term remediation.</p>
         <p style="margin:0;">The recommended security program outlined in this proposal is designed to close identified gaps in a structured, prioritized manner — reducing risk exposure while aligning with industry best practices and applicable regulatory requirements.</p>
       </td>
@@ -642,7 +643,7 @@ MSP PRIMARY COLOR: ${P()}
 CLIENT: ${cn()}
 INDUSTRY: ${state.client.industry || 'not specified'}
 ORGANIZATION SIZE: IG${ig} (${ig === 1 ? '1-100 users' : ig === 2 ? '100-500 users' : '500+ users'})
-FRAMEWORK: CIS Controls v8
+FRAMEWORK: ${fw().label}
 APPLICABLE REGULATIONS: ${regs}
 CRITICAL GAPS: ${criticalGaps.join(', ') || 'none'}
 HIGH PRIORITY GAPS: ${highGaps.join(', ') || 'none'}
@@ -953,8 +954,8 @@ exportXlsxBtn.addEventListener('click', () => {
     ['SECURITY ASSESSMENT — TECH QUESTIONNAIRE'],
     [''],
     ['Client:', state.client.name],
-    ['Framework:', 'CIS Controls v8'],
-    ['IG Level:', `IG${ig} — ${ig === 1 ? 'Essential (1–100 users)' : ig === 2 ? 'Foundational (100–500 users)' : 'Advanced (500+ users)'}`],
+    ['Framework:', fw().label],
+    ['Org Size:', `${ig === 1 ? 'Small (1–100 users)' : ig === 2 ? 'Mid-size (100–500 users)' : 'Large (500+ users)'}`],
     ['Date:', new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' })],
     [''],
     ['INSTRUCTIONS FOR TECH:'],
@@ -976,8 +977,10 @@ exportXlsxBtn.addEventListener('click', () => {
   XLSX.utils.book_append_sheet(wb, instrSheet, 'Instructions');
 
   // ── Sheet 2: Assessment ────────────────────────────────────
-  const headerRow = ['ID', 'Control Domain', 'Description', 'IG Level', 'Current State', 'Notes'];
-  const dataRows  = CIS_CONTROLS.map((ctrl, idx) => {
+  const fwConf    = fw();
+  const fwCtrls   = fwControls();
+  const headerRow = ['ID', 'Control Domain', 'Description', fwConf.colHeader, 'Current State', 'Notes'];
+  const dataRows  = fwCtrls.map((ctrl, idx) => {
     const a    = state.assessment[idx];
     const curr = a.current === 'implemented' ? 'Implemented'
                : a.current === 'partial'     ? 'Partial'
@@ -986,7 +989,7 @@ exportXlsxBtn.addEventListener('click', () => {
       ctrl.id,
       ctrl.name,
       ctrl.desc,
-      `IG${ctrl.ig}`,
+      fwConf.badgeLabel(ctrl),
       curr,
       a.notes || ''
     ];
