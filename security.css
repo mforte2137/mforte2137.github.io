@@ -837,3 +837,8 @@ body {
   font-size: 14px;
   user-select: none;
 }
+
+/* ── FRAMEWORK CARD ICON STATE ── */
+.framework-card .framework-icon { color: var(--border-dark); transition: color 0.15s; }
+.framework-card.selected .framework-icon { color: var(--accent-a); }
+.framework-card.coming-soon .framework-icon { color: var(--border); }
