@@ -15,12 +15,12 @@
       <span class="app-subtitle">MSP Framework Assessment Tool</span>
     </div>
     <div class="header-right">
-      <button class="btn-session" id="importBtn" title="Import a saved session file">IMPORT SESSION</button>
-      <button class="btn-session btn-session-export" id="exportBtn" title="Save current session to file">EXPORT SESSION</button>
+      <button class="btn-session" id="importBtn" title="Import a saved session file">LOAD SESSION</button>
+      <button class="btn-session btn-session-export" id="exportBtn" title="Save current session to file">SAVE SESSION</button>
       <input type="file" id="importFile" accept=".json" style="display:none;">
       <span class="header-divider">|</span>
       <button class="btn-session" id="importXlsxBtn" title="Import tech assessment spreadsheet">IMPORT SPREADSHEET</button>
-      <button class="btn-session btn-session-export" id="exportXlsxBtn" title="Download tech assessment spreadsheet">TECH SPREADSHEET</button>
+      <button class="btn-session btn-session-export" id="exportXlsxBtn" title="Download tech assessment spreadsheet">TECH SHEET</button>
       <input type="file" id="importXlsxFile" accept=".xlsx,.csv" style="display:none;">
       <span class="step-indicator" id="stepIndicator">STEP 1 OF 5</span>
     </div>
@@ -233,7 +233,7 @@
     <section class="step-panel" id="step3">
       <div class="panel-header">
         <h1 class="panel-title">CIS CONTROLS ASSESSMENT</h1>
-        <p class="panel-desc">Rate current implementation and target state for each control. Defaults are set for the selected IG level.</p>
+        <p class="panel-desc">Rate current implementation and target state for each control. If you need technical input, use the <strong>Tech Handoff</strong> section below the assessment to save your progress and send a spreadsheet to your tech team.</p>
       </div>
 
       <div class="assessment-legend">
@@ -265,6 +265,35 @@
         <div id="assessmentRows">
           <!-- Populated by JS -->
         </div>
+      </div>
+
+      <!-- TECH HANDOFF PANELS -->
+      <div class="handoff-grid">
+
+        <div class="handoff-panel handoff-pause">
+          <div class="handoff-icon">⏸</div>
+          <div class="handoff-content">
+            <div class="handoff-title">NEED TECH INPUT?</div>
+            <div class="handoff-desc">Save your session and send the tech a pre-filled spreadsheet. When they return it, use the Resume panel to pick up where you left off.</div>
+            <div class="handoff-actions">
+              <button class="btn-handoff" id="saveSessionBtn">SAVE SESSION</button>
+              <button class="btn-handoff btn-handoff-accent" id="downloadTechBtn">DOWNLOAD TECH SPREADSHEET</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="handoff-panel handoff-resume">
+          <div class="handoff-icon">▶</div>
+          <div class="handoff-content">
+            <div class="handoff-title">RESUMING FROM A SAVED SESSION?</div>
+            <div class="handoff-desc">Load your saved session first to restore client and framework settings, then import the completed tech spreadsheet to populate the assessment.</div>
+            <div class="handoff-actions">
+              <button class="btn-handoff" id="loadSessionBtn">LOAD SESSION</button>
+              <button class="btn-handoff btn-handoff-accent" id="importTechBtn">IMPORT TECH SPREADSHEET</button>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <div class="step-actions">
