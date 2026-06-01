@@ -57,6 +57,11 @@ const importFile         = document.getElementById('importFile');
 const exportXlsxBtn      = document.getElementById('exportXlsxBtn');
 const importXlsxBtn      = document.getElementById('importXlsxBtn');
 const importXlsxFile     = document.getElementById('importXlsxFile');
+// Handoff panel buttons (Step 3)
+const saveSessionBtn     = document.getElementById('saveSessionBtn');
+const downloadTechBtn    = document.getElementById('downloadTechBtn');
+const loadSessionBtn     = document.getElementById('loadSessionBtn');
+const importTechBtn      = document.getElementById('importTechBtn');
 
 // ── STATE ───────────────────────────────────────────────────
 let state = {
@@ -1123,6 +1128,13 @@ importFile.addEventListener('change', () => {
   };
   reader.readAsText(file);
 });
+
+// ── HANDOFF PANEL BUTTON WIRING ─────────────────────────────
+// These delegate to the existing export/import handlers
+saveSessionBtn.addEventListener('click',  () => exportBtn.click());
+downloadTechBtn.addEventListener('click', () => exportXlsxBtn.click());
+loadSessionBtn.addEventListener('click',  () => importBtn.click());
+importTechBtn.addEventListener('click',   () => importXlsxBtn.click());
 
 // ── SPREADSHEET EXPORT / IMPORT ─────────────────────────────
 const VALID_STATES = ['Not Started', 'Partial', 'Implemented'];
