@@ -269,15 +269,27 @@ document.querySelectorAll('.framework-card:not(.coming-soon)').forEach(card => {
     document.querySelectorAll('.framework-card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
     state.framework = card.dataset.framework;
-    // Update Step 2 framework label
+    // Update Step 2 framework label and IG badge labels
     const fwLabelEl = document.getElementById('selectedFwLabel');
     if (fwLabelEl) fwLabelEl.textContent = fw().label;
+    updateIgBadges();
   });
 });
 
 step1Next.addEventListener('click', () => goToStep(2));
 
 // ── STEP 2 ───────────────────────────────────────────────────
+function updateIgBadges() {
+  const isCIS = state.framework === 'cis';
+  const badges = [
+    { el: document.querySelector('[data-ig="1"] .ig-badge'), cis: 'IG1', other: 'S' },
+    { el: document.querySelector('[data-ig="2"] .ig-badge'), cis: 'IG2', other: 'M' },
+    { el: document.querySelector('[data-ig="3"] .ig-badge'), cis: 'IG3', other: 'L' },
+  ];
+  badges.forEach(b => {
+    if (b.el) b.el.textContent = isCIS ? b.cis : b.other;
+  });
+}
 igOptions.forEach(opt => {
   opt.addEventListener('click', () => {
     igOptions.forEach(o => o.classList.remove('selected'));
@@ -1064,6 +1076,7 @@ importFile.addEventListener('change', () => {
       });
       const fwLabelEl = document.getElementById('selectedFwLabel');
       if (fwLabelEl) fwLabelEl.textContent = fw().label;
+      updateIgBadges();
 
       // Re-render assessment with restored values
       renderAssessmentRows();
