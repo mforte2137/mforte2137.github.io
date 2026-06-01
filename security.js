@@ -167,6 +167,23 @@ const HIPAA_CONTROLS = [
   { id:18, name:'Transmission Security',             desc:'Implement technical security measures to guard against unauthorized access to ePHI transmitted over electronic communications.',          domain:'TC', domainLabel:'TECHNICAL',  defaultS:'none',    defaultM:'partial',      defaultL:'implemented' },
 ];
 
+
+// ── PCI-DSS v4.0 CONTROLS ────────────────────────────────────
+const PCI_CONTROLS = [
+  { id:1,  name:'Install & Maintain Network Security Controls', desc:'Install and maintain network security controls (firewalls, routers) to protect the cardholder data environment from unauthorized access.',           domain:'NW', domainLabel:'NETWORK',    defaultS:'partial', defaultM:'partial',     defaultL:'implemented' },
+  { id:2,  name:'Secure Configurations for All Components',     desc:'Apply secure configurations to all system components. Do not use vendor-supplied defaults for passwords or other security parameters.',             domain:'NW', domainLabel:'NETWORK',    defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+  { id:3,  name:'Protect Stored Account Data',                  desc:'Protect stored account data by minimizing storage, rendering PAN unreadable, and protecting encryption keys.',                                          domain:'PD', domainLabel:'PROTECT DATA', defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+  { id:4,  name:'Protect Cardholder Data in Transit',           desc:'Protect cardholder data with strong cryptography during transmission over open, public networks.',                                                      domain:'PD', domainLabel:'PROTECT DATA', defaultS:'partial', defaultM:'implemented', defaultL:'implemented' },
+  { id:5,  name:'Protect All Systems Against Malware',          desc:'Protect all systems and networks from malicious software. Deploy and maintain anti-malware solutions on all applicable systems.',                       domain:'VM', domainLabel:'VULN MGMT',  defaultS:'partial', defaultM:'implemented', defaultL:'implemented' },
+  { id:6,  name:'Develop & Maintain Secure Systems',            desc:'Develop and maintain secure systems and software. Protect systems from known vulnerabilities by patching and using secure development practices.',     domain:'VM', domainLabel:'VULN MGMT',  defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+  { id:7,  name:'Restrict Access to System Components',         desc:'Restrict access to system components and cardholder data to only those individuals whose job requires such access.',                                    domain:'AC', domainLabel:'ACCESS CTRL', defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+  { id:8,  name:'Identify Users & Authenticate Access',         desc:'Identify users and authenticate access to system components. Assign a unique ID to each person with access. Enforce MFA for all access into the CDE.',domain:'AC', domainLabel:'ACCESS CTRL', defaultS:'partial', defaultM:'implemented', defaultL:'implemented' },
+  { id:9,  name:'Restrict Physical Access to Cardholder Data',  desc:'Restrict physical access to systems and data that store, process, or transmit cardholder data.',                                                       domain:'AC', domainLabel:'ACCESS CTRL', defaultS:'partial', defaultM:'implemented', defaultL:'implemented' },
+  { id:10, name:'Log & Monitor All Access to System Components',desc:'Log and monitor all access to network resources and cardholder data. Implement audit logging and review logs daily.',                                   domain:'MN', domainLabel:'MONITOR',    defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+  { id:11, name:'Test Security of Systems & Networks Regularly',desc:'Test security of systems and networks regularly. Run vulnerability scans, penetration tests, and intrusion detection.',                                  domain:'MN', domainLabel:'MONITOR',    defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+  { id:12, name:'Support Information Security with Policies',   desc:'Support information security with organizational policies and programs. Maintain a security policy and security awareness program for all personnel.',  domain:'PL', domainLabel:'POLICY',     defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+];
+
 // ── FRAMEWORK CONFIG MAP ──────────────────────────────────────
 const FRAMEWORK_CONFIG = {
   cis: {
@@ -236,6 +253,23 @@ const FRAMEWORK_CONFIG = {
     defaultKey: (ig)   => ig === 1 ? 'defaultS' : ig === 2 ? 'defaultM' : 'defaultL',
     panelTitle: 'HIPAA SECURITY RULE ASSESSMENT',
     colHeader:  'SAFEGUARD',
+  },
+  pci: {
+    controls:   () => PCI_CONTROLS,
+    categories: [
+      { label:'Network Security',   ids:[1,2] },
+      { label:'Data Protection',    ids:[3,4] },
+      { label:'Vulnerability Mgmt', ids:[5,6] },
+      { label:'Access Control',     ids:[7,8,9] },
+      { label:'Monitoring & Testing',ids:[10,11] },
+      { label:'Policy & Awareness', ids:[12] },
+    ],
+    label:      'PCI-DSS v4.0',
+    badgeLabel: (ctrl) => ctrl.domain,
+    badgeColor: (ctrl) => ({ NW:'#1a3a5c', PD:'#c9303a', VM:'#c9830a', AC:'#2d7a4f', MN:'#8b5cf6', PL:'#0891b2' })[ctrl.domain] || '#666',
+    defaultKey: (ig)   => ig === 1 ? 'defaultS' : ig === 2 ? 'defaultM' : 'defaultL',
+    panelTitle: 'PCI-DSS v4.0 ASSESSMENT',
+    colHeader:  'DOMAIN',
   },
 };
 
