@@ -154,6 +154,18 @@ const TOOLS = [
     icon: "chart"
   },
   {
+    title: "MSP Security Assessment Tool",
+    shortLabel: "Security Assessment",
+    description:
+      "Generate proposal widgets for all major security framework assessments. Includes technician checklists and tools to build current and ideal state matrices — all ready to drop into Salesbuildr.",
+    category: "Security",
+    url: "https://widgetcreator.netlify.app/security.html",
+    badge: "new",
+    updated: "2026-05-31",
+    gradient: "crimson",
+    icon: "checklist"
+  },
+  {
     title: "Project Tasks → Calculator",
     shortLabel: "Project Calculator",
     description:
@@ -269,7 +281,8 @@ const GRADIENTS = {
   sunset:  "linear-gradient(135deg, #be185d 0%, #ec4899 40%, #fb923c 100%)",
   indigo:  "linear-gradient(135deg, #312e81 0%, #4f46e5 55%, #818cf8 100%)",
   cyan:    "linear-gradient(135deg, #164e63 0%, #0891b2 55%, #67e8f9 100%)",
-  forest:  "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #86efac 100%)"
+  forest:  "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #86efac 100%)",
+  crimson: "linear-gradient(135deg, #7f1d1d 0%, #dc2626 55%, #f87171 100%)"
 };
 
 /* =========================================================
