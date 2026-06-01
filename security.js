@@ -917,8 +917,8 @@ function buildWidgetArray() {
   const WIDGET_ORDER = [
     { key: 'execSummary',   title: 'Executive Summary' },
     { key: 'currentState',  title: 'Current Security Posture' },
-    { key: 'riskLandscape', title: 'Risk Landscape' },
     { key: 'gapAnalysis',   title: 'Gap Analysis' },
+    { key: 'riskLandscape', title: 'Risk Landscape' },
     { key: 'idealState',    title: 'Ideal Security Environment' },
     { key: 'roadmap',       title: 'Recommended Roadmap' },
   ];
