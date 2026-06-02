@@ -149,30 +149,28 @@ async function fetchAllProducts(tenantUrl, apiKey) {
   while (true) {
     updateLoadingLabel(
       `Fetching products… (${results.length}${total ? ' of ' + total : ''})`,
-      'Loading page by page'
+      'Loading page by page — routing via proxy'
     );
 
-    const url = `${tenantUrl}/public-api/product?size=${PAGE}&from=${from}&filters=type:product`;
-    const resp = await fetch(url, {
-      headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' }
+    // All Salesbuildr calls go through the Netlify proxy to avoid CORS
+    const resp = await fetch('/api/sb-products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenantUrl, apiKey, size: PAGE, from }),
     });
 
     if (!resp.ok) {
       const txt = await resp.text();
-      throw new Error(`API ${resp.status}: ${txt.slice(0, 120)}`);
+      throw new Error(`Proxy ${resp.status}: ${txt.slice(0, 120)}`);
     }
 
     const data = await resp.json();
-    const page = data.results || data;
+    if (!data.ok) throw new Error(data.error || 'Proxy returned an error');
 
-    if (Array.isArray(page)) {
-      results.push(...page);
-      total = data.total || results.length;
-      if (page.length < PAGE) break;
-      from += PAGE;
-    } else {
-      throw new Error('Unexpected API response shape');
-    }
+    results.push(...data.results);
+    total = data.total || results.length;
+    if (data.results.length < PAGE) break;
+    from += PAGE;
   }
 
   return results;
@@ -563,12 +561,13 @@ async function executeUnlist() {
     const batch = ids.slice(i, i + CONCURRENCY);
     await Promise.all(batch.map(async (id) => {
       try {
-        const resp = await fetch(`${tenantUrl}/public-api/product/${id}`, {
-          method: 'PUT',
-          headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ listed: false }),
+        const resp = await fetch('/api/sb-unlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tenantUrl, apiKey, productId: id }),
         });
-        if (resp.ok) {
+        const result = await resp.json();
+        if (resp.ok && result.ok) {
           // Update local state
           const product = allProducts.find(p => p.id === id);
           if (product) product.listed = false;
