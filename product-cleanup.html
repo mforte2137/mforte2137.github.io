@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Cleanup — Salesbuildr</title>
+  <link rel="stylesheet" href="product-cleanup.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <span class="brand-mark">SB</span>
+        <span class="brand-name">Product Cleanup</span>
+      </div>
+      <div class="header-meta" id="headerMeta"></div>
+    </div>
+  </header>
+
+  <!-- CREDENTIALS BAR -->
+  <section class="creds-bar" id="credsBar">
+    <div class="creds-inner">
+      <div class="cred-group">
+        <label class="field-label">TENANT URL</label>
+        <input type="url" id="tenantUrl" class="cred-input" placeholder="https://acme.salesbuildr.com" />
+      </div>
+      <div class="cred-group">
+        <label class="field-label">API KEY</label>
+        <input type="password" id="apiKey" class="cred-input" placeholder="Your Salesbuildr API key" />
+      </div>
+      <button class="btn btn-primary" id="loadBtn">LOAD CATALOG</button>
+    </div>
+    <div class="creds-error" id="credsError"></div>
+  </section>
+
+  <!-- MAIN -->
+  <main class="app-main" id="appMain">
+
+    <!-- LOADING STATE -->
+    <div class="loading-state" id="loadingState" style="display:none;">
+      <div class="loading-inner">
+        <div class="loading-spinner"></div>
+        <p class="loading-label" id="loadingLabel">Fetching products…</p>
+        <p class="loading-sub" id="loadingSub">This may take a moment for large catalogs</p>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="dashboard" id="dashboard" style="display:none;">
+
+      <!-- TRIAGE BUCKETS -->
+      <section class="buckets-section">
+        <div class="section-header">
+          <h2 class="section-title">CATALOG TRIAGE</h2>
+          <div class="section-actions">
+            <button class="btn btn-secondary" id="analyzeBtn">RUN AI ANALYSIS</button>
+            <button class="btn btn-secondary" id="exportBtn">EXPORT PLAN</button>
+          </div>
+        </div>
+
+        <div class="buckets-grid">
+          <div class="bucket bucket--green" id="bucket-green" data-bucket="green">
+            <div class="bucket-indicator"></div>
+            <div class="bucket-content">
+              <div class="bucket-count" id="count-green">—</div>
+              <div class="bucket-label">READY TO SELL</div>
+              <div class="bucket-desc">Found in distribution, in stock</div>
+            </div>
+          </div>
+
+          <div class="bucket bucket--yellow" id="bucket-yellow" data-bucket="yellow">
+            <div class="bucket-indicator"></div>
+            <div class="bucket-content">
+              <div class="bucket-count" id="count-yellow">—</div>
+              <div class="bucket-label">NEEDS REVIEW</div>
+              <div class="bucket-desc">Valid MPN, temporarily unavailable</div>
+            </div>
+          </div>
+
+          <div class="bucket bucket--orange" id="bucket-orange" data-bucket="orange">
+            <div class="bucket-indicator"></div>
+            <div class="bucket-content">
+              <div class="bucket-count" id="count-orange">—</div>
+              <div class="bucket-label">LIKELY UNLIST</div>
+              <div class="bucket-desc">Not found in distribution</div>
+            </div>
+          </div>
+
+          <div class="bucket bucket--red" id="bucket-red" data-bucket="red">
+            <div class="bucket-indicator"></div>
+            <div class="bucket-content">
+              <div class="bucket-count" id="count-red">—</div>
+              <div class="bucket-label">UNLIST CANDIDATE</div>
+              <div class="bucket-desc">No MPN, not found in any feed</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- AI ANALYSIS PANEL -->
+      <section class="analysis-section" id="analysisSection" style="display:none;">
+        <div class="analysis-header">
+          <h2 class="section-title">AI ANALYSIS</h2>
+          <div class="analysis-progress" id="analysisProgress"></div>
+        </div>
+        <div class="analysis-summary" id="analysisSummary"></div>
+      </section>
+
+      <!-- PRODUCT TABLE -->
+      <section class="table-section" id="tableSection">
+        <div class="table-toolbar">
+          <div class="toolbar-left">
+            <h2 class="section-title" id="tableTitle">ALL PRODUCTS</h2>
+            <span class="table-count" id="tableCount"></span>
+          </div>
+          <div class="toolbar-right">
+            <div class="filter-group">
+              <label class="field-label">FILTER</label>
+              <select class="filter-select" id="bucketFilter">
+                <option value="all">All buckets</option>
+                <option value="green">Ready to Sell</option>
+                <option value="yellow">Needs Review</option>
+                <option value="orange">Likely Unlist</option>
+                <option value="red">Unlist Candidate</option>
+                <option value="unanalyzed">Not yet analyzed</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label class="field-label">SEARCH</label>
+              <input type="text" class="filter-input" id="tableSearch" placeholder="Name or MPN…" />
+            </div>
+          </div>
+        </div>
+
+        <!-- BULK ACTIONS -->
+        <div class="bulk-bar" id="bulkBar" style="display:none;">
+          <span class="bulk-count" id="bulkCount">0 selected</span>
+          <button class="btn btn-danger" id="bulkUnlistBtn">UNLIST SELECTED</button>
+          <button class="btn btn-secondary" id="bulkClearBtn">CLEAR SELECTION</button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="product-table" id="productTable">
+            <thead>
+              <tr>
+                <th class="col-check"><input type="checkbox" id="selectAll" /></th>
+                <th class="col-status">STATUS</th>
+                <th class="col-name">PRODUCT NAME</th>
+                <th class="col-mpn">MPN</th>
+                <th class="col-vendor">VENDOR</th>
+                <th class="col-category">CATEGORY</th>
+                <th class="col-bucket">BUCKET</th>
+                <th class="col-ai">AI NOTES</th>
+                <th class="col-listed">LISTED</th>
+              </tr>
+            </thead>
+            <tbody id="productTableBody">
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-pagination" id="tablePagination"></div>
+      </section>
+
+    </div><!-- /dashboard -->
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-inner">
+        <div class="empty-icon">⬡</div>
+        <p class="empty-title">No catalog loaded</p>
+        <p class="empty-sub">Enter your Salesbuildr credentials above and click Load Catalog to begin.</p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- UNLIST CONFIRM MODAL -->
+  <div class="modal-overlay" id="unlistModal" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">CONFIRM UNLIST</h3>
+      </div>
+      <div class="modal-body" id="unlistModalBody"></div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" id="unlistConfirmBtn">UNLIST PRODUCTS</button>
+        <button class="btn btn-secondary" id="unlistCancelBtn">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UNLIST PROGRESS MODAL -->
+  <div class="modal-overlay" id="progressModal" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">UNLISTING PRODUCTS</h3>
+      </div>
+      <div class="modal-body">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="unlistProgressBar"></div>
+        </div>
+        <p class="progress-label" id="unlistProgressLabel">Starting…</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="product-cleanup.js"></script>
+</body>
+</html>
