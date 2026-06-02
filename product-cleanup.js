@@ -167,7 +167,14 @@ async function fetchAllProducts(tenantUrl, apiKey) {
     const data = await resp.json();
     if (!data.ok) throw new Error(data.error || 'Proxy returned an error');
 
-    results.push(...data.results);
+    // Keep only hardware/one-time products — exclude services and labor
+    // which are always managed in the PSA and never need cleanup
+    const products = data.results.filter(p => {
+      const t = (p.productType || '').toLowerCase();
+      return t !== 'service' && t !== 'labor';
+    });
+
+    results.push(...products);
     total = data.total || results.length;
     if (data.results.length < PAGE) break;
     from += PAGE;
