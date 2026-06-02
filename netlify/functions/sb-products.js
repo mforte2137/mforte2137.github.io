@@ -37,7 +37,7 @@ exports.handler = async (event) => {
   try {
     const resp = await fetch(url, {
       headers: {
-        'x-api-key': apiKey,
+        'api-key': apiKey,
         'Content-Type': 'application/json',
       },
     });
