@@ -13,13 +13,17 @@
 // Credentials come from the REQUEST BODY — never env vars.
 // =========================================================
 
-const BASE = 'https://portal.us1-salesbuildr.com/public-api';
+// BASE URL is now dynamic — built from the MSP's own tenant URL
+// e.g. https://acme.salesbuildr.com → https://acme.salesbuildr.com/public-api
+function getBase(tenantUrl) {
+  const clean = (tenantUrl || '').replace(/\/+$/, '');
+  return clean + '/public-api';
+}
 
-function sbHeaders(apiKey, intKey) {
+function sbHeaders(apiKey) {
   return {
     'Content-Type': 'application/json',
     'api-key': apiKey,
-    'integration-key': intKey
   };
 }
 
@@ -49,14 +53,15 @@ exports.handler = async (event) => {
   try { body = JSON.parse(event.body); }
   catch { return err('Invalid JSON.', 400); }
 
-  const { action, apiKey, integrationKey } = body;
+  const { action, apiKey, tenantUrl } = body;
 
   // Ping — warm-up call, no credentials needed
   if (action === 'ping') return { statusCode: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: true, pong: true }) };
 
-  if (!apiKey || !integrationKey) return err('API credentials required.', 400);
+  if (!apiKey || !tenantUrl) return err('API credentials required.', 400);
 
-  const headers = sbHeaders(apiKey, integrationKey);
+  const BASE    = getBase(tenantUrl);
+  const headers = sbHeaders(apiKey);
 
   try {
 
