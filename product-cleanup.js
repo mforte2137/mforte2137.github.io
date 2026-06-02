@@ -280,39 +280,30 @@ async function analyzeProductBatch(products) {
   const productList = products.map(p => ({
     id: p.id,
     name: p.name,
-    mpn: p.mpn || null,
-    vendor: p.vendor || p.manufacturer || null,
-    category: p.categories?.[0]?.name || p.category?.name || null,
+    mpn: p.mpn && p.mpn.trim() !== '' ? p.mpn : null,
+    manufacturer: p.manufacturer || null,
+    category: p.categories?.[0]?.name || null,
     shortDescription: p.shortDescription || null,
-    currentBucket: p.bucket,
+    bucket: p.bucket,
   }));
 
-  const prompt = `You are a product catalog analyst for an MSP technology reseller.
-These products have already been pre-triaged by stock status from the distributor feed.
-Your job is to refine the classification and write a one-sentence note explaining each product's situation.
+  const prompt = `You are a product catalog analyst for an MSP (managed service provider) technology reseller.
+These products have been pre-triaged by live distributor stock data. Write a one-sentence note for each explaining its situation and confirming or adjusting its cleanup bucket.
 
-CURRENT BUCKETS (already assigned by stock data):
-- yellow: backOrder, unavailable, or custom supplier — real products, temporarily problematic
-- orange: notFound in distribution, HAS a valid MPN — likely EOL or legacy
-- red: notFound in distribution, NO MPN — ghost/placeholder entries
+BUCKET MEANINGS:
+- yellow: Real product, back-ordered or temporarily unavailable in distribution. Likely still valid.
+- orange: Has a valid MPN but not found in any distributor feed. Possibly EOL, discontinued, or legacy.
+- red: No MPN at all. Cannot be ordered from any distributor. Strong unlist candidate.
 
-YOUR TASK:
-1. Confirm or adjust the bucket if you have strong reason (e.g. a yellow item looks clearly EOL, or a red item is actually a known accessory MSPs buy outside distribution)
-2. Write a short note explaining why
-3. Flag yellow items that look like accessories/consumables MSPs commonly buy outside distribution (cables, cases, bags, batteries, etc.) — these should stay yellow or green
+YOUR JOB:
+- Write a plain-English note explaining why this product is in its bucket
+- Adjust the bucket only if you have strong reason (e.g. orange item is clearly a current product the MSP buys direct; red item is a known accessory type)
+- Note if something looks EOL, legacy, or like a product the MSP sources outside distribution (Amazon, direct from vendor, etc.)
 
-RULES:
-- Keep green items green (don't send those)
-- Yellow with recognizable current-gen part numbers → keep yellow
-- Orange with clearly obsolete/legacy naming → confirm orange  
-- Red with no MPN and vague name → confirm red
-- Cables, bags, consumables with no MPN → yellow (MSPs buy these outside disti)
-- Services or warranties accidentally included → yellow, note "warranty/service item"
+RESPOND with a JSON array only. No markdown, no explanation outside the JSON.
+Format: [{"id":"...","bucket":"yellow|orange|red","confidence":"high|medium|low","note":"one sentence explaining this product's situation"}]
 
-Respond ONLY with a valid JSON array. No preamble, no markdown.
-Each element: {"id":"...","bucket":"yellow|orange|red","confidence":"high|medium|low","note":"one sentence"}
-
-Products:
+Products to analyze:
 ${JSON.stringify(productList, null, 2)}`;
 
   const resp = await fetch('/api/analyze-products', {
