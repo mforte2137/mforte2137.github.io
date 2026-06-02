@@ -1,65 +1,93 @@
 /* ============================================================
    PRODUCT CLEANUP — JS
-   Fetches all products, triages into buckets, runs AI analysis,
-   and supports bulk unlisting via the Salesbuildr public API.
+   Fetches products by stock status group (real data from SB),
+   triages into four buckets, runs optional AI analysis for
+   notes, and supports bulk unlisting via the Salesbuildr API.
    ============================================================ */
 
 // ── DOM REFS ──────────────────────────────────────────────────
-const tenantUrlInput  = document.getElementById('tenantUrl');
-const apiKeyInput     = document.getElementById('apiKey');
-const loadBtn         = document.getElementById('loadBtn');
-const credsError      = document.getElementById('credsError');
-const headerMeta      = document.getElementById('headerMeta');
+const tenantUrlInput   = document.getElementById('tenantUrl');
+const apiKeyInput      = document.getElementById('apiKey');
+const loadBtn          = document.getElementById('loadBtn');
+const credsError       = document.getElementById('credsError');
+const headerMeta       = document.getElementById('headerMeta');
 
-const loadingState    = document.getElementById('loadingState');
-const loadingLabel    = document.getElementById('loadingLabel');
-const loadingSub      = document.getElementById('loadingSub');
-const dashboard       = document.getElementById('dashboard');
-const emptyState      = document.getElementById('emptyState');
+const loadingState     = document.getElementById('loadingState');
+const loadingLabel     = document.getElementById('loadingLabel');
+const loadingSub       = document.getElementById('loadingSub');
+const dashboard        = document.getElementById('dashboard');
+const emptyState       = document.getElementById('emptyState');
 
-const analyzeBtn      = document.getElementById('analyzeBtn');
-const exportBtn       = document.getElementById('exportBtn');
-const analysisSection = document.getElementById('analysisSection');
+const analyzeBtn       = document.getElementById('analyzeBtn');
+const exportBtn        = document.getElementById('exportBtn');
+const analysisSection  = document.getElementById('analysisSection');
 const analysisProgress = document.getElementById('analysisProgress');
-const analysisSummary = document.getElementById('analysisSummary');
+const analysisSummary  = document.getElementById('analysisSummary');
 
-const bucketFilter    = document.getElementById('bucketFilter');
-const tableSearch     = document.getElementById('tableSearch');
-const tableTitle      = document.getElementById('tableTitle');
-const tableCount      = document.getElementById('tableCount');
+const bucketFilter     = document.getElementById('bucketFilter');
+const tableSearch      = document.getElementById('tableSearch');
+const tableTitle       = document.getElementById('tableTitle');
+const tableCount       = document.getElementById('tableCount');
 const productTableBody = document.getElementById('productTableBody');
-const tablePagination = document.getElementById('tablePagination');
+const tablePagination  = document.getElementById('tablePagination');
 
-const bulkBar         = document.getElementById('bulkBar');
-const bulkCount       = document.getElementById('bulkCount');
-const bulkUnlistBtn   = document.getElementById('bulkUnlistBtn');
-const bulkClearBtn    = document.getElementById('bulkClearBtn');
-const selectAllChk    = document.getElementById('selectAll');
+const bulkBar          = document.getElementById('bulkBar');
+const bulkCount        = document.getElementById('bulkCount');
+const bulkUnlistBtn    = document.getElementById('bulkUnlistBtn');
+const bulkClearBtn     = document.getElementById('bulkClearBtn');
+const selectAllChk     = document.getElementById('selectAll');
 
-const unlistModal     = document.getElementById('unlistModal');
-const unlistModalBody = document.getElementById('unlistModalBody');
+const unlistModal      = document.getElementById('unlistModal');
+const unlistModalBody  = document.getElementById('unlistModalBody');
 const unlistConfirmBtn = document.getElementById('unlistConfirmBtn');
-const unlistCancelBtn = document.getElementById('unlistCancelBtn');
-const progressModal   = document.getElementById('progressModal');
-const unlistProgressBar = document.getElementById('unlistProgressBar');
+const unlistCancelBtn  = document.getElementById('unlistCancelBtn');
+const progressModal    = document.getElementById('progressModal');
+const unlistProgressBar   = document.getElementById('unlistProgressBar');
 const unlistProgressLabel = document.getElementById('unlistProgressLabel');
 
 // ── STATE ─────────────────────────────────────────────────────
-let allProducts = [];       // raw from API
-let analysisMap = {};       // id → { bucket, note, confidence }
+let allProducts = [];      // all fetched products with .bucket already set
+let aiNotes = {};          // id → { note, confidence } from AI analysis
 let selectedIds = new Set();
 let currentPage = 1;
 const PAGE_SIZE = 50;
 let activeBucketFilter = 'all';
 let activeSearch = '';
 
-// Bucket definitions used for triage
+// Stock groups → bucket mapping
+// We fetch each group separately so every product gets a real stock-based bucket
+const STOCK_GROUPS = [
+  {
+    bucket: 'green',
+    filter: 'inStock|onlyDistributor|internal|lowStock',
+    label:  'Ready to Sell',
+  },
+  {
+    bucket: 'yellow',
+    filter: 'backOrder|unavailable|custom',
+    label:  'Needs Review',
+  },
+  {
+    bucket: 'orange',
+    filter: 'notFound',
+    label:  'Likely Unlist / Unlist Candidate',
+  },
+];
+
+// notFound products get split into orange (has MPN) or red (no MPN) client-side
 const BUCKET_META = {
-  green:  { label: 'Ready to Sell',     cls: 'bucket-badge--green' },
-  yellow: { label: 'Needs Review',      cls: 'bucket-badge--yellow' },
-  orange: { label: 'Likely Unlist',     cls: 'bucket-badge--orange' },
-  red:    { label: 'Unlist Candidate',  cls: 'bucket-badge--red' },
+  green:  { label: 'Ready to Sell',    cls: 'bucket-badge--green'  },
+  yellow: { label: 'Needs Review',     cls: 'bucket-badge--yellow' },
+  orange: { label: 'Likely Unlist',    cls: 'bucket-badge--orange' },
+  red:    { label: 'Unlist Candidate', cls: 'bucket-badge--red'    },
 };
+
+// Six months ago — used for not-quoted-since signal
+function sixMonthsAgo() {
+  const d = new Date();
+  d.setMonth(d.getMonth() - 6);
+  return d.toISOString().slice(0, 10);
+}
 
 // ── INIT ──────────────────────────────────────────────────────
 function init() {
@@ -67,15 +95,22 @@ function init() {
   loadBtn.addEventListener('click', handleLoad);
   analyzeBtn.addEventListener('click', handleAnalyze);
   exportBtn.addEventListener('click', handleExport);
-  bucketFilter.addEventListener('change', () => { activeBucketFilter = bucketFilter.value; currentPage = 1; renderTable(); });
-  tableSearch.addEventListener('input', () => { activeSearch = tableSearch.value.trim().toLowerCase(); currentPage = 1; renderTable(); });
+  bucketFilter.addEventListener('change', () => {
+    activeBucketFilter = bucketFilter.value;
+    currentPage = 1;
+    renderTable();
+  });
+  tableSearch.addEventListener('input', () => {
+    activeSearch = tableSearch.value.trim().toLowerCase();
+    currentPage = 1;
+    renderTable();
+  });
   bulkUnlistBtn.addEventListener('click', promptUnlist);
   bulkClearBtn.addEventListener('click', clearSelection);
   selectAllChk.addEventListener('change', handleSelectAll);
   unlistConfirmBtn.addEventListener('click', executeUnlist);
   unlistCancelBtn.addEventListener('click', () => { unlistModal.style.display = 'none'; });
 
-  // Bucket click = filter
   document.querySelectorAll('.bucket').forEach(el => {
     el.addEventListener('click', () => {
       const b = el.dataset.bucket;
@@ -92,12 +127,10 @@ function loadStoredCreds() {
   tenantUrlInput.value = localStorage.getItem('sb_tenant_url') || '';
   apiKeyInput.value    = localStorage.getItem('sb_api_key')    || '';
 }
-
 function saveCreds() {
   localStorage.setItem('sb_tenant_url', tenantUrlInput.value.trim());
   localStorage.setItem('sb_api_key',    apiKeyInput.value.trim());
 }
-
 function getCreds() {
   return {
     tenantUrl: tenantUrlInput.value.trim().replace(/\/$/, ''),
@@ -118,20 +151,37 @@ async function handleLoad() {
   saveCreds();
   allProducts = [];
   selectedIds.clear();
-  analysisMap = {};
+  aiNotes = {};
 
-  showLoading('Connecting to Salesbuildr…', 'Fetching first page of products');
+  showLoading('Connecting to Salesbuildr…', 'Fetching product catalog by stock status');
   dashboard.style.display = 'none';
   emptyState.style.display = 'none';
 
   try {
-    allProducts = await fetchAllProducts(tenantUrl, apiKey);
+    // Fetch each stock group separately so we get real per-product bucket assignment
+    for (const group of STOCK_GROUPS) {
+      updateLoadingLabel(
+        `Fetching "${group.label}" products…`,
+        `${allProducts.length} products loaded so far`
+      );
+      const products = await fetchProductGroup(tenantUrl, apiKey, group.filter);
+
+      // Split notFound into orange (has MPN) vs red (no MPN)
+      for (const p of products) {
+        const hasMpn = p.mpn && p.mpn.trim() !== '';
+        if (group.bucket === 'orange') {
+          p.bucket = hasMpn ? 'orange' : 'red';
+        } else {
+          p.bucket = group.bucket;
+        }
+        p.stockGroup = group.filter; // keep for reference
+      }
+
+      allProducts.push(...products);
+    }
+
     headerMeta.textContent = `${allProducts.length} products · ${new URL(tenantUrl).hostname}`;
-
-    // Pre-triage without AI (instant bucket assignment by stock status)
-    preTriageProducts();
     updateBucketCounts();
-
     showDashboard();
     renderTable();
   } catch (err) {
@@ -140,23 +190,16 @@ async function handleLoad() {
   }
 }
 
-async function fetchAllProducts(tenantUrl, apiKey) {
+async function fetchProductGroup(tenantUrl, apiKey, stockFilter) {
   const PAGE = 100;
   let from = 0;
-  let total = null;
   const results = [];
 
   while (true) {
-    updateLoadingLabel(
-      `Fetching products… (${results.length}${total ? ' of ' + total : ''})`,
-      'Loading page by page — routing via proxy'
-    );
-
-    // All Salesbuildr calls go through the Netlify proxy to avoid CORS
     const resp = await fetch('/api/sb-products', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tenantUrl, apiKey, size: PAGE, from }),
+      body: JSON.stringify({ tenantUrl, apiKey, size: PAGE, from, stockFilter }),
     });
 
     if (!resp.ok) {
@@ -165,67 +208,26 @@ async function fetchAllProducts(tenantUrl, apiKey) {
     }
 
     const data = await resp.json();
-    if (!data.ok) throw new Error(data.error || 'Proxy returned an error');
+    if (!data.ok) throw new Error(data.error || 'Proxy error');
 
-    // Keep only hardware/one-time products — exclude services and labor
-    // which are always managed in the PSA and never need cleanup
-    const products = data.results.filter(p => {
-      const t = (p.productType || '').toLowerCase();
-      return t !== 'service' && t !== 'labor';
-    });
-
-    results.push(...products);
-    total = data.total || results.length;
+    results.push(...data.results);
     if (data.results.length < PAGE) break;
     from += PAGE;
+
+    updateLoadingLabel(
+      `Fetching products… (${allProducts.length + results.length} loaded)`,
+      'Loading page by page'
+    );
   }
 
   return results;
 }
 
-// ── PRE-TRIAGE (no AI, instant) ───────────────────────────────
-// Uses stock/availability fields returned by the API to bucket without AI.
-// The `filters` array on the search response contains facets; however
-// individual product objects don't directly carry a stock status string.
-// We infer from what we have: mpn presence + listed status.
-// AI analysis will refine later.
-
-function preTriageProducts() {
-  // We do a lightweight rule-based pass first so the UI is immediately useful.
-  // AI analysis (the button) enriches these assessments later.
-  for (const p of allProducts) {
-    if (!analysisMap[p.id]) {
-      analysisMap[p.id] = {
-        bucket: inferBucket(p),
-        note: null,
-        confidence: null,
-      };
-    }
-  }
-}
-
-function inferBucket(p) {
-  const hasMpn = p.mpn && p.mpn.trim() !== '';
-  // SB returns inventory info in the filters facet, not per product.
-  // But productType, listed, mpn give us strong signals:
-  // - If listed=false already → red (user already unlisted it)
-  // - If no MPN at all → red
-  // - If has MPN, listed → yellow (may or may not be in stock; AI will refine)
-  // We can't know stock status from the GET /product response alone
-  // without a separate inventory call — so we keep it simple here.
-  // The "green" bucket gets filled in properly after the analyze step.
-  if (!p.listed)  return 'red';
-  if (!hasMpn)    return 'red';
-  // Has MPN and is listed — could be green or yellow; default yellow until AI runs
-  return 'yellow';
-}
-
 // ── BUCKET COUNTS ─────────────────────────────────────────────
 function updateBucketCounts() {
   const counts = { green: 0, yellow: 0, orange: 0, red: 0 };
-  for (const id in analysisMap) {
-    const b = analysisMap[id].bucket;
-    if (counts[b] !== undefined) counts[b]++;
+  for (const p of allProducts) {
+    if (counts[p.bucket] !== undefined) counts[p.bucket]++;
   }
   document.getElementById('count-green').textContent  = counts.green;
   document.getElementById('count-yellow').textContent = counts.yellow;
@@ -240,38 +242,27 @@ async function handleAnalyze() {
   analysisSection.style.display = 'block';
   analysisSummary.innerHTML = '<p style="color:var(--text-muted);font-size:12px;">Sending products to AI for analysis…</p>';
 
-  // Grab only the products that need attention (yellow, orange, red)
-  const candidates = allProducts.filter(p => {
-    const b = analysisMap[p.id]?.bucket;
-    return b === 'yellow' || b === 'orange' || b === 'red';
-  });
-
+  // Only send yellow, orange, red to AI — green is already confirmed sellable
+  const candidates = allProducts.filter(p => p.bucket !== 'green');
   const total = candidates.length;
   let done = 0;
 
-  // Process in batches of 30 — Haiku handles this well within timeout
   const BATCH = 30;
-  const batches = [];
   for (let i = 0; i < candidates.length; i += BATCH) {
-    batches.push(candidates.slice(i, i + BATCH));
-  }
-
-  const allResults = [];
-
-  for (const batch of batches) {
+    const batch = candidates.slice(i, i + BATCH);
     analysisProgress.textContent = `Analyzing ${done} of ${total}…`;
     try {
       const results = await analyzeProductBatch(batch);
-      allResults.push(...results);
       for (const r of results) {
-        if (analysisMap[r.id]) {
-          analysisMap[r.id].bucket = r.bucket;
-          analysisMap[r.id].note   = r.note;
-          analysisMap[r.id].confidence = r.confidence;
+        aiNotes[r.id] = { note: r.note, confidence: r.confidence };
+        // AI can upgrade/downgrade bucket for yellow/orange/red
+        const p = allProducts.find(x => x.id === r.id);
+        if (p && r.bucket && BUCKET_META[r.bucket]) {
+          p.bucket = r.bucket;
         }
       }
     } catch (e) {
-      console.error('Batch analysis error:', e);
+      console.error('Batch error:', e);
     }
     done += batch.length;
   }
@@ -290,33 +281,38 @@ async function analyzeProductBatch(products) {
     id: p.id,
     name: p.name,
     mpn: p.mpn || null,
-    vendor: p.vendor || null,
-    category: p.category?.name || null,
+    vendor: p.vendor || p.manufacturer || null,
+    category: p.categories?.[0]?.name || p.category?.name || null,
     shortDescription: p.shortDescription || null,
-    listed: p.listed,
+    currentBucket: p.bucket,
   }));
 
-  const prompt = `You are a product catalog analyst for an MSP (managed service provider) technology reseller. 
-Your job is to classify products that are problematic — either "not found" in distribution or "unavailable" — into cleanup buckets to help the MSP decide what to do.
+  const prompt = `You are a product catalog analyst for an MSP technology reseller.
+These products have already been pre-triaged by stock status from the distributor feed.
+Your job is to refine the classification and write a one-sentence note explaining each product's situation.
 
-BUCKETS:
-- green: Can be sold. Has a valid MPN, likely in stock in a distributor feed, or is a standard stocked item.
-- yellow: Needs human review. Has a valid MPN but may be temporarily out of stock, older model, or hard to classify. Could also be something MSPs buy outside distribution (e.g. cables, consumables, accessories, AV gear, specialty items).
-- orange: Likely safe to unlist. MPN doesn't match anything in major distribution (TD Synnex, Ingram Micro, D&H). Probably EOL or a legacy product. Low risk to unlist.
-- red: Almost certainly unlist. No MPN, no vendor, vague name, or clearly a ghost/placeholder entry. Very safe to unlist.
+CURRENT BUCKETS (already assigned by stock data):
+- yellow: backOrder, unavailable, or custom supplier — real products, temporarily problematic
+- orange: notFound in distribution, HAS a valid MPN — likely EOL or legacy
+- red: notFound in distribution, NO MPN — ghost/placeholder entries
+
+YOUR TASK:
+1. Confirm or adjust the bucket if you have strong reason (e.g. a yellow item looks clearly EOL, or a red item is actually a known accessory MSPs buy outside distribution)
+2. Write a short note explaining why
+3. Flag yellow items that look like accessories/consumables MSPs commonly buy outside distribution (cables, cases, bags, batteries, etc.) — these should stay yellow or green
 
 RULES:
-1. Products with no MPN at all are usually red.
-2. Products with recognizable current-generation vendor part numbers (HP, Dell, Lenovo, Microsoft, Cisco, etc.) that look active are yellow at minimum.
-3. Very old product names or part numbers with legacy naming conventions lean orange.
-4. Generic descriptions with no vendor info are red.
-5. Cables, consumables, accessories, peripherals — flag yellow because MSPs often buy these outside distribution.
-6. Services, warranties, and labor items are out of scope but if they appear, mark yellow.
+- Keep green items green (don't send those)
+- Yellow with recognizable current-gen part numbers → keep yellow
+- Orange with clearly obsolete/legacy naming → confirm orange  
+- Red with no MPN and vague name → confirm red
+- Cables, bags, consumables with no MPN → yellow (MSPs buy these outside disti)
+- Services or warranties accidentally included → yellow, note "warranty/service item"
 
-Respond ONLY with a JSON array. No preamble, no markdown fences.
-Each element: {"id":"...","bucket":"green|yellow|orange|red","confidence":"high|medium|low","note":"one short sentence explaining why"}
+Respond ONLY with a valid JSON array. No preamble, no markdown.
+Each element: {"id":"...","bucket":"yellow|orange|red","confidence":"high|medium|low","note":"one sentence"}
 
-Products to analyze:
+Products:
 ${JSON.stringify(productList, null, 2)}`;
 
   const resp = await fetch('/api/analyze-products', {
@@ -325,7 +321,7 @@ ${JSON.stringify(productList, null, 2)}`;
     body: JSON.stringify({ products: productList, prompt }),
   });
 
-  if (!resp.ok) throw new Error(`Function error: ${resp.status}`);
+  if (!resp.ok) throw new Error(`Function error ${resp.status}`);
   const data = await resp.json();
   if (!data.ok) throw new Error(data.error || 'Unknown error');
 
@@ -339,36 +335,37 @@ ${JSON.stringify(productList, null, 2)}`;
 }
 
 function renderAnalysisSummary() {
-  const buckets = { green: [], yellow: [], orange: [], red: [] };
-  for (const [id, info] of Object.entries(analysisMap)) {
-    if (buckets[info.bucket]) buckets[info.bucket].push(id);
-  }
+  const counts = { green: 0, yellow: 0, orange: 0, red: 0 };
+  for (const p of allProducts) counts[p.bucket]++;
 
   const total = allProducts.length;
-  const unlisted = buckets.orange.length + buckets.red.length;
-  const pct = total > 0 ? Math.round((unlisted / total) * 100) : 0;
+  const actionable = counts.orange + counts.red;
+  const pct = total > 0 ? Math.round((actionable / total) * 100) : 0;
 
   analysisSummary.innerHTML = `
     <div class="analysis-card">
-      <div class="analysis-card-title">Overview</div>
+      <div class="analysis-card-title">Catalog Overview</div>
       <div class="analysis-card-body">
-        ${total} total products analyzed.<br>
-        <strong>${buckets.green.length}</strong> are ready to sell — no action needed.<br>
-        <strong>${buckets.yellow.length}</strong> need human review before acting.<br>
-        <strong>${unlisted}</strong> (${pct}%) are candidates for unlisting.
+        <strong>${counts.green}</strong> products are ready to sell — in stock or available via distributor.<br>
+        <strong>${counts.yellow}</strong> need review — back-ordered, temporarily unavailable, or custom sourced.<br>
+        <strong>${counts.orange}</strong> are likely safe to unlist — not found in distribution but have a part number.<br>
+        <strong>${counts.red}</strong> are unlist candidates — no MPN, not found anywhere.
       </div>
     </div>
     <div class="analysis-card">
       <div class="analysis-card-title">Recommended Action</div>
       <div class="analysis-card-body">
-        Start with the <strong>${buckets.red.length} Unlist Candidates</strong> — these have no MPN and no clear path to ordering. Very safe to unlist.<br><br>
-        Then review <strong>${buckets.orange.length} Likely Unlist</strong> items with your customer before acting.
+        <strong>${actionable} products (${pct}%)</strong> are candidates for unlisting.<br><br>
+        Start with the <strong>${counts.red} Unlist Candidates</strong> (no MPN) — safest to act on immediately.<br>
+        Then review <strong>${counts.orange} Likely Unlist</strong> items with the MSP before acting.
       </div>
     </div>
     <div class="analysis-card">
-      <div class="analysis-card-title">About Labels</div>
+      <div class="analysis-card-title">Label Readiness</div>
       <div class="analysis-card-body">
-        When Salesbuildr adds label-writing to the API, this tool will automatically tag products with their cleanup bucket label — making the plan visible inside SB too.
+        Your <strong>cleanup-unlist</strong> and <strong>cleanup-review</strong> labels are ready in Salesbuildr.
+        When the SB API adds label-writing support, this tool will automatically tag each product.
+        Until then, use the Export Plan CSV to guide manual labeling.
       </div>
     </div>
   `;
@@ -377,18 +374,12 @@ function renderAnalysisSummary() {
 // ── TABLE RENDER ──────────────────────────────────────────────
 function getFilteredProducts() {
   return allProducts.filter(p => {
-    const info = analysisMap[p.id];
-    const bucket = info?.bucket;
-
-    if (activeBucketFilter === 'unanalyzed' && info?.note) return false;
-    if (activeBucketFilter !== 'all' && activeBucketFilter !== 'unanalyzed' && bucket !== activeBucketFilter) return false;
-
+    if (activeBucketFilter !== 'all' && p.bucket !== activeBucketFilter) return false;
     if (activeSearch) {
       const name = (p.name || '').toLowerCase();
       const mpn  = (p.mpn  || '').toLowerCase();
       if (!name.includes(activeSearch) && !mpn.includes(activeSearch)) return false;
     }
-
     return true;
   });
 }
@@ -402,55 +393,63 @@ function renderTable() {
   const pageItems = filtered.slice(start, start + PAGE_SIZE);
 
   tableCount.textContent = `${filtered.length} product${filtered.length !== 1 ? 's' : ''}`;
-
   productTableBody.innerHTML = '';
-  for (const p of pageItems) {
-    productTableBody.appendChild(buildRow(p));
-  }
+  for (const p of pageItems) productTableBody.appendChild(buildRow(p));
 
   renderPagination(totalPages);
   updateBulkBar();
 }
 
 function buildRow(p) {
-  const info = analysisMap[p.id] || {};
+  const note = aiNotes[p.id];
   const hasMpn = p.mpn && p.mpn.trim() !== '';
   const isSelected = selectedIds.has(p.id);
 
   const tr = document.createElement('tr');
   if (isSelected) tr.classList.add('selected');
 
-  // Derive a display status from what we know
+  // Stock status badge — derived from bucket (which came from real stock data)
   let statusHtml = '';
   if (!p.listed) {
     statusHtml = '<span class="status-badge status-nodata">Unlisted</span>';
-  } else if (!hasMpn) {
-    statusHtml = '<span class="status-badge status-notfound">No MPN</span>';
+  } else if (p.bucket === 'green') {
+    statusHtml = '<span class="status-badge status-instock">In Stock</span>';
+  } else if (p.bucket === 'yellow') {
+    statusHtml = '<span class="status-badge status-unavailable">Unavailable</span>';
   } else {
-    statusHtml = '<span class="status-badge status-unavailable">Listed</span>';
+    statusHtml = '<span class="status-badge status-notfound">Not Found</span>';
   }
 
-  const bucket = info.bucket || null;
-  const badgeCls = bucket ? `bucket-badge--${bucket}` : 'bucket-badge--none';
-  const badgeLabel = bucket ? (BUCKET_META[bucket]?.label || bucket) : 'Not analyzed';
+  const badgeCls   = `bucket-badge--${p.bucket}`;
+  const badgeLabel = BUCKET_META[p.bucket]?.label || p.bucket;
 
-  const aiNote = info.note
-    ? `<span class="ai-note">${escHtml(info.note)}</span>`
+  const category = p.categories?.[0]?.name || p.category?.name || '—';
+  const vendor   = p.manufacturer || p.vendor || '—';
+
+  const aiNote = note
+    ? `<span class="ai-note">${escHtml(note.note)}</span>`
     : `<span class="ai-note-pending">—</span>`;
 
   tr.innerHTML = `
-    <td><input type="checkbox" class="row-check" data-id="${p.id}" ${isSelected ? 'checked' : ''} ${p.listed === false ? 'disabled' : ''}/></td>
+    <td><input type="checkbox" class="row-check" data-id="${p.id}"
+      ${isSelected ? 'checked' : ''}
+      ${!p.listed ? 'disabled' : ''} /></td>
     <td>${statusHtml}</td>
     <td><div class="product-name">${escHtml(p.name)}</div></td>
-    <td>${hasMpn ? `<span class="product-mpn">${escHtml(p.mpn)}</span>` : `<span class="mpn-missing">missing</span>`}</td>
-    <td>${escHtml(p.vendor || '—')}</td>
-    <td>${escHtml(p.category?.name || '—')}</td>
+    <td>${hasMpn
+      ? `<span class="product-mpn">${escHtml(p.mpn)}</span>`
+      : `<span class="mpn-missing">missing</span>`}</td>
+    <td>${escHtml(vendor)}</td>
+    <td>${escHtml(category)}</td>
     <td><span class="bucket-badge ${badgeCls}">${badgeLabel}</span></td>
     <td>${aiNote}</td>
-    <td style="text-align:center;"><span class="listed-dot listed-dot--${p.listed ? 'yes' : 'no'}" title="${p.listed ? 'Listed' : 'Unlisted'}"></span></td>
+    <td style="text-align:center;">
+      <span class="listed-dot listed-dot--${p.listed ? 'yes' : 'no'}"
+        title="${p.listed ? 'Listed' : 'Unlisted'}"></span>
+    </td>
   `;
 
-  tr.querySelector('.row-check')?.addEventListener('change', (e) => {
+  tr.querySelector('.row-check')?.addEventListener('change', e => {
     if (e.target.checked) selectedIds.add(p.id);
     else selectedIds.delete(p.id);
     tr.classList.toggle('selected', e.target.checked);
@@ -474,9 +473,7 @@ function renderPagination(totalPages) {
   };
 
   tablePagination.appendChild(mkBtn('←', currentPage - 1, currentPage === 1, false));
-
-  const range = pageRange(currentPage, totalPages);
-  for (const p of range) {
+  for (const p of pageRange(currentPage, totalPages)) {
     if (p === '…') {
       const sp = document.createElement('span');
       sp.textContent = '…';
@@ -486,7 +483,6 @@ function renderPagination(totalPages) {
       tablePagination.appendChild(mkBtn(p, p, false, p === currentPage));
     }
   }
-
   tablePagination.appendChild(mkBtn('→', currentPage + 1, currentPage === totalPages, false));
 }
 
@@ -509,9 +505,8 @@ function handleSelectAll(e) {
   const filtered = getFilteredProducts();
   const pageStart = (currentPage - 1) * PAGE_SIZE;
   const pageItems = filtered.slice(pageStart, pageStart + PAGE_SIZE);
-
   for (const p of pageItems) {
-    if (p.listed === false) continue; // can't unlist what's already unlisted
+    if (!p.listed) continue;
     if (e.target.checked) selectedIds.add(p.id);
     else selectedIds.delete(p.id);
   }
@@ -534,18 +529,18 @@ function promptUnlist() {
     .slice(0, 5)
     .map(p => `<li>${escHtml(p.name)}</li>`)
     .join('');
-
   const more = count > 5 ? `<li>…and ${count - 5} more</li>` : '';
 
   unlistModalBody.innerHTML = `
-    <p>You are about to <strong>unlist ${count} product${count !== 1 ? 's' : ''}</strong>. 
-    This sets them to inactive in Salesbuildr and syncs the change back to your PSA. 
-    Items can be re-listed at any time.</p>
+    <p>You are about to <strong>unlist ${count} product${count !== 1 ? 's' : ''}</strong>.
+    This sets them to inactive in Salesbuildr and syncs back to your PSA.
+    Items can be re-listed at any time if needed.</p>
     <ul style="margin:12px 0;padding-left:20px;font-size:12px;color:var(--text-mid);">
       ${names}${more}
     </ul>
-    <p style="font-size:12px;color:var(--text-muted);">This action will call the Salesbuildr API once per product. It cannot be undone in bulk.</p>
-  `;
+    <p style="font-size:12px;color:var(--text-muted);">
+      This action calls the Salesbuildr API once per product and cannot be undone in bulk.
+    </p>`;
 
   unlistModal.style.display = 'flex';
 }
@@ -556,13 +551,11 @@ async function executeUnlist() {
 
   const { tenantUrl, apiKey } = getCreds();
   const ids = [...selectedIds];
-  let done = 0;
-  let errors = 0;
+  let done = 0, errors = 0;
 
   unlistProgressBar.style.width = '0%';
   unlistProgressLabel.textContent = 'Starting…';
 
-  // Process in batches of 5 concurrent requests
   const CONCURRENCY = 5;
   for (let i = 0; i < ids.length; i += CONCURRENCY) {
     const batch = ids.slice(i, i + CONCURRENCY);
@@ -575,16 +568,12 @@ async function executeUnlist() {
         });
         const result = await resp.json();
         if (resp.ok && result.ok) {
-          // Update local state
           const product = allProducts.find(p => p.id === id);
           if (product) product.listed = false;
-          if (analysisMap[id]) analysisMap[id].bucket = 'red';
         } else {
           errors++;
         }
-      } catch {
-        errors++;
-      }
+      } catch { errors++; }
       done++;
       const pct = Math.round((done / ids.length) * 100);
       unlistProgressBar.style.width = pct + '%';
@@ -598,11 +587,9 @@ async function executeUnlist() {
 
   unlistProgressLabel.textContent = errors === 0
     ? `Done — ${done} products unlisted successfully.`
-    : `Done — ${done - errors} succeeded, ${errors} failed. Check the console for details.`;
+    : `Done — ${done - errors} succeeded, ${errors} failed.`;
 
-  setTimeout(() => {
-    progressModal.style.display = 'none';
-  }, 2500);
+  setTimeout(() => { progressModal.style.display = 'none'; }, 2500);
 }
 
 // ── EXPORT ────────────────────────────────────────────────────
@@ -612,21 +599,20 @@ function handleExport() {
   ];
 
   for (const p of allProducts) {
-    const info = analysisMap[p.id] || {};
+    const note = aiNotes[p.id] || {};
+    const category = p.categories?.[0]?.name || p.category?.name || '';
+    const vendor   = p.manufacturer || p.vendor || '';
     rows.push([
-      p.id,
-      p.name,
-      p.mpn || '',
-      p.vendor || '',
-      p.category?.name || '',
+      p.id, p.name, p.mpn || '', vendor, category,
       p.listed ? 'Yes' : 'No',
-      info.bucket || '',
-      info.note || '',
-      info.confidence || '',
+      p.bucket, note.note || '', note.confidence || '',
     ]);
   }
 
-  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const csv = rows.map(r =>
+    r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')
+  ).join('\n');
+
   const blob = new Blob([csv], { type: 'text/csv' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
@@ -638,37 +624,31 @@ function handleExport() {
 
 // ── UI HELPERS ────────────────────────────────────────────────
 function showLoading(label, sub) {
-  loadingLabel.textContent = label;
-  loadingSub.textContent   = sub;
+  loadingLabel.textContent   = label;
+  loadingSub.textContent     = sub;
   loadingState.style.display = 'flex';
   dashboard.style.display    = 'none';
   emptyState.style.display   = 'none';
 }
-
 function updateLoadingLabel(label, sub) {
   loadingLabel.textContent = label;
   if (sub) loadingSub.textContent = sub;
 }
-
 function showDashboard() {
   loadingState.style.display = 'none';
   dashboard.style.display    = 'block';
   emptyState.style.display   = 'none';
 }
-
 function showEmpty() {
   loadingState.style.display = 'none';
   dashboard.style.display    = 'none';
   emptyState.style.display   = 'flex';
 }
-
 function escHtml(str) {
   if (!str) return '';
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // ── START ─────────────────────────────────────────────────────
