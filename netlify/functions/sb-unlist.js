@@ -35,7 +35,7 @@ exports.handler = async (event) => {
     const resp = await fetch(`${tenantUrl}/public-api/product/${productId}`, {
       method: 'PUT',
       headers: {
-        'x-api-key': apiKey,
+        'api-key': apiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ listed: false }),
