@@ -13,7 +13,7 @@ let lastTextExcerpt  = '';
 let selectedColors   = { primary: '#0d2d5e', accent: '#1a6fc4', light: '#f0f6ff' };
 let generatedWidgets = [];
 const LS_API_KEY     = 'sb_api_key';
-const LS_INT_KEY     = 'sb_int_key';
+const LS_TENANT_URL  = 'sb_tenant_url';
 
 // ── DOM handles ───────────────────────────────────────────
 const uploadView    = document.getElementById('upload-view');
@@ -57,8 +57,8 @@ const individualToggle  = document.getElementById('individual-toggle');
 const sbToggle          = document.getElementById('sb-toggle');
 const sbArrow           = document.getElementById('sb-arrow');
 const sbBody            = document.getElementById('sb-connect-body');
-const sbApiKey          = document.getElementById('sb-api-key');
-const sbIntKey          = document.getElementById('sb-int-key');
+const sbApiKey          = document.getElementById('sbApiKey');
+const sbTenantUrl       = document.getElementById('sbTenantUrl');
 const sbRemember        = document.getElementById('sb-remember');
 const sbPrefix          = document.getElementById('sb-prefix');
 const sbPushBtn         = document.getElementById('sb-push-btn');
@@ -462,7 +462,7 @@ sbToggle.addEventListener('click', () => {
   sbArrow.classList.toggle('is-open', !isOpen);
 });
 sbApiKey.addEventListener('input', updateSbPushButton);
-sbIntKey.addEventListener('input', updateSbPushButton);
+sbTenantUrl.addEventListener('input', updateSbPushButton);
 sbPushBtn.addEventListener('click', pushToSalesbuildr);
 
 async function generateWidgets() {
@@ -509,25 +509,25 @@ function buildCombinedWidget(widgets) {
 }
 
 function initSbConnect() {
-  const savedApi = localStorage.getItem(LS_API_KEY);
-  const savedInt = localStorage.getItem(LS_INT_KEY);
-  if (savedApi) sbApiKey.value = savedApi;
-  if (savedInt) sbIntKey.value = savedInt;
-  if (savedApi && savedInt) sbRemember.checked = true;
+  const savedApi    = localStorage.getItem(LS_API_KEY);
+  const savedTenant = localStorage.getItem(LS_TENANT_URL);
+  if (savedApi)    sbApiKey.value    = savedApi;
+  if (savedTenant) sbTenantUrl.value = savedTenant;
+  if (savedApi && savedTenant) sbRemember.checked = true;
   updateSbPushButton();
 }
 
 function updateSbPushButton() {
-  sbPushBtn.disabled = !(sbApiKey.value.trim() && sbIntKey.value.trim());
+  sbPushBtn.disabled = !(sbApiKey.value.trim() && sbTenantUrl.value.trim());
 }
 
 async function pushToSalesbuildr() {
-  const apiKey = sbApiKey.value.trim();
-  const intKey = sbIntKey.value.trim();
-  if (!apiKey || !intKey) return;
+  const apiKey    = sbApiKey.value.trim();
+  const tenantUrl = sbTenantUrl.value.trim();
+  if (!apiKey || !tenantUrl) return;
 
-  if (sbRemember.checked) { localStorage.setItem(LS_API_KEY, apiKey); localStorage.setItem(LS_INT_KEY, intKey); }
-  else { localStorage.removeItem(LS_API_KEY); localStorage.removeItem(LS_INT_KEY); }
+  if (sbRemember.checked) { localStorage.setItem(LS_API_KEY, apiKey); localStorage.setItem(LS_TENANT_URL, tenantUrl); }
+  else { localStorage.removeItem(LS_API_KEY); localStorage.removeItem(LS_TENANT_URL); }
 
   sbPushBtn.disabled = true; sbPushBtn.textContent = 'Saving…'; sbResult.hidden = true;
 
@@ -536,7 +536,7 @@ async function pushToSalesbuildr() {
 
   let res;
   try {
-    res = await fetch('/api/push-widgets', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ widgets:[combinedWidget], prefix, apiKey, integrationKey:intKey }) });
+    res = await fetch('/api/push-widgets', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ widgets:[combinedWidget], prefix, apiKey, tenantUrl }) });
   } catch (e) {
     showSbResult(false, 'Could not reach the server.'); sbPushBtn.disabled=false; sbPushBtn.textContent='Save to Salesbuildr →'; return;
   }
