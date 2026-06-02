@@ -1,7 +1,8 @@
 /* ============================================================
    netlify/functions/sb-products.js
    Proxy for Salesbuildr product API — avoids CORS restrictions.
-   Forwards requests server-side where CORS does not apply.
+   Fetches products filtered by stock status group so each
+   product arrives pre-labelled for triage bucketing.
    ============================================================ */
 
 exports.handler = async (event) => {
@@ -22,7 +23,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const { tenantUrl, apiKey, size = 100, from = 0 } = body;
+  const { tenantUrl, apiKey, size = 100, from = 0, stockFilter, notQuotedSince } = body;
 
   if (!tenantUrl || !apiKey) {
     return {
@@ -31,7 +32,14 @@ exports.handler = async (event) => {
     };
   }
 
-  const url = `${tenantUrl}/public-api/product?size=${size}&from=${from}&sort=-updatedDate`;
+  // Build filter string
+  // stockFilter: e.g. "inStock|onlyDistributor|internal|lowStock"
+  // notQuotedSince: ISO date string e.g. "2024-12-02"
+  let filters = `productType:product`;
+  if (stockFilter) filters += `,stock:${stockFilter}`;
+  if (notQuotedSince) filters += `,not-quoted-since:${notQuotedSince}`;
+
+  const url = `${tenantUrl}/public-api/product?size=${size}&from=${from}&filters=${encodeURIComponent(filters)}&sort=-updatedDate`;
 
   let data;
   try {
