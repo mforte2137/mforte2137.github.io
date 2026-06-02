@@ -1297,7 +1297,7 @@ async function qqAddToCatalog(btn, idx) {
       shortDescription: btn.dataset.desc   || undefined,
       price:            approxPrice || undefined,
       apiKey,
-      integrationKey:   intKey
+      tenantUrl:        intKey
     });
     if (!res.ok) throw new Error(res.error || 'Failed to create product');
 
