@@ -31,7 +31,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const url = `${tenantUrl}/public-api/product?size=${size}&from=${from}&filters=type:product&sort=-updatedDate`;
+  const url = `${tenantUrl}/public-api/product?size=${size}&from=${from}&sort=-updatedDate`;
 
   let data;
   try {
