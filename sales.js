@@ -540,10 +540,10 @@ form.addEventListener('submit', async (e) => {
     showCombinedWidget(generatedWidgets);
     combinedSection.hidden   = false;
     individualSection.hidden = false;
-    initConnectSection();
-    showView('output');  // switch only when everything is ready
+    initSbCredentials();
+    showView('output');
   } else {
-    showView('output'); // show even if all failed, so error cards are visible
+    showView('output');
   }
 });
 
