@@ -16,7 +16,6 @@
 
 const PLACID_API  = 'https://api.placid.app/api/rest/images';
 const UNSPLASH_API = 'https://api.unsplash.com/search/photos';
-const SB_BASE     = 'https://portal.us1-salesbuildr.com/public-api/quote-widget-template';
 
 // Template registry — add new Placid templates here as they're created
 const TEMPLATES = {
@@ -592,17 +591,18 @@ Respond ONLY with valid JSON, no markdown:
 
   // ── ACTION: push ───────────────────────────────────────
   if (action === 'push') {
-    const { imageUrl, companyName, brandColor, apiKey, integrationKey } = body;
-    if (!apiKey || !integrationKey) return err('Salesbuildr credentials required.', 401);
-    if (!imageUrl)                  return err('imageUrl required.', 400);
+    const { imageUrl, companyName, brandColor, apiKey, tenantUrl } = body;
+    if (!apiKey || !tenantUrl) return err('Salesbuildr credentials required.', 401);
+    if (!imageUrl)             return err('imageUrl required.', 400);
 
-    const zones = buildOverlayZones(brandColor || '#1a1a1a');
-    const name  = companyName ? `${companyName} – Cover Page` : 'Cover Page';
+    const zones    = buildOverlayZones(brandColor || '#1a1a1a');
+    const name     = companyName ? `${companyName} – Cover Page` : 'Cover Page';
+    const sbUrl    = `${tenantUrl.replace(/\/$/, '')}/public-api/quote-widget-template`;
 
     try {
-      const res = await fetch(SB_BASE, {
+      const res = await fetch(sbUrl, {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json', 'api-key': apiKey, 'integration-key': integrationKey },
+        headers: { 'Content-Type': 'application/json', 'api-key': apiKey },
         body:    JSON.stringify({
           name,
           widget: {
