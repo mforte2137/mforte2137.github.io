@@ -2,8 +2,8 @@
    First Impression — first-impression.js
    ========================================================= */
 
-const LS_API_KEY  = 'sb_api_key';
-const LS_INT_KEY  = 'sb_int_key';
+const LS_API_KEY    = 'sb_api_key';
+const LS_TENANT_URL = 'sb_tenant_url';
 const LS_REP_NAME = 'fi_rep_name';
 
 // ── State ─────────────────────────────────────────────────
@@ -40,7 +40,7 @@ const autoMiniToggle     = document.getElementById('auto-mini-toggle');
 const autoMiniArrow      = document.getElementById('auto-mini-arrow');
 const autoMiniBody       = document.getElementById('auto-mini-body');
 const autoSbApiKey       = document.getElementById('auto-sb-api-key');
-const autoSbIntKey       = document.getElementById('auto-sb-int-key');
+const autoSbTenantUrl    = document.getElementById('auto-sb-tenant-url');
 const autoSbRemember     = document.getElementById('auto-sb-remember');
 const restartAutoBtn     = document.getElementById('restart-auto-btn');
 const logoMissingBanner  = document.getElementById('logo-missing-banner');
@@ -98,19 +98,19 @@ const pushResult   = document.getElementById('push-result');
 const miniToggle = document.getElementById('mini-toggle');
 const miniArrow  = document.getElementById('mini-arrow');
 const miniBody   = document.getElementById('mini-body');
-const sbApiKey   = document.getElementById('sb-api-key');
-const sbIntKey   = document.getElementById('sb-int-key');
-const sbRemember = document.getElementById('sb-remember');
+const sbApiKey    = document.getElementById('sb-api-key');
+const sbTenantUrl = document.getElementById('sb-tenant-url');
+const sbRemember  = document.getElementById('sb-remember');
 
 // ── Init ──────────────────────────────────────────────────
 function init() {
-  const savedApi  = localStorage.getItem(LS_API_KEY);
-  const savedInt  = localStorage.getItem(LS_INT_KEY);
-  const savedRep  = localStorage.getItem(LS_REP_NAME);
-  if (savedApi) { sbApiKey.value = savedApi; autoSbApiKey.value = savedApi; }
-  if (savedInt) { sbIntKey.value = savedInt; autoSbIntKey.value = savedInt; }
-  if (savedRep) { repNameInput.value = savedRep; autoRepInput.value = savedRep; }
-  if (savedApi && savedInt) { sbRemember.checked = true; autoSbRemember.checked = true; }
+  const savedApi    = localStorage.getItem(LS_API_KEY);
+  const savedTenant = localStorage.getItem(LS_TENANT_URL);
+  const savedRep    = localStorage.getItem(LS_REP_NAME);
+  if (savedApi)    { sbApiKey.value = savedApi; autoSbApiKey.value = savedApi; }
+  if (savedTenant) { sbTenantUrl.value = savedTenant; autoSbTenantUrl.value = savedTenant; }
+  if (savedRep)    { repNameInput.value = savedRep; autoRepInput.value = savedRep; }
+  if (savedApi && savedTenant) { sbRemember.checked = true; autoSbRemember.checked = true; }
 }
 
 // ── View switching ────────────────────────────────────────
@@ -338,16 +338,21 @@ autoMiniToggle.addEventListener('click', () => {
 
 // Auto push to Salesbuildr
 autoPushBtn.addEventListener('click', async () => {
-  const apiKey = autoSbApiKey.value.trim();
-  const intKey = autoSbIntKey.value.trim();
-  if (!apiKey || !intKey) {
+  const apiKey    = autoSbApiKey.value.trim();
+  const tenantUrl = autoSbTenantUrl.value.trim();
+  if (!apiKey || !tenantUrl) {
     autoMiniBody.hidden = false;
     autoMiniArrow.classList.add('is-open');
     autoSbApiKey.focus();
     return;
   }
-  if (autoSbRemember.checked) { localStorage.setItem(LS_API_KEY, apiKey); localStorage.setItem(LS_INT_KEY, intKey); }
-  else { localStorage.removeItem(LS_API_KEY); localStorage.removeItem(LS_INT_KEY); }
+  if (autoSbRemember.checked) {
+    localStorage.setItem(LS_API_KEY, apiKey);
+    localStorage.setItem(LS_TENANT_URL, tenantUrl);
+  } else {
+    localStorage.removeItem(LS_API_KEY);
+    localStorage.removeItem(LS_TENANT_URL);
+  }
 
   autoPushBtn.disabled    = true;
   autoPushBtn.textContent = 'Saving…';
@@ -364,7 +369,7 @@ autoPushBtn.addEventListener('click', async () => {
         action: 'push', imageUrl,
         companyName: autoCompanyName,
         brandColor:  autoBrandColor,
-        apiKey, integrationKey: intKey
+        apiKey, tenantUrl
       })
     });
     const data = await res.json();
@@ -886,18 +891,23 @@ generateBtn.addEventListener('click', async () => {
 
 // ── Push to Salesbuildr ───────────────────────────────────
 pushBtn.addEventListener('click', async () => {
-  const apiKey = sbApiKey.value.trim();
-  const intKey = sbIntKey.value.trim();
+  const apiKey    = sbApiKey.value.trim();
+  const tenantUrl = sbTenantUrl.value.trim();
 
-  if (!apiKey || !intKey) {
+  if (!apiKey || !tenantUrl) {
     miniBody.hidden = false;
     miniArrow.classList.add('is-open');
     sbApiKey.focus();
     return;
   }
 
-  if (sbRemember.checked) { localStorage.setItem(LS_API_KEY, apiKey); localStorage.setItem(LS_INT_KEY, intKey); }
-  else { localStorage.removeItem(LS_API_KEY); localStorage.removeItem(LS_INT_KEY); }
+  if (sbRemember.checked) {
+    localStorage.setItem(LS_API_KEY, apiKey);
+    localStorage.setItem(LS_TENANT_URL, tenantUrl);
+  } else {
+    localStorage.removeItem(LS_API_KEY);
+    localStorage.removeItem(LS_TENANT_URL);
+  }
 
   pushBtn.disabled    = true;
   pushBtn.textContent = 'Saving…';
@@ -916,7 +926,7 @@ pushBtn.addEventListener('click', async () => {
         companyName,
         brandColor,
         apiKey,
-        integrationKey: intKey
+        tenantUrl
       })
     });
     const data = await res.json();
