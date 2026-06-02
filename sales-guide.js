@@ -5,7 +5,7 @@
    ========================================================= */
 
 const LS_API_KEY       = 'sb_api_key';
-const LS_INT_KEY       = 'sb_int_key';
+const LS_TENANT_URL    = 'sb_tenant_url';
 // (Phase 2 field cache keys removed — no longer creating opportunities)
 const LS_SESSIONS = 'sb_sales_guide_sessions';
 const MAX_SESSIONS = 5;
@@ -309,7 +309,7 @@ let execMatchedProducts = [];  // confirmed catalog matches to include in quote
 
 async function execMatchCatalog(lineItems) {
   const apiKey = $('oppApiKey')?.value.trim() || localStorage.getItem(LS_API_KEY) || '';
-  const intKey = $('oppIntKey')?.value.trim() || localStorage.getItem(LS_INT_KEY) || '';
+  const intKey = $('oppTenantUrl')?.value.trim() || localStorage.getItem(LS_TENANT_URL) || '';
   const wrap   = $('execQuoteLinesWrap');
   if (!wrap) return;
 
@@ -325,7 +325,7 @@ async function execMatchCatalog(lineItems) {
   execMatchedProducts = [];
 
   try {
-    const res = await callCreateOpp('match-spec-items', { items: lineItems, apiKey, integrationKey: intKey });
+    const res = await callCreateOpp('match-spec-items', { items: lineItems, apiKey, tenantUrl: intKey });
     $('execMatchWorking').classList.add('hidden');
     if (!res.ok) throw new Error(res.error || 'Matching failed');
 
@@ -644,7 +644,7 @@ function renderResults(mode, title, rec) {
   showSection('results-view');
 
   // Auto-open Salesbuildr widget push if creds saved
-  if (localStorage.getItem(LS_API_KEY) && localStorage.getItem(LS_INT_KEY)) {
+  if (localStorage.getItem(LS_API_KEY) && localStorage.getItem(LS_TENANT_URL)) {
     $('sbBody').hidden = false;
     $('sbArrow').classList.add('open');
     updatePushBtn();
@@ -777,14 +777,15 @@ $('startOverBtn')?.addEventListener('click', () => {
 
 // ── Salesbuildr push ──────────────────────────────────────
 function initCredentials() {
-  const a = localStorage.getItem(LS_API_KEY), i = localStorage.getItem(LS_INT_KEY);
-  if (a) $('sbApiKey').value = a;
-  if (i) $('sbIntKey').value = i;
-  if (a && i) $('sbRemember').checked = true;
+  const savedApi    = localStorage.getItem(LS_API_KEY);
+  const savedTenant = localStorage.getItem(LS_TENANT_URL);
+  if (savedApi)    $('sbApiKey').value    = savedApi;
+  if (savedTenant) $('sbTenantUrl').value = savedTenant;
+  if (savedApi && savedTenant) $('sbRemember').checked = true;
   updatePushBtn();
 }
 function updatePushBtn() {
-  $('sbPushBtn').disabled = !($('sbApiKey').value.trim() && $('sbIntKey').value.trim());
+  $('sbPushBtn').disabled = !($('sbApiKey').value.trim() && $('sbTenantUrl').value.trim());
 }
 $('sbToggle')?.addEventListener('click', () => {
   const open = !$('sbBody').hidden;
@@ -792,13 +793,19 @@ $('sbToggle')?.addEventListener('click', () => {
   $('sbArrow').classList.toggle('open', !open);
 });
 $('sbApiKey')?.addEventListener('input', updatePushBtn);
-$('sbIntKey')?.addEventListener('input', updatePushBtn);
+$('sbTenantUrl')?.addEventListener('input', updatePushBtn);
 
 $('sbPushBtn')?.addEventListener('click', async () => {
-  const apiKey = $('sbApiKey').value.trim(), intKey = $('sbIntKey').value.trim();
-  if (!apiKey || !intKey) return;
-  if ($('sbRemember').checked) { localStorage.setItem(LS_API_KEY,apiKey); localStorage.setItem(LS_INT_KEY,intKey); }
-  else { localStorage.removeItem(LS_API_KEY); localStorage.removeItem(LS_INT_KEY); }
+  const apiKey    = $('sbApiKey').value.trim();
+  const tenantUrl = $('sbTenantUrl').value.trim();
+  if (!apiKey || !tenantUrl) return;
+  if ($('sbRemember').checked) {
+    localStorage.setItem(LS_API_KEY, apiKey);
+    localStorage.setItem(LS_TENANT_URL, tenantUrl);
+  } else {
+    localStorage.removeItem(LS_API_KEY);
+    localStorage.removeItem(LS_TENANT_URL);
+  }
 
   $('sbPushBtn').disabled=true; $('sbPushBtn').textContent='Saving…'; $('sbResult').classList.add('hidden');
 
@@ -812,7 +819,7 @@ $('sbPushBtn')?.addEventListener('click', async () => {
 
   try {
     const res  = await fetch('/api/push-widgets',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({widgets, prefix, apiKey, integrationKey:intKey})});
+      body:JSON.stringify({widgets, prefix, apiKey, tenantUrl})});
     const data = await res.json();
     if (data.successCount>0) {
       $('sbResult').textContent='✓ Saved to your Salesbuildr widget library.';
@@ -1037,9 +1044,9 @@ $('qq-request')?.addEventListener('input', () => {
 document.querySelectorAll('.mode-card[data-mode="quickquote"]').forEach(btn => {
   btn.addEventListener('click', () => {
     setTimeout(() => {
-      const a = localStorage.getItem(LS_API_KEY), i = localStorage.getItem(LS_INT_KEY);
+      const a = localStorage.getItem(LS_API_KEY), i = localStorage.getItem(LS_TENANT_URL);
       if (a) $('qqApiKey').value = a;
-      if (i) $('qqIntKey').value = i;
+      if (i) $('qqTenantUrl').value = i;
       if (a && i) $('qqRemember').checked = true;
     }, 50);
   });
@@ -1075,17 +1082,17 @@ async function doQQCatalogSearch() {
   clearError('qqError');
   const request = $('qq-request')?.value.trim() || '';
   const apiKey  = $('qqApiKey')?.value.trim() || '';
-  const intKey  = $('qqIntKey')?.value.trim() || '';
+  const intKey  = $('qqTenantUrl')?.value.trim() || '';
 
   if (!request)           { showError('qqError', 'Describe what the customer needs first.'); return; }
   if (!apiKey || !intKey) { showError('qqError', 'Enter your API credentials to search your catalog.'); return; }
 
   if ($('qqRemember')?.checked) {
     localStorage.setItem(LS_API_KEY, apiKey);
-    localStorage.setItem(LS_INT_KEY, intKey);
+    localStorage.setItem(LS_TENANT_URL, intKey);
   } else {
     localStorage.removeItem(LS_API_KEY);
-    localStorage.removeItem(LS_INT_KEY);
+    localStorage.removeItem(LS_TENANT_URL);
   }
 
   $('qqSearchBtn').disabled    = true;
@@ -1100,7 +1107,7 @@ async function doQQCatalogSearch() {
     const catRes = await callCreateOpp('search-products', {
       query: request,
       apiKey,
-      integrationKey: intKey
+      tenantUrl: intKey
     });
     console.log('[Quick Quote] catalog response:', catRes);
     console.log('[Quick Quote] catalog size:', catRes.catalogSize, '— matched:', catRes.matched);
@@ -1270,7 +1277,7 @@ function qqCopyMpn(btn, mpn) {
 
 async function qqAddToCatalog(btn, idx) {
   const apiKey = $('qqApiKey')?.value.trim() || '';
-  const intKey = $('qqIntKey')?.value.trim() || '';
+  const intKey = $('qqTenantUrl')?.value.trim() || '';
   if (!apiKey || !intKey) {
     const resultEl = document.getElementById('qq-add-result-' + idx);
     if (resultEl) { resultEl.textContent = 'Enter API credentials first'; resultEl.style.color = '#dc2626'; }
@@ -1508,7 +1515,7 @@ $('qqCompanyName')?.addEventListener('keydown', e => { if (e.key === 'Enter') do
 async function doQQCompanySearch() {
   const name   = $('qqCompanyName')?.value.trim() || '';
   const apiKey = $('qqApiKey')?.value.trim() || '';
-  const intKey = $('qqIntKey')?.value.trim() || '';
+  const intKey = $('qqTenantUrl')?.value.trim() || '';
   if (!name) return;
 
   $('qqCompanySearchBtn').disabled    = true;
@@ -1516,7 +1523,7 @@ async function doQQCompanySearch() {
   $('qqCompanyResults').classList.add('hidden');
 
   try {
-    const res = await callCreateOpp('search-company', { name, apiKey, integrationKey: intKey });
+    const res = await callCreateOpp('search-company', { name, apiKey, tenantUrl: intKey });
     renderQQCompanyResults(res.companies || [], name);
   } catch (e) {
     showError('qqError', 'Company search failed: ' + e.message);
@@ -1563,14 +1570,14 @@ function qqSelectCompany(company) {
 
 async function loadQQOpportunities(companyId) {
   const apiKey = $('qqApiKey')?.value.trim() || '';
-  const intKey = $('qqIntKey')?.value.trim() || '';
+  const intKey = $('qqTenantUrl')?.value.trim() || '';
   const list   = $('qqOppList');
   list.innerHTML = '<div class="opp-contact-loading">Loading opportunities…</div>';
   list.classList.remove('hidden');
   $('qqQuoteStep').classList.add('hidden');
 
   try {
-    const res  = await callCreateOpp('search-opportunity', { companyId, apiKey, integrationKey: intKey });
+    const res  = await callCreateOpp('search-opportunity', { companyId, apiKey, tenantUrl: intKey });
     const opps = res.opportunities || [];
     if (opps.length === 0) {
       list.innerHTML = '<div class="opp-contact-none">No opportunities found — create one in Salesbuildr or Autotask first.</div>';
@@ -1615,7 +1622,7 @@ $('qqCreateQuoteBtn')?.addEventListener('click', doQQCreateQuote);
 async function doQQCreateQuote() {
   if (!qqSelectedOpportunity) { showError('qqError', 'Select an opportunity first.'); return; }
   const apiKey   = $('qqApiKey')?.value.trim() || '';
-  const intKey   = $('qqIntKey')?.value.trim() || '';
+  const intKey   = $('qqTenantUrl')?.value.trim() || '';
   const title    = $('qqQuoteTitle')?.value.trim() || qqSelectedOpportunity.name;
   const selected = qqMatchedProducts.filter(p => p.id);
 
@@ -1633,7 +1640,7 @@ async function doQQCreateQuote() {
       products: selected.map(p => ({ id: p.id, quantity: p.qty })),
       quickQuote: true,  // triggers Quick Quote template
       apiKey,
-      integrationKey: intKey
+      tenantUrl: intKey
     });
     $('qqCreateWorking').classList.add('hidden');
     if (res.ok) {
@@ -1777,10 +1784,10 @@ function initCreateOppPanel() {
   selectedOppCompany     = null;
   selectedOppOpportunity = null;
 
-  const a = localStorage.getItem(LS_API_KEY), i = localStorage.getItem(LS_INT_KEY);
-  if (a) $('oppApiKey').value = a;
-  if (i) $('oppIntKey').value = i;
-  if (a && i) $('oppRemember').checked = true;
+  const a = localStorage.getItem(LS_API_KEY), t = localStorage.getItem(LS_TENANT_URL);
+  if (a) $('oppApiKey').value    = a;
+  if (t) $('oppTenantUrl').value = t;
+  if (a && t) $('oppRemember').checked = true;
 
   const company = currentAnswers?.company || '';
   if (company) $('oppCompanyName').value = company;
@@ -1855,7 +1862,7 @@ $('oppCompanyName')?.addEventListener('keydown', e => { if (e.key === 'Enter') d
 async function doCompanySearch() {
   const name   = $('oppCompanyName').value.trim();
   const apiKey = $('oppApiKey').value.trim();
-  const intKey = $('oppIntKey').value.trim();
+  const intKey = $('oppTenantUrl').value.trim();
   if (!name)              { showOppError('Enter a company name to search.'); return; }
   if (!apiKey || !intKey) { showOppError('Enter your API credentials first.'); return; }
 
@@ -1865,7 +1872,7 @@ async function doCompanySearch() {
   $('oppCreateResult').classList.add('hidden');
 
   try {
-    const res = await callCreateOpp('search-company', { name, apiKey, integrationKey: intKey });
+    const res = await callCreateOpp('search-company', { name, apiKey, tenantUrl: intKey });
     renderCompanyResults(res.companies || [], name);
   } catch (e) { showOppError('Search failed: ' + e.message); }
 
@@ -1918,7 +1925,7 @@ function selectCompany(company) {
 // ── Opportunity list for selected company ─────────────────
 async function loadOpportunitiesForCompany(companyId) {
   const apiKey = $('oppApiKey').value.trim();
-  const intKey = $('oppIntKey').value.trim();
+  const intKey = $('oppTenantUrl').value.trim();
   const list   = $('oppOppList');
 
   list.innerHTML = '<div class="opp-contact-loading">Loading opportunities…</div>';
@@ -1926,7 +1933,7 @@ async function loadOpportunitiesForCompany(companyId) {
   $('oppStep3').classList.add('hidden');
 
   try {
-    const res  = await callCreateOpp('search-opportunity', { companyId, apiKey, integrationKey: intKey });
+    const res  = await callCreateOpp('search-opportunity', { companyId, apiKey, tenantUrl: intKey });
     renderOpportunityList(res.opportunities || []);
   } catch (e) {
     list.innerHTML = `<div class="opp-contact-none">Could not load opportunities — ${esc(e.message)}</div>`;
@@ -1969,8 +1976,8 @@ async function selectOpportunity(opp) {
   // Fetch full opportunity to get all existing field IDs
   try {
     const apiKey = $('oppApiKey').value.trim();
-    const intKey = $('oppIntKey').value.trim();
-    const res    = await callCreateOpp('get-opportunity', { opportunityId: opp.id, apiKey, integrationKey: intKey });
+    const intKey = $('oppTenantUrl').value.trim();
+    const res    = await callCreateOpp('get-opportunity', { opportunityId: opp.id, apiKey, tenantUrl: intKey });
     if (res.ok && res.opportunity) {
       const full = res.opportunity;
       opp.contactId       = full.contactId       || null;
@@ -2013,7 +2020,7 @@ async function selectOpportunity(opp) {
 // ── Guided catalog fetch & service matching ───────────────
 async function loadGuidedCatalog() {
   const apiKey = $('oppApiKey').value.trim();
-  const intKey = $('oppIntKey').value.trim();
+  const intKey = $('oppTenantUrl').value.trim();
   const list   = $('oppServiceList');
 
   list.innerHTML = '<div class="opp-contact-loading">Loading your catalog…</div>';
@@ -2021,7 +2028,7 @@ async function loadGuidedCatalog() {
   $('oppServiceTotal').classList.add('hidden');
 
   try {
-    const res     = await callCreateOpp('fetch-guided-catalog', { apiKey, integrationKey: intKey });
+    const res     = await callCreateOpp('fetch-guided-catalog', { apiKey, tenantUrl: intKey });
     const catalog = res.catalog || [];
     if (res._debug) console.log('[Sales Guide] catalog debug:', JSON.stringify(res._debug, null, 2));
     renderServiceSelection(catalog);
@@ -2360,23 +2367,23 @@ $('oppCreateBtn')?.addEventListener('click', doConnectOpportunity);
 
 async function doConnectOpportunity() {
   const apiKey = $('oppApiKey').value.trim();
-  const intKey = $('oppIntKey').value.trim();
+  const intKey = $('oppTenantUrl').value.trim();
   if (!apiKey || !intKey)         { showOppError('Enter your API credentials first.'); return; }
   if (!selectedOppOpportunity)    { showOppError('Select an opportunity first.'); return; }
 
   if ($('oppRemember').checked) {
-    localStorage.setItem(LS_API_KEY, apiKey);
-    localStorage.setItem(LS_INT_KEY, intKey);
+    localStorage.setItem(LS_API_KEY,    apiKey);
+    localStorage.setItem(LS_TENANT_URL, intKey);
   } else {
     localStorage.removeItem(LS_API_KEY);
-    localStorage.removeItem(LS_INT_KEY);
+    localStorage.removeItem(LS_TENANT_URL);
   }
 
   $('oppCreateBtn').disabled    = true;
   $('oppCreateWorking').classList.remove('hidden');
   $('oppCreateResult').classList.add('hidden');
 
-  const creds       = { apiKey, integrationKey: intKey };
+  const creds       = { apiKey, tenantUrl: intKey };
   const description = buildSalesBrief();
   const opp         = selectedOppOpportunity;
 
