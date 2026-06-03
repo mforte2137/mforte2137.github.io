@@ -55,7 +55,7 @@
         <div class="section-header">
           <h2 class="section-title">CATALOG TRIAGE</h2>
           <div class="section-actions">
-            <button class="btn btn-secondary" id="fixMfrBtn" style="display:none;">FIX MANUFACTURERS</button>
+            <button class="btn btn-secondary" id="fixMfrBtn" style="display:none;">GROUP BY MANUFACTURER</button>
             <button class="btn btn-secondary" id="analyzeBtn">RUN AI ANALYSIS</button>
             <button class="btn btn-secondary" id="exportBtn">EXPORT PLAN</button>
           </div>
@@ -124,6 +124,20 @@
           </div>
           <button class="btn btn-secondary" id="nqsLoadBtn">LOAD</button>
           <button class="btn btn-primary" id="nqsFilterBtn" disabled>VIEW THESE</button>
+        </div>
+      </div>
+
+      <!-- DUPLICATE MPN CARD -->
+      <div class="dup-card" id="dupCard" style="display:none;">
+        <div class="dup-left">
+          <div class="dup-content">
+            <div class="dup-count" id="dupCount">—</div>
+            <div class="dup-label">DUPLICATE MPNs</div>
+            <div class="dup-desc" id="dupDesc">Same part number on multiple products</div>
+          </div>
+        </div>
+        <div class="dup-right">
+          <button class="btn btn-secondary" id="dupViewBtn">VIEW DUPLICATES</button>
         </div>
       </div>
 
@@ -226,11 +240,24 @@
     </div>
   </div>
 
+  <!-- DUPLICATE MPN MODAL -->
+  <div class="modal-overlay" id="dupModal" style="display:none;">
+    <div class="modal modal--wide">
+      <div class="modal-header">
+        <h3 class="modal-title">DUPLICATE MPNs</h3>
+      </div>
+      <div class="modal-body" id="dupModalBody"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="dupModalCloseBtn">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MANUFACTURER GROUPING MODAL -->
   <div class="modal-overlay" id="mfrModal" style="display:none;">
     <div class="modal modal--wide">
       <div class="modal-header">
-        <h3 class="modal-title">FIX MANUFACTURER — AI GROUPING</h3>
+        <h3 class="modal-title">MANUFACTURER GROUPING — AI ANALYSIS</h3>
       </div>
       <div class="modal-body" id="mfrModalBody">
         <p style="color:var(--text-muted);font-size:12px;">Analyzing product names…</p>
