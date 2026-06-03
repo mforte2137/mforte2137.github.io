@@ -282,6 +282,8 @@ async function handleAnalyze() {
 }
 
 async function analyzeProductBatch(products) {
+  const months = parseInt(document.getElementById('nqsMonths').value, 10);
+
   const productList = products.map(p => ({
     id: p.id,
     name: p.name,
@@ -290,23 +292,31 @@ async function analyzeProductBatch(products) {
     category: p.categories?.[0]?.name || null,
     shortDescription: p.shortDescription || null,
     bucket: p.bucket,
+    notQuotedMonths: nqsProductIds.has(p.id) ? months : null,
   }));
+
+  const nqsLoaded = nqsProductIds.size > 0;
 
   const prompt = `You are a product catalog analyst for an MSP (managed service provider) technology reseller.
 These products are NOT FOUND in any distributor feed but have a valid MPN. Analyze each and write a one-sentence note.
+
+SIGNALS AVAILABLE:
+- bucket: always "orange" (not found in distribution, has MPN)
+- notQuotedMonths: if set, this product has NOT appeared on any quote in that many months. If null, quote history is unknown.
 
 FOCUS ON:
 - Is this product EOL / discontinued / legacy (e.g. old server gen, obsolete part)?
 - Is it a product the MSP might source direct or from Amazon (cables, accessories, consumables)?
 - Is the MPN format suspicious (internal code, warranty SKU, config string rather than a real part number)?
 - Is it a current product that just happens to be temporarily out of distribution?
+${nqsLoaded ? '- If notQuotedMonths is set, factor that into your recommendation — a product not quoted in 12+ months AND not in distribution is a very strong unlist candidate.' : ''}
 
 Respond ONLY with a valid JSON array. No markdown, no explanation.
 Format: [{"id":"...","bucket":"yellow|orange|red","confidence":"high|medium|low","note":"one plain-English sentence"}]
 
 - Keep orange if genuinely EOL/legacy/not orderable
 - Move to yellow if it looks like a product the MSP sources outside distribution
-- Keep red only if you see NO MPN (these shouldn't be in this batch but handle gracefully)
+- A product with notQuotedMonths set AND no distribution presence should lean toward orange with a decisive note
 
 Products:
 ${JSON.stringify(productList, null, 2)}`;
