@@ -47,11 +47,13 @@ const unlistProgressLabel = document.getElementById('unlistProgressLabel');
 // ── STATE ─────────────────────────────────────────────────────
 let allProducts = [];      // listed products only, with .bucket set from real stock data
 let aiNotes = {};          // id → { note, confidence }
+let nqsProductIds = new Set(); // ids of products not quoted in selected period
 let selectedIds = new Set();
 let currentPage = 1;
 const PAGE_SIZE = 50;
 let activeBucketFilter = 'actionable'; // default: hide green
 let activeSearch = '';
+let nqsActive = false; // whether NQS filter is applied
 
 const STOCK_GROUPS = [
   { bucket: 'green',  filter: 'inStock|onlyDistributor|internal|lowStock', label: 'Ready to Sell' },
@@ -87,6 +89,19 @@ function init() {
   selectAllChk.addEventListener('change', handleSelectAll);
   unlistConfirmBtn.addEventListener('click', executeUnlist);
   unlistCancelBtn.addEventListener('click', () => { unlistModal.style.display = 'none'; });
+
+  // NQS card
+  document.getElementById('nqsLoadBtn').addEventListener('click', handleNqsLoad);
+  document.getElementById('nqsFilterBtn').addEventListener('click', handleNqsFilter);
+  document.getElementById('nqsMonths').addEventListener('change', () => {
+    // Reset if period changes
+    nqsProductIds.clear();
+    nqsActive = false;
+    document.getElementById('nqsCount').textContent = '—';
+    document.getElementById('nqsDesc').textContent = "Haven't appeared on a quote";
+    document.getElementById('nqsFilterBtn').disabled = true;
+    renderTable();
+  });
 
   document.querySelectorAll('.bucket').forEach(el => {
     el.addEventListener('click', () => {
@@ -158,6 +173,7 @@ async function handleLoad() {
 
     headerMeta.textContent = `${allProducts.length} products · ${new URL(tenantUrl).hostname}`;
     updateBucketCounts();
+    document.getElementById('nqsCard').style.display = 'flex';
     showDashboard();
     renderTable();
   } catch (err) {
@@ -314,7 +330,82 @@ ${JSON.stringify(productList, null, 2)}`;
   }
 }
 
-// ── GUIDANCE PANEL ────────────────────────────────────────────
+// ── NOT QUOTED SINCE ──────────────────────────────────────────
+async function handleNqsLoad() {
+  const { tenantUrl, apiKey } = getCreds();
+  const months = parseInt(document.getElementById('nqsMonths').value, 10);
+  const loadBtn = document.getElementById('nqsLoadBtn');
+  const filterBtn = document.getElementById('nqsFilterBtn');
+
+  loadBtn.disabled = true;
+  loadBtn.textContent = 'LOADING…';
+  nqsProductIds.clear();
+  nqsActive = false;
+
+  // Calculate the cutoff date
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - months);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+  try {
+    // Fetch all products not quoted since cutoff — no stock filter, all types excluded per usual
+    const PAGE = 100;
+    let from = 0;
+    let fetched = 0;
+
+    while (true) {
+      const resp = await fetch('/api/sb-products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantUrl, apiKey,
+          size: PAGE, from,
+          notQuotedSince: cutoffStr,
+        }),
+      });
+
+      if (!resp.ok) throw new Error(`Proxy ${resp.status}`);
+      const data = await resp.json();
+      if (!data.ok) throw new Error(data.error);
+
+      for (const p of data.results) {
+        // Only count products we already have in our catalog (listed products)
+        if (allProducts.find(x => x.id === p.id)) {
+          nqsProductIds.add(p.id);
+        }
+      }
+
+      fetched += data.results.length;
+      if (data.results.length < PAGE) break;
+      from += PAGE;
+    }
+
+    const count = nqsProductIds.size;
+    document.getElementById('nqsCount').textContent = count;
+    document.getElementById('nqsDesc').textContent =
+      `Not quoted in the last ${months} months — ${count} products`;
+    filterBtn.disabled = count === 0;
+
+  } catch (err) {
+    document.getElementById('nqsDesc').textContent = `Error: ${err.message}`;
+  }
+
+  loadBtn.disabled = false;
+  loadBtn.textContent = 'LOAD';
+}
+
+function handleNqsFilter() {
+  nqsActive = !nqsActive;
+  const btn = document.getElementById('nqsFilterBtn');
+  const card = document.getElementById('nqsCard');
+  btn.textContent = nqsActive ? 'CLEAR FILTER' : 'VIEW THESE';
+  btn.className = nqsActive ? 'btn btn-danger' : 'btn btn-primary';
+  card.style.outline = nqsActive ? '2px solid #4a6fa5' : 'none';
+  currentPage = 1;
+  renderTable();
+}
+
+
 // Replaces the generic summary with actionable next steps
 function renderGuidancePanel() {
   const counts = { green: 0, yellow: 0, orange: 0, red: 0 };
@@ -357,6 +448,9 @@ function renderGuidancePanel() {
 // ── TABLE RENDER ──────────────────────────────────────────────
 function getFilteredProducts() {
   return allProducts.filter(p => {
+    // NQS filter — if active, only show products in the NQS set
+    if (nqsActive && !nqsProductIds.has(p.id)) return false;
+
     // 'actionable' = yellow + orange + red (default view — hides green)
     if (activeBucketFilter === 'actionable') {
       if (p.bucket === 'green') return false;
@@ -414,10 +508,14 @@ function buildRow(p) {
     ? `<span class="ai-note">${escHtml(note.note)}</span>`
     : `<span class="ai-note-pending">—</span>`;
 
+  const nqsBadge = nqsProductIds.has(p.id)
+    ? `<span class="nqs-badge">NOT QUOTED</span>`
+    : '';
+
   tr.innerHTML = `
     <td><input type="checkbox" class="row-check" data-id="${p.id}" ${isSelected ? 'checked' : ''} /></td>
     <td>${statusHtml}</td>
-    <td><div class="product-name">${escHtml(p.name)}</div></td>
+    <td><div class="product-name">${escHtml(p.name)}${nqsBadge}</div></td>
     <td>${hasMpn ? `<span class="product-mpn">${escHtml(p.mpn)}</span>` : `<span class="mpn-missing">missing</span>`}</td>
     <td>${escHtml(vendor)}</td>
     <td>${escHtml(category)}</td>
