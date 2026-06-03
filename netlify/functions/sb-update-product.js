@@ -22,7 +22,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const { tenantUrl, apiKey, productId, fields } = body;
+  const { tenantUrl, apiKey, productId, fields, skipLookup } = body;
 
   if (!tenantUrl || !apiKey || !productId || !fields) {
     return {
@@ -31,10 +31,10 @@ exports.handler = async (event) => {
     };
   }
 
-  // If vendor name provided, look up the company ID first
+  // If vendor name provided and not skipping lookup, resolve to company ID
   let resolvedFields = { ...fields };
 
-  if (fields.vendor && !fields.vendorId) {
+  if (fields.vendor && !fields.vendorId && !skipLookup) {
     try {
       const compUrl = `${tenantUrl}/public-api/company?query=${encodeURIComponent(fields.vendor)}&filters=type:manufacturer&size=5`;
       const compResp = await fetch(compUrl, {
