@@ -484,3 +484,74 @@ body {
   .buckets-grid { grid-template-columns: 1fr 1fr; }
   .table-toolbar { flex-direction: column; align-items: stretch; }
 }
+
+/* ── NOT QUOTED SINCE CARD ── */
+.nqs-card {
+  margin-top: 1px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 4px solid #4a6fa5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.nqs-left { display: flex; align-items: center; gap: 16px; }
+.nqs-indicator {
+  width: 4px;
+  min-height: 60px;
+  background: #4a6fa5;
+  flex-shrink: 0;
+  display: none; /* using border-left on card instead */
+}
+.nqs-count {
+  font-size: 36px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: #4a6fa5;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.nqs-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.nqs-desc { font-size: 11px; color: var(--text-muted); }
+.nqs-right {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.nqs-select-group { display: flex; flex-direction: column; gap: 4px; }
+.nqs-select {
+  background: var(--bg);
+  border: 1px solid var(--border-dark);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  padding: 6px 8px;
+  outline: none;
+  min-width: 140px;
+}
+.nqs-select:focus { border-color: var(--text); }
+
+/* NQS badge in table */
+.nqs-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 5px;
+  border: 1px solid #4a6fa5;
+  color: #4a6fa5;
+  background: #eef2f8;
+  margin-left: 4px;
+  vertical-align: middle;
+}
