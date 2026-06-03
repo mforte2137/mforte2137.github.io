@@ -78,7 +78,7 @@ exports.handler = async (event) => {
     delete resolvedFields.vendor;
   }
 
-  if (!resolvedFields.vendorId && fields.vendor) {
+  if (!resolvedFields.vendorId && fields.vendor && !skipLookup) {
     return {
       statusCode: 422,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
