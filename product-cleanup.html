@@ -99,6 +99,31 @@
         </div>
       </section>
 
+      <!-- NOT QUOTED SINCE CARD -->
+      <div class="nqs-card" id="nqsCard" style="display:none;">
+        <div class="nqs-left">
+          <div class="nqs-indicator"></div>
+          <div class="nqs-content">
+            <div class="nqs-count" id="nqsCount">—</div>
+            <div class="nqs-label">NOT QUOTED IN</div>
+            <div class="nqs-desc" id="nqsDesc">Haven't appeared on a quote</div>
+          </div>
+        </div>
+        <div class="nqs-right">
+          <div class="nqs-select-group">
+            <label class="field-label">TIME PERIOD</label>
+            <select class="nqs-select" id="nqsMonths">
+              <option value="6">6 months</option>
+              <option value="12" selected>12 months</option>
+              <option value="18">18 months</option>
+              <option value="24">24 months</option>
+            </select>
+          </div>
+          <button class="btn btn-secondary" id="nqsLoadBtn">LOAD</button>
+          <button class="btn btn-primary" id="nqsFilterBtn" disabled>VIEW THESE</button>
+        </div>
+      </div>
+
       <!-- AI ANALYSIS PANEL -->
       <section class="analysis-section" id="analysisSection" style="display:none;">
         <div class="analysis-header">
