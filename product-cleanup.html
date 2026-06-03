@@ -60,25 +60,14 @@
           </div>
         </div>
 
-        <div class="buckets-grid">
-          <div class="bucket bucket--green" id="bucket-green" data-bucket="green">
-            <div class="bucket-indicator"></div>
-            <div class="bucket-content">
-              <div class="bucket-count" id="count-green">—</div>
-              <div class="bucket-label">READY TO SELL</div>
-              <div class="bucket-desc">Found in distribution, in stock</div>
-            </div>
-          </div>
+        <!-- Summary line for non-actionable buckets -->
+        <div class="buckets-summary" id="bucketsSummary" style="display:none;">
+          <span id="summary-green">—</span> ready to sell &nbsp;·&nbsp;
+          <span id="summary-yellow">—</span> back-ordered &nbsp;·&nbsp;
+          no action needed on these
+        </div>
 
-          <div class="bucket bucket--yellow" id="bucket-yellow" data-bucket="yellow">
-            <div class="bucket-indicator"></div>
-            <div class="bucket-content">
-              <div class="bucket-count" id="count-yellow">—</div>
-              <div class="bucket-label">NEEDS REVIEW</div>
-              <div class="bucket-desc">Valid MPN, temporarily unavailable</div>
-            </div>
-          </div>
-
+        <div class="buckets-grid buckets-grid--actionable">
           <div class="bucket bucket--orange" id="bucket-orange" data-bucket="orange">
             <div class="bucket-indicator"></div>
             <div class="bucket-content">
@@ -96,7 +85,20 @@
               <div class="bucket-desc">No MPN, not found in any feed</div>
             </div>
           </div>
+
+          <div class="bucket bucket--mismatch" id="mismatch-card" data-bucket="mismatch" style="display:none;">
+            <div class="bucket-indicator"></div>
+            <div class="bucket-content">
+              <div class="bucket-count" id="count-mismatch">—</div>
+              <div class="bucket-label">MANUFACTURER MISMATCH</div>
+              <div class="bucket-desc" id="mismatch-desc">Manufacturer defaulted to MSP name on import</div>
+            </div>
+          </div>
         </div>
+
+        <!-- Hidden counts for summary line -->
+        <span id="count-green" style="display:none;">—</span>
+        <span id="count-yellow" style="display:none;">—</span>
       </section>
 
       <!-- NOT QUOTED SINCE CARD -->
@@ -130,6 +132,12 @@
           <h2 class="section-title">AI ANALYSIS</h2>
           <div class="analysis-progress" id="analysisProgress"></div>
         </div>
+        <div class="analysis-progress-wrap" id="analysisProgressWrap" style="display:none;">
+          <div class="analysis-progress-bar-track">
+            <div class="analysis-progress-bar-fill" id="analysisProgressFill"></div>
+          </div>
+          <div class="analysis-progress-detail" id="analysisProgressDetail"></div>
+        </div>
         <div class="analysis-summary" id="analysisSummary"></div>
       </section>
 
@@ -147,7 +155,8 @@
                 <option value="actionable">Needs Action (default)</option>
                 <option value="red">Unlist Candidate</option>
                 <option value="orange">Likely Unlist</option>
-                <option value="yellow">Needs Review</option>
+                <option value="mismatch">Manufacturer Mismatch</option>
+                <option value="yellow">Back-ordered (no action)</option>
                 <option value="green">Ready to Sell</option>
                 <option value="all">All products</option>
               </select>
