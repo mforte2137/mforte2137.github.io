@@ -694,3 +694,67 @@ body {
 .mfr-unknown {
   opacity: 0.5;
 }
+
+/* ── DUPLICATE MPN CARD ── */
+.dup-card {
+  margin-top: 1px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 4px solid #8a3e00;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.dup-count {
+  font-size: 36px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: #8a3e00;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.dup-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.dup-desc { font-size: 11px; color: var(--text-muted); }
+.dup-right { display: flex; align-items: center; gap: 12px; }
+
+/* Duplicate MPN modal */
+.dup-mpn-group {
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.dup-mpn-header {
+  background: var(--bg-alt);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dup-mpn-value {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  flex: 1;
+}
+.dup-mpn-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+.dup-mpn-body { padding: 8px 16px; }
+.dup-mpn-product {
+  font-size: 11px;
+  color: var(--text-mid);
+  padding: 3px 0;
+  border-bottom: 1px solid var(--border);
+}
+.dup-mpn-product:last-child { border-bottom: none; }
