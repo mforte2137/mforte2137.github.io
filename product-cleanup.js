@@ -55,6 +55,7 @@ let activeBucketFilter = 'actionable'; // default: hide green
 let activeSearch = '';
 let nqsActive = false; // whether NQS filter is applied
 let mspName = null;    // MSP's own company name — auto-detected via company API
+let dupMpnGroups = []; // duplicate MPN groups from API filters
 
 const STOCK_GROUPS = [
   { bucket: 'green',  filter: 'inStock|onlyDistributor|internal|lowStock', label: 'Ready to Sell' },
@@ -92,6 +93,11 @@ function init() {
   selectAllChk.addEventListener('change', handleSelectAll);
   unlistConfirmBtn.addEventListener('click', executeUnlist);
   unlistCancelBtn.addEventListener('click', () => { unlistModal.style.display = 'none'; });
+
+  document.getElementById('dupViewBtn').addEventListener('click', handleDupView);
+  document.getElementById('dupModalCloseBtn').addEventListener('click', () => {
+    document.getElementById('dupModal').style.display = 'none';
+  });
 
   document.getElementById('fixMfrBtn').addEventListener('click', handleFixManufacturers);
   document.getElementById('mfrModalCloseBtn').addEventListener('click', () => {
@@ -158,6 +164,7 @@ async function handleLoad() {
   allProducts = [];
   selectedIds.clear();
   aiNotes = {};
+  dupMpnGroups = [];
   analysisSection.style.display = 'none';
 
   showLoading('Connecting to Salesbuildr…', 'Fetching product catalog by stock status');
@@ -212,6 +219,16 @@ async function handleLoad() {
 
     updateBucketCounts();
     document.getElementById('nqsCard').style.display = 'flex';
+
+    // Show duplicate MPN card if any found
+    if (dupMpnGroups.length > 0) {
+      const totalDupProducts = dupMpnGroups.reduce((n, g) => n + g.amount, 0);
+      document.getElementById('dupCount').textContent = dupMpnGroups.length;
+      document.getElementById('dupDesc').textContent =
+        `${dupMpnGroups.length} part numbers appear on ${totalDupProducts} products`;
+      document.getElementById('dupCard').style.display = 'flex';
+    }
+
     showDashboard();
     renderTable();
   } catch (err) {
@@ -239,6 +256,16 @@ async function fetchProductGroup(tenantUrl, apiKey, stockFilter) {
 
     const data = await resp.json();
     if (!data.ok) throw new Error(data.error || 'Proxy error');
+
+    // Capture duplicate MPN data from the first page filters response
+    if (from === 0 && data.filters && !dupMpnGroups.length) {
+      const partNumberFilter = data.filters.find(f => f.key === 'part-number');
+      if (partNumberFilter && Array.isArray(partNumberFilter.values)) {
+        // Only keep MPNs that appear more than once and have a real value
+        const dups = partNumberFilter.values.filter(v => v.amount > 1 && v.value && v.value.trim() !== '');
+        dupMpnGroups.push(...dups);
+      }
+    }
 
     results.push(...data.results);
     if (data.results.length < PAGE) break;
@@ -418,6 +445,60 @@ ${JSON.stringify(productList, null, 2)}`;
   }
 }
 
+// ── DUPLICATE MPNs ────────────────────────────────────────────
+function handleDupView() {
+  const modal = document.getElementById('dupModal');
+  const body  = document.getElementById('dupModalBody');
+  modal.style.display = 'flex';
+
+  if (dupMpnGroups.length === 0) {
+    body.innerHTML = '<p style="color:var(--text-muted);font-size:12px;">No duplicate MPNs found.</p>';
+    return;
+  }
+
+  // Sort by count descending
+  const sorted = [...dupMpnGroups].sort((a, b) => b.amount - a.amount);
+
+  body.innerHTML = `
+    <p style="font-size:12px;color:var(--text-mid);margin-bottom:16px;">
+      ${sorted.length} part numbers appear on more than one product.
+      Review each group and unlist or delete the duplicates, keeping only the preferred version.
+    </p>
+  `;
+
+  for (const group of sorted) {
+    const groupEl = document.createElement('div');
+    groupEl.className = 'dup-mpn-group';
+
+    // Find matching products in our loaded catalog
+    const products = allProducts.filter(p =>
+      p.mpn && p.mpn.trim().toLowerCase() === group.value.trim().toLowerCase()
+    );
+
+    groupEl.innerHTML = `
+      <div class="dup-mpn-header">
+        <div class="dup-mpn-value">${escHtml(group.value)}</div>
+        <span class="dup-mpn-count">${group.amount} products</span>
+      </div>
+      <div class="dup-mpn-body">
+        ${products.length > 0
+          ? products.map(p => `
+              <div class="dup-mpn-product">
+                <strong>${escHtml(p.name)}</strong>
+                <span style="color:var(--text-muted);margin-left:8px;">${escHtml(p.manufacturer || '—')}</span>
+                <span style="color:var(--text-muted);margin-left:8px;font-family:var(--font-mono);font-size:10px;">${escHtml(p.categories?.[0]?.name || '—')}</span>
+              </div>`).join('')
+          : `<div class="dup-mpn-product" style="color:var(--text-muted);">
+              Products not in current view — may be in a different stock group
+            </div>`
+        }
+      </div>
+    `;
+
+    body.appendChild(groupEl);
+  }
+}
+
 // ── MANUFACTURER FIX ──────────────────────────────────────────
 async function handleFixManufacturers() {
   const mismatchProducts = allProducts.filter(p => p.mfrMismatch);
@@ -483,8 +564,8 @@ function renderMfrGroups(container, groups) {
 
   container.innerHTML = `
     <p style="font-size:12px;color:var(--text-mid);margin-bottom:16px;">
-      AI has grouped ${groups.reduce((n, [,p]) => n + p.length, 0)} products by manufacturer.
-      Review each group, adjust the name if needed, then click UPDATE to fix them.
+      AI has grouped ${groups.reduce((n, [,p]) => n + p.length, 0)} products by correct manufacturer.
+      Use this list as a guide — select each group in Salesbuildr's bulk edit to update the manufacturer there.
     </p>
   `;
 
@@ -498,11 +579,6 @@ function renderMfrGroups(container, groups) {
       <div class="mfr-group-header">
         <div class="mfr-group-name">${escHtml(mfrName)}</div>
         <span class="mfr-group-count">${products.length} product${products.length !== 1 ? 's' : ''}</span>
-        <input class="mfr-group-input" id="${inputId}" type="text"
-          value="${escHtml(isUnknown ? '' : mfrName)}"
-          placeholder="${isUnknown ? 'Skip or enter manufacturer' : mfrName}" />
-        <button class="btn btn-primary mfr-update-btn" data-group="${escHtml(mfrName)}"
-          ${isUnknown ? 'disabled' : ''}>UPDATE ALL</button>
       </div>
       <div class="mfr-group-body">
         ${products.slice(0, 20).map(p =>
@@ -513,68 +589,6 @@ function renderMfrGroups(container, groups) {
           : ''}
       </div>
     `;
-
-    const btn   = groupEl.querySelector('.mfr-update-btn');
-    const input = groupEl.querySelector(`#${inputId}`);
-
-    input.addEventListener('input', () => { btn.disabled = input.value.trim() === ''; });
-
-    btn.addEventListener('click', async () => {
-      const newMfr = input.value.trim();
-      if (!newMfr) return;
-
-      btn.disabled = true;
-      btn.textContent = 'UPDATING…';
-
-      const ids = products.map(p => p.id);
-      let done = 0, errors = 0, lastError = '';
-
-      document.getElementById('progressModalTitle').textContent = `UPDATING — ${newMfr}`;
-      document.getElementById('unlistProgressBar').style.width = '0%';
-      document.getElementById('unlistProgressLabel').textContent = 'Starting…';
-      document.getElementById('progressModal').style.display = 'flex';
-
-      const CONCURRENCY = 5;
-      for (let i = 0; i < ids.length; i += CONCURRENCY) {
-        const batch = ids.slice(i, i + CONCURRENCY);
-        await Promise.all(batch.map(async (id) => {
-          try {
-            const resp = await fetch('/api/sb-update-product', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ tenantUrl, apiKey, productId: id, fields: { vendor: newMfr } }),
-            });
-            const result = await resp.json();
-            if (resp.ok && result.ok) {
-              const p = allProducts.find(x => x.id === id);
-              if (p) { p.manufacturer = newMfr; p.mfrMismatch = false; }
-            } else {
-              errors++;
-              lastError = result.error || 'Unknown error';
-            }
-          } catch { errors++; }
-          done++;
-          document.getElementById('unlistProgressBar').style.width =
-            Math.round((done / ids.length) * 100) + '%';
-          document.getElementById('unlistProgressLabel').textContent =
-            `${done} of ${ids.length} updated…`;
-        }));
-      }
-
-      document.getElementById('unlistProgressLabel').textContent = errors === 0
-        ? `Done — ${done} products updated to "${newMfr}".`
-        : `${done - errors} succeeded, ${errors} failed. ${lastError}`;
-
-      setTimeout(() => { document.getElementById('progressModal').style.display = 'none'; }, 2000);
-
-      updateBucketCounts();
-      renderTable();
-
-      btn.textContent = '✓ UPDATED';
-      btn.style.background = 'var(--green)';
-      btn.style.borderColor = 'var(--green)';
-      groupEl.style.opacity = '0.5';
-    });
 
     container.appendChild(groupEl);
   }
@@ -917,7 +931,7 @@ async function executeUnlist() {
     ? `Done — ${done} products unlisted successfully.`
     : `Done — ${done - errors} succeeded, ${errors} failed.`;
 
-  setTimeout(() => { progressModal.style.display = 'none'; }, 2500);
+  setTimeout(() => { progressModal.style.display = 'none'; }, 3000);
 }
 
 // ── EXPORT ────────────────────────────────────────────────────
