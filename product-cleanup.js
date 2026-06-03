@@ -456,45 +456,117 @@ function handleDupView() {
     return;
   }
 
-  // Sort by count descending
   const sorted = [...dupMpnGroups].sort((a, b) => b.amount - a.amount);
 
   body.innerHTML = `
     <p style="font-size:12px;color:var(--text-mid);margin-bottom:16px;">
       ${sorted.length} part numbers appear on more than one product.
-      Review each group and unlist or delete the duplicates, keeping only the preferred version.
+      Check the products you want to unlist in each group, keeping only the preferred version.
     </p>
   `;
 
-  for (const group of sorted) {
-    const groupEl = document.createElement('div');
-    groupEl.className = 'dup-mpn-group';
+  const { tenantUrl, apiKey } = getCreds();
 
-    // Find matching products in our loaded catalog
+  for (const group of sorted) {
     const products = allProducts.filter(p =>
       p.mpn && p.mpn.trim().toLowerCase() === group.value.trim().toLowerCase()
     );
 
-    groupEl.innerHTML = `
-      <div class="dup-mpn-header">
-        <div class="dup-mpn-value">${escHtml(group.value)}</div>
-        <span class="dup-mpn-count">${group.amount} products</span>
-      </div>
-      <div class="dup-mpn-body">
-        ${products.length > 0
-          ? products.map(p => `
-              <div class="dup-mpn-product">
-                <strong>${escHtml(p.name)}</strong>
-                <span style="color:var(--text-muted);margin-left:8px;">${escHtml(p.manufacturer || '—')}</span>
-                <span style="color:var(--text-muted);margin-left:8px;font-family:var(--font-mono);font-size:10px;">${escHtml(p.categories?.[0]?.name || '—')}</span>
-              </div>`).join('')
-          : `<div class="dup-mpn-product" style="color:var(--text-muted);">
-              Products not in current view — may be in a different stock group
-            </div>`
-        }
-      </div>
+    const groupEl = document.createElement('div');
+    groupEl.className = 'dup-mpn-group';
+
+    const headerEl = document.createElement('div');
+    headerEl.className = 'dup-mpn-header';
+    headerEl.innerHTML = `
+      <div class="dup-mpn-value">${escHtml(group.value)}</div>
+      <span class="dup-mpn-count">${group.amount} products</span>
     `;
 
+    const unlistBtn = document.createElement('button');
+    unlistBtn.className = 'btn btn-danger';
+    unlistBtn.textContent = 'UNLIST CHECKED';
+    unlistBtn.style.fontSize = '10px';
+    unlistBtn.style.padding = '5px 10px';
+    unlistBtn.disabled = true;
+    headerEl.appendChild(unlistBtn);
+    groupEl.appendChild(headerEl);
+
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'dup-mpn-body';
+
+    if (products.length === 0) {
+      bodyEl.innerHTML = `<div class="dup-mpn-product" style="color:var(--text-muted);">
+        Products not in current view — may be in a different stock group
+      </div>`;
+    } else {
+      const checkboxes = [];
+      for (const p of products) {
+        const row = document.createElement('div');
+        row.className = 'dup-mpn-product';
+        row.style.display = 'flex';
+        row.style.alignItems = 'center';
+        row.style.gap = '10px';
+
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.dataset.id = p.id;
+        chk.dataset.name = p.name;
+        checkboxes.push(chk);
+
+        chk.addEventListener('change', () => {
+          const anyChecked = checkboxes.some(c => c.checked);
+          unlistBtn.disabled = !anyChecked;
+        });
+
+        const label = document.createElement('span');
+        label.style.flex = '1';
+        label.innerHTML = `<strong>${escHtml(p.name)}</strong>
+          <span style="color:var(--text-muted);margin-left:8px;">${escHtml(p.manufacturer || '—')}</span>
+          <span style="color:var(--text-muted);margin-left:8px;font-family:var(--font-mono);font-size:10px;">${escHtml(p.categories?.[0]?.name || '—')}</span>`;
+
+        row.appendChild(chk);
+        row.appendChild(label);
+        bodyEl.appendChild(row);
+      }
+
+      unlistBtn.addEventListener('click', async () => {
+        const toUnlist = checkboxes.filter(c => c.checked).map(c => ({ id: c.dataset.id, name: c.dataset.name }));
+        if (toUnlist.length === 0) return;
+
+        unlistBtn.disabled = true;
+        unlistBtn.textContent = 'UNLISTING…';
+
+        let done = 0, errors = 0;
+        for (const item of toUnlist) {
+          try {
+            const resp = await fetch('/api/sb-unlist', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ tenantUrl, apiKey, productId: item.id }),
+            });
+            const result = await resp.json();
+            if (resp.ok && result.ok) {
+              allProducts = allProducts.filter(p => p.id !== item.id);
+              done++;
+              // Grey out the row
+              checkboxes.find(c => c.dataset.id === item.id)?.closest('.dup-mpn-product')
+                ?.style.setProperty('opacity', '0.4');
+            } else { errors++; }
+          } catch { errors++; }
+        }
+
+        updateBucketCounts();
+        renderTable();
+
+        unlistBtn.textContent = errors === 0
+          ? `✓ ${done} UNLISTED`
+          : `${done} ok, ${errors} failed`;
+        unlistBtn.style.background = errors === 0 ? 'var(--green)' : 'var(--red)';
+        unlistBtn.style.borderColor = errors === 0 ? 'var(--green)' : 'var(--red)';
+      });
+    }
+
+    groupEl.appendChild(bodyEl);
     body.appendChild(groupEl);
   }
 }
