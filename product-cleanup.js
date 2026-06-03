@@ -477,21 +477,30 @@ async function handleDupView() {
       const data = await resp.json();
       if (data.ok) {
         // Filter to exact MPN match and listed only
-        groupProducts[group.value] = (data.results || []).filter(p =>
+        const listed = (data.results || []).filter(p =>
           p.mpn && p.mpn.trim().toLowerCase() === group.value.trim().toLowerCase()
           && p.listed !== false
         );
+        // Only keep groups that still have 2+ listed products
+        if (listed.length >= 2) groupProducts[group.value] = listed;
       }
     } catch (e) {
       groupProducts[group.value] = [];
     }
   }
 
+  // If nothing left to clean up
+  const activeGroups = sorted.filter(g => groupProducts[g.value]?.length >= 2);
+  if (activeGroups.length === 0) {
+    body.innerHTML = '<p style="color:var(--text-mid);font-size:13px;">No duplicate MPNs with multiple listed products found — catalog looks clean!</p>';
+    return;
+  }
+
   // Global unlist button
   const globalBar = document.createElement('div');
   globalBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding:12px 16px;background:var(--bg-alt);border:1px solid var(--border);';
   globalBar.innerHTML = `<p style="font-size:12px;color:var(--text-mid);margin:0;">
-    Check duplicates to remove across all groups, then unlist in one action.
+    ${activeGroups.length} part numbers still have multiple listed products. Check duplicates to remove, keep the preferred version unchecked.
   </p>`;
   const globalUnlistBtn = document.createElement('button');
   globalUnlistBtn.className = 'btn btn-danger';
@@ -505,7 +514,7 @@ async function handleDupView() {
 
   const allCheckboxes = [];
 
-  for (const group of sorted) {
+  for (const group of activeGroups) {
     const products = groupProducts[group.value] || [];
     const groupEl = document.createElement('div');
     groupEl.className = 'dup-mpn-group';
