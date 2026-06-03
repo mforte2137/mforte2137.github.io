@@ -1,8 +1,7 @@
 /* ============================================================
    PRODUCT CLEANUP — JS
-   Fetches products by stock status group (real data from SB),
-   triages into four buckets, runs optional AI analysis for
-   notes, and supports bulk unlisting via the Salesbuildr API.
+   v3 — Real stock-based triage, parallel AI analysis (orange only),
+   no unlisted products shown, actionable guidance panel.
    ============================================================ */
 
 // ── DOM REFS ──────────────────────────────────────────────────
@@ -46,48 +45,26 @@ const unlistProgressBar   = document.getElementById('unlistProgressBar');
 const unlistProgressLabel = document.getElementById('unlistProgressLabel');
 
 // ── STATE ─────────────────────────────────────────────────────
-let allProducts = [];      // all fetched products with .bucket already set
-let aiNotes = {};          // id → { note, confidence } from AI analysis
+let allProducts = [];      // listed products only, with .bucket set from real stock data
+let aiNotes = {};          // id → { note, confidence }
 let selectedIds = new Set();
 let currentPage = 1;
 const PAGE_SIZE = 50;
-let activeBucketFilter = 'all';
+let activeBucketFilter = 'actionable'; // default: hide green
 let activeSearch = '';
 
-// Stock groups → bucket mapping
-// We fetch each group separately so every product gets a real stock-based bucket
 const STOCK_GROUPS = [
-  {
-    bucket: 'green',
-    filter: 'inStock|onlyDistributor|internal|lowStock',
-    label:  'Ready to Sell',
-  },
-  {
-    bucket: 'yellow',
-    filter: 'backOrder|unavailable|custom',
-    label:  'Needs Review',
-  },
-  {
-    bucket: 'orange',
-    filter: 'notFound',
-    label:  'Likely Unlist / Unlist Candidate',
-  },
+  { bucket: 'green',  filter: 'inStock|onlyDistributor|internal|lowStock', label: 'Ready to Sell' },
+  { bucket: 'yellow', filter: 'backOrder|unavailable|custom',              label: 'Needs Review'  },
+  { bucket: 'orange', filter: 'notFound',                                  label: 'Not Found'     },
 ];
 
-// notFound products get split into orange (has MPN) or red (no MPN) client-side
 const BUCKET_META = {
   green:  { label: 'Ready to Sell',    cls: 'bucket-badge--green'  },
   yellow: { label: 'Needs Review',     cls: 'bucket-badge--yellow' },
   orange: { label: 'Likely Unlist',    cls: 'bucket-badge--orange' },
   red:    { label: 'Unlist Candidate', cls: 'bucket-badge--red'    },
 };
-
-// Six months ago — used for not-quoted-since signal
-function sixMonthsAgo() {
-  const d = new Date();
-  d.setMonth(d.getMonth() - 6);
-  return d.toISOString().slice(0, 10);
-}
 
 // ── INIT ──────────────────────────────────────────────────────
 function init() {
@@ -142,7 +119,6 @@ function getCreds() {
 async function handleLoad() {
   const { tenantUrl, apiKey } = getCreds();
   credsError.textContent = '';
-
   if (!tenantUrl || !apiKey) {
     credsError.textContent = 'Both Tenant URL and API Key are required.';
     return;
@@ -152,32 +128,32 @@ async function handleLoad() {
   allProducts = [];
   selectedIds.clear();
   aiNotes = {};
+  analysisSection.style.display = 'none';
 
   showLoading('Connecting to Salesbuildr…', 'Fetching product catalog by stock status');
-  dashboard.style.display = 'none';
+  dashboard.style.display  = 'none';
   emptyState.style.display = 'none';
 
   try {
-    // Fetch each stock group separately so we get real per-product bucket assignment
     for (const group of STOCK_GROUPS) {
       updateLoadingLabel(
-        `Fetching "${group.label}" products…`,
+        `Fetching ${group.label} products…`,
         `${allProducts.length} products loaded so far`
       );
       const products = await fetchProductGroup(tenantUrl, apiKey, group.filter);
 
-      // Split notFound into orange (has MPN) vs red (no MPN)
       for (const p of products) {
+        // Skip already-unlisted products entirely — nothing to act on
+        if (!p.listed) continue;
+
         const hasMpn = p.mpn && p.mpn.trim() !== '';
-        if (group.bucket === 'orange') {
-          p.bucket = hasMpn ? 'orange' : 'red';
-        } else {
-          p.bucket = group.bucket;
-        }
-        p.stockGroup = group.filter; // keep for reference
+        p.bucket = (group.bucket === 'orange')
+          ? (hasMpn ? 'orange' : 'red')
+          : group.bucket;
       }
 
-      allProducts.push(...products);
+      // Only push listed products
+      allProducts.push(...products.filter(p => p.listed));
     }
 
     headerMeta.textContent = `${allProducts.length} products · ${new URL(tenantUrl).hostname}`;
@@ -219,7 +195,6 @@ async function fetchProductGroup(tenantUrl, apiKey, stockFilter) {
       'Loading page by page'
     );
   }
-
   return results;
 }
 
@@ -233,44 +208,58 @@ function updateBucketCounts() {
   document.getElementById('count-yellow').textContent = counts.yellow;
   document.getElementById('count-orange').textContent = counts.orange;
   document.getElementById('count-red').textContent    = counts.red;
+  return counts;
 }
 
 // ── AI ANALYSIS ───────────────────────────────────────────────
+// Only analyze orange — red is self-evident (no MPN), green is confirmed good,
+// yellow is real products temporarily out of stock (stock data tells the story).
+// Run 3 batches in parallel for speed.
 async function handleAnalyze() {
   analyzeBtn.disabled = true;
   analyzeBtn.textContent = 'ANALYZING…';
   analysisSection.style.display = 'block';
-  analysisSummary.innerHTML = '<p style="color:var(--text-muted);font-size:12px;">Sending products to AI for analysis…</p>';
+  analysisSummary.innerHTML = '<p style="color:var(--text-muted);font-size:12px;">Analyzing not-found products…</p>';
 
-  // Only send yellow, orange, red to AI — green is already confirmed sellable
-  const candidates = allProducts.filter(p => p.bucket !== 'green');
+  const candidates = allProducts.filter(p => p.bucket === 'orange');
   const total = candidates.length;
   let done = 0;
 
-  const BATCH = 30;
+  const BATCH = 50;
+  const PARALLEL = 3;
+
+  // Build all batches upfront
+  const batches = [];
   for (let i = 0; i < candidates.length; i += BATCH) {
-    const batch = candidates.slice(i, i + BATCH);
+    batches.push(candidates.slice(i, i + BATCH));
+  }
+
+  // Process in parallel groups of PARALLEL
+  for (let i = 0; i < batches.length; i += PARALLEL) {
+    const group = batches.slice(i, i + PARALLEL);
     analysisProgress.textContent = `Analyzing ${done} of ${total}…`;
-    try {
-      const results = await analyzeProductBatch(batch);
-      for (const r of results) {
-        aiNotes[r.id] = { note: r.note, confidence: r.confidence };
-        // AI can upgrade/downgrade bucket for yellow/orange/red
-        const p = allProducts.find(x => x.id === r.id);
-        if (p && r.bucket && BUCKET_META[r.bucket]) {
-          p.bucket = r.bucket;
+
+    await Promise.all(group.map(async (batch) => {
+      try {
+        const results = await analyzeProductBatch(batch);
+        for (const r of results) {
+          aiNotes[r.id] = { note: r.note, confidence: r.confidence };
+          const p = allProducts.find(x => x.id === r.id);
+          if (p && r.bucket && BUCKET_META[r.bucket]) p.bucket = r.bucket;
         }
+      } catch (e) {
+        console.error('Batch error:', e);
       }
-    } catch (e) {
-      console.error('Batch error:', e);
-    }
-    done += batch.length;
+      done += batch.length;
+    }));
+
+    analysisProgress.textContent = `Analyzing ${Math.min(done, total)} of ${total}…`;
   }
 
   analysisProgress.textContent = `Complete — ${total} products analyzed`;
   updateBucketCounts();
   renderTable();
-  renderAnalysisSummary();
+  renderGuidancePanel();
 
   analyzeBtn.disabled = false;
   analyzeBtn.textContent = 'RE-ANALYZE';
@@ -288,22 +277,22 @@ async function analyzeProductBatch(products) {
   }));
 
   const prompt = `You are a product catalog analyst for an MSP (managed service provider) technology reseller.
-These products have been pre-triaged by live distributor stock data. Write a one-sentence note for each explaining its situation and confirming or adjusting its cleanup bucket.
+These products are NOT FOUND in any distributor feed but have a valid MPN. Analyze each and write a one-sentence note.
 
-BUCKET MEANINGS:
-- yellow: Real product, back-ordered or temporarily unavailable in distribution. Likely still valid.
-- orange: Has a valid MPN but not found in any distributor feed. Possibly EOL, discontinued, or legacy.
-- red: No MPN at all. Cannot be ordered from any distributor. Strong unlist candidate.
+FOCUS ON:
+- Is this product EOL / discontinued / legacy (e.g. old server gen, obsolete part)?
+- Is it a product the MSP might source direct or from Amazon (cables, accessories, consumables)?
+- Is the MPN format suspicious (internal code, warranty SKU, config string rather than a real part number)?
+- Is it a current product that just happens to be temporarily out of distribution?
 
-YOUR JOB:
-- Write a plain-English note explaining why this product is in its bucket
-- Adjust the bucket only if you have strong reason (e.g. orange item is clearly a current product the MSP buys direct; red item is a known accessory type)
-- Note if something looks EOL, legacy, or like a product the MSP sources outside distribution (Amazon, direct from vendor, etc.)
+Respond ONLY with a valid JSON array. No markdown, no explanation.
+Format: [{"id":"...","bucket":"yellow|orange|red","confidence":"high|medium|low","note":"one plain-English sentence"}]
 
-RESPOND with a JSON array only. No markdown, no explanation outside the JSON.
-Format: [{"id":"...","bucket":"yellow|orange|red","confidence":"high|medium|low","note":"one sentence explaining this product's situation"}]
+- Keep orange if genuinely EOL/legacy/not orderable
+- Move to yellow if it looks like a product the MSP sources outside distribution
+- Keep red only if you see NO MPN (these shouldn't be in this batch but handle gracefully)
 
-Products to analyze:
+Products:
 ${JSON.stringify(productList, null, 2)}`;
 
   const resp = await fetch('/api/analyze-products', {
@@ -325,38 +314,41 @@ ${JSON.stringify(productList, null, 2)}`;
   }
 }
 
-function renderAnalysisSummary() {
+// ── GUIDANCE PANEL ────────────────────────────────────────────
+// Replaces the generic summary with actionable next steps
+function renderGuidancePanel() {
   const counts = { green: 0, yellow: 0, orange: 0, red: 0 };
   for (const p of allProducts) counts[p.bucket]++;
 
   const total = allProducts.length;
   const actionable = counts.orange + counts.red;
-  const pct = total > 0 ? Math.round((actionable / total) * 100) : 0;
 
   analysisSummary.innerHTML = `
     <div class="analysis-card">
-      <div class="analysis-card-title">Catalog Overview</div>
+      <div class="analysis-card-title">Step 1 — Quick Wins</div>
       <div class="analysis-card-body">
-        <strong>${counts.green}</strong> products are ready to sell — in stock or available via distributor.<br>
-        <strong>${counts.yellow}</strong> need review — back-ordered, temporarily unavailable, or custom sourced.<br>
-        <strong>${counts.orange}</strong> are likely safe to unlist — not found in distribution but have a part number.<br>
-        <strong>${counts.red}</strong> are unlist candidates — no MPN, not found anywhere.
+        Filter to <strong>Unlist Candidate</strong> (${counts.red} products).
+        These have no MPN and cannot be ordered from any distributor.
+        Select all and unlist — this is the safest bulk action and requires no customer approval.
       </div>
     </div>
     <div class="analysis-card">
-      <div class="analysis-card-title">Recommended Action</div>
+      <div class="analysis-card-title">Step 2 — Review with Customer</div>
       <div class="analysis-card-body">
-        <strong>${actionable} products (${pct}%)</strong> are candidates for unlisting.<br><br>
-        Start with the <strong>${counts.red} Unlist Candidates</strong> (no MPN) — safest to act on immediately.<br>
-        Then review <strong>${counts.orange} Likely Unlist</strong> items with the MSP before acting.
+        Filter to <strong>Likely Unlist</strong> (${counts.orange} products).
+        These have MPNs but aren't in any distributor feed — likely EOL or legacy.
+        Review the AI notes with the MSP. Most can be unlisted; a few may be products
+        they still source direct.
       </div>
     </div>
     <div class="analysis-card">
-      <div class="analysis-card-title">Label Readiness</div>
+      <div class="analysis-card-title">Step 3 — Leave for Now</div>
       <div class="analysis-card-body">
-        Your <strong>cleanup-unlist</strong> and <strong>cleanup-review</strong> labels are ready in Salesbuildr.
-        When the SB API adds label-writing support, this tool will automatically tag each product.
-        Until then, use the Export Plan CSV to guide manual labeling.
+        The <strong>${counts.yellow} Needs Review</strong> products are real items
+        temporarily back-ordered or unavailable. No action needed — monitor and
+        revisit if they remain unavailable after 90 days.
+        <br><br>
+        <strong>${counts.green} products</strong> are in stock and ready to sell.
       </div>
     </div>
   `;
@@ -365,7 +357,12 @@ function renderAnalysisSummary() {
 // ── TABLE RENDER ──────────────────────────────────────────────
 function getFilteredProducts() {
   return allProducts.filter(p => {
-    if (activeBucketFilter !== 'all' && p.bucket !== activeBucketFilter) return false;
+    // 'actionable' = yellow + orange + red (default view — hides green)
+    if (activeBucketFilter === 'actionable') {
+      if (p.bucket === 'green') return false;
+    } else if (activeBucketFilter !== 'all') {
+      if (p.bucket !== activeBucketFilter) return false;
+    }
     if (activeSearch) {
       const name = (p.name || '').toLowerCase();
       const mpn  = (p.mpn  || '').toLowerCase();
@@ -399,11 +396,8 @@ function buildRow(p) {
   const tr = document.createElement('tr');
   if (isSelected) tr.classList.add('selected');
 
-  // Stock status badge — derived from bucket (which came from real stock data)
   let statusHtml = '';
-  if (!p.listed) {
-    statusHtml = '<span class="status-badge status-nodata">Unlisted</span>';
-  } else if (p.bucket === 'green') {
+  if (p.bucket === 'green') {
     statusHtml = '<span class="status-badge status-instock">In Stock</span>';
   } else if (p.bucket === 'yellow') {
     statusHtml = '<span class="status-badge status-unavailable">Unavailable</span>';
@@ -413,30 +407,24 @@ function buildRow(p) {
 
   const badgeCls   = `bucket-badge--${p.bucket}`;
   const badgeLabel = BUCKET_META[p.bucket]?.label || p.bucket;
-
-  const category = p.categories?.[0]?.name || p.category?.name || '—';
-  const vendor   = p.manufacturer || p.vendor || '—';
+  const category   = p.categories?.[0]?.name || '—';
+  const vendor     = p.manufacturer || '—';
 
   const aiNote = note
     ? `<span class="ai-note">${escHtml(note.note)}</span>`
     : `<span class="ai-note-pending">—</span>`;
 
   tr.innerHTML = `
-    <td><input type="checkbox" class="row-check" data-id="${p.id}"
-      ${isSelected ? 'checked' : ''}
-      ${!p.listed ? 'disabled' : ''} /></td>
+    <td><input type="checkbox" class="row-check" data-id="${p.id}" ${isSelected ? 'checked' : ''} /></td>
     <td>${statusHtml}</td>
     <td><div class="product-name">${escHtml(p.name)}</div></td>
-    <td>${hasMpn
-      ? `<span class="product-mpn">${escHtml(p.mpn)}</span>`
-      : `<span class="mpn-missing">missing</span>`}</td>
+    <td>${hasMpn ? `<span class="product-mpn">${escHtml(p.mpn)}</span>` : `<span class="mpn-missing">missing</span>`}</td>
     <td>${escHtml(vendor)}</td>
     <td>${escHtml(category)}</td>
     <td><span class="bucket-badge ${badgeCls}">${badgeLabel}</span></td>
     <td>${aiNote}</td>
     <td style="text-align:center;">
-      <span class="listed-dot listed-dot--${p.listed ? 'yes' : 'no'}"
-        title="${p.listed ? 'Listed' : 'Unlisted'}"></span>
+      <span class="listed-dot listed-dot--yes" title="Listed"></span>
     </td>
   `;
 
@@ -497,7 +485,6 @@ function handleSelectAll(e) {
   const pageStart = (currentPage - 1) * PAGE_SIZE;
   const pageItems = filtered.slice(pageStart, pageStart + PAGE_SIZE);
   for (const p of pageItems) {
-    if (!p.listed) continue;
     if (e.target.checked) selectedIds.add(p.id);
     else selectedIds.delete(p.id);
   }
@@ -559,20 +546,19 @@ async function executeUnlist() {
         });
         const result = await resp.json();
         if (resp.ok && result.ok) {
-          const product = allProducts.find(p => p.id === id);
-          if (product) product.listed = false;
+          // Remove from allProducts entirely — unlisted products don't show
+          allProducts = allProducts.filter(p => p.id !== id);
+          selectedIds.delete(id);
         } else {
           errors++;
         }
       } catch { errors++; }
       done++;
-      const pct = Math.round((done / ids.length) * 100);
-      unlistProgressBar.style.width = pct + '%';
+      unlistProgressBar.style.width = Math.round((done / ids.length) * 100) + '%';
       unlistProgressLabel.textContent = `${done} of ${ids.length} processed…`;
     }));
   }
 
-  selectedIds.clear();
   updateBucketCounts();
   renderTable();
 
@@ -586,24 +572,22 @@ async function executeUnlist() {
 // ── EXPORT ────────────────────────────────────────────────────
 function handleExport() {
   const rows = [
-    ['ID', 'Name', 'MPN', 'Vendor', 'Category', 'Listed', 'Bucket', 'AI Note', 'Confidence'],
+    ['ID', 'Name', 'MPN', 'Manufacturer', 'Category', 'Bucket', 'AI Note', 'Confidence'],
   ];
-
   for (const p of allProducts) {
     const note = aiNotes[p.id] || {};
-    const category = p.categories?.[0]?.name || p.category?.name || '';
-    const vendor   = p.manufacturer || p.vendor || '';
     rows.push([
-      p.id, p.name, p.mpn || '', vendor, category,
-      p.listed ? 'Yes' : 'No',
-      p.bucket, note.note || '', note.confidence || '',
+      p.id, p.name, p.mpn || '',
+      p.manufacturer || '',
+      p.categories?.[0]?.name || '',
+      p.bucket,
+      note.note || '',
+      note.confidence || '',
     ]);
   }
-
   const csv = rows.map(r =>
     r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')
   ).join('\n');
-
   const blob = new Blob([csv], { type: 'text/csv' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
