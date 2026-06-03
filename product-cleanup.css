@@ -555,3 +555,75 @@ body {
   margin-left: 4px;
   vertical-align: middle;
 }
+
+/* ── AI PROGRESS BAR ── */
+.analysis-progress-wrap {
+  margin-bottom: 16px;
+}
+.analysis-progress-bar-track {
+  height: 6px;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.analysis-progress-bar-fill {
+  height: 100%;
+  background: var(--text);
+  width: 0%;
+  transition: width 0.4s ease;
+}
+.analysis-progress-detail {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+/* ── ACTIONABLE BUCKETS LAYOUT ── */
+.buckets-grid--actionable {
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (max-width: 900px) {
+  .buckets-grid--actionable { grid-template-columns: repeat(2, 1fr); }
+}
+
+.buckets-summary {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 10px 0 14px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+.buckets-summary span {
+  font-weight: 700;
+  color: var(--text-mid);
+}
+
+/* Mismatch bucket */
+--mismatch:    #5a3e8a;
+--mismatch-bg: #f3f0fa;
+--mismatch-bd: #c4b4e8;
+
+.bucket--mismatch .bucket-indicator { background: #5a3e8a; }
+.bucket--mismatch .bucket-count     { color: #5a3e8a; }
+
+.bucket-badge--mismatch {
+  color: #5a3e8a;
+  border-color: #5a3e8a;
+  background: #f3f0fa;
+}
+
+.mismatch-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 5px;
+  border: 1px solid #5a3e8a;
+  color: #5a3e8a;
+  background: #f3f0fa;
+  margin-left: 4px;
+  vertical-align: middle;
+}
