@@ -220,12 +220,32 @@ async function handleLoad() {
     updateBucketCounts();
     document.getElementById('nqsCard').style.display = 'flex';
 
+    // Fetch duplicate MPN data — dedicated call with no stock filter
+    // so we see duplicates across ALL stock groups
+    try {
+      const dupResp = await fetch('/api/sb-products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenantUrl, apiKey, size: 1, from: 0 }),
+      });
+      const dupData = await dupResp.json();
+      if (dupData.ok && dupData.filters) {
+        const partNumberFilter = dupData.filters.find(f => f.key === 'part-number');
+        if (partNumberFilter && Array.isArray(partNumberFilter.values)) {
+          dupMpnGroups = partNumberFilter.values.filter(v =>
+            v.amount > 1 && v.value && v.value.trim() !== ''
+          );
+        }
+      }
+    } catch (e) {
+      console.warn('Could not fetch duplicate MPN data:', e);
+    }
+
     // Show duplicate MPN card if any found
     if (dupMpnGroups.length > 0) {
-      const totalDupProducts = dupMpnGroups.reduce((n, g) => n + g.amount, 0);
       document.getElementById('dupCount').textContent = dupMpnGroups.length;
       document.getElementById('dupDesc').textContent =
-        `${dupMpnGroups.length} part numbers appear on ${totalDupProducts} products`;
+        `${dupMpnGroups.length} potential duplicates detected — click to verify`;
       document.getElementById('dupCard').style.display = 'flex';
     }
 
@@ -256,16 +276,6 @@ async function fetchProductGroup(tenantUrl, apiKey, stockFilter) {
 
     const data = await resp.json();
     if (!data.ok) throw new Error(data.error || 'Proxy error');
-
-    // Capture duplicate MPN data from the first page filters response
-    if (from === 0 && data.filters && !dupMpnGroups.length) {
-      const partNumberFilter = data.filters.find(f => f.key === 'part-number');
-      if (partNumberFilter && Array.isArray(partNumberFilter.values)) {
-        // Only keep MPNs that appear more than once and have a real value
-        const dups = partNumberFilter.values.filter(v => v.amount > 1 && v.value && v.value.trim() !== '');
-        dupMpnGroups.push(...dups);
-      }
-    }
 
     results.push(...data.results);
     if (data.results.length < PAGE) break;
