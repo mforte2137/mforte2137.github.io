@@ -225,7 +225,7 @@ async function handleAnalyze() {
   const total = candidates.length;
   let done = 0;
 
-  const BATCH = 50;
+  const BATCH = 25;
   const PARALLEL = 3;
 
   // Build all batches upfront
