@@ -23,7 +23,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const { tenantUrl, apiKey, size = 100, from = 0, stockFilter, notQuotedSince } = body;
+  const { tenantUrl, apiKey, size = 100, from = 0, stockFilter, notQuotedSince, mpnQuery } = body;
 
   if (!tenantUrl || !apiKey) {
     return {
@@ -39,7 +39,10 @@ exports.handler = async (event) => {
   if (stockFilter) filters += `,stock:${stockFilter}`;
   if (notQuotedSince) filters += `,not-quoted-since:${notQuotedSince}`;
 
-  const url = `${tenantUrl}/public-api/product?size=${size}&from=${from}&filters=${encodeURIComponent(filters)}&sort=-updatedDate`;
+  // mpnQuery uses search query param to find products by MPN
+  const queryParam = mpnQuery ? `&query=${encodeURIComponent(mpnQuery)}` : '';
+
+  const url = `${tenantUrl}/public-api/product?size=${size}&from=${from}&filters=${encodeURIComponent(filters)}&sort=-updatedDate${queryParam}`;
 
   let data;
   try {
