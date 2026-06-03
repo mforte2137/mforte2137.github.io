@@ -54,6 +54,7 @@ const PAGE_SIZE = 50;
 let activeBucketFilter = 'actionable'; // default: hide green
 let activeSearch = '';
 let nqsActive = false; // whether NQS filter is applied
+let mspName = null;    // MSP's own company name — auto-detected via company API
 
 const STOCK_GROUPS = [
   { bucket: 'green',  filter: 'inStock|onlyDistributor|internal|lowStock', label: 'Ready to Sell' },
@@ -106,8 +107,13 @@ function init() {
   document.querySelectorAll('.bucket').forEach(el => {
     el.addEventListener('click', () => {
       const b = el.dataset.bucket;
-      bucketFilter.value = b;
-      activeBucketFilter = b;
+      if (b === 'mismatch') {
+        bucketFilter.value = 'mismatch';
+        activeBucketFilter = 'mismatch';
+      } else {
+        bucketFilter.value = b;
+        activeBucketFilter = b;
+      }
       currentPage = 1;
       renderTable();
     });
@@ -150,6 +156,21 @@ async function handleLoad() {
   emptyState.style.display = 'none';
 
   try {
+    // Fetch MSP company name first — used to detect manufacturer mismatches
+    try {
+      const compResp = await fetch('/api/sb-company', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenantUrl, apiKey }),
+      });
+      const compData = await compResp.json();
+      if (compData.ok && compData.mspName) {
+        mspName = compData.mspName;
+      }
+    } catch (e) {
+      console.warn('Could not fetch MSP company name:', e);
+    }
+
     for (const group of STOCK_GROUPS) {
       updateLoadingLabel(
         `Fetching ${group.label} products…`,
@@ -172,6 +193,14 @@ async function handleLoad() {
     }
 
     headerMeta.textContent = `${allProducts.length} products · ${new URL(tenantUrl).hostname}`;
+
+    // Tag manufacturer mismatches — products where manufacturer = MSP name (PSA import default)
+    if (mspName) {
+      for (const p of allProducts) {
+        p.mfrMismatch = p.manufacturer && p.manufacturer.trim().toLowerCase() === mspName.trim().toLowerCase();
+      }
+    }
+
     updateBucketCounts();
     document.getElementById('nqsCard').style.display = 'flex';
     showDashboard();
@@ -216,14 +245,37 @@ async function fetchProductGroup(tenantUrl, apiKey, stockFilter) {
 
 // ── BUCKET COUNTS ─────────────────────────────────────────────
 function updateBucketCounts() {
-  const counts = { green: 0, yellow: 0, orange: 0, red: 0 };
+  const counts = { green: 0, yellow: 0, orange: 0, red: 0, mismatch: 0 };
   for (const p of allProducts) {
     if (counts[p.bucket] !== undefined) counts[p.bucket]++;
+    if (p.mfrMismatch) counts.mismatch++;
   }
+
+  // Hidden counts (used by summary line)
   document.getElementById('count-green').textContent  = counts.green;
   document.getElementById('count-yellow').textContent = counts.yellow;
   document.getElementById('count-orange').textContent = counts.orange;
   document.getElementById('count-red').textContent    = counts.red;
+
+  // Summary line
+  const summary = document.getElementById('bucketsSummary');
+  if (summary) {
+    document.getElementById('summary-green').textContent  = counts.green;
+    document.getElementById('summary-yellow').textContent = counts.yellow;
+    summary.style.display = 'block';
+  }
+
+  // Mismatch card
+  const mismatchCard = document.getElementById('mismatch-card');
+  if (mismatchCard) {
+    document.getElementById('count-mismatch').textContent = counts.mismatch;
+    mismatchCard.style.display = counts.mismatch > 0 ? 'flex' : 'none';
+    if (mspName) {
+      document.getElementById('mismatch-desc').textContent =
+        `Manufacturer set to "${mspName}" — PSA import default, needs correction`;
+    }
+  }
+
   return counts;
 }
 
@@ -235,25 +287,38 @@ async function handleAnalyze() {
   analyzeBtn.disabled = true;
   analyzeBtn.textContent = 'ANALYZING…';
   analysisSection.style.display = 'block';
-  analysisSummary.innerHTML = '<p style="color:var(--text-muted);font-size:12px;">Analyzing not-found products…</p>';
+  analysisSummary.innerHTML = '';
+
+  const progressWrap   = document.getElementById('analysisProgressWrap');
+  const progressFill   = document.getElementById('analysisProgressFill');
+  const progressDetail = document.getElementById('analysisProgressDetail');
+  progressWrap.style.display = 'block';
+  progressFill.style.width = '0%';
 
   const candidates = allProducts.filter(p => p.bucket === 'orange');
   const total = candidates.length;
   let done = 0;
+  let errors = 0;
+
+  const updateProgress = () => {
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    progressFill.style.width = pct + '%';
+    analysisProgress.textContent = `${pct}% complete`;
+    progressDetail.textContent = `${done} of ${total} products analyzed${errors > 0 ? ` · ${errors} failed` : ''} · running in parallel batches`;
+  };
+
+  updateProgress();
 
   const BATCH = 25;
   const PARALLEL = 3;
 
-  // Build all batches upfront
   const batches = [];
   for (let i = 0; i < candidates.length; i += BATCH) {
     batches.push(candidates.slice(i, i + BATCH));
   }
 
-  // Process in parallel groups of PARALLEL
   for (let i = 0; i < batches.length; i += PARALLEL) {
     const group = batches.slice(i, i + PARALLEL);
-    analysisProgress.textContent = `Analyzing ${done} of ${total}…`;
 
     await Promise.all(group.map(async (batch) => {
       try {
@@ -265,14 +330,18 @@ async function handleAnalyze() {
         }
       } catch (e) {
         console.error('Batch error:', e);
+        errors++;
       }
       done += batch.length;
+      updateProgress();
     }));
-
-    analysisProgress.textContent = `Analyzing ${Math.min(done, total)} of ${total}…`;
   }
 
-  analysisProgress.textContent = `Complete — ${total} products analyzed`;
+  // Final state
+  progressFill.style.width = '100%';
+  analysisProgress.textContent = `Complete`;
+  progressDetail.textContent = `${total} products analyzed${errors > 0 ? ` · ${errors} batches failed — re-analyze to retry` : ' · all batches succeeded'}`;
+
   updateBucketCounts();
   renderTable();
   renderGuidancePanel();
@@ -458,12 +527,12 @@ function renderGuidancePanel() {
 // ── TABLE RENDER ──────────────────────────────────────────────
 function getFilteredProducts() {
   return allProducts.filter(p => {
-    // NQS filter — if active, only show products in the NQS set
     if (nqsActive && !nqsProductIds.has(p.id)) return false;
 
-    // 'actionable' = yellow + orange + red (default view — hides green)
     if (activeBucketFilter === 'actionable') {
-      if (p.bucket === 'green') return false;
+      if (p.bucket === 'green' || p.bucket === 'yellow') return false;
+    } else if (activeBucketFilter === 'mismatch') {
+      if (!p.mfrMismatch) return false;
     } else if (activeBucketFilter !== 'all') {
       if (p.bucket !== activeBucketFilter) return false;
     }
@@ -521,11 +590,14 @@ function buildRow(p) {
   const nqsBadge = nqsProductIds.has(p.id)
     ? `<span class="nqs-badge">NOT QUOTED</span>`
     : '';
+  const mismatchBadge = p.mfrMismatch
+    ? `<span class="mismatch-badge">MFR MISMATCH</span>`
+    : '';
 
   tr.innerHTML = `
     <td><input type="checkbox" class="row-check" data-id="${p.id}" ${isSelected ? 'checked' : ''} /></td>
     <td>${statusHtml}</td>
-    <td><div class="product-name">${escHtml(p.name)}${nqsBadge}</div></td>
+    <td><div class="product-name">${escHtml(p.name)}${nqsBadge}${mismatchBadge}</div></td>
     <td>${hasMpn ? `<span class="product-mpn">${escHtml(p.mpn)}</span>` : `<span class="mpn-missing">missing</span>`}</td>
     <td>${escHtml(vendor)}</td>
     <td>${escHtml(category)}</td>
