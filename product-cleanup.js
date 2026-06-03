@@ -78,6 +78,8 @@ function init() {
   bucketFilter.addEventListener('change', () => {
     activeBucketFilter = bucketFilter.value;
     currentPage = 1;
+    document.getElementById('fixMfrBtn').style.display =
+      activeBucketFilter === 'mismatch' ? 'inline-block' : 'none';
     renderTable();
   });
   tableSearch.addEventListener('input', () => {
@@ -90,6 +92,11 @@ function init() {
   selectAllChk.addEventListener('change', handleSelectAll);
   unlistConfirmBtn.addEventListener('click', executeUnlist);
   unlistCancelBtn.addEventListener('click', () => { unlistModal.style.display = 'none'; });
+
+  document.getElementById('fixMfrBtn').addEventListener('click', handleFixManufacturers);
+  document.getElementById('mfrModalCloseBtn').addEventListener('click', () => {
+    document.getElementById('mfrModal').style.display = 'none';
+  });
 
   // NQS card
   document.getElementById('nqsLoadBtn').addEventListener('click', handleNqsLoad);
@@ -110,9 +117,11 @@ function init() {
       if (b === 'mismatch') {
         bucketFilter.value = 'mismatch';
         activeBucketFilter = 'mismatch';
+        document.getElementById('fixMfrBtn').style.display = 'inline-block';
       } else {
         bucketFilter.value = b;
         activeBucketFilter = b;
+        document.getElementById('fixMfrBtn').style.display = 'none';
       }
       currentPage = 1;
       renderTable();
@@ -406,6 +415,165 @@ ${JSON.stringify(productList, null, 2)}`;
   } catch {
     console.error('Could not parse AI response:', data.result);
     return [];
+  }
+}
+
+// ── MANUFACTURER FIX ──────────────────────────────────────────
+async function handleFixManufacturers() {
+  const mismatchProducts = allProducts.filter(p => p.mfrMismatch);
+  if (mismatchProducts.length === 0) return;
+
+  const modal = document.getElementById('mfrModal');
+  const body  = document.getElementById('mfrModalBody');
+  modal.style.display = 'flex';
+  body.innerHTML = '<p style="color:var(--text-muted);font-size:12px;">Analyzing product names with AI — grouping by manufacturer…</p>';
+
+  const BATCH = 50;
+  const allSuggestions = [];
+
+  for (let i = 0; i < mismatchProducts.length; i += BATCH) {
+    const batch = mismatchProducts.slice(i, i + BATCH).map(p => ({
+      id: p.id,
+      name: p.name,
+      mpn: p.mpn || null,
+      shortDescription: p.shortDescription || null,
+    }));
+
+    try {
+      const resp = await fetch('/api/group-manufacturers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ products: batch }),
+      });
+      const data = await resp.json();
+      if (data.ok) {
+        const clean = data.result.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(clean);
+        allSuggestions.push(...parsed);
+      }
+    } catch (e) {
+      console.error('Manufacturer grouping error:', e);
+    }
+  }
+
+  const groups = {};
+  for (const s of allSuggestions) {
+    const mfr = s.manufacturer || 'Unknown';
+    if (!groups[mfr]) groups[mfr] = [];
+    const product = allProducts.find(p => p.id === s.id);
+    if (product) groups[mfr].push(product);
+  }
+
+  const sorted = Object.entries(groups).sort(([aName, aProds], [bName, bProds]) => {
+    if (aName === 'Unknown') return 1;
+    if (bName === 'Unknown') return -1;
+    return bProds.length - aProds.length;
+  });
+
+  renderMfrGroups(body, sorted);
+}
+
+function renderMfrGroups(container, groups) {
+  const { tenantUrl, apiKey } = getCreds();
+
+  if (groups.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-muted);font-size:12px;">No groups found.</p>';
+    return;
+  }
+
+  container.innerHTML = `
+    <p style="font-size:12px;color:var(--text-mid);margin-bottom:16px;">
+      AI has grouped ${groups.reduce((n, [,p]) => n + p.length, 0)} products by manufacturer.
+      Review each group, adjust the name if needed, then click UPDATE to fix them.
+    </p>
+  `;
+
+  for (const [mfrName, products] of groups) {
+    const isUnknown = mfrName === 'Unknown';
+    const groupEl = document.createElement('div');
+    groupEl.className = 'mfr-group' + (isUnknown ? ' mfr-unknown' : '');
+    const inputId = `mfr-input-${mfrName.replace(/[^a-zA-Z0-9]/g, '-')}`;
+
+    groupEl.innerHTML = `
+      <div class="mfr-group-header">
+        <div class="mfr-group-name">${escHtml(mfrName)}</div>
+        <span class="mfr-group-count">${products.length} product${products.length !== 1 ? 's' : ''}</span>
+        <input class="mfr-group-input" id="${inputId}" type="text"
+          value="${escHtml(isUnknown ? '' : mfrName)}"
+          placeholder="${isUnknown ? 'Skip or enter manufacturer' : mfrName}" />
+        <button class="btn btn-primary mfr-update-btn" data-group="${escHtml(mfrName)}"
+          ${isUnknown ? 'disabled' : ''}>UPDATE ALL</button>
+      </div>
+      <div class="mfr-group-body">
+        ${products.slice(0, 20).map(p =>
+          `<div class="mfr-group-product" title="${escHtml(p.name)}">${escHtml(p.name)}</div>`
+        ).join('')}
+        ${products.length > 20
+          ? `<div class="mfr-group-product" style="color:var(--text-muted);">…and ${products.length - 20} more</div>`
+          : ''}
+      </div>
+    `;
+
+    const btn   = groupEl.querySelector('.mfr-update-btn');
+    const input = groupEl.querySelector(`#${inputId}`);
+
+    input.addEventListener('input', () => { btn.disabled = input.value.trim() === ''; });
+
+    btn.addEventListener('click', async () => {
+      const newMfr = input.value.trim();
+      if (!newMfr) return;
+
+      btn.disabled = true;
+      btn.textContent = 'UPDATING…';
+
+      const ids = products.map(p => p.id);
+      let done = 0, errors = 0;
+
+      document.getElementById('progressModalTitle').textContent = `UPDATING — ${newMfr}`;
+      document.getElementById('unlistProgressBar').style.width = '0%';
+      document.getElementById('unlistProgressLabel').textContent = 'Starting…';
+      document.getElementById('progressModal').style.display = 'flex';
+
+      const CONCURRENCY = 5;
+      for (let i = 0; i < ids.length; i += CONCURRENCY) {
+        const batch = ids.slice(i, i + CONCURRENCY);
+        await Promise.all(batch.map(async (id) => {
+          try {
+            const resp = await fetch('/api/sb-update-product', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ tenantUrl, apiKey, productId: id, fields: { vendor: newMfr } }),
+            });
+            const result = await resp.json();
+            if (resp.ok && result.ok) {
+              const p = allProducts.find(x => x.id === id);
+              if (p) { p.manufacturer = newMfr; p.mfrMismatch = false; }
+            } else { errors++; }
+          } catch { errors++; }
+          done++;
+          document.getElementById('unlistProgressBar').style.width =
+            Math.round((done / ids.length) * 100) + '%';
+          document.getElementById('unlistProgressLabel').textContent =
+            `${done} of ${ids.length} updated…`;
+        }));
+      }
+
+      document.getElementById('unlistProgressLabel').textContent = errors === 0
+        ? `Done — ${done} products updated to "${newMfr}".`
+        : `Done — ${done - errors} succeeded, ${errors} failed.`;
+
+      setTimeout(() => { document.getElementById('progressModal').style.display = 'none'; }, 2000);
+
+      updateBucketCounts();
+      renderTable();
+
+      btn.textContent = '✓ UPDATED';
+      btn.style.background = 'var(--green)';
+      btn.style.borderColor = 'var(--green)';
+      groupEl.style.opacity = '0.5';
+    });
+
+    container.appendChild(groupEl);
   }
 }
 
