@@ -689,8 +689,9 @@ function renderMfrGroups(container, groups) {
 
   container.innerHTML = `
     <p style="font-size:12px;color:var(--text-mid);margin-bottom:16px;">
-      AI has grouped ${groups.reduce((n, [,p]) => n + p.length, 0)} products by correct manufacturer.
-      Use this list as a guide — select each group in Salesbuildr's bulk edit to update the manufacturer there.
+      AI has grouped ${groups.reduce((n, [,p]) => n + p.length, 0)} products by manufacturer.
+      Review each group, adjust the name if needed, then click UPDATE ALL to fix them in Salesbuildr.
+      The manufacturer must exist as a company in SB — if not found, add it there first.
     </p>
   `;
 
@@ -704,6 +705,11 @@ function renderMfrGroups(container, groups) {
       <div class="mfr-group-header">
         <div class="mfr-group-name">${escHtml(mfrName)}</div>
         <span class="mfr-group-count">${products.length} product${products.length !== 1 ? 's' : ''}</span>
+        <input class="mfr-group-input" id="${inputId}" type="text"
+          value="${escHtml(isUnknown ? '' : mfrName)}"
+          placeholder="${isUnknown ? 'Skip or enter manufacturer' : mfrName}" />
+        <button class="btn btn-primary mfr-update-btn"
+          ${isUnknown ? 'disabled' : ''}>UPDATE ALL</button>
       </div>
       <div class="mfr-group-body">
         ${products.slice(0, 20).map(p =>
@@ -714,6 +720,113 @@ function renderMfrGroups(container, groups) {
           : ''}
       </div>
     `;
+
+    const btn   = groupEl.querySelector('.mfr-update-btn');
+    const input = groupEl.querySelector(`#${inputId}`);
+
+    input.addEventListener('input', () => { btn.disabled = input.value.trim() === ''; });
+
+    btn.addEventListener('click', async () => {
+      const mfrNameToUse = input.value.trim();
+      if (!mfrNameToUse) return;
+
+      btn.disabled = true;
+      btn.textContent = 'LOOKING UP…';
+
+      // Look up company ID first
+      let companyId = null;
+      try {
+        const compResp = await fetch('/api/sb-company-search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tenantUrl, apiKey, query: mfrNameToUse }),
+        });
+        const compData = await compResp.json();
+        if (compData.ok && compData.companyId) {
+          companyId = compData.companyId;
+        }
+      } catch (e) {
+        console.error('Company lookup failed:', e);
+      }
+
+      if (!companyId) {
+        btn.textContent = `NOT FOUND IN SB`;
+        btn.style.background = 'var(--orange)';
+        btn.style.borderColor = 'var(--orange)';
+        btn.title = `"${mfrNameToUse}" not found as a company in Salesbuildr. Add it there first.`;
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = 'UPDATE ALL';
+          btn.style.background = '';
+          btn.style.borderColor = '';
+        }, 3000);
+        return;
+      }
+
+      btn.textContent = 'UPDATING…';
+
+      const ids = products.map(p => p.id);
+      let done = 0, errors = 0;
+
+      document.getElementById('progressModalTitle').textContent = `UPDATING — ${mfrNameToUse}`;
+      document.getElementById('unlistProgressBar').style.width = '0%';
+      document.getElementById('unlistProgressLabel').textContent = 'Starting…';
+      document.getElementById('progressModal').style.display = 'flex';
+
+      const CONCURRENCY = 5;
+      for (let i = 0; i < ids.length; i += CONCURRENCY) {
+        const batch = ids.slice(i, i + CONCURRENCY);
+        await Promise.all(batch.map(async (id) => {
+          try {
+            const resp = await fetch('/api/sb-update-product', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                tenantUrl, apiKey,
+                productId: id,
+                fields: { vendor: companyId },
+                skipLookup: true,
+              }),
+            });
+            const result = await resp.json();
+            if (resp.ok && result.ok) {
+              const p = allProducts.find(x => x.id === id);
+              if (p) { p.manufacturer = mfrNameToUse; p.mfrMismatch = false; }
+            } else { errors++; }
+          } catch { errors++; }
+          done++;
+          document.getElementById('unlistProgressBar').style.width =
+            Math.round((done / ids.length) * 100) + '%';
+          document.getElementById('unlistProgressLabel').textContent =
+            `${done} of ${ids.length} updated…`;
+        }));
+      }
+
+      document.getElementById('unlistProgressLabel').textContent = errors === 0
+        ? `Done — ${done} products updated to "${mfrNameToUse}".`
+        : `${done - errors} succeeded, ${errors} failed.`;
+
+      if (errors === 0) {
+        setTimeout(() => { document.getElementById('progressModal').style.display = 'none'; }, 3000);
+      } else {
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'btn btn-secondary';
+        closeBtn.textContent = 'CLOSE';
+        closeBtn.style.marginTop = '12px';
+        closeBtn.addEventListener('click', () => {
+          document.getElementById('progressModal').style.display = 'none';
+        });
+        document.getElementById('progressModal').querySelector('.modal-body').appendChild(closeBtn);
+      }
+
+      updateBucketCounts();
+      renderTable();
+
+      btn.textContent = errors === 0 ? '✓ UPDATED' : `${errors} FAILED`;
+      btn.style.background = errors === 0 ? 'var(--green)' : 'var(--red)';
+      btn.style.borderColor = errors === 0 ? 'var(--green)' : 'var(--red)';
+      groupEl.style.opacity = errors === 0 ? '0.5' : '1';
+    });
 
     container.appendChild(groupEl);
   }
