@@ -55,6 +55,7 @@
         <div class="section-header">
           <h2 class="section-title">CATALOG TRIAGE</h2>
           <div class="section-actions">
+            <button class="btn btn-secondary" id="fixMfrBtn" style="display:none;">FIX MANUFACTURERS</button>
             <button class="btn btn-secondary" id="analyzeBtn">RUN AI ANALYSIS</button>
             <button class="btn btn-secondary" id="exportBtn">EXPORT PLAN</button>
           </div>
@@ -225,11 +226,26 @@
     </div>
   </div>
 
-  <!-- UNLIST PROGRESS MODAL -->
+  <!-- MANUFACTURER GROUPING MODAL -->
+  <div class="modal-overlay" id="mfrModal" style="display:none;">
+    <div class="modal modal--wide">
+      <div class="modal-header">
+        <h3 class="modal-title">FIX MANUFACTURER — AI GROUPING</h3>
+      </div>
+      <div class="modal-body" id="mfrModalBody">
+        <p style="color:var(--text-muted);font-size:12px;">Analyzing product names…</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="mfrModalCloseBtn">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPDATE PROGRESS MODAL -->
   <div class="modal-overlay" id="progressModal" style="display:none;">
     <div class="modal">
       <div class="modal-header">
-        <h3 class="modal-title">UNLISTING PRODUCTS</h3>
+        <h3 class="modal-title" id="progressModalTitle">PROCESSING</h3>
       </div>
       <div class="modal-body">
         <div class="progress-bar-wrap">
