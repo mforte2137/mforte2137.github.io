@@ -491,6 +491,13 @@ async function handleDupView() {
 
   // If nothing left to clean up
   const activeGroups = sorted.filter(g => groupProducts[g.value]?.length >= 2);
+
+  // Update the card count to reflect only actionable duplicates
+  document.getElementById('dupCount').textContent = activeGroups.length;
+  document.getElementById('dupDesc').textContent = activeGroups.length > 0
+    ? `${activeGroups.length} part numbers still have multiple listed products`
+    : 'No listed duplicates — catalog looks clean';
+
   if (activeGroups.length === 0) {
     body.innerHTML = '<p style="color:var(--text-mid);font-size:13px;">No duplicate MPNs with multiple listed products found — catalog looks clean!</p>';
     return;
