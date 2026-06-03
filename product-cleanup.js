@@ -527,7 +527,7 @@ function renderMfrGroups(container, groups) {
       btn.textContent = 'UPDATING…';
 
       const ids = products.map(p => p.id);
-      let done = 0, errors = 0;
+      let done = 0, errors = 0, lastError = '';
 
       document.getElementById('progressModalTitle').textContent = `UPDATING — ${newMfr}`;
       document.getElementById('unlistProgressBar').style.width = '0%';
@@ -548,7 +548,10 @@ function renderMfrGroups(container, groups) {
             if (resp.ok && result.ok) {
               const p = allProducts.find(x => x.id === id);
               if (p) { p.manufacturer = newMfr; p.mfrMismatch = false; }
-            } else { errors++; }
+            } else {
+              errors++;
+              lastError = result.error || 'Unknown error';
+            }
           } catch { errors++; }
           done++;
           document.getElementById('unlistProgressBar').style.width =
@@ -560,7 +563,7 @@ function renderMfrGroups(container, groups) {
 
       document.getElementById('unlistProgressLabel').textContent = errors === 0
         ? `Done — ${done} products updated to "${newMfr}".`
-        : `Done — ${done - errors} succeeded, ${errors} failed.`;
+        : `${done - errors} succeeded, ${errors} failed. ${lastError}`;
 
       setTimeout(() => { document.getElementById('progressModal').style.display = 'none'; }, 2000);
 
