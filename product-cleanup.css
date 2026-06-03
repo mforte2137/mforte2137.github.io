@@ -627,3 +627,63 @@ body {
   margin-left: 4px;
   vertical-align: middle;
 }
+
+/* ── MANUFACTURER MODAL ── */
+.modal--wide {
+  max-width: 780px;
+  width: 95%;
+}
+.mfr-group {
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.mfr-group-header {
+  background: var(--bg-alt);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.mfr-group-name {
+  font-size: 13px;
+  font-weight: 700;
+  flex: 1;
+  min-width: 140px;
+}
+.mfr-group-input {
+  background: var(--bg);
+  border: 1px solid var(--border-dark);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 5px 8px;
+  width: 180px;
+  outline: none;
+}
+.mfr-group-input:focus { border-color: var(--text); }
+.mfr-group-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+.mfr-group-body {
+  padding: 8px 16px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+.mfr-group-product {
+  font-size: 11px;
+  color: var(--text-mid);
+  padding: 3px 0;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mfr-group-product:last-child { border-bottom: none; }
+.mfr-unknown {
+  opacity: 0.5;
+}
