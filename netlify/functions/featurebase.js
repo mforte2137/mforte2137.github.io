@@ -46,8 +46,9 @@ exports.handler = async function (event) {
 
         const title = article.title || article.name || '(untitled)';
         const url   = article.featurebaseUrl || article.externalUrl || '';
+        const description = article.description || '';
         if (title && url) {
-          articles.push({ title, url });
+          articles.push({ title, url, description });
         }
       }
 
@@ -65,20 +66,24 @@ exports.handler = async function (event) {
 
     // ── Step 2: Ask Claude to search the article list ────────────────────
     const articleList = articles
-      .map((a, i) => `${i + 1}. ${a.title}\n   ${a.url}`)
-      .join('\n');
+      .map((a, i) => {
+        let entry = `${i + 1}. ${a.title}\n   URL: ${a.url}`;
+        if (a.description) entry += `\n   Description: ${a.description}`;
+        return entry;
+      })
+      .join('\n\n');
 
     const prompt = `A support agent is searching the Salesbuildr knowledge base.
 
 QUERY: "${query}"
 
-Here is the complete list of published articles (${articles.length} total):
+Here is the complete list of published articles (${articles.length} total), each with title, URL and description where available:
 
 ${articleList}
 
-Based on this list, answer the following:
-1. Are there any articles that cover this topic? If yes, give the exact title and URL from the list above.
-2. What does each relevant article likely cover based on its title?
+Match the query against both titles AND descriptions. Answer:
+1. Are there any articles that cover this topic — either directly in the title or in the description? If yes, give the exact title and URL.
+2. What does each relevant article likely cover based on its title and description?
 3. Is there anything the query asks about that no article seems to cover?
 
 If no relevant articles exist, say so clearly.
@@ -100,7 +105,7 @@ Only use URLs from the list above — do not modify or construct any URLs.`;
       },
       body: JSON.stringify({
         model:      'claude-haiku-4-5',
-        max_tokens: 1000,
+        max_tokens: 1500,
         system:     instructions || '',
         messages:   [{ role: 'user', content: prompt }]
       })
