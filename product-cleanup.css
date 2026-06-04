@@ -1168,30 +1168,29 @@ body {
   font-family: var(--font-mono);
 }
 
-/* ── WIZARD LAYOUT FIX — footer always visible ── */
-.wizard {
-  min-height: calc(100vh - 52px);
-  display: flex;
-  flex-direction: column;
-}
-.wizard-body {
-  flex: 1;
-}
+/* ── WIZARD FOOTER — fixed to viewport bottom ── */
 .wizard-footer {
-  margin-top: auto;
+  position: fixed !important;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg) !important;
+  border-top: 2px solid var(--text) !important;
+  padding: 12px 32px !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 100;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+  max-width: none !important;
+  margin: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box;
 }
 
-/* ── WIZARD FOOTER REPOSITIONED ── */
-.wizard-footer {
-  position: static !important;
-  border-top: 2px solid var(--text);
-  background: var(--bg-alt);
-  padding: 16px 24px;
-  display: flex;
-  max-width: 860px;
-  margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
+/* Add bottom padding to wizard so footer doesn't cover content */
+.wizard {
+  padding-bottom: 72px;
 }
 
 /* ── HEADER BUTTONS — visible on dark background ── */
