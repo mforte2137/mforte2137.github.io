@@ -152,6 +152,9 @@ function init() {
     });
   });
 
+  // Welcome screen import
+  document.getElementById('welcomeImportFile')?.addEventListener('change', handleFileImport);
+
   // Connect screen
   document.getElementById('backToWelcomeBtn').addEventListener('click', () => showScreen('screenWelcome'));
   document.getElementById('loadBtn').addEventListener('click', handleLoad);
@@ -241,6 +244,9 @@ function handleFileExport() {
     aiNotes,
     sessionStats,
   };
+  // Save to localStorage too so Continue tile works on return
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(session)); } catch(e) {}
+
   const blob = new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
