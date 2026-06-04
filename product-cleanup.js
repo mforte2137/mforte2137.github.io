@@ -1527,6 +1527,11 @@ function showStep(stepId) {
 
   document.getElementById('wizardTable').style.display = 'none';
   document.getElementById('wizardBody').style.display = 'block';
+  // Make sure step panels are visible, completion hidden
+  const sc = document.getElementById('stepsContainer');
+  if (sc) sc.style.display = 'block';
+  const cc = document.getElementById('completionContent');
+  if (cc) cc.style.display = 'none';
 }
 
 function updateFooter(steps, stepIndex) {
@@ -1701,6 +1706,7 @@ function showCompletionScreen() {
     </div>`;
   };
 
+  const mismatchRemaining = counts.mismatch;
   const actionTiles = [
     sessionStats.unlisted > 0
       ? tile('🗑', sessionStats.unlisted, 'Products Unlisted',
@@ -1710,10 +1716,13 @@ function showCompletionScreen() {
       ? tile('🔗', sessionStats.dupsResolved, 'Duplicates Resolved',
           'Kept one listing per part number, unlisted the rest.', 'var(--green)')
       : tile('✓', 0, 'Duplicate MPNs', 'No duplicates found.', 'var(--text-muted)'),
-    sessionStats.mfrFixed > 0
-      ? tile('🏷', sessionStats.mfrFixed, 'Manufacturers Fixed',
-          'Updated from your company name to the correct manufacturer.', 'var(--green)')
-      : tile('✓', 0, 'Manufacturers', 'No manufacturer mismatches found.', 'var(--text-muted)'),
+    sessionStats.mfrFixed > 0 && mismatchRemaining > 0
+      ? tile('🏷', sessionStats.mfrFixed, 'Manufacturers Fixed (partial)',
+          `${mismatchRemaining} still need fixing. Click to go back and finish.`, 'var(--orange)', 'mfr')
+      : sessionStats.mfrFixed > 0
+        ? tile('🏷', sessionStats.mfrFixed, 'Manufacturers Fixed',
+            'All updated to the correct manufacturer.', 'var(--green)')
+        : tile('✓', 0, 'Manufacturers', 'No manufacturer mismatches found.', 'var(--text-muted)'),
   ].join('');
 
   const catalogTiles = [
@@ -1727,7 +1736,18 @@ function showCompletionScreen() {
       'No valid part number. Click to go back and unlist these.', 'var(--red)', 'red') : '',
   ].join('');
 
-  document.getElementById('wizardBody').innerHTML = `
+  // Hide step panels, show completion in separate div
+  const stepsContainer = document.getElementById('stepsContainer');
+  if (stepsContainer) stepsContainer.style.display = 'none';
+
+  let completionDiv = document.getElementById('completionContent');
+  if (!completionDiv) {
+    completionDiv = document.createElement('div');
+    completionDiv.id = 'completionContent';
+    document.getElementById('wizardBody').appendChild(completionDiv);
+  }
+  completionDiv.style.display = 'block';
+  completionDiv.innerHTML = `
     <div class="completion-wrap">
       <div class="completion-header">
         <div class="completion-check">✓</div>
@@ -1749,20 +1769,24 @@ function showCompletionScreen() {
     </div>
   `;
 
-  // Wire clickable tiles
-  document.querySelectorAll('.completion-tile--clickable').forEach(tile => {
-    tile.addEventListener('click', () => {
-      const stepId = tile.dataset.step;
-      if (stepId) {
-        buildWizard();
-        showStep(stepId);
-      }
-    });
-  });
+  // Wire clicks via event delegation on the completionDiv (tiles are injected via innerHTML)
+  function resumeFromCompletion(stepId) {
+    const cd = document.getElementById('completionContent');
+    if (cd) cd.style.display = 'none';
+    const sc = document.getElementById('stepsContainer');
+    if (sc) sc.style.display = 'block';
+    buildWizard(stepId || null);
+  }
 
-  // Wire jump back button
-  document.getElementById('completionBackBtn')?.addEventListener('click', () => {
-    buildWizard();
+  completionDiv.addEventListener('click', (e) => {
+    const tile = e.target.closest('.completion-tile--clickable');
+    if (tile) {
+      resumeFromCompletion(tile.dataset.step);
+      return;
+    }
+    if (e.target.id === 'completionBackBtn') {
+      resumeFromCompletion(null);
+    }
   });
 
   document.getElementById('wizardBody').style.display = 'block';
