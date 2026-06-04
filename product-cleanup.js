@@ -1678,58 +1678,66 @@ function markStepDone(stepId) {
 }
 
 function showCompletionScreen() {
-  clearSavedSession(); // Clean up — session complete
+  clearSavedSession();
   const counts = getCounts();
   const greenCount  = counts.green;
   const yellowCount = counts.yellow;
   const orangeCount = counts.orange;
   const redCount    = counts.red;
 
-  const tile = (icon, num, label, desc, color='var(--green)') => `
-    <div class="completion-tile">
+  const tile = (icon, num, label, desc, color='var(--green)', stepId=null) => {
+    const clickable = stepId && num > 0;
+    return `
+    <div class="completion-tile ${clickable ? 'completion-tile--clickable' : ''}"
+      ${clickable ? `data-step="${stepId}" role="button" tabindex="0"` : ''}>
       <div class="completion-tile-icon">${icon}</div>
       <div class="completion-tile-num" style="color:${color};">${num}</div>
       <div class="completion-tile-label">${label}</div>
       <div class="completion-tile-desc">${desc}</div>
+      ${clickable ? '<div class="completion-tile-cta">Click to continue →</div>' : ''}
     </div>`;
+  };
 
   const actionTiles = [
     sessionStats.unlisted > 0
       ? tile('🗑', sessionStats.unlisted, 'Products Unlisted',
-          'Removed from active catalog. Not deleted — can be re-listed any time.')
+          'Removed from active catalog. Not deleted — can be re-listed any time.', 'var(--green)')
       : tile('✓', 0, 'Unlist Candidates', 'No products needed unlisting.', 'var(--text-muted)'),
     sessionStats.dupsResolved > 0
       ? tile('🔗', sessionStats.dupsResolved, 'Duplicates Resolved',
-          'Kept one listing per part number, unlisted the rest.')
+          'Kept one listing per part number, unlisted the rest.', 'var(--green)')
       : tile('✓', 0, 'Duplicate MPNs', 'No duplicates found.', 'var(--text-muted)'),
     sessionStats.mfrFixed > 0
       ? tile('🏷', sessionStats.mfrFixed, 'Manufacturers Fixed',
-          'Updated from your company name to the correct manufacturer.')
+          'Updated from your company name to the correct manufacturer.', 'var(--green)')
       : tile('✓', 0, 'Manufacturers', 'No manufacturer mismatches found.', 'var(--text-muted)'),
+  ].join('');
+
+  const catalogTiles = [
+    tile('🟢', greenCount, 'Ready to Sell',
+      'In stock and connected to distributors. Ready to go on quotes right now.', '#2d6a4f'),
+    tile('🟡', yellowCount, 'Temporarily Unavailable',
+      'Real products that are back-ordered or temporarily out of stock. We left these alone — they will come back.', '#7d5a00'),
+    orangeCount > 0 ? tile('🟠', orangeCount, 'Still to Review',
+      'Not found in any distributor. Click to go back and review these.', 'var(--orange)', 'orange') : '',
+    redCount > 0 ? tile('🔴', redCount, 'Still Needs Attention',
+      'No valid part number. Click to go back and unlist these.', 'var(--red)', 'red') : '',
   ].join('');
 
   document.getElementById('wizardBody').innerHTML = `
     <div class="completion-wrap">
       <div class="completion-header">
         <div class="completion-check">✓</div>
-        <h2 class="completion-title">Your catalog is cleaner.</h2>
-        <p class="completion-sub">Here's a summary of this session.</p>
+        <h2 class="completion-title">Great work. Your catalog is cleaner.</h2>
+        <p class="completion-sub">Here is a summary of this session.</p>
+        <button class="btn btn-secondary" id="completionBackBtn" style="margin-top:16px;">← Jump back in and do more</button>
       </div>
 
       <div class="completion-section-label">WHAT YOU DID THIS SESSION</div>
       <div class="completion-tiles">${actionTiles}</div>
 
-      <div class="completion-section-label">YOUR CATALOG NOW</div>
-      <div class="completion-tiles">
-        ${tile('🟢', greenCount, 'Ready to Sell',
-          'In stock and connected to distributors. These are ready to go on quotes right now.', '#2d6a4f')}
-        ${tile('🟡', yellowCount, 'Temporarily Unavailable',
-          'Real products that are back-ordered or temporarily out of stock. We left these alone — they will come back.', '#7d5a00')}
-        ${orangeCount > 0 ? tile('🟠', orangeCount, 'Still to Review',
-          'Products not found in any distributor. Review these when you are ready.', 'var(--orange)') : ''}
-        ${redCount > 0 ? tile('🔴', redCount, 'Still Needs Attention',
-          'Products with no valid part number — still waiting to be unlisted.', 'var(--red)') : ''}
-      </div>
+      <div class="completion-section-label">YOUR CATALOG NOW — click any tile to continue working</div>
+      <div class="completion-tiles">${catalogTiles}</div>
 
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:40px;">
         <button class="btn btn-secondary" onclick="location.reload()">START OVER</button>
@@ -1737,10 +1745,28 @@ function showCompletionScreen() {
       </div>
     </div>
   `;
+
+  // Wire clickable tiles
+  document.querySelectorAll('.completion-tile--clickable').forEach(tile => {
+    tile.addEventListener('click', () => {
+      const stepId = tile.dataset.step;
+      if (stepId) {
+        buildWizard();
+        showStep(stepId);
+      }
+    });
+  });
+
+  // Wire jump back button
+  document.getElementById('completionBackBtn')?.addEventListener('click', () => {
+    buildWizard();
+  });
+
   document.getElementById('wizardBody').style.display = 'block';
   document.getElementById('wizardTable').style.display = 'none';
   window.scrollTo(0, 0);
 }
+
 
 function showEmpty() {
   loadingState.style.display = 'none';
