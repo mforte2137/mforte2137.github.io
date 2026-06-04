@@ -1482,10 +1482,11 @@ function showTableView(title) {
   document.getElementById('tableTitle').textContent = title;
   renderTable();
   window.scrollTo(0, 0);
+}
+
 function showEmpty() {
   loadingState.style.display = 'none';
   showScreen('screenConnect');
-}
 }
 function escHtml(str) {
   if (!str) return '';
