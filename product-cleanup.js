@@ -322,7 +322,6 @@ async function handleLoad() {
     }
 
     updateBucketCounts();
-    document.getElementById('nqsCard').style.display = 'flex';
 
     // Fetch duplicate MPN data — dedicated call with no stock filter
     // so we see duplicates across ALL stock groups
@@ -345,12 +344,8 @@ async function handleLoad() {
       console.warn('Could not fetch duplicate MPN data:', e);
     }
 
-    // Show duplicate MPN card if any found
     if (dupMpnGroups.length > 0) {
-      document.getElementById('dupCount').textContent = dupMpnGroups.length;
-      document.getElementById('dupDesc').textContent =
-        `${dupMpnGroups.length} potential duplicates detected — click to verify`;
-      document.getElementById('dupCard').style.display = 'flex';
+      // Update step strip dup count — handled by buildWizard
     }
 
     showDashboard();
