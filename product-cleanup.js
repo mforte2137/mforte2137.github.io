@@ -69,6 +69,9 @@ const BUCKET_META = {
 let currentMode = null; // 'onboarding' or 'maintenance'
 let activeStepId = null;
 
+// Session stats — track what was accomplished
+let sessionStats = { unlisted: 0, dupsResolved: 0, mfrFixed: 0, startCount: 0 };
+
 function showScreen(id) {
   ['screenWelcome','screenConnect','screenApp'].forEach(s => {
     document.getElementById(s).style.display = s === id ? 'block' : 'none';
@@ -161,6 +164,9 @@ function init() {
     document.getElementById('nqsResult').style.display = 'none';
     document.getElementById('nqsFilterBtn').disabled = true;
   });
+
+  document.getElementById('footerBackBtn')?.addEventListener('click', handleFooterBack);
+  document.getElementById('footerNextBtn')?.addEventListener('click', handleFooterNext);
 
   // Back to steps from table
   document.getElementById('backToStepsBtn').addEventListener('click', () => {
@@ -268,6 +274,7 @@ async function handleLoad() {
   selectedIds.clear();
   aiNotes = {};
   dupMpnGroups = [];
+  sessionStats = { unlisted: 0, dupsResolved: 0, mfrFixed: 0, startCount: 0 };
 
   showLoading('Connecting to Salesbuildr…', 'Fetching product catalog by stock status');
   showScreen('screenApp');
@@ -313,6 +320,7 @@ async function handleLoad() {
     headerMeta.textContent = '';
     document.getElementById('headerTenant').textContent =
       `${allProducts.length} products · ${new URL(tenantUrl).hostname}`;
+    sessionStats.startCount = allProducts.length;
 
     // Tag manufacturer mismatches — products where manufacturer = MSP name (PSA import default)
     if (mspName) {
@@ -716,6 +724,8 @@ async function handleDupView() {
 
     updateBucketCounts();
     renderTable();
+    sessionStats.dupsResolved += done;
+    checkCompletion();
 
     globalUnlistBtn.textContent = errors === 0
       ? `✓ ${done} UNLISTED`
@@ -851,16 +861,19 @@ function renderMfrGroups(container, groups) {
       }
 
       if (!companyId) {
-        btn.textContent = `NOT FOUND IN SB`;
-        btn.style.background = 'var(--orange)';
-        btn.style.borderColor = 'var(--orange)';
-        btn.title = `"${mfrNameToUse}" not found as a company in Salesbuildr. Add it there first.`;
-        setTimeout(() => {
-          btn.disabled = false;
-          btn.textContent = 'UPDATE ALL';
-          btn.style.background = '';
-          btn.style.borderColor = '';
-        }, 3000);
+        // Persistent blocked state — amber border, stays until they retry
+        groupEl.classList.add('mfr-group--blocked');
+        // Remove old blocked note if exists
+        const oldNote = groupEl.querySelector('.mfr-blocked-note');
+        if (oldNote) oldNote.remove();
+        const note = document.createElement('div');
+        note.className = 'mfr-blocked-note';
+        note.innerHTML = `⚠ "${mfrNameToUse}" not found in Salesbuildr. Go to <strong>Companies → Create New Company</strong>, set the name to <strong>${escHtml(mfrNameToUse)}</strong> and type to <strong>Manufacturer</strong>, then click Update All again.`;
+        groupEl.appendChild(note);
+        btn.disabled = false;
+        btn.textContent = 'UPDATE ALL';
+        btn.style.background = '';
+        btn.style.borderColor = '';
         return;
       }
 
@@ -922,6 +935,8 @@ function renderMfrGroups(container, groups) {
 
       updateBucketCounts();
       renderTable();
+      sessionStats.mfrFixed += (done - errors);
+      checkCompletion();
 
       btn.textContent = errors === 0 ? '✓ UPDATED' : `${errors} FAILED`;
       btn.style.background = errors === 0 ? 'var(--green)' : 'var(--red)';
@@ -1212,15 +1227,14 @@ function promptUnlist() {
   const more = count > 5 ? `<li>…and ${count - 5} more</li>` : '';
 
   unlistModalBody.innerHTML = `
-    <p>You are about to <strong>unlist ${count} product${count !== 1 ? 's' : ''}</strong>.
-    This sets them to inactive in Salesbuildr and syncs back to your PSA.
-    Items can be re-listed at any time if needed.</p>
-    <ul style="margin:12px 0;padding-left:20px;font-size:12px;color:var(--text-mid);">
+    <div style="background:var(--green-bg);border-left:4px solid var(--green);padding:12px 16px;margin-bottom:16px;">
+      <p style="font-size:13px;color:var(--green);font-weight:700;margin-bottom:4px;">✓ You are not deleting these products.</p>
+      <p style="font-size:12px;color:var(--text-mid);line-height:1.5;">Unlisting marks them as inactive in Salesbuildr and syncs to your PSA. They remain in the system and can be re-listed at any time in seconds.</p>
+    </div>
+    <p style="font-size:13px;color:var(--text-mid);margin-bottom:12px;">You are about to <strong>unlist ${count} product${count !== 1 ? 's' : ''}</strong>:</p>
+    <ul style="margin:0 0 12px;padding-left:20px;font-size:12px;color:var(--text-mid);">
       ${names}${more}
-    </ul>
-    <p style="font-size:12px;color:var(--text-muted);">
-      This action calls the Salesbuildr API once per product and cannot be undone in bulk.
-    </p>`;
+    </ul>`;
 
   unlistModal.style.display = 'flex';
 }
@@ -1263,6 +1277,8 @@ async function executeUnlist() {
 
   updateBucketCounts();
   renderTable();
+  sessionStats.unlisted += (done - errors);
+  checkCompletion();
 
   unlistProgressLabel.textContent = errors === 0
     ? `Done — ${done} products unlisted successfully.`
@@ -1325,7 +1341,7 @@ function showDashboard() {
 function buildWizard() {
   const steps = getSteps();
   buildStepStrip(steps);
-  // Show first step by default
+  document.getElementById('wizardFooter').style.display = 'flex';
   if (steps.length > 0) showStep(steps[0].id);
 }
 
@@ -1401,39 +1417,71 @@ function showStep(stepId) {
   activeStepId = stepId;
   const steps = getSteps();
 
-  // Update strip active state
-  document.querySelectorAll('.step-pill').forEach((pill, i) => {
+  document.querySelectorAll('.step-pill').forEach(pill => {
     pill.classList.toggle('active', pill.dataset.step === stepId);
   });
 
-  // Hide all panels, show the right one
   document.querySelectorAll('.step-panel').forEach(p => p.style.display = 'none');
   const panel = document.getElementById(`step-${stepId}`);
   if (!panel) return;
   panel.style.display = 'block';
 
-  // Set step number in panel
   const stepIndex = steps.findIndex(s => s.id === stepId);
   panel.querySelectorAll('.step-num-val').forEach(el => el.textContent = stepIndex + 1);
 
-  // Update counts
   const counts = getCounts();
   const countMap = {
-    red: counts.red,
-    dups: dupMpnGroups.length,
-    mfr: counts.mismatch,
-    orange: counts.orange,
+    red: counts.red, dups: dupMpnGroups.length,
+    mfr: counts.mismatch, orange: counts.orange,
     nqs: nqsProductIds.size || null,
   };
   const countEl = document.getElementById(`step-${stepId}-count`);
   if (countEl && countMap[stepId] !== null) countEl.textContent = countMap[stepId];
 
-  // Wire up step-specific buttons
   wireStepButtons(stepId);
+  updateFooter(steps, stepIndex);
 
-  // Show table or wizard body
   document.getElementById('wizardTable').style.display = 'none';
   document.getElementById('wizardBody').style.display = 'block';
+}
+
+function updateFooter(steps, stepIndex) {
+  const footer = document.getElementById('wizardFooter');
+  const backBtn = document.getElementById('footerBackBtn');
+  const nextBtn = document.getElementById('footerNextBtn');
+  const indicator = document.getElementById('footerStepIndicator');
+
+  if (!footer) return;
+  footer.style.display = 'flex';
+
+  const isFirst = stepIndex === 0;
+  const isLast = stepIndex === steps.length - 1;
+
+  backBtn.textContent = isFirst ? '← BACK TO START' : '← BACK';
+  nextBtn.textContent = isLast ? 'FINISH ✓' : 'NEXT →';
+  nextBtn.className = isLast ? 'btn btn-primary' : 'btn btn-secondary';
+  indicator.textContent = `Step ${stepIndex + 1} of ${steps.length}`;
+}
+
+function handleFooterBack() {
+  const steps = getSteps();
+  const idx = steps.findIndex(s => s.id === activeStepId);
+  if (idx <= 0) {
+    showScreen('screenConnect');
+    document.getElementById('wizardFooter').style.display = 'none';
+  } else {
+    showStep(steps[idx - 1].id);
+  }
+}
+
+function handleFooterNext() {
+  const steps = getSteps();
+  const idx = steps.findIndex(s => s.id === activeStepId);
+  if (idx >= steps.length - 1) {
+    showCompletionScreen();
+  } else {
+    showStep(steps[idx + 1].id);
+  }
 }
 
 function wireStepButtons(stepId) {
@@ -1461,16 +1509,29 @@ function wireStepButtons(stepId) {
     if (btn) btn.onclick = handleFixManufacturers;
   }
 
-  // Likely Unlist
+  // Likely Unlist — combined Analyze & Review
   if (stepId === 'orange') {
     const analyzeBtn = document.getElementById('stepOrangeAnalyzeBtn');
-    const filterBtn  = document.getElementById('stepOrangeFilterBtn');
-    if (analyzeBtn) analyzeBtn.onclick = handleAnalyze;
-    if (filterBtn) filterBtn.onclick = () => {
-      activeBucketFilter = 'orange';
-      document.getElementById('bucketFilter').value = 'orange';
-      showTableView('LIKELY UNLIST');
-    };
+    if (analyzeBtn) {
+      // If AI already run, go straight to review
+      const hasNotes = Object.keys(aiNotes).length > 0;
+      if (hasNotes) {
+        analyzeBtn.textContent = 'REVIEW PRODUCTS';
+        analyzeBtn.onclick = () => {
+          activeBucketFilter = 'orange';
+          document.getElementById('bucketFilter').value = 'orange';
+          showTableView('LIKELY UNLIST');
+        };
+      } else {
+        analyzeBtn.textContent = 'ANALYZE & REVIEW';
+        analyzeBtn.onclick = async () => {
+          await handleAnalyze();
+          activeBucketFilter = 'orange';
+          document.getElementById('bucketFilter').value = 'orange';
+          showTableView('LIKELY UNLIST');
+        };
+      }
+    }
   }
 }
 
@@ -1479,6 +1540,80 @@ function showTableView(title) {
   document.getElementById('wizardTable').style.display = 'block';
   document.getElementById('tableTitle').textContent = title;
   renderTable();
+  window.scrollTo(0, 0);
+}
+
+function checkCompletion() {
+  const counts = getCounts();
+  // Check if all actionable steps are at 0
+  const allDone = counts.red === 0 && counts.orange === 0 && counts.mismatch === 0;
+  if (allDone && allProducts.length > 0) {
+    // Mark all step pills as done
+    document.querySelectorAll('.step-pill').forEach(p => p.classList.add('done'));
+    setTimeout(() => showCompletionScreen(), 1500);
+  }
+  // Mark individual steps as done
+  if (counts.red === 0) markStepDone('red');
+  if (counts.mismatch === 0) markStepDone('mfr');
+  if (dupMpnGroups.length === 0) markStepDone('dups');
+}
+
+function markStepDone(stepId) {
+  const pill = document.querySelector(`[data-step="${stepId}"]`);
+  if (pill && !pill.classList.contains('done')) {
+    pill.classList.add('done');
+    const numEl = pill.querySelector('.step-pill-num');
+    if (numEl) numEl.textContent = '✓';
+  }
+}
+
+function showCompletionScreen() {
+  const finalCount = allProducts.filter(p => p.bucket === 'green' || p.bucket === 'yellow').length +
+    allProducts.filter(p => p.bucket === 'orange' || p.bucket === 'red').length;
+
+  document.getElementById('wizardBody').innerHTML = `
+    <div style="text-align:center;padding:60px 24px;">
+      <div style="font-size:48px;margin-bottom:24px;">✓</div>
+      <h2 style="font-size:24px;font-weight:700;margin-bottom:8px;">Your catalog is cleaner.</h2>
+      <p style="font-size:14px;color:var(--text-muted);margin-bottom:40px;">
+        Here's what you accomplished in this session.
+      </p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);max-width:600px;margin:0 auto 40px;text-align:left;">
+        ${sessionStats.unlisted > 0 ? `
+        <div style="background:var(--bg);padding:20px;">
+          <div style="font-size:28px;font-weight:700;font-family:var(--font-mono);color:var(--green);">${sessionStats.unlisted}</div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-top:4px;">Products Unlisted</div>
+        </div>` : ''}
+        ${sessionStats.dupsResolved > 0 ? `
+        <div style="background:var(--bg);padding:20px;">
+          <div style="font-size:28px;font-weight:700;font-family:var(--font-mono);color:var(--green);">${sessionStats.dupsResolved}</div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-top:4px;">Duplicates Resolved</div>
+        </div>` : ''}
+        ${sessionStats.mfrFixed > 0 ? `
+        <div style="background:var(--bg);padding:20px;">
+          <div style="font-size:28px;font-weight:700;font-family:var(--font-mono);color:var(--green);">${sessionStats.mfrFixed}</div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-top:4px;">Manufacturers Fixed</div>
+        </div>` : ''}
+        <div style="background:var(--bg);padding:20px;">
+          <div style="font-size:28px;font-weight:700;font-family:var(--font-mono);color:var(--text);">${allProducts.length}</div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-top:4px;">Active Products</div>
+        </div>
+      </div>
+
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:32px;max-width:480px;margin-left:auto;margin-right:auto;">
+        Products with valid part numbers that are temporarily back-ordered or unavailable
+        have been left in place — they'll come back into stock.
+      </p>
+
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn btn-secondary" onclick="location.reload()">START OVER</button>
+        <button class="btn btn-primary" onclick="handleExport()">EXPORT SESSION REPORT</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('wizardBody').style.display = 'block';
+  document.getElementById('wizardTable').style.display = 'none';
   window.scrollTo(0, 0);
 }
 
