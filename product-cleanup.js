@@ -9,17 +9,12 @@ const tenantUrlInput   = document.getElementById('tenantUrl');
 const apiKeyInput      = document.getElementById('apiKey');
 const loadBtn          = document.getElementById('loadBtn');
 const credsError       = document.getElementById('credsError');
-const headerMeta       = document.getElementById('headerMeta');
+const headerMeta       = { textContent: '' }; // legacy compat
 
 const loadingState     = document.getElementById('loadingState');
 const loadingLabel     = document.getElementById('loadingLabel');
 const loadingSub       = document.getElementById('loadingSub');
-const dashboard        = document.getElementById('dashboard');
-const emptyState       = document.getElementById('emptyState');
 
-const analyzeBtn       = document.getElementById('analyzeBtn');
-const exportBtn        = document.getElementById('exportBtn');
-const analysisSection  = document.getElementById('analysisSection');
 const analysisProgress = document.getElementById('analysisProgress');
 const analysisSummary  = document.getElementById('analysisSummary');
 
@@ -70,93 +65,201 @@ const BUCKET_META = {
   red:    { label: 'Unlist Candidate', cls: 'bucket-badge--red'    },
 };
 
+// ── SCREEN MANAGEMENT ─────────────────────────────────────────
+let currentMode = null; // 'onboarding' or 'maintenance'
+let activeStepId = null;
+
+function showScreen(id) {
+  ['screenWelcome','screenConnect','screenApp'].forEach(s => {
+    document.getElementById(s).style.display = s === id ? 'block' : 'none';
+  });
+}
+
 // ── INIT ──────────────────────────────────────────────────────
 function init() {
-  loadStoredCreds();
-  loadBtn.addEventListener('click', handleLoad);
-  analyzeBtn.addEventListener('click', handleAnalyze);
-  exportBtn.addEventListener('click', handleExport);
-  bucketFilter.addEventListener('change', () => {
-    activeBucketFilter = bucketFilter.value;
-    currentPage = 1;
-    document.getElementById('fixMfrBtn').style.display =
-      activeBucketFilter === 'mismatch' ? 'inline-block' : 'none';
-    renderTable();
+  // Welcome screen — mode selection
+  document.querySelectorAll('.mode-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      currentMode = card.dataset.mode;
+      localStorage.setItem('sb_cleanup_mode', currentMode);
+      setTimeout(() => showConnectScreen(), 200);
+    });
   });
-  tableSearch.addEventListener('input', () => {
-    activeSearch = tableSearch.value.trim().toLowerCase();
-    currentPage = 1;
-    renderTable();
-  });
-  bulkUnlistBtn.addEventListener('click', promptUnlist);
-  bulkClearBtn.addEventListener('click', clearSelection);
-  selectAllChk.addEventListener('change', handleSelectAll);
-  unlistConfirmBtn.addEventListener('click', executeUnlist);
-  unlistCancelBtn.addEventListener('click', () => { unlistModal.style.display = 'none'; });
 
-  document.getElementById('dupViewBtn').addEventListener('click', handleDupView);
+  // Restore saved mode
+  const savedMode = localStorage.getItem('sb_cleanup_mode');
+  if (savedMode) {
+    currentMode = savedMode;
+    const card = document.querySelector(`[data-mode="${savedMode}"]`);
+    if (card) card.classList.add('selected');
+  }
+
+  // Resume session
+  const resumeFile = document.getElementById('resumeFile');
+  if (resumeFile) {
+    resumeFile.addEventListener('change', handleResumeFile);
+    // Show resume bar if we have saved state
+    if (localStorage.getItem('sb_saved_session')) {
+      document.getElementById('resumeBar').style.display = 'flex';
+    }
+  }
+
+  // Connect screen
+  document.getElementById('backToWelcomeBtn').addEventListener('click', () => showScreen('screenWelcome'));
+  document.getElementById('loadBtn').addEventListener('click', handleLoad);
+
+  // Save progress
+  document.getElementById('saveProgressBtn').addEventListener('click', handleSaveProgress);
+
+  // Switch account
+  document.getElementById('switchAccountBtn').addEventListener('click', () => {
+    showConnectScreen();
+  });
+
+  // Table controls
+  document.getElementById('bucketFilter').addEventListener('change', () => {
+    activeBucketFilter = document.getElementById('bucketFilter').value;
+    currentPage = 1;
+    renderTable();
+  });
+  document.getElementById('tableSearch').addEventListener('input', () => {
+    activeSearch = document.getElementById('tableSearch').value.trim().toLowerCase();
+    currentPage = 1;
+    renderTable();
+  });
+
+  // Bulk actions
+  document.getElementById('bulkUnlistBtn').addEventListener('click', promptUnlist);
+  document.getElementById('bulkClearBtn').addEventListener('click', clearSelection);
+  document.getElementById('selectAll').addEventListener('change', handleSelectAll);
+
+  // Modals
+  document.getElementById('unlistConfirmBtn').addEventListener('click', executeUnlist);
+  document.getElementById('unlistCancelBtn').addEventListener('click', () => {
+    document.getElementById('unlistModal').style.display = 'none';
+  });
   document.getElementById('dupModalCloseBtn').addEventListener('click', () => {
     document.getElementById('dupModal').style.display = 'none';
   });
-
-  document.getElementById('fixMfrBtn').addEventListener('click', handleFixManufacturers);
   document.getElementById('mfrModalCloseBtn').addEventListener('click', () => {
     document.getElementById('mfrModal').style.display = 'none';
   });
 
-  // NQS card
+  // Export
+  document.getElementById('exportBtn').addEventListener('click', handleExport);
+
+  // NQS in step panel
   document.getElementById('nqsLoadBtn').addEventListener('click', handleNqsLoad);
   document.getElementById('nqsFilterBtn').addEventListener('click', handleNqsFilter);
   document.getElementById('nqsMonths').addEventListener('change', () => {
-    // Reset if period changes
     nqsProductIds.clear();
     nqsActive = false;
     document.getElementById('nqsCount').textContent = '—';
-    document.getElementById('nqsDesc').textContent = "Haven't appeared on a quote";
+    document.getElementById('nqsDesc').textContent = '';
+    document.getElementById('nqsResult').style.display = 'none';
     document.getElementById('nqsFilterBtn').disabled = true;
-    renderTable();
   });
 
-  document.querySelectorAll('.bucket').forEach(el => {
-    el.addEventListener('click', () => {
-      const b = el.dataset.bucket;
-      if (b === 'mismatch') {
-        bucketFilter.value = 'mismatch';
-        activeBucketFilter = 'mismatch';
-        document.getElementById('fixMfrBtn').style.display = 'inline-block';
-      } else {
-        bucketFilter.value = b;
-        activeBucketFilter = b;
-        document.getElementById('fixMfrBtn').style.display = 'none';
-      }
-      currentPage = 1;
-      renderTable();
-    });
+  // Back to steps from table
+  document.getElementById('backToStepsBtn').addEventListener('click', () => {
+    document.getElementById('wizardTable').style.display = 'none';
+    document.getElementById('wizardBody').style.display = 'block';
+    nqsActive = false;
   });
+
+  loadStoredCreds();
+  showScreen('screenWelcome');
 }
+
+function showConnectScreen() {
+  const badge = document.getElementById('connectModeBadge');
+  badge.textContent = currentMode === 'onboarding'
+    ? '🚀 First-time cleanup'
+    : '🔧 Ongoing maintenance';
+  showScreen('screenConnect');
+}
+
+// ── SAVE / RESUME ─────────────────────────────────────────────
+function handleSaveProgress() {
+  const session = {
+    version: 1,
+    savedAt: new Date().toISOString(),
+    mode: currentMode,
+    tenantUrl: localStorage.getItem('sb_tenant_url'),
+    aiNotes,
+    stepsDone: getStepsDone(),
+  };
+  const blob = new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `catalog-cleanup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function handleResumeFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const session = JSON.parse(ev.target.result);
+      if (session.aiNotes) aiNotes = session.aiNotes;
+      if (session.mode) {
+        currentMode = session.mode;
+        localStorage.setItem('sb_cleanup_mode', currentMode);
+      }
+      alert(`Session restored from ${session.savedAt?.slice(0,10) || 'saved file'}. Load your catalog to continue.`);
+      showConnectScreen();
+    } catch {
+      alert('Could not read session file.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function getStepsDone() {
+  const done = {};
+  document.querySelectorAll('.step-pill.done').forEach(p => {
+    done[p.dataset.step] = true;
+  });
+  return done;
+}
+
+
 
 // ── CREDENTIALS ───────────────────────────────────────────────
 function loadStoredCreds() {
-  tenantUrlInput.value = localStorage.getItem('sb_tenant_url') || '';
-  apiKeyInput.value    = localStorage.getItem('sb_api_key')    || '';
+  const tu = document.getElementById('tenantUrl');
+  const ak = document.getElementById('apiKey');
+  if (tu) tu.value = localStorage.getItem('sb_tenant_url') || '';
+  if (ak) ak.value = localStorage.getItem('sb_api_key')    || '';
 }
 function saveCreds() {
-  localStorage.setItem('sb_tenant_url', tenantUrlInput.value.trim());
-  localStorage.setItem('sb_api_key',    apiKeyInput.value.trim());
+  const tu = document.getElementById('tenantUrl');
+  const ak = document.getElementById('apiKey');
+  if (tu) localStorage.setItem('sb_tenant_url', tu.value.trim());
+  if (ak) localStorage.setItem('sb_api_key',    ak.value.trim());
 }
 function getCreds() {
+  const tu = document.getElementById('tenantUrl');
+  const ak = document.getElementById('apiKey');
   return {
-    tenantUrl: tenantUrlInput.value.trim().replace(/\/$/, ''),
-    apiKey:    apiKeyInput.value.trim(),
+    tenantUrl: (tu?.value || localStorage.getItem('sb_tenant_url') || '').trim().replace(/\/$/, ''),
+    apiKey:    (ak?.value || localStorage.getItem('sb_api_key')    || '').trim(),
   };
 }
 
 // ── LOAD CATALOG ──────────────────────────────────────────────
 async function handleLoad() {
   const { tenantUrl, apiKey } = getCreds();
-  credsError.textContent = '';
+  const credsErrorEl = document.getElementById('credsError');
+  if (credsErrorEl) credsErrorEl.textContent = '';
   if (!tenantUrl || !apiKey) {
-    credsError.textContent = 'Both Tenant URL and API Key are required.';
+    if (credsErrorEl) credsErrorEl.textContent = 'Both Tenant URL and API Key are required.';
     return;
   }
 
@@ -168,8 +271,8 @@ async function handleLoad() {
   analysisSection.style.display = 'none';
 
   showLoading('Connecting to Salesbuildr…', 'Fetching product catalog by stock status');
-  dashboard.style.display  = 'none';
-  emptyState.style.display = 'none';
+  showScreen('screenApp');
+  document.getElementById('wizard').style.display = 'none';
 
   try {
     // Fetch MSP company name first — used to detect manufacturer mismatches
@@ -208,7 +311,9 @@ async function handleLoad() {
       allProducts.push(...products.filter(p => p.listed));
     }
 
-    headerMeta.textContent = `${allProducts.length} products · ${new URL(tenantUrl).hostname}`;
+    headerMeta.textContent = '';
+    document.getElementById('headerTenant').textContent =
+      `${allProducts.length} products · ${new URL(tenantUrl).hostname}`;
 
     // Tag manufacturer mismatches — products where manufacturer = MSP name (PSA import default)
     if (mspName) {
@@ -253,7 +358,8 @@ async function handleLoad() {
     renderTable();
   } catch (err) {
     showEmpty();
-    credsError.textContent = `Error: ${err.message}`;
+    const credsErrorEl = document.getElementById('credsError');
+    if (credsErrorEl) credsErrorEl.textContent = `Error: ${err.message}`;
   }
 }
 
@@ -297,28 +403,25 @@ function updateBucketCounts() {
     if (p.mfrMismatch) counts.mismatch++;
   }
 
-  // Hidden counts (used by summary line)
-  document.getElementById('count-green').textContent  = counts.green;
-  document.getElementById('count-yellow').textContent = counts.yellow;
-  document.getElementById('count-orange').textContent = counts.orange;
-  document.getElementById('count-red').textContent    = counts.red;
-
-  // Summary line
-  const summary = document.getElementById('bucketsSummary');
-  if (summary) {
-    document.getElementById('summary-green').textContent  = counts.green;
-    document.getElementById('summary-yellow').textContent = counts.yellow;
-    summary.style.display = 'block';
+  // Update step panel counts
+  const countMap = {
+    'step-red-count':    counts.red,
+    'step-dups-count':   dupMpnGroups.length,
+    'step-mfr-count':    counts.mismatch,
+    'step-orange-count': counts.orange,
+  };
+  for (const [id, val] of Object.entries(countMap)) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
   }
 
-  // Mismatch card
-  const mismatchCard = document.getElementById('mismatch-card');
-  if (mismatchCard) {
-    document.getElementById('count-mismatch').textContent = counts.mismatch;
-    mismatchCard.style.display = counts.mismatch > 0 ? 'flex' : 'none';
-    if (mspName) {
-      document.getElementById('mismatch-desc').textContent =
-        `Manufacturer set to "${mspName}" — PSA import default, needs correction`;
+  // Refresh step strip
+  if (document.getElementById('wizard')?.style.display !== 'none') {
+    const steps = getSteps();
+    buildStepStrip(steps);
+    if (activeStepId) {
+      const pill = document.querySelector(`[data-step="${activeStepId}"]`);
+      if (pill) pill.classList.add('active');
     }
   }
 
@@ -330,16 +433,15 @@ function updateBucketCounts() {
 // yellow is real products temporarily out of stock (stock data tells the story).
 // Run 3 batches in parallel for speed.
 async function handleAnalyze() {
-  analyzeBtn.disabled = true;
-  analyzeBtn.textContent = 'ANALYZING…';
-  analysisSection.style.display = 'block';
-  analysisSummary.innerHTML = '';
+  const analyzeBtn = document.getElementById('stepOrangeAnalyzeBtn');
+  if (analyzeBtn) { analyzeBtn.disabled = true; analyzeBtn.textContent = 'ANALYZING…'; }
 
-  const progressWrap   = document.getElementById('analysisProgressWrap');
-  const progressFill   = document.getElementById('analysisProgressFill');
+  const progressWrap  = document.getElementById('stepOrangeProgress');
+  const progressFill  = document.getElementById('analysisProgressFill');
   const progressDetail = document.getElementById('analysisProgressDetail');
-  progressWrap.style.display = 'block';
-  progressFill.style.width = '0%';
+  const progressLabel = document.getElementById('analysisProgress');
+  if (progressWrap) progressWrap.style.display = 'block';
+  if (progressFill) progressFill.style.width = '0%';
 
   const candidates = allProducts.filter(p => p.bucket === 'orange');
   const total = candidates.length;
@@ -348,9 +450,10 @@ async function handleAnalyze() {
 
   const updateProgress = () => {
     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-    progressFill.style.width = pct + '%';
-    analysisProgress.textContent = `${pct}% complete`;
-    progressDetail.textContent = `${done} of ${total} products analyzed${errors > 0 ? ` · ${errors} failed` : ''} · running in parallel batches`;
+    if (progressFill) progressFill.style.width = pct + '%';
+    if (progressLabel) progressLabel.textContent = `${pct}% complete`;
+    if (progressDetail) progressDetail.textContent =
+      `${done} of ${total} products analyzed${errors > 0 ? ` · ${errors} failed` : ''} · running in parallel batches`;
   };
 
   updateProgress();
@@ -384,16 +487,17 @@ async function handleAnalyze() {
   }
 
   // Final state
-  progressFill.style.width = '100%';
-  analysisProgress.textContent = `Complete`;
-  progressDetail.textContent = `${total} products analyzed${errors > 0 ? ` · ${errors} batches failed — re-analyze to retry` : ' · all batches succeeded'}`;
+  if (progressFill) progressFill.style.width = '100%';
+  if (progressLabel) progressLabel.textContent = `Complete`;
+  if (progressDetail) progressDetail.textContent =
+    `${total} products analyzed${errors > 0 ? ` · ${errors} batches failed — re-analyze to retry` : ' · all batches succeeded'}`;
 
   updateBucketCounts();
   renderTable();
-  renderGuidancePanel();
+  // Refresh the step strip to reflect updated counts
+  buildWizard();
 
-  analyzeBtn.disabled = false;
-  analyzeBtn.textContent = 'RE-ANALYZE';
+  if (analyzeBtn) { analyzeBtn.disabled = false; analyzeBtn.textContent = 'RE-ANALYZE'; }
 }
 
 async function analyzeProductBatch(products) {
@@ -886,6 +990,8 @@ async function handleNqsLoad() {
     document.getElementById('nqsCount').textContent = count;
     document.getElementById('nqsDesc').textContent =
       `Not quoted in the last ${months} months — ${count} products`;
+    document.getElementById('nqsResult').style.display = 'flex';
+    document.getElementById('step-nqs-count').textContent = count;
     filterBtn.disabled = count === 0;
 
   } catch (err) {
@@ -897,14 +1003,10 @@ async function handleNqsLoad() {
 }
 
 function handleNqsFilter() {
-  nqsActive = !nqsActive;
-  const btn = document.getElementById('nqsFilterBtn');
-  const card = document.getElementById('nqsCard');
-  btn.textContent = nqsActive ? 'CLEAR FILTER' : 'VIEW THESE';
-  btn.className = nqsActive ? 'btn btn-danger' : 'btn btn-primary';
-  card.style.outline = nqsActive ? '2px solid #4a6fa5' : 'none';
-  currentPage = 1;
-  renderTable();
+  nqsActive = true;
+  activeBucketFilter = 'actionable';
+  document.getElementById('bucketFilter').value = 'actionable';
+  showTableView('NOT RECENTLY QUOTED');
 }
 
 
@@ -1202,11 +1304,12 @@ function handleExport() {
 
 // ── UI HELPERS ────────────────────────────────────────────────
 function showLoading(label, sub) {
-  loadingLabel.textContent   = label;
-  loadingSub.textContent     = sub;
+  loadingLabel.textContent = label;
+  loadingSub.textContent = sub;
   loadingState.style.display = 'flex';
-  dashboard.style.display    = 'none';
-  emptyState.style.display   = 'none';
+  const wiz = document.getElementById('wizard');
+  if (wiz) wiz.style.display = 'none';
+}
 }
 function updateLoadingLabel(label, sub) {
   loadingLabel.textContent = label;
@@ -1214,13 +1317,177 @@ function updateLoadingLabel(label, sub) {
 }
 function showDashboard() {
   loadingState.style.display = 'none';
-  dashboard.style.display    = 'block';
-  emptyState.style.display   = 'none';
+  showScreen('screenApp');
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('wizard').style.display = 'flex';
+  document.getElementById('wizardBody').style.display = 'block';
+  document.getElementById('wizardTable').style.display = 'none';
+  document.getElementById('headerActions').style.display = 'flex';
+  buildWizard();
 }
+
+function buildWizard() {
+  const steps = getSteps();
+  buildStepStrip(steps);
+  // Show first step by default
+  if (steps.length > 0) showStep(steps[0].id);
+}
+
+function getSteps() {
+  const counts = getCounts();
+  const steps = [
+    {
+      id: 'red',
+      label: 'Unlist Candidates',
+      count: counts.red,
+      show: true,
+    },
+    {
+      id: 'dups',
+      label: 'Duplicate MPNs',
+      count: dupMpnGroups.length,
+      show: dupMpnGroups.length > 0,
+    },
+    {
+      id: 'mfr',
+      label: 'Manufacturer Mismatch',
+      count: counts.mismatch,
+      show: counts.mismatch > 0,
+    },
+    {
+      id: 'orange',
+      label: 'Likely Unlist',
+      count: counts.orange,
+      show: true,
+    },
+  ];
+
+  // Only show NQS for maintenance mode
+  if (currentMode === 'maintenance') {
+    steps.push({
+      id: 'nqs',
+      label: 'Not Recently Quoted',
+      count: nqsProductIds.size || null,
+      show: true,
+    });
+  }
+
+  return steps.filter(s => s.show);
+}
+
+function getCounts() {
+  const counts = { green: 0, yellow: 0, orange: 0, red: 0, mismatch: 0 };
+  for (const p of allProducts) {
+    if (counts[p.bucket] !== undefined) counts[p.bucket]++;
+    if (p.mfrMismatch) counts.mismatch++;
+  }
+  return counts;
+}
+
+function buildStepStrip(steps) {
+  const strip = document.getElementById('stepStrip');
+  strip.innerHTML = '';
+  steps.forEach((step, i) => {
+    const pill = document.createElement('div');
+    pill.className = 'step-pill';
+    pill.dataset.step = step.id;
+    pill.innerHTML = `
+      <span class="step-pill-num">${i + 1}</span>
+      <span class="step-pill-label">${step.label}</span>
+      ${step.count !== null ? `<span class="step-pill-count">${step.count}</span>` : ''}
+    `;
+    pill.addEventListener('click', () => showStep(step.id));
+    strip.appendChild(pill);
+  });
+}
+
+function showStep(stepId) {
+  activeStepId = stepId;
+  const steps = getSteps();
+
+  // Update strip active state
+  document.querySelectorAll('.step-pill').forEach((pill, i) => {
+    pill.classList.toggle('active', pill.dataset.step === stepId);
+  });
+
+  // Hide all panels, show the right one
+  document.querySelectorAll('.step-panel').forEach(p => p.style.display = 'none');
+  const panel = document.getElementById(`step-${stepId}`);
+  if (!panel) return;
+  panel.style.display = 'block';
+
+  // Set step number in panel
+  const stepIndex = steps.findIndex(s => s.id === stepId);
+  panel.querySelectorAll('.step-num-val').forEach(el => el.textContent = stepIndex + 1);
+
+  // Update counts
+  const counts = getCounts();
+  const countMap = {
+    red: counts.red,
+    dups: dupMpnGroups.length,
+    mfr: counts.mismatch,
+    orange: counts.orange,
+    nqs: nqsProductIds.size || null,
+  };
+  const countEl = document.getElementById(`step-${stepId}-count`);
+  if (countEl && countMap[stepId] !== null) countEl.textContent = countMap[stepId];
+
+  // Wire up step-specific buttons
+  wireStepButtons(stepId);
+
+  // Show table or wizard body
+  document.getElementById('wizardTable').style.display = 'none';
+  document.getElementById('wizardBody').style.display = 'block';
+}
+
+function wireStepButtons(stepId) {
+  // Unlist Candidates
+  if (stepId === 'red') {
+    const btn = document.getElementById('stepRedFilterBtn');
+    if (btn) {
+      btn.onclick = () => {
+        activeBucketFilter = 'red';
+        document.getElementById('bucketFilter').value = 'red';
+        showTableView('UNLIST CANDIDATES');
+      };
+    }
+  }
+
+  // Duplicates
+  if (stepId === 'dups') {
+    const btn = document.getElementById('stepDupsBtn');
+    if (btn) btn.onclick = handleDupView;
+  }
+
+  // Manufacturer
+  if (stepId === 'mfr') {
+    const btn = document.getElementById('stepMfrBtn');
+    if (btn) btn.onclick = handleFixManufacturers;
+  }
+
+  // Likely Unlist
+  if (stepId === 'orange') {
+    const analyzeBtn = document.getElementById('stepOrangeAnalyzeBtn');
+    const filterBtn  = document.getElementById('stepOrangeFilterBtn');
+    if (analyzeBtn) analyzeBtn.onclick = handleAnalyze;
+    if (filterBtn) filterBtn.onclick = () => {
+      activeBucketFilter = 'orange';
+      document.getElementById('bucketFilter').value = 'orange';
+      showTableView('LIKELY UNLIST');
+    };
+  }
+}
+
+function showTableView(title) {
+  document.getElementById('wizardBody').style.display = 'none';
+  document.getElementById('wizardTable').style.display = 'block';
+  document.getElementById('tableTitle').textContent = title;
+  renderTable();
+  window.scrollTo(0, 0);
 function showEmpty() {
   loadingState.style.display = 'none';
-  dashboard.style.display    = 'none';
-  emptyState.style.display   = 'flex';
+  showScreen('screenConnect');
+}
 }
 function escHtml(str) {
   if (!str) return '';
