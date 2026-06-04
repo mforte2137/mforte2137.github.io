@@ -1193,3 +1193,89 @@ body {
   width: 100%;
   box-sizing: border-box;
 }
+
+/* ── HEADER BUTTONS — visible on dark background ── */
+.header-btn {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: var(--font-ui);
+  padding: 6px 12px;
+  border: 1px solid rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.75);
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  display: inline-block;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.header-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  border-color: rgba(255,255,255,0.6);
+}
+.header-btn--primary {
+  border-color: rgba(255,255,255,0.6);
+  color: #fff;
+}
+.header-btn--primary:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* ── CONTINUE TILE ── */
+.mode-card--continue {
+  grid-column: 1 / -1;
+  border-color: var(--text);
+  background: var(--bg-alt);
+  margin-top: 8px;
+  display: flex !important;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.mode-card--continue .mode-card-icon { font-size: 24px; flex-shrink: 0; }
+.mode-card--continue .mode-card-title { font-size: 14px; flex-shrink: 0; }
+.mode-card-continue-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  flex: 1;
+}
+.mode-card-continue-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ── REASSURANCE TEXT on mode cards ── */
+.mode-card-reassurance {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── BACK TO STEPS BUTTON ── */
+.back-to-steps-btn {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-mid);
+  background: var(--bg);
+  border: 1px solid var(--border-dark);
+  padding: 5px 12px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.back-to-steps-btn:hover {
+  background: var(--bg-alt);
+  color: var(--text);
+  border-color: var(--text);
+}
