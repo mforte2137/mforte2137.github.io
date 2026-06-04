@@ -268,7 +268,6 @@ async function handleLoad() {
   selectedIds.clear();
   aiNotes = {};
   dupMpnGroups = [];
-  analysisSection.style.display = 'none';
 
   showLoading('Connecting to Salesbuildr…', 'Fetching product catalog by stock status');
   showScreen('screenApp');
