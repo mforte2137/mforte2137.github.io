@@ -1278,3 +1278,23 @@ body {
   color: var(--text);
   border-color: var(--text);
 }
+
+/* ── STEP INLINE NAV ── */
+.step-inline-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  max-width: 860px;
+}
+.step-nav-indicator {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* Hide the fixed footer bar */
+.wizard-footer { display: none !important; }
+.wizard { padding-bottom: 0; }
