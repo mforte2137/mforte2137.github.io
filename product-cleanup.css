@@ -1167,3 +1167,29 @@ body {
   color: var(--text-muted);
   font-family: var(--font-mono);
 }
+
+/* ── WIZARD LAYOUT FIX — footer always visible ── */
+.wizard {
+  min-height: calc(100vh - 52px);
+  display: flex;
+  flex-direction: column;
+}
+.wizard-body {
+  flex: 1;
+}
+.wizard-footer {
+  margin-top: auto;
+}
+
+/* ── WIZARD FOOTER REPOSITIONED ── */
+.wizard-footer {
+  position: static !important;
+  border-top: 2px solid var(--text);
+  background: var(--bg-alt);
+  padding: 16px 24px;
+  display: flex;
+  max-width: 860px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
