@@ -228,6 +228,14 @@ function showConnectScreen(resuming = false) {
   const badge = document.getElementById('connectModeBadge');
   const modeLabel = currentMode === 'maintenance' ? '🔧 Ongoing maintenance' : '🚀 First-time cleanup';
   if (badge) badge.textContent = resuming ? `📋 Resuming · ${modeLabel}` : modeLabel;
+
+  // If resuming and we have saved credentials, auto-connect
+  if (resuming && localStorage.getItem('sb_tenant_url') && localStorage.getItem('sb_api_key')) {
+    showScreen('screenApp');
+    handleLoad();
+    return;
+  }
+
   showScreen('screenConnect');
 }
 
@@ -1388,33 +1396,33 @@ function showDashboard() {
   document.getElementById('wizardBody').style.display = 'block';
   document.getElementById('wizardTable').style.display = 'none';
   document.getElementById('headerActions').style.display = 'flex';
-  buildWizard();
+
+  // Pass saved step directly into buildWizard so there's no race condition
+  const saved = getSavedSession();
+  buildWizard(saved?.activeStepId || null);
 }
 
-function buildWizard() {
+function buildWizard(resumeStepId = null) {
   const steps = getSteps();
   buildStepStrip(steps);
   const wf = document.getElementById('wizardFooter');
   if (wf) wf.style.display = 'none';
 
-  // Find first step with items — auto-skip empty ones
   const counts = getCounts();
   const countMap = {
-    red: counts.red,
-    dups: dupMpnGroups.length,
-    mfr: counts.mismatch,
-    orange: counts.orange,
-    nqs: null,
+    red: counts.red, dups: dupMpnGroups.length,
+    mfr: counts.mismatch, orange: counts.orange, nqs: null,
   };
 
   // Mark empty steps as done immediately
-  steps.forEach(s => {
-    if (countMap[s.id] === 0) markStepDone(s.id);
-  });
+  steps.forEach(s => { if (countMap[s.id] === 0) markStepDone(s.id); });
 
-  // Show first step that has items, or first step if all empty
-  const firstActive = steps.find(s => countMap[s.id] === null || countMap[s.id] > 0);
-  showStep(firstActive ? firstActive.id : steps[0].id);
+  // Resume to saved step if valid, otherwise first step with items
+  let target = null;
+  if (resumeStepId) target = steps.find(s => s.id === resumeStepId);
+  if (!target) target = steps.find(s => countMap[s.id] === null || countMap[s.id] > 0);
+  if (!target && steps.length) target = steps[0];
+  if (target) showStep(target.id);
 }
 
 function getSteps() {
@@ -1487,6 +1495,7 @@ function buildStepStrip(steps) {
 
 function showStep(stepId) {
   activeStepId = stepId;
+  autoSave();
   const steps = getSteps();
 
   document.querySelectorAll('.step-pill').forEach(pill => {
