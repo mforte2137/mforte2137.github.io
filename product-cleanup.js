@@ -1388,7 +1388,8 @@ function showDashboard() {
 function buildWizard() {
   const steps = getSteps();
   buildStepStrip(steps);
-  document.getElementById('wizardFooter').style.display = 'flex';
+  const wf = document.getElementById('wizardFooter');
+  if (wf) wf.style.display = 'none';
 
   // Find first step with items — auto-skip empty ones
   const counts = getCounts();
@@ -1422,7 +1423,7 @@ function getSteps() {
     {
       id: 'dups',
       label: 'Duplicate MPNs',
-      count: dupMpnGroups.length,
+      count: null, // shown as — until modal verifies real count
       show: dupMpnGroups.length > 0,
     },
     {
@@ -1511,21 +1512,32 @@ function showStep(stepId) {
 }
 
 function updateFooter(steps, stepIndex) {
+  // Hide the fixed footer bar — we put nav inside the step panel instead
   const footer = document.getElementById('wizardFooter');
-  const backBtn = document.getElementById('footerBackBtn');
-  const nextBtn = document.getElementById('footerNextBtn');
-  const indicator = document.getElementById('footerStepIndicator');
+  if (footer) footer.style.display = 'none';
 
-  if (!footer) return;
-  footer.style.display = 'flex';
+  const panel = document.getElementById(`step-${steps[stepIndex].id}`);
+  if (!panel) return;
+
+  // Remove any existing inline nav
+  const existing = panel.querySelector('.step-inline-nav');
+  if (existing) existing.remove();
 
   const isFirst = stepIndex === 0;
   const isLast = stepIndex === steps.length - 1;
 
-  backBtn.textContent = isFirst ? '← BACK TO START' : '← BACK';
-  nextBtn.textContent = isLast ? 'FINISH ✓' : 'NEXT →';
-  nextBtn.className = isLast ? 'btn btn-primary' : 'btn btn-secondary';
-  indicator.textContent = `Step ${stepIndex + 1} of ${steps.length}`;
+  const nav = document.createElement('div');
+  nav.className = 'step-inline-nav';
+  nav.innerHTML = `
+    <button class="btn btn-secondary step-nav-back">${isFirst ? '← BACK TO START' : '← BACK'}</button>
+    <span class="step-nav-indicator">Step ${stepIndex + 1} of ${steps.length}</span>
+    <button class="btn ${isLast ? 'btn-primary' : 'btn-secondary'} step-nav-next">${isLast ? 'FINISH ✓' : 'NEXT →'}</button>
+  `;
+
+  nav.querySelector('.step-nav-back').addEventListener('click', handleFooterBack);
+  nav.querySelector('.step-nav-next').addEventListener('click', handleFooterNext);
+
+  panel.querySelector('.step-panel-body').appendChild(nav);
 }
 
 function handleFooterBack() {
