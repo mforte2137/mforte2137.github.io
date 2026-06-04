@@ -65,11 +65,36 @@ const BUCKET_META = {
   red:    { label: 'Unlist Candidate', cls: 'bucket-badge--red'    },
 };
 
-// ── SCREEN MANAGEMENT ─────────────────────────────────────────
-let currentMode = null; // 'onboarding' or 'maintenance'
-let activeStepId = null;
+// ── AUTO-SAVE ─────────────────────────────────────────────────
+const STORAGE_KEY = 'sb_cleanup_session';
 
-// Session stats — track what was accomplished
+function autoSave() {
+  if (allProducts.length === 0) return;
+  const hostname = (() => { try { return new URL(localStorage.getItem('sb_tenant_url')).hostname; } catch { return ''; } })();
+  const session = {
+    version: 2,
+    savedAt: new Date().toISOString(),
+    mode: currentMode,
+    tenantUrl: localStorage.getItem('sb_tenant_url'),
+    hostname,
+    activeStepId,
+    aiNotes,
+    sessionStats,
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(session)); } catch(e) {}
+}
+
+function getSavedSession() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { return null; }
+}
+
+function clearSavedSession() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
+// ── SCREEN MANAGEMENT ─────────────────────────────────────────
+let currentMode = null;
+let activeStepId = null;
 let sessionStats = { unlisted: 0, dupsResolved: 0, mfrFixed: 0, startCount: 0 };
 
 function showScreen(id) {
@@ -80,8 +105,21 @@ function showScreen(id) {
 
 // ── INIT ──────────────────────────────────────────────────────
 function init() {
-  // Welcome screen — mode selection
-  document.querySelectorAll('.mode-card').forEach(card => {
+  loadStoredCreds();
+
+  // Check for saved session
+  const saved = getSavedSession();
+  if (saved) {
+    const meta = document.getElementById('continueMeta');
+    const date = new Date(saved.savedAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    if (meta) meta.textContent = `Last saved ${date} · ${saved.hostname || 'your account'}`;
+    const cont = document.getElementById('modeContinue');
+    if (cont) cont.style.display = 'block';
+  }
+
+  // Mode card clicks
+  document.querySelectorAll('.mode-card[data-mode]').forEach(card => {
+    if (card.dataset.mode === 'continue') return;
     card.addEventListener('click', () => {
       document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
@@ -91,35 +129,32 @@ function init() {
     });
   });
 
-  // Restore saved mode
-  const savedMode = localStorage.getItem('sb_cleanup_mode');
-  if (savedMode) {
-    currentMode = savedMode;
-    const card = document.querySelector(`[data-mode="${savedMode}"]`);
-    if (card) card.classList.add('selected');
-  }
+  // Continue saved session
+  document.getElementById('continueBtn')?.addEventListener('click', () => {
+    const s = getSavedSession();
+    if (!s) return;
+    currentMode = s.mode || 'onboarding';
+    if (s.aiNotes) aiNotes = s.aiNotes;
+    if (s.sessionStats) sessionStats = s.sessionStats;
+    localStorage.setItem('sb_cleanup_mode', currentMode);
+    showConnectScreen(true);
+  });
 
-  // Resume session
-  const resumeFile = document.getElementById('resumeFile');
-  if (resumeFile) {
-    resumeFile.addEventListener('change', handleResumeFile);
-    // Show resume bar if we have saved state
-    if (localStorage.getItem('sb_saved_session')) {
-      document.getElementById('resumeBar').style.display = 'flex';
-    }
-  }
+  // Clear saved session
+  document.getElementById('clearSessionBtn')?.addEventListener('click', () => {
+    clearSavedSession();
+    const cont = document.getElementById('modeContinue');
+    if (cont) cont.style.display = 'none';
+  });
 
   // Connect screen
   document.getElementById('backToWelcomeBtn').addEventListener('click', () => showScreen('screenWelcome'));
   document.getElementById('loadBtn').addEventListener('click', handleLoad);
 
-  // Save progress
-  document.getElementById('saveProgressBtn').addEventListener('click', handleSaveProgress);
-
-  // Switch account
-  document.getElementById('switchAccountBtn').addEventListener('click', () => {
-    showConnectScreen();
-  });
+  // Header buttons
+  document.getElementById('saveProgressBtn')?.addEventListener('click', handleFileExport);
+  document.getElementById('importFile')?.addEventListener('change', handleFileImport);
+  document.getElementById('switchAccountBtn')?.addEventListener('click', () => showConnectScreen());
 
   // Table controls
   document.getElementById('bucketFilter').addEventListener('change', () => {
@@ -150,10 +185,10 @@ function init() {
     document.getElementById('mfrModal').style.display = 'none';
   });
 
-  // Export
+  // Export CSV
   document.getElementById('exportBtn').addEventListener('click', handleExport);
 
-  // NQS in step panel
+  // NQS
   document.getElementById('nqsLoadBtn').addEventListener('click', handleNqsLoad);
   document.getElementById('nqsFilterBtn').addEventListener('click', handleNqsFilter);
   document.getElementById('nqsMonths').addEventListener('change', () => {
@@ -165,48 +200,55 @@ function init() {
     document.getElementById('nqsFilterBtn').disabled = true;
   });
 
-  document.getElementById('footerBackBtn')?.addEventListener('click', handleFooterBack);
-  document.getElementById('footerNextBtn')?.addEventListener('click', handleFooterNext);
-
-  // Back to steps from table
+  // Back to steps
   document.getElementById('backToStepsBtn').addEventListener('click', () => {
     document.getElementById('wizardTable').style.display = 'none';
     document.getElementById('wizardBody').style.display = 'block';
+    document.getElementById('wizardFooter').style.display = 'flex';
     nqsActive = false;
+    if (activeStepId) showStep(activeStepId);
   });
 
-  loadStoredCreds();
+  // Footer nav
+  document.getElementById('footerBackBtn')?.addEventListener('click', handleFooterBack);
+  document.getElementById('footerNextBtn')?.addEventListener('click', handleFooterNext);
+
   showScreen('screenWelcome');
 }
 
-function showConnectScreen() {
+function showConnectScreen(resuming = false) {
   const badge = document.getElementById('connectModeBadge');
-  badge.textContent = currentMode === 'onboarding'
-    ? '🚀 First-time cleanup'
-    : '🔧 Ongoing maintenance';
+  const modeLabel = currentMode === 'maintenance' ? '🔧 Ongoing maintenance' : '🚀 First-time cleanup';
+  if (badge) badge.textContent = resuming ? `📋 Resuming · ${modeLabel}` : modeLabel;
   showScreen('screenConnect');
 }
 
-// ── SAVE / RESUME ─────────────────────────────────────────────
-function handleSaveProgress() {
+// ── FILE EXPORT / IMPORT ──────────────────────────────────────
+function handleFileExport() {
+  const hostname = (() => { try { return new URL(localStorage.getItem('sb_tenant_url')).hostname; } catch { return 'session'; } })();
   const session = {
-    version: 1,
+    version: 2,
     savedAt: new Date().toISOString(),
     mode: currentMode,
     tenantUrl: localStorage.getItem('sb_tenant_url'),
+    hostname,
+    activeStepId,
     aiNotes,
-    stepsDone: getStepsDone(),
+    sessionStats,
   };
   const blob = new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
   a.href = url;
-  a.download = `catalog-cleanup-${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `catalog-cleanup-${hostname}-${date}.json`;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
-function handleResumeFile(e) {
+function handleFileImport(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
@@ -214,26 +256,23 @@ function handleResumeFile(e) {
     try {
       const session = JSON.parse(ev.target.result);
       if (session.aiNotes) aiNotes = session.aiNotes;
+      if (session.sessionStats) sessionStats = session.sessionStats;
       if (session.mode) {
         currentMode = session.mode;
         localStorage.setItem('sb_cleanup_mode', currentMode);
       }
-      alert(`Session restored from ${session.savedAt?.slice(0,10) || 'saved file'}. Load your catalog to continue.`);
-      showConnectScreen();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+      alert(`Session from ${new Date(session.savedAt).toLocaleDateString()} imported. Connect to continue.`);
+      showConnectScreen(true);
     } catch {
       alert('Could not read session file.');
     }
   };
   reader.readAsText(file);
+  e.target.value = '';
 }
 
-function getStepsDone() {
-  const done = {};
-  document.querySelectorAll('.step-pill.done').forEach(p => {
-    done[p.dataset.step] = true;
-  });
-  return done;
-}
+
 
 
 
@@ -725,6 +764,7 @@ async function handleDupView() {
     updateBucketCounts();
     renderTable();
     sessionStats.dupsResolved += done;
+    autoSave();
     checkCompletion();
 
     globalUnlistBtn.textContent = errors === 0
@@ -936,6 +976,7 @@ function renderMfrGroups(container, groups) {
       updateBucketCounts();
       renderTable();
       sessionStats.mfrFixed += (done - errors);
+      autoSave();
       checkCompletion();
 
       btn.textContent = errors === 0 ? '✓ UPDATED' : `${errors} FAILED`;
@@ -1278,6 +1319,7 @@ async function executeUnlist() {
   updateBucketCounts();
   renderTable();
   sessionStats.unlisted += (done - errors);
+  autoSave();
   checkCompletion();
 
   unlistProgressLabel.textContent = errors === 0
@@ -1483,7 +1525,6 @@ function handleFooterNext() {
     showStep(steps[idx + 1].id);
   }
 }
-
 function wireStepButtons(stepId) {
   // Unlist Candidates
   if (stepId === 'red') {
@@ -1545,17 +1586,13 @@ function showTableView(title) {
 
 function checkCompletion() {
   const counts = getCounts();
-  // Check if all actionable steps are at 0
-  const allDone = counts.red === 0 && counts.orange === 0 && counts.mismatch === 0;
-  if (allDone && allProducts.length > 0) {
-    // Mark all step pills as done
-    document.querySelectorAll('.step-pill').forEach(p => p.classList.add('done'));
-    setTimeout(() => showCompletionScreen(), 1500);
-  }
-  // Mark individual steps as done
+  // Mark individual steps as done when count hits 0
   if (counts.red === 0) markStepDone('red');
   if (counts.mismatch === 0) markStepDone('mfr');
-  if (dupMpnGroups.length === 0) markStepDone('dups');
+  // Dup step done only after modal has verified (step-dups-count updated)
+  const dupsCountEl = document.getElementById('step-dups-count');
+  if (dupsCountEl && dupsCountEl.textContent === '0') markStepDone('dups');
+  autoSave();
 }
 
 function markStepDone(stepId) {
