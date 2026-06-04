@@ -1310,7 +1310,6 @@ function showLoading(label, sub) {
   const wiz = document.getElementById('wizard');
   if (wiz) wiz.style.display = 'none';
 }
-}
 function updateLoadingLabel(label, sub) {
   loadingLabel.textContent = label;
   if (sub) loadingSub.textContent = sub;
