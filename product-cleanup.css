@@ -1105,3 +1105,65 @@ body {
 #count-green, #count-yellow, #count-orange, #count-red,
 #count-mismatch, #mismatch-desc, #mismatch-card,
 #summary-green, #summary-yellow { display: none !important; }
+
+/* ── BACK TO STEPS FIX ── */
+#backToStepsBtn {
+  color: var(--text-mid);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  border: 1px solid var(--border-dark);
+  padding: 5px 10px;
+  background: var(--bg);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  white-space: nowrap;
+}
+#backToStepsBtn:hover {
+  background: var(--bg-deep);
+  color: var(--text);
+}
+
+/* ── STEP DONE STATE ── */
+.step-pill.done .step-pill-num {
+  background: var(--green);
+  color: #fff;
+}
+.step-pill.done .step-pill-label { color: var(--text-muted); }
+
+/* ── MANUFACTURER NOT FOUND STATE ── */
+.mfr-group--blocked {
+  border: 2px solid var(--orange);
+}
+.mfr-group--blocked .mfr-group-header {
+  background: var(--orange-bg);
+}
+.mfr-blocked-note {
+  font-size: 11px;
+  color: var(--orange);
+  font-weight: 600;
+  padding: 8px 16px;
+  border-top: 1px solid var(--orange-bd);
+  background: var(--orange-bg);
+}
+
+/* ── BACK/NEXT FOOTER ── */
+.wizard-footer {
+  position: sticky;
+  bottom: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 50;
+}
+.wizard-footer-left { display: flex; align-items: center; gap: 12px; }
+.wizard-footer-right { display: flex; align-items: center; gap: 12px; }
+.wizard-step-indicator {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
