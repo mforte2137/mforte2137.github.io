@@ -15,28 +15,73 @@
         <span class="brand-mark">SB</span>
         <span class="brand-name">Product Cleanup</span>
       </div>
-      <div class="header-meta" id="headerMeta"></div>
+      <div class="header-actions" id="headerActions" style="display:none;">
+        <span class="header-tenant" id="headerTenant"></span>
+        <button class="btn-link" id="switchAccountBtn">Switch Account</button>
+        <button class="btn btn-secondary btn-sm" id="saveProgressBtn">SAVE PROGRESS</button>
+      </div>
     </div>
   </header>
 
-  <!-- CREDENTIALS BAR -->
-  <section class="creds-bar" id="credsBar">
-    <div class="creds-inner">
-      <div class="cred-group">
-        <label class="field-label">TENANT URL</label>
-        <input type="url" id="tenantUrl" class="cred-input" placeholder="https://acme.salesbuildr.com" />
-      </div>
-      <div class="cred-group">
-        <label class="field-label">API KEY</label>
-        <input type="password" id="apiKey" class="cred-input" placeholder="Your Salesbuildr API key" />
-      </div>
-      <button class="btn btn-primary" id="loadBtn">LOAD CATALOG</button>
-    </div>
-    <div class="creds-error" id="credsError"></div>
-  </section>
+  <!-- SCREEN 1: WELCOME -->
+  <div class="screen" id="screenWelcome">
+    <div class="welcome-wrap">
+      <div class="welcome-logo">⬡</div>
+      <h1 class="welcome-title">Product Cleanup</h1>
+      <p class="welcome-sub">Powered by Salesbuildr · AI-assisted catalog management</p>
 
-  <!-- MAIN -->
-  <main class="app-main" id="appMain">
+      <p class="welcome-question">What can we help you with today?</p>
+
+      <div class="mode-cards">
+        <div class="mode-card" id="modeOnboarding" data-mode="onboarding">
+          <div class="mode-card-icon">🚀</div>
+          <div class="mode-card-title">First-time cleanup</div>
+          <div class="mode-card-desc">My catalog just synced from my PSA and needs cleaning up</div>
+        </div>
+        <div class="mode-card" id="modeMaintenance" data-mode="maintenance">
+          <div class="mode-card-icon">🔧</div>
+          <div class="mode-card-title">Ongoing maintenance</div>
+          <div class="mode-card-desc">I've been quoting in Salesbuildr and want to tidy things up</div>
+        </div>
+      </div>
+
+      <div class="resume-bar" id="resumeBar" style="display:none;">
+        <span class="resume-text">You have a saved session.</span>
+        <label class="btn btn-secondary btn-sm" for="resumeFile">RESUME SESSION</label>
+        <input type="file" id="resumeFile" accept=".json" style="display:none;" />
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: CONNECT -->
+  <div class="screen" id="screenConnect" style="display:none;">
+    <div class="connect-wrap">
+      <button class="btn-link back-btn" id="backToWelcomeBtn">← Back</button>
+      <div class="connect-mode-badge" id="connectModeBadge"></div>
+      <h2 class="connect-title">Connect your Salesbuildr account</h2>
+      <p class="connect-sub">Enter your tenant URL and API key to load your product catalog.</p>
+
+      <div class="connect-form">
+        <div class="connect-field">
+          <label class="field-label">TENANT URL</label>
+          <input type="url" id="tenantUrl" class="connect-input"
+            placeholder="https://yourcompany.salesbuildr.com" autocomplete="off" />
+          <span class="field-hint">Your Salesbuildr portal address</span>
+        </div>
+        <div class="connect-field">
+          <label class="field-label">API KEY</label>
+          <input type="password" id="apiKey" class="connect-input"
+            placeholder="Your API key" autocomplete="new-password" />
+          <span class="field-hint">Found in Admin → Integrations → API Key</span>
+        </div>
+        <div class="connect-error" id="credsError"></div>
+        <button class="btn btn-primary btn-connect" id="loadBtn">CONNECT & LOAD CATALOG</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: MAIN APP -->
+  <div class="screen" id="screenApp" style="display:none;">
 
     <!-- LOADING STATE -->
     <div class="loading-state" id="loadingState" style="display:none;">
@@ -47,120 +92,137 @@
       </div>
     </div>
 
-    <!-- DASHBOARD -->
-    <div class="dashboard" id="dashboard" style="display:none;">
+    <!-- WIZARD -->
+    <div class="wizard" id="wizard" style="display:none;">
 
-      <!-- TRIAGE BUCKETS -->
-      <section class="buckets-section">
-        <div class="section-header">
-          <h2 class="section-title">CATALOG TRIAGE</h2>
-          <div class="section-actions">
-            <button class="btn btn-secondary" id="fixMfrBtn" style="display:none;">FIX MANUFACTURERS</button>
-            <button class="btn btn-secondary" id="analyzeBtn">RUN AI ANALYSIS</button>
-            <button class="btn btn-secondary" id="exportBtn">EXPORT PLAN</button>
+      <!-- STEP PROGRESS STRIP -->
+      <div class="step-strip" id="stepStrip"></div>
+
+      <!-- STEP PANELS -->
+      <div class="wizard-body" id="wizardBody">
+
+        <!-- STEP: UNLIST CANDIDATES -->
+        <div class="step-panel" id="step-red" style="display:none;">
+          <div class="step-panel-header">
+            <div class="step-panel-num">Step <span class="step-num-val"></span></div>
+            <h2 class="step-panel-title">Unlist Candidates</h2>
+            <div class="step-panel-count"><span id="step-red-count">—</span> products</div>
           </div>
-        </div>
-
-        <!-- Summary line for non-actionable buckets -->
-        <div class="buckets-summary" id="bucketsSummary" style="display:none;">
-          <span id="summary-green">—</span> ready to sell &nbsp;·&nbsp;
-          <span id="summary-yellow">—</span> back-ordered &nbsp;·&nbsp;
-          no action needed on these
-        </div>
-
-        <div class="buckets-grid buckets-grid--actionable">
-          <div class="bucket bucket--orange" id="bucket-orange" data-bucket="orange">
-            <div class="bucket-indicator"></div>
-            <div class="bucket-content">
-              <div class="bucket-count" id="count-orange">—</div>
-              <div class="bucket-label">LIKELY UNLIST</div>
-              <div class="bucket-desc">Not found in distribution</div>
+          <div class="step-panel-body">
+            <div class="step-guidance">
+              <p class="step-guidance-main">These products have <strong>no part number</strong> — they can't be ordered from any distributor. There's no reason to keep them in your active catalog.</p>
+              <p class="step-guidance-safe">✓ Safe to unlist — items can be re-listed at any time if needed.</p>
             </div>
-          </div>
-
-          <div class="bucket bucket--red" id="bucket-red" data-bucket="red">
-            <div class="bucket-indicator"></div>
-            <div class="bucket-content">
-              <div class="bucket-count" id="count-red">—</div>
-              <div class="bucket-label">UNLIST CANDIDATE</div>
-              <div class="bucket-desc">No MPN, not found in any feed</div>
-            </div>
-          </div>
-
-          <div class="bucket bucket--mismatch" id="mismatch-card" data-bucket="mismatch" style="display:none;">
-            <div class="bucket-indicator"></div>
-            <div class="bucket-content">
-              <div class="bucket-count" id="count-mismatch">—</div>
-              <div class="bucket-label">MANUFACTURER MISMATCH</div>
-              <div class="bucket-desc" id="mismatch-desc">Manufacturer defaulted to MSP name on import</div>
+            <div class="step-actions-primary">
+              <button class="btn btn-primary" id="stepRedFilterBtn">VIEW THESE PRODUCTS</button>
             </div>
           </div>
         </div>
 
-        <!-- Hidden counts for summary line -->
-        <span id="count-green" style="display:none;">—</span>
-        <span id="count-yellow" style="display:none;">—</span>
-      </section>
-
-      <!-- NOT QUOTED SINCE CARD -->
-      <div class="nqs-card" id="nqsCard" style="display:none;">
-        <div class="nqs-left">
-          <div class="nqs-indicator"></div>
-          <div class="nqs-content">
-            <div class="nqs-count" id="nqsCount">—</div>
-            <div class="nqs-label">NOT QUOTED IN</div>
-            <div class="nqs-desc" id="nqsDesc">Haven't appeared on a quote</div>
+        <!-- STEP: DUPLICATE MPNs -->
+        <div class="step-panel" id="step-dups" style="display:none;">
+          <div class="step-panel-header">
+            <div class="step-panel-num">Step <span class="step-num-val"></span></div>
+            <h2 class="step-panel-title">Duplicate Part Numbers</h2>
+            <div class="step-panel-count"><span id="step-dups-count">—</span> groups</div>
+          </div>
+          <div class="step-panel-body">
+            <div class="step-guidance">
+              <p class="step-guidance-main">The same part number appears on <strong>multiple products</strong>. When added to a quote, duplicates cause confusion — which one is being sold?</p>
+              <p class="step-guidance-safe">✓ Review each group, keep one, unlist the rest.</p>
+            </div>
+            <div class="step-actions-primary">
+              <button class="btn btn-primary" id="stepDupsBtn">REVIEW DUPLICATES</button>
+            </div>
           </div>
         </div>
-        <div class="nqs-right">
-          <div class="nqs-select-group">
-            <label class="field-label">TIME PERIOD</label>
-            <select class="nqs-select" id="nqsMonths">
-              <option value="6">6 months</option>
-              <option value="12" selected>12 months</option>
-              <option value="18">18 months</option>
-              <option value="24">24 months</option>
-            </select>
-          </div>
-          <button class="btn btn-secondary" id="nqsLoadBtn">LOAD</button>
-          <button class="btn btn-primary" id="nqsFilterBtn" disabled>VIEW THESE</button>
-        </div>
-      </div>
 
-      <!-- DUPLICATE MPN CARD -->
-      <div class="dup-card" id="dupCard" style="display:none;">
-        <div class="dup-left">
-          <div class="dup-content">
-            <div class="dup-count" id="dupCount">—</div>
-            <div class="dup-label">DUPLICATE MPNs</div>
-            <div class="dup-desc" id="dupDesc">Same part number on multiple products</div>
+        <!-- STEP: MANUFACTURER MISMATCH -->
+        <div class="step-panel" id="step-mfr" style="display:none;">
+          <div class="step-panel-header">
+            <div class="step-panel-num">Step <span class="step-num-val"></span></div>
+            <h2 class="step-panel-title">Manufacturer Mismatch</h2>
+            <div class="step-panel-count"><span id="step-mfr-count">—</span> products</div>
+          </div>
+          <div class="step-panel-body">
+            <div class="step-guidance">
+              <p class="step-guidance-main">When products synced from your PSA, any with a <strong>blank manufacturer field</strong> were defaulted to your company name. HP laptops should show HP — not your company.</p>
+              <p class="step-guidance-safe">✓ AI will group these by the correct manufacturer so you can fix them in one click per brand.</p>
+            </div>
+            <div class="step-actions-primary">
+              <button class="btn btn-primary" id="stepMfrBtn">FIX MANUFACTURERS</button>
+            </div>
           </div>
         </div>
-        <div class="dup-right">
-          <button class="btn btn-secondary" id="dupViewBtn">VIEW DUPLICATES</button>
-        </div>
-      </div>
 
-      <!-- AI ANALYSIS PANEL -->
-      <section class="analysis-section" id="analysisSection" style="display:none;">
-        <div class="analysis-header">
-          <h2 class="section-title">AI ANALYSIS</h2>
-          <div class="analysis-progress" id="analysisProgress"></div>
-        </div>
-        <div class="analysis-progress-wrap" id="analysisProgressWrap" style="display:none;">
-          <div class="analysis-progress-bar-track">
-            <div class="analysis-progress-bar-fill" id="analysisProgressFill"></div>
+        <!-- STEP: LIKELY UNLIST -->
+        <div class="step-panel" id="step-orange" style="display:none;">
+          <div class="step-panel-header">
+            <div class="step-panel-num">Step <span class="step-num-val"></span></div>
+            <h2 class="step-panel-title">Likely Unlist</h2>
+            <div class="step-panel-count"><span id="step-orange-count">—</span> products</div>
           </div>
-          <div class="analysis-progress-detail" id="analysisProgressDetail"></div>
+          <div class="step-panel-body">
+            <div class="step-guidance">
+              <p class="step-guidance-main">These products have a valid part number but <strong>aren't found in any distributor feed</strong>. They may be discontinued, legacy hardware, or products you source outside distribution.</p>
+              <p class="step-guidance-safe">✓ Run AI Analysis to get a note on each product explaining why it's not found — then review with your customer before unlisting.</p>
+            </div>
+            <div class="step-actions-primary">
+              <button class="btn btn-secondary" id="stepOrangeAnalyzeBtn">RUN AI ANALYSIS</button>
+              <button class="btn btn-primary" id="stepOrangeFilterBtn">REVIEW PRODUCTS</button>
+            </div>
+            <!-- AI progress bar inline -->
+            <div id="stepOrangeProgress" style="display:none;margin-top:16px;">
+              <div class="analysis-progress-bar-track">
+                <div class="analysis-progress-bar-fill" id="analysisProgressFill"></div>
+              </div>
+              <div class="analysis-progress-detail" id="analysisProgressDetail"></div>
+              <div class="analysis-progress" id="analysisProgress" style="font-size:11px;color:var(--text-muted);margin-top:4px;font-family:var(--font-mono);"></div>
+            </div>
+            <div class="analysis-summary" id="analysisSummary" style="margin-top:16px;"></div>
+          </div>
         </div>
-        <div class="analysis-summary" id="analysisSummary"></div>
-      </section>
 
-      <!-- PRODUCT TABLE -->
-      <section class="table-section" id="tableSection">
+        <!-- STEP: NOT QUOTED SINCE (maintenance only) -->
+        <div class="step-panel" id="step-nqs" style="display:none;">
+          <div class="step-panel-header">
+            <div class="step-panel-num">Step <span class="step-num-val"></span></div>
+            <h2 class="step-panel-title">Not Recently Quoted</h2>
+            <div class="step-panel-count"><span id="step-nqs-count">—</span> products</div>
+          </div>
+          <div class="step-panel-body">
+            <div class="step-guidance">
+              <p class="step-guidance-main">Products that haven't appeared on a quote in a long time are unlikely to be sold. If they're also not in distribution, they're strong candidates for unlisting.</p>
+              <p class="step-guidance-safe">✓ Select a time period, load the data, then review the overlap with your other buckets.</p>
+            </div>
+            <div class="step-nqs-controls">
+              <div class="nqs-select-group">
+                <label class="field-label">NOT QUOTED IN</label>
+                <select class="nqs-select" id="nqsMonths">
+                  <option value="6">6 months</option>
+                  <option value="12" selected>12 months</option>
+                  <option value="18">18 months</option>
+                  <option value="24">24 months</option>
+                </select>
+              </div>
+              <button class="btn btn-secondary" id="nqsLoadBtn">LOAD</button>
+              <button class="btn btn-primary" id="nqsFilterBtn" disabled>VIEW THESE</button>
+            </div>
+            <div class="nqs-result" id="nqsResult" style="display:none;">
+              <span class="nqs-result-count" id="nqsCount">—</span>
+              <span class="nqs-result-label" id="nqsDesc"></span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /wizardBody -->
+
+      <!-- PRODUCT TABLE (shared across steps) -->
+      <div class="wizard-table" id="wizardTable" style="display:none;">
         <div class="table-toolbar">
           <div class="toolbar-left">
-            <h2 class="section-title" id="tableTitle">ALL PRODUCTS</h2>
+            <button class="btn-link" id="backToStepsBtn">← Back to steps</button>
+            <h2 class="section-title" id="tableTitle" style="margin-left:16px;"></h2>
             <span class="table-count" id="tableCount"></span>
           </div>
           <div class="toolbar-right">
@@ -180,10 +242,10 @@
               <label class="field-label">SEARCH</label>
               <input type="text" class="filter-input" id="tableSearch" placeholder="Name or MPN…" />
             </div>
+            <button class="btn btn-secondary btn-sm" id="exportBtn">EXPORT CSV</button>
           </div>
         </div>
 
-        <!-- BULK ACTIONS -->
         <div class="bulk-bar" id="bulkBar" style="display:none;">
           <span class="bulk-count" id="bulkCount">0 selected</span>
           <button class="btn btn-danger" id="bulkUnlistBtn">UNLIST SELECTED</button>
@@ -205,33 +267,20 @@
                 <th class="col-listed">LISTED</th>
               </tr>
             </thead>
-            <tbody id="productTableBody">
-            </tbody>
+            <tbody id="productTableBody"></tbody>
           </table>
         </div>
-
         <div class="table-pagination" id="tablePagination"></div>
-      </section>
-
-    </div><!-- /dashboard -->
-
-    <!-- EMPTY STATE -->
-    <div class="empty-state" id="emptyState">
-      <div class="empty-inner">
-        <div class="empty-icon">⬡</div>
-        <p class="empty-title">No catalog loaded</p>
-        <p class="empty-sub">Enter your Salesbuildr credentials above and click Load Catalog to begin.</p>
       </div>
-    </div>
 
-  </main>
+    </div><!-- /wizard -->
 
-  <!-- UNLIST CONFIRM MODAL -->
+  </div><!-- /screenApp -->
+
+  <!-- MODALS -->
   <div class="modal-overlay" id="unlistModal" style="display:none;">
     <div class="modal">
-      <div class="modal-header">
-        <h3 class="modal-title">CONFIRM UNLIST</h3>
-      </div>
+      <div class="modal-header"><h3 class="modal-title">CONFIRM UNLIST</h3></div>
       <div class="modal-body" id="unlistModalBody"></div>
       <div class="modal-footer">
         <button class="btn btn-danger" id="unlistConfirmBtn">UNLIST PRODUCTS</button>
@@ -240,12 +289,9 @@
     </div>
   </div>
 
-  <!-- DUPLICATE MPN MODAL -->
   <div class="modal-overlay" id="dupModal" style="display:none;">
     <div class="modal modal--wide">
-      <div class="modal-header">
-        <h3 class="modal-title">DUPLICATE MPNs</h3>
-      </div>
+      <div class="modal-header"><h3 class="modal-title">DUPLICATE MPNs</h3></div>
       <div class="modal-body" id="dupModalBody"></div>
       <div class="modal-footer">
         <button class="btn btn-secondary" id="dupModalCloseBtn">CLOSE</button>
@@ -253,27 +299,19 @@
     </div>
   </div>
 
-  <!-- MANUFACTURER GROUPING MODAL -->
   <div class="modal-overlay" id="mfrModal" style="display:none;">
     <div class="modal modal--wide">
-      <div class="modal-header">
-        <h3 class="modal-title">FIX MANUFACTURER — AI GROUPING</h3>
-      </div>
-      <div class="modal-body" id="mfrModalBody">
-        <p style="color:var(--text-muted);font-size:12px;">Analyzing product names…</p>
-      </div>
+      <div class="modal-header"><h3 class="modal-title">FIX MANUFACTURER — AI GROUPING</h3></div>
+      <div class="modal-body" id="mfrModalBody"></div>
       <div class="modal-footer">
         <button class="btn btn-secondary" id="mfrModalCloseBtn">CLOSE</button>
       </div>
     </div>
   </div>
 
-  <!-- UPDATE PROGRESS MODAL -->
   <div class="modal-overlay" id="progressModal" style="display:none;">
     <div class="modal">
-      <div class="modal-header">
-        <h3 class="modal-title" id="progressModalTitle">PROCESSING</h3>
-      </div>
+      <div class="modal-header"><h3 class="modal-title" id="progressModalTitle">PROCESSING</h3></div>
       <div class="modal-body">
         <div class="progress-bar-wrap">
           <div class="progress-bar" id="unlistProgressBar"></div>
