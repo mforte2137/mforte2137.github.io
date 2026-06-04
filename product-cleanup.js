@@ -1389,7 +1389,25 @@ function buildWizard() {
   const steps = getSteps();
   buildStepStrip(steps);
   document.getElementById('wizardFooter').style.display = 'flex';
-  if (steps.length > 0) showStep(steps[0].id);
+
+  // Find first step with items — auto-skip empty ones
+  const counts = getCounts();
+  const countMap = {
+    red: counts.red,
+    dups: dupMpnGroups.length,
+    mfr: counts.mismatch,
+    orange: counts.orange,
+    nqs: null,
+  };
+
+  // Mark empty steps as done immediately
+  steps.forEach(s => {
+    if (countMap[s.id] === 0) markStepDone(s.id);
+  });
+
+  // Show first step that has items, or first step if all empty
+  const firstActive = steps.find(s => countMap[s.id] === null || countMap[s.id] > 0);
+  showStep(firstActive ? firstActive.id : steps[0].id);
 }
 
 function getSteps() {
@@ -1531,35 +1549,43 @@ function handleFooterNext() {
   }
 }
 function wireStepButtons(stepId) {
-  // Unlist Candidates
-  if (stepId === 'red') {
-    const btn = document.getElementById('stepRedFilterBtn');
-    if (btn) {
-      btn.onclick = () => {
-        activeBucketFilter = 'red';
-        document.getElementById('bucketFilter').value = 'red';
-        showTableView('UNLIST CANDIDATES');
-      };
-    }
+  const counts = getCounts();
+  const countMap = { red: counts.red, dups: dupMpnGroups.length, mfr: counts.mismatch, orange: counts.orange };
+  const count = countMap[stepId];
+  const actionsEl = document.querySelector(`#step-${stepId} .step-actions-primary`);
+
+  // If step is empty, show clean done state
+  if (count === 0 && actionsEl) {
+    actionsEl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--bg-alt);border-left:4px solid var(--green);">
+        <span style="font-size:18px;">✓</span>
+        <span style="font-size:13px;color:var(--text-mid);">Nothing to do here — this step is already clean.</span>
+      </div>`;
+    return;
   }
 
-  // Duplicates
+  if (stepId === 'red') {
+    const btn = document.getElementById('stepRedFilterBtn');
+    if (btn) btn.onclick = () => {
+      activeBucketFilter = 'red';
+      document.getElementById('bucketFilter').value = 'red';
+      showTableView('UNLIST CANDIDATES');
+    };
+  }
+
   if (stepId === 'dups') {
     const btn = document.getElementById('stepDupsBtn');
     if (btn) btn.onclick = handleDupView;
   }
 
-  // Manufacturer
   if (stepId === 'mfr') {
     const btn = document.getElementById('stepMfrBtn');
     if (btn) btn.onclick = handleFixManufacturers;
   }
 
-  // Likely Unlist — combined Analyze & Review
   if (stepId === 'orange') {
     const analyzeBtn = document.getElementById('stepOrangeAnalyzeBtn');
     if (analyzeBtn) {
-      // If AI already run, go straight to review
       const hasNotes = Object.keys(aiNotes).length > 0;
       if (hasNotes) {
         analyzeBtn.textContent = 'REVIEW PRODUCTS';
