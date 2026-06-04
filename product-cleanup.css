@@ -1298,3 +1298,17 @@ body {
 /* Hide the fixed footer bar */
 .wizard-footer { display: none !important; }
 .wizard { padding-bottom: 0; }
+
+/* ── WELCOME IMPORT BAR ── */
+.welcome-import {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+  padding: 12px 16px;
+  border: 1px dashed var(--border-dark);
+  color: var(--text-muted);
+}
+.welcome-import-text { font-size: 12px; }
+.welcome-import-btn { cursor: pointer; }
