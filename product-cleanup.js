@@ -1739,6 +1739,8 @@ function showCompletionScreen() {
   // Hide step panels, show completion in separate div
   const stepsContainer = document.getElementById('stepsContainer');
   if (stepsContainer) stepsContainer.style.display = 'none';
+  document.getElementById('wizardTable').style.display = 'none';
+  document.querySelectorAll('.step-panel').forEach(p => p.style.display = 'none');
 
   let completionDiv = document.getElementById('completionContent');
   if (!completionDiv) {
@@ -1790,7 +1792,6 @@ function showCompletionScreen() {
   });
 
   document.getElementById('wizardBody').style.display = 'block';
-  document.getElementById('wizardTable').style.display = 'none';
   window.scrollTo(0, 0);
 }
 
