@@ -109,42 +109,47 @@ function init() {
 
   // Check for saved session
   const saved = getSavedSession();
-  if (saved) {
+  if (saved && saved.version === 2 && saved.tenantUrl) {
     const meta = document.getElementById('continueMeta');
     const date = new Date(saved.savedAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-    if (meta) meta.textContent = `Last saved ${date} · ${saved.hostname || 'your account'}`;
+    if (meta) meta.textContent = `Last saved ${date} · ${saved.hostname || saved.tenantUrl}`;
     const cont = document.getElementById('modeContinue');
-    if (cont) cont.style.display = 'block';
+    if (cont) cont.style.display = 'flex';
+  } else if (saved) {
+    // Stale session from old version — clear it
+    clearSavedSession();
   }
+
+  // Continue saved session
+  document.getElementById('continueBtn')?.addEventListener('click', () => {
+    const s = getSavedSession();
+    if (!s) { showScreen('screenWelcome'); return; }
+    currentMode = s.mode || 'onboarding';
+    if (s.aiNotes) aiNotes = s.aiNotes;
+    if (s.sessionStats) sessionStats = { ...sessionStats, ...s.sessionStats };
+    localStorage.setItem('sb_cleanup_mode', currentMode);
+    showConnectScreen(true);
+  });
+
+  // Dismiss saved session tile
+  document.getElementById('clearSessionBtn')?.addEventListener('click', () => {
+    clearSavedSession();
+    const cont = document.getElementById('modeContinue');
+    if (cont) cont.style.display = 'none';
+  });
 
   // Mode card clicks
   document.querySelectorAll('.mode-card[data-mode]').forEach(card => {
-    if (card.dataset.mode === 'continue') return;
-    card.addEventListener('click', () => {
+    card.addEventListener('click', (e) => {
+      // Ignore clicks on buttons inside the continue tile
+      if (e.target.tagName === 'BUTTON') return;
+      if (!card.dataset.mode || card.id === 'modeContinue') return;
       document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
       currentMode = card.dataset.mode;
       localStorage.setItem('sb_cleanup_mode', currentMode);
       setTimeout(() => showConnectScreen(), 200);
     });
-  });
-
-  // Continue saved session
-  document.getElementById('continueBtn')?.addEventListener('click', () => {
-    const s = getSavedSession();
-    if (!s) return;
-    currentMode = s.mode || 'onboarding';
-    if (s.aiNotes) aiNotes = s.aiNotes;
-    if (s.sessionStats) sessionStats = s.sessionStats;
-    localStorage.setItem('sb_cleanup_mode', currentMode);
-    showConnectScreen(true);
-  });
-
-  // Clear saved session
-  document.getElementById('clearSessionBtn')?.addEventListener('click', () => {
-    clearSavedSession();
-    const cont = document.getElementById('modeContinue');
-    if (cont) cont.style.display = 'none';
   });
 
   // Connect screen
