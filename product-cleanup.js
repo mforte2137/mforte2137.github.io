@@ -1541,12 +1541,18 @@ function updateFooter(steps, stepIndex) {
   const isFirst = stepIndex === 0;
   const isLast = stepIndex === steps.length - 1;
 
+  // On last step (Likely Unlist), only show FINISH after AI has run
+  const isOrangeStep = steps[stepIndex].id === 'orange';
+  const analysisRun = Object.keys(aiNotes).length > 0;
+  const showFinish = isLast && (!isOrangeStep || analysisRun);
+  const nextLabel = showFinish ? 'FINISH ✓' : 'NEXT →';
+
   const nav = document.createElement('div');
   nav.className = 'step-inline-nav';
   nav.innerHTML = `
     <button class="btn btn-secondary step-nav-back">${isFirst ? '← BACK TO START' : '← BACK'}</button>
     <span class="step-nav-indicator">Step ${stepIndex + 1} of ${steps.length}</span>
-    <button class="btn ${isLast ? 'btn-primary' : 'btn-secondary'} step-nav-next">${isLast ? 'FINISH ✓' : 'NEXT →'}</button>
+    <button class="btn btn-primary step-nav-next">${nextLabel}</button>
   `;
 
   nav.querySelector('.step-nav-back').addEventListener('click', handleFooterBack);
@@ -1663,47 +1669,62 @@ function markStepDone(stepId) {
 }
 
 function showCompletionScreen() {
-  const finalCount = allProducts.filter(p => p.bucket === 'green' || p.bucket === 'yellow').length +
-    allProducts.filter(p => p.bucket === 'orange' || p.bucket === 'red').length;
+  clearSavedSession(); // Clean up — session complete
+  const counts = getCounts();
+  const greenCount  = counts.green;
+  const yellowCount = counts.yellow;
+  const orangeCount = counts.orange;
+  const redCount    = counts.red;
+
+  const tile = (icon, num, label, desc, color='var(--green)') => `
+    <div class="completion-tile">
+      <div class="completion-tile-icon">${icon}</div>
+      <div class="completion-tile-num" style="color:${color};">${num}</div>
+      <div class="completion-tile-label">${label}</div>
+      <div class="completion-tile-desc">${desc}</div>
+    </div>`;
+
+  const actionTiles = [
+    sessionStats.unlisted > 0
+      ? tile('🗑', sessionStats.unlisted, 'Products Unlisted',
+          'Removed from active catalog. Not deleted — can be re-listed any time.')
+      : tile('✓', 0, 'Unlist Candidates', 'No products needed unlisting.', 'var(--text-muted)'),
+    sessionStats.dupsResolved > 0
+      ? tile('🔗', sessionStats.dupsResolved, 'Duplicates Resolved',
+          'Kept one listing per part number, unlisted the rest.')
+      : tile('✓', 0, 'Duplicate MPNs', 'No duplicates found.', 'var(--text-muted)'),
+    sessionStats.mfrFixed > 0
+      ? tile('🏷', sessionStats.mfrFixed, 'Manufacturers Fixed',
+          'Updated from your company name to the correct manufacturer.')
+      : tile('✓', 0, 'Manufacturers', 'No manufacturer mismatches found.', 'var(--text-muted)'),
+  ].join('');
 
   document.getElementById('wizardBody').innerHTML = `
-    <div style="text-align:center;padding:60px 24px;">
-      <div style="font-size:48px;margin-bottom:24px;">✓</div>
-      <h2 style="font-size:24px;font-weight:700;margin-bottom:8px;">Your catalog is cleaner.</h2>
-      <p style="font-size:14px;color:var(--text-muted);margin-bottom:40px;">
-        Here's what you accomplished in this session.
-      </p>
-
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);max-width:600px;margin:0 auto 40px;text-align:left;">
-        ${sessionStats.unlisted > 0 ? `
-        <div style="background:var(--bg);padding:20px;">
-          <div style="font-size:28px;font-weight:700;font-family:var(--font-mono);color:var(--green);">${sessionStats.unlisted}</div>
-          <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-top:4px;">Products Unlisted</div>
-        </div>` : ''}
-        ${sessionStats.dupsResolved > 0 ? `
-        <div style="background:var(--bg);padding:20px;">
-          <div style="font-size:28px;font-weight:700;font-family:var(--font-mono);color:var(--green);">${sessionStats.dupsResolved}</div>
-          <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-top:4px;">Duplicates Resolved</div>
-        </div>` : ''}
-        ${sessionStats.mfrFixed > 0 ? `
-        <div style="background:var(--bg);padding:20px;">
-          <div style="font-size:28px;font-weight:700;font-family:var(--font-mono);color:var(--green);">${sessionStats.mfrFixed}</div>
-          <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-top:4px;">Manufacturers Fixed</div>
-        </div>` : ''}
-        <div style="background:var(--bg);padding:20px;">
-          <div style="font-size:28px;font-weight:700;font-family:var(--font-mono);color:var(--text);">${allProducts.length}</div>
-          <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-top:4px;">Active Products</div>
-        </div>
+    <div class="completion-wrap">
+      <div class="completion-header">
+        <div class="completion-check">✓</div>
+        <h2 class="completion-title">Your catalog is cleaner.</h2>
+        <p class="completion-sub">Here's a summary of this session.</p>
       </div>
 
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:32px;max-width:480px;margin-left:auto;margin-right:auto;">
-        Products with valid part numbers that are temporarily back-ordered or unavailable
-        have been left in place — they'll come back into stock.
-      </p>
+      <div class="completion-section-label">WHAT YOU DID THIS SESSION</div>
+      <div class="completion-tiles">${actionTiles}</div>
 
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <div class="completion-section-label">YOUR CATALOG NOW</div>
+      <div class="completion-tiles">
+        ${tile('🟢', greenCount, 'Ready to Sell',
+          'In stock and connected to distributors. These are ready to go on quotes right now.', '#2d6a4f')}
+        ${tile('🟡', yellowCount, 'Temporarily Unavailable',
+          'Real products that are back-ordered or temporarily out of stock. We left these alone — they will come back.', '#7d5a00')}
+        ${orangeCount > 0 ? tile('🟠', orangeCount, 'Still to Review',
+          'Products not found in any distributor. Review these when you are ready.', 'var(--orange)') : ''}
+        ${redCount > 0 ? tile('🔴', redCount, 'Still Needs Attention',
+          'Products with no valid part number — still waiting to be unlisted.', 'var(--red)') : ''}
+      </div>
+
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:40px;">
         <button class="btn btn-secondary" onclick="location.reload()">START OVER</button>
-        <button class="btn btn-primary" onclick="handleExport()">EXPORT SESSION REPORT</button>
+        <button class="btn btn-primary" onclick="handleExport()">EXPORT REPORT</button>
       </div>
     </div>
   `;
