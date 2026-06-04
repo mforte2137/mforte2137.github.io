@@ -195,6 +195,7 @@ function init() {
 
   // Export CSV
   document.getElementById('exportBtn').addEventListener('click', handleExport);
+  document.getElementById('tableFinishBtn')?.addEventListener('click', showCompletionScreen);
 
   // NQS
   document.getElementById('nqsLoadBtn').addEventListener('click', handleNqsLoad);
@@ -1545,7 +1546,7 @@ function updateFooter(steps, stepIndex) {
   const isOrangeStep = steps[stepIndex].id === 'orange';
   const analysisRun = Object.keys(aiNotes).length > 0;
   const showFinish = isLast && (!isOrangeStep || analysisRun);
-  const nextLabel = showFinish ? 'FINISH ✓' : 'NEXT →';
+  const nextLabel = showFinish ? 'FINISH ✓' : isOrangeStep ? 'SKIP & FINISH →' : 'NEXT →';
 
   const nav = document.createElement('div');
   nav.className = 'step-inline-nav';
@@ -1644,6 +1645,14 @@ function showTableView(title) {
   document.getElementById('wizardBody').style.display = 'none';
   document.getElementById('wizardTable').style.display = 'block';
   document.getElementById('tableTitle').textContent = title;
+
+  // Show FINISH button in table toolbar if on last step and analysis run
+  const steps = getSteps();
+  const isLastStep = steps.length > 0 && activeStepId === steps[steps.length - 1].id;
+  const analysisRun = Object.keys(aiNotes).length > 0;
+  const finishBtn = document.getElementById('tableFinishBtn');
+  if (finishBtn) finishBtn.style.display = (isLastStep && analysisRun) ? 'inline-block' : 'none';
+
   renderTable();
   window.scrollTo(0, 0);
 }
