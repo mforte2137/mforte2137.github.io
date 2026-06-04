@@ -555,8 +555,9 @@ async function handleAnalyze() {
 
   updateBucketCounts();
   renderTable();
-  // Refresh the step strip to reflect updated counts
-  buildWizard();
+  updateTableFinishBtn();
+  // Refresh the step strip
+  buildWizard(activeStepId);
 
   if (analyzeBtn) { analyzeBtn.disabled = false; analyzeBtn.textContent = 'RE-ANALYZE'; }
 }
@@ -1338,6 +1339,7 @@ async function executeUnlist() {
 
   updateBucketCounts();
   renderTable();
+  updateTableFinishBtn();
   sessionStats.unlisted += (done - errors);
   autoSave();
   checkCompletion();
@@ -1645,16 +1647,17 @@ function showTableView(title) {
   document.getElementById('wizardBody').style.display = 'none';
   document.getElementById('wizardTable').style.display = 'block';
   document.getElementById('tableTitle').textContent = title;
+  updateTableFinishBtn();
+  renderTable();
+  window.scrollTo(0, 0);
+}
 
-  // Show FINISH button in table toolbar if on last step and analysis run
+function updateTableFinishBtn() {
   const steps = getSteps();
   const isLastStep = steps.length > 0 && activeStepId === steps[steps.length - 1].id;
   const analysisRun = Object.keys(aiNotes).length > 0;
   const finishBtn = document.getElementById('tableFinishBtn');
   if (finishBtn) finishBtn.style.display = (isLastStep && analysisRun) ? 'inline-block' : 'none';
-
-  renderTable();
-  window.scrollTo(0, 0);
 }
 
 function checkCompletion() {
