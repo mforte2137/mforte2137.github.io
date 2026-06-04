@@ -17,8 +17,10 @@
       </div>
       <div class="header-actions" id="headerActions" style="display:none;">
         <span class="header-tenant" id="headerTenant"></span>
-        <button class="btn-link" id="switchAccountBtn">Switch Account</button>
-        <button class="btn btn-secondary btn-sm" id="saveProgressBtn">SAVE PROGRESS</button>
+        <button class="header-btn" id="switchAccountBtn">Switch Account</button>
+        <button class="header-btn header-btn--primary" id="saveProgressBtn">⬇ Save Session</button>
+        <label class="header-btn header-btn--primary" for="importFile">⬆ Import Session</label>
+        <input type="file" id="importFile" accept=".json" style="display:none;" />
       </div>
     </div>
   </header>
@@ -32,24 +34,32 @@
 
       <p class="welcome-question">What can we help you with today?</p>
 
-      <div class="mode-cards">
+      <div class="mode-cards" id="modeCards">
         <div class="mode-card" id="modeOnboarding" data-mode="onboarding">
           <div class="mode-card-icon">🚀</div>
           <div class="mode-card-title">First-time cleanup</div>
           <div class="mode-card-desc">My catalog just synced from my PSA and needs cleaning up</div>
+          <div class="mode-card-reassurance">Don't worry if you can't finish in one go — your progress saves automatically and you can pick up right where you left off.</div>
         </div>
         <div class="mode-card" id="modeMaintenance" data-mode="maintenance">
           <div class="mode-card-icon">🔧</div>
           <div class="mode-card-title">Ongoing maintenance</div>
           <div class="mode-card-desc">I've been quoting in Salesbuildr and want to tidy things up</div>
+          <div class="mode-card-reassurance">Don't worry if you can't finish in one go — your progress saves automatically and you can pick up right where you left off.</div>
         </div>
       </div>
 
-      <div class="resume-bar" id="resumeBar" style="display:none;">
-        <span class="resume-text">You have a saved session.</span>
-        <label class="btn btn-secondary btn-sm" for="resumeFile">RESUME SESSION</label>
-        <input type="file" id="resumeFile" accept=".json" style="display:none;" />
+      <!-- Continue saved session tile — shown when localStorage has data -->
+      <div class="mode-card mode-card--continue" id="modeContinue" style="display:none;" data-mode="continue">
+        <div class="mode-card-icon">📋</div>
+        <div class="mode-card-title">Continue where you left off</div>
+        <div class="mode-card-continue-meta" id="continueMeta"></div>
+        <div class="mode-card-continue-actions">
+          <button class="btn btn-primary" id="continueBtn">CONTINUE SESSION</button>
+          <button class="btn btn-secondary" id="clearSessionBtn">Start fresh instead</button>
+        </div>
       </div>
+
     </div>
   </div>
 
@@ -170,7 +180,6 @@
             <div class="step-actions-primary">
               <button class="btn btn-primary" id="stepOrangeAnalyzeBtn">ANALYZE &amp; REVIEW</button>
             </div>
-            <!-- AI progress bar inline -->
             <div id="stepOrangeProgress" style="display:none;margin-top:16px;">
               <div class="analysis-progress-bar-track">
                 <div class="analysis-progress-bar-fill" id="analysisProgressFill"></div>
@@ -216,11 +225,11 @@
 
       </div><!-- /wizardBody -->
 
-      <!-- PRODUCT TABLE (shared across steps) -->
+      <!-- PRODUCT TABLE -->
       <div class="wizard-table" id="wizardTable" style="display:none;">
         <div class="table-toolbar">
           <div class="toolbar-left">
-            <button class="btn-link" id="backToStepsBtn">← Back to steps</button>
+            <button class="back-to-steps-btn" id="backToStepsBtn">← Back to steps</button>
             <h2 class="section-title" id="tableTitle" style="margin-left:16px;"></h2>
             <span class="table-count" id="tableCount"></span>
           </div>
@@ -281,7 +290,7 @@
       </div>
       <div class="wizard-step-indicator" id="footerStepIndicator"></div>
       <div class="wizard-footer-right">
-        <button class="btn btn-primary" id="footerNextBtn">NEXT →</button>
+        <button class="btn btn-secondary" id="footerNextBtn">NEXT →</button>
       </div>
     </div>
 
