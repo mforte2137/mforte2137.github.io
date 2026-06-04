@@ -600,9 +600,12 @@ async function handleDupView() {
   // If nothing left to clean up
   const activeGroups = sorted.filter(g => groupProducts[g.value]?.length >= 2);
 
-  // Update the card count to reflect only actionable duplicates
-  document.getElementById('dupCount').textContent = activeGroups.length;
-  document.getElementById('dupDesc').textContent = activeGroups.length > 0
+  // Update step strip count
+  const stepDupsCount = document.getElementById('step-dups-count');
+  if (stepDupsCount) stepDupsCount.textContent = activeGroups.length;
+  // Update step guidance desc if available
+  const stepDupsDesc = document.getElementById('step-dups-desc');
+  if (stepDupsDesc) stepDupsDesc.textContent = activeGroups.length > 0
     ? `${activeGroups.length} part numbers still have multiple listed products`
     : 'No listed duplicates — catalog looks clean';
 
