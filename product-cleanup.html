@@ -110,8 +110,8 @@
           </div>
           <div class="step-panel-body">
             <div class="step-guidance">
-              <p class="step-guidance-main">These products have <strong>no part number</strong> — they can't be ordered from any distributor. There's no reason to keep them in your active catalog.</p>
-              <p class="step-guidance-safe">✓ Safe to unlist — items can be re-listed at any time if needed.</p>
+              <p class="step-guidance-main">These products <strong>cannot be ordered from any distributor</strong> — either the part number is missing, invalid, or the product doesn't exist in any feed. There's no reason to keep them in your active catalog.</p>
+              <p class="step-guidance-safe">✓ Safe to unlist — items are not deleted and can be re-listed at any time.</p>
             </div>
             <div class="step-actions-primary">
               <button class="btn btn-primary" id="stepRedFilterBtn">VIEW THESE PRODUCTS</button>
@@ -165,11 +165,10 @@
           <div class="step-panel-body">
             <div class="step-guidance">
               <p class="step-guidance-main">These products have a valid part number but <strong>aren't found in any distributor feed</strong>. They may be discontinued, legacy hardware, or products you source outside distribution.</p>
-              <p class="step-guidance-safe">✓ Run AI Analysis to get a note on each product explaining why it's not found — then review with your customer before unlisting.</p>
+              <p class="step-guidance-safe">✓ Run AI Analysis to get a note on each product explaining why it's not found — then review before unlisting.</p>
             </div>
             <div class="step-actions-primary">
-              <button class="btn btn-secondary" id="stepOrangeAnalyzeBtn">RUN AI ANALYSIS</button>
-              <button class="btn btn-primary" id="stepOrangeFilterBtn">REVIEW PRODUCTS</button>
+              <button class="btn btn-primary" id="stepOrangeAnalyzeBtn">ANALYZE &amp; REVIEW</button>
             </div>
             <!-- AI progress bar inline -->
             <div id="stepOrangeProgress" style="display:none;margin-top:16px;">
@@ -274,6 +273,17 @@
       </div>
 
     </div><!-- /wizard -->
+
+    <!-- WIZARD FOOTER -->
+    <div class="wizard-footer" id="wizardFooter" style="display:none;">
+      <div class="wizard-footer-left">
+        <button class="btn btn-secondary" id="footerBackBtn">← BACK</button>
+      </div>
+      <div class="wizard-step-indicator" id="footerStepIndicator"></div>
+      <div class="wizard-footer-right">
+        <button class="btn btn-primary" id="footerNextBtn">NEXT →</button>
+      </div>
+    </div>
 
   </div><!-- /screenApp -->
 
