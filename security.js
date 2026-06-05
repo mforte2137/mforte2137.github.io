@@ -703,7 +703,7 @@ function buildCurrentStateWidget() {
     <tr style="background:#2d2d2d;">
       <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:left;">#</th>
       <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:left;">Control Domain</th>
-      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:center;">IG</th>
+      <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:center;">${fw().colHeader}</th>
       <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:center;">Status</th>
       <th style="padding:8px 10px;color:#f5f2eb;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;text-align:left;">Notes</th>
     </tr>
