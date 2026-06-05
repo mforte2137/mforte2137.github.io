@@ -559,6 +559,10 @@ async function handleAnalyze() {
   // Refresh the step strip
   buildWizard(activeStepId);
 
+  // Show Group by Theme button in the step panel
+  const groupBtn = document.getElementById('stepOrangeGroupBtn');
+  if (groupBtn) groupBtn.style.display = 'inline-block';
+
   if (analyzeBtn) { analyzeBtn.disabled = false; analyzeBtn.textContent = 'RE-ANALYZE'; }
 }
 
@@ -721,7 +725,13 @@ async function handleDupView() {
         No listed products found for this MPN.
       </div>`;
     } else {
-      for (const p of products) {
+      // Add "keep one" hint
+      const hint = document.createElement('div');
+      hint.style.cssText = 'font-size:11px;color:var(--text-muted);padding:6px 0 8px;font-style:italic;';
+      hint.textContent = 'First product kept by default — uncheck to change which one to keep.';
+      bodyEl.appendChild(hint);
+
+      products.forEach((p, idx) => {
         const row = document.createElement('div');
         row.className = 'dup-mpn-product';
         row.style.cssText = 'display:flex;align-items:center;gap:10px;';
@@ -729,6 +739,9 @@ async function handleDupView() {
         const chk = document.createElement('input');
         chk.type = 'checkbox';
         chk.dataset.id = p.id;
+
+        // Pre-select all except the first (keep first by default)
+        chk.checked = idx > 0;
         allCheckboxes.push(chk);
 
         chk.addEventListener('change', () => {
@@ -739,20 +752,31 @@ async function handleDupView() {
             : 'UNLIST ALL CHECKED';
         });
 
+        const keepBadge = idx === 0
+          ? `<span style="font-size:10px;font-weight:700;color:var(--green);margin-left:8px;letter-spacing:0.06em;">KEEP</span>`
+          : '';
+
         const label = document.createElement('span');
         label.style.flex = '1';
-        label.innerHTML = `<strong>${escHtml(p.name)}</strong>
+        label.innerHTML = `<strong>${escHtml(p.name)}</strong>${keepBadge}
           <span style="color:var(--text-muted);margin-left:8px;">${escHtml(p.manufacturer || '—')}</span>
           <span style="color:var(--text-muted);margin-left:8px;font-family:var(--font-mono);font-size:10px;">${escHtml(p.categories?.[0]?.name || '—')}</span>`;
 
         row.appendChild(chk);
         row.appendChild(label);
         bodyEl.appendChild(row);
-      }
+      });
     }
 
     groupEl.appendChild(bodyEl);
     body.appendChild(groupEl);
+  }
+
+  // Update button count — boxes are pre-checked
+  const preChecked = allCheckboxes.filter(c => c.checked).length;
+  if (preChecked > 0) {
+    globalUnlistBtn.disabled = false;
+    globalUnlistBtn.textContent = `UNLIST ${preChecked} CHECKED`;
   }
 
   globalUnlistBtn.addEventListener('click', async () => {
@@ -922,15 +946,85 @@ function renderMfrGroups(container, groups) {
       }
 
       if (!companyId) {
-        // Persistent blocked state — amber border, stays until they retry
         groupEl.classList.add('mfr-group--blocked');
-        // Remove old blocked note if exists
         const oldNote = groupEl.querySelector('.mfr-blocked-note');
         if (oldNote) oldNote.remove();
-        const note = document.createElement('div');
-        note.className = 'mfr-blocked-note';
-        note.innerHTML = `⚠ "${mfrNameToUse}" not found in Salesbuildr. Go to <strong>Companies → Create New Company</strong>, set the name to <strong>${escHtml(mfrNameToUse)}</strong> and type to <strong>Manufacturer</strong>, then click Update All again.`;
-        groupEl.appendChild(note);
+        const noteEl = document.createElement('div');
+        noteEl.className = 'mfr-blocked-note';
+        const formId = `create-${mfrNameToUse.replace(/[^a-zA-Z0-9]/g, '-')}`;
+        noteEl.innerHTML = `
+          <div style="margin-bottom:10px;">⚠ <strong>"${escHtml(mfrNameToUse)}"</strong> not found as a manufacturer in Salesbuildr. Create it here:</div>
+          <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+            <div>
+              <label class="field-label" style="font-size:9px;">COMPANY NAME</label>
+              <input id="${formId}-name" class="connect-input" style="font-size:11px;padding:5px 8px;width:160px;" value="${escHtml(mfrNameToUse)}" />
+            </div>
+            <div>
+              <label class="field-label" style="font-size:9px;">WEBSITE (required)</label>
+              <input id="${formId}-website" class="connect-input" style="font-size:11px;padding:5px 8px;width:200px;" placeholder="https://www.example.com" />
+            </div>
+            <button class="btn btn-primary" id="${formId}-create" style="font-size:10px;padding:6px 12px;">CREATE &amp; UPDATE</button>
+          </div>
+          <div id="${formId}-status" style="font-size:11px;margin-top:6px;color:var(--text-muted);min-height:16px;"></div>`;
+        groupEl.appendChild(noteEl);
+
+        setTimeout(() => {
+          document.getElementById(`${formId}-create`)?.addEventListener('click', async () => {
+            const name    = document.getElementById(`${formId}-name`)?.value.trim();
+            const website = document.getElementById(`${formId}-website`)?.value.trim();
+            const status  = document.getElementById(`${formId}-status`);
+            const createBtn = document.getElementById(`${formId}-create`);
+            if (!name) { if (status) status.textContent = 'Company name required.'; return; }
+            if (!website) { if (status) status.textContent = 'Website is required by Salesbuildr.'; return; }
+            createBtn.disabled = true;
+            createBtn.textContent = 'CREATING…';
+            if (status) status.textContent = 'Creating company…';
+            try {
+              const cr = await fetch('/api/sb-create-company', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tenantUrl, apiKey, name, website }),
+              });
+              const cd = await cr.json();
+              if (!cd.ok) {
+                if (status) status.textContent = `Failed: ${cd.error}`;
+                createBtn.disabled = false;
+                createBtn.textContent = 'CREATE & UPDATE';
+                return;
+              }
+              if (status) status.textContent = `✓ Created. Updating ${products.length} products…`;
+              const newCompanyId = cd.companyId;
+              const ids = products.map(p => p.id);
+              let done = 0, errors = 0;
+              for (const id of ids) {
+                try {
+                  const resp = await fetch('/api/sb-update-product', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tenantUrl, apiKey, productId: id, fields: { vendor: newCompanyId }, skipLookup: true }),
+                  });
+                  const result = await resp.json();
+                  if (resp.ok && result.ok) {
+                    const p = allProducts.find(x => x.id === id);
+                    if (p) { p.manufacturer = name; p.mfrMismatch = false; }
+                    done++;
+                  } else { errors++; }
+                } catch { errors++; }
+              }
+              updateBucketCounts(); renderTable();
+              sessionStats.mfrFixed += done; autoSave();
+              groupEl.classList.remove('mfr-group--blocked');
+              noteEl.remove();
+              btn.textContent = errors === 0 ? '✓ UPDATED' : `${errors} FAILED`;
+              btn.style.background = errors === 0 ? 'var(--green)' : 'var(--red)';
+              btn.style.borderColor = errors === 0 ? 'var(--green)' : 'var(--red)';
+              groupEl.style.opacity = errors === 0 ? '0.5' : '1';
+            } catch(e) {
+              if (status) status.textContent = `Error: ${e.message}`;
+              createBtn.disabled = false; createBtn.textContent = 'CREATE & UPDATE';
+            }
+          });
+        }, 100);
+
         btn.disabled = false;
         btn.textContent = 'UPDATE ALL';
         btn.style.background = '';
@@ -1626,6 +1720,12 @@ function wireStepButtons(stepId) {
 
   if (stepId === 'orange') {
     const analyzeBtn = document.getElementById('stepOrangeAnalyzeBtn');
+    const groupBtn = document.getElementById('stepOrangeGroupBtn');
+
+    // Show group button if analysis already run
+    if (groupBtn && Object.keys(aiNotes).length > 0) groupBtn.style.display = 'inline-block';
+    if (groupBtn) groupBtn.onclick = handleGroupByTheme;
+
     if (analyzeBtn) {
       const hasNotes = Object.keys(aiNotes).length > 0;
       if (hasNotes) {
@@ -1646,6 +1746,195 @@ function wireStepButtons(stepId) {
       }
     }
   }
+}
+
+// ── GROUP BY THEME ────────────────────────────────────────────
+const GROUP_META = {
+  eol:          { label: 'EOL / Discontinued',    desc: 'Legacy, obsolete, or end-of-life products. Safe to unlist.',           color: '#8a3e00' },
+  invalid_mpn:  { label: 'Invalid Part Number',   desc: 'Internal codes, licensing SKUs, or fictional products. Safe to unlist.', color: 'var(--red)' },
+  source_direct:{ label: 'Source Direct',         desc: 'Cables, accessories, or items sourced outside distribution. Review before unlisting.', color: '#4a6fa5' },
+  current:      { label: 'Possibly Current',      desc: 'May return to stock or be temporarily unavailable. Keep for now.',       color: 'var(--text-muted)' },
+};
+
+async function handleGroupByTheme() {
+  const btn = document.getElementById('stepOrangeGroupBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'GROUPING…'; }
+
+  const orangeProducts = allProducts.filter(p => p.bucket === 'orange');
+  const productsWithNotes = orangeProducts.map(p => ({
+    id: p.id, name: p.name,
+    note: aiNotes[p.id]?.note || '',
+  }));
+
+  let groupMap = {};
+
+  try {
+    const resp = await fetch('/api/group-unlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ products: productsWithNotes }),
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      const clean = data.result.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(clean);
+      for (const item of parsed) {
+        if (!groupMap[item.group]) groupMap[item.group] = [];
+        const product = allProducts.find(p => p.id === item.id);
+        if (product) groupMap[item.group].push(product);
+      }
+    }
+  } catch (e) {
+    console.error('Group by theme error:', e);
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = 'GROUP BY THEME'; }
+
+  if (Object.keys(groupMap).length === 0) {
+    alert('Could not group products. Try again.');
+    return;
+  }
+
+  renderGroupedView(groupMap);
+}
+
+function renderGroupedView(groupMap) {
+  const { tenantUrl, apiKey } = getCreds();
+
+  document.getElementById('wizardBody').style.display = 'none';
+  document.getElementById('wizardTable').style.display = 'block';
+  document.getElementById('tableTitle').textContent = 'LIKELY UNLIST — GROUPED BY THEME';
+  updateTableFinishBtn();
+
+  // Replace table content with grouped view
+  const tableWrap = document.querySelector('.table-wrap');
+  const pagination = document.getElementById('tablePagination');
+  if (pagination) pagination.innerHTML = '';
+
+  tableWrap.innerHTML = '';
+  const container = document.createElement('div');
+  container.style.padding = '0';
+
+  const groupOrder = ['eol', 'invalid_mpn', 'source_direct', 'current'];
+  const allGroupCheckboxes = [];
+
+  for (const groupId of groupOrder) {
+    const products = groupMap[groupId];
+    if (!products?.length) continue;
+
+    const meta = GROUP_META[groupId];
+    const groupEl = document.createElement('div');
+    groupEl.style.cssText = 'margin-bottom:2px;border:1px solid var(--border);';
+
+    const header = document.createElement('div');
+    header.style.cssText = `display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--bg-alt);border-left:4px solid ${meta.color};`;
+
+    const selectAllChk = document.createElement('input');
+    selectAllChk.type = 'checkbox';
+    selectAllChk.title = 'Select all in group';
+
+    const headerText = document.createElement('div');
+    headerText.style.flex = '1';
+    headerText.innerHTML = `
+      <div style="font-size:13px;font-weight:700;margin-bottom:2px;">${meta.label}</div>
+      <div style="font-size:11px;color:var(--text-muted);">${meta.desc}</div>`;
+
+    const countBadge = document.createElement('span');
+    countBadge.style.cssText = 'font-size:11px;font-family:var(--font-mono);color:var(--text-muted);';
+    countBadge.textContent = `${products.length} products`;
+
+    const unlistGroupBtn = document.createElement('button');
+    unlistGroupBtn.className = 'btn btn-danger';
+    unlistGroupBtn.style.cssText = 'font-size:10px;padding:5px 12px;';
+    unlistGroupBtn.textContent = 'UNLIST GROUP';
+    unlistGroupBtn.disabled = true;
+
+    header.appendChild(selectAllChk);
+    header.appendChild(headerText);
+    header.appendChild(countBadge);
+    header.appendChild(unlistGroupBtn);
+    groupEl.appendChild(header);
+
+    const body = document.createElement('div');
+    const groupCheckboxes = [];
+
+    for (const p of products) {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:10px 16px;border-top:1px solid var(--border);';
+      row.dataset.id = p.id;
+
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.dataset.id = p.id;
+      chk.style.marginTop = '3px';
+      groupCheckboxes.push(chk);
+      allGroupCheckboxes.push(chk);
+
+      const info = document.createElement('div');
+      info.style.flex = '1';
+      const note = aiNotes[p.id]?.note || '';
+      info.innerHTML = `
+        <div style="font-size:12px;font-weight:600;">${escHtml(p.name)}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-family:var(--font-mono);">${escHtml(p.mpn || 'no MPN')}</div>
+        ${note ? `<div style="font-size:11px;color:var(--text-mid);margin-top:4px;font-style:italic;">${escHtml(note)}</div>` : ''}`;
+
+      chk.addEventListener('change', () => {
+        const checked = groupCheckboxes.filter(c => c.checked).length;
+        unlistGroupBtn.disabled = checked === 0;
+        unlistGroupBtn.textContent = checked > 0 ? `UNLIST ${checked} CHECKED` : 'UNLIST GROUP';
+        selectAllChk.checked = checked === groupCheckboxes.length;
+      });
+
+      row.appendChild(chk);
+      row.appendChild(info);
+      body.appendChild(row);
+    }
+
+    // Select all checkbox
+    selectAllChk.addEventListener('change', () => {
+      groupCheckboxes.forEach(c => { c.checked = selectAllChk.checked; c.dispatchEvent(new Event('change')); });
+    });
+
+    // Unlist group button
+    unlistGroupBtn.addEventListener('click', async () => {
+      const toUnlist = groupCheckboxes.filter(c => c.checked);
+      if (toUnlist.length === 0) return;
+      unlistGroupBtn.disabled = true;
+      unlistGroupBtn.textContent = 'UNLISTING…';
+      let done = 0, errors = 0;
+      for (const chk of toUnlist) {
+        try {
+          const resp = await fetch('/api/sb-unlist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tenantUrl, apiKey, productId: chk.dataset.id }),
+          });
+          const result = await resp.json();
+          if (resp.ok && result.ok) {
+            allProducts = allProducts.filter(p => p.id !== chk.dataset.id);
+            done++;
+            const row = chk.closest('[data-id]');
+            if (row) row.style.opacity = '0.3';
+            chk.disabled = true;
+          } else { errors++; }
+        } catch { errors++; }
+      }
+      updateBucketCounts();
+      updateTableFinishBtn();
+      sessionStats.unlisted += done;
+      autoSave();
+      countBadge.textContent = `${products.filter(p => allProducts.find(x => x.id === p.id)).length} products`;
+      unlistGroupBtn.textContent = errors === 0 ? `✓ ${done} UNLISTED` : `${done} ok · ${errors} failed`;
+      unlistGroupBtn.style.background = errors === 0 ? 'var(--green)' : 'var(--red)';
+      unlistGroupBtn.style.borderColor = errors === 0 ? 'var(--green)' : 'var(--red)';
+    });
+
+    groupEl.appendChild(body);
+    container.appendChild(groupEl);
+  }
+
+  tableWrap.appendChild(container);
+  window.scrollTo(0, 0);
 }
 
 function showTableView(title) {
