@@ -189,6 +189,56 @@ const PCI_CONTROLS = [
   { id:12, name:'Support Information Security with Policies',   desc:'Support information security with organizational policies and programs. Maintain a security policy and security awareness program for all personnel.',  domain:'PL', domainLabel:'POLICY',     defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
 ];
 
+
+// ── SOC 2 TRUST SERVICES CRITERIA CONTROLS ───────────────────
+// CC1-CC9 (Security/Common Criteria) are required for every SOC 2.
+// A1 (Availability) is included by default — almost always in scope.
+// C1-C2 (Confidentiality), PI1 (Processing Integrity) are optional.
+const SOC2_CONTROLS = [
+  // CC1 — Control Environment
+  { id:1,  name:'CC1 — Governance & Oversight',          desc:'Board and management demonstrate commitment to integrity, ethical values, and competence. Oversight structures for cybersecurity are defined and active.',                     domain:'CC1', domainLabel:'CTRL ENV',   defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+  { id:2,  name:'CC1 — Organizational Structure',        desc:'Roles, responsibilities, and reporting lines for security are defined. Accountability for the system of internal controls is assigned and communicated.',                      domain:'CC1', domainLabel:'CTRL ENV',   defaultS:'partial', defaultM:'partial',     defaultL:'implemented' },
+  { id:3,  name:'CC1 — Policies & Standards',            desc:'Security policies are documented, approved, and communicated to all personnel. Policies are reviewed and updated periodically.',                                                domain:'CC1', domainLabel:'CTRL ENV',   defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+
+  // CC2 — Communication & Information
+  { id:4,  name:'CC2 — Internal Communication',          desc:'Relevant security information is communicated internally across the organization. Reporting mechanisms for security concerns exist and are used.',                              domain:'CC2', domainLabel:'COMMS',      defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+  { id:5,  name:'CC2 — External Communication',          desc:'External parties (customers, vendors, regulators) are informed of security commitments and incidents as required.',                                                             domain:'CC2', domainLabel:'COMMS',      defaultS:'none',    defaultM:'none',        defaultL:'partial'     },
+
+  // CC3 — Risk Assessment
+  { id:6,  name:'CC3 — Risk Identification & Analysis',  desc:'The organization identifies and analyzes risks that could affect the achievement of its security objectives.',                                                                  domain:'CC3', domainLabel:'RISK ASSESS', defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+  { id:7,  name:'CC3 — Fraud & Threat Consideration',    desc:'Risk assessment considers fraud risk and the potential for management override of controls. Threat intelligence is incorporated.',                                              domain:'CC3', domainLabel:'RISK ASSESS', defaultS:'none',    defaultM:'none',        defaultL:'partial'     },
+
+  // CC4 — Monitoring Controls
+  { id:8,  name:'CC4 — Ongoing Monitoring',              desc:'The organization conducts ongoing and periodic evaluations of its controls to confirm they are operating effectively.',                                                          domain:'CC4', domainLabel:'MONITORING',  defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+  { id:9,  name:'CC4 — Deficiency Remediation',          desc:'Control deficiencies are identified, communicated to responsible parties, and remediated in a timely manner.',                                                                 domain:'CC4', domainLabel:'MONITORING',  defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+
+  // CC5 — Control Activities
+  { id:10, name:'CC5 — Control Selection & Development', desc:'The organization selects and develops control activities that mitigate risks to the achievement of security objectives.',                                                        domain:'CC5', domainLabel:'CTRL ACT',    defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+  { id:11, name:'CC5 — Technology Controls',             desc:'The organization selects and develops general control activities over technology to support achievement of objectives.',                                                         domain:'CC5', domainLabel:'CTRL ACT',    defaultS:'partial', defaultM:'partial',     defaultL:'implemented' },
+
+  // CC6 — Logical & Physical Access
+  { id:12, name:'CC6 — Logical Access Controls',         desc:'Access to systems and data is restricted to authorized users through user registration, authentication, and role-based access controls.',                                       domain:'CC6', domainLabel:'ACCESS',      defaultS:'partial', defaultM:'implemented', defaultL:'implemented' },
+  { id:13, name:'CC6 — Multi-Factor Authentication',     desc:'MFA is implemented for all access to the production environment and sensitive systems.',                                                                                       domain:'CC6', domainLabel:'ACCESS',      defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+  { id:14, name:'CC6 — Physical Access Controls',        desc:'Physical access to facilities, data centers, and sensitive areas is restricted to authorized personnel.',                                                                      domain:'CC6', domainLabel:'ACCESS',      defaultS:'partial', defaultM:'implemented', defaultL:'implemented' },
+  { id:15, name:'CC6 — Encryption & Data Protection',    desc:'Data at rest and in transit is protected using encryption. Encryption keys are managed and protected appropriately.',                                                          domain:'CC6', domainLabel:'ACCESS',      defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+
+  // CC7 — System Operations
+  { id:16, name:'CC7 — Threat Detection & Monitoring',   desc:'The organization detects and monitors for security events and anomalies. SIEM, IDS/IPS, and logging tools are in place and actively reviewed.',                               domain:'CC7', domainLabel:'OPERATIONS',  defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+  { id:17, name:'CC7 — Incident Response',               desc:'Security incidents are identified, classified, responded to, and documented. Incident response plans are tested periodically.',                                                domain:'CC7', domainLabel:'OPERATIONS',  defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+  { id:18, name:'CC7 — Vulnerability Management',        desc:'Vulnerabilities are identified through scanning and penetration testing. Findings are remediated based on risk rating and defined SLAs.',                                      domain:'CC7', domainLabel:'OPERATIONS',  defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+
+  // CC8 — Change Management
+  { id:19, name:'CC8 — Change Control Process',          desc:'Changes to infrastructure, data, and software are authorized, tested, documented, and approved before implementation in production.',                                          domain:'CC8', domainLabel:'CHANGE MGMT', defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+
+  // CC9 — Risk Mitigation
+  { id:20, name:'CC9 — Business Continuity & DR',        desc:'Business continuity and disaster recovery plans are documented, tested, and maintained. Recovery objectives (RTO/RPO) are defined.',                                           domain:'CC9', domainLabel:'RISK MIT',    defaultS:'none',    defaultM:'partial',     defaultL:'implemented' },
+  { id:21, name:'CC9 — Vendor Risk Management',          desc:'Third-party vendors and subprocessors are assessed for security risk before engagement and monitored on an ongoing basis.',                                                     domain:'CC9', domainLabel:'RISK MIT',    defaultS:'none',    defaultM:'none',        defaultL:'partial'     },
+
+  // A1 — Availability (almost always in scope)
+  { id:22, name:'A1 — Availability Commitments',         desc:'The organization maintains availability commitments (SLAs/uptime). Capacity planning, redundancy, and failover are in place to meet commitments.',                             domain:'A1',  domainLabel:'AVAIL',     defaultS:'partial', defaultM:'partial',     defaultL:'implemented' },
+  { id:23, name:'A1 — Backup & Recovery',                desc:'Data is backed up on a defined schedule. Backup integrity is tested. Restoration procedures are documented and validated.',                                                    domain:'A1',  domainLabel:'AVAIL',     defaultS:'partial', defaultM:'implemented', defaultL:'implemented' },
+];
+
 // ── FRAMEWORK CONFIG MAP ──────────────────────────────────────
 const FRAMEWORK_CONFIG = {
   cis: {
@@ -262,12 +312,12 @@ const FRAMEWORK_CONFIG = {
   pci: {
     controls:   () => PCI_CONTROLS,
     categories: [
-      { label:'Network Security',   ids:[1,2] },
-      { label:'Data Protection',    ids:[3,4] },
-      { label:'Vulnerability Mgmt', ids:[5,6] },
-      { label:'Access Control',     ids:[7,8,9] },
+      { label:'Network Security',    ids:[1,2] },
+      { label:'Data Protection',     ids:[3,4] },
+      { label:'Vulnerability Mgmt',  ids:[5,6] },
+      { label:'Access Control',      ids:[7,8,9] },
       { label:'Monitoring & Testing',ids:[10,11] },
-      { label:'Policy & Awareness', ids:[12] },
+      { label:'Policy & Awareness',  ids:[12] },
     ],
     label:      'PCI-DSS v4.0',
     badgeLabel: (ctrl) => ctrl.domain,
@@ -275,6 +325,30 @@ const FRAMEWORK_CONFIG = {
     defaultKey: (ig)   => ig === 1 ? 'defaultS' : ig === 2 ? 'defaultM' : 'defaultL',
     panelTitle: 'PCI-DSS v4.0 ASSESSMENT',
     colHeader:  'DOMAIN',
+  },
+  soc2: {
+    controls:   () => SOC2_CONTROLS,
+    categories: [
+      { label:'Control Environment',  ids:[1,2,3] },
+      { label:'Communication',        ids:[4,5] },
+      { label:'Risk Assessment',      ids:[6,7] },
+      { label:'Monitoring',           ids:[8,9] },
+      { label:'Control Activities',   ids:[10,11] },
+      { label:'Logical & Physical Access', ids:[12,13,14,15] },
+      { label:'System Operations',    ids:[16,17,18] },
+      { label:'Change & Vendor Mgmt', ids:[19,20,21] },
+      { label:'Availability',         ids:[22,23] },
+    ],
+    label:      'SOC 2 (Trust Services Criteria)',
+    badgeLabel: (ctrl) => ctrl.domain,
+    badgeColor: (ctrl) => ({
+      CC1:'#1a3a5c', CC2:'#1a3a5c', CC3:'#c9303a', CC4:'#8b5cf6',
+      CC5:'#c9830a', CC6:'#2d7a4f', CC7:'#0891b2', CC8:'#d97706',
+      CC9:'#6d4c41', A1:'#2d7a4f'
+    })[ctrl.domain] || '#666',
+    defaultKey: (ig)   => ig === 1 ? 'defaultS' : ig === 2 ? 'defaultM' : 'defaultL',
+    panelTitle: 'SOC 2 READINESS ASSESSMENT',
+    colHeader:  'CRITERIA',
   },
 };
 
