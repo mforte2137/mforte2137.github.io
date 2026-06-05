@@ -181,6 +181,15 @@
     position: relative; z-index: 2;
   }
 
+  .app-tool-name {
+    font-family: 'Sora', sans-serif;
+    font-size: clamp(13px,1.3vw,18px);
+    font-weight: 600;
+    color: var(--white);
+    letter-spacing: -0.01em;
+    margin-bottom: clamp(4px,0.6vw,8px);
+  }
+
   .app-category {
     font-size: clamp(9px,0.85vw,11px);
     font-weight: 600;
@@ -213,7 +222,8 @@
     font-weight: 300;
     color: var(--white-50);
     line-height: 1.6;
-    max-width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
   .app-badge {
@@ -234,6 +244,7 @@
     flex: 1;
     display: flex; align-items: center; justify-content: center;
     position: relative; z-index: 2;
+    overflow: hidden;
   }
 
   /* ── APP WINDOW FRAME ─────────────────────────── */
@@ -243,6 +254,7 @@
     border-radius: 12px;
     border: 1px solid var(--blue-border);
     overflow: hidden;
+    display: flex; flex-direction: column;
     box-shadow:
       0 0 0 1px rgba(37,99,255,0.08),
       0 24px 64px rgba(0,0,0,0.6),
@@ -280,10 +292,13 @@
     overflow: hidden;
   }
 
-  /* screenshot: full width, natural height */
+  /* screenshot: full width, capped height, crops from top */
   .window-content img {
     width: 100%;
     height: auto;
+    max-height: clamp(200px, 38vh, 420px);
+    object-fit: cover;
+    object-position: top center;
     display: block;
   }
 
@@ -488,7 +503,11 @@
   <div class="slide slide-app" data-index="1">
     <div class="slide-inner"></div>
     <div class="app-left">
+
+
+
       <div class="app-category">Proposal</div>
+      <div class="app-tool-name">Proposal Evaluator</div>
       <h2 class="app-headline">Your proposal,<br>seen through<br>the buyer's eyes.</h2>
       <p class="app-tagline">Upload any MSP proposal and get an instant audit against the five questions every buyer silently asks — before it's too late to fix them.</p>
       <div class="app-badge">✦ AI-powered · Proposal Evaluator</div>
@@ -518,6 +537,7 @@
     <div class="slide-inner"></div>
     <div class="app-left">
       <div class="app-category">Proposal</div>
+      <div class="app-tool-name">Proposal Widget Builder</div>
       <h2 class="app-headline">Five buyer-journey<br>widgets. Zero<br>blank-page dread.</h2>
       <p class="app-tagline">Tell us what you're selling and who you're selling it to. AI generates five ready-to-use widgets — paste straight into Salesbuildr.</p>
       <div class="app-badge">✦ AI-powered · Proposal Widget Builder</div>
@@ -547,6 +567,7 @@
     <div class="slide-inner"></div>
     <div class="app-left">
       <div class="app-category">Proposal</div>
+      <div class="app-tool-name">Guided Sales Tool</div>
       <h2 class="app-headline">Start with the<br>problem.<br>Win the deal.</h2>
       <p class="app-tagline">The Guided Sales Tool builds buyer-focused proposals from the customer's pain — not your product catalog. Proposals that move businesses forward.</p>
       <div class="app-badge">✦ AI-powered · Guided Sales Tool · NEW</div>
@@ -575,7 +596,10 @@
   <div class="slide slide-app" data-index="4">
     <div class="slide-inner"></div>
     <div class="app-left">
+
+
       <div class="app-category">Scoping</div>
+      <div class="app-tool-name">SOW Widget Generator</div>
       <h2 class="app-headline">Professional SOWs.<br>Any project.<br>In seconds.</h2>
       <p class="app-tagline">Select from pre-built project presets or let AI write a Statement of Work from scratch — polished, customer-facing, and quote-ready.</p>
       <div class="app-badge">✦ AI-powered · SOW Widget Generator · NEW</div>
@@ -605,6 +629,7 @@
     <div class="slide-inner"></div>
     <div class="app-left">
       <div class="app-category">Proposal</div>
+      <div class="app-tool-name">ROI Builder</div>
       <h2 class="app-headline">Turn your quote<br>into a financial<br>argument.</h2>
       <p class="app-tagline">Enter a few numbers — we calculate the ROI and generate a customer-facing widget that makes the business case for you.</p>
       <div class="app-badge">✦ AI-powered · ROI Builder</div>
@@ -633,7 +658,9 @@
   <div class="slide slide-app glow-purple" data-index="6">
     <div class="slide-inner"></div>
     <div class="app-left">
+
       <div class="app-category">Design</div>
+      <div class="app-tool-name">Cover Page Creator</div>
       <h2 class="app-headline">Their brand.<br>Your proposal.<br>Instant impression.</h2>
       <p class="app-tagline">Enter your prospect's details and get a branded cover page in their colours — ready to drop into a Salesbuildr demo quote in seconds.</p>
       <div class="app-badge">✦ AI-powered · Cover Page Creator</div>
@@ -663,6 +690,7 @@
     <div class="slide-inner"></div>
     <div class="app-left">
       <div class="app-category">Design</div>
+      <div class="app-tool-name">Widget Banner Tool</div>
       <h2 class="app-headline">Eye-catching banners.<br>No design skills<br>required.</h2>
       <p class="app-tagline">Create widget banners using your own logos or custom text overlays — export straight into Salesbuildr widgets, ready to impress.</p>
       <div class="app-badge">✦ Widget Banner Tool · NEW</div>
@@ -691,7 +719,10 @@
   <div class="slide slide-app glow-coral" data-index="8">
     <div class="slide-inner"></div>
     <div class="app-left">
+
+
       <div class="app-category">Conversion</div>
+      <div class="app-tool-name">Product Catalog — Guided Cleanup</div>
       <h2 class="app-headline">A clean catalog<br>is a<br>faster close.</h2>
       <p class="app-tagline">AI-assisted guided cleanup fixes duplicate MPNs, bulk-unlists EOL products, and keeps your catalog sharp — step by step.</p>
       <div class="app-badge">✦ AI-powered · Product Catalog Cleanup · NEW</div>
@@ -721,6 +752,7 @@
     <div class="slide-inner"></div>
     <div class="app-left">
       <div class="app-category">Quote</div>
+      <div class="app-tool-name">MSP Quote Preflight</div>
       <h2 class="app-headline">Spot the gaps<br>before your<br>buyer does.</h2>
       <p class="app-tagline">Preflight reviews your quote for issues that could cause problems — before it leaves your hands. Fix early, send with confidence.</p>
       <div class="app-badge">✦ AI-powered · MSP Quote Preflight</div>
@@ -750,6 +782,7 @@
     <div class="slide-inner"></div>
     <div class="app-left">
       <div class="app-category">Conversion</div>
+      <div class="app-tool-name">Document Converter</div>
       <h2 class="app-headline">Any document.<br>Widget-ready<br>in one click.</h2>
       <p class="app-tagline">Convert PDFs, Word, and Excel into TinyMCE-ready HTML — paste content directly into any Salesbuildr widget without reformatting.</p>
       <div class="app-badge">✦ Document Converter</div>
@@ -779,6 +812,7 @@
     <div class="slide-inner"></div>
     <div class="app-left">
       <div class="app-category">Conversion</div>
+      <div class="app-tool-name">Import Special Pricing</div>
       <h2 class="app-headline">Vendor deal-reg<br>to import-ready.<br>In seconds.</h2>
       <p class="app-tagline">Upload any vendor special pricing file — xlsx, xls, or csv — and get it converted into a Salesbuildr import-ready format instantly.</p>
       <div class="app-badge">✦ Import Special Pricing</div>
@@ -808,6 +842,7 @@
     <div class="slide-inner"></div>
     <div class="app-left">
       <div class="app-category">Scoping</div>
+      <div class="app-tool-name">Project Reports</div>
       <h2 class="app-headline">Project updates<br>clients actually<br>read.</h2>
       <p class="app-tagline">Generate executive-style PDF status reports written in plain, non-technical language — keeping clients informed and confident throughout every project.</p>
       <div class="app-badge">✦ AI-powered · Project Reports · NEW</div>
@@ -837,6 +872,7 @@
     <div class="slide-inner"></div>
     <div class="app-left">
       <div class="app-category">Security</div>
+      <div class="app-tool-name">MSP Security Assessment Tool</div>
       <h2 class="app-headline">Every security<br>framework.<br>Ready to propose.</h2>
       <p class="app-tagline">Generate proposal widgets for all major security framework assessments — includes technician checklists and tools to show current vs ideal state.</p>
       <div class="app-badge">✦ AI-powered · MSP Security Assessment · NEW</div>
@@ -866,6 +902,7 @@
     <div class="slide-inner"></div>
     <div class="app-left">
       <div class="app-category">Scoping</div>
+      <div class="app-tool-name">Project Tasks → Calculator</div>
       <h2 class="app-headline">Complex projects.<br>Accurate hours.<br>No guesswork.</h2>
       <p class="app-tagline">Build a task list for any complex project, then generate a clean effort-hours table — ready to paste directly into a Salesbuildr Quote Widget.</p>
       <div class="app-badge">✦ Project Tasks Calculator</div>
