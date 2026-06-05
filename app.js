@@ -86,7 +86,7 @@ const TOOLS = [
     shortLabel: "Cover Page Creator",
     description:
       "Enter your prospect's details and we'll generate a branded cover page in their colours — ready to drop into a Salesbuildr demo quote in seconds.",
-    category: "Proposal",
+    category: "Design",
     url: "https://widgetcreator.netlify.app/first-impression.html",
     badge: "",
     updated: "2026-05-01",
@@ -106,6 +106,18 @@ const TOOLS = [
     icon: "palette"
   },
   {
+    title: "Product Catalog — Guided Cleanup",
+    shortLabel: "Catalog Cleanup",
+    description:
+      "AI-assisted guided cleanup for your product catalog. Fix duplicate MPNs, bulk unlist EOL or missing products, and keep your catalog sharp and accurate.",
+    category: "Conversion",
+    url: "https://widgetcreator.netlify.app/product-cleanup.html",
+    badge: "new",
+    updated: "2026-06-04",
+    gradient: "indigo",
+    icon: "search"
+  },
+  {
     title: "MSP Quote Preflight",
     shortLabel: "Quote Preflight",
     description:
@@ -114,7 +126,7 @@ const TOOLS = [
     url: "https://widgetcreator.netlify.app/preflight.html",
     badge: "",
     updated: "2026-05-01",
-    gradient: "indigo",
+    gradient: "violet",
     icon: "search"
   },
   {
@@ -183,13 +195,20 @@ const TOOLS = [
    Rendering — you generally don't need to edit below this line
    ========================================================= */
 
-const grid       = document.getElementById("tools-grid");
-const search     = document.getElementById("search");
-const countEl    = document.getElementById("result-count");
-const noResults  = document.getElementById("no-results");
-const yearEl     = document.getElementById("year");
+const grid      = document.getElementById("tools-grid");
+const searchEl  = document.getElementById("search");
+const clearEl   = document.getElementById("search-clear");
+const countEl   = document.getElementById("result-count");
+const noResults = document.getElementById("no-results");
+const tabsEl    = document.getElementById("tabs");
+const yearEl    = document.getElementById("year");
 
 if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+let activeCategory = "All";
+
+/* Derive ordered category list */
+const CATEGORIES = ["All", ...Array.from(new Set(TOOLS.map(t => t.category)))];
 
 function escapeHtml(str) {
   return String(str || "")
@@ -200,42 +219,36 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-function formatDate(isoDate) {
-  if (!isoDate) return "";
-  const d = new Date(isoDate);
-  if (isNaN(d.getTime())) return "";
-  return d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+/* Icon SVG lookup — returns inline SVG string */
+function getIconSvg(key) {
+  return ICONS[key] || ICONS.doc;
 }
 
 function buildCard(tool) {
-  const grad = GRADIENTS[tool.gradient] || GRADIENTS.navy;
-  const iconSvg = ICONS[tool.icon] || ICONS.doc;
-  const badgeHtml = tool.badge
-    ? `<span class="badge ${escapeHtml(tool.badge)}">${escapeHtml(tool.badge)}</span>`
-    : "";
-  const updated = formatDate(tool.updated);
+  const iconSvg  = getIconSvg(tool.icon);
+  const iconCls  = "icon-" + (tool.gradient || "navy");
+  const badgeCls = tool.badge ? "card-badge badge-" + tool.badge : "card-badge badge-empty";
+  const badgeTxt = tool.badge || "·";
 
   return `
     <a class="tool-card" href="${escapeHtml(tool.url)}" target="_blank" rel="noopener noreferrer"
        aria-label="Open ${escapeHtml(tool.title)} (opens in a new tab)">
-      <div class="thumb" style="--card-grad: ${grad};">
-        ${badgeHtml}
-        <div class="thumb-icon">${iconSvg}</div>
-        <div class="thumb-label">${escapeHtml(tool.shortLabel || tool.title)}</div>
-      </div>
       <div class="card-body">
-        <span class="card-tag">${escapeHtml(tool.category)}</span>
+        <div class="card-top">
+          <div class="card-icon ${iconCls}">${iconSvg}</div>
+          <span class="${badgeCls}">${escapeHtml(badgeTxt)}</span>
+        </div>
         <h3 class="card-title">${escapeHtml(tool.title)}</h3>
         <p class="card-desc">${escapeHtml(tool.description)}</p>
       </div>
       <div class="card-foot">
-        <span class="card-meta">${updated ? "Updated " + updated : ""}</span>
+        <span class="card-tag">${escapeHtml(tool.category)}</span>
         <span class="open-link">
-          Open tool
-          <svg class="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="13 5 20 12 13 19"></polyline>
+          Open
+          <svg class="arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="13 5 20 12 13 19"/>
           </svg>
         </span>
       </div>
@@ -243,27 +256,66 @@ function buildCard(tool) {
   `;
 }
 
-function render(list) {
+function getFiltered() {
+  const q = (searchEl.value || "").trim().toLowerCase();
+  return TOOLS.filter(t => {
+    const catMatch = activeCategory === "All" || t.category === activeCategory;
+    if (!catMatch) return false;
+    if (!q) return true;
+    return [t.title, t.shortLabel, t.description, t.category, t.badge]
+      .join(" ").toLowerCase().includes(q);
+  });
+}
+
+function render() {
+  const list = getFiltered();
   grid.innerHTML = list.map(buildCard).join("");
-  countEl.textContent = list.length === TOOLS.length
+  const total = activeCategory === "All" ? TOOLS.length : TOOLS.filter(t => t.category === activeCategory).length;
+  countEl.textContent = list.length === total
     ? `${list.length} tool${list.length === 1 ? "" : "s"}`
-    : `${list.length} of ${TOOLS.length} tool${TOOLS.length === 1 ? "" : "s"}`;
+    : `${list.length} of ${total} tool${total === 1 ? "" : "s"}`;
   noResults.hidden = list.length !== 0;
 }
 
-function applyFilter() {
-  const q = (search.value || "").trim().toLowerCase();
-  if (!q) { render(TOOLS); return; }
-  const filtered = TOOLS.filter(t => {
-    const haystack = [
-      t.title, t.shortLabel, t.description, t.category, t.badge
-    ].join(" ").toLowerCase();
-    return haystack.includes(q);
+/* Build tabs */
+function buildTabs() {
+  tabsEl.innerHTML = CATEGORIES.map(cat => {
+    const count = cat === "All" ? TOOLS.length : TOOLS.filter(t => t.category === cat).length;
+    return `
+      <button class="tab-btn${cat === activeCategory ? " active" : ""}" data-cat="${escapeHtml(cat)}"
+              role="tab" aria-selected="${cat === activeCategory}">
+        ${escapeHtml(cat)}<span class="tab-count">${count}</span>
+      </button>`;
+  }).join("");
+
+  tabsEl.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      activeCategory = btn.dataset.cat;
+      tabsEl.querySelectorAll(".tab-btn").forEach(b => {
+        b.classList.toggle("active", b === btn);
+        b.setAttribute("aria-selected", b === btn ? "true" : "false");
+      });
+      render();
+    });
   });
-  render(filtered);
 }
 
-if (search) search.addEventListener("input", applyFilter);
+/* Search */
+searchEl.addEventListener("input", () => {
+  clearEl.hidden = !searchEl.value;
+  render();
+});
+
+clearEl.addEventListener("click", () => {
+  searchEl.value = "";
+  clearEl.hidden = true;
+  searchEl.focus();
+  render();
+});
+clearEl.addEventListener("keydown", e => {
+  if (e.key === "Enter" || e.key === " ") clearEl.click();
+});
+
 
 /* =========================================================
    GRADIENT LIBRARY
@@ -280,6 +332,7 @@ const GRADIENTS = {
   slate:   "linear-gradient(135deg, #1e293b 0%, #475569 55%, #94a3b8 100%)",
   sunset:  "linear-gradient(135deg, #be185d 0%, #ec4899 40%, #fb923c 100%)",
   indigo:  "linear-gradient(135deg, #312e81 0%, #4f46e5 55%, #818cf8 100%)",
+  violet:  "linear-gradient(135deg, #5b21b6 0%, #8b5cf6 55%, #c4b5fd 100%)",
   cyan:    "linear-gradient(135deg, #164e63 0%, #0891b2 55%, #67e8f9 100%)",
   forest:  "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #86efac 100%)",
   crimson: "linear-gradient(135deg, #7f1d1d 0%, #dc2626 55%, #f87171 100%)"
@@ -379,4 +432,5 @@ const ICONS = {
 };
 
 /* Initial render — runs after GRADIENTS and ICONS are defined */
-render(TOOLS);
+buildTabs();
+render();
