@@ -42,17 +42,19 @@
   /* ── SLIDE: true 16:9 letterboxed ────────────── */
   .slide {
     display: none;
-    /* fit inside viewport maintaining 16:9 */
     width: min(100vw, 177.78vh);
     height: min(100vh, 56.25vw);
     background: var(--bg);
     position: relative;
     overflow: hidden;
-    align-items: center;
-    justify-content: center;
     flex-shrink: 0;
   }
-  .slide.active { display: flex; }
+  .slide.active {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: flex-start;
+  }
 
   /* glow orbs */
   .slide::before {
@@ -170,15 +172,22 @@
 
   /* ── LAYOUT: APP SLIDE (standard) ────────────── */
   .slide-app {
-    padding: clamp(24px,3vw,44px) clamp(32px,4vw,52px);
-    gap: clamp(16px,2vw,28px);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
     align-items: center;
+    padding: clamp(24px,4vh,52px) clamp(32px,4vw,52px);
+    gap: clamp(20px,3vw,44px);
+    box-sizing: border-box;
   }
 
   .app-left {
-    flex: 0 0 36%;
+    flex: 0 0 32%;
+    height: 100%;
     display: flex; flex-direction: column; justify-content: center;
     position: relative; z-index: 2;
+    overflow: hidden;
   }
 
   .app-tool-name {
@@ -222,8 +231,10 @@
     font-weight: 300;
     color: var(--white-50);
     line-height: 1.6;
+    white-space: normal;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    max-width: 100%;
   }
 
   .app-badge {
@@ -242,14 +253,19 @@
 
   .app-right {
     flex: 1;
-    display: flex; align-items: center; justify-content: center;
+    min-width: 0;
+    display: flex; align-items: center; justify-content: flex-start;
     position: relative; z-index: 2;
+    padding: clamp(12px,2vh,28px) 0;
+    box-sizing: border-box;
+    min-height: 0;
     overflow: hidden;
   }
 
   /* ── APP WINDOW FRAME ─────────────────────────── */
   .app-window {
     width: 100%;
+    max-width: 100%;
     background: var(--surface2);
     border-radius: 12px;
     border: 1px solid var(--blue-border);
@@ -257,7 +273,7 @@
     display: flex; flex-direction: column;
     box-shadow:
       0 0 0 1px rgba(37,99,255,0.08),
-      0 24px 64px rgba(0,0,0,0.6),
+      0 20px 50px rgba(0,0,0,0.55),
       inset 0 1px 0 rgba(255,255,255,0.04);
   }
 
@@ -292,13 +308,10 @@
     overflow: hidden;
   }
 
-  /* screenshot: full width, capped height, crops from top */
+  /* screenshot: natural size, never distorted */
   .window-content img {
     width: 100%;
     height: auto;
-    max-height: clamp(200px, 38vh, 420px);
-    object-fit: cover;
-    object-position: top center;
     display: block;
   }
 
