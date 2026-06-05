@@ -752,7 +752,8 @@ function buildGapAnalysisWidget(gaps) {
 function buildIdealStateWidget() {
   let rows = '';
   state.assessment.forEach((a, idx) => {
-    const ctrl = CIS_CONTROLS[idx];
+    const ctrl = fwControls()[idx];
+    if (!ctrl) return;
     const bgColor = idx % 2 === 0 ? '#ffffff' : '#faf8f4';
     const statusColor = a.ideal === 'implemented' ? '#2d7a4f' : a.ideal === 'partial' ? '#c9830a' : '#999';
     rows += `<tr style="background:${bgColor};">
