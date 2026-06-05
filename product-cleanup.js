@@ -53,7 +53,7 @@ let mspName = null;    // MSP's own company name — auto-detected via company A
 let dupMpnGroups = []; // duplicate MPN groups from API filters
 
 const STOCK_GROUPS = [
-  { bucket: 'green',  filter: 'inStock|onlyDistributor|internal|lowStock', label: 'Ready to Sell' },
+  { bucket: 'green',  filter: 'inStock|onlyDistributor|internal', label: 'Ready to Sell' },
   { bucket: 'yellow', filter: 'backOrder|unavailable|custom',              label: 'Needs Review'  },
   { bucket: 'orange', filter: 'notFound',                                  label: 'Not Found'     },
 ];
@@ -360,20 +360,20 @@ async function handleLoad() {
         `Fetching ${group.label} products…`,
         `${allProducts.length} products loaded so far`
       );
-      const products = await fetchProductGroup(tenantUrl, apiKey, group.filter);
-
-      for (const p of products) {
-        // Skip already-unlisted products entirely — nothing to act on
-        if (!p.listed) continue;
-
-        const hasMpn = p.mpn && p.mpn.trim() !== '';
-        p.bucket = (group.bucket === 'orange')
-          ? (hasMpn ? 'orange' : 'red')
-          : group.bucket;
+      try {
+        const products = await fetchProductGroup(tenantUrl, apiKey, group.filter);
+        for (const p of products) {
+          if (!p.listed) continue;
+          const hasMpn = p.mpn && p.mpn.trim() !== '';
+          p.bucket = (group.bucket === 'orange')
+            ? (hasMpn ? 'orange' : 'red')
+            : group.bucket;
+        }
+        allProducts.push(...products.filter(p => p.listed));
+      } catch (groupErr) {
+        console.warn(`Could not load ${group.label} products:`, groupErr.message);
+        // Continue with other groups — partial data is better than nothing
       }
-
-      // Only push listed products
-      allProducts.push(...products.filter(p => p.listed));
     }
 
     headerMeta.textContent = '';
