@@ -100,7 +100,8 @@ body {
 .obj-generate-btn { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; background: var(--ink); color: var(--paper); border: none; padding: 10px 22px; font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; transition: background 0.15s; }
 .obj-generate-btn:hover    { background: var(--accent); }
 .obj-generate-btn:disabled { background: var(--mute); cursor: not-allowed; }
-.obj-working { display: flex; align-items: center; gap: 12px; font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: var(--mute); padding: 12px 0; }
+.obj-working { display: none; align-items: center; gap: 12px; font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: var(--mute); padding: 12px 0; }
+.obj-working:not([hidden]) { display: flex; }
 .obj-spinner { width: 18px; height: 18px; border: 2px solid var(--rule); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
 .obj-result  { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; line-height: 1.65; color: var(--ink); background: var(--paper-alt); border: 1px solid var(--rule); padding: 18px 20px; white-space: pre-wrap; margin-bottom: 14px; max-height: 420px; overflow-y: auto; }
 .obj-copy-row  { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
