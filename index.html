@@ -7,7 +7,7 @@
   <meta name="description" content="A curated set of practical tools for MSPs — proposals, document conversion, project scoping and more." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -25,23 +25,12 @@
         </span>
         <span class="brand-text">MSP Tools Hub</span>
       </a>
-      <nav class="header-nav" aria-label="Primary">
-        <a href="#tools">Tools</a>
-        <a href="#about">About</a>
-      </nav>
+      <p class="header-sub">A practical toolkit for MSPs — by Salesbuildr</p>
     </div>
   </header>
 
-  <section class="hero">
+  <div class="search-bar-wrap">
     <div class="container">
-      <p class="eyebrow">A practical toolkit for MSPs</p>
-      <h1>Tools that make selling and scoping easier.</h1>
-      <p class="lede">
-        A small, curated set of utilities to help MSPs run better proposals, faster
-        quotes and cleaner project scoping. Bookmark this page — new tools are
-        added here as they're released.
-      </p>
-
       <div class="search-wrap">
         <span class="search-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -49,25 +38,36 @@
             <line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
         </span>
-        <input id="search" type="search" placeholder="Search tools by name, category or keyword…" autocomplete="off" />
+        <input id="search" type="search" placeholder="Search tools by name, category or keyword…" autocomplete="off" aria-label="Search tools" />
+        <span id="search-clear" class="search-clear" aria-label="Clear search" role="button" tabindex="0" hidden>
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
       </div>
     </div>
-  </section>
+  </div>
+
+  <div class="tabs-wrap">
+    <div class="container">
+      <nav class="tabs" id="tabs" aria-label="Filter by category" role="tablist"></nav>
+    </div>
+  </div>
 
   <main id="tools" class="tools-section">
     <div class="container">
       <div class="section-head">
-        <h2>All tools</h2>
         <p id="result-count" class="result-count"></p>
       </div>
-      <div id="tools-grid" class="tools-grid" aria-live="polite"></div>
+      <div id="tools-grid" class="tools-grid" aria-live="polite" aria-label="Tools"></div>
       <p id="no-results" class="no-results" hidden>No tools match that search.</p>
     </div>
   </main>
 
-  <footer id="about" class="site-footer">
+  <footer class="site-footer">
     <div class="container footer-inner">
-      <div>
+      <div class="footer-left">
         <span class="brand-mark small" aria-hidden="true">
           <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
             <rect x="3" y="3" width="11" height="11" rx="2.5"/>
