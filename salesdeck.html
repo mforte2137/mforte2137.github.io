@@ -151,7 +151,7 @@ html, body {
 
 .app-tool-name {
   font-family: 'Sora', sans-serif;
-  font-size: clamp(11px,1.1vw,14px);
+  font-size: clamp(13px,1.3vw,17px);
   font-weight: 600;
   color: rgba(255,255,255,0.55);
   letter-spacing: 0.01em;
@@ -182,7 +182,7 @@ html, body {
 }
 
 .app-tagline {
-  font-size: clamp(11px,1.05vw,14px);
+  font-size: clamp(13px,1.25vw,16px);
   font-weight: 300;
   color: rgba(255,255,255,0.5);
   line-height: 1.65;
@@ -205,8 +205,10 @@ html, body {
 .app-right {
   flex: 1;
   min-width: 0;
+  max-width: 56%;
   display: flex; align-items: center; justify-content: center;
   position: relative; z-index: 2;
+  overflow: hidden;
 }
 
 /* Browser window chrome */
