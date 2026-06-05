@@ -662,7 +662,7 @@ function appendIndividualCard(widget) {
   const num=document.createElement('span'); num.className='widget-num'; num.textContent=WIDGET_LABELS[widget.id]||widget.id;
   const title=document.createElement('span'); title.className='widget-card-title'; title.textContent=widget.title;
   label.appendChild(num); label.appendChild(title);
-  const copyBtn=document.createElement('button'); copyBtn.type='button'; copyBtn.className='widget-copy-btn'; copyBtn.textContent='Copy HTML';
+  const copyBtn=document.createElement('button'); copyBtn.type='button'; copyBtn.className='widget-copy-btn'; copyBtn.textContent='Copy Widget HTML';
   copyBtn.addEventListener('click',()=>copyHtml(widget.html,copyBtn));
   header.appendChild(label); header.appendChild(copyBtn);
   const tabs=document.createElement('div'); tabs.className='widget-tabs';
@@ -700,7 +700,7 @@ function getCurrentFields() {
 async function copyHtml(html,btn) {
   try{ await navigator.clipboard.writeText(html); }catch{ const ta=document.createElement('textarea'); ta.value=html; ta.style.cssText='position:fixed;opacity:0;'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
   btn.textContent='Copied!'; btn.classList.add('is-copied');
-  setTimeout(()=>{ btn.textContent='Copy HTML'; btn.classList.remove('is-copied'); },2500);
+  setTimeout(()=>{ btn.textContent='Copy Widget HTML'; btn.classList.remove('is-copied'); },2500);
 }
 
 // ── Why This Works sidebar toggle ────────────────────────
@@ -822,7 +822,7 @@ objGenerateBtn.addEventListener('click', async () => {
     objResult.textContent = text;
     objResultWrap.hidden = false;
   } catch(err) {
-    objResult.textContent = 'Could not generate objection coaching. Please try again.';
+    objResult.textContent = 'Could not generate objection coaching: ' + err.message;
     objResultWrap.hidden = false;
   }
 
