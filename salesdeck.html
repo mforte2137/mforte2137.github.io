@@ -25,7 +25,7 @@ html, body {
   display: none;
   position: relative;
   overflow: hidden;
-  background: #0c0f1a;
+  background: #164DF1;
   /* letterbox: fill viewport maintaining 16:9 */
   width: min(100vw, 177.78vh);
   height: min(100vh, 56.25vw);
@@ -38,8 +38,8 @@ html, body {
   content: '';
   position: absolute; inset: 0;
   background-image:
-    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+    linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
   background-size: 48px 48px;
   pointer-events: none;
   z-index: 0;
@@ -51,7 +51,7 @@ html, body {
   position: absolute;
   top: -100px; right: -80px;
   width: 380px; height: 380px;
-  background: radial-gradient(circle, rgba(37,99,255,0.18) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 65%);
   pointer-events: none;
   z-index: 0;
 }
@@ -70,7 +70,7 @@ html, body {
   font-weight: 500;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: #2563FF;
+  color: rgba(255,255,255,0.8);
   margin-bottom: 1.4em;
   display: flex; align-items: center; gap: 12px;
   position: relative; z-index: 2;
@@ -78,7 +78,7 @@ html, body {
 .cover-eyebrow::before, .cover-eyebrow::after {
   content: ''; display: block;
   width: 36px; height: 1px;
-  background: rgba(37,99,255,0.4);
+  background: rgba(22,77,241,0.4);
 }
 
 .cover-logo {
@@ -102,7 +102,7 @@ html, body {
   margin-bottom: 0.5em;
   position: relative; z-index: 2;
 }
-.cover-headline em { font-style: normal; color: #2563FF; }
+.cover-headline em { font-style: normal; color: #164DF1; }
 
 .cover-sub {
   font-size: clamp(13px,1.4vw,17px);
@@ -114,16 +114,16 @@ html, body {
 
 .cover-pill {
   display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(37,99,255,0.15);
-  border: 1px solid rgba(37,99,255,0.35);
-  color: rgba(150,185,255,0.9);
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.9);
   font-size: clamp(10px,1vw,12px); font-weight: 500;
   letter-spacing: 0.1em; padding: 7px 18px; border-radius: 30px;
   position: relative; z-index: 2;
 }
 .cover-pill::before {
   content: ''; width: 6px; height: 6px;
-  border-radius: 50%; background: #2563FF;
+  border-radius: 50%; background: #164DF1;
   animation: pulse 2s infinite;
 }
 @keyframes pulse {
@@ -163,14 +163,14 @@ html, body {
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #2563FF;
+  color: #164DF1;
   margin-bottom: 0.7em;
   display: flex; align-items: center; gap: 8px;
 }
 .app-category::before {
   content: '';
   display: block; width: 18px; height: 2px;
-  background: #2563FF; flex-shrink: 0;
+  background: #164DF1; flex-shrink: 0;
 }
 
 .app-headline {
@@ -193,9 +193,9 @@ html, body {
 .app-badge {
   display: inline-flex; align-items: center; gap: 6px;
   margin-top: 1.2em;
-  background: rgba(37,99,255,0.15);
-  border: 1px solid rgba(37,99,255,0.3);
-  color: rgba(150,185,255,0.85);
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.9);
   font-size: clamp(9px,0.85vw,11px); font-weight: 500;
   letter-spacing: 0.1em; padding: 5px 12px;
   border-radius: 20px; width: fit-content;
@@ -214,21 +214,21 @@ html, body {
 /* Browser window chrome */
 .app-window {
   width: 100%;
-  background: #1a1f35;
+  background: #ffffff;
   border-radius: 10px;
-  border: 1px solid rgba(37,99,255,0.25);
+  border: 1px solid rgba(255,255,255,0.3);
   overflow: hidden;
   box-shadow:
-    0 0 0 1px rgba(37,99,255,0.08),
+    0 0 0 1px rgba(22,77,241,0.08),
     0 20px 56px rgba(0,0,0,0.6),
     inset 0 1px 0 rgba(255,255,255,0.04);
 }
 
 .window-bar {
-  background: #141829;
+  background: #f0f2f7;
   padding: 9px 13px;
   display: flex; align-items: center; gap: 6px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid #e2e6f0;
   flex-shrink: 0;
 }
 .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
@@ -257,24 +257,24 @@ html, body {
   align-items: center; justify-content: center;
   gap: 10px;
   padding: clamp(28px,5vh,56px) 0;
-  background: #1a1f35;
+  background: #ffffff;
 }
 .window-content img + .placeholder-wrap { display: none; }
 
 .placeholder-icon {
   width: 44px; height: 44px;
-  background: rgba(37,99,255,0.18);
-  border: 1px solid rgba(37,99,255,0.3);
+  background: rgba(22,77,241,0.08);
+  border: 1px solid rgba(22,77,241,0.2);
   border-radius: 10px;
   display: flex; align-items: center; justify-content: center;
   font-size: 22px;
 }
 .placeholder-label {
-  font-size: 11px; color: rgba(255,255,255,0.25);
+  font-size: 11px; color: rgba(0,0,0,0.3);
   letter-spacing: 0.14em; text-transform: uppercase;
 }
 .placeholder-hint {
-  font-size: 10px; color: rgba(255,255,255,0.1);
+  font-size: 10px; color: rgba(0,0,0,0.2);
   font-style: italic;
 }
 
@@ -292,7 +292,7 @@ html, body {
   margin-bottom: 0.5em;
   position: relative; z-index: 2;
 }
-.close-headline em { font-style: normal; color: #2563FF; }
+.close-headline em { font-style: normal; color: #164DF1; }
 .close-sub {
   font-size: clamp(13px,1.3vw,17px);
   font-weight: 300; color: rgba(255,255,255,0.5);
@@ -301,7 +301,7 @@ html, body {
 }
 .close-cta {
   display: inline-flex; align-items: center; gap: 10px;
-  background: #2563FF; color: #fff;
+  background: #fff; color: #164DF1;
   font-family: 'Sora', sans-serif;
   font-size: clamp(12px,1.1vw,15px); font-weight: 600;
   letter-spacing: 0.04em;
@@ -314,7 +314,7 @@ html, body {
 .slide-counter {
   position: absolute; bottom: 3%; left: 4%;
   font-size: clamp(9px,0.8vw,11px);
-  color: rgba(255,255,255,0.22);
+  color: rgba(255,255,255,0.5);
   letter-spacing: 0.12em; z-index: 10;
 }
 .slide-logo {
@@ -332,21 +332,21 @@ html, body {
 .nav-btn {
   position: fixed; top: 50%; transform: translateY(-50%);
   width: 38px; height: 38px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.2);
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; z-index: 100; color: rgba(255,255,255,0.5);
+  cursor: pointer; z-index: 100; color: rgba(255,255,255,0.8);
   font-size: 16px; transition: background 0.2s;
 }
-.nav-btn:hover { background: rgba(37,99,255,0.25); color: #fff; }
+.nav-btn:hover { background: rgba(255,255,255,0.3); color: #fff; }
 .nav-btn.hidden { opacity: 0; pointer-events: none; }
 #nav-prev { left: 14px; }
 #nav-next { right: 14px; }
 
 #progress {
   position: fixed; top: 0; left: 0; height: 2px;
-  background: #2563FF;
+  background: rgba(255,255,255,0.7);
   transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
   z-index: 200;
 }
@@ -358,9 +358,9 @@ html, body {
 }
 
 /* glow variants */
-.glow-teal::after  { background: radial-gradient(circle, rgba(29,158,117,0.14) 0%, transparent 65%); }
-.glow-coral::after { background: radial-gradient(circle, rgba(216,90,48,0.14) 0%, transparent 65%); }
-.glow-purple::after{ background: radial-gradient(circle, rgba(127,119,221,0.14) 0%, transparent 65%); }
+.glow-teal::after  { background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 65%); }
+.glow-coral::after { background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 65%); }
+.glow-purple::after{ background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 65%); }
 </style>
 </head>
 <body>
@@ -375,7 +375,7 @@ html, body {
 <div class="slide slide-cover active" data-index="0">
   <div class="cover-eyebrow">Innovation Suite</div>
   <div class="cover-logo">
-    <svg width="32" height="32" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="#2563FF" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="#2563FF"/></svg>
+    <svg width="32" height="32" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="#164DF1" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="#164DF1"/></svg>
     <span class="cover-logo-text">Salesbuildr</span>
   </div>
   <h1 class="cover-headline">Built for MSPs.<br>Powered by <em>AI</em>.</h1>
