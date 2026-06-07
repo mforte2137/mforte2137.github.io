@@ -81,7 +81,7 @@ ${freeformText}
         'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
       },
       body: JSON.stringify({
-        from: 'QBR Intel Feedback <feedback@widgetcreator.netlify.app>',
+        from: 'QBR Intel Feedback <onboarding@resend.dev>',
         to:   ['mike@salesbuildr.com'],
         subject: `QBR Demo Feedback — ${from}`,
         text: emailText,
