@@ -12,136 +12,212 @@
     <div class="header-inner">
       <div class="header-left">
         <span class="app-logo">&#9646;&#9646;</span>
-        <span class="app-title">QBR Intelligence</span>
+        <span class="app-title">Customer Growth Operating System</span>
         <span class="app-sub">Customer conversation briefing tool</span>
       </div>
       <div class="header-right">
         <span class="demo-badge">DEMO — Seeded Data</span>
+        <button class="feedback-toggle" id="feedback-toggle" aria-expanded="false">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Share Feedback
+        </button>
       </div>
     </div>
   </header>
 
-  <main class="app-main">
+  <div class="page-layout">
 
-    <div class="toolbar">
-      <div class="toolbar-left">
-        <label class="toolbar-label">CUSTOMER</label>
-        <select id="customer-select">
-          <option value="abc">ABC Manufacturing</option>
-          <option value="river">River Tech Solutions</option>
-          <option value="peak">Peak Financial Group</option>
-        </select>
-      </div>
-      <div class="toolbar-right">
-        <label class="toolbar-label">DATA SOURCES</label>
-        <div class="source-pills">
-          <button class="pill active" data-src="psa">PSA</button>
-          <button class="pill active" data-src="rmm">RMM</button>
-          <button class="pill active" data-src="sb">Salesbuildr</button>
-        </div>
-      </div>
-    </div>
+    <main class="app-main" id="app-main">
 
-    <div class="customer-header" id="cust-header">
-      <div class="avatar" id="cust-avatar">AM</div>
-      <div class="cust-info">
-        <div class="cust-name" id="cust-name">ABC Manufacturing</div>
-        <div class="cust-tag" id="cust-tag">Fully Managed &middot; Houston, TX</div>
-      </div>
-      <div class="cust-meta">
-        <div class="meta-item">
-          <div class="meta-val" id="cust-mrr">$3,840</div>
-          <div class="meta-lbl">MRR</div>
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <label class="toolbar-label">CUSTOMER</label>
+          <select id="customer-select">
+            <option value="abc">ABC Manufacturing</option>
+            <option value="river">River Tech Solutions</option>
+            <option value="peak">Peak Financial Group</option>
+          </select>
         </div>
-        <div class="meta-item">
-          <div class="meta-val" id="cust-since">May 2021</div>
-          <div class="meta-lbl">Client Since</div>
-        </div>
-        <div class="meta-item">
-          <div class="meta-val" id="cust-health">82</div>
-          <div class="meta-lbl">Health Score</div>
-        </div>
-        <div class="meta-item">
-          <div class="meta-val" id="cust-am">Sarah Johnson</div>
-          <div class="meta-lbl">Account Manager</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="stat-grid">
-      <div class="stat-card">
-        <div class="stat-val" id="stat-devices">47</div>
-        <div class="stat-lbl">Managed Devices</div>
-        <div class="stat-delta warn" id="stat-eol">14 near EOL</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val" id="stat-tickets">+34%</div>
-        <div class="stat-lbl">Ticket Volume</div>
-        <div class="stat-delta warn" id="stat-ticket-sub">vs prior 90 days</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val" id="stat-users">+18%</div>
-        <div class="stat-lbl">User Count Change</div>
-        <div class="stat-delta good" id="stat-user-sub">8 new users added</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val" id="stat-open-opps">3</div>
-        <div class="stat-lbl">Open Opportunities</div>
-        <div class="stat-delta info" id="stat-opp-val">$21,950 pipeline</div>
-      </div>
-    </div>
-
-    <div class="two-col">
-
-      <section class="panel" id="signals-panel">
-        <div class="panel-header">
-          <span class="panel-title">CHANGE SIGNALS</span>
-          <span class="signal-count" id="signal-count">5 signals</span>
-        </div>
-        <div id="signals-list"></div>
-      </section>
-
-      <section class="panel" id="recs-panel">
-        <div class="panel-header">
-          <span class="panel-title">RECOMMENDED CONVERSATIONS</span>
-        </div>
-        <div id="recs-list"></div>
-        <button class="ai-btn" id="ai-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          Generate AI Conversation Brief
-        </button>
-      </section>
-
-    </div>
-
-    <section class="panel suggestion-panel" id="suggested-panel">
-      <div class="panel-header">
-        <span class="panel-title">SUGGESTED NEXT CONVERSATION</span>
-        <span class="conf-label" id="conf-label">92% confidence</span>
-      </div>
-      <div class="suggested">
-        <div class="suggest-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-        </div>
-        <div class="suggest-body">
-          <div class="suggest-title" id="suggest-title">Schedule strategic review — 4 active signals require discussion</div>
-          <div class="suggest-desc" id="suggest-desc">Lead with the device refresh timeline — it has the longest planning horizon and highest revenue potential. Then address labour over-utilisation to reset scope expectations before the security review conversation. User growth gives you a natural upsell bridge.</div>
-          <div class="conf-bar-wrap">
-            <div class="conf-bar-bg"><div class="conf-bar" id="conf-bar" style="width:92%"></div></div>
+        <div class="toolbar-right">
+          <label class="toolbar-label">DATA SOURCES</label>
+          <div class="source-pills">
+            <button class="pill active" data-src="psa">PSA</button>
+            <button class="pill active" data-src="rmm">RMM</button>
+            <button class="pill active" data-src="sb">Salesbuildr</button>
           </div>
         </div>
       </div>
-    </section>
 
-    <section class="panel ai-panel" id="ai-output" style="display:none;">
-      <div class="panel-header">
-        <span class="panel-title">AI CONVERSATION BRIEF</span>
-        <button class="close-btn" id="close-ai">&times;</button>
+      <div class="customer-header" id="cust-header">
+        <div class="avatar" id="cust-avatar">AM</div>
+        <div class="cust-info">
+          <div class="cust-name" id="cust-name">ABC Manufacturing</div>
+          <div class="cust-tag" id="cust-tag">Fully Managed &middot; Houston, TX</div>
+        </div>
+        <div class="cust-meta">
+          <div class="meta-item">
+            <div class="meta-val" id="cust-mrr">$3,840</div>
+            <div class="meta-lbl">MRR</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-val" id="cust-since">May 2021</div>
+            <div class="meta-lbl">Client Since</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-val" id="cust-health">82</div>
+            <div class="meta-lbl">Health Score</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-val" id="cust-am">Sarah Johnson</div>
+            <div class="meta-lbl">Account Manager</div>
+          </div>
+        </div>
       </div>
-      <div id="ai-text" class="ai-text"></div>
-    </section>
 
-  </main>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-val" id="stat-devices">47</div>
+          <div class="stat-lbl">Managed Devices</div>
+          <div class="stat-delta warn" id="stat-eol">14 near EOL</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-tickets">+34%</div>
+          <div class="stat-lbl">Ticket Volume</div>
+          <div class="stat-delta warn" id="stat-ticket-sub">vs prior 90 days</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-users">+18%</div>
+          <div class="stat-lbl">User Count Change</div>
+          <div class="stat-delta good" id="stat-user-sub">8 new users added</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-open-opps">3</div>
+          <div class="stat-lbl">Open Opportunities</div>
+          <div class="stat-delta info" id="stat-opp-val">$21,950 pipeline</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+
+        <section class="panel" id="signals-panel">
+          <div class="panel-header">
+            <span class="panel-title">CHANGE SIGNALS</span>
+            <span class="signal-count" id="signal-count">5 signals</span>
+          </div>
+          <div id="signals-list"></div>
+        </section>
+
+        <section class="panel" id="recs-panel">
+          <div class="panel-header">
+            <span class="panel-title">RECOMMENDED CONVERSATIONS</span>
+          </div>
+          <div id="recs-list"></div>
+          <button class="ai-btn" id="ai-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            Generate AI Conversation Brief
+          </button>
+        </section>
+
+      </div>
+
+      <section class="panel suggestion-panel" id="suggested-panel">
+        <div class="panel-header">
+          <span class="panel-title">SUGGESTED NEXT CONVERSATION</span>
+          <span class="conf-label" id="conf-label">92% confidence</span>
+        </div>
+        <div class="suggested">
+          <div class="suggest-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          </div>
+          <div class="suggest-body">
+            <div class="suggest-title" id="suggest-title">Schedule strategic review — 4 active signals require discussion</div>
+            <div class="suggest-desc" id="suggest-desc"></div>
+            <div class="conf-bar-wrap">
+              <div class="conf-bar-bg"><div class="conf-bar" id="conf-bar" style="width:92%"></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel ai-panel" id="ai-output" style="display:none;">
+        <div class="panel-header">
+          <span class="panel-title">AI CONVERSATION BRIEF</span>
+          <button class="close-btn" id="close-ai">&times;</button>
+        </div>
+        <div id="ai-text" class="ai-text"></div>
+      </section>
+
+    </main>
+
+    <!-- ── Feedback panel ── -->
+    <aside class="feedback-panel" id="feedback-panel" aria-hidden="true">
+
+      <div class="fb-header">
+        <span class="fb-title">BETA FEEDBACK</span>
+        <button class="fb-close" id="fb-close" aria-label="Close feedback panel">&times;</button>
+      </div>
+
+      <p class="fb-intro">You're previewing an early build. Tell us what you'd want this tool to do — your input shapes what gets built next.</p>
+
+      <div class="fb-section">
+        <div class="fb-section-label">YOUR DETAILS <span class="fb-optional">(optional)</span></div>
+        <input type="text" class="fb-input" id="fb-name" placeholder="Name">
+        <input type="text" class="fb-input" id="fb-company" placeholder="Company / MSP name">
+      </div>
+
+      <div class="fb-section">
+        <div class="fb-section-label">WHAT ACTIONS WOULD YOU WANT TO TAKE FROM HERE?</div>
+        <div class="fb-checks" id="fb-actions">
+          <label class="fb-check"><input type="checkbox" value="Generate a quote or proposal"> Generate a quote or proposal</label>
+          <label class="fb-check"><input type="checkbox" value="Build a slide deck for the customer"> Build a slide deck for the customer</label>
+          <label class="fb-check"><input type="checkbox" value="Create a one-page executive report"> Create a one-page executive report</label>
+          <label class="fb-check"><input type="checkbox" value="Schedule or log an appointment"> Schedule or log an appointment</label>
+          <label class="fb-check"><input type="checkbox" value="Drill down on a specific signal"> Drill down on a specific signal</label>
+          <label class="fb-check"><input type="checkbox" value="Add notes to the customer record"> Add notes to the customer record</label>
+          <label class="fb-check"><input type="checkbox" value="Email a summary to the account manager"> Email a summary to the account manager</label>
+          <label class="fb-check"><input type="checkbox" value="Export a tech roadmap PDF"> Export a tech roadmap PDF</label>
+          <label class="fb-check"><input type="checkbox" value="Compare this customer against similar accounts"> Compare this customer against similar accounts</label>
+          <label class="fb-check"><input type="checkbox" value="Set an alert or follow-up reminder"> Set an alert or follow-up reminder</label>
+        </div>
+      </div>
+
+      <div class="fb-section">
+        <div class="fb-section-label">WHAT DATA SOURCES MATTER MOST TO YOU?</div>
+        <div class="fb-checks" id="fb-sources">
+          <label class="fb-check"><input type="checkbox" value="NinjaRMM"> NinjaRMM</label>
+          <label class="fb-check"><input type="checkbox" value="ConnectWise Automate"> ConnectWise Automate</label>
+          <label class="fb-check"><input type="checkbox" value="Datto RMM"> Datto RMM</label>
+          <label class="fb-check"><input type="checkbox" value="ConnectWise PSA"> ConnectWise PSA</label>
+          <label class="fb-check"><input type="checkbox" value="Autotask PSA"> Autotask PSA</label>
+          <label class="fb-check"><input type="checkbox" value="HaloPSA"> HaloPSA</label>
+          <label class="fb-check"><input type="checkbox" value="Microsoft 365 / Entra ID"> Microsoft 365 / Entra ID</label>
+          <label class="fb-check"><input type="checkbox" value="CRM (HubSpot, Salesforce, etc.)"> CRM (HubSpot, Salesforce, etc.)</label>
+          <label class="fb-check"><input type="checkbox" value="Security platform (Huntress, SentinelOne, etc.)"> Security platform (Huntress, SentinelOne, etc.)</label>
+          <label class="fb-check"><input type="checkbox" value="Distributor pricing (Ingram, TD Synnex, etc.)"> Distributor pricing (Ingram, TD Synnex, etc.)</label>
+        </div>
+      </div>
+
+      <div class="fb-section">
+        <div class="fb-section-label">FREEFORM THOUGHTS</div>
+        <textarea class="fb-textarea" id="fb-freeform" placeholder="What would make this genuinely useful for your team? What's missing? What would you change?"></textarea>
+      </div>
+
+      <div class="fb-section">
+        <div class="fb-section-label">OVERALL REACTION</div>
+        <div class="fb-rating" id="fb-rating">
+          <button class="rating-btn" data-val="1" title="Not useful">&#128078;</button>
+          <button class="rating-btn" data-val="2" title="Somewhat useful">&#128077;</button>
+          <button class="rating-btn" data-val="3" title="Very useful">&#129321;</button>
+        </div>
+        <div class="rating-label" id="rating-label"></div>
+      </div>
+
+      <button class="fb-submit" id="fb-submit">Send Feedback</button>
+      <div class="fb-status" id="fb-status"></div>
+
+    </aside>
+
+  </div><!-- /.page-layout -->
 
   <script src="qbr-intel.js"></script>
 </body>
