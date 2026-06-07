@@ -22,6 +22,18 @@
 
 const TOOLS = [
   {
+    title: "Customer Growth Operating System",
+    shortLabel: "Growth OS",
+    description:
+      "The opportunity isn't the product — it's the change. Change creates conversations. Conversations create opportunities.",
+    category: "Proposal",
+    url: "https://widgetcreator.netlify.app/qbr-intel.html",
+    badge: "new",
+    updated: "2026-06-07",
+    gradient: "gold",
+    icon: "compass"
+  },
+  {
     title: "Proposal Evaluator",
     shortLabel: "Proposal Evaluator",
     description:
@@ -333,6 +345,7 @@ const GRADIENTS = {
   sunset:  "linear-gradient(135deg, #be185d 0%, #ec4899 40%, #fb923c 100%)",
   indigo:  "linear-gradient(135deg, #312e81 0%, #4f46e5 55%, #818cf8 100%)",
   violet:  "linear-gradient(135deg, #5b21b6 0%, #8b5cf6 55%, #c4b5fd 100%)",
+  gold:    "linear-gradient(135deg, #78350f 0%, #d97706 55%, #fbbf24 100%)",
   cyan:    "linear-gradient(135deg, #164e63 0%, #0891b2 55%, #67e8f9 100%)",
   forest:  "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #86efac 100%)",
   crimson: "linear-gradient(135deg, #7f1d1d 0%, #dc2626 55%, #f87171 100%)"
