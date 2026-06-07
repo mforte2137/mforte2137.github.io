@@ -348,3 +348,4 @@ closeAi.addEventListener('click', () => { aiOutput.style.display = 'none'; });
 
 /* ── Init ── */
 renderCustomer('abc');
+openFeedback();
