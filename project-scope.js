@@ -75,7 +75,7 @@ function applyCustomHex() {
 
 const LS_TEMPLATES  = 'sb_scope_templates_v1';
 const LS_API_KEY   = 'sb_api_key';
-const LS_INT_KEY   = 'sb_int_key';
+const LS_TENANT_URL = 'sb_tenant_url';
 const API_TEMPLATES = '/api/scope-templates';
 const API_AI        = '/api/scope-ai';
 const ROLES = ['PM', 'Senior Engineer', 'Engineer', 'Technician', 'Account Manager'];
@@ -1137,41 +1137,46 @@ const sbToggleBtn = document.getElementById('sbToggle');
 const sbArrow     = document.getElementById('sbArrow');
 const sbBody      = document.getElementById('sbBody');
 const sbApiKey    = document.getElementById('sbApiKey');
-const sbIntKey    = document.getElementById('sbIntKey');
 const sbRemember  = document.getElementById('sbRemember');
 const sbPushBtn   = document.getElementById('sbPushBtn');
 const sbResult    = document.getElementById('sbResult');
 const sbPrefix    = document.getElementById('sbPrefix');
 
 function initSbCredentials() {
-  const savedApi = localStorage.getItem(LS_API_KEY);
-  const savedInt = localStorage.getItem(LS_INT_KEY);
-  if (savedApi) sbApiKey.value = savedApi;
-  if (savedInt) sbIntKey.value = savedInt;
-  if (savedApi && savedInt) sbRemember.checked = true;
+  const savedApi    = localStorage.getItem(LS_API_KEY);
+  const savedTenant = localStorage.getItem(LS_TENANT_URL);
+  if (savedApi)    document.getElementById('sbApiKey').value    = savedApi;
+  if (savedTenant) document.getElementById('sbTenantUrl').value = savedTenant;
+  if (savedApi && savedTenant) document.getElementById('sbRemember').checked = true;
   updateSbBtn();
 }
-function updateSbBtn() { sbPushBtn.disabled = !(sbApiKey.value.trim() && sbIntKey.value.trim()); }
+function updateSbBtn() {
+  document.getElementById('sbPushBtn').disabled = !(
+    document.getElementById('sbApiKey').value.trim() &&
+    document.getElementById('sbTenantUrl').value.trim()
+  );
+}
 
 sbToggleBtn.addEventListener('click', () => {
   const open = !sbBody.hidden; sbBody.hidden = open;
   sbArrow.classList.toggle('open', !open);
 });
-sbApiKey.addEventListener('input', updateSbBtn);
-sbIntKey.addEventListener('input', updateSbBtn);
+document.getElementById('sbApiKey').addEventListener('input', updateSbBtn);
+document.getElementById('sbTenantUrl').addEventListener('input', updateSbBtn);
 
 sbPushBtn.addEventListener('click', async () => {
   const html = document.getElementById('htmlOut').textContent.trim();
   if (!html) { showToast('Generate the widget first'); document.getElementById('generateBtn').click(); return; }
-  const apiKey = sbApiKey.value.trim(); const intKey = sbIntKey.value.trim();
-  if (!apiKey || !intKey) return;
-  if (sbRemember.checked) { localStorage.setItem(LS_API_KEY, apiKey); localStorage.setItem(LS_INT_KEY, intKey); }
-  else { localStorage.removeItem(LS_API_KEY); localStorage.removeItem(LS_INT_KEY); }
+  const apiKey    = document.getElementById('sbApiKey').value.trim();
+  const tenantUrl = document.getElementById('sbTenantUrl').value.trim();
+  if (!apiKey || !tenantUrl) return;
+  if (sbRemember.checked) { localStorage.setItem(LS_API_KEY, apiKey); localStorage.setItem(LS_TENANT_URL, tenantUrl); }
+  else { localStorage.removeItem(LS_API_KEY); localStorage.removeItem(LS_TENANT_URL); }
   sbPushBtn.disabled = true; sbPushBtn.textContent = 'Saving…'; sbResult.hidden = true;
   const title  = (document.getElementById('projectTitle').value || 'Project Scope').trim();
   const prefix = sbPrefix.value.trim();
   try {
-    const res  = await fetch('/api/push-widgets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ widgets:[{ id:'project-scope', title, html }], prefix, apiKey, integrationKey:intKey }) });
+    const res  = await fetch('/api/push-widgets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ widgets:[{ id:'project-scope', title, html }], prefix, apiKey, tenantUrl }) });
     const data = await res.json();
     if (data.successCount > 0) {
       sbResult.textContent = `✓ Saved as "${prefix ? prefix + ' – ' : ''}${title}" in Salesbuildr.`;
