@@ -27,7 +27,7 @@ const TOOLS = [
     description:
       "The opportunity isn't the product — it's the change. Change creates conversations. Conversations create opportunities.",
     category: "Proposal",
-    url: "https://widgetcreator.netlify.app/qbr-intel.html",
+    url: "https://widgetcreator.netlify.app/cgos.html",
     badge: "new",
     updated: "2026-06-07",
     gradient: "gold",
