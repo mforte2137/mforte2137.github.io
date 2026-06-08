@@ -15,10 +15,6 @@
         <span class="app-title">Customer Growth Operating System</span>
       </div>
       <div class="header-right">
-        <nav class="view-nav">
-          <button class="nav-btn active" id="nav-briefing" data-view="briefing">Briefing</button>
-          <button class="nav-btn" id="nav-portfolio" data-view="portfolio">Portfolio</button>
-        </nav>
         <span class="demo-badge">DEMO — Seeded Data</span>
         <button class="feedback-toggle" id="feedback-toggle" aria-expanded="true">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -27,6 +23,18 @@
       </div>
     </div>
   </header>
+
+  <!-- Classic page tabs -->
+  <div class="view-tabs">
+    <button class="view-tab active" id="nav-briefing" data-view="briefing">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Customer Briefing
+    </button>
+    <button class="view-tab" id="nav-portfolio" data-view="portfolio">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Portfolio View
+    </button>
+  </div>
 
   <div class="page-layout">
 
@@ -68,14 +76,11 @@
           <span class="memory-meta" id="memory-meta">Last review: Nov 2025 &middot; 3 open items</span>
         </div>
         <div class="memory-bar-right" id="memory-toggle-btn">
-          <span class="memory-items-preview" id="memory-preview">
-            <span class="mem-item done">&#10003; Replace Server 2016</span>
-            <span class="mem-item warn">&#9651; MFA rollout (in progress)</span>
-            <span class="mem-item miss">&#10005; Security assessment</span>
-          </span>
+          <span class="memory-items-preview" id="memory-preview"></span>
           <svg class="memory-chevron" id="memory-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
       </div>
+      <div class="memory-expanded" id="memory-expanded"></div>
 
       <!-- Main two-col: signals + opportunities -->
       <div class="two-col">
@@ -166,7 +171,7 @@
       <div class="portfolio-header">
         <div>
           <div class="portfolio-title">Customer portfolio</div>
-          <div class="portfolio-sub" id="port-sub">12 accounts &middot; 4 need attention this week</div>
+          <div class="portfolio-sub" id="port-sub">3 accounts &middot; 1 needs attention this week</div>
         </div>
         <div class="port-filters">
           <button class="pill active" data-filter="all">All</button>
@@ -287,6 +292,11 @@
       <div class="modal-header">
         <div class="modal-title" id="modal-title">Signal detail</div>
         <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <!-- Modal tabs (shown when modal has tabs) -->
+      <div class="modal-tabs" id="modal-tabs" style="display:none;">
+        <button class="modal-tab active" data-tab="0">Tab 1</button>
+        <button class="modal-tab" data-tab="1">Tab 2</button>
       </div>
       <div class="modal-body" id="modal-body"></div>
       <div class="modal-footer" id="modal-footer"></div>
