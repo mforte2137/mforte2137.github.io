@@ -12,7 +12,7 @@
 'use strict';
 
 const LS_API_KEY = 'sb_api_key';
-const LS_INT_KEY = 'sb_int_key';
+const LS_TENANT_URL = 'sb_tenant_url';
 
 // ── Salesbuildr Special Bid field definitions ─────────────
 // Order matches the template column order exactly.
@@ -542,9 +542,9 @@ function runConversion() {
   document.getElementById('step-export').scrollIntoView({ behavior:'smooth', block:'start' });
 
   // Auto-open connect panel and load categories if credentials are already saved
-  const savedApi = localStorage.getItem(LS_API_KEY);
-  const savedInt = localStorage.getItem(LS_INT_KEY);
-  if (savedApi && savedInt) {
+  const savedApi    = localStorage.getItem(LS_API_KEY);
+  const savedTenant = localStorage.getItem(LS_TENANT_URL);
+  if (savedApi && savedTenant) {
     document.getElementById('sbBody').hidden = false;
     document.getElementById('sbArrow').classList.add('open');
     fetchCategories();
@@ -617,13 +617,13 @@ function fallbackCopy(text, cb) {
 
 // ── Salesbuildr Connect & Push ────────────────────────────
 function initSalesbuildrConnect() {
-  const savedApi = localStorage.getItem(LS_API_KEY);
-  const savedInt = localStorage.getItem(LS_INT_KEY);
-  const apiInput = document.getElementById('sbApiKey');
-  const intInput = document.getElementById('sbIntKey');
-  if (savedApi) apiInput.value = savedApi;
-  if (savedInt) intInput.value = savedInt;
-  if (savedApi && savedInt) document.getElementById('sbRemember').checked = true;
+  const savedApi    = localStorage.getItem(LS_API_KEY);
+  const savedTenant = localStorage.getItem(LS_TENANT_URL);
+  const apiInput    = document.getElementById('sbApiKey');
+  const tenantInput = document.getElementById('sbTenantUrl');
+  if (savedApi)    apiInput.value    = savedApi;
+  if (savedTenant) tenantInput.value = savedTenant;
+  if (savedApi && savedTenant) document.getElementById('sbRemember').checked = true;
 
   document.getElementById('sbToggle').addEventListener('click', () => {
     const body  = document.getElementById('sbBody');
@@ -631,30 +631,30 @@ function initSalesbuildrConnect() {
     const isOpen = !body.hidden;
     body.hidden = isOpen;
     arrow.classList.toggle('open', !isOpen);
-    if (!isOpen && apiInput.value.trim() && intInput.value.trim()) {
+    if (!isOpen && apiInput.value.trim() && tenantInput.value.trim()) {
       fetchCategories();
     }
   });
 
   document.getElementById('fetchCatsBtn').addEventListener('click', fetchCategories);
   document.getElementById('sbApiKey').addEventListener('input', updatePushBtn);
-  document.getElementById('sbIntKey').addEventListener('input', updatePushBtn);
+  document.getElementById('sbTenantUrl').addEventListener('input', updatePushBtn);
   document.getElementById('categorySelect').addEventListener('change', updatePushBtn);
   document.getElementById('pushBtn').addEventListener('click', pushToSalesbuildr);
 }
 
 function updatePushBtn() {
-  const apiKey = document.getElementById('sbApiKey').value.trim();
-  const intKey = document.getElementById('sbIntKey').value.trim();
-  const catId  = document.getElementById('categorySelect').value;
-  const btn    = document.getElementById('pushBtn');
-  btn.disabled = !(apiKey && intKey && catId && convertedData.length > 0);
+  const apiKey    = document.getElementById('sbApiKey').value.trim();
+  const tenantUrl = document.getElementById('sbTenantUrl').value.trim();
+  const catId     = document.getElementById('categorySelect').value;
+  const btn       = document.getElementById('pushBtn');
+  btn.disabled = !(apiKey && tenantUrl && catId && convertedData.length > 0);
 }
 
 async function fetchCategories() {
-  const apiKey = document.getElementById('sbApiKey').value.trim();
-  const intKey = document.getElementById('sbIntKey').value.trim();
-  if (!apiKey || !intKey) return;
+  const apiKey    = document.getElementById('sbApiKey').value.trim();
+  const tenantUrl = document.getElementById('sbTenantUrl').value.trim();
+  if (!apiKey || !tenantUrl) return;
 
   const status = document.getElementById('categoryStatus');
   const sel    = document.getElementById('categorySelect');
@@ -669,7 +669,7 @@ async function fetchCategories() {
     const res  = await fetch('/api/bid-push', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action:'categories', apiKey, integrationKey:intKey })
+      body:    JSON.stringify({ action:'categories', apiKey, tenantUrl })
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Could not fetch categories');
@@ -693,8 +693,8 @@ async function fetchCategories() {
 }
 
 async function pushToSalesbuildr() {
-  const apiKey  = document.getElementById('sbApiKey').value.trim();
-  const intKey  = document.getElementById('sbIntKey').value.trim();
+  const apiKey    = document.getElementById('sbApiKey').value.trim();
+  const tenantUrl = document.getElementById('sbTenantUrl').value.trim();
   const catId   = document.getElementById('categorySelect').value;
   const enrich  = document.getElementById('enrichToggle').checked;
   const btn     = document.getElementById('pushBtn');
@@ -703,14 +703,14 @@ async function pushToSalesbuildr() {
   const pText   = document.getElementById('progressText');
   const result  = document.getElementById('pushResult');
 
-  if (!apiKey || !intKey || !catId) return;
+  if (!apiKey || !tenantUrl || !catId) return;
 
   if (document.getElementById('sbRemember').checked) {
     localStorage.setItem(LS_API_KEY, apiKey);
-    localStorage.setItem(LS_INT_KEY, intKey);
+    localStorage.setItem(LS_TENANT_URL, tenantUrl);
   } else {
     localStorage.removeItem(LS_API_KEY);
-    localStorage.removeItem(LS_INT_KEY);
+    localStorage.removeItem(LS_TENANT_URL);
   }
 
   btn.disabled    = true;
@@ -733,7 +733,7 @@ async function pushToSalesbuildr() {
       const res  = await fetch('/api/bid-push', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ action:'push', rows:batches[b], categoryId:catId, apiKey, integrationKey:intKey, enrich })
+        body:    JSON.stringify({ action:'push', rows:batches[b], categoryId:catId, apiKey, tenantUrl, enrich })
       });
       const data = await res.json();
       if (data.ok) {
