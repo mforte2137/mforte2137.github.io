@@ -12,7 +12,7 @@
 // at 100 products per call stays well inside the 10s timeout).
 // =========================================================
 
-const SB_BASE = 'https://portal.us1-salesbuildr.com/public-api';
+
 
 // Maps Special Bid CSV field names → Salesbuildr API field names
 function toApiProduct(row, categoryId) {
@@ -62,12 +62,13 @@ exports.handler = async (event) => {
   try { body = JSON.parse(event.body); }
   catch (e) { return { statusCode: 400, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'Invalid JSON.' }) }; }
 
-  const { action, apiKey, integrationKey } = body;
-  if (!apiKey || !integrationKey) {
+  const { action, apiKey, tenantUrl } = body;
+  if (!apiKey || !tenantUrl) {
     return { statusCode: 401, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'Salesbuildr credentials required.' }) };
   }
 
-  const sbHeaders = { 'Content-Type': 'application/json', 'api-key': apiKey, 'integration-key': integrationKey };
+  const SB_BASE   = tenantUrl.replace(/\/+$/, '') + '/public-api';
+  const sbHeaders = { 'Content-Type': 'application/json', 'api-key': apiKey };
   const ok200 = (data) => ({ statusCode: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: true, ...data }) });
   const err   = (msg, code = 500) => ({ statusCode: code, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: msg }) });
 
