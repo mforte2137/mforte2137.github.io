@@ -14,7 +14,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 const LS_API_KEY = 'sb_api_key';
 let   contentAbortCtrl = null;  // AbortController for in-flight content review
-const LS_INT_KEY = 'sb_int_key';
+const LS_TENANT_URL = 'sb_tenant_url';
 
 // ── DOM handles ───────────────────────────────────────────
 const setupView     = document.getElementById('setup-view');
@@ -26,7 +26,7 @@ const connectToggle = document.getElementById('connect-toggle');
 const connectArrow  = document.getElementById('connect-arrow');
 const connectBody   = document.getElementById('connect-body');
 const apiKeyInput   = document.getElementById('api-key');
-const intKeyInput   = document.getElementById('int-key');
+const tenantUrlInput = document.getElementById('tenant-url');
 const rememberKeys  = document.getElementById('remember-keys');
 const quoteIdInput  = document.getElementById('quote-id');
 const runBtn        = document.getElementById('run-btn');
@@ -52,11 +52,11 @@ function hideError()     { errorBanner.hidden = true; }
 
 // ── Connect section ───────────────────────────────────────
 function initCredentials() {
-  const savedApi = localStorage.getItem(LS_API_KEY);
-  const savedInt = localStorage.getItem(LS_INT_KEY);
-  if (savedApi) apiKeyInput.value = savedApi;
-  if (savedInt) intKeyInput.value = savedInt;
-  if (savedApi && savedInt) { rememberKeys.checked = true; connectBody.hidden = false; connectArrow.classList.add('is-open'); }
+  const savedApi    = localStorage.getItem(LS_API_KEY);
+  const savedTenant = localStorage.getItem(LS_TENANT_URL);
+  if (savedApi)    apiKeyInput.value    = savedApi;
+  if (savedTenant) tenantUrlInput.value = savedTenant;
+  if (savedApi && savedTenant) { rememberKeys.checked = true; connectBody.hidden = false; connectArrow.classList.add('is-open'); }
 }
 
 connectToggle.addEventListener('click', () => {
@@ -84,14 +84,14 @@ quoteIdInput.addEventListener('keydown', e => { if (e.key === 'Enter') runBtn.cl
 async function runCheck(overrideId) {
   hideError();
 
-  const apiKey = apiKeyInput.value.trim();
-  const intKey = intKeyInput.value.trim();
+  const apiKey    = apiKeyInput.value.trim();
+  const tenantUrl = tenantUrlInput.value.trim();
 
-  if (!apiKey || !intKey) {
+  if (!apiKey || !tenantUrl) {
     // Expand connect section if credentials missing
     connectBody.hidden = false;
     connectArrow.classList.add('is-open');
-    apiKeyInput.focus();
+    tenantUrlInput.focus();
     showError('Please enter your Salesbuildr API credentials first.');
     return;
   }
@@ -109,10 +109,10 @@ async function runCheck(overrideId) {
   // Save credentials if Remember checked
   if (rememberKeys.checked) {
     localStorage.setItem(LS_API_KEY, apiKey);
-    localStorage.setItem(LS_INT_KEY, intKey);
+    localStorage.setItem(LS_TENANT_URL, tenantUrl);
   } else {
     localStorage.removeItem(LS_API_KEY);
-    localStorage.removeItem(LS_INT_KEY);
+    localStorage.removeItem(LS_TENANT_URL);
   }
 
   runBtn.disabled = true;
@@ -124,7 +124,7 @@ async function runCheck(overrideId) {
     const res = await fetch('/api/preflight-check', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action: 'structural', quoteId, apiKey, integrationKey: intKey })
+      body:    JSON.stringify({ action: 'structural', quoteId, apiKey, tenantUrl })
     });
 
     let data;
@@ -318,14 +318,14 @@ async function handlePdf(file) {
     }
 
     // Send to content review (cancellable via AbortController)
-    const apiKey = apiKeyInput.value.trim();
-    const intKey = intKeyInput.value.trim();
+    const apiKey    = apiKeyInput.value.trim();
+    const tenantUrl = tenantUrlInput.value.trim();
 
     contentAbortCtrl = new AbortController();
     const res = await fetch('/api/preflight-check', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action: 'content', quoteId: lastQuoteId, apiKey, integrationKey: intKey, quoteText: normalized }),
+      body:    JSON.stringify({ action: 'content', quoteId: lastQuoteId, apiKey, tenantUrl, quoteText: normalized }),
       signal:  contentAbortCtrl.signal
     });
 
