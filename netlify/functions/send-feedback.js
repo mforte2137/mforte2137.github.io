@@ -23,7 +23,7 @@ exports.handler = async (event) => {
   const freeformText = freeform || '(no comment)';
   const ratingText   = rating   || '(not rated)';
 
-  const emailText = `QBR Intelligence — Beta Feedback
+  const emailText = `Customer Growth Operating System — Beta Feedback
 ================================
 From:     ${from}
 Customer viewed: ${viewedCustomer}
@@ -45,7 +45,7 @@ ${freeformText}
   const htmlEmail = `
 <div style="font-family: 'Courier New', monospace; font-size: 13px; color: #1a1917; max-width: 600px; margin: 0 auto;">
   <div style="background: #1a1917; color: #f5f2eb; padding: 16px 20px; margin-bottom: 24px;">
-    <strong>QBR Intelligence — Beta Feedback</strong>
+    <strong>Customer Growth Operating System — Beta Feedback</strong>
   </div>
 
   <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
@@ -81,9 +81,9 @@ ${freeformText}
         'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
       },
       body: JSON.stringify({
-        from: 'QBR Intel Feedback <onboarding@resend.dev>',
+        from: 'CGOS Feedback <onboarding@resend.dev>',
         to:   ['mike@salesbuildr.com'],
-        subject: `QBR Demo Feedback — ${from}`,
+        subject: `CGOS Beta Feedback — ${from}`,
         text: emailText,
         html: htmlEmail
       })
