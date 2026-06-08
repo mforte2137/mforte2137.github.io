@@ -8,7 +8,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 //  State
 // ─────────────────────────────────────────────────────────────────
 const LS_API_KEY  = 'sb_api_key';
-const LS_INT_KEY  = 'sb_int_key';
+const LS_TENANT_URL = 'sb_tenant_url';
 
 let rawHtml      = '';   // unstyled HTML from converter
 let accentColor  = '#0d2d5e';
@@ -545,7 +545,7 @@ const sbToggle   = document.getElementById('sb-toggle');
 const sbArrow    = document.getElementById('sb-arrow');
 const sbBody     = document.getElementById('sb-body');
 const sbApiKey   = document.getElementById('sb-api-key');
-const sbIntKey   = document.getElementById('sb-int-key');
+const sbTenantUrl = document.getElementById('sb-tenant-url');
 const sbRemember = document.getElementById('sb-remember');
 const sbPushBtn  = document.getElementById('sb-push-btn');
 const sbResult   = document.getElementById('sb-result');
@@ -557,23 +557,23 @@ sbToggle.addEventListener('click', () => {
 });
 
 function updatePushBtn() {
-  sbPushBtn.disabled = !(sbApiKey.value.trim() && sbIntKey.value.trim());
+  sbPushBtn.disabled = !(sbApiKey.value.trim() && sbTenantUrl.value.trim());
 }
 
 sbApiKey.addEventListener('input', updatePushBtn);
-sbIntKey.addEventListener('input', updatePushBtn);
+sbTenantUrl.addEventListener('input', updatePushBtn);
 
 sbPushBtn.addEventListener('click', async () => {
-  const apiKey = sbApiKey.value.trim();
-  const intKey = sbIntKey.value.trim();
-  if (!apiKey || !intKey) return;
+  const apiKey    = sbApiKey.value.trim();
+  const tenantUrl = sbTenantUrl.value.trim();
+  if (!apiKey || !tenantUrl) return;
 
   if (sbRemember.checked) {
     localStorage.setItem(LS_API_KEY, apiKey);
-    localStorage.setItem(LS_INT_KEY, intKey);
+    localStorage.setItem(LS_TENANT_URL, tenantUrl);
   } else {
     localStorage.removeItem(LS_API_KEY);
-    localStorage.removeItem(LS_INT_KEY);
+    localStorage.removeItem(LS_TENANT_URL);
   }
 
   const title = (document.getElementById('sb-widget-title').value.trim()) || 'Converted Document';
@@ -592,7 +592,7 @@ sbPushBtn.addEventListener('click', async () => {
         widgets: [{ id: 'doc-' + Date.now(), title, html }],
         prefix: '',
         apiKey,
-        integrationKey: intKey
+        tenantUrl
       })
     });
 
@@ -623,8 +623,8 @@ sbPushBtn.addEventListener('click', async () => {
 // ─────────────────────────────────────────────────────────────────
 (function init() {
   const a = localStorage.getItem(LS_API_KEY);
-  const i = localStorage.getItem(LS_INT_KEY);
-  if (a) sbApiKey.value = a;
-  if (i) sbIntKey.value = i;
-  if (a && i) { sbRemember.checked = true; updatePushBtn(); }
+  const t = localStorage.getItem(LS_TENANT_URL);
+  if (a) sbApiKey.value    = a;
+  if (t) sbTenantUrl.value = t;
+  if (a && t) { sbRemember.checked = true; updatePushBtn(); }
 })();
