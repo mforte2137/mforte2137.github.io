@@ -2,7 +2,7 @@
 // preflight-check.js — Netlify function
 // Path: /api/preflight-check
 //
-// Accepts POST { action, quoteId, apiKey, integrationKey, quoteText }
+// Accepts POST { action, quoteId, apiKey, tenantUrl, quoteText }
 //
 // action: 'structural' — fetches quote + runs logic checks (no Claude, instant)
 // action: 'content'   — sends quote data + extracted text to Claude for deep review
@@ -11,7 +11,6 @@
 // Content review uses Claude Sonnet for language analysis.
 // =========================================================
 
-const SB_BASE      = 'https://portal.us1-salesbuildr.com/public-api';
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 
 // ── Structural check — pure logic, no AI ─────────────────
@@ -201,16 +200,17 @@ exports.handler = async (event) => {
   try { body = JSON.parse(event.body); }
   catch (e) { return { statusCode: 400, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'Invalid JSON.' }) }; }
 
-  const { action, quoteId, apiKey, integrationKey, quoteText } = body;
+  const { action, quoteId, apiKey, tenantUrl, quoteText } = body;
 
-  if (!apiKey || !integrationKey) {
+  if (!apiKey || !tenantUrl) {
     return { statusCode: 401, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'Salesbuildr API credentials required.' }) };
   }
   if (!quoteId) {
     return { statusCode: 400, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'Quote ID required.' }) };
   }
 
-  const sbHeaders = { 'Content-Type': 'application/json', 'api-key': apiKey, 'integration-key': integrationKey };
+  const SB_BASE  = `${tenantUrl.replace(/\/$/, '')}/public-api`;
+  const sbHeaders = { 'Content-Type': 'application/json', 'api-key': apiKey };
 
   // ── ACTION: structural ────────────────────────────────────
   if (action === 'structural') {
