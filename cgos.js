@@ -12,7 +12,14 @@ const chipAm         = document.getElementById('chip-am');
 const signalsList    = document.getElementById('signals-list');
 const signalCount    = document.getElementById('signal-count');
 const recsList       = document.getElementById('recs-list');
-const oppTotal       = document.getElementById('opp-total');
+let oppTotal_val     = '$21,950 pipeline'; // updated per customer
+const alignmentList  = document.getElementById('alignment-list');
+const alignmentOverall = document.getElementById('alignment-overall');
+const alignmentRec   = document.getElementById('alignment-rec');
+const oppBar         = document.getElementById('opp-bar');
+const oppChevron     = document.getElementById('opp-chevron');
+const oppExpanded    = document.getElementById('opp-expanded');
+const oppBarMeta     = document.getElementById('opp-bar-meta');
 const suggestTitle   = document.getElementById('suggest-title');
 const suggestDesc    = document.getElementById('suggest-desc');
 const confBar        = document.getElementById('conf-bar');
@@ -56,6 +63,7 @@ const srcKeyMap      = { 'PSA': 'psa', 'RMM': 'rmm', 'Salesbuildr': 'sb' };
 let selectedRating   = null;
 let memoryOpen       = false;
 let activeFilter     = 'all';
+let oppOpen          = false;
 let currentModalTabs = null;
 
 const ratingLabels = { 1: 'Not useful', 2: 'Somewhat useful', 3: "Very useful — I'd use this" };
@@ -104,6 +112,16 @@ const CUSTOMERS = {
       { title: 'User growth — licensing review',   sub: '18% user growth, 7 users potentially unlicensed. Review seat counts.',     val: 'Review M365 seats' }
     ],
     oppTotal: '$21,950 pipeline',
+    alignment: {
+      overall: 86,
+      items: [
+        { label: 'Agreement vs Licensing',      score: 94, cls: 'good' },
+        { label: 'Agreement vs Managed Devices', score: 82, cls: 'warn' },
+        { label: 'Security Coverage',            score: 71, cls: 'danger' },
+        { label: 'Billing Reconciliation',       score: 97, cls: 'good' }
+      ],
+      rec: { title: 'Review Licensing & Device Alignment', val: '$4,200 annually', cls: 'warn' }
+    },
     suggestTitle: 'Schedule strategic review — 5 signals require discussion',
     suggest: 'Lead with the device refresh timeline — it has the longest planning horizon and highest revenue potential. Then address labour over-utilisation to reset scope expectations. The user count and backup topics reinforce why a scope review is overdue. Close with the security assessment as a risk-based conversation.',
     confidence: 92
@@ -132,6 +150,16 @@ const CUSTOMERS = {
       { title: 'SSL certificate renewal', sub: '45 days is within action window. Confirm renewal process with client.',          val: 'Low urgency — confirm' }
     ],
     oppTotal: '$17,500 pipeline',
+    alignment: {
+      overall: 74,
+      items: [
+        { label: 'Agreement vs Licensing',       score: 88, cls: 'warn' },
+        { label: 'Agreement vs Managed Devices', score: 65, cls: 'danger' },
+        { label: 'Security Coverage',            score: 61, cls: 'danger' },
+        { label: 'Billing Reconciliation',       score: 91, cls: 'good' }
+      ],
+      rec: { title: 'Managed Device & Security Scope Review', val: '$6,800 annually', cls: 'danger' }
+    },
     suggestTitle: 'Schedule server review — infrastructure and backup risk are both active',
     suggest: 'Open with the server warranty conversation — it carries the most risk and the highest revenue opportunity. The backup failure rate reinforces the DR narrative and should be the second agenda item. Use the user and device audit finding to demonstrate proactive management.',
     confidence: 87
@@ -157,6 +185,16 @@ const CUSTOMERS = {
       { title: 'Strategic growth planning', sub: 'Strong health score — ideal time to discuss technology roadmap.',            val: 'Retention & upsell' }
     ],
     oppTotal: '$4,000 pipeline',
+    alignment: {
+      overall: 96,
+      items: [
+        { label: 'Agreement vs Licensing',       score: 98, cls: 'good' },
+        { label: 'Agreement vs Managed Devices', score: 95, cls: 'good' },
+        { label: 'Security Coverage',            score: 94, cls: 'good' },
+        { label: 'Billing Reconciliation',       score: 99, cls: 'good' }
+      ],
+      rec: { title: 'Strong alignment across all areas', val: 'No immediate action required', cls: 'good' }
+    },
     suggestTitle: 'Relationship & planning conversation — strong health, one upcoming milestone',
     suggest: 'This is a relationship maintenance and growth conversation. Lead with appreciation for the strong health metrics, then move to compliance audit preparation. Use the positive momentum to open a technology roadmap discussion — this client is well positioned to invest.',
     confidence: 88
@@ -516,6 +554,39 @@ modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) clo
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
 /* ══════════════════════════════════════════
+   RENDER ALIGNMENT
+   ══════════════════════════════════════════ */
+function renderAlignment(c) {
+  const a = c.alignment;
+  const overallCls = a.overall >= 90 ? 'good' : a.overall >= 75 ? 'warn' : 'danger';
+  alignmentOverall.textContent = `Overall ${a.overall}%`;
+  alignmentOverall.style.color = overallCls === 'good' ? 'var(--good)' : overallCls === 'warn' ? 'var(--warn)' : 'var(--danger)';
+
+  alignmentList.innerHTML = a.items.map(item => `
+    <div class="align-row">
+      <div class="align-indicator ${item.cls}"></div>
+      <div class="align-label">${item.label}</div>
+      <div class="align-bar-wrap">
+        <div class="align-bar-bg"><div class="align-bar-fill ${item.cls}" style="width:${item.score}%"></div></div>
+      </div>
+      <div class="align-score ${item.cls}">${item.score}%</div>
+    </div>
+  `).join('');
+
+  const rec = a.rec;
+  alignmentRec.className = `alignment-rec${rec.cls === 'good' ? ' all-good' : ''}`;
+  alignmentRec.innerHTML = `
+    <div class="alignment-rec-label">RECOMMENDED CONVERSATION</div>
+    <div class="alignment-rec-title">${rec.title}</div>
+    <div class="alignment-rec-val">${rec.val}</div>`;
+}
+
+function renderOppBar(c) {
+  const count = c.recs.length;
+  oppBarMeta.innerHTML = `${count} opportunit${count !== 1 ? 'ies' : 'y'} &middot; ${c.oppTotal}`;
+}
+
+/* ══════════════════════════════════════════
    RENDER CUSTOMER
    ══════════════════════════════════════════ */
 function healthClass(score) {
@@ -572,7 +643,12 @@ function renderCustomer(key) {
     </div>
   `).join('');
 
-  oppTotal.textContent     = c.oppTotal;
+  oppTotal_val             = c.oppTotal;
+  renderAlignment(c);
+  renderOppBar(c);
+  oppOpen = false;
+  oppChevron.classList.remove('open');
+  oppExpanded.classList.remove('open');
   suggestTitle.textContent = c.suggestTitle;
   suggestDesc.textContent  = c.suggest;
   confBar.style.width      = c.confidence + '%';
@@ -677,6 +753,15 @@ function toggleMemory() {
   }
 }
 memoryBar.addEventListener('click', toggleMemory);
+
+/* ── Opportunities bar toggle ── */
+oppBar.addEventListener('click', () => {
+  oppOpen = !oppOpen;
+  oppChevron.classList.toggle('open', oppOpen);
+  oppExpanded.classList.toggle('open', oppOpen);
+});
+
+
 
 /* ══════════════════════════════════════════
    AI FUNCTIONS
