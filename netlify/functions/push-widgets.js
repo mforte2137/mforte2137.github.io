@@ -140,6 +140,7 @@ exports.handler = async (event) => {
       });
 
       const data = await res.json();
+      console.log('[push-widgets] SB response', res.status, JSON.stringify(data));
       results.push(res.ok
         ? { id: widget.id, name, ok: true,  salesbuildrId: data.id }
         : { id: widget.id, name, ok: false, error: data.message || `HTTP ${res.status}` }
