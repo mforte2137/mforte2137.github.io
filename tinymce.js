@@ -348,6 +348,35 @@ function updateCombinedOutput() {
 }
 
 // ─────────────────────────────────────────────────────────────────
+//  Legal document detection
+// ─────────────────────────────────────────────────────────────────
+const LEGAL_KEYWORDS = [
+  'agreement','terms','conditions','contract','sla','policy',
+  'schedule','liability','clause','warranty','indemnity','gdpr',
+  'privacy','compliance','obligation','confidential','intellectual property',
+  'governing law','jurisdiction','termination','renewal','addendum','annex'
+];
+
+function detectLegalDocument(fileName, html) {
+  const haystack = (fileName + ' ' + html.replace(/<[^>]+>/g, ' ')).toLowerCase();
+  return LEGAL_KEYWORDS.some(kw => haystack.includes(kw));
+}
+
+function addLegalNote(notes, ext) {
+  if (ext === 'pdf') {
+    notes.push({
+      type: 'warning',
+      text: '⚖ <strong>Legal or contractual content detected.</strong> PDF conversion uses text extraction which may affect line breaks, indentation, and table formatting. <strong>Please compare the preview carefully against your original document</strong> before pushing to Salesbuildr — do not push if any wording or clause structure appears incorrect.'
+    });
+  } else {
+    notes.push({
+      type: 'info',
+      text: '⚖ <strong>Legal or contractual content detected.</strong> Text and formatting have been preserved verbatim from your Word document. Please review the preview — particularly tables, numbered clauses, and indented sections — before pushing to Salesbuildr.'
+    });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
 //  Main entry point
 // ─────────────────────────────────────────────────────────────────
 async function handleFile(file) {
@@ -370,6 +399,8 @@ async function handleFile(file) {
 
     rawHtml    = html;
     widgetList = splitIntoWidgets(html, ext, file.name);
+
+    if (detectLegalDocument(file.name, html)) addLegalNote(notes, ext);
 
     showResults(file.name, ext, notes);
 
