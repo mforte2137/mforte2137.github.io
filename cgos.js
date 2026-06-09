@@ -115,10 +115,10 @@ const CUSTOMERS = {
     alignment: {
       overall: 86,
       items: [
-        { label: 'Agreement vs Licensing',      score: 94, cls: 'good' },
-        { label: 'Agreement vs Managed Devices', score: 82, cls: 'warn' },
-        { label: 'Security Coverage',            score: 71, cls: 'danger' },
-        { label: 'Billing Reconciliation',       score: 97, cls: 'good' }
+        { label: 'Agreement vs Licensing',       score: 94, cls: 'good',   modal: 'align_licensing_abc' },
+        { label: 'Agreement vs Managed Devices', score: 82, cls: 'warn',   modal: 'align_devices_abc'   },
+        { label: 'Security Coverage',            score: 71, cls: 'danger', modal: 'align_security_abc'  },
+        { label: 'Billing Reconciliation',       score: 97, cls: 'good',   modal: 'align_billing_abc'   }
       ],
       rec: { title: 'Review Licensing & Device Alignment', val: '$4,200 annually', cls: 'warn' }
     },
@@ -153,10 +153,10 @@ const CUSTOMERS = {
     alignment: {
       overall: 74,
       items: [
-        { label: 'Agreement vs Licensing',       score: 88, cls: 'warn' },
-        { label: 'Agreement vs Managed Devices', score: 65, cls: 'danger' },
-        { label: 'Security Coverage',            score: 61, cls: 'danger' },
-        { label: 'Billing Reconciliation',       score: 91, cls: 'good' }
+        { label: 'Agreement vs Licensing',       score: 88, cls: 'warn',   modal: 'align_licensing_river' },
+        { label: 'Agreement vs Managed Devices', score: 65, cls: 'danger', modal: 'align_devices_river'   },
+        { label: 'Security Coverage',            score: 61, cls: 'danger', modal: 'align_security_river'  },
+        { label: 'Billing Reconciliation',       score: 91, cls: 'good',   modal: 'align_billing_river'   }
       ],
       rec: { title: 'Managed Device & Security Scope Review', val: '$6,800 annually', cls: 'danger' }
     },
@@ -188,10 +188,10 @@ const CUSTOMERS = {
     alignment: {
       overall: 96,
       items: [
-        { label: 'Agreement vs Licensing',       score: 98, cls: 'good' },
-        { label: 'Agreement vs Managed Devices', score: 95, cls: 'good' },
-        { label: 'Security Coverage',            score: 94, cls: 'good' },
-        { label: 'Billing Reconciliation',       score: 99, cls: 'good' }
+        { label: 'Agreement vs Licensing',       score: 98, cls: 'good', modal: 'align_licensing_peak' },
+        { label: 'Agreement vs Managed Devices', score: 95, cls: 'good', modal: 'align_devices_peak'   },
+        { label: 'Security Coverage',            score: 94, cls: 'good', modal: 'align_security_peak'  },
+        { label: 'Billing Reconciliation',       score: 99, cls: 'good', modal: 'align_billing_peak'   }
       ],
       rec: { title: 'Strong alignment across all areas', val: 'No immediate action required', cls: 'good' }
     },
@@ -504,7 +504,254 @@ const MODALS = {
         <div class="modal-stat">Service delivery is strong. Use this as an opening talking point — it reinforces the value of the managed service and builds goodwill before strategic topics.</div>`
     }],
     footer: []
-  }
+  },
+
+  /* ── Alignment modals ── */
+
+  align_licensing_abc: {
+    title: 'Agreement vs Licensing — ABC Manufacturing',
+    tabs: [{
+      label: 'Licensing breakdown',
+      html: `
+        <div style="font-size:11px;color:var(--text-2);font-family:'Courier New',monospace;margin-bottom:10px;">Contracted seats vs actual M365 assignments — 3 unlicensed users detected</div>
+        <table class="modal-table">
+          <thead><tr><th>License type</th><th>Contracted</th><th>In use</th><th>Variance</th></tr></thead>
+          <tbody>
+            <tr><td>M365 Business Standard</td><td>40</td><td style="color:var(--danger);">47</td><td><span class="eol-badge eol-critical">-7 seats</span></td></tr>
+            <tr><td>M365 Business Basic</td><td>5</td><td>3</td><td><span class="eol-badge eol-ok">+2 spare</span></td></tr>
+            <tr><td>Intune Device Mgmt</td><td>45</td><td>47</td><td><span class="eol-badge eol-soon">-2 seats</span></td></tr>
+          </tbody>
+        </table>
+        <div class="modal-stat">7 users are operating on M365 Business Standard without a contracted seat. At $22/user/mo this represents <strong>$1,848/yr in unbilled licensing</strong>. Agreement needs updating to reflect current headcount.</div>`
+    }],
+    footer: [{ label: 'Update agreement in Salesbuildr', primary: true }, { label: 'Create licensing review opportunity' }]
+  },
+
+  align_devices_abc: {
+    title: 'Agreement vs Managed Devices — ABC Manufacturing',
+    tabs: [{
+      label: 'Device scope',
+      html: `
+        <div style="font-size:11px;color:var(--text-2);font-family:'Courier New',monospace;margin-bottom:10px;">2 devices managed outside contracted scope</div>
+        <table class="modal-table">
+          <thead><tr><th>Category</th><th>Contracted</th><th>Actual managed</th><th>Variance</th></tr></thead>
+          <tbody>
+            <tr><td>Workstations</td><td>40</td><td>42</td><td><span class="eol-badge eol-soon">+2</span></td></tr>
+            <tr><td>Laptops</td><td>5</td><td>5</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+            <tr><td>Servers</td><td>2</td><td>2</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+          </tbody>
+        </table>
+        <div class="modal-stat">2 workstations are being managed outside the contracted scope — likely added during the recent user growth period. At $45/device/mo this is <strong>$1,080/yr in unrecovered revenue</strong>.</div>`
+    }],
+    footer: [{ label: 'Update agreement scope', primary: true }, { label: 'Create scope adjustment opportunity' }]
+  },
+
+  align_security_abc: {
+    title: 'Security Coverage — ABC Manufacturing',
+    tabs: [{
+      label: 'Coverage assessment',
+      html: `
+        <div style="font-size:11px;color:var(--text-2);font-family:'Courier New',monospace;margin-bottom:10px;">3 of 7 recommended security layers are missing or partially deployed</div>
+        <table class="modal-table">
+          <thead><tr><th>Security layer</th><th>Status</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Endpoint Detection & Response</td><td><span class="eol-badge eol-ok">Deployed</span></td><td style="color:var(--text-2);font-size:11px;">All 47 endpoints</td></tr>
+            <tr><td>Multi-Factor Authentication</td><td><span class="eol-badge eol-soon">Partial</span></td><td style="color:var(--text-2);font-size:11px;">31 of 47 users enrolled</td></tr>
+            <tr><td>DNS Filtering</td><td><span class="eol-badge eol-ok">Deployed</span></td><td style="color:var(--text-2);font-size:11px;">All endpoints</td></tr>
+            <tr><td>Email Security (DMARC/DKIM)</td><td><span class="eol-badge eol-ok">Deployed</span></td><td style="color:var(--text-2);font-size:11px;">Configured</td></tr>
+            <tr><td>Security Awareness Training</td><td><span class="eol-badge eol-critical">Not deployed</span></td><td style="color:var(--text-2);font-size:11px;">Not in agreement</td></tr>
+            <tr><td>Privileged Access Management</td><td><span class="eol-badge eol-critical">Not deployed</span></td><td style="color:var(--text-2);font-size:11px;">Not in agreement</td></tr>
+            <tr><td>Dark Web Monitoring</td><td><span class="eol-badge eol-critical">Not deployed</span></td><td style="color:var(--text-2);font-size:11px;">Not in agreement</td></tr>
+          </tbody>
+        </table>
+        <div class="modal-stat">MFA gap is the most urgent — 16 users without MFA is a significant exposure in a manufacturing environment with OT/IT convergence risk. Security awareness training adds <strong>$2,350/yr</strong> to agreement value.</div>`
+    }],
+    footer: [{ label: 'Create security assessment opportunity', primary: true }, { label: 'Schedule security review' }]
+  },
+
+  align_billing_abc: {
+    title: 'Billing Reconciliation — ABC Manufacturing',
+    tabs: [{
+      label: 'Billing vs contract',
+      html: `
+        <div style="font-size:11px;color:var(--text-2);font-family:'Courier New',monospace;margin-bottom:10px;">Billing is 97% aligned — 1 minor line item discrepancy found</div>
+        <table class="modal-table">
+          <thead><tr><th>Line item</th><th>Contracted</th><th>Billed</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Managed workstations (40)</td><td>$1,800/mo</td><td>$1,800/mo</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+            <tr><td>Server management (2)</td><td>$400/mo</td><td>$400/mo</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+            <tr><td>M365 management</td><td>$480/mo</td><td>$480/mo</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+            <tr><td>Backup management</td><td>$160/mo</td><td style="color:var(--warn);">$140/mo</td><td><span class="eol-badge eol-soon">Under-billed $20</span></td></tr>
+            <tr><td>Security tools</td><td>$1,000/mo</td><td>$1,020/mo</td><td><span class="eol-badge eol-soon">Over-billed $20</span></td></tr>
+          </tbody>
+        </table>
+        <div class="modal-stat">Net discrepancy is $0 — the under and over billing cancel out. <strong>No financial adjustment needed</strong> but line items should be corrected for clarity at next agreement review.</div>`
+    }],
+    footer: [{ label: 'Flag for agreement review', primary: true }]
+  },
+
+  align_licensing_river: {
+    title: 'Agreement vs Licensing — River Tech Solutions',
+    tabs: [{
+      label: 'Licensing breakdown',
+      html: `
+        <div style="font-size:11px;color:var(--text-2);font-family:'Courier New',monospace;margin-bottom:10px;">Contractor account active outside agreement scope</div>
+        <table class="modal-table">
+          <thead><tr><th>License type</th><th>Contracted</th><th>In use</th><th>Variance</th></tr></thead>
+          <tbody>
+            <tr><td>M365 Business Standard</td><td>25</td><td>26</td><td><span class="eol-badge eol-soon">-1 seat</span></td></tr>
+            <tr><td>M365 Business Basic</td><td>3</td><td>2</td><td><span class="eol-badge eol-ok">+1 spare</span></td></tr>
+            <tr><td>Intune Device Mgmt</td><td>28</td><td>28</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+          </tbody>
+        </table>
+        <div class="modal-stat">1 unlicensed seat (Ben Hartley — expired contractor). Deactivating this account would bring licensing into alignment and <strong>save $22/mo</strong>.</div>`
+    }],
+    footer: [{ label: 'Deactivate contractor account', primary: true }, { label: 'Update agreement' }]
+  },
+
+  align_devices_river: {
+    title: 'Agreement vs Managed Devices — River Tech Solutions',
+    tabs: [{
+      label: 'Device scope',
+      html: `
+        <div style="font-size:11px;color:var(--text-2);font-family:'Courier New',monospace;margin-bottom:10px;">2 dormant devices being billed — not in active use</div>
+        <table class="modal-table">
+          <thead><tr><th>Category</th><th>Contracted</th><th>Actual managed</th><th>Active</th></tr></thead>
+          <tbody>
+            <tr><td>Workstations</td><td>25</td><td>27</td><td style="color:var(--warn);">25 active, 2 dormant</td></tr>
+            <tr><td>Servers</td><td>3</td><td>3</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+          </tbody>
+        </table>
+        <div class="modal-stat">2 workstations (RIVER-WS-14 and RIVER-LAPTOP-03) have been dormant for 74 and 143 days respectively. If decommissioned, <strong>scope reduces by $90/mo</strong> — worth confirming with client whether these should remain managed.</div>`
+    }],
+    footer: [{ label: 'Schedule device audit with client', primary: true }, { label: 'Flag for scope review' }]
+  },
+
+  align_security_river: {
+    title: 'Security Coverage — River Tech Solutions',
+    tabs: [{
+      label: 'Coverage assessment',
+      html: `
+        <div style="font-size:11px;color:var(--text-2);font-family:'Courier New',monospace;margin-bottom:10px;">4 of 7 security layers missing — significant coverage gap</div>
+        <table class="modal-table">
+          <thead><tr><th>Security layer</th><th>Status</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Endpoint Detection & Response</td><td><span class="eol-badge eol-ok">Deployed</span></td><td style="color:var(--text-2);font-size:11px;">All endpoints</td></tr>
+            <tr><td>Multi-Factor Authentication</td><td><span class="eol-badge eol-critical">Not deployed</span></td><td style="color:var(--text-2);font-size:11px;">0 users enrolled</td></tr>
+            <tr><td>DNS Filtering</td><td><span class="eol-badge eol-ok">Deployed</span></td><td style="color:var(--text-2);font-size:11px;">All endpoints</td></tr>
+            <tr><td>Email Security (DMARC/DKIM)</td><td><span class="eol-badge eol-soon">Partial</span></td><td style="color:var(--text-2);font-size:11px;">DKIM only</td></tr>
+            <tr><td>Security Awareness Training</td><td><span class="eol-badge eol-critical">Not deployed</span></td><td style="color:var(--text-2);font-size:11px;">Not in agreement</td></tr>
+            <tr><td>Privileged Access Management</td><td><span class="eol-badge eol-critical">Not deployed</span></td><td style="color:var(--text-2);font-size:11px;">Not in agreement</td></tr>
+            <tr><td>Dark Web Monitoring</td><td><span class="eol-badge eol-critical">Not deployed</span></td><td style="color:var(--text-2);font-size:11px;">Not in agreement</td></tr>
+          </tbody>
+        </table>
+        <div class="modal-stat">MFA is entirely absent — no users enrolled. This is the most critical gap and should be the lead conversation. Full security stack expansion is a <strong>$3,200/yr opportunity</strong>.</div>`
+    }],
+    footer: [{ label: 'Create security stack opportunity', primary: true }, { label: 'Schedule MFA rollout' }]
+  },
+
+  align_billing_river: {
+    title: 'Billing Reconciliation — River Tech Solutions',
+    tabs: [{
+      label: 'Billing vs contract',
+      html: `
+        <div style="font-size:11px;color:var(--text-2);font-family:'Courier New',monospace;margin-bottom:10px;">Billing aligned — no discrepancies found</div>
+        <table class="modal-table">
+          <thead><tr><th>Line item</th><th>Contracted</th><th>Billed</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Managed workstations (25)</td><td>$1,125/mo</td><td>$1,125/mo</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+            <tr><td>Server management (3)</td><td>$600/mo</td><td>$600/mo</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+            <tr><td>M365 management</td><td>$280/mo</td><td>$280/mo</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+            <tr><td>Backup management</td><td>$95/mo</td><td>$95/mo</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+          </tbody>
+        </table>
+        <div class="modal-stat">Billing is fully reconciled. <strong>No adjustments needed.</strong> Note that dormant device charges are technically accurate under the current agreement — client conversation needed to decide whether to adjust scope.</div>`
+    }],
+    footer: [{ label: 'No action required — close' }]
+  },
+
+  align_licensing_peak: {
+    title: 'Agreement vs Licensing — Peak Financial Group',
+    tabs: [{
+      label: 'Licensing breakdown',
+      html: `
+        <div style="font-size:11px;color:var(--text-2);font-family:'Courier New',monospace;margin-bottom:10px;">Licensing fully aligned across all tiers</div>
+        <table class="modal-table">
+          <thead><tr><th>License type</th><th>Contracted</th><th>In use</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>M365 E3</td><td>63</td><td>63</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+            <tr><td>Intune Device Mgmt</td><td>63</td><td>63</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+            <tr><td>Defender for Business</td><td>63</td><td>63</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+          </tbody>
+        </table>
+        <div class="modal-stat">Licensing is perfectly aligned. <strong>No action required.</strong> Next review point: if headcount grows beyond 65, a volume tier review may be beneficial.</div>`
+    }],
+    footer: []
+  },
+
+  align_devices_peak: {
+    title: 'Agreement vs Managed Devices — Peak Financial Group',
+    tabs: [{
+      label: 'Device scope',
+      html: `
+        <div style="font-size:11px;color:var(--text-2);font-family:'Courier New',monospace;margin-bottom:10px;">All 63 devices within contracted scope</div>
+        <table class="modal-table">
+          <thead><tr><th>Category</th><th>Contracted</th><th>Actual managed</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Workstations</td><td>50</td><td>50</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+            <tr><td>Laptops</td><td>10</td><td>10</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+            <tr><td>Servers</td><td>3</td><td>3</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+          </tbody>
+        </table>
+        <div class="modal-stat">Device scope is fully aligned. <strong>No action required.</strong></div>`
+    }],
+    footer: []
+  },
+
+  align_security_peak: {
+    title: 'Security Coverage — Peak Financial Group',
+    tabs: [{
+      label: 'Coverage assessment',
+      html: `
+        <div style="font-size:11px;color:var(--text-2);font-family:'Courier New',monospace;margin-bottom:10px;">6 of 7 security layers deployed — strong coverage for a financial client</div>
+        <table class="modal-table">
+          <thead><tr><th>Security layer</th><th>Status</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Endpoint Detection & Response</td><td><span class="eol-badge eol-ok">Deployed</span></td><td style="color:var(--text-2);font-size:11px;">All 63 endpoints</td></tr>
+            <tr><td>Multi-Factor Authentication</td><td><span class="eol-badge eol-ok">Deployed</span></td><td style="color:var(--text-2);font-size:11px;">100% enrolled</td></tr>
+            <tr><td>DNS Filtering</td><td><span class="eol-badge eol-ok">Deployed</span></td><td style="color:var(--text-2);font-size:11px;">All endpoints</td></tr>
+            <tr><td>Email Security (DMARC/DKIM)</td><td><span class="eol-badge eol-ok">Deployed</span></td><td style="color:var(--text-2);font-size:11px;">Fully configured</td></tr>
+            <tr><td>Security Awareness Training</td><td><span class="eol-badge eol-ok">Deployed</span></td><td style="color:var(--text-2);font-size:11px;">Quarterly programme</td></tr>
+            <tr><td>Privileged Access Management</td><td><span class="eol-badge eol-ok">Deployed</span></td><td style="color:var(--text-2);font-size:11px;">Admin accounts only</td></tr>
+            <tr><td>Dark Web Monitoring</td><td><span class="eol-badge eol-soon">Partial</span></td><td style="color:var(--text-2);font-size:11px;">Domain only, not personal</td></tr>
+          </tbody>
+        </table>
+        <div class="modal-stat">Excellent security posture for a financial services client. Extending dark web monitoring to cover personal emails used for business would close the final gap — <strong>$480/yr addition</strong>.</div>`
+    }],
+    footer: [{ label: 'Propose dark web monitoring expansion', primary: true }]
+  },
+
+  align_billing_peak: {
+    title: 'Billing Reconciliation — Peak Financial Group',
+    tabs: [{
+      label: 'Billing vs contract',
+      html: `
+        <div style="font-size:11px;color:var(--text-2);font-family:'Courier New',monospace;margin-bottom:10px;">Billing fully reconciled — no discrepancies</div>
+        <table class="modal-table">
+          <thead><tr><th>Line item</th><th>Contracted</th><th>Billed</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Managed endpoints (63)</td><td>$2,835/mo</td><td>$2,835/mo</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+            <tr><td>M365 E3 management</td><td>$945/mo</td><td>$945/mo</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+            <tr><td>Security stack</td><td>$1,260/mo</td><td>$1,260/mo</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+            <tr><td>Compliance management</td><td>$160/mo</td><td>$160/mo</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+          </tbody>
+        </table>
+        <div class="modal-stat">Billing is perfectly reconciled. <strong>No adjustments needed.</strong> This client is your cleanest agreement — worth highlighting internally as a model for other accounts.</div>`
+    }],
+    footer: []
+  },
+
+
 };
 
 /* ══════════════════════════════════════════
@@ -563,15 +810,21 @@ function renderAlignment(c) {
   alignmentOverall.style.color = overallCls === 'good' ? 'var(--good)' : overallCls === 'warn' ? 'var(--warn)' : 'var(--danger)';
 
   alignmentList.innerHTML = a.items.map(item => `
-    <div class="align-row">
+    <div class="align-row" data-modal="${item.modal}" tabindex="0" role="button" aria-label="View details: ${item.label}">
       <div class="align-indicator ${item.cls}"></div>
       <div class="align-label">${item.label}</div>
       <div class="align-bar-wrap">
         <div class="align-bar-bg"><div class="align-bar-fill ${item.cls}" style="width:${item.score}%"></div></div>
       </div>
       <div class="align-score ${item.cls}">${item.score}%</div>
+      <span class="signal-arrow">&#8250;</span>
     </div>
   `).join('');
+
+  document.querySelectorAll('.align-row[data-modal]').forEach(row => {
+    row.addEventListener('click', () => openModal(row.dataset.modal));
+    row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openModal(row.dataset.modal); });
+  });
 
   const rec = a.rec;
   alignmentRec.className = `alignment-rec${rec.cls === 'good' ? ' all-good' : ''}`;
