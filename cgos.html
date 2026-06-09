@@ -82,7 +82,7 @@
       </div>
       <div class="memory-expanded" id="memory-expanded"></div>
 
-      <!-- Main two-col: signals + opportunities -->
+      <!-- Main two-col: signals + alignment -->
       <div class="two-col">
 
         <section class="panel" id="signals-panel">
@@ -93,14 +93,30 @@
           <div id="signals-list"></div>
         </section>
 
-        <section class="panel" id="opps-panel">
+        <section class="panel" id="alignment-panel">
           <div class="panel-header">
-            <span class="panel-title">OPPORTUNITIES</span>
-            <span class="opp-total" id="opp-total">$21,950 pipeline</span>
+            <span class="panel-title">AGREEMENT ALIGNMENT</span>
+            <span class="alignment-overall" id="alignment-overall">Overall 86%</span>
           </div>
-          <div id="recs-list"></div>
+          <div id="alignment-list"></div>
+          <div class="alignment-rec" id="alignment-rec"></div>
         </section>
 
+      </div>
+
+      <!-- Opportunities — collapsed expandable bar -->
+      <div class="opp-bar" id="opp-bar">
+        <div class="opp-bar-left">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          <span class="opp-bar-label">Opportunities</span>
+          <span class="opp-bar-meta" id="opp-bar-meta">3 opportunities &middot; $21,950 potential</span>
+        </div>
+        <div class="opp-bar-right">
+          <svg class="opp-chevron" id="opp-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="opp-expanded" id="opp-expanded">
+        <div id="recs-list"></div>
       </div>
 
       <!-- Suggested next conversation -->
