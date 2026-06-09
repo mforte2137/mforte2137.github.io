@@ -109,6 +109,21 @@
       <button id="reapply-btn" class="btn-reapply">↻ Re-apply styles</button>
     </div>
 
+    <!-- Widget list (multi-section documents) -->
+    <div id="widget-list-section" class="widget-list-section hidden">
+      <div class="widget-list-header">
+        <div>
+          <span id="widget-count-label" class="widget-count-label"></span>
+          <span class="widget-list-hint">Rename sections or uncheck any to exclude from the push. Decorative cover pages are excluded automatically.</span>
+        </div>
+        <div class="widget-list-controls">
+          <button type="button" class="btn-text-sm" id="select-all-btn">Select all</button>
+          <button type="button" class="btn-text-sm" id="deselect-all-btn">Deselect all</button>
+        </div>
+      </div>
+      <div id="widget-list"></div>
+    </div>
+
     <!-- Tabs -->
     <div>
       <div class="tabs">
@@ -149,7 +164,7 @@
           <input type="checkbox" id="sb-remember"> Remember on this device
         </label>
 
-        <div class="sb-title-row">
+        <div id="sb-widget-title-row" class="sb-title-row">
           <label class="sb-label">Widget title <span class="sb-where">How it will appear in your widget library</span></label>
           <input type="text" id="sb-widget-title" class="sb-input" placeholder="e.g. MSA Agreement">
         </div>
