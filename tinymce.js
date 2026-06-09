@@ -7,61 +7,52 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 // ─────────────────────────────────────────────────────────────────
 //  State
 // ─────────────────────────────────────────────────────────────────
-const LS_API_KEY  = 'sb_api_key';
+const LS_API_KEY    = 'sb_api_key';
 const LS_TENANT_URL = 'sb_tenant_url';
 
-let rawHtml      = '';   // unstyled HTML from converter
-let accentColor  = '#0d2d5e';
-const FONT = "'Segoe UI', Arial, sans-serif";
+let rawHtml     = '';   // full unstyled HTML (for single-widget flow)
+let widgetList  = [];   // array of { title, rawHtml, isCover, isDecorativeCover, include }
+let accentColor = '#0d2d5e';
+const FONT      = "'Segoe UI', Arial, sans-serif";
 
 // ─────────────────────────────────────────────────────────────────
 //  Color helpers
 // ─────────────────────────────────────────────────────────────────
 function lightenHex(hex, amount) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return '#' + [r, g, b].map(c => Math.round(c + (255 - c) * amount).toString(16).padStart(2, '0')).join('');
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return '#'+[r,g,b].map(c=>Math.round(c+(255-c)*amount).toString(16).padStart(2,'0')).join('');
 }
-
 function darkenHex(hex, amount) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return '#' + [r, g, b].map(c => Math.round(c * (1 - amount)).toString(16).padStart(2, '0')).join('');
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return '#'+[r,g,b].map(c=>Math.round(c*(1-amount)).toString(16).padStart(2,'0')).join('');
 }
-
 function isValidHex(v) { return /^#[0-9a-fA-F]{6}$/.test(v); }
 
 // ─────────────────────────────────────────────────────────────────
-//  Dynamic STYLES based on accent color
+//  Styles
 // ─────────────────────────────────────────────────────────────────
 function buildStyles(accent) {
-  const headingColor   = accent;
-  const subHeadColor   = darkenHex(lightenHex(accent, 0.15), 0);
-  const lightBg        = lightenHex(accent, 0.93);
-  const altRowBg       = lightenHex(accent, 0.95);
-  const thBorderColor  = darkenHex(accent, 0.15);
-  const blockquoteBg   = lightenHex(accent, 0.90);
-  const linkColor      = lightenHex(accent, 0.25);
-
+  const subHeadColor = darkenHex(lightenHex(accent, 0.15), 0);
+  const altRowBg     = lightenHex(accent, 0.95);
+  const thBorderColor= darkenHex(accent, 0.15);
+  const blockquoteBg = lightenHex(accent, 0.90);
   return {
-    WRAPPER:    `max-width: 860px; margin: 0 auto; padding: 32px; background-color: #ffffff; font-family: ${FONT};`,
-    H1:         `font-family: ${FONT}; font-size: 20px; font-weight: 700; color: ${headingColor}; margin: 28px 0 12px 0; line-height: 1.3; padding: 0; border: none; background: none;`,
-    H2:         `font-family: ${FONT}; font-size: 17px; font-weight: 700; color: ${headingColor}; margin: 22px 0 10px 0; line-height: 1.3; padding: 0; border: none; background: none;`,
-    H3:         `font-family: ${FONT}; font-size: 15px; font-weight: 600; color: ${subHeadColor}; margin: 18px 0 8px 0; line-height: 1.3; padding: 0; border: none; background: none;`,
-    H4:         `font-family: ${FONT}; font-size: 14px; font-weight: 600; color: ${subHeadColor}; margin: 14px 0 6px 0; line-height: 1.3; padding: 0;`,
-    P:          `font-family: ${FONT}; font-size: 14px; color: #1a1a1a; line-height: 1.8; margin: 0 0 14px 0; padding: 0;`,
-    UL:         `margin: 0 0 14px 0; padding: 0 0 0 24px;`,
-    OL:         `margin: 0 0 14px 0; padding: 0 0 0 24px;`,
-    LI:         `font-family: ${FONT}; font-size: 14px; color: #1a1a1a; line-height: 1.8; margin: 0 0 6px 0; padding: 0;`,
-    TABLE:      `border-collapse: collapse; width: 100%; margin: 0 0 20px 0; font-family: ${FONT};`,
-    TH:         `background-color: ${headingColor}; color: #ffffff; font-weight: 600; font-size: 13px; padding: 10px 14px; border: 1px solid ${thBorderColor}; text-align: left; vertical-align: top;`,
-    TD:         `font-size: 13px; color: #1a1a1a; padding: 10px 14px; border: 1px solid #d0d0d0; vertical-align: top;`,
-    TD_ALT:     `font-size: 13px; color: #1a1a1a; padding: 10px 14px; border: 1px solid #d0d0d0; vertical-align: top; background-color: ${altRowBg};`,
-    BLOCKQUOTE: `margin: 0 0 14px 0; padding: 12px 16px; border-left: 4px solid ${accent}; background-color: ${blockquoteBg}; font-family: ${FONT}; font-size: 14px; color: #334e6e; line-height: 1.8;`,
-    HR:         `border: none; border-top: 1px solid #d0e2f5; margin: 20px 0;`,
-    A:          `color: ${accent}; text-decoration: none;`,
+    WRAPPER:    `max-width:860px;margin:0 auto;padding:32px;background-color:#ffffff;font-family:${FONT};`,
+    H1:         `font-family:${FONT};font-size:20px;font-weight:700;color:${accent};margin:28px 0 12px 0;line-height:1.3;padding:0;border:none;background:none;`,
+    H2:         `font-family:${FONT};font-size:17px;font-weight:700;color:${accent};margin:22px 0 10px 0;line-height:1.3;padding:0;border:none;background:none;`,
+    H3:         `font-family:${FONT};font-size:15px;font-weight:600;color:${subHeadColor};margin:18px 0 8px 0;line-height:1.3;padding:0;border:none;background:none;`,
+    H4:         `font-family:${FONT};font-size:14px;font-weight:600;color:${subHeadColor};margin:14px 0 6px 0;line-height:1.3;padding:0;`,
+    P:          `font-family:${FONT};font-size:14px;color:#1a1a1a;line-height:1.8;margin:0 0 14px 0;padding:0;`,
+    UL:         `margin:0 0 14px 0;padding:0 0 0 24px;`,
+    OL:         `margin:0 0 14px 0;padding:0 0 0 24px;`,
+    LI:         `font-family:${FONT};font-size:14px;color:#1a1a1a;line-height:1.8;margin:0 0 6px 0;padding:0;`,
+    TABLE:      `border-collapse:collapse;width:100%;margin:0 0 20px 0;font-family:${FONT};`,
+    TH:         `background-color:${accent};color:#ffffff;font-weight:600;font-size:13px;padding:10px 14px;border:1px solid ${thBorderColor};text-align:left;vertical-align:top;`,
+    TD:         `font-size:13px;color:#1a1a1a;padding:10px 14px;border:1px solid #d0d0d0;vertical-align:top;`,
+    TD_ALT:     `font-size:13px;color:#1a1a1a;padding:10px 14px;border:1px solid #d0d0d0;vertical-align:top;background-color:${altRowBg};`,
+    BLOCKQUOTE: `margin:0 0 14px 0;padding:12px 16px;border-left:4px solid ${accent};background-color:${blockquoteBg};font-family:${FONT};font-size:14px;color:#334e6e;line-height:1.8;`,
+    HR:         `border:none;border-top:1px solid #d0e2f5;margin:20px 0;`,
+    A:          `color:${accent};text-decoration:none;`,
   };
 }
 
@@ -91,41 +82,33 @@ const accentPreview = document.getElementById('accent-preview');
 function setAccentColor(color, reapply = false) {
   if (!isValidHex(color)) return;
   accentColor = color.toLowerCase();
-  accentPicker.value  = accentColor;
-  accentHex.value     = accentColor.toUpperCase();
+  accentPicker.value = accentColor;
+  accentHex.value    = accentColor.toUpperCase();
   accentPreview.style.background = accentColor;
-
-  document.querySelectorAll('.color-preset').forEach(b => {
-    b.classList.toggle('active', b.dataset.color === accentColor);
-  });
-
-  if (reapply && rawHtml) reapplyStyles();
+  document.querySelectorAll('.color-preset').forEach(b =>
+    b.classList.toggle('active', b.dataset.color === accentColor)
+  );
+  if (reapply && (rawHtml || widgetList.length)) reapplyStyles();
 }
 
-document.querySelectorAll('.color-preset').forEach(btn => {
-  btn.addEventListener('click', () => setAccentColor(btn.dataset.color, true));
-});
-
+document.querySelectorAll('.color-preset').forEach(btn =>
+  btn.addEventListener('click', () => setAccentColor(btn.dataset.color, true))
+);
 accentPicker.addEventListener('input', () => setAccentColor(accentPicker.value));
 accentHex.addEventListener('input', () => {
   const raw = accentHex.value.trim();
   const v   = raw.startsWith('#') ? raw : '#' + raw;
   if (isValidHex(v)) setAccentColor(v);
 });
-accentHex.addEventListener('keydown', e => {
-  if (e.key === 'Enter') { reapplyStyles(); }
-});
+accentHex.addEventListener('keydown', e => { if (e.key === 'Enter') reapplyStyles(); });
 reapplyBtn.addEventListener('click', () => {
-  setAccentColor(accentHex.value.trim().startsWith('#') ? accentHex.value.trim() : '#' + accentHex.value.trim());
+  const raw = accentHex.value.trim();
+  setAccentColor(raw.startsWith('#') ? raw : '#' + raw);
   reapplyStyles();
 });
 
 function reapplyStyles() {
-  if (!rawHtml) return;
-  const styled = applyInlineStyles(rawHtml);
-  htmlOutput.value = styled;
-  previewFrame.srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;padding:0;background:#fff;}</style></head><body>${styled}</body></html>`;
-  // Flash the button
+  updateCombinedOutput();
   reapplyBtn.textContent = '✓ Applied';
   setTimeout(() => { reapplyBtn.textContent = '↻ Re-apply styles'; }, 1500);
 }
@@ -133,23 +116,15 @@ function reapplyStyles() {
 // ─────────────────────────────────────────────────────────────────
 //  Drag & Drop + File Input
 // ─────────────────────────────────────────────────────────────────
-uploadZone.addEventListener('dragover', e => {
-  e.preventDefault();
-  uploadZone.classList.add('drag-over');
-});
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
 uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
 uploadZone.addEventListener('drop', e => {
-  e.preventDefault();
-  uploadZone.classList.remove('drag-over');
+  e.preventDefault(); uploadZone.classList.remove('drag-over');
   const file = e.dataTransfer.files[0];
   if (file) handleFile(file);
 });
-uploadZone.addEventListener('click', e => {
-  if (e.target.tagName !== 'LABEL') fileInput.click();
-});
-fileInput.addEventListener('change', () => {
-  if (fileInput.files[0]) handleFile(fileInput.files[0]);
-});
+uploadZone.addEventListener('click', e => { if (e.target.tagName !== 'LABEL') fileInput.click(); });
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
 
 // ─────────────────────────────────────────────────────────────────
 //  Tab switching
@@ -160,7 +135,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('active');
     const tab = btn.dataset.tab;
     document.getElementById('tab-preview').classList.toggle('hidden', tab !== 'preview');
-    document.getElementById('tab-code').classList.toggle('hidden', tab !== 'code');
+    document.getElementById('tab-code').classList.toggle('hidden',    tab !== 'code');
   });
 });
 
@@ -169,18 +144,11 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 // ─────────────────────────────────────────────────────────────────
 copyBtn.addEventListener('click', async () => {
   const text = htmlOutput.value;
-  try {
-    await navigator.clipboard.writeText(text);
-  } catch {
-    htmlOutput.select();
-    document.execCommand('copy');
-  }
+  try { await navigator.clipboard.writeText(text); }
+  catch { htmlOutput.select(); document.execCommand('copy'); }
   copyBtn.textContent = '✅ Copied!';
   copyBtn.classList.add('copied');
-  setTimeout(() => {
-    copyBtn.innerHTML = '📋 Copy HTML';
-    copyBtn.classList.remove('copied');
-  }, 2500);
+  setTimeout(() => { copyBtn.innerHTML = '📋 Copy HTML'; copyBtn.classList.remove('copied'); }, 2500);
 });
 
 // ─────────────────────────────────────────────────────────────────
@@ -189,20 +157,194 @@ copyBtn.addEventListener('click', async () => {
 resetBtn.addEventListener('click', resetApp);
 
 function resetApp() {
-  rawHtml = '';
+  rawHtml    = '';
+  widgetList = [];
   fileInput.value = '';
   uploadZone.classList.remove('hidden');
   processingEl.classList.add('hidden');
   resultsEl.classList.add('hidden');
+  document.getElementById('widget-list-section').classList.add('hidden');
+  document.getElementById('widget-list').innerHTML = '';
   notesEl.innerHTML = '';
-  htmlOutput.value = '';
+  htmlOutput.value  = '';
   previewFrame.srcdoc = '';
   copyBtn.innerHTML = '📋 Copy HTML';
   copyBtn.classList.remove('copied');
-  // Reset Salesbuildr section
   document.getElementById('sb-result').classList.add('hidden');
   document.getElementById('sb-push-btn').textContent = 'Save to Salesbuildr →';
   document.getElementById('sb-push-btn').classList.remove('is-done');
+  document.getElementById('sb-widget-title-row').classList.remove('hidden');
+  document.getElementById('sb-widget-title').value = '';
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Widget splitting
+// ─────────────────────────────────────────────────────────────────
+function splitIntoWidgets(html, ext, fileName) {
+  const baseName = fileName.replace(/\.[^.]+$/, '');
+  if (ext === 'pdf') return splitOnHr(html, baseName);
+  return splitOnH2(html, baseName);   // docx, xlsx both use h2
+}
+
+function splitOnH2(html, baseName) {
+  const h2Regex   = /<h2[^>]*>([\s\S]*?)<\/h2>/gi;
+  const positions = [];
+  let match;
+  while ((match = h2Regex.exec(html)) !== null) {
+    positions.push({
+      index: match.index,
+      title: match[1].replace(/<[^>]+>/g, '').trim() || `Section ${positions.length + 1}`
+    });
+  }
+
+  // No headings — single widget
+  if (positions.length === 0) {
+    return [{ title: baseName, rawHtml: html, isCover: false, isDecorativeCover: false, include: true }];
+  }
+
+  const widgets = [];
+
+  // Content before first h2
+  const pre = html.slice(0, positions[0].index).trim();
+  if (pre) {
+    const textLen = pre.replace(/<[^>]+>/g, '').trim().length;
+    if (textLen > 0) {
+      const isDecorativeCover = textLen < 250;
+      widgets.push({
+        title: 'Cover Page',
+        rawHtml: pre,
+        isCover: true,
+        isDecorativeCover,
+        include: !isDecorativeCover
+      });
+    }
+  }
+
+  // Each h2 section
+  positions.forEach((pos, i) => {
+    const end         = i < positions.length - 1 ? positions[i+1].index : html.length;
+    const sectionHtml = html.slice(pos.index, end).trim();
+    if (!sectionHtml.replace(/<[^>]+>/g, '').trim()) return;
+    widgets.push({ title: pos.title, rawHtml: sectionHtml, isCover: false, isDecorativeCover: false, include: true });
+  });
+
+  return widgets;
+}
+
+function splitOnHr(html, baseName) {
+  const parts   = html.split(/<hr\s*\/?>/i);
+  const widgets = [];
+
+  parts.forEach((part, i) => {
+    const text = part.replace(/<[^>]+>/g, '').trim();
+    if (!text) return;
+    const headingMatch = part.match(/<h[123][^>]*>([\s\S]*?)<\/h[123]>/i);
+    const headingTitle = headingMatch ? headingMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+    const isDecorativeCover = i === 0 && text.length < 250;
+    widgets.push({
+      title: isDecorativeCover ? 'Cover Page' : (headingTitle || `Page ${i + 1}`),
+      rawHtml: part.trim(),
+      isCover: i === 0,
+      isDecorativeCover,
+      include: !isDecorativeCover
+    });
+  });
+
+  return widgets;
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Widget list UI
+// ─────────────────────────────────────────────────────────────────
+function renderWidgetList(widgets) {
+  const section = document.getElementById('widget-list-section');
+  const list    = document.getElementById('widget-list');
+  const label   = document.getElementById('widget-count-label');
+
+  // Single widget — no list needed
+  if (widgets.length <= 1) {
+    section.classList.add('hidden');
+    document.getElementById('sb-widget-title-row').classList.remove('hidden');
+    // Pre-fill title from the single widget
+    if (widgets.length === 1) {
+      document.getElementById('sb-widget-title').value = widgets[0].title;
+    }
+    return;
+  }
+
+  // Multiple widgets — show list, hide single title field
+  document.getElementById('sb-widget-title-row').classList.add('hidden');
+  list.innerHTML = '';
+
+  widgets.forEach((w, i) => {
+    const size      = new Blob([w.rawHtml]).size;
+    const sizeLabel = size > 1024 ? `${(size/1024).toFixed(1)} KB` : `${size} B`;
+    const row       = document.createElement('div');
+    row.className   = `widget-item${!w.include ? ' widget-item-skipped' : ''}`;
+
+    row.innerHTML = `
+      <label class="widget-check-label" title="${w.isDecorativeCover ? 'Decorative cover detected — excluded by default' : ''}">
+        <input type="checkbox" class="widget-checkbox" id="widget-check-${i}" ${w.include ? 'checked' : ''}>
+      </label>
+      <span class="widget-num">${i + 1}</span>
+      <div class="widget-item-body">
+        <input type="text" class="widget-title-input" id="widget-title-${i}" value="${escHtml(w.title)}" placeholder="Widget title">
+        ${w.isDecorativeCover ? '<span class="widget-badge badge-skip">Decorative cover — excluded</span>' : ''}
+        ${w.isCover && !w.isDecorativeCover ? '<span class="widget-badge badge-cover">Cover</span>' : ''}
+      </div>
+      <span class="widget-size">${sizeLabel}</span>
+    `;
+
+    row.querySelector('.widget-checkbox').addEventListener('change', () => {
+      row.classList.toggle('widget-item-skipped', !row.querySelector('.widget-checkbox').checked);
+      updateCombinedOutput();
+      updatePushBtn();
+    });
+    row.querySelector('.widget-title-input').addEventListener('input', e => {
+      widgetList[i].title = e.target.value;
+    });
+
+    list.appendChild(row);
+  });
+
+  const total    = widgets.length;
+  const included = widgets.filter(w => w.include).length;
+  label.textContent = `${total} section${total !== 1 ? 's' : ''} detected — ${included} selected`;
+
+  document.getElementById('select-all-btn').onclick = () => {
+    document.querySelectorAll('.widget-checkbox').forEach(cb => { cb.checked = true; cb.closest('.widget-item').classList.remove('widget-item-skipped'); });
+    updateCombinedOutput(); updatePushBtn();
+  };
+  document.getElementById('deselect-all-btn').onclick = () => {
+    document.querySelectorAll('.widget-checkbox').forEach(cb => { cb.checked = false; cb.closest('.widget-item').classList.add('widget-item-skipped'); });
+    updateCombinedOutput(); updatePushBtn();
+  };
+
+  section.classList.remove('hidden');
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Build combined styled HTML from checked widgets
+// ─────────────────────────────────────────────────────────────────
+function updateCombinedOutput() {
+  let combined;
+
+  if (widgetList.length <= 1) {
+    // Single widget — style the full rawHtml
+    combined = rawHtml ? applyInlineStyles(rawHtml) : '';
+  } else {
+    combined = widgetList
+      .filter((w, i) => {
+        const cb = document.getElementById(`widget-check-${i}`);
+        return cb ? cb.checked : w.include;
+      })
+      .map(w => applyInlineStyles(w.rawHtml))
+      .join('\n');
+  }
+
+  htmlOutput.value = combined;
+  previewFrame.srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>body{margin:0;padding:0;background:#fff;}</style></head><body>${combined}</body></html>`;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -210,8 +352,7 @@ function resetApp() {
 // ─────────────────────────────────────────────────────────────────
 async function handleFile(file) {
   const ext = file.name.split('.').pop().toLowerCase();
-  const supported = ['pdf', 'doc', 'docx', 'xlsx', 'xls'];
-  if (!supported.includes(ext)) {
+  if (!['pdf','doc','docx','xlsx','xls'].includes(ext)) {
     showNote('error', `Unsupported file type ".${ext}". Please upload a PDF, Word (.docx), or Excel (.xlsx) file.`);
     return;
   }
@@ -220,27 +361,17 @@ async function handleFile(file) {
 
   try {
     const arrayBuffer = await file.arrayBuffer();
-    let html = '';
     const notes = [];
+    let html    = '';
 
-    if (ext === 'pdf') {
-      html = await convertPdf(arrayBuffer, notes);
-    } else if (ext === 'docx' || ext === 'doc') {
-      html = await convertDocx(arrayBuffer, notes);
-    } else if (ext === 'xlsx' || ext === 'xls') {
-      html = await convertXlsx(arrayBuffer, notes);
-    }
+    if (ext === 'pdf')                       html = await convertPdf(arrayBuffer, notes);
+    else if (ext === 'docx' || ext === 'doc') html = await convertDocx(arrayBuffer, notes);
+    else if (ext === 'xlsx' || ext === 'xls') html = await convertXlsx(arrayBuffer, notes);
 
-    rawHtml = html;  // store pre-styled HTML for color re-apply
-    const styledHtml = applyInlineStyles(html);
+    rawHtml    = html;
+    widgetList = splitIntoWidgets(html, ext, file.name);
 
-    // Default widget title from filename (no extension)
-    const titleInput = document.getElementById('sb-widget-title');
-    if (!titleInput.value) {
-      titleInput.value = file.name.replace(/\.[^.]+$/, '');
-    }
-
-    showResults(styledHtml, file.name, ext, notes);
+    showResults(file.name, ext, notes);
 
   } catch (err) {
     console.error(err);
@@ -252,32 +383,23 @@ async function handleFile(file) {
 //  DOCX → HTML  (mammoth.js)
 // ─────────────────────────────────────────────────────────────────
 async function convertDocx(arrayBuffer, notes) {
-  const result = await mammoth.convertToHtml(
-    { arrayBuffer },
-    {
-      styleMap: [
-        "p[style-name='Title']         => h1:fresh",
-        "p[style-name='Heading 1']     => h1:fresh",
-        "p[style-name='Heading 2']     => h2:fresh",
-        "p[style-name='Heading 3']     => h3:fresh",
-        "p[style-name='Heading 4']     => h4:fresh",
-        "p[style-name='List Bullet']   => ul > li:fresh",
-        "p[style-name='List Number']   => ol > li:fresh",
-        "r[style-name='Strong']        => strong",
-        "r[style-name='Emphasis']      => em",
-      ]
-    }
-  );
-
-  if (result.messages && result.messages.length) {
-    const warnings = result.messages.filter(m => m.type === 'warning');
-    if (warnings.length) {
-      notes.push({ type: 'info', text: `${warnings.length} minor formatting element(s) could not be converted (e.g. custom styles, embedded objects). All text content has been preserved.` });
-    }
+  const result = await mammoth.convertToHtml({ arrayBuffer }, {
+    styleMap: [
+      "p[style-name='Title']       => h1:fresh",
+      "p[style-name='Heading 1']   => h1:fresh",
+      "p[style-name='Heading 2']   => h2:fresh",
+      "p[style-name='Heading 3']   => h3:fresh",
+      "p[style-name='Heading 4']   => h4:fresh",
+      "p[style-name='List Bullet'] => ul > li:fresh",
+      "p[style-name='List Number'] => ol > li:fresh",
+      "r[style-name='Strong']      => strong",
+      "r[style-name='Emphasis']    => em",
+    ]
+  });
+  if (result.messages?.filter(m => m.type === 'warning').length) {
+    notes.push({ type: 'info', text: `${result.messages.filter(m=>m.type==='warning').length} minor formatting element(s) could not be converted. All text content has been preserved.` });
   }
-
-  notes.push({ type: 'info', text: '✔ Word document converted. Inline images are not included in the HTML output. All text, headings, lists, and tables have been preserved verbatim.' });
-
+  notes.push({ type: 'info', text: '✔ Word document converted. Inline images are not included. All text, headings, lists, and tables have been preserved.' });
   return result.value;
 }
 
@@ -292,13 +414,11 @@ async function convertPdf(arrayBuffer, notes) {
   for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
     const page        = await pdfDoc.getPage(pageNum);
     const textContent = await page.getTextContent();
-
-    // Group text items by line (similar y-position)
     const Y_SNAP = 4;
     const lineMap = new Map();
 
     for (const item of textContent.items) {
-      if (!item.str || !item.str.trim()) continue;
+      if (!item.str?.trim()) continue;
       const y    = Math.round(item.transform[5] / Y_SNAP) * Y_SNAP;
       const x    = item.transform[4];
       const size = Math.abs(item.transform[3]) || Math.abs(item.transform[0]) || 12;
@@ -308,65 +428,45 @@ async function convertPdf(arrayBuffer, notes) {
       if (size > line.maxSize) line.maxSize = size;
     }
 
-    // Sort lines top-to-bottom (PDF y-axis is bottom=0)
     const lines = [...lineMap.entries()]
-      .sort((a, b) => b[0] - a[0])
-      .map(([y, data]) => ({
-        y,
-        text: data.items.sort((a, b) => a.x - b.x).map(i => i.text).join(' ').trim(),
-        maxSize: data.maxSize
-      }))
+      .sort((a,b) => b[0]-a[0])
+      .map(([y, data]) => ({ y, text: data.items.sort((a,b)=>a.x-b.x).map(i=>i.text).join(' ').trim(), maxSize: data.maxSize }))
       .filter(l => l.text.length > 0);
 
     if (lines.length === 0) continue;
 
-    // Estimate body font size (median)
-    const sizes = lines.map(l => l.maxSize).sort((a, b) => a - b);
-    const bodySize = sizes[Math.floor(sizes.length / 2)] || 12;
-
-    // Convert lines to HTML
-    let paragraphBuffer = [];
-    let prevY = null;
+    const sizes    = lines.map(l=>l.maxSize).sort((a,b)=>a-b);
+    const bodySize = sizes[Math.floor(sizes.length/2)] || 12;
+    let paragraphBuffer = [], prevY = null;
 
     const flushParagraph = () => {
-      if (paragraphBuffer.length === 0) return;
+      if (!paragraphBuffer.length) return;
       parts.push(`<p>${escHtml(paragraphBuffer.join(' '))}</p>`);
       paragraphBuffer = [];
     };
 
     for (const line of lines) {
-      const isHeading1 = line.maxSize > bodySize * 1.35 || (line.text === line.text.toUpperCase() && line.text.length < 80 && line.maxSize >= bodySize * 1.15);
-      const isHeading2 = !isHeading1 && (line.maxSize > bodySize * 1.15 || (line.text.match(/^(\d+\.|ARTICLE|SECTION|SCHEDULE|EXHIBIT|APPENDIX)/i) && line.text.length < 100));
-      const isHeading3 = !isHeading1 && !isHeading2 && line.maxSize > bodySize * 1.05 && line.text.length < 100;
+      const isH1 = line.maxSize > bodySize*1.35 || (line.text===line.text.toUpperCase() && line.text.length<80 && line.maxSize>=bodySize*1.15);
+      const isH2 = !isH1 && (line.maxSize > bodySize*1.15 || (line.text.match(/^(\d+\.|ARTICLE|SECTION|SCHEDULE|EXHIBIT|APPENDIX)/i) && line.text.length<100));
+      const isH3 = !isH1 && !isH2 && line.maxSize > bodySize*1.05 && line.text.length<100;
+      const gap  = prevY !== null && (prevY - line.y) > bodySize*1.8;
 
-      const largeGap = prevY !== null && (prevY - line.y) > bodySize * 1.8;
-
-      if (isHeading1 || isHeading2 || isHeading3) {
+      if (isH1||isH2||isH3) {
         flushParagraph();
-        const tag = isHeading1 ? 'h1' : isHeading2 ? 'h2' : 'h3';
-        parts.push(`<${tag}>${escHtml(line.text)}</${tag}>`);
-      } else if (largeGap) {
+        parts.push(`<${isH1?'h1':isH2?'h2':'h3'}>${escHtml(line.text)}</${isH1?'h1':isH2?'h2':'h3'}>`);
+      } else if (gap) {
         flushParagraph();
         paragraphBuffer.push(line.text);
       } else {
         paragraphBuffer.push(line.text);
       }
-
       prevY = line.y;
     }
     flushParagraph();
-
-    // Page divider (except after last page)
     if (pageNum < pdfDoc.numPages) parts.push('<hr>');
   }
 
-  notes.push({
-    type: 'warning',
-    text: '⚠ PDF conversion extracts text only — complex formatting, columns, and embedded images cannot be fully reconstructed. ' +
-          'For verbatim legal agreements, <strong>Word (.docx) format gives significantly better results</strong>. ' +
-          'Please review the output carefully before pasting into Salesbuildr.'
-  });
-
+  notes.push({ type: 'warning', text: '⚠ PDF conversion extracts text only — complex formatting, columns, and embedded images cannot be fully reconstructed. For legal agreements, <strong>Word (.docx) gives significantly better results</strong>. Please review carefully before pasting into Salesbuildr.' });
   return parts.join('\n');
 }
 
@@ -374,109 +474,82 @@ async function convertPdf(arrayBuffer, notes) {
 //  XLSX → HTML  (SheetJS)
 // ─────────────────────────────────────────────────────────────────
 async function convertXlsx(arrayBuffer, notes) {
-  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+  const workbook  = XLSX.read(arrayBuffer, { type: 'array' });
   const htmlParts = [];
 
   for (const sheetName of workbook.SheetNames) {
     const sheet = workbook.Sheets[sheetName];
     const data  = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-
-    if (data.length === 0) continue;
-
-    htmlParts.push(`<h2>${escHtml(sheetName)}</h2>`);
-    htmlParts.push('<table>');
-
+    if (!data.length) continue;
+    htmlParts.push(`<h2>${escHtml(sheetName)}</h2><table>`);
     data.forEach((row, rowIdx) => {
       htmlParts.push('<tr>');
       row.forEach(cell => {
-        const val = cell === null || cell === undefined ? '' : String(cell);
-        if (rowIdx === 0) {
-          htmlParts.push(`<th>${escHtml(val)}</th>`);
-        } else {
-          htmlParts.push(`<td>${escHtml(val)}</td>`);
-        }
+        const val = cell == null ? '' : String(cell);
+        htmlParts.push(rowIdx === 0 ? `<th>${escHtml(val)}</th>` : `<td>${escHtml(val)}</td>`);
       });
       htmlParts.push('</tr>');
     });
-
     htmlParts.push('</table>');
   }
 
-  const sheetCount = workbook.SheetNames.length;
-  notes.push({ type: 'info', text: `✔ Excel file converted — ${sheetCount} sheet${sheetCount !== 1 ? 's' : ''} included as HTML table${sheetCount !== 1 ? 's' : ''}. Formulas are shown as their calculated values.` });
-
+  const n = workbook.SheetNames.length;
+  notes.push({ type: 'info', text: `✔ Excel file converted — ${n} sheet${n!==1?'s':''} included as HTML table${n!==1?'s':''}. Formulas are shown as their calculated values.` });
   return htmlParts.join('\n');
 }
 
 // ─────────────────────────────────────────────────────────────────
-//  Apply inline styles to HTML string
+//  Apply inline styles
 // ─────────────────────────────────────────────────────────────────
 function applyInlineStyles(htmlString) {
   const S      = buildStyles(accentColor);
   const parser = new DOMParser();
   const doc    = parser.parseFromString(`<div id="sb-root">${htmlString}</div>`, 'text/html');
   const root   = doc.getElementById('sb-root');
-
-  // Remove class attributes throughout (TinyMCE may strip them anyway)
   root.querySelectorAll('[class]').forEach(el => el.removeAttribute('class'));
 
   function walk(node) {
     if (node.nodeType !== 1) return;
-
-    const tag = node.tagName;
     let style = '';
-
-    switch (tag) {
-      case 'H1':         style = S.H1;   break;
-      case 'H2':         style = S.H2;   break;
-      case 'H3':         style = S.H3;   break;
-      case 'H4':         style = S.H4;   break;
-      case 'P':          style = S.P;    break;
-      case 'UL':         style = S.UL;   break;
-      case 'OL':         style = S.OL;   break;
-      case 'LI':         style = S.LI;   break;
-      case 'TABLE':      style = S.TABLE; break;
-      case 'TH':         style = S.TH;   break;
+    switch (node.tagName) {
+      case 'H1': style = S.H1; break; case 'H2': style = S.H2; break;
+      case 'H3': style = S.H3; break; case 'H4': style = S.H4; break;
+      case 'P':  style = S.P;  break; case 'UL': style = S.UL; break;
+      case 'OL': style = S.OL; break; case 'LI': style = S.LI; break;
+      case 'TABLE': style = S.TABLE; break; case 'TH': style = S.TH; break;
       case 'BLOCKQUOTE': style = S.BLOCKQUOTE; break;
-      case 'HR':         style = S.HR;   break;
-      case 'A':          style = S.A;    break;
-      case 'STRONG': case 'B': style = 'font-weight: 700;'; break;
-      case 'EM': case 'I':     style = 'font-style: italic;'; break;
-      case 'U':                style = 'text-decoration: underline;'; break;
+      case 'HR': style = S.HR; break; case 'A':  style = S.A;  break;
+      case 'STRONG': case 'B': style = 'font-weight:700;'; break;
+      case 'EM': case 'I':     style = 'font-style:italic;'; break;
+      case 'U':                style = 'text-decoration:underline;'; break;
       case 'TD': {
-        const row      = node.parentElement;
-        const tbody    = row && row.parentElement;
-        const rowIndex = tbody ? Array.from(tbody.children).indexOf(row) : 0;
+        const rowIndex = node.parentElement && node.parentElement.parentElement
+          ? Array.from(node.parentElement.parentElement.children).indexOf(node.parentElement) : 0;
         style = rowIndex % 2 === 0 ? S.TD : S.TD_ALT;
         break;
       }
     }
-
     if (style) {
       const existing = node.getAttribute('style') || '';
-      node.setAttribute('style', style + (existing ? ' ' + existing : ''));
+      node.setAttribute('style', style + (existing ? ' '+existing : ''));
     }
-
-    for (const child of Array.from(node.children)) walk(child);
+    Array.from(node.children).forEach(walk);
   }
 
   walk(root);
-
-  // Wrap in outer container
   const wrapper = doc.createElement('div');
   wrapper.setAttribute('style', S.WRAPPER);
   wrapper.innerHTML = root.innerHTML;
-
   return wrapper.outerHTML;
 }
 
 // ─────────────────────────────────────────────────────────────────
 //  Show results
 // ─────────────────────────────────────────────────────────────────
-function showResults(html, fileName, ext, notes) {
+function showResults(fileName, ext, notes) {
   fileNameEl.textContent = fileName;
   typeBadgeEl.textContent = ext.toUpperCase();
-  typeBadgeEl.className = `type-badge type-${ext === 'doc' ? 'docx' : ext === 'xls' ? 'xlsx' : ext}`;
+  typeBadgeEl.className = `type-badge type-${ext==='doc'?'docx':ext==='xls'?'xlsx':ext}`;
 
   notesEl.innerHTML = '';
   notes.forEach(n => {
@@ -486,8 +559,11 @@ function showResults(html, fileName, ext, notes) {
     notesEl.appendChild(div);
   });
 
-  previewFrame.srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;padding:0;background:#fff;}</style></head><body>${html}</body></html>`;
-  htmlOutput.value = html;
+  // Render widget list (may hide single-title field if multi-widget)
+  renderWidgetList(widgetList);
+
+  // Build initial combined output
+  updateCombinedOutput();
 
   // Activate preview tab
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -498,6 +574,8 @@ function showResults(html, fileName, ext, notes) {
   uploadZone.classList.add('hidden');
   processingEl.classList.add('hidden');
   resultsEl.classList.remove('hidden');
+
+  updatePushBtn();
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -531,11 +609,7 @@ function showNote(type, text) {
 }
 
 function escHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -545,7 +619,7 @@ const sbToggle   = document.getElementById('sb-toggle');
 const sbArrow    = document.getElementById('sb-arrow');
 const sbBody     = document.getElementById('sb-body');
 const sbApiKey   = document.getElementById('sb-api-key');
-const sbTenantUrl = document.getElementById('sb-tenant-url');
+const sbTenantUrl= document.getElementById('sb-tenant-url');
 const sbRemember = document.getElementById('sb-remember');
 const sbPushBtn  = document.getElementById('sb-push-btn');
 const sbResult   = document.getElementById('sb-result');
@@ -557,7 +631,16 @@ sbToggle.addEventListener('click', () => {
 });
 
 function updatePushBtn() {
-  sbPushBtn.disabled = !(sbApiKey.value.trim() && sbTenantUrl.value.trim());
+  const hasCredentials = sbApiKey.value.trim() && sbTenantUrl.value.trim();
+  const checkedCount   = widgetList.length > 1
+    ? document.querySelectorAll('.widget-checkbox:checked').length
+    : 1;
+  sbPushBtn.disabled = !hasCredentials || checkedCount === 0;
+  if (widgetList.length > 1 && checkedCount > 0) {
+    sbPushBtn.textContent = `Save ${checkedCount} widget${checkedCount!==1?'s':''} to Salesbuildr →`;
+  } else {
+    sbPushBtn.textContent = 'Save to Salesbuildr →';
+  }
 }
 
 sbApiKey.addEventListener('input', updatePushBtn);
@@ -576,34 +659,53 @@ sbPushBtn.addEventListener('click', async () => {
     localStorage.removeItem(LS_TENANT_URL);
   }
 
-  const title = (document.getElementById('sb-widget-title').value.trim()) || 'Converted Document';
-  const html  = htmlOutput.value;
-  if (!html) { sbResult.textContent = 'No HTML to push — convert a document first.'; sbResult.className = 'sb-result error'; sbResult.classList.remove('hidden'); return; }
+  // Build widgets array
+  let widgets;
+  if (widgetList.length > 1) {
+    widgets = widgetList
+      .filter((w, i) => { const cb = document.getElementById(`widget-check-${i}`); return cb?.checked; })
+      .map((w, i) => {
+        const titleEl = document.getElementById(`widget-title-${i}`);
+        return { id: `doc-${Date.now()}-${i}`, title: titleEl?.value.trim() || w.title || `Widget ${i+1}`, html: applyInlineStyles(w.rawHtml) };
+      });
+  } else {
+    const title = document.getElementById('sb-widget-title')?.value.trim()
+      || fileNameEl.textContent.replace(/\.[^.]+$/,'')
+      || 'Converted Document';
+    const html  = htmlOutput.value;
+    if (!html) {
+      sbResult.textContent = 'No HTML to push — convert a document first.';
+      sbResult.className   = 'sb-result error';
+      sbResult.classList.remove('hidden');
+      return;
+    }
+    widgets = [{ id: 'doc-' + Date.now(), title, html }];
+  }
+
+  if (!widgets.length) {
+    sbResult.textContent = 'No widgets selected — check at least one section above.';
+    sbResult.className   = 'sb-result error';
+    sbResult.classList.remove('hidden');
+    return;
+  }
 
   sbPushBtn.disabled    = true;
-  sbPushBtn.textContent = 'Saving…';
+  sbPushBtn.textContent = `Saving ${widgets.length} widget${widgets.length!==1?'s':''}…`;
   sbResult.classList.add('hidden');
 
   try {
     const res  = await fetch('/api/push-widgets', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
-        widgets: [{ id: 'doc-' + Date.now(), title, html }],
-        prefix: '',
-        apiKey,
-        tenantUrl
-      })
+      body:    JSON.stringify({ widgets, prefix: '', apiKey, tenantUrl })
     });
-
     if (!res.headers.get('content-type')?.includes('application/json')) {
       throw new Error('Server error — make sure the Netlify function is deployed.');
     }
-
     const data = await res.json();
     if (data.successCount > 0) {
-      sbResult.textContent  = `✓ "${title}" saved to your Salesbuildr widget library.`;
-      sbResult.className    = 'sb-result ok';
+      sbResult.textContent = `✓ ${data.successCount} widget${data.successCount!==1?'s':''} saved to your Salesbuildr widget library.`;
+      sbResult.className   = 'sb-result ok';
       sbPushBtn.textContent = '✓ Saved';
       sbPushBtn.classList.add('is-done');
     } else {
@@ -613,7 +715,7 @@ sbPushBtn.addEventListener('click', async () => {
     sbResult.textContent = `✕ ${e.message}`;
     sbResult.className   = 'sb-result error';
     sbPushBtn.disabled    = false;
-    sbPushBtn.textContent = 'Save to Salesbuildr →';
+    updatePushBtn();
   }
   sbResult.classList.remove('hidden');
 });
