@@ -350,3 +350,15 @@ body { font-family: 'Georgia', serif; background: var(--bg); color: var(--text);
   margin-bottom: 12px;
 }
 .opp-expanded.open { display: block; }
+
+/* ── Alignment rows — clickable ── */
+.align-row {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.align-row:hover {
+  background: var(--bg-row);
+  margin: 0 -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
