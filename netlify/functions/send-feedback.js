@@ -1,7 +1,5 @@
 // netlify/functions/send-feedback.js
-// Receives QBR demo feedback and emails it to mike@salesbuildr.com via Resend
-// POST /api/send-feedback
-// Env var required: RESEND_API_KEY
+// Receives CGOS beta feedback and emails it to mike@salesbuildr.com via Resend
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -12,66 +10,91 @@ exports.handler = async (event) => {
   try { body = JSON.parse(event.body); }
   catch { return { statusCode: 400, body: JSON.stringify({ ok: false, error: 'Invalid JSON.' }) }; }
 
-  const { name, company, actions, sources, freeform, rating, viewedCustomer, submittedAt } = body;
+  const {
+    name, company, actions, sources,
+    investigate, timecost, problem, autoassemble, onething,
+    viewedCustomer, submittedAt
+  } = body;
 
-  // Build plain-text email body
-  const from    = [name, company].filter(Boolean).join(' — ') || 'Anonymous reviewer';
-  const date    = new Date(submittedAt || Date.now()).toLocaleString('en-US', { timeZone: 'America/New_York', dateStyle: 'medium', timeStyle: 'short' });
+  const from   = [name, company].filter(Boolean).join(' — ') || 'Anonymous reviewer';
+  const date   = new Date(submittedAt || Date.now()).toLocaleString('en-US', {
+    timeZone: 'America/New_York', dateStyle: 'medium', timeStyle: 'short'
+  });
 
-  const actionBlock  = actions && actions.length  ? actions.map(a => `  • ${a}`).join('\n')  : '  (none selected)';
-  const sourceBlock  = sources && sources.length  ? sources.map(s => `  • ${s}`).join('\n')  : '  (none selected)';
-  const freeformText = freeform || '(no comment)';
-  const ratingText   = rating   || '(not rated)';
+  const actionBlock      = actions?.length    ? actions.map(a  => `  • ${a}`).join('\n')  : '  (none selected)';
+  const sourceBlock      = sources?.length    ? sources.map(s  => `  • ${s}`).join('\n')  : '  (none selected)';
+  const investigateText  = investigate        || '(no answer)';
+  const timecostText     = timecost           || '(no answer)';
+  const problemText      = problem            || '(no answer)';
+  const autoassembleText = autoassemble       || '(no answer)';
+  const onethingText     = onething           || '(no answer)';
 
   const emailText = `Customer Growth Operating System — Beta Feedback
-================================
+================================================
 From:     ${from}
-Customer viewed: ${viewedCustomer}
-Submitted: ${date}
+Viewed:   ${viewedCustomer}
+Date:     ${date}
 
-OVERALL REACTION
-${ratingText}
-
-ACTIONS THEY'D WANT TO TAKE
+WHAT ACTIONS WOULD YOU WANT FROM HERE?
 ${actionBlock}
 
-DATA SOURCES THAT MATTER MOST
+WHAT DATA SOURCES MATTER MOST?
 ${sourceBlock}
 
-FREEFORM THOUGHTS
-${freeformText}
+WHAT WOULD YOU INVESTIGATE FIRST?
+  ${investigateText}
+
+MOST TIME-CONSUMING PART OF PREPARING FOR REVIEWS?
+  ${timecostText}
+
+IF THIS EXISTED TOMORROW, WHAT PROBLEM WOULD IT SOLVE?
+  ${problemText}
+
+WHAT INFORMATION DO YOU WISH WAS AUTO-ASSEMBLED?
+  ${autoassembleText}
+
+THE ONE THING YOU WISH YOU KNEW ABOUT EVERY CUSTOMER?
+  ${onethingText}
 `;
 
+  const section = (label, content) => `
+  <div style="margin-bottom:18px;">
+    <div style="font-size:10px;letter-spacing:0.1em;color:#6b6860;font-family:'Courier New',monospace;margin-bottom:6px;">${label}</div>
+    <div style="background:#f5f2eb;padding:10px 12px;border-left:2px solid #c8c4bb;font-size:12px;white-space:pre-wrap;line-height:1.6;">${content}</div>
+  </div>`;
+
+  const pillList = (items) => items?.length
+    ? items.map(i => `<span style="display:inline-block;font-size:10px;padding:2px 8px;border:1px solid #c8c4bb;margin:2px;font-family:'Courier New',monospace;">${i}</span>`).join('')
+    : '<span style="color:#9e9b95;font-size:12px;">(none selected)</span>';
+
   const htmlEmail = `
-<div style="font-family: 'Courier New', monospace; font-size: 13px; color: #1a1917; max-width: 600px; margin: 0 auto;">
-  <div style="background: #1a1917; color: #f5f2eb; padding: 16px 20px; margin-bottom: 24px;">
+<div style="font-family:'Courier New',monospace;font-size:13px;color:#1a1917;max-width:620px;margin:0 auto;">
+  <div style="background:#1a1917;color:#f5f2eb;padding:16px 20px;margin-bottom:24px;">
     <strong>Customer Growth Operating System — Beta Feedback</strong>
   </div>
-
-  <table style="width:100%; border-collapse:collapse; margin-bottom:20px;">
-    <tr><td style="padding:4px 0; color:#6b6860; width:140px;">From</td><td style="padding:4px 0;"><strong>${from}</strong></td></tr>
-    <tr><td style="padding:4px 0; color:#6b6860;">Customer viewed</td><td style="padding:4px 0;">${viewedCustomer}</td></tr>
-    <tr><td style="padding:4px 0; color:#6b6860;">Submitted</td><td style="padding:4px 0;">${date}</td></tr>
-    <tr><td style="padding:4px 0; color:#6b6860;">Overall rating</td><td style="padding:4px 0;">${ratingText}</td></tr>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+    <tr><td style="padding:4px 0;color:#6b6860;width:100px;">From</td><td style="padding:4px 0;"><strong>${from}</strong></td></tr>
+    <tr><td style="padding:4px 0;color:#6b6860;">Viewed</td><td style="padding:4px 0;">${viewedCustomer}</td></tr>
+    <tr><td style="padding:4px 0;color:#6b6860;">Submitted</td><td style="padding:4px 0;">${date}</td></tr>
   </table>
 
-  <div style="margin-bottom:20px;">
-    <div style="font-size:10px; letter-spacing:0.1em; color:#6b6860; margin-bottom:8px;">ACTIONS THEY'D WANT TO TAKE</div>
-    ${actions && actions.length ? actions.map(a => `<div style="padding:3px 0; padding-left:12px; border-left:2px solid #dedad3;">${a}</div>`).join('') : '<div style="color:#9e9b95;">(none selected)</div>'}
+  <div style="margin-bottom:18px;">
+    <div style="font-size:10px;letter-spacing:0.1em;color:#6b6860;margin-bottom:8px;">WHAT ACTIONS WOULD YOU WANT FROM HERE?</div>
+    <div>${pillList(actions)}</div>
   </div>
 
-  <div style="margin-bottom:20px;">
-    <div style="font-size:10px; letter-spacing:0.1em; color:#6b6860; margin-bottom:8px;">DATA SOURCES THAT MATTER MOST</div>
-    ${sources && sources.length ? sources.map(s => `<div style="padding:3px 0; padding-left:12px; border-left:2px solid #dedad3;">${s}</div>`).join('') : '<div style="color:#9e9b95;">(none selected)</div>'}
+  <div style="margin-bottom:18px;">
+    <div style="font-size:10px;letter-spacing:0.1em;color:#6b6860;margin-bottom:8px;">WHAT DATA SOURCES MATTER MOST?</div>
+    <div>${pillList(sources)}</div>
   </div>
 
-  <div style="margin-bottom:20px;">
-    <div style="font-size:10px; letter-spacing:0.1em; color:#6b6860; margin-bottom:8px;">FREEFORM THOUGHTS</div>
-    <div style="background:#f5f2eb; padding:12px; border-left:2px solid #c8c4bb; white-space:pre-wrap;">${freeformText}</div>
-  </div>
+  ${section('WHAT WOULD YOU INVESTIGATE FIRST?', investigateText)}
+  ${section('MOST TIME-CONSUMING PART OF PREPARING FOR REVIEWS?', timecostText)}
+  ${section('IF THIS EXISTED TOMORROW, WHAT PROBLEM WOULD IT SOLVE?', problemText)}
+  ${section('WHAT INFORMATION DO YOU WISH WAS AUTO-ASSEMBLED?', autoassembleText)}
+  ${section('THE ONE THING YOU WISH YOU KNEW ABOUT EVERY CUSTOMER?', onethingText)}
 </div>`;
 
-  // Send via Resend
   let resendRes;
   try {
     resendRes = await fetch('https://api.resend.com/emails', {
