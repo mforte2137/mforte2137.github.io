@@ -114,13 +114,33 @@ const CUSTOMERS = {
       { title: 'User growth — licensing review',   sub: '18% user growth, 7 users potentially unlicensed. Review seat counts.',     val: 'Review M365 seats' }
     ],
     oppTotal: '$21,950 pipeline',
+    oppCategories: [
+      { label: 'Device Refresh',      val: '$14,000', cls: 'danger' },
+      { label: 'Security',            val: '$3,500',  cls: 'warn'   },
+      { label: 'Licensing',           val: '$1,680',  cls: 'warn'   },
+      { label: 'Managed Svc Expansion', val: '$2,770', cls: 'info'  }
+    ],
+    healthBreakdown: {
+      score: 82,
+      dimensions: [
+        { label: 'Relationship',        score: 95, note: 'Long-term client, strong engagement' },
+        { label: 'Technical',           score: 78, note: '14 EOL devices, backup issues emerging' },
+        { label: 'Security',            score: 71, note: 'MFA gap, no security review in 14 months' },
+        { label: 'Alignment',           score: 86, note: 'Device and user count slightly out of sync' },
+        { label: 'Lifecycle',           score: 74, note: 'Multiple renewals and EOL items in window' },
+        { label: 'Strategic Engagement', score: 80, note: 'Last QBR 8 months ago — overdue' }
+      ]
+    },
     alignment: {
       overall: 86,
       items: [
-        { label: 'Agreement vs Licensing',       score: 94, cls: 'good',   modal: 'align_licensing_abc' },
-        { label: 'Agreement vs Managed Devices', score: 82, cls: 'warn',   modal: 'align_devices_abc'   },
-        { label: 'Security Coverage',            score: 71, cls: 'danger', modal: 'align_security_abc'  },
-        { label: 'Billing Reconciliation',       score: 97, cls: 'good',   modal: 'align_billing_abc'   }
+        { label: 'Agreement vs Licensing',       score: 94, cls: 'good',   modal: 'align_licensing_abc'  },
+        { label: 'Agreement vs Managed Devices', score: 82, cls: 'warn',   modal: 'align_devices_abc'    },
+        { label: 'Agreement vs Backup Coverage', score: 68, cls: 'danger', modal: 'align_backup_abc'     },
+        { label: 'Agreement vs User Count',      score: 85, cls: 'warn',   modal: 'align_users_abc',
+          detail: '7 unlicensed · $1,680/yr' },
+        { label: 'Security Coverage',            score: 71, cls: 'danger', modal: 'align_security_abc'   },
+        { label: 'Billing Reconciliation',       score: 97, cls: 'good',   modal: 'align_billing_abc'    }
       ],
       rec: { title: 'Review Licensing & Device Alignment', val: '$4,200 annually', cls: 'warn' }
     },
@@ -190,11 +210,32 @@ const CUSTOMERS = {
       { title: 'SSL certificate renewal', sub: '45 days is within action window. Confirm renewal process with client.',          val: 'Low urgency — confirm' }
     ],
     oppTotal: '$17,500 pipeline',
+    oppCategories: [
+      { label: 'Server Refresh',  val: '$12,000', cls: 'danger' },
+      { label: 'Backup & DR',     val: '$2,500',  cls: 'danger' },
+      { label: 'Security Stack',  val: '$3,200',  cls: 'warn'   },
+      { label: 'Device Cleanup',  val: 'Saving',  cls: 'info'   }
+    ],
+    healthBreakdown: {
+      score: 71,
+      dimensions: [
+        { label: 'Relationship',        score: 82, note: 'Good relationship, co-managed dynamic' },
+        { label: 'Technical',           score: 65, note: '3 servers EOW, backup target degrading' },
+        { label: 'Security',            score: 61, note: 'No MFA, 4 security layers missing' },
+        { label: 'Alignment',           score: 74, note: 'Dormant devices, contractor seat active' },
+        { label: 'Lifecycle',           score: 68, note: 'Multiple warranty and renewal items due' },
+        { label: 'Strategic Engagement', score: 72, note: 'Last review 4 months ago' }
+      ]
+    },
     alignment: {
       overall: 74,
       items: [
         { label: 'Agreement vs Licensing',       score: 88, cls: 'warn',   modal: 'align_licensing_river' },
         { label: 'Agreement vs Managed Devices', score: 65, cls: 'danger', modal: 'align_devices_river'   },
+        { label: 'Agreement vs Backup Coverage', score: 54, cls: 'danger', modal: 'align_backup_river',
+          detail: 'Backup target failing' },
+        { label: 'Agreement vs User Count',      score: 92, cls: 'good',   modal: 'align_users_river',
+          detail: '1 contractor to remove' },
         { label: 'Security Coverage',            score: 61, cls: 'danger', modal: 'align_security_river'  },
         { label: 'Billing Reconciliation',       score: 91, cls: 'good',   modal: 'align_billing_river'   }
       ],
@@ -261,11 +302,30 @@ const CUSTOMERS = {
       { title: 'Strategic growth planning', sub: 'Strong health score — ideal time to discuss technology roadmap.',            val: 'Retention & upsell' }
     ],
     oppTotal: '$4,000 pipeline',
+    oppCategories: [
+      { label: 'Compliance Audit', val: '$4,000', cls: 'warn' },
+      { label: 'Dark Web Monitoring', val: '$480', cls: 'info' }
+    ],
+    healthBreakdown: {
+      score: 91,
+      dimensions: [
+        { label: 'Relationship',        score: 96, note: 'Long-term client, strong strategic partner' },
+        { label: 'Technical',           score: 94, note: 'All patches current, no EOL concerns' },
+        { label: 'Security',            score: 94, note: 'Strong posture — minor dark web gap' },
+        { label: 'Alignment',           score: 96, note: 'Near-perfect agreement alignment' },
+        { label: 'Lifecycle',           score: 90, note: 'Only compliance audit in the window' },
+        { label: 'Strategic Engagement', score: 88, note: 'QBR 2 months ago, roadmap in progress' }
+      ]
+    },
     alignment: {
       overall: 96,
       items: [
         { label: 'Agreement vs Licensing',       score: 98, cls: 'good', modal: 'align_licensing_peak' },
         { label: 'Agreement vs Managed Devices', score: 95, cls: 'good', modal: 'align_devices_peak'   },
+        { label: 'Agreement vs Backup Coverage', score: 97, cls: 'good', modal: 'align_backup_peak',
+          detail: 'All backups healthy' },
+        { label: 'Agreement vs User Count',      score: 99, cls: 'good', modal: 'align_users_peak',
+          detail: 'Fully aligned' },
         { label: 'Security Coverage',            score: 94, cls: 'good', modal: 'align_security_peak'  },
         { label: 'Billing Reconciliation',       score: 99, cls: 'good', modal: 'align_billing_peak'   }
       ],
@@ -927,6 +987,170 @@ const MODALS = {
   },
 
 
+  /* ── Stage 2: New alignment modals ── */
+
+  align_backup_abc: {
+    title: 'Agreement vs Backup Coverage — ABC Manufacturing',
+    tabs: [{ label: 'Backup agreement', html: `
+      <div style="font-size:11px;color:var(--text-2);font-family:'Courier New',monospace;margin-bottom:10px;">Backup coverage is below contracted scope — 2 endpoints unprotected</div>
+      <table class="modal-table">
+        <thead><tr><th>Coverage type</th><th>Contracted</th><th>Actual</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Server image backup</td><td>2 servers</td><td>2 servers</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+          <tr><td>Endpoint backup</td><td>47 endpoints</td><td style="color:var(--danger);">45 endpoints</td><td><span class="eol-badge eol-critical">Gap</span></td></tr>
+          <tr><td>Cloud data backup</td><td>M365 included</td><td>Configured</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+          <tr><td>Verified restore test</td><td>Quarterly</td><td style="color:var(--danger);">Last: Nov 2025</td><td><span class="eol-badge eol-critical">Overdue</span></td></tr>
+        </tbody>
+      </table>
+      <div class="modal-stat">2 endpoints are not covered by the backup agreement. The restore test is also 7 months overdue. <strong>Recommended: remediate both before next billing review.</strong></div>` }],
+    footer: [{ label: 'Create backup remediation ticket', primary: true }, { label: 'Schedule restore test' }]
+  },
+
+  align_users_abc: {
+    title: 'Agreement vs User Count — ABC Manufacturing',
+    tabs: [{ label: 'User count detail', html: `
+      <table class="modal-table">
+        <thead><tr><th>Metric</th><th>Agreement</th><th>Actual</th><th>Variance</th></tr></thead>
+        <tbody>
+          <tr><td>Contracted users</td><td>40</td><td style="color:var(--danger);">47</td><td><span class="eol-badge eol-critical">+7 users</span></td></tr>
+          <tr><td>M365 seats</td><td>40</td><td style="color:var(--danger);">47</td><td><span class="eol-badge eol-critical">7 unlicensed</span></td></tr>
+          <tr><td>Managed endpoints/user</td><td>1.0</td><td>1.0</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+        </tbody>
+      </table>
+      <div class="modal-stat">7 users are active above the contracted count. At $22/user/mo (M365) + $18/user/mo (management fee) this is <strong>$1,680/yr in unrecovered revenue</strong>. Agreement update needed.</div>` }],
+    footer: [{ label: 'Update agreement to 47 users', primary: true }, { label: 'Create licensing opportunity' }]
+  },
+
+  align_backup_river: {
+    title: 'Agreement vs Backup Coverage — River Tech Solutions',
+    tabs: [{ label: 'Backup agreement', html: `
+      <div style="font-size:11px;color:var(--text-2);font-family:'Courier New',monospace;margin-bottom:10px;">Backup target hardware failure is breaking contracted coverage commitments</div>
+      <table class="modal-table">
+        <thead><tr><th>Coverage type</th><th>Contracted</th><th>Actual</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Server image backup</td><td>3 servers</td><td style="color:var(--danger);">2 healthy, 1 failing</td><td><span class="eol-badge eol-critical">At risk</span></td></tr>
+          <tr><td>Endpoint backup</td><td>28 endpoints</td><td>26 endpoints</td><td><span class="eol-badge eol-soon">Gap</span></td></tr>
+          <tr><td>Verified restore test</td><td>Quarterly</td><td style="color:var(--danger);">Last: Sep 2025</td><td><span class="eol-badge eol-critical">9 months overdue</span></td></tr>
+        </tbody>
+      </table>
+      <div class="modal-stat">SRV-RIVER-03 disk failure is actively breaking the backup SLA. This is a liability risk — <strong>urgent remediation required</strong> and the client should be notified.</div>` }],
+    footer: [{ label: 'Create urgent remediation ticket', primary: true }, { label: 'Notify client' }]
+  },
+
+  align_users_river: {
+    title: 'Agreement vs User Count — River Tech Solutions',
+    tabs: [{ label: 'User count detail', html: `
+      <table class="modal-table">
+        <thead><tr><th>Metric</th><th>Agreement</th><th>Actual</th><th>Variance</th></tr></thead>
+        <tbody>
+          <tr><td>Contracted users</td><td>28</td><td>28</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+          <tr><td>Active users</td><td>28</td><td style="color:var(--warn);">27 active + 1 inactive</td><td><span class="eol-badge eol-soon">Review</span></td></tr>
+          <tr><td>M365 seats</td><td>28</td><td>28</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+        </tbody>
+      </table>
+      <div class="modal-stat">User count is technically aligned but 1 contractor account (Ben Hartley) is inactive. Deactivating would free a seat and clean up the directory. <strong>Saving: $22/mo ($264/yr).</strong></div>` }],
+    footer: [{ label: 'Deactivate contractor account', primary: true }]
+  },
+
+  align_backup_peak: {
+    title: 'Agreement vs Backup Coverage — Peak Financial Group',
+    tabs: [{ label: 'Backup agreement', html: `
+      <div style="font-size:11px;color:var(--text-2);font-family:'Courier New',monospace;margin-bottom:10px;">Backup coverage fully aligned — all targets healthy</div>
+      <table class="modal-table">
+        <thead><tr><th>Coverage type</th><th>Contracted</th><th>Actual</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Server image backup</td><td>3 servers</td><td>3 servers</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+          <tr><td>Endpoint backup</td><td>63 endpoints</td><td>63 endpoints</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+          <tr><td>Cloud data backup</td><td>M365 E3 included</td><td>Configured</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+          <tr><td>Verified restore test</td><td>Quarterly</td><td>Mar 2026</td><td><span class="eol-badge eol-ok">On schedule</span></td></tr>
+        </tbody>
+      </table>
+      <div class="modal-stat">Backup coverage is exemplary. <strong>No action required.</strong> Use this as a positive talking point in the next review.</div>` }],
+    footer: []
+  },
+
+  align_users_peak: {
+    title: 'Agreement vs User Count — Peak Financial Group',
+    tabs: [{ label: 'User count detail', html: `
+      <table class="modal-table">
+        <thead><tr><th>Metric</th><th>Agreement</th><th>Actual</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Contracted users</td><td>63</td><td>63</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+          <tr><td>M365 E3 seats</td><td>63</td><td>63</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+          <tr><td>All accounts active</td><td>63</td><td>63</td><td><span class="eol-badge eol-ok">Aligned</span></td></tr>
+        </tbody>
+      </table>
+      <div class="modal-stat">User count is perfectly aligned. <strong>No action required.</strong> Flag for review if headcount changes at next onboarding.</div>` }],
+    footer: []
+  },
+
+  health_abc: {
+    title: 'Health Score Breakdown — ABC Manufacturing',
+    tabs: [{ label: 'Score breakdown', html: `
+      <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+        <span style="font-size:36px;line-height:1;">82</span>
+        <span style="font-size:14px;color:var(--text-2);">/100 &middot; Good</span>
+      </div>
+      <table class="modal-table">
+        <thead><tr><th>Dimension</th><th>Score</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Relationship</td><td style="color:var(--good);font-size:14px;">95</td><td style="font-size:11px;color:var(--text-2);">Long-term client, strong engagement</td></tr>
+          <tr><td>Technical</td><td style="color:var(--warn);font-size:14px;">78</td><td style="font-size:11px;color:var(--text-2);">14 EOL devices, backup issues emerging</td></tr>
+          <tr><td>Security</td><td style="color:var(--danger);font-size:14px;">71</td><td style="font-size:11px;color:var(--text-2);">MFA gap, no review in 14 months</td></tr>
+          <tr><td>Alignment</td><td style="color:var(--warn);font-size:14px;">86</td><td style="font-size:11px;color:var(--text-2);">Device and user count slightly out of sync</td></tr>
+          <tr><td>Lifecycle</td><td style="color:var(--warn);font-size:14px;">74</td><td style="font-size:11px;color:var(--text-2);">Multiple renewals and EOL items in window</td></tr>
+          <tr><td>Strategic Engagement</td><td style="color:var(--warn);font-size:14px;">80</td><td style="font-size:11px;color:var(--text-2);">Last QBR 8 months ago — overdue</td></tr>
+        </tbody>
+      </table>
+      <div class="modal-stat">Lowest scoring areas: Security (71) and Lifecycle (74). Addressing these in the next strategic review would push the overall health score above 88.</div>` }],
+    footer: [{ label: 'Schedule strategic review', primary: true }]
+  },
+
+  health_river: {
+    title: 'Health Score Breakdown — River Tech Solutions',
+    tabs: [{ label: 'Score breakdown', html: `
+      <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+        <span style="font-size:36px;line-height:1;color:var(--warn);">71</span>
+        <span style="font-size:14px;color:var(--text-2);">/100 &middot; Needs attention</span>
+      </div>
+      <table class="modal-table">
+        <thead><tr><th>Dimension</th><th>Score</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Relationship</td><td style="color:var(--warn);font-size:14px;">82</td><td style="font-size:11px;color:var(--text-2);">Good relationship, co-managed dynamic</td></tr>
+          <tr><td>Technical</td><td style="color:var(--danger);font-size:14px;">65</td><td style="font-size:11px;color:var(--text-2);">3 servers EOW, backup target degrading</td></tr>
+          <tr><td>Security</td><td style="color:var(--danger);font-size:14px;">61</td><td style="font-size:11px;color:var(--text-2);">No MFA, 4 security layers missing</td></tr>
+          <tr><td>Alignment</td><td style="color:var(--warn);font-size:14px;">74</td><td style="font-size:11px;color:var(--text-2);">Dormant devices, contractor seat active</td></tr>
+          <tr><td>Lifecycle</td><td style="color:var(--danger);font-size:14px;">68</td><td style="font-size:11px;color:var(--text-2);">Multiple warranty and renewal items due</td></tr>
+          <tr><td>Strategic Engagement</td><td style="color:var(--warn);font-size:14px;">72</td><td style="font-size:11px;color:var(--text-2);">Last review 4 months ago</td></tr>
+        </tbody>
+      </table>
+      <div class="modal-stat">Three dimensions below 70. Technical and Security are the most urgent — both are directly actionable with existing proposals. Resolving them would bring health to approximately 82.</div>` }],
+    footer: [{ label: 'Schedule server & security review', primary: true }]
+  },
+
+  health_peak: {
+    title: 'Health Score Breakdown — Peak Financial Group',
+    tabs: [{ label: 'Score breakdown', html: `
+      <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border);">
+        <span style="font-size:36px;line-height:1;color:var(--good);">91</span>
+        <span style="font-size:14px;color:var(--text-2);">/100 &middot; Excellent</span>
+      </div>
+      <table class="modal-table">
+        <thead><tr><th>Dimension</th><th>Score</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Relationship</td><td style="color:var(--good);font-size:14px;">96</td><td style="font-size:11px;color:var(--text-2);">Long-term strategic partner</td></tr>
+          <tr><td>Technical</td><td style="color:var(--good);font-size:14px;">94</td><td style="font-size:11px;color:var(--text-2);">All patches current, no EOL concerns</td></tr>
+          <tr><td>Security</td><td style="color:var(--good);font-size:14px;">94</td><td style="font-size:11px;color:var(--text-2);">Strong posture — minor dark web gap</td></tr>
+          <tr><td>Alignment</td><td style="color:var(--good);font-size:14px;">96</td><td style="font-size:11px;color:var(--text-2);">Near-perfect agreement alignment</td></tr>
+          <tr><td>Lifecycle</td><td style="color:var(--good);font-size:14px;">90</td><td style="font-size:11px;color:var(--text-2);">Only compliance audit in the window</td></tr>
+          <tr><td>Strategic Engagement</td><td style="color:var(--warn);font-size:14px;">88</td><td style="font-size:11px;color:var(--text-2);">QBR 2 months ago, roadmap in progress</td></tr>
+        </tbody>
+      </table>
+      <div class="modal-stat">This is your healthiest account. Use Peak Financial as a benchmark for what excellent managed service delivery looks like internally.</div>` }],
+    footer: []
+  },
+
+
 };
 
 /* ══════════════════════════════════════════
@@ -1097,7 +1321,10 @@ function renderAlignment(c) {
   alignmentList.innerHTML = a.items.map(item => `
     <div class="align-row" data-modal="${item.modal}" tabindex="0" role="button" aria-label="View details: ${item.label}">
       <div class="align-indicator ${item.cls}"></div>
-      <div class="align-label">${item.label}</div>
+      <div class="align-label-wrap">
+        <div class="align-label">${item.label}</div>
+        ${item.detail ? `<div class="align-detail">${item.detail}</div>` : ''}
+      </div>
       <div class="align-bar-wrap">
         <div class="align-bar-bg"><div class="align-bar-fill ${item.cls}" style="width:${item.score}%"></div></div>
       </div>
@@ -1121,7 +1348,14 @@ function renderAlignment(c) {
 
 function renderOppBar(c) {
   const count = c.recs.length;
+  const catPills = c.oppCategories
+    ? c.oppCategories.map(cat =>
+        `<span class="opp-cat-pill opp-cat-${cat.cls}">${cat.label} <strong>${cat.val}</strong></span>`
+      ).join('')
+    : '';
   oppBarMeta.innerHTML = `${count} opportunit${count !== 1 ? 'ies' : 'y'} &middot; ${c.oppTotal}`;
+  const catsEl = document.getElementById('opp-categories');
+  if (catsEl) catsEl.innerHTML = catPills;
 }
 
 /* ══════════════════════════════════════════
@@ -1141,7 +1375,8 @@ function renderCustomer(key) {
   chipSince.textContent  = `Since ${c.since}`;
   chipAm.textContent     = c.am;
   chipHealth.textContent = `Health ${c.health}`;
-  chipHealth.className   = `cust-chip health-chip ${healthClass(c.health)}`;
+  chipHealth.className   = `cust-chip health-chip ${healthClass(c.health)} clickable`;
+  chipHealth.dataset.modal = `health_${customerSelect.value}`;
 
   memoryMeta.innerHTML = c.memory.meta;
   const doneCount = c.memory.items.filter(i => i.status === 'done').length;
@@ -1491,6 +1726,12 @@ document.querySelectorAll('.source-pills .pill').forEach(pill => {
     else                        { activeSources.add(src);    pill.classList.add('active');    }
     renderCustomer(customerSelect.value);
   });
+});
+
+/* Health chip click */
+document.getElementById('chip-health').addEventListener('click', () => {
+  const key = customerSelect.value;
+  openModal(`health_${key}`);
 });
 
 /* ── Wiring ── */
