@@ -397,3 +397,131 @@ body { font-family: 'Georgia', serif; background: var(--bg); color: var(--text);
 }
 .fb-other-input.visible { display: block; }
 .fb-other-input:focus { outline: 2px solid var(--text); outline-offset: 1px; }
+
+/* ══════════════════════════════════
+   STAGE 1 ADDITIONS
+   ══════════════════════════════════ */
+
+/* ── Priority & confidence chips ── */
+.priority-chip {
+  background: #1a1917;
+  color: #f5f2eb;
+  border-color: #1a1917;
+  font-weight: normal;
+}
+.confidence-chip.full   { border-color: #97C459; color: var(--good); }
+.confidence-chip.warn   { border-color: #EF9F27; color: var(--warn); }
+.confidence-chip.danger { border-color: #F09595; color: var(--danger); }
+
+/* ── Lifecycle & Renewals panel ── */
+.lifecycle-total { font-size: 11px; color: var(--info); font-family: 'Courier New', monospace; }
+
+.lifecycle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.lifecycle-row:last-child { border-bottom: none; padding-bottom: 0; }
+.lifecycle-row:hover { background: var(--bg-row); margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
+
+.lifecycle-icon {
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.lifecycle-icon.renewal  { background: var(--warn-bg);   color: var(--warn);   }
+.lifecycle-icon.eol      { background: var(--danger-bg); color: var(--danger); }
+.lifecycle-icon.warranty { background: var(--info-bg);   color: var(--info);   }
+.lifecycle-icon.ok       { background: var(--good-bg);   color: var(--good);   }
+
+.lifecycle-body { flex: 1; }
+.lifecycle-title { font-size: 13px; line-height: 1.3; }
+.lifecycle-sub   { font-size: 11px; color: var(--text-3); margin-top: 1px; font-family: 'Courier New', monospace; }
+.lifecycle-val   { font-size: 11px; color: var(--info); font-family: 'Courier New', monospace; flex-shrink: 0; text-align: right; }
+
+/* ── Priority + Suggestion row ── */
+.priority-suggest-row {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+  align-items: stretch;
+}
+@media (max-width: 680px) { .priority-suggest-row { grid-template-columns: 1fr; } }
+
+.priority-panel { display: flex; flex-direction: column; }
+.priority-body  { display: flex; align-items: flex-start; gap: 10px; flex: 1; padding-bottom: 10px; }
+.priority-score-wrap { display: flex; align-items: baseline; gap: 2px; }
+.priority-score { font-size: 42px; line-height: 1; color: var(--text); }
+.priority-score-denom { font-size: 16px; color: var(--text-3); }
+.priority-reasons { flex: 1; }
+.priority-reason-item {
+  font-size: 11px;
+  color: var(--text-2);
+  padding: 2px 0;
+  font-family: 'Courier New', monospace;
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+}
+.priority-reason-item::before { content: '›'; color: var(--danger); flex-shrink: 0; }
+.priority-action {
+  font-size: 12px;
+  padding: 8px 10px;
+  background: var(--text);
+  color: var(--bg);
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.04em;
+  margin-top: auto;
+}
+
+/* ── Strategic memory — upgraded grouping ── */
+.memory-group { margin-bottom: 10px; }
+.memory-group:last-child { margin-bottom: 0; }
+.memory-group-label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-family: 'Courier New', monospace;
+  padding: 4px 0 6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.memory-completion {
+  font-size: 11px;
+  color: var(--text-2);
+  font-family: 'Courier New', monospace;
+  padding: 8px 0 4px;
+  border-top: 1px solid var(--border);
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.completion-bar-bg { flex: 1; height: 3px; background: var(--border); }
+.completion-bar-fill { height: 3px; background: var(--good); transition: width 0.4s; }
+
+/* ── What Changed section (inside expanded memory) ── */
+.changed-section { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+.changed-label {
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-3); font-family: 'Courier New', monospace; margin-bottom: 6px;
+}
+.changed-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; padding: 3px 0;
+}
+.changed-delta {
+  font-size: 11px; font-family: 'Courier New', monospace;
+  padding: 1px 6px; border-radius: 20px; flex-shrink: 0;
+}
+.delta-up   { background: var(--warn-bg);   color: var(--warn);   }
+.delta-down { background: var(--good-bg);   color: var(--good);   }
+.delta-neg  { background: var(--danger-bg); color: var(--danger); }
