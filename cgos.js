@@ -1438,15 +1438,7 @@ function renderCustomer(key) {
 /* ══════════════════════════════════════════
    RENDER PORTFOLIO
    ══════════════════════════════════════════ */
-function renderPortfolio(filter) {
-  let rows = PORTFOLIO;
-  if (filter === 'urgent')  rows = rows.filter(r => r.priority === 'urgent');
-  if (filter === 'overdue') rows = rows.filter(r => r.overdue);
-
-  const urgentCount = PORTFOLIO.filter(r => r.priority === 'urgent').length;
-  document.getElementById('port-sub').textContent =
-    `${PORTFOLIO.length} accounts \u00b7 ${urgentCount} need attention this week`;
-
+function renderPortfolioRows(rows) {
   portfolioList.innerHTML = rows.map(r => {
     const pClass = r.priority === 'urgent' ? 'p-urgent' : r.priority === 'review' ? 'p-review' : 'p-ok';
     const pLabel = r.priority === 'urgent' ? '&#9679; Urgent' : r.priority === 'review' ? '&#9679; Review soon' : '&#9679; On track';
@@ -1474,6 +1466,8 @@ function renderPortfolio(filter) {
     const go = () => {
       const key = row.dataset.key;
       if (CUSTOMERS[key]) {
+        activeSignalFilter = null;
+        document.querySelectorAll('.port-intel-signal').forEach(c => c.classList.remove('active'));
         switchView('briefing');
         customerSelect.value = key;
         renderCustomer(key);
@@ -1484,27 +1478,32 @@ function renderPortfolio(filter) {
   });
 }
 
+function renderPortfolio(filter) {
+  activeSignalFilter = null;
+  document.querySelectorAll('.port-intel-signal').forEach(c => c.classList.remove('active'));
+  let rows = PORTFOLIO;
+  if (filter === 'urgent')  rows = rows.filter(r => r.priority === 'urgent');
+  if (filter === 'overdue') rows = rows.filter(r => r.overdue);
+  const urgentCount = PORTFOLIO.filter(r => r.priority === 'urgent').length;
+  document.getElementById('port-sub').textContent =
+    `${PORTFOLIO.length} accounts \u00b7 ${urgentCount} need attention this week`;
+  renderPortfolioRows(rows);
+}
+
 /* ══════════════════════════════════════════
    VIEW SWITCHING
    ══════════════════════════════════════════ */
 function switchView(view) {
-  const vBriefing  = document.getElementById('view-briefing');
-  const vPortfolio = document.getElementById('view-portfolio');
-  const tBriefing  = document.getElementById('nav-briefing');
-  const tPortfolio = document.getElementById('nav-portfolio');
-
-  if (view === 'briefing') {
-    vBriefing.style.display  = '';
-    vPortfolio.style.display = 'none';
-    tBriefing.classList.add('active');
-    tPortfolio.classList.remove('active');
-  } else {
-    vBriefing.style.display  = 'none';
-    vPortfolio.style.display = '';
-    tBriefing.classList.remove('active');
-    tPortfolio.classList.add('active');
-    renderPortfolio(activeFilter);
-  }
+  const views = { briefing: 'view-briefing', portfolio: 'view-portfolio', team: 'view-team' };
+  const tabs  = { briefing: 'nav-briefing',  portfolio: 'nav-portfolio',  team: 'nav-team'  };
+  Object.entries(views).forEach(([k, id]) => {
+    document.getElementById(id).style.display = k === view ? '' : 'none';
+  });
+  Object.entries(tabs).forEach(([k, id]) => {
+    document.getElementById(id).classList.toggle('active', k === view);
+  });
+  if (view === 'portfolio') renderPortfolio(activeFilter);
+  if (view === 'team')      renderTeam();
 }
 
 document.querySelectorAll('.view-tab').forEach(btn => {
@@ -1747,9 +1746,237 @@ closeAi.addEventListener('click',     () => { aiOutput.style.display   = 'none';
 closeExec.addEventListener('click',   () => { execOutput.style.display = 'none'; });
 portAiBtn.addEventListener('click',   generatePortfolioAI);
 closePortAi.addEventListener('click', () => { portAiOutput.style.display = 'none'; });
+document.getElementById('team-ai-btn').addEventListener('click', generateTeamAI);
+document.getElementById('close-team-ai').addEventListener('click', () => {
+  document.getElementById('team-ai-output').style.display = 'none';
+});
+
+/* ══════════════════════════════════════════
+   TEAM DATA
+   ══════════════════════════════════════════ */
+const TEAM = [
+  {
+    key: 'sarah', name: 'Sarah Johnson', title: 'Senior Account Manager',
+    accounts: ['ABC Manufacturing'],
+    pipeline: '$21,950', avgHealth: 82, openOpps: 4,
+    lastReview: '8 months ago', status: 'watch',
+    note: 'Strong relationship but QBR overdue. Pipeline is healthy.'
+  },
+  {
+    key: 'mark', name: 'Mark Davies', title: 'Account Manager',
+    accounts: ['River Tech Solutions'],
+    pipeline: '$17,500', avgHealth: 71, openOpps: 4,
+    lastReview: '4 months ago', status: 'good',
+    note: 'Actively working server refresh. Backup urgency needs escalation.'
+  },
+  {
+    key: 'lisa', name: 'Lisa Tran', title: 'Senior Account Manager',
+    accounts: ['Peak Financial Group'],
+    pipeline: '$4,000', avgHealth: 91, openOpps: 2,
+    lastReview: '2 months ago', status: 'strong',
+    note: 'Exemplary account management. Best practice for the team.'
+  }
+];
+
+const ATTENTION = [
+  {
+    key: 'abc', name: 'ABC Manufacturing', am: 'Sarah Johnson',
+    priority: 96, pipeline: '$21,950',
+    reasons: 'Security review 14 months overdue · 7 unlicensed users · EOL in 10 months'
+  },
+  {
+    key: 'river', name: 'River Tech Solutions', am: 'Mark Davies',
+    priority: 88, pipeline: '$17,500',
+    reasons: 'Backup target failing · 3 servers out of warranty · No MFA deployed'
+  }
+];
+
+/* ══════════════════════════════════════════
+   PORTFOLIO INTELLIGENCE — signal filter map
+   ══════════════════════════════════════════ */
+const PORT_SIGNAL_FILTERS = {
+  win10:    ['abc'],
+  security: ['abc', 'river'],
+  license:  ['abc', 'river'],
+  price:    ['abc', 'river']
+};
+let activeSignalFilter = null;
+
+/* ══════════════════════════════════════════
+   RENDER TEAM
+   ══════════════════════════════════════════ */
+function renderTeam() {
+  const statusMap = {
+    strong: { cls: 'perf-strong', label: 'Strong' },
+    good:   { cls: 'perf-good',   label: 'Good'   },
+    watch:  { cls: 'perf-watch',  label: 'Watch'  },
+    coach:  { cls: 'perf-coach',  label: 'Needs coaching' }
+  };
+
+  document.getElementById('team-list').innerHTML = TEAM.map(am => {
+    const s = statusMap[am.status] || statusMap.good;
+    const hColor = am.avgHealth >= 85 ? 'var(--good)' : am.avgHealth >= 70 ? 'var(--warn)' : 'var(--danger)';
+    return `
+      <div class="team-row">
+        <div><div class="team-am-name">${am.name}</div><div class="team-am-title">${am.title}</div></div>
+        <span style="font-size:12px;">${am.accounts.length}</span>
+        <span class="team-pipeline">${am.pipeline}</span>
+        <span style="font-size:14px;color:${hColor};">${am.avgHealth}</span>
+        <span style="font-size:12px;">${am.openOpps}</span>
+        <span style="font-size:11px;color:var(--text-2);font-family:'Courier New',monospace;">${am.lastReview}</span>
+        <span class="perf-badge ${s.cls}">${s.label}</span>
+      </div>`;
+  }).join('');
+
+  document.getElementById('attention-list').innerHTML = ATTENTION.map(a => {
+    const pColor = a.priority >= 90 ? 'var(--danger)' : 'var(--warn)';
+    return `
+      <div class="attention-row" data-key="${a.key}" tabindex="0" role="button" aria-label="Open briefing for ${a.name}">
+        <div class="att-priority" style="color:${pColor};">${a.priority}</div>
+        <div class="att-body">
+          <div class="att-name">${a.name}</div>
+          <div class="att-am">${a.am}</div>
+          <div class="att-reasons">${a.reasons}</div>
+        </div>
+        <div class="att-pipeline">${a.pipeline}</div>
+        <span class="signal-arrow">&#8250;</span>
+      </div>`;
+  }).join('');
+
+  document.querySelectorAll('.attention-row[data-key]').forEach(row => {
+    const go = () => {
+      const key = row.dataset.key;
+      if (CUSTOMERS[key]) { switchView('briefing'); customerSelect.value = key; renderCustomer(key); }
+    };
+    row.addEventListener('click', go);
+    row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') go(); });
+  });
+}
+
+/* ══════════════════════════════════════════
+   PORTFOLIO INTELLIGENCE CARDS
+   ══════════════════════════════════════════ */
+function initPortfolioIntel() {
+  document.querySelectorAll('.port-intel-signal').forEach(card => {
+    card.addEventListener('click', () => {
+      const sig = card.dataset.filterSignal;
+      if (activeSignalFilter === sig) {
+        activeSignalFilter = null;
+        card.classList.remove('active');
+        renderPortfolio(activeFilter);
+      } else {
+        activeSignalFilter = sig;
+        document.querySelectorAll('.port-intel-signal').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        renderPortfolioBySignal(sig);
+      }
+    });
+  });
+}
+
+function renderPortfolioBySignal(sig) {
+  const keys = PORT_SIGNAL_FILTERS[sig] || [];
+  let rows = PORTFOLIO.filter(r => keys.includes(r.key));
+  renderPortfolioRows(rows);
+  document.getElementById('port-sub').textContent =
+    `Showing ${rows.length} account${rows.length !== 1 ? 's' : ''} with this signal`;
+}
+
+/* ══════════════════════════════════════════
+   WELCOME BANNER & NUDGES
+   ══════════════════════════════════════════ */
+function initWelcomeBanner() {
+  const banner = document.getElementById('welcome-banner');
+  const closeBtn = document.getElementById('welcome-close');
+  if (!banner) return;
+  if (localStorage.getItem('cgos_welcome_dismissed')) {
+    banner.style.display = 'none';
+    return;
+  }
+  closeBtn.addEventListener('click', () => {
+    banner.style.display = 'none';
+    localStorage.setItem('cgos_welcome_dismissed', '1');
+  });
+}
+
+function initNudges() {
+  // Signal nudge
+  const nudgeSignal = document.getElementById('nudge-signal');
+  const closeSignal = document.getElementById('nudge-signal-close');
+  if (nudgeSignal) {
+    if (localStorage.getItem('cgos_nudge_signal')) nudgeSignal.classList.add('hidden');
+    else {
+      closeSignal.addEventListener('click', () => {
+        nudgeSignal.classList.add('hidden');
+        localStorage.setItem('cgos_nudge_signal', '1');
+      });
+    }
+  }
+
+  // Health nudge
+  const nudgeHealth = document.getElementById('nudge-health');
+  const closeHealth = document.getElementById('nudge-health-close');
+  if (nudgeHealth) {
+    if (localStorage.getItem('cgos_nudge_health')) nudgeHealth.classList.add('hidden');
+    else {
+      closeHealth.addEventListener('click', () => {
+        nudgeHealth.classList.add('hidden');
+        localStorage.setItem('cgos_nudge_health', '1');
+      });
+      // Also dismiss when health chip is clicked
+      document.getElementById('chip-health').addEventListener('click', () => {
+        nudgeHealth.classList.add('hidden');
+        localStorage.setItem('cgos_nudge_health', '1');
+      }, { once: true });
+    }
+  }
+
+  // Dismiss signal nudge on first signal click
+  document.addEventListener('click', function dismissSignalNudge(e) {
+    if (e.target.closest('.signal-row')) {
+      const n = document.getElementById('nudge-signal');
+      if (n) { n.classList.add('hidden'); localStorage.setItem('cgos_nudge_signal', '1'); }
+      document.removeEventListener('click', dismissSignalNudge);
+    }
+  });
+}
+
+/* ══════════════════════════════════════════
+   TEAM AI BRIEF
+   ══════════════════════════════════════════ */
+async function generateTeamAI() {
+  const teamBtn = document.getElementById('team-ai-btn');
+  const out     = document.getElementById('team-ai-output');
+  const txt     = document.getElementById('team-ai-text');
+  teamBtn.innerHTML = '<span class="spinner"></span> Generating...';
+  teamBtn.disabled  = true;
+  out.style.display = 'none';
+
+  const teamLines = TEAM.map(am =>
+    `${am.name} (${am.title}): ${am.accounts.join(', ')} — Pipeline: ${am.pipeline} — Avg health: ${am.avgHealth} — Status: ${am.status} — ${am.note}`
+  ).join('\n');
+  const attnLines = ATTENTION.map(a =>
+    `${a.name} (Priority ${a.priority}): ${a.reasons}`
+  ).join('\n');
+
+  const sys = `You are a sales manager coach reviewing an MSP account management team. Plain text only — no markdown, no bullets. 3 short paragraphs: (1) portfolio health summary and which AM is performing best, (2) where the manager should focus this week — specific accounts and specific reasons, (3) one coaching observation for the team. Be direct and specific. No platitudes.`;
+  const prompt = `Team:\n${teamLines}\n\nAccounts needing attention:\n${attnLines}\n\nGenerate a manager brief.`;
+
+  try { txt.textContent = await callAI(prompt, sys); }
+  catch { txt.textContent = 'Could not reach the AI service.'; }
+
+  out.style.display = 'block';
+  teamBtn.innerHTML = 'Generate &rarr;';
+  teamBtn.disabled  = false;
+  out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
 
 /* ══════════════════════════════════════════
    INIT
    ══════════════════════════════════════════ */
 renderCustomer('abc');
 openFeedback();
+switchView('portfolio');
+initNudges();
+initWelcomeBanner();
+initPortfolioIntel();
