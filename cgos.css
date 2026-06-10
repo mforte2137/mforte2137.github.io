@@ -525,3 +525,42 @@ body { font-family: 'Georgia', serif; background: var(--bg); color: var(--text);
 .delta-up   { background: var(--warn-bg);   color: var(--warn);   }
 .delta-down { background: var(--good-bg);   color: var(--good);   }
 .delta-neg  { background: var(--danger-bg); color: var(--danger); }
+
+/* ══════════════════════════════════
+   STAGE 2 ADDITIONS
+   ══════════════════════════════════ */
+
+/* ── Alignment detail line ── */
+.align-label-wrap { flex: 1; min-width: 0; }
+.align-detail {
+  font-size: 10px;
+  color: var(--warn);
+  font-family: 'Courier New', monospace;
+  margin-top: 1px;
+}
+
+/* ── Opportunity category pills ── */
+.opp-categories { display: flex; gap: 5px; flex-wrap: wrap; margin-left: 6px; }
+.opp-cat-pill {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+}
+.opp-cat-pill strong { font-weight: normal; }
+.opp-cat-danger { background: var(--danger-bg); color: var(--danger); }
+.opp-cat-warn   { background: var(--warn-bg);   color: var(--warn);   }
+.opp-cat-info   { background: var(--info-bg);   color: var(--info);   }
+.opp-cat-good   { background: var(--good-bg);   color: var(--good);   }
+
+/* ── Clickable chip ── */
+.cust-chip.clickable {
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+.cust-chip.clickable:hover {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
