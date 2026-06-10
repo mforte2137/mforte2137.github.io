@@ -14,6 +14,13 @@ const signalCount    = document.getElementById('signal-count');
 const recsList       = document.getElementById('recs-list');
 let oppTotal_val     = '$21,950 pipeline'; // updated per customer
 const alignmentList  = document.getElementById('alignment-list');
+const lifecycleList  = document.getElementById('lifecycle-list');
+const lifecycleTotal = document.getElementById('lifecycle-total');
+const priorityScore  = document.getElementById('priority-score');
+const priorityReasons = document.getElementById('priority-reasons');
+const priorityAction = document.getElementById('priority-action');
+const chipPriority   = document.getElementById('chip-priority');
+const chipConfidence = document.getElementById('chip-confidence');
 const alignmentOverall = document.getElementById('alignment-overall');
 const alignmentRec   = document.getElementById('alignment-rec');
 const oppBar         = document.getElementById('opp-bar');
@@ -119,7 +126,45 @@ const CUSTOMERS = {
     },
     suggestTitle: 'Schedule strategic review — 5 signals require discussion',
     suggest: 'Lead with the device refresh timeline — it has the longest planning horizon and highest revenue potential. Then address labour over-utilisation to reset scope expectations. The user count and backup topics reinforce why a scope review is overdue. Close with the security assessment as a risk-based conversation.',
-    confidence: 92
+    confidence: 92,
+    priority: {
+      score: 96,
+      reasons: [
+        'Security review overdue 14 months',
+        'User growth +18% — 7 unlicensed',
+        '$21,950 opportunity pipeline',
+        'Labor utilization 27% over agreement'
+      ],
+      action: 'Schedule Strategic Review'
+    },
+    dataConfidence: {
+      score: 92,
+      cls: 'full',
+      sources: [
+        { label: 'PSA',             ok: true  },
+        { label: 'RMM',             ok: true  },
+        { label: 'M365 / Entra ID', ok: true  },
+        { label: 'Security data',   ok: false, note: 'Missing — no security platform connected' },
+        { label: 'Billing sync',    ok: false, note: 'Last sync 7 days ago'                     }
+      ]
+    },
+    lifecycle: {
+      total: '$18,400 potential',
+      items: [
+        { icon: 'eol',      title: '14 Windows 10 devices',          sub: 'EOL in 10 months',           val: '$14,000',  modal: 'eol'    },
+        { icon: 'eol',      title: '2 Server 2016 systems',          sub: 'EOL Oct 2026',               val: '$4,000',   modal: 'servers_abc' },
+        { icon: 'renewal',  title: 'Fortinet firewall renewal',      sub: 'Expires in 60 days',         val: '$1,200',   modal: 'fortinet' },
+        { icon: 'renewal',  title: 'Veeam backup licence',           sub: 'Renewal in 90 days',         val: '$800',     modal: 'veeam'   },
+        { icon: 'warranty', title: 'Warranty expiry — 3 workstations', sub: 'Expiring in 120 days',     val: 'Review',   modal: 'warranty_abc' }
+      ]
+    },
+    changed: [
+      { label: '+8 users onboarded',              delta: '+8',   cls: 'delta-up'   },
+      { label: '+4 managed devices added',        delta: '+4',   cls: 'delta-up'   },
+      { label: 'Ticket volume up 12%',            delta: '+12%', cls: 'delta-up'   },
+      { label: '1 backup platform alert raised',  delta: '⚠',    cls: 'delta-neg'  },
+      { label: '2 security policies updated',     delta: '✓',    cls: 'delta-down' }
+    ]
   },
   river: {
     name: 'River Tech Solutions', type: 'Co-Managed', location: 'Austin, TX',
@@ -157,7 +202,43 @@ const CUSTOMERS = {
     },
     suggestTitle: 'Schedule server review — infrastructure and backup risk are both active',
     suggest: 'Open with the server warranty conversation — it carries the most risk and the highest revenue opportunity. The backup failure rate reinforces the DR narrative and should be the second agenda item. Use the user and device audit finding to demonstrate proactive management.',
-    confidence: 87
+    confidence: 87,
+    priority: {
+      score: 88,
+      reasons: [
+        '3 servers approaching warranty end',
+        'Backup failure rate up 22%',
+        'Security coverage only 61%',
+        '2 dormant devices — scope misalignment'
+      ],
+      action: 'Schedule Server & DR Review'
+    },
+    dataConfidence: {
+      score: 78,
+      cls: 'warn',
+      sources: [
+        { label: 'PSA',             ok: true  },
+        { label: 'RMM',             ok: true  },
+        { label: 'M365 / Entra ID', ok: true  },
+        { label: 'Security data',   ok: false, note: 'No EDR platform connected'      },
+        { label: 'Billing sync',    ok: false, note: 'Last sync 12 days ago'           }
+      ]
+    },
+    lifecycle: {
+      total: '$17,500 potential',
+      items: [
+        { icon: 'warranty', title: '3 servers — warranty expiring',  sub: 'Aug–Nov 2026',               val: '$12,000',  modal: 'servers' },
+        { icon: 'eol',      title: 'SRV-RIVER-03 disk health',       sub: 'SMART errors detected',       val: 'Urgent',   modal: 'backup_river' },
+        { icon: 'renewal',  title: 'SSL certificate renewals',       sub: '2 certs expire Jul 2026',    val: '$400',     modal: 'ssl'     },
+        { icon: 'renewal',  title: 'RMM agent licences',             sub: 'Renewal in 45 days',         val: '$1,200',   modal: 'rmm_renewal' }
+      ]
+    },
+    changed: [
+      { label: 'Backup failure rate increased',    delta: '+22%', cls: 'delta-neg'  },
+      { label: 'SRV-RIVER-03 disk warnings raised',delta: '⚠',    cls: 'delta-neg'  },
+      { label: '2 new users onboarded',            delta: '+2',   cls: 'delta-up'   },
+      { label: 'SSL certs flagged for renewal',    delta: '⚠',    cls: 'delta-up'   }
+    ]
   },
   peak: {
     name: 'Peak Financial Group', type: 'Fully Managed', location: 'Denver, CO',
@@ -192,7 +273,41 @@ const CUSTOMERS = {
     },
     suggestTitle: 'Relationship & planning conversation — strong health, one upcoming milestone',
     suggest: 'This is a relationship maintenance and growth conversation. Lead with appreciation for the strong health metrics, then move to compliance audit preparation. Use the positive momentum to open a technology roadmap discussion — this client is well positioned to invest.',
-    confidence: 88
+    confidence: 88,
+    priority: {
+      score: 52,
+      reasons: [
+        'Compliance audit due in 60 days',
+        'Technology roadmap review pending',
+        'Dark web monitoring gap'
+      ],
+      action: 'Schedule Compliance Prep Call'
+    },
+    dataConfidence: {
+      score: 98,
+      cls: 'full',
+      sources: [
+        { label: 'PSA',             ok: true },
+        { label: 'RMM',             ok: true },
+        { label: 'M365 / Entra ID', ok: true },
+        { label: 'Security stack',  ok: true },
+        { label: 'Billing sync',    ok: true, note: 'Last sync today' }
+      ]
+    },
+    lifecycle: {
+      total: '$4,480 potential',
+      items: [
+        { icon: 'renewal', title: 'Annual compliance audit',        sub: 'Due in 60 days',             val: '$4,000',  modal: 'audit'   },
+        { icon: 'renewal', title: 'M365 E3 licence renewal',        sub: 'Renewal in 4 months',        val: 'Renew',   modal: 'align_licensing_peak' },
+        { icon: 'ok',      title: 'All endpoints under warranty',   sub: 'Next review Dec 2027',       val: 'On track', modal: null     }
+      ]
+    },
+    changed: [
+      { label: 'Annual compliance audit completed',  delta: '✓',   cls: 'delta-down' },
+      { label: 'M365 E3 upgrade completed',          delta: '✓',   cls: 'delta-down' },
+      { label: '1 new user onboarded',               delta: '+1',  cls: 'delta-up'   },
+      { label: 'Ticket volume down 8%',              delta: '-8%', cls: 'delta-down' }
+    ]
   }
 };
 
@@ -747,6 +862,71 @@ const MODALS = {
   },
 
 
+  servers_abc: {
+    title: '2 Server 2016 systems — EOL Oct 2026',
+    tabs: [{ label: 'Server detail', html: `
+      <table class="modal-table">
+        <thead><tr><th>Server</th><th>Role</th><th>OS EOL</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>SRV-ABC-FILE</td><td>File server</td><td style="font-family:'Courier New',monospace;color:var(--text-2);">Oct 2026</td><td><span class="eol-badge eol-soon">Plan now</span></td></tr>
+          <tr><td>SRV-ABC-APP</td><td>Application</td><td style="font-family:'Courier New',monospace;color:var(--text-2);">Oct 2026</td><td><span class="eol-badge eol-soon">Plan now</span></td></tr>
+        </tbody>
+      </table>
+      <div class="modal-stat">Both servers reach OS end of life Oct 2026. Budget conversation should happen now — <strong>estimated $4,000–$6,000</strong> for replacement or cloud migration.</div>` }],
+    footer: [{ label: 'Create server refresh opportunity', primary: true }]
+  },
+  fortinet: {
+    title: 'Fortinet firewall renewal — 60 days',
+    tabs: [{ label: 'Renewal detail', html: `
+      <table class="modal-table">
+        <thead><tr><th>Device</th><th>Licence type</th><th>Expiry</th><th>Annual cost</th></tr></thead>
+        <tbody>
+          <tr><td>FortiGate 60F</td><td>UTM Bundle</td><td style="font-family:'Courier New',monospace;color:var(--warn);">Aug 10, 2026</td><td>$1,200</td></tr>
+        </tbody>
+      </table>
+      <div class="modal-stat">Renewal is in 60 days. Auto-renewal is not configured — <strong>manual action required</strong>. Consider upgrading to FortiGate 80F at renewal for improved throughput.</div>` }],
+    footer: [{ label: 'Create renewal opportunity', primary: true }, { label: 'Log reminder' }]
+  },
+  veeam: {
+    title: 'Veeam backup licence renewal — 90 days',
+    tabs: [{ label: 'Renewal detail', html: `
+      <table class="modal-table">
+        <thead><tr><th>Product</th><th>Licences</th><th>Expiry</th><th>Annual cost</th></tr></thead>
+        <tbody>
+          <tr><td>Veeam Backup Essentials</td><td>2 sockets</td><td style="font-family:'Courier New',monospace;color:var(--text-2);">Sep 2026</td><td>$800</td></tr>
+        </tbody>
+      </table>
+      <div class="modal-stat">Standard renewal — no issues flagged. Note: given current backup failure rate, consider discussing an upgrade to Veeam Business+ which includes improved monitoring.</div>` }],
+    footer: [{ label: 'Log renewal reminder', primary: true }]
+  },
+  warranty_abc: {
+    title: 'Warranty expiry — 3 workstations',
+    tabs: [{ label: 'Device list', html: `
+      <table class="modal-table">
+        <thead><tr><th>Device</th><th>Warranty expires</th><th>Replacement cost</th></tr></thead>
+        <tbody>
+          <tr><td>DESK-MFG-031</td><td style="font-family:'Courier New',monospace;color:var(--text-2);">Oct 2026</td><td>$900</td></tr>
+          <tr><td>DESK-MFG-032</td><td style="font-family:'Courier New',monospace;color:var(--text-2);">Oct 2026</td><td>$900</td></tr>
+          <tr><td>LAPTOP-EXEC-03</td><td style="font-family:'Courier New',monospace;color:var(--text-2);">Nov 2026</td><td>$1,300</td></tr>
+        </tbody>
+      </table>
+      <div class="modal-stat">3 devices expire within 6 months. These overlap with the Win10 EOL conversation — consider bundling into a single refresh proposal for <strong>$3,100</strong>.</div>` }],
+    footer: [{ label: 'Bundle into refresh proposal', primary: true }]
+  },
+  rmm_renewal: {
+    title: 'RMM agent licence renewal — 45 days',
+    tabs: [{ label: 'Renewal detail', html: `
+      <table class="modal-table">
+        <thead><tr><th>Product</th><th>Agents</th><th>Expiry</th><th>Annual cost</th></tr></thead>
+        <tbody>
+          <tr><td>NinjaRMM Professional</td><td>28</td><td style="font-family:'Courier New',monospace;color:var(--warn);">Jul 2026</td><td>$1,176</td></tr>
+        </tbody>
+      </table>
+      <div class="modal-stat">Standard renewal — 45 days out. No changes anticipated. Confirm device count at renewal in case dormant devices have been decommissioned.</div>` }],
+    footer: [{ label: 'Log renewal reminder', primary: true }]
+  },
+
+
 };
 
 /* ══════════════════════════════════════════
@@ -794,6 +974,116 @@ function closeModal() {
 modalClose.addEventListener('click', closeModal);
 modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* ══════════════════════════════════════════
+   RENDER LIFECYCLE & RENEWALS
+   ══════════════════════════════════════════ */
+function iconForLifecycle(type) {
+  if (type === 'renewal')  return svg('<path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>');
+  if (type === 'eol')      return svg('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>');
+  if (type === 'warranty') return svg('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>');
+  return svg('<polyline points="20 6 9 17 4 12"/>');
+}
+
+function renderLifecycle(c) {
+  const lc = c.lifecycle;
+  lifecycleTotal.textContent = lc.total;
+  lifecycleList.innerHTML = lc.items.map(item => `
+    <div class="lifecycle-row${item.modal ? '' : ' no-click'}" ${item.modal ? `data-modal="${item.modal}" tabindex="0" role="button"` : ''}>
+      <div class="lifecycle-icon ${item.icon}">${iconForLifecycle(item.icon)}</div>
+      <div class="lifecycle-body">
+        <div class="lifecycle-title">${item.title}</div>
+        <div class="lifecycle-sub">${item.sub}</div>
+      </div>
+      <div class="lifecycle-val">${item.val}</div>
+      ${item.modal ? '<span class="signal-arrow">&#8250;</span>' : ''}
+    </div>
+  `).join('');
+
+  document.querySelectorAll('.lifecycle-row[data-modal]').forEach(row => {
+    row.addEventListener('click', () => openModal(row.dataset.modal));
+    row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openModal(row.dataset.modal); });
+  });
+}
+
+/* ══════════════════════════════════════════
+   RENDER PRIORITY SCORE
+   ══════════════════════════════════════════ */
+function renderPriority(c) {
+  const p = c.priority;
+  const scoreEl = document.getElementById('priority-score');
+  scoreEl.textContent = p.score;
+  scoreEl.style.color = p.score >= 80 ? 'var(--danger)' : p.score >= 60 ? 'var(--warn)' : 'var(--good)';
+  priorityReasons.innerHTML = p.reasons.map(r =>
+    `<div class="priority-reason-item">${r}</div>`
+  ).join('');
+  priorityAction.textContent = p.action;
+
+  // Update chip
+  chipPriority.textContent = `★ Priority ${p.score}`;
+  chipPriority.style.background = p.score >= 80 ? '#8b1f1f' : p.score >= 60 ? '#7a4f0a' : '#2d6a2d';
+  chipPriority.style.borderColor = chipPriority.style.background;
+}
+
+/* ══════════════════════════════════════════
+   RENDER DATA CONFIDENCE
+   ══════════════════════════════════════════ */
+function renderDataConfidence(c) {
+  const dc = c.dataConfidence;
+  chipConfidence.textContent  = `✓ Data ${dc.score}%`;
+  chipConfidence.className    = `cust-chip confidence-chip ${dc.cls}`;
+}
+
+/* ══════════════════════════════════════════
+   RENDER STRATEGIC MEMORY (upgraded)
+   ══════════════════════════════════════════ */
+function renderMemoryExpanded(c) {
+  const groups = {
+    done:  { label: 'Completed', items: [] },
+    warn:  { label: 'In Progress', items: [] },
+    miss:  { label: 'Open', items: [] },
+    over:  { label: 'Overdue', items: [] }
+  };
+
+  c.memory.items.forEach(i => {
+    const key = i.status === 'overdue' ? 'over' : i.status;
+    if (groups[key]) groups[key].items.push(i);
+  });
+
+  const completed = c.memory.items.filter(i => i.status === 'done').length;
+  const total     = c.memory.items.length;
+
+  const groupHtml = Object.values(groups).filter(g => g.items.length > 0).map(g => `
+    <div class="memory-group">
+      <div class="memory-group-label">${g.label}</div>
+      ${g.items.map(i => `
+        <div class="memory-row">
+          <div class="mem-status ${i.status}">${i.status === 'done' ? '&#10003;' : i.status === 'warn' ? '&#9651;' : i.status === 'over' ? '&#9888;' : '&#9675;'}</div>
+          <div class="mem-title">${i.label}</div>
+          <div class="mem-date">${i.date}</div>
+        </div>`).join('')}
+    </div>`).join('');
+
+  // What changed section
+  const changedHtml = c.changed ? `
+    <div class="changed-section">
+      <div class="changed-label">WHAT CHANGED SINCE LAST REVIEW</div>
+      ${c.changed.map(ch => `
+        <div class="changed-row">
+          <span class="changed-delta ${ch.cls}">${ch.delta}</span>
+          <span>${ch.label}</span>
+        </div>`).join('')}
+    </div>` : '';
+
+  const completionPct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  memoryExpanded.innerHTML = groupHtml + `
+    <div class="memory-completion">
+      <span>Roadmap: ${completed} / ${total} items complete</span>
+      <div class="completion-bar-bg"><div class="completion-bar-fill" style="width:${completionPct}%"></div></div>
+      <span>${completionPct}%</span>
+    </div>` + changedHtml;
+}
 
 /* ══════════════════════════════════════════
    RENDER ALIGNMENT
@@ -854,9 +1144,11 @@ function renderCustomer(key) {
   chipHealth.className   = `cust-chip health-chip ${healthClass(c.health)}`;
 
   memoryMeta.innerHTML = c.memory.meta;
-  memoryPreview.innerHTML = c.memory.items.map(i =>
+  const doneCount = c.memory.items.filter(i => i.status === 'done').length;
+  const totalItems = c.memory.items.length;
+  memoryPreview.innerHTML = c.memory.items.slice(0, 3).map(i =>
     `<span class="mem-item ${i.status}">${i.status === 'done' ? '&#10003;' : i.status === 'warn' ? '&#9651;' : '&#10005;'} ${i.label}</span>`
-  ).join('');
+  ).join('') + `<span class="mem-item" style="color:var(--text-3)">${doneCount}/${totalItems} complete</span>`;
 
   const filtered = c.signals.filter(s => {
     const srcKey = srcKeyMap[s.src];
@@ -894,6 +1186,9 @@ function renderCustomer(key) {
   oppTotal_val             = c.oppTotal;
   renderAlignment(c);
   renderOppBar(c);
+  renderLifecycle(c);
+  renderPriority(c);
+  renderDataConfidence(c);
   oppOpen = false;
   oppChevron.classList.remove('open');
   oppExpanded.classList.remove('open');
@@ -989,12 +1284,7 @@ function toggleMemory() {
   memoryChevron.classList.toggle('open', memoryOpen);
   const c = CUSTOMERS[customerSelect.value];
   if (memoryOpen) {
-    memoryExpanded.innerHTML = c.memory.items.map(i => `
-      <div class="memory-row">
-        <div class="mem-status ${i.status}">${i.status === 'done' ? '&#10003;' : i.status === 'warn' ? '&#9651;' : '&#10005;'}</div>
-        <div class="mem-title">${i.label}</div>
-        <div class="mem-date">${i.date}</div>
-      </div>`).join('');
+    renderMemoryExpanded(c);
     memoryExpanded.classList.add('open');
   } else {
     memoryExpanded.classList.remove('open');
