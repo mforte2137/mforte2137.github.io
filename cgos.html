@@ -59,6 +59,8 @@
           <span class="cust-chip" id="chip-since">Since May 2021</span>
           <span class="cust-chip health-chip" id="chip-health">Health 82</span>
           <span class="cust-chip" id="chip-am">Sarah Johnson</span>
+          <span class="cust-chip priority-chip" id="chip-priority" title="AI Priority Score">&#9733; Priority 96</span>
+          <span class="cust-chip confidence-chip" id="chip-confidence" title="Data Confidence">&#10003; Data 92%</span>
         </div>
         <div class="source-pills">
           <span class="toolbar-label">Sources</span>
@@ -119,25 +121,52 @@
         <div id="recs-list"></div>
       </div>
 
-      <!-- Suggested next conversation -->
-      <section class="panel suggestion-panel" id="suggested-panel">
+      <!-- Lifecycle & Renewals -->
+      <section class="panel" id="lifecycle-panel">
         <div class="panel-header">
-          <span class="panel-title">SUGGESTED NEXT CONVERSATION</span>
-          <span class="conf-label" id="conf-label">92% confidence</span>
+          <span class="panel-title">LIFECYCLE &amp; RENEWALS</span>
+          <span class="lifecycle-total" id="lifecycle-total">$18,400 potential</span>
         </div>
-        <div class="suggested">
-          <div class="suggest-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <div id="lifecycle-list"></div>
+      </section>
+
+      <!-- AI Priority + Suggested next conversation -->
+      <div class="priority-suggest-row">
+
+        <section class="panel priority-panel">
+          <div class="panel-header">
+            <span class="panel-title">AI PRIORITY SCORE</span>
           </div>
-          <div class="suggest-body">
-            <div class="suggest-title" id="suggest-title"></div>
-            <div class="suggest-desc" id="suggest-desc"></div>
-            <div class="conf-bar-wrap">
-              <div class="conf-bar-bg"><div class="conf-bar" id="conf-bar" style="width:92%"></div></div>
+          <div class="priority-body">
+            <div class="priority-score-wrap">
+              <div class="priority-score" id="priority-score">96</div>
+              <div class="priority-score-denom">/100</div>
+            </div>
+            <div class="priority-reasons" id="priority-reasons"></div>
+          </div>
+          <div class="priority-action" id="priority-action"></div>
+        </section>
+
+        <section class="panel suggestion-panel" id="suggested-panel">
+          <div class="panel-header">
+            <span class="panel-title">SUGGESTED NEXT CONVERSATION</span>
+            <span class="conf-label" id="conf-label">92% confidence</span>
+          </div>
+          <div class="suggested">
+            <div class="suggest-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            </div>
+            <div class="suggest-body">
+              <div class="suggest-title" id="suggest-title"></div>
+              <div class="suggest-desc" id="suggest-desc"></div>
+              <div class="conf-bar-wrap">
+                <div class="conf-bar-bg"><div class="conf-bar" id="conf-bar" style="width:92%"></div></div>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+      </div>
 
       <!-- Action buttons -->
       <div class="action-row">
