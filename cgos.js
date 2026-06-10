@@ -42,9 +42,6 @@ const feedbackPanel  = document.getElementById('feedback-panel');
 const fbClose        = document.getElementById('fb-close');
 const fbSubmit       = document.getElementById('fb-submit');
 const fbStatus       = document.getElementById('fb-status');
-const fbFreeform     = document.getElementById('fb-freeform');
-const ratingBtns     = document.querySelectorAll('.rating-btn');
-const ratingLabel    = document.getElementById('rating-label');
 const modalOverlay   = document.getElementById('modal-overlay');
 const modalTitle     = document.getElementById('modal-title');
 const modalTabsEl    = document.getElementById('modal-tabs');
@@ -60,13 +57,11 @@ const closePortAi    = document.getElementById('close-port-ai');
 /* ── State ── */
 const activeSources  = new Set(['psa', 'rmm', 'sb']);
 const srcKeyMap      = { 'PSA': 'psa', 'RMM': 'rmm', 'Salesbuildr': 'sb' };
-let selectedRating   = null;
 let memoryOpen       = false;
 let activeFilter     = 'all';
 let oppOpen          = false;
 let currentModalTabs = null;
 
-const ratingLabels = { 1: 'Not useful', 2: 'Somewhat useful', 3: "Very useful — I'd use this" };
 
 /* ── SVG icons ── */
 function svg(path) { return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">${path}</svg>`; }
@@ -1111,12 +1106,11 @@ function closeFeedback() { feedbackPanel.classList.remove('open'); feedbackPanel
 feedbackToggle.addEventListener('click', () => feedbackPanel.classList.contains('open') ? closeFeedback() : openFeedback());
 fbClose.addEventListener('click', closeFeedback);
 
-ratingBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    selectedRating = parseInt(btn.dataset.val, 10);
-    ratingBtns.forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    ratingLabel.textContent = ratingLabels[selectedRating] || '';
+/* Show/hide Other text input when Other radio selected */
+document.querySelectorAll('input[name="investigate"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const otherInput = document.getElementById('fb-investigate-other');
+    otherInput.classList.toggle('visible', radio.value === 'Other' && radio.checked);
   });
 });
 
@@ -1125,13 +1119,24 @@ function getChecked(id) {
 }
 
 async function submitFeedback() {
-  const actions  = getChecked('fb-actions');
-  const sources  = getChecked('fb-sources');
-  const freeform = fbFreeform.value.trim();
-  const name     = document.getElementById('fb-name').value.trim();
-  const company  = document.getElementById('fb-company').value.trim();
+  const actions       = getChecked('fb-actions');
+  const sources       = getChecked('fb-sources');
+  const name          = document.getElementById('fb-name').value.trim();
+  const company       = document.getElementById('fb-company').value.trim();
+  const timecost      = document.getElementById('fb-timecost').value.trim();
+  const problem       = document.getElementById('fb-problem').value.trim();
+  const autoassemble  = document.getElementById('fb-autoassemble').value.trim();
+  const onething      = document.getElementById('fb-onething').value.trim();
 
-  if (!actions.length && !sources.length && !freeform && !selectedRating) {
+  // Investigate radio
+  const investigateRadio = document.querySelector('input[name="investigate"]:checked');
+  let investigate = investigateRadio ? investigateRadio.value : null;
+  if (investigate === 'Other') {
+    const otherVal = document.getElementById('fb-investigate-other').value.trim();
+    if (otherVal) investigate = `Other: ${otherVal}`;
+  }
+
+  if (!actions.length && !sources.length && !investigate && !timecost && !problem && !autoassemble && !onething) {
     fbStatus.textContent = 'Please fill in at least one field.';
     fbStatus.className   = 'fb-status err';
     return;
@@ -1149,19 +1154,21 @@ async function submitFeedback() {
     const res  = await fetch('/api/send-feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, company, actions, sources, freeform,
-        rating: selectedRating ? `${selectedRating}/3 — ${ratingLabels[selectedRating]}` : null,
+      body: JSON.stringify({ name, company, actions, sources,
+        investigate, timecost, problem, autoassemble, onething,
         viewedCustomer: activeView, submittedAt: new Date().toISOString() })
     });
     const data = await res.json();
     if (data.ok) {
       fbStatus.textContent = 'Feedback sent — thank you!';
       fbStatus.className   = 'fb-status ok';
-      fbFreeform.value = '';
       document.querySelectorAll('.fb-check input').forEach(cb => cb.checked = false);
-      ratingBtns.forEach(b => b.classList.remove('selected'));
-      selectedRating = null;
-      ratingLabel.textContent = '';
+      document.querySelectorAll('input[name="investigate"]').forEach(r => r.checked = false);
+      document.getElementById('fb-investigate-other').classList.remove('visible');
+      document.getElementById('fb-timecost').value     = '';
+      document.getElementById('fb-problem').value      = '';
+      document.getElementById('fb-autoassemble').value = '';
+      document.getElementById('fb-onething').value     = '';
     } else {
       fbStatus.textContent = 'Error: ' + (data.error || 'Could not send.');
       fbStatus.className   = 'fb-status err';
