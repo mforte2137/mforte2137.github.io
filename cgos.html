@@ -279,18 +279,38 @@
       </div>
 
       <div class="fb-section">
-        <div class="fb-section-label">FREEFORM THOUGHTS</div>
-        <textarea class="fb-textarea" id="fb-freeform" placeholder="What would make this genuinely useful for your team? What's missing? What would you change?"></textarea>
+        <div class="fb-section-label">WHAT WOULD YOU INVESTIGATE FIRST ON THIS PAGE?</div>
+        <div class="fb-radios" id="fb-investigate">
+          <label class="fb-radio"><input type="radio" name="investigate" value="Change Signals"> Change Signals</label>
+          <label class="fb-radio"><input type="radio" name="investigate" value="Agreement Alignment"> Agreement Alignment</label>
+          <label class="fb-radio"><input type="radio" name="investigate" value="Strategic Memory"> Strategic Memory</label>
+          <label class="fb-radio"><input type="radio" name="investigate" value="Opportunities"> Opportunities</label>
+          <label class="fb-radio"><input type="radio" name="investigate" value="Suggested Next Conversation"> Suggested Next Conversation</label>
+          <label class="fb-radio fb-radio-other">
+            <input type="radio" name="investigate" value="Other"> Other
+            <input type="text" class="fb-other-input" id="fb-investigate-other" placeholder="Please specify">
+          </label>
+        </div>
       </div>
 
       <div class="fb-section">
-        <div class="fb-section-label">OVERALL REACTION</div>
-        <div class="fb-rating" id="fb-rating">
-          <button class="rating-btn" data-val="1" title="Not useful">&#128078;</button>
-          <button class="rating-btn" data-val="2" title="Somewhat useful">&#128077;</button>
-          <button class="rating-btn" data-val="3" title="Very useful">&#129321;</button>
-        </div>
-        <div class="rating-label" id="rating-label"></div>
+        <div class="fb-section-label">WHAT IS THE MOST TIME-CONSUMING PART OF PREPARING FOR CUSTOMER REVIEWS TODAY?</div>
+        <textarea class="fb-textarea" id="fb-timecost" placeholder="e.g. gathering data from multiple systems, writing up notes, remembering what was discussed last time..."></textarea>
+      </div>
+
+      <div class="fb-section">
+        <div class="fb-section-label">IF THIS EXISTED TOMORROW, WHAT PROBLEM WOULD IT SOLVE FOR YOU?</div>
+        <textarea class="fb-textarea" id="fb-problem" placeholder="Describe the specific pain point this would address for your team..."></textarea>
+      </div>
+
+      <div class="fb-section">
+        <div class="fb-section-label">WHAT INFORMATION DO YOU WISH WAS AUTOMATICALLY ASSEMBLED BEFORE EVERY CUSTOMER REVIEW?</div>
+        <textarea class="fb-textarea" id="fb-autoassemble" placeholder="e.g. ticket history, device status, contract changes, last conversation notes..."></textarea>
+      </div>
+
+      <div class="fb-section">
+        <div class="fb-section-label">WHAT'S THE ONE THING YOU WISH YOU KNEW ABOUT EVERY CUSTOMER?</div>
+        <textarea class="fb-textarea" id="fb-onething" placeholder="The single insight that would change how you approach every customer conversation..."></textarea>
       </div>
 
       <button class="fb-submit" id="fb-submit">Send Feedback</button>
