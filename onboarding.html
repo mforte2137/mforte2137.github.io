@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Salesbuildr — Customer Onboarding</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --brand: #164df1;
+        --brand-deep: #0b2c8c;
+        --brand-bright: #5b82ff;
+        --ink: #0a1330;
+        --paper: #ffffff;
+        --muted: rgba(255, 255, 255, 0.72);
+        --faint: rgba(255, 255, 255, 0.45);
+        --hair: rgba(255, 255, 255, 0.16);
+        --ease: cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        background: var(--brand-deep);
+        font-family:
+          "Plus Jakarta Sans",
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          sans-serif;
+        color: #fff;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .deck {
+        position: fixed;
+        inset: 0;
+        background:
+          radial-gradient(
+            120% 90% at 78% 12%,
+            var(--brand-bright) 0%,
+            rgba(91, 130, 255, 0) 42%
+          ),
+          radial-gradient(
+            120% 120% at 0% 100%,
+            var(--brand-deep) 0%,
+            rgba(11, 44, 140, 0) 55%
+          ),
+          var(--brand);
+      }
+
+      /* ---------- Slides ---------- */
+      .slide {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: clamp(48px, 7vw, 120px) clamp(28px, 8vw, 160px);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(22px);
+        transition:
+          opacity 0.6s var(--ease),
+          transform 0.7s var(--ease),
+          visibility 0s linear 0.6s;
+      }
+      .slide.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        transition:
+          opacity 0.6s var(--ease),
+          transform 0.7s var(--ease),
+          visibility 0s;
+      }
+      .slide.active .reveal {
+        animation: rise 0.7s var(--ease) both;
+      }
+      .slide.active .reveal:nth-child(1) {
+        animation-delay: 0.06s;
+      }
+      .slide.active .reveal:nth-child(2) {
+        animation-delay: 0.14s;
+      }
+      .slide.active .reveal:nth-child(3) {
+        animation-delay: 0.22s;
+      }
+      .slide.active .reveal:nth-child(4) {
+        animation-delay: 0.3s;
+      }
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .eyebrow {
+        font-size: clamp(11px, 1.1vw, 14px);
+        font-weight: 700;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--brand-bright);
+        margin-bottom: clamp(18px, 2.4vh, 30px);
+      }
+      .slide.tinted .eyebrow {
+        color: #9db4ff;
+      }
+
+      h1 {
+        font-weight: 800;
+        line-height: 1.02;
+        letter-spacing: -0.025em;
+        font-size: clamp(40px, 6.4vw, 104px);
+        max-width: 16ch;
+      }
+      h2 {
+        font-weight: 800;
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+        font-size: clamp(30px, 4.4vw, 64px);
+        max-width: 18ch;
+      }
+      .accent {
+        color: var(--brand-bright);
+      }
+
+      .sub {
+        margin-top: clamp(18px, 2.6vh, 30px);
+        font-size: clamp(16px, 1.65vw, 24px);
+        font-weight: 500;
+        line-height: 1.5;
+        color: var(--muted);
+        max-width: 60ch;
+      }
+
+      /* ---------- Image frame (no crop, flexes with aspect ratio) ---------- */
+      .frame {
+        margin-top: clamp(22px, 3.4vh, 44px);
+        width: min(92vw, 960px);
+        max-height: 50vh;
+        background: #fff;
+        border-radius: 18px;
+        padding: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.55);
+      }
+      .frame img {
+        max-width: 100%;
+        max-height: calc(50vh - 28px);
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        border-radius: 8px;
+        display: block;
+      }
+      /* Graceful placeholder shown until the real screenshot is added */
+      .frame img.missing {
+        display: none;
+      }
+      .frame .placeholder {
+        display: none;
+      }
+      .frame.empty {
+        background: rgba(255, 255, 255, 0.06);
+        border: 2px dashed rgba(255, 255, 255, 0.32);
+        box-shadow: none;
+        aspect-ratio: 16 / 9;
+        max-height: 48vh;
+      }
+      .frame.empty .placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        color: var(--faint);
+      }
+      .frame.empty .placeholder .pi {
+        font-size: 30px;
+      }
+      .frame.empty .placeholder .pf {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.7);
+        background: rgba(255, 255, 255, 0.08);
+        padding: 4px 10px;
+        border-radius: 6px;
+      }
+
+      /* ---------- Timeline (slide 3) ---------- */
+      .timeline {
+        margin-top: clamp(34px, 5vh, 64px);
+        width: min(94vw, 1040px);
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: clamp(12px, 2vw, 26px);
+        position: relative;
+      }
+      .timeline::before {
+        content: "";
+        position: absolute;
+        top: 22px;
+        left: 8%;
+        right: 8%;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0.12),
+          rgba(255, 255, 255, 0.4),
+          rgba(255, 255, 255, 0.12)
+        );
+      }
+      .step {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+      .step .dot {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: #fff;
+        color: var(--brand);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 18px;
+        box-shadow: 0 12px 26px -10px rgba(0, 0, 0, 0.5);
+        position: relative;
+        z-index: 1;
+      }
+      .step .label {
+        margin-top: 16px;
+        font-weight: 700;
+        font-size: clamp(15px, 1.4vw, 19px);
+        line-height: 1.25;
+      }
+      .step .desc {
+        margin-top: 6px;
+        font-size: clamp(12px, 1.05vw, 14px);
+        color: var(--faint);
+        line-height: 1.35;
+        max-width: 20ch;
+      }
+      .note {
+        margin-top: clamp(26px, 3.6vh, 44px);
+        font-size: clamp(13px, 1.15vw, 16px);
+        color: var(--faint);
+        font-weight: 500;
+      }
+
+      .closing-line {
+        margin-top: clamp(26px, 3.6vh, 42px);
+        font-size: clamp(15px, 1.5vw, 21px);
+        font-weight: 700;
+        color: #fff;
+        border-top: 1px solid var(--hair);
+        padding-top: clamp(20px, 2.6vh, 28px);
+      }
+
+      /* ---------- Chrome ---------- */
+      .brand-tag {
+        position: fixed;
+        right: clamp(20px, 3vw, 44px);
+        bottom: clamp(18px, 3vh, 36px);
+        font-weight: 700;
+        font-size: 14px;
+        letter-spacing: 0.02em;
+        color: rgba(255, 255, 255, 0.85);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        z-index: 20;
+      }
+      .brand-tag .mark {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        background: #fff;
+        color: var(--brand);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 13px;
+      }
+      .counter {
+        position: fixed;
+        left: clamp(20px, 3vw, 44px);
+        bottom: clamp(18px, 3vh, 36px);
+        font-size: 13px;
+        letter-spacing: 0.12em;
+        color: var(--faint);
+        font-weight: 600;
+        z-index: 20;
+      }
+      .counter b {
+        color: #fff;
+        font-weight: 800;
+      }
+
+      .nav-btn {
+        position: fixed;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: 1px solid var(--hair);
+        background: rgba(255, 255, 255, 0.06);
+        color: #fff;
+        cursor: pointer;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          background 0.2s,
+          opacity 0.2s,
+          border-color 0.2s;
+        backdrop-filter: blur(4px);
+      }
+      .nav-btn:hover {
+        background: rgba(255, 255, 255, 0.16);
+        border-color: rgba(255, 255, 255, 0.4);
+      }
+      .nav-btn svg {
+        width: 20px;
+        height: 20px;
+      }
+      .nav-btn.prev {
+        left: clamp(14px, 2vw, 30px);
+      }
+      .nav-btn.next {
+        right: clamp(14px, 2vw, 30px);
+      }
+      .nav-btn:disabled {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        background: #fff;
+        width: 0;
+        z-index: 30;
+        transition: width 0.5s var(--ease);
+        box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+      }
+
+      .hint {
+        position: fixed;
+        left: 50%;
+        bottom: clamp(18px, 3vh, 34px);
+        transform: translateX(-50%);
+        font-size: 12px;
+        color: var(--faint);
+        letter-spacing: 0.08em;
+        z-index: 20;
+        transition: opacity 0.4s;
+        font-weight: 600;
+      }
+      .hint kbd {
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 5px;
+        padding: 2px 7px;
+        font-family: inherit;
+        font-weight: 700;
+        color: #fff;
+      }
+      .hint.hide {
+        opacity: 0;
+      }
+
+      @media (max-width: 720px) {
+        .timeline {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 28px 16px;
+        }
+        .timeline::before {
+          display: none;
+        }
+        h1 {
+          font-size: clamp(34px, 9vw, 56px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="progress" id="progress"></div>
+    <div class="deck" id="deck">
+      <!-- 1. Title -->
+      <section class="slide active">
+        <div class="eyebrow reveal">Salesbuildr Onboarding</div>
+        <h1 class="reveal">White-glove<br />from day one.</h1>
+        <p class="sub reveal">
+          A guided rollout, led by a dedicated specialist — built around your
+          catalog, your workflow, and your team.
+        </p>
+      </section>
+
+      <!-- 2. Dedicated specialist -->
+      <section class="slide tinted">
+        <div class="eyebrow reveal">A Dedicated Specialist</div>
+        <h2 class="reveal">You're never doing<br />this alone.</h2>
+        <p class="sub reveal">
+          Every onboarding is led live by a Salesbuildr specialist who builds
+          alongside you — sharing their screen, answering questions in the
+          moment, and tailoring each session to how you actually sell.
+        </p>
+        <div
+          class="frame reveal"
+          data-img="slide-2.png"
+          data-caption="A live onboarding session"
+        ></div>
+      </section>
+
+      <!-- 3. The journey / timeline -->
+      <section class="slide tinted">
+        <div class="eyebrow reveal">The Journey</div>
+        <h2 class="reveal">A clear path,<br />session by session.</h2>
+        <p class="sub reveal">
+          A handful of focused working sessions — each one builds on the last.
+        </p>
+        <div class="timeline reveal">
+          <div class="step">
+            <div class="dot">1</div>
+            <div class="label">Kickoff &amp; First Quote</div>
+            <div class="desc">
+              Get set up and build a real quote together on day one.
+            </div>
+          </div>
+          <div class="step">
+            <div class="dot">2</div>
+            <div class="label">Catalog &amp; Quoting</div>
+            <div class="desc">
+              Your products, pricing, and quoting workflow.
+            </div>
+          </div>
+          <div class="step">
+            <div class="dot">3</div>
+            <div class="label">Templates &amp; Cover Pages</div>
+            <div class="desc">On-brand proposals, widgets, and templates.</div>
+          </div>
+          <div class="step">
+            <div class="dot">4</div>
+            <div class="label">Refining Your Workflow</div>
+            <div class="desc">Integrations, approvals, and team rollout.</div>
+          </div>
+        </div>
+        <div class="note reveal">
+          Spaced to fit your pace — typically over a few weeks.
+        </div>
+      </section>
+
+      <!-- 4. Inside a session -->
+      <section class="slide tinted">
+        <div class="eyebrow reveal">Inside a Session</div>
+        <h2 class="reveal">We build with your<br />data — not slides.</h2>
+        <p class="sub reveal">
+          Sessions are hands-on. We work in your real catalog and create real
+          quotes together, then leave a short punchlist so progress continues
+          between sessions.
+        </p>
+        <div
+          class="frame reveal"
+          data-img="slide-4.png"
+          data-caption="Working in your real catalog"
+        ></div>
+      </section>
+
+      <!-- 5. Tailored to you -->
+      <section class="slide tinted">
+        <div class="eyebrow reveal">Tailored To You</div>
+        <h2 class="reveal">Shaped around<br />your team.</h2>
+        <p class="sub reveal">
+          Need sales-rep training or a self-serve storefront? We add focused
+          sessions where they help — and bring in ad-hoc sessions whenever you
+          need them.
+        </p>
+        <div
+          class="frame reveal"
+          data-img="slide-5.png"
+          data-caption="Optional add-on sessions"
+        ></div>
+      </section>
+
+      <!-- 6. Outcome -->
+      <section class="slide">
+        <div class="eyebrow reveal">The Outcome</div>
+        <h1 class="reveal">
+          From zero to<br /><span class="accent">winning quotes.</span>
+        </h1>
+        <p class="sub reveal">
+          In a few weeks your team is live, confident, and sending on-brand
+          proposals that close — and we're still here whenever you need us.
+        </p>
+        <div class="closing-line reveal">Let's map out your onboarding.</div>
+      </section>
+    </div>
+
+    <!-- Chrome -->
+    <button class="nav-btn prev" id="prev" aria-label="Previous slide">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    <button class="nav-btn next" id="next" aria-label="Next slide">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </button>
+
+    <div class="counter"><b id="cur">01</b> / <span id="total">06</span></div>
+    <div class="brand-tag"><span class="mark">S</span> Salesbuildr</div>
+    <div class="hint" id="hint">
+      Press <kbd>Space</kbd> or <kbd>→</kbd> to advance
+    </div>
+
+    <script>
+      (function () {
+        var slides = Array.prototype.slice.call(
+          document.querySelectorAll(".slide"),
+        );
+        var total = slides.length;
+        var i = 0;
+
+        // Build image frames with graceful placeholders.
+        document.querySelectorAll(".frame[data-img]").forEach(function (frame) {
+          var src = frame.getAttribute("data-img");
+          var caption = frame.getAttribute("data-caption") || "Screenshot";
+          var img = new Image();
+          img.alt = caption;
+          img.src = src;
+          var ph = document.createElement("div");
+          ph.className = "placeholder";
+          ph.innerHTML =
+            '<div class="pi">\u25A6</div><div>' +
+            caption +
+            '</div><div class="pf">' +
+            src +
+            "</div>";
+          img.onerror = function () {
+            img.classList.add("missing");
+            frame.classList.add("empty");
+          };
+          frame.appendChild(img);
+          frame.appendChild(ph);
+        });
+
+        var curEl = document.getElementById("cur");
+        var totalEl = document.getElementById("total");
+        var progress = document.getElementById("progress");
+        var prevBtn = document.getElementById("prev");
+        var nextBtn = document.getElementById("next");
+        var hint = document.getElementById("hint");
+        totalEl.textContent = pad(total);
+
+        function pad(n) {
+          return n < 10 ? "0" + n : "" + n;
+        }
+
+        function show(n) {
+          n = Math.max(0, Math.min(total - 1, n));
+          if (n === i) {
+            sync();
+            return;
+          }
+          slides[i].classList.remove("active");
+          i = n;
+          slides[i].classList.add("active");
+          if (history.replaceState)
+            history.replaceState(null, "", "#" + (i + 1));
+          sync();
+        }
+        function sync() {
+          curEl.textContent = pad(i + 1);
+          progress.style.width = (i / (total - 1)) * 100 + "%";
+          prevBtn.disabled = i === 0;
+          nextBtn.disabled = i === total - 1;
+          if (i > 0) hint.classList.add("hide");
+        }
+        function next() {
+          show(i + 1);
+        }
+        function prev() {
+          show(i - 1);
+        }
+
+        function startIndex() {
+          var h = parseInt((location.hash || "").replace("#", ""), 10);
+          return isNaN(h) ? 0 : h - 1;
+        }
+
+        document.addEventListener("keydown", function (e) {
+          if (
+            e.key === " " ||
+            e.key === "ArrowRight" ||
+            e.key === "ArrowDown" ||
+            e.key === "PageDown" ||
+            e.key === "Enter"
+          ) {
+            e.preventDefault();
+            next();
+          } else if (
+            e.key === "ArrowLeft" ||
+            e.key === "ArrowUp" ||
+            e.key === "PageUp" ||
+            e.key === "Backspace"
+          ) {
+            e.preventDefault();
+            prev();
+          } else if (e.key === "Home") {
+            e.preventDefault();
+            show(0);
+          } else if (e.key === "End") {
+            e.preventDefault();
+            show(total - 1);
+          }
+        });
+
+        nextBtn.addEventListener("click", next);
+        prevBtn.addEventListener("click", prev);
+
+        var s0 = startIndex();
+        if (s0 > 0) {
+          slides[0].classList.remove("active");
+          i = s0;
+          slides[i].classList.add("active");
+        }
+
+        // Click on the slide area (not on a button) advances.
+        document.getElementById("deck").addEventListener("click", function (e) {
+          if (e.target.closest(".nav-btn")) return;
+          next();
+        });
+
+        sync();
+      })();
+    </script>
+  </body>
+</html>
