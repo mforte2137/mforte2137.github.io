@@ -662,6 +662,7 @@ function wrapWidget(title, content) {
       </td>
     </tr>
   </table>
+  <div style="height:32px;line-height:32px;font-size:1px;">&nbsp;</div>
 </div>`;
 }
 
@@ -1063,9 +1064,19 @@ document.querySelectorAll('.btn-push').forEach(btn => {
 });
 
 copyAllBtn.addEventListener('click', () => {
-  const all = Object.values(state.widgets).filter(Boolean).join('\n\n');
+  // Use WIDGET_ORDER to ensure correct narrative arc sequence
+  const ORDERED_KEYS = [
+    'execSummary', 'currentState', 'gapAnalysis',
+    'riskLandscape', 'idealState', 'roadmap'
+  ];
+  // Separator between sections — visible breathing room when pasted as one block
+  const separator = '<div style="height:40px;font-size:1px;line-height:40px;">&nbsp;</div>';
+  const all = ORDERED_KEYS
+    .map(k => state.widgets[k])
+    .filter(Boolean)
+    .join(separator);
   copyHtml(all);
-  showToast('All widgets copied to clipboard.');
+  showToast('All widgets copied to clipboard — in proposal order.');
 });
 
 // Push All button (in salesbuildr bar)
