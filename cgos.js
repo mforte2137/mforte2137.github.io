@@ -1424,9 +1424,31 @@ function renderAlignment(c) {
   const rec = a.rec;
   alignmentRec.className = `alignment-rec${rec.cls === 'good' ? ' all-good' : ''}`;
   alignmentRec.innerHTML = `
-    <div class="alignment-rec-label">RECOMMENDED CONVERSATION</div>
-    <div class="alignment-rec-title">${rec.title}</div>
-    <div class="alignment-rec-val">${rec.val}</div>`;
+    <div class="alignment-rec-top">
+      <div>
+        <div class="alignment-rec-label">RECOMMENDED CONVERSATION</div>
+        <div class="alignment-rec-title">${rec.title}</div>
+        <div class="alignment-rec-val">${rec.val}</div>
+      </div>
+      ${rec.cls !== 'good' ? `
+      <div class="alignment-rec-actions">
+        <button class="align-action-btn" id="align-report-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Summary Report
+        </button>
+        <button class="align-action-btn" id="align-email-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Draft Customer Email
+        </button>
+      </div>` : ''}
+    </div>`;
+
+  if (rec.cls !== 'good') {
+    const reportBtn = document.getElementById('align-report-btn');
+    const emailBtn  = document.getElementById('align-email-btn');
+    if (reportBtn) reportBtn.addEventListener('click', () => generateAlignmentReport(c));
+    if (emailBtn)  emailBtn.addEventListener('click',  () => generateAlignmentEmail(c));
+  }
 }
 
 function renderOppBar(c) {
@@ -1972,6 +1994,122 @@ function initTimelineBar(c) {
       expanded.classList.remove('open');
     }
   };
+}
+
+/* ══════════════════════════════════════════
+   ALIGNMENT ACTIONS
+   ══════════════════════════════════════════ */
+
+function buildAlignmentContext(c) {
+  const items = c.alignment.items.map(i =>
+    `- ${i.label}: ${i.score}% (${i.cls})${i.detail ? ' — ' + i.detail : ''}`
+  ).join('\n');
+  return `Customer: ${c.name} | Type: ${c.type} | MRR: ${c.mrr} | AM: ${c.am}
+Overall alignment score: ${c.alignment.overall}%
+Recommended conversation: ${c.alignment.rec.title} — ${c.alignment.rec.val}
+
+Alignment breakdown:
+${items}`;
+}
+
+async function generateAlignmentReport(c) {
+  const sys = `You are preparing an internal alignment summary report for an MSP sales manager to review with their team or present to their business owner before a customer conversation.
+
+Write a clean, professional report in plain text. No markdown, no asterisks. Use these exact section headings on their own lines followed by a colon and a line break:
+
+EXECUTIVE SUMMARY:
+ALIGNMENT FINDINGS:
+REVENUE IMPACT:
+RECOMMENDED CONVERSATION ORDER:
+SUGGESTED NEXT STEPS:
+
+Under each heading write 2-4 concise sentences or a short structured list using dashes. Be specific with numbers and dollar amounts. Tone: internal, factual, commercially focused.`;
+
+  const prompt = buildAlignmentContext(c) + '\n\nGenerate the internal alignment summary report.';
+  openAlignmentModal('Alignment Summary Report — ' + c.name, 'Generating report…', true);
+  try {
+    const text = await callAI(prompt, sys);
+    updateAlignmentModal(text, [
+      { label: 'Copy report', primary: true, action: 'copy' },
+      { label: 'Close' }
+    ]);
+  } catch {
+    updateAlignmentModal('Could not reach the AI service.', [{ label: 'Close' }]);
+  }
+}
+
+async function generateAlignmentEmail(c) {
+  const sys = `You are drafting a professional email from an MSP to a customer to initiate a proactive agreement alignment review conversation.
+
+Format the output exactly like this — use these exact labels:
+
+SUBJECT: [subject line here]
+
+Dear [contact name],
+
+[email body — 3 short paragraphs]
+
+[sign-off]
+[AM name]
+[company]
+
+Rules:
+- Paragraph 1: Frame this as a proactive partnership service — not a billing issue or complaint.
+- Paragraph 2: Reference 2-3 specific alignment findings by name and why they matter to the customer's business. Be factual, not alarming.
+- Paragraph 3: Propose a short call or meeting to walk through the findings together and agree on next steps.
+- Tone: warm, professional, partner-oriented. This is a trusted advisor reaching out, not a sales pitch.
+- Do not mention specific dollar amounts in the email — keep those for the meeting.
+- Sign off with the account manager's name.`;
+
+  const prompt = buildAlignmentContext(c) + '\n\nDraft the customer email.';
+  openAlignmentModal('Customer Email Draft — ' + c.name, 'Drafting email…', true);
+  try {
+    const text = await callAI(prompt, sys);
+    updateAlignmentModal(text, [
+      { label: 'Copy email', primary: true, action: 'copy' },
+      { label: 'Close' }
+    ]);
+  } catch {
+    updateAlignmentModal('Could not reach the AI service.', [{ label: 'Close' }]);
+  }
+}
+
+function openAlignmentModal(title, loadingText, isLoading) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-tabs').style.display = 'none';
+  document.getElementById('modal-body').innerHTML = isLoading
+    ? `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;color:var(--text-2);font-size:13px;"><span class="spinner"></span>${loadingText}</div>`
+    : `<div class="align-output-text">${loadingText}</div>`;
+  document.getElementById('modal-footer').innerHTML = '';
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('modal-overlay').setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function updateAlignmentModal(text, buttons) {
+  document.getElementById('modal-body').innerHTML =
+    `<div class="align-output-text">${escapeHtml(text)}</div>`;
+  document.getElementById('modal-footer').innerHTML = buttons.map(btn =>
+    `<button class="modal-btn${btn.primary ? ' primary' : ''}" ${btn.action ? `data-action="${btn.action}"` : ''}>${btn.label}</button>`
+  ).join('');
+  document.querySelectorAll('#modal-footer button[data-action="copy"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = btn.dataset.action === 'copy' ? (text.includes('SUBJECT:') ? 'Copy email' : 'Copy report') : btn.textContent, 1500);
+      });
+    });
+  });
+  document.querySelectorAll('#modal-footer button:not([data-action])').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('modal-overlay').classList.remove('open');
+      document.body.style.overflow = '';
+    });
+  });
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 /* ══════════════════════════════════════════
