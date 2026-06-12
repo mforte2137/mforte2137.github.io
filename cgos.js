@@ -2208,10 +2208,12 @@ async function generateTeamAI() {
 /* ══════════════════════════════════════════
    INIT
    ══════════════════════════════════════════ */
-renderCustomer('abc');
-openFeedback();
-switchView('portfolio');
-initNudges();
-initWelcomeBanner();
-initPortfolioIntel();
-renderPortfolio('all');
+document.addEventListener('DOMContentLoaded', () => {
+  renderCustomer('abc');
+  openFeedback();
+  switchView('portfolio');
+  renderPortfolio('all');
+  initNudges();
+  initWelcomeBanner();
+  initPortfolioIntel();
+});
