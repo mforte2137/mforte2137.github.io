@@ -2214,3 +2214,4 @@ switchView('portfolio');
 initNudges();
 initWelcomeBanner();
 initPortfolioIntel();
+renderPortfolio('all');
