@@ -128,6 +128,12 @@ body {
   margin-top: var(--space-2);
 }
 
+.btn.is-done {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: var(--surface);
+}
+
 /* ---------- Dropzone ---------- */
 
 .dropzone {
@@ -205,12 +211,23 @@ body {
   font-size: 12px;
 }
 
+.section-list .sec-include {
+  margin: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
 .section-list .sec-name {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
+}
+
+.section-list .sec-name.is-excluded {
+  text-decoration: line-through;
+  color: var(--ink-soft);
 }
 
 .section-list .sec-name:hover { text-decoration: underline; }
