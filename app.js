@@ -142,6 +142,18 @@ const TOOLS = [
     icon: "search"
   },
   {
+    title: "MSP Document to Widget",
+    shortLabel: "Doc to Widget",
+    description:
+      "Have an existing Word doc scope? Convert it instantly into a clean, customer-facing Salesbuildr widget — no reformatting needed.",
+    category: "Conversion",
+    url: "https://widgetcreator.netlify.app/doc-to-widget.html",
+    badge: "new",
+    updated: "2026-06-12",
+    gradient: "sky",
+    icon: "swap"
+  },
+  {
     title: "Document Converter",
     shortLabel: "Document Converter",
     description:
@@ -346,6 +358,7 @@ const GRADIENTS = {
   indigo:  "linear-gradient(135deg, #312e81 0%, #4f46e5 55%, #818cf8 100%)",
   violet:  "linear-gradient(135deg, #5b21b6 0%, #8b5cf6 55%, #c4b5fd 100%)",
   gold:    "linear-gradient(135deg, #78350f 0%, #d97706 55%, #fbbf24 100%)",
+  sky:     "linear-gradient(135deg, #0c4a6e 0%, #0284c7 55%, #7dd3fc 100%)",
   cyan:    "linear-gradient(135deg, #164e63 0%, #0891b2 55%, #67e8f9 100%)",
   forest:  "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #86efac 100%)",
   crimson: "linear-gradient(135deg, #7f1d1d 0%, #dc2626 55%, #f87171 100%)"
