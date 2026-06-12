@@ -139,6 +139,18 @@ function isSubLabel(el) {
   return isHeadingLike(el) && /:$/.test(getPlainText(el));
 }
 
+/* Pricing sections are excluded by default — the MSP adds products and
+   services from the Salesbuildr catalogue (PSA-linked), so document
+   pricing would duplicate or contradict it.
+   Exceptions that stay IN: standard labour rates and response-time /
+   SLA tables, which are not product-specific. The MSP can override
+   either way with the checkbox in the section list. */
+function isPricingSection(title, bodyText) {
+  const keep = /\b(labou?r\s+rates?|rate\s+card|hourly\s+rates?|sla|service\s+level|response\s+time)\b/i;
+  if (keep.test(title) || keep.test(bodyText)) return false;
+  return /\b(pricing|prices?|fees?|investment|costs?)\b/i.test(title);
+}
+
 /* Word docs often put a bold label and its content in ONE paragraph,
    separated by <br/>:  <p><strong>SITUATION:</strong><br/>text…</p>
    Explode those into a sub-heading + a normal paragraph so the label can
@@ -228,10 +240,12 @@ function parseDocument(rawHtml) {
     .map((s, idx) => {
       const wrap = doc.createElement('div');
       s.bodyNodes.forEach((n) => wrap.appendChild(n));
+      const bodyHtml = wrap.innerHTML;
       return {
         id: 'sec-' + idx,
         title: s.title,
-        originalBodyHtml: wrap.innerHTML,
+        originalBodyHtml: bodyHtml,
+        included: !isPricingSection(s.title, wrap.textContent || ''),
         status: 'verbatim' // verbatim | working | rewritten | error
       };
     })
@@ -276,12 +290,30 @@ function styleBodyContent(container, theme) {
   });
 
   container.querySelectorAll('table').forEach((t) => {
-    t.style.cssText = 'border-collapse:collapse; width:100%; margin:0 0 16px;';
-    t.querySelectorAll('td, th').forEach((cell) => {
-      cell.style.cssText = 'border:1px solid #d9d9d9; padding:8px 12px; text-align:left;';
-    });
-    t.querySelectorAll('th').forEach((th) => {
-      th.style.background = subtle;
+    t.style.cssText = 'border-collapse:collapse; width:100%; margin:0 0 18px;';
+
+    const rows = Array.from(t.querySelectorAll('tr'));
+    rows.forEach((row, ri) => {
+      // Word/mammoth tables have no <th>; the first row is the header.
+      const isHeader = ri === 0 && rows.length > 1;
+      const bodyIndex = ri - 1;
+
+      row.querySelectorAll('td, th').forEach((cell) => {
+        if (isHeader || cell.tagName === 'TH') {
+          cell.style.cssText =
+            `border:1px solid ${theme}; padding:10px 14px; text-align:left;` +
+            `background:${theme}; color:#ffffff; font-weight:700; vertical-align:top;`;
+        } else {
+          const zebra = bodyIndex % 2 === 1 ? `background:${subtle};` : 'background:#ffffff;';
+          cell.style.cssText =
+            'border:1px solid #d9d9d9; padding:9px 14px; text-align:left;' +
+            'vertical-align:top;' + zebra;
+        }
+        // Mammoth wraps cell text in <p> — strip the paragraph margins.
+        cell.querySelectorAll('p').forEach((cp) => {
+          cp.style.cssText = 'margin:0; padding:0;';
+        });
+      });
     });
   });
 }
@@ -303,6 +335,7 @@ function buildPreview() {
     const wrap = document.createElement('div');
     wrap.setAttribute('data-role', 'section');
     wrap.setAttribute('data-sec-id', sec.id);
+    if (!sec.included) wrap.setAttribute('data-excluded', 'true');
 
     if (sec.title) {
       const h = document.createElement('h2');
@@ -339,6 +372,13 @@ function applyTheme(theme) {
       ? 'margin:0 0 8px; padding:0;'
       : 'margin:0 0 8px; padding:28px 0 0; border-top:1px solid #e4e4e4;';
 
+    // Excluded sections stay visible but clearly dimmed in the preview.
+    if (wrap.getAttribute('data-excluded') === 'true') {
+      wrap.style.opacity = '0.35';
+      wrap.style.outline = '1px dashed #b9b3a6';
+      wrap.style.outlineOffset = '6px';
+    }
+
     const h = wrap.querySelector('[data-role="heading"]');
     if (h) {
       h.style.cssText =
@@ -364,18 +404,31 @@ function buildExportHtml() {
   clone.removeAttribute('contenteditable');
   clone.removeAttribute('spellcheck');
   clone.removeAttribute('id');
+  // Excluded sections (e.g. pricing) never leave the app.
+  clone.querySelectorAll('[data-excluded="true"]').forEach((el) => el.remove());
+  // If the first section was removed, the new first one shouldn't carry
+  // a divider line above it.
+  const remaining = clone.querySelectorAll('[data-role="section"]');
+  if (remaining.length) {
+    remaining[0].style.borderTop = 'none';
+    remaining[0].style.paddingTop = '0';
+  }
   clone.querySelectorAll('[data-role]').forEach((el) => {
     el.removeAttribute('data-role');
     el.removeAttribute('data-sec-id');
+    el.style.opacity = '';
+    el.style.outline = '';
+    el.style.outlineOffset = '';
   });
   return clone.outerHTML;
 }
+
+let copyResetTimer = null;
 
 async function copyWidgetHtml() {
   const html = buildExportHtml();
   try {
     await navigator.clipboard.writeText(html);
-    setStatus(statusBar, 'Widget HTML copied.', 'ok');
   } catch {
     // Fallback for older browsers / non-secure contexts
     const ta = document.createElement('textarea');
@@ -384,8 +437,15 @@ async function copyWidgetHtml() {
     ta.select();
     document.execCommand('copy');
     ta.remove();
-    setStatus(statusBar, 'Widget HTML copied.', 'ok');
   }
+  copyBtn.textContent = '\u2713 Copied';
+  copyBtn.classList.add('is-done');
+  setStatus(statusBar, 'Widget HTML copied.', 'ok');
+  clearTimeout(copyResetTimer);
+  copyResetTimer = setTimeout(() => {
+    copyBtn.textContent = 'Copy widget HTML';
+    copyBtn.classList.remove('is-done');
+  }, 2000);
 }
 
 /* ==========================================================================
@@ -419,8 +479,9 @@ async function improveAllSections() {
   improveBtn.disabled = true;
   setStatus(statusBar, 'Polishing writing\u2026', '');
 
+  const targets = sections.filter((sec) => sec.included);
   const results = await Promise.allSettled(
-    sections.map((sec) =>
+    targets.map((sec) =>
       improveSection(sec).catch((err) => {
         sec.status = 'error';
         throw err;
@@ -460,6 +521,25 @@ function revertAllSections() {
    Section list (left panel)
    ========================================================================== */
 
+function setSectionIncluded(sec, included) {
+  sec.included = included;
+  const wrap = widgetRoot.querySelector(`[data-sec-id="${sec.id}"]`);
+  if (wrap) {
+    if (included) wrap.removeAttribute('data-excluded');
+    else wrap.setAttribute('data-excluded', 'true');
+  }
+  applyTheme(currentTheme);
+  renderSectionList();
+  updateFileMeta();
+}
+
+function updateFileMeta() {
+  const excluded = sections.filter((s) => !s.included).length;
+  let text = sections.length + ' section' + (sections.length === 1 ? '' : 's');
+  if (excluded) text += ' \u00b7 ' + excluded + ' excluded';
+  fileSections.textContent = text;
+}
+
 const STATUS_LABEL = {
   verbatim: 'verbatim',
   working: 'polishing\u2026',
@@ -474,8 +554,15 @@ function renderSectionList() {
   sections.forEach((sec) => {
     const li = document.createElement('li');
 
+    const include = document.createElement('input');
+    include.type = 'checkbox';
+    include.className = 'sec-include';
+    include.checked = sec.included;
+    include.title = sec.included ? 'Included in widget' : 'Excluded from widget';
+    include.addEventListener('change', () => setSectionIncluded(sec, include.checked));
+
     const name = document.createElement('span');
-    name.className = 'sec-name';
+    name.className = 'sec-name' + (sec.included ? '' : ' is-excluded');
     name.textContent = sec.title || '(untitled section)';
     name.addEventListener('click', () => {
       const el = widgetRoot.querySelector(`[data-sec-id="${sec.id}"]`);
@@ -484,14 +571,19 @@ function renderSectionList() {
 
     const status = document.createElement('span');
     status.className = 'sec-status';
-    if (sec.status === 'rewritten') status.classList.add('is-done');
-    if (sec.status === 'error') status.classList.add('is-err');
-    status.textContent = STATUS_LABEL[sec.status];
+    if (!sec.included) {
+      status.textContent = 'excluded';
+    } else {
+      if (sec.status === 'rewritten') status.classList.add('is-done');
+      if (sec.status === 'error') status.classList.add('is-err');
+      status.textContent = STATUS_LABEL[sec.status];
+    }
 
+    li.appendChild(include);
     li.appendChild(name);
     li.appendChild(status);
 
-    if (sec.status === 'rewritten') {
+    if (sec.included && sec.status === 'rewritten') {
       const revert = document.createElement('button');
       revert.type = 'button';
       revert.className = 'sec-revert';
@@ -533,7 +625,7 @@ async function handleFile(file) {
     renderSectionList();
 
     fileNameEl.textContent = file.name;
-    fileSections.textContent = sections.length + ' section' + (sections.length === 1 ? '' : 's');
+    updateFileMeta();
     fileMeta.hidden = false;
 
     modeBlock.hidden = false;
@@ -551,7 +643,15 @@ async function handleFile(file) {
     modeVerbatim.checked = true;
     improveBtn.hidden = true;
 
-    setStatus(statusBar, 'Document loaded. Pick a theme, edit anything inline.', 'ok');
+    const excluded = sections.filter((s) => !s.included).length;
+    setStatus(
+      statusBar,
+      excluded
+        ? 'Document loaded. ' + excluded + ' pricing section' + (excluded === 1 ? '' : 's') +
+          ' excluded \u2014 add products from your Salesbuildr catalogue instead.'
+        : 'Document loaded. Pick a theme, edit anything inline.',
+      'ok'
+    );
   } catch (err) {
     console.error(err);
     setStatus(statusBar, 'Could not read that document.', 'err');
