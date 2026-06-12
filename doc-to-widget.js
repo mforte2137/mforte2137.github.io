@@ -591,9 +591,8 @@ async function pushToSalesbuildr() {
     localStorage.removeItem(LS_TENANT_URL);
   }
 
-  const name = widgetNameEl.value.trim() || docTitle || 'Imported widget';
-  const widgets = [{ name, html: buildExportHtml() }];
-  const prefix = '';
+  const title = widgetNameEl.value.trim() || docTitle || 'Imported widget';
+  const widgets = [{ id: 'doc-' + Date.now(), title, html: buildExportHtml() }];
 
   sbPushBtn.disabled = true;
   setStatus(sbStatus, 'Pushing to Salesbuildr\u2026', '');
@@ -602,16 +601,19 @@ async function pushToSalesbuildr() {
     const res = await fetch('/api/push-widgets', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ widgets, prefix, apiKey, tenantUrl })
+      body: JSON.stringify({ widgets, prefix: '', apiKey, tenantUrl })
     });
-    const data = await res.json();
-    if (data.ok) {
-      setStatus(sbStatus, 'Widget pushed to Salesbuildr.', 'ok');
-    } else {
-      setStatus(sbStatus, data.error || 'Push failed.', 'err');
+    if (!res.headers.get('content-type')?.includes('application/json')) {
+      throw new Error('Server error \u2014 make sure the Netlify function is deployed.');
     }
-  } catch {
-    setStatus(sbStatus, 'Network error \u2014 push failed.', 'err');
+    const data = await res.json();
+    if (data.successCount > 0) {
+      setStatus(sbStatus, '\u2713 Widget saved to your Salesbuildr widget library.', 'ok');
+    } else {
+      throw new Error(data.results?.[0]?.error || data.error || 'Unknown error');
+    }
+  } catch (err) {
+    setStatus(sbStatus, '\u2715 ' + err.message, 'err');
   }
 
   sbPushBtn.disabled = false;
