@@ -159,7 +159,71 @@ header.top .brand { font-weight: 700; color: var(--ink); }
   margin-top: 14px; font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
   font-size: 13px; color: var(--mute);
 }
+.photo-loading[hidden] { display: none; }
 .spinner-sm { width: 20px; height: 20px; border: 2.5px solid var(--rule); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+
+/* Focal point control */
+.focal-control {
+  margin-top: 14px; padding: 14px 16px;
+  background: var(--paper-alt); border: 1px solid var(--rule);
+}
+.focal-inner {
+  display: flex; gap: 20px; align-items: flex-start;
+}
+.focal-preview-wrap { flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; }
+.focal-preview-label {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--mute);
+}
+.focal-preview-viewport {
+  width: 80px; height: 140px;
+  overflow: hidden; position: relative;
+  border: 2px solid var(--ink); flex-shrink: 0;
+  background: var(--paper-alt);
+}
+.focal-preview-img {
+  position: absolute; left: 0;
+}
+.focal-slider-wrap { flex: 1; display: flex; flex-direction: column; gap: 10px; padding-top: 2px; }
+.focal-slider-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 13px; font-weight: 600; color: var(--ink);
+}
+.focal-value-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent);
+  padding: 2px 8px;
+}
+.focal-track-wrap { display: flex; align-items: center; gap: 10px; }
+.focal-end-label {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px; color: var(--mute); white-space: nowrap;
+}
+.focal-slider {
+  flex: 1; -webkit-appearance: none; appearance: none;
+  height: 4px; background: var(--rule); outline: none; border-radius: 2px; cursor: pointer;
+}
+.focal-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--ink); cursor: pointer; border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+.focal-slider::-moz-range-thumb {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--ink); cursor: pointer; border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+.focal-hint {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px; color: var(--mute); line-height: 1.5;
+}
+@media (max-width: 640px) {
+  .focal-inner { flex-direction: column; }
+  .focal-preview-viewport { width: 100%; height: 140px; }
+}
 
 /* Template grid */
 .template-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
@@ -320,6 +384,27 @@ footer.tag { margin-top: 64px; font-family: 'Inter', 'Helvetica Neue', Arial, sa
 }
 .manual-toggle-btn:hover { color: var(--ink); }
 
+/* Website photos */
+.website-photos-strip { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.website-photos-or {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--mute);
+}
+.website-photos-btn {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+  padding: 8px 14px; background: var(--paper-alt); color: var(--ink);
+  border: 1px solid var(--rule); cursor: pointer; transition: border-color 0.15s;
+}
+.website-photos-btn:hover { border-color: var(--ink); }
+.website-photo-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.website-photo-title { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 700; color: var(--ink); }
+.website-photos-back-btn { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 12px; color: var(--mute); background: none; border: none; cursor: pointer; padding: 0; }
+.website-photos-back-btn:hover { color: var(--ink); }
+.website-photo-empty { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: var(--mute); padding: 16px 0; }
+.website-photo-loading[hidden] { display: none; }
+
 /* Logo missing banner */
 .logo-missing-banner {
   display: flex; gap: 14px; align-items: flex-start;
@@ -328,10 +413,7 @@ footer.tag { margin-top: 64px; font-family: 'Inter', 'Helvetica Neue', Arial, sa
 }
 .logo-missing-banner[hidden] { display: none; }
 .logo-missing-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
-.logo-missing-body {
-  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  font-size: 13px; color: #5a4500; line-height: 1.5; flex: 1;
-}
+.logo-missing-body { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: #5a4500; line-height: 1.5; flex: 1; }
 .logo-missing-body strong { color: #3a2c00; }
 .logo-missing-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
 .logo-missing-input {
@@ -344,8 +426,7 @@ footer.tag { margin-top: 64px; font-family: 'Inter', 'Helvetica Neue', Arial, sa
 .logo-missing-btn {
   font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
   font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
-  padding: 8px 16px; background: #3a2c00; color: #fff;
-  border: none; cursor: pointer; white-space: nowrap;
+  padding: 8px 16px; background: #3a2c00; color: #fff; border: none; cursor: pointer; white-space: nowrap;
 }
 .logo-missing-btn:hover { background: #5a4500; }
 .logo-missing-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -366,6 +447,10 @@ footer.tag { margin-top: 64px; font-family: 'Inter', 'Helvetica Neue', Arial, sa
 /* Selected cover actions */
 .selected-cover-actions { display: grid; grid-template-columns: 280px 1fr; gap: 32px; border-top: 2px solid var(--ink); padding-top: 28px; margin-top: 8px; }
 .selected-cover-img { width: 100%; display: block; border: 1px solid var(--rule); }
+
+/* Template preview images */
+.template-preview-img { height: 200px; }
+.template-preview-img img { width: 100%; height: 100%; object-fit: contain; object-position: top; display: block; }
 
 @media (max-width: 800px) {
   .covers-grid { grid-template-columns: repeat(2, 1fr); }
