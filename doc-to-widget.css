@@ -1,0 +1,398 @@
+/* ==========================================================================
+   doc-to-widget.css
+   App shell styling only. The widget preview itself uses inline styles,
+   because the exported HTML must carry its styling into TinyMCE.
+   ========================================================================== */
+
+:root {
+  --bg: #f5f2eb;
+  --surface: #ffffff;
+  --ink: #1a1a1a;
+  --ink-soft: #5c5852;
+  --line: #d8d3c8;
+  --line-strong: #1a1a1a;
+  --ok: #1e6b4f;
+  --err: #8c2f1f;
+
+  --space-1: 8px;
+  --space-2: 12px;
+  --space-3: 20px;
+  --space-4: 32px;
+
+  --panel-width: 360px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ---------- Top bar ---------- */
+
+.topbar {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--line-strong);
+  background: var(--surface);
+}
+
+.topbar-title {
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.topbar-title .arrow { font-weight: 400; }
+
+.topbar-sub {
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+/* ---------- Layout ---------- */
+
+.layout {
+  display: flex;
+  align-items: flex-start;
+  min-height: calc(100vh - 61px);
+}
+
+.panel {
+  width: var(--panel-width);
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  min-height: calc(100vh - 61px);
+}
+
+.panel-block {
+  padding: var(--space-3) var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.block-label {
+  margin: 0 0 var(--space-2);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink);
+}
+
+.hint {
+  margin: var(--space-1) 0 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 10px 16px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) { background: var(--bg); }
+
+.btn-primary {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.btn-primary:hover:not(:disabled) { background: #333333; }
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-full {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-2);
+}
+
+/* ---------- Dropzone ---------- */
+
+.dropzone {
+  border: 1px dashed var(--ink-soft);
+  padding: var(--space-4) var(--space-3);
+  text-align: center;
+}
+
+.dropzone.dragover {
+  border-color: var(--ink);
+  background: var(--bg);
+}
+
+.dropzone-line { margin: 0; font-weight: 600; }
+
+.dropzone-or {
+  margin: var(--space-1) 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.file-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: 13px;
+}
+
+.file-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-sections { color: var(--ink-soft); white-space: nowrap; }
+
+/* ---------- Content mode ---------- */
+
+.radio-row {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  cursor: pointer;
+}
+
+.radio-row input { margin-top: 3px; }
+
+.radio-text strong { display: block; font-size: 13px; }
+
+.radio-text em {
+  display: block;
+  font-style: normal;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.section-list {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+}
+
+.section-list:empty { margin: 0; }
+
+.section-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+}
+
+.section-list .sec-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.section-list .sec-name:hover { text-decoration: underline; }
+
+.section-list .sec-status { color: var(--ink-soft); white-space: nowrap; }
+
+.section-list .sec-status.is-done { color: var(--ok); }
+
+.section-list .sec-status.is-err { color: var(--err); }
+
+.section-list .sec-revert {
+  font: inherit;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: none;
+  background: none;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+.section-list .sec-revert:hover { color: var(--ink); }
+
+/* ---------- Theme swatches ---------- */
+
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-1);
+}
+
+.swatch {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: var(--space-1);
+  cursor: pointer;
+  text-align: center;
+}
+
+.swatch.is-active { border-color: var(--ink); outline: 1px solid var(--ink); }
+
+.swatch-chip {
+  display: block;
+  height: 26px;
+  margin-bottom: 4px;
+}
+
+.swatch-name {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+
+.custom-hex-row { margin-top: var(--space-2); }
+
+.custom-hex-inputs {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.custom-hex-inputs .sb-input { flex: 1; }
+
+/* ---------- Salesbuildr fields ---------- */
+
+.sb-fields { margin-bottom: var(--space-2); }
+
+.sb-field { margin-bottom: var(--space-2); }
+
+.sb-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+
+.sb-where {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink-soft);
+}
+
+.sb-input {
+  width: 100%;
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.sb-input:focus {
+  outline: none;
+  border-color: var(--ink);
+}
+
+.sb-divider {
+  border-top: 1px solid var(--line);
+  margin: var(--space-3) 0;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 13px;
+  margin-bottom: var(--space-1);
+  cursor: pointer;
+}
+
+.status-line {
+  margin: var(--space-1) 0 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+  min-height: 1em;
+}
+
+.status-line.is-ok { color: var(--ok); }
+
+.status-line.is-err { color: var(--err); }
+
+/* ---------- Preview pane ---------- */
+
+.preview-pane {
+  flex: 1;
+  padding: var(--space-4);
+  min-width: 0;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  max-width: 780px;
+  margin: 0 auto var(--space-2);
+}
+
+.preview-empty {
+  max-width: 460px;
+  margin: 18vh auto 0;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.preview-empty p:first-child {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.preview-empty-sub { font-size: 13px; }
+
+.page {
+  max-width: 780px;
+  margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 56px 64px;
+}
+
+#widgetRoot:focus { outline: none; }
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 640px) {
+  .layout { flex-direction: column; }
+
+  .panel {
+    width: 100%;
+    min-height: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .preview-pane { padding: var(--space-2); }
+
+  .page { padding: var(--space-3); }
+}
