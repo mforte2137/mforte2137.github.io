@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doc to Widget — Salesbuildr</title>
+  <link rel="stylesheet" href="doc-to-widget.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-title">Doc <span class="arrow">&rarr;</span> Widget</div>
+    <div class="topbar-sub">Word document to Salesbuildr proposal widget</div>
+  </header>
+
+  <main class="layout">
+
+    <!-- ============ LEFT: CONTROLS ============ -->
+    <aside class="panel">
+
+      <!-- 1. Source document -->
+      <section class="panel-block">
+        <h2 class="block-label">1 &middot; Source document</h2>
+        <div class="dropzone" id="dropZone">
+          <input type="file" id="fileInput" accept=".docx" hidden>
+          <p class="dropzone-line">Drop a .docx here</p>
+          <p class="dropzone-or">or</p>
+          <button type="button" class="btn btn-secondary" id="browseBtn">Choose file</button>
+        </div>
+        <div class="file-meta" id="fileMeta" hidden>
+          <span class="file-name" id="fileName"></span>
+          <span class="file-sections" id="fileSections"></span>
+        </div>
+      </section>
+
+      <!-- 2. Content mode -->
+      <section class="panel-block" id="modeBlock" hidden>
+        <h2 class="block-label">2 &middot; Content</h2>
+        <label class="radio-row">
+          <input type="radio" name="contentMode" id="modeVerbatim" value="verbatim" checked>
+          <span class="radio-text">
+            <strong>Keep verbatim</strong>
+            <em>Wording stays exactly as written. Layout only.</em>
+          </span>
+        </label>
+        <label class="radio-row">
+          <input type="radio" name="contentMode" id="modeAI" value="ai">
+          <span class="radio-text">
+            <strong>Polish the writing</strong>
+            <em>AI tidies grammar and flow. Services, prices and commitments are never changed or added.</em>
+          </span>
+        </label>
+        <button type="button" class="btn btn-primary btn-full" id="improveBtn" hidden>Improve writing</button>
+        <ul class="section-list" id="sectionList"></ul>
+      </section>
+
+      <!-- 3. Theme -->
+      <section class="panel-block" id="themeBlock" hidden>
+        <h2 class="block-label">3 &middot; Colour theme</h2>
+        <div class="swatch-grid" id="themeSwatches"></div>
+        <div class="custom-hex-row">
+          <label class="sb-label" for="customHex">Brand hex</label>
+          <div class="custom-hex-inputs">
+            <input type="text" id="customHex" class="sb-input" placeholder="#1F4E8C" maxlength="7" autocomplete="off">
+            <button type="button" class="btn btn-secondary" id="customHexApply">Apply</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Export -->
+      <section class="panel-block" id="exportBlock" hidden>
+        <h2 class="block-label">4 &middot; Export</h2>
+        <div class="sb-field">
+          <label class="sb-label" for="widgetName">Widget name</label>
+          <input type="text" id="widgetName" class="sb-input" placeholder="e.g. Cyber Tabletop Exercise" autocomplete="off">
+        </div>
+        <button type="button" class="btn btn-primary btn-full" id="copyBtn">Copy widget HTML</button>
+        <p class="hint">Paste straight into a Salesbuildr widget (TinyMCE source view).</p>
+
+        <div class="sb-divider"></div>
+
+        <h2 class="block-label">Or push to Salesbuildr</h2>
+        <div class="sb-fields">
+          <div class="sb-field">
+            <label class="sb-label">Tenant URL <span class="sb-where">e.g. https://acme.salesbuildr.com</span></label>
+            <input type="text" id="sbTenantUrl" class="sb-input" placeholder="https://yourcompany.salesbuildr.com" autocomplete="off">
+          </div>
+          <div class="sb-field">
+            <label class="sb-label">API Key <span class="sb-where">Admin &rarr; Integrations &rarr; API Key</span></label>
+            <input type="password" id="sbApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
+          </div>
+        </div>
+        <label class="check-row">
+          <input type="checkbox" id="sbRemember">
+          <span>Remember credentials on this device</span>
+        </label>
+        <button type="button" class="btn btn-primary btn-full" id="sbPushBtn" disabled>Push widget to Salesbuildr</button>
+        <p class="status-line" id="sbStatus"></p>
+      </section>
+
+    </aside>
+
+    <!-- ============ RIGHT: PREVIEW ============ -->
+    <section class="preview-pane">
+      <div class="preview-header" id="previewHeader" hidden>
+        <span class="block-label">Preview &mdash; click anywhere to edit</span>
+        <span class="status-line" id="statusBar"></span>
+      </div>
+      <div class="preview-empty" id="previewEmpty">
+        <p>Upload a Word document to begin.</p>
+        <p class="preview-empty-sub">The document is split into sections, restyled as a corporate widget, and stays fully editable before you export.</p>
+      </div>
+      <div class="page" id="previewPage" hidden>
+        <div id="widgetRoot" contenteditable="true" spellcheck="false"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="doc-to-widget.js"></script>
+</body>
+</html>
