@@ -896,3 +896,53 @@ body { font-family: 'Georgia', serif; background: var(--bg); color: var(--text);
   color: var(--text-2); font-family: 'Courier New', monospace;
   margin-bottom: 10px;
 }
+
+/* ══════════════════════════════════
+   ALIGNMENT ACTION BUTTONS
+   ══════════════════════════════════ */
+
+.alignment-rec-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.alignment-rec-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.align-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  padding: 5px 12px;
+  border: 1px solid var(--border-2);
+  background: var(--bg-panel);
+  color: var(--text);
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+  transition: background 0.1s, color 0.1s;
+}
+.align-action-btn:hover {
+  background: var(--text);
+  color: var(--bg);
+}
+.align-action-btn:hover svg { stroke: var(--bg); }
+.align-action-btn svg { flex-shrink: 0; }
+
+/* Output text in alignment modals */
+.align-output-text {
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--text);
+  white-space: pre-wrap;
+  font-family: 'Georgia', serif;
+}
