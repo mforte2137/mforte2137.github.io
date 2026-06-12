@@ -11,7 +11,7 @@ const chipHealth     = document.getElementById('chip-health');
 const chipAm         = document.getElementById('chip-am');
 const signalsList    = document.getElementById('signals-list');
 const signalCount    = document.getElementById('signal-count');
-const recsList       = document.getElementById('recs-list');
+// recsList removed — opportunity cards now rendered by renderOppCards into opp-cards-list
 let oppTotal_val     = '$21,950 pipeline'; // updated per customer
 const alignmentList  = document.getElementById('alignment-list');
 const lifecycleList  = document.getElementById('lifecycle-list');
@@ -1489,17 +1489,6 @@ function renderCustomer(key) {
     row.addEventListener('click', () => openModal(row.dataset.modal));
     row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openModal(row.dataset.modal); });
   });
-
-  recsList.innerHTML = c.recs.map((r, i) => `
-    <div class="rec-row">
-      <div class="rec-num">${i + 1}</div>
-      <div>
-        <div class="rec-title">${r.title}</div>
-        <div class="rec-sub">${r.sub}</div>
-        <div class="rec-value">${r.val}</div>
-      </div>
-    </div>
-  `).join('');
 
   oppTotal_val             = c.oppTotal;
   renderAlignment(c);
