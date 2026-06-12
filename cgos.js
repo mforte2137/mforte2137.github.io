@@ -1555,8 +1555,7 @@ function renderPortfolioRows(rows) {
         activeSignalFilter = null;
         document.querySelectorAll('.port-intel-signal').forEach(c => c.classList.remove('active'));
         switchView('briefing');
-        customerSelect.value = key;
-        renderCustomer(key);
+        ensureBriefingRendered(key);
       }
     };
     row.addEventListener('click', go);
@@ -1590,6 +1589,7 @@ function switchView(view) {
   });
   if (view === 'portfolio') renderPortfolio(activeFilter);
   if (view === 'team')      renderTeam();
+  if (view === 'briefing')  ensureBriefingRendered();
 }
 
 document.querySelectorAll('.view-tab').forEach(btn => {
@@ -1827,7 +1827,7 @@ customerSelect.addEventListener('change', e => {
   oppOpen = false;
   oppChevron.classList.remove('open');
   oppExpanded.classList.remove('open');
-  renderCustomer(e.target.value);
+  ensureBriefingRendered(e.target.value);
 });
 aiBtn.addEventListener('click', generateAIBrief);
 execBtn.addEventListener('click', generateExecSummary);
@@ -2080,7 +2080,7 @@ function renderTeam() {
   document.querySelectorAll('.attention-row[data-key]').forEach(row => {
     const go = () => {
       const key = row.dataset.key;
-      if (CUSTOMERS[key]) { switchView('briefing'); customerSelect.value = key; renderCustomer(key); }
+      if (CUSTOMERS[key]) { switchView('briefing'); ensureBriefingRendered(key); }
     };
     row.addEventListener('click', go);
     row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') go(); });
@@ -2209,11 +2209,19 @@ async function generateTeamAI() {
    INIT
    ══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
-  renderCustomer('abc');
+  // Show portfolio immediately — no briefing render needed yet
   openFeedback();
   switchView('portfolio');
   renderPortfolio('all');
-  initNudges();
   initWelcomeBanner();
   initPortfolioIntel();
 });
+
+// Briefing renders lazily the first time the tab is clicked or a portfolio row is clicked
+let briefingRendered = false;
+function ensureBriefingRendered(key) {
+  customerSelect.value = key || customerSelect.value;
+  renderCustomer(customerSelect.value);
+  briefingRendered = true;
+  initNudges();
+}
