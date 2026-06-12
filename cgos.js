@@ -120,6 +120,56 @@ const CUSTOMERS = {
       { label: 'Licensing',           val: '$1,680',  cls: 'warn'   },
       { label: 'Managed Svc Expansion', val: '$2,770', cls: 'info'  }
     ],
+    opportunities: [
+      {
+        id: 'opp_abc_1', title: 'Device Refresh — Windows 10 EOL',
+        status: 'proposed', statusLabel: 'Proposal Sent',
+        value: '$14,800', created: 'Apr 2, 2026',
+        emails: 4, meetings: 2, proposalSent: true,
+        lastActivity: 'Customer requested revised pricing', lastActivityAge: '3 days ago',
+        timeline: [
+          { date: 'Jun 10', type: 'review',   title: 'Security review scheduled',             detail: 'Booked for Jun 24 — Sarah attending' },
+          { date: 'Jun 4',  type: 'proposal', title: 'Revised proposal sent',                  detail: 'Updated pricing per customer request', val: '$13,200' },
+          { date: 'May 28', type: 'email',    title: 'Customer requested revised pricing',     detail: '3 units removed from original scope' },
+          { date: 'May 14', type: 'proposal', title: 'Initial proposal sent',                  detail: 'Device refresh — 14 units', val: '$14,800' },
+          { date: 'Apr 22', type: 'decision', title: 'Customer confirmed EOL concern',         detail: 'Verbal approval to proceed with scoping' },
+          { date: 'Apr 2',  type: 'opp',      title: 'Opportunity created',                    detail: 'Triggered by RMM EOL signal' }
+        ]
+      },
+      {
+        id: 'opp_abc_2', title: 'Managed Services Scope Review',
+        status: 'active', statusLabel: 'In Discussion',
+        value: '+$450/mo', created: 'May 15, 2026',
+        emails: 2, meetings: 1, proposalSent: false,
+        lastActivity: 'AM shared labour utilisation report with client', lastActivityAge: '12 days ago',
+        timeline: [
+          { date: 'Jun 1',  type: 'note',     title: 'AM shared utilisation report',          detail: 'Client acknowledged the overage' },
+          { date: 'May 22', type: 'review',   title: 'Internal scope review completed',        detail: 'Recommended +$450/mo adjustment' },
+          { date: 'May 15', type: 'opp',      title: 'Opportunity created',                    detail: 'Triggered by PSA labour overage signal' }
+        ]
+      },
+      {
+        id: 'opp_abc_3', title: 'Security & Compliance Assessment',
+        status: 'active', statusLabel: 'Identified',
+        value: '$3,500', created: 'Jun 5, 2026',
+        emails: 0, meetings: 0, proposalSent: false,
+        lastActivity: 'Opportunity created from CGOS signal', lastActivityAge: '7 days ago',
+        timeline: [
+          { date: 'Jun 5',  type: 'opp',      title: 'Opportunity created',                    detail: 'No security review in 14 months — flagged by CGOS' }
+        ]
+      }
+    ],
+    activityTimeline: [
+      { date: 'Jun 10', type: 'review',   title: 'Security review scheduled',        detail: 'Booked for Jun 24' },
+      { date: 'Jun 4',  type: 'proposal', title: 'Revised proposal sent — Device Refresh', detail: 'Updated pricing', val: '$13,200' },
+      { date: 'Jun 1',  type: 'note',     title: 'Labour utilisation report shared with client', detail: 'Client acknowledged the overage' },
+      { date: 'May 28', type: 'email',    title: 'Customer requested revised pricing', detail: 'Device refresh scope change' },
+      { date: 'May 21', type: 'review',   title: 'Strategic review completed',        detail: 'MFA rollout agreed, security assessment deferred' },
+      { date: 'May 15', type: 'opp',      title: 'Opportunity created — Scope Review', detail: 'Labour overage signal triggered', val: '+$450/mo' },
+      { date: 'May 14', type: 'proposal', title: 'Initial proposal sent — Device Refresh', detail: '14 devices', val: '$14,800' },
+      { date: 'Apr 22', type: 'decision', title: 'Customer confirmed EOL concern',    detail: 'Verbal approval for device refresh scoping' },
+      { date: 'Apr 2',  type: 'opp',      title: 'Opportunity created — Device Refresh', detail: 'EOL signal from RMM', val: '$14,800' }
+    ],
     healthBreakdown: {
       score: 82,
       dimensions: [
@@ -215,6 +265,39 @@ const CUSTOMERS = {
       { label: 'Backup & DR',     val: '$2,500',  cls: 'danger' },
       { label: 'Security Stack',  val: '$3,200',  cls: 'warn'   },
       { label: 'Device Cleanup',  val: 'Saving',  cls: 'info'   }
+    ],
+    opportunities: [
+      {
+        id: 'opp_river_1', title: 'Server Refresh — 3 Servers EOW',
+        status: 'active', statusLabel: 'In Discussion',
+        value: '$12,000', created: 'May 20, 2026',
+        emails: 3, meetings: 1, proposalSent: false,
+        lastActivity: 'Mark presented cloud vs on-prem options to client', lastActivityAge: '8 days ago',
+        timeline: [
+          { date: 'Jun 3',  type: 'review',   title: 'Cloud vs on-prem options presented', detail: 'Client leaning toward hybrid' },
+          { date: 'May 28', type: 'email',    title: 'Warranty expiry confirmed by vendor', detail: 'SRV-RIVER-01 warranty ends Aug 2026' },
+          { date: 'May 20', type: 'opp',      title: 'Opportunity created',                 detail: 'Triggered by RMM warranty signal' }
+        ]
+      },
+      {
+        id: 'opp_river_2', title: 'Backup & DR Remediation',
+        status: 'active', statusLabel: 'Urgent — In Progress',
+        value: '$2,500', created: 'Jun 8, 2026',
+        emails: 1, meetings: 0, proposalSent: false,
+        lastActivity: 'SMART errors escalated — client notified', lastActivityAge: '4 days ago',
+        timeline: [
+          { date: 'Jun 8',  type: 'alert',    title: 'SMART errors detected on SRV-RIVER-03', detail: 'Client notified immediately' },
+          { date: 'Jun 8',  type: 'opp',      title: 'Opportunity created — urgent',           detail: 'Backup target disk failure imminent' }
+        ]
+      }
+    ],
+    activityTimeline: [
+      { date: 'Jun 8',  type: 'alert',    title: 'SMART disk errors detected',        detail: 'SRV-RIVER-03 — client notified' },
+      { date: 'Jun 3',  type: 'review',   title: 'Cloud vs on-prem options presented', detail: 'Server refresh scoping call' },
+      { date: 'May 28', type: 'email',    title: 'Vendor warranty confirmation received', detail: 'SRV-RIVER-01 expires Aug 2026' },
+      { date: 'May 22', type: 'decision', title: 'M365 migration completed',           detail: 'Email fully migrated, signed off by client' },
+      { date: 'May 20', type: 'opp',      title: 'Opportunity created — Server Refresh', detail: 'Warranty signal from RMM', val: '$12,000' },
+      { date: 'Apr 15', type: 'review',   title: 'Quarterly check-in call',            detail: 'No major issues — backup not yet flagged' }
     ],
     healthBreakdown: {
       score: 71,
@@ -1421,9 +1504,12 @@ function renderCustomer(key) {
   oppTotal_val             = c.oppTotal;
   renderAlignment(c);
   renderOppBar(c);
+  renderOppCards(c);
   renderLifecycle(c);
   renderPriority(c);
   renderDataConfidence(c);
+  renderActivityTimeline(c);
+  initTimelineBar(c);
   oppOpen = false;
   oppChevron.classList.remove('open');
   oppExpanded.classList.remove('open');
@@ -1738,6 +1824,9 @@ customerSelect.addEventListener('change', e => {
   memoryOpen = false;
   memoryChevron.classList.remove('open');
   memoryExpanded.classList.remove('open');
+  oppOpen = false;
+  oppChevron.classList.remove('open');
+  oppExpanded.classList.remove('open');
   renderCustomer(e.target.value);
 });
 aiBtn.addEventListener('click', generateAIBrief);
@@ -1750,6 +1839,151 @@ document.getElementById('team-ai-btn').addEventListener('click', generateTeamAI)
 document.getElementById('close-team-ai').addEventListener('click', () => {
   document.getElementById('team-ai-output').style.display = 'none';
 });
+
+/* ══════════════════════════════════════════
+   OPPORTUNITY CARDS & ACTIVITY TIMELINE
+   ══════════════════════════════════════════ */
+
+function statusTagHtml(status, label) {
+  const cls = { active: 'opp-tag-active', proposed: 'opp-tag-proposed', won: 'opp-tag-won', lost: 'opp-tag-lost' };
+  return `<span class="opp-card-tag ${cls[status] || 'opp-tag-active'}">${label}</span>`;
+}
+
+function timelineDotClass(type) {
+  return { proposal: 'td-proposal', review: 'td-review', decision: 'td-decision',
+           alert: 'td-alert', note: 'td-note', email: 'td-email', opp: 'td-opp' }[type] || 'td-note';
+}
+
+function renderTimelineEntries(entries) {
+  return `<div class="timeline-list">${entries.map(e => `
+    <div class="timeline-entry">
+      <div class="timeline-dot ${timelineDotClass(e.type)}"></div>
+      <div class="timeline-body">
+        <div class="timeline-date">${e.date}</div>
+        <div class="timeline-title">${e.title}</div>
+        ${e.detail ? `<div class="timeline-detail">${e.detail}</div>` : ''}
+        ${e.val    ? `<div class="timeline-val">${e.val}</div>` : ''}
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function renderOppCards(c) {
+  const container = document.getElementById('opp-cards-list');
+  if (!container) return;
+  if (!c.opportunities || !c.opportunities.length) {
+    container.innerHTML = '<div style="padding:12px 16px;font-size:12px;color:var(--text-3);">No open opportunities.</div>';
+    return;
+  }
+
+  container.innerHTML = `<div class="opp-cards-grid">${c.opportunities.map(opp => `
+    <div class="opp-card" data-opp="${opp.id}" tabindex="0" role="button" aria-label="View opportunity: ${opp.title}">
+      <div class="opp-card-status opp-status-${opp.status}"></div>
+      <div class="opp-card-body">
+        <div class="opp-card-title">${opp.title}</div>
+        <div class="opp-card-meta">
+          ${statusTagHtml(opp.status, opp.statusLabel)}
+          <span class="opp-card-date">Created ${opp.created}</span>
+        </div>
+        <div class="opp-card-last"><strong>Last:</strong> ${opp.lastActivity} <span style="color:var(--text-3);">&middot; ${opp.lastActivityAge}</span></div>
+      </div>
+      <div class="opp-card-right">
+        <div class="opp-card-val">${opp.value}</div>
+        <div class="opp-card-activity">
+          ${opp.emails    ? `<span class="opp-act-item"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>${opp.emails}</span>` : ''}
+          ${opp.meetings  ? `<span class="opp-act-item"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${opp.meetings}</span>` : ''}
+          ${opp.proposalSent ? `<span class="opp-act-item"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Proposal</span>` : ''}
+        </div>
+      </div>
+      <span class="signal-arrow">&#8250;</span>
+    </div>`).join('')}
+  </div>`;
+
+  document.querySelectorAll('.opp-card[data-opp]').forEach(card => {
+    const open = () => openOppModal(card.dataset.opp, c);
+    card.addEventListener('click', open);
+    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') open(); });
+  });
+}
+
+function openOppModal(oppId, c) {
+  const opp = c.opportunities.find(o => o.id === oppId);
+  if (!opp) return;
+
+  const statusCls = { active: 'opp-tag-active', proposed: 'opp-tag-proposed', won: 'opp-tag-won', lost: 'opp-tag-lost' };
+
+  document.getElementById('modal-title').textContent = opp.title;
+  document.getElementById('modal-tabs').style.display = 'none';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="opp-modal-header">
+      <div>
+        <div class="opp-modal-val">${opp.value}</div>
+        <div class="opp-modal-status-row">
+          <span class="opp-card-tag ${statusCls[opp.status] || 'opp-tag-active'}">${opp.statusLabel}</span>
+          <span style="font-size:11px;color:var(--text-3);font-family:'Courier New',monospace;">Created ${opp.created}</span>
+        </div>
+      </div>
+    </div>
+    <div class="opp-modal-meta-grid">
+      <div class="omg-cell"><div class="omg-val">${opp.emails || 0}</div><div class="omg-lbl">Emails</div></div>
+      <div class="omg-cell"><div class="omg-val">${opp.meetings || 0}</div><div class="omg-lbl">Meetings</div></div>
+      <div class="omg-cell"><div class="omg-val">${opp.proposalSent ? 'Sent' : 'Not yet'}</div><div class="omg-lbl">Proposal</div></div>
+    </div>
+    <div style="font-size:12px;padding:8px 10px;background:var(--bg-row);border:1px solid var(--border);margin-bottom:14px;">
+      <strong>Last activity:</strong> ${opp.lastActivity} <span style="color:var(--text-3);">&middot; ${opp.lastActivityAge}</span>
+    </div>
+    <div class="opp-modal-tl-label">ACTIVITY TIMELINE</div>
+    <div class="opp-modal-timeline">${renderTimelineEntries(opp.timeline)}</div>`;
+
+  document.getElementById('modal-footer').innerHTML = `
+    <button class="modal-btn primary">Open in Salesbuildr</button>
+    <button class="modal-btn">Add note</button>
+    <button class="modal-btn">Log activity</button>`;
+
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('modal-overlay').setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function renderActivityTimeline(c) {
+  const meta = document.getElementById('timeline-bar-meta');
+  if (!c.activityTimeline || !c.activityTimeline.length) {
+    if (meta) meta.textContent = 'No recent activity';
+    return;
+  }
+  const count = c.activityTimeline.length;
+  const last  = c.activityTimeline[0];
+  if (meta) meta.textContent = `${count} events &middot; last activity ${last.date}`;
+
+  const list = document.getElementById('timeline-list');
+  if (list) list.innerHTML = '';
+}
+
+let timelineOpen = false;
+
+function initTimelineBar(c) {
+  const bar     = document.getElementById('timeline-bar');
+  const chevron = document.getElementById('timeline-chevron');
+  const expanded= document.getElementById('timeline-expanded');
+  const list    = document.getElementById('timeline-list');
+  if (!bar) return;
+
+  // Reset on customer change
+  timelineOpen = false;
+  chevron.classList.remove('open');
+  expanded.classList.remove('open');
+
+  bar.onclick = () => {
+    timelineOpen = !timelineOpen;
+    chevron.classList.toggle('open', timelineOpen);
+    if (timelineOpen) {
+      list.innerHTML = renderTimelineEntries(c.activityTimeline);
+      expanded.classList.add('open');
+    } else {
+      expanded.classList.remove('open');
+    }
+  };
+}
 
 /* ══════════════════════════════════════════
    TEAM DATA
