@@ -710,3 +710,189 @@ body { font-family: 'Georgia', serif; background: var(--bg); color: var(--text);
 .att-am   { font-size: 11px; color: var(--text-3); margin-top: 1px; font-family: 'Courier New', monospace; }
 .att-reasons { font-size: 11px; color: var(--text-2); margin-top: 3px; }
 .att-pipeline { font-size: 12px; color: var(--info); font-family: 'Courier New', monospace; flex-shrink: 0; }
+
+/* ══════════════════════════════════
+   OPPORTUNITY CARDS & ACTIVITY TIMELINE
+   ══════════════════════════════════ */
+
+/* ── Opportunity cards (inside opp-expanded) ── */
+.opp-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.opp-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.opp-card:last-child { border-bottom: none; }
+.opp-card:hover { background: var(--bg-row); }
+
+.opp-card-status {
+  width: 6px;
+  flex-shrink: 0;
+  align-self: stretch;
+  border-radius: 3px;
+  margin-top: 2px;
+}
+.opp-status-active   { background: var(--info);   }
+.opp-status-proposed { background: var(--warn);   }
+.opp-status-won      { background: var(--good);   }
+.opp-status-lost     { background: var(--text-3); }
+
+.opp-card-body { flex: 1; min-width: 0; }
+.opp-card-title { font-size: 13px; color: var(--text); }
+.opp-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+.opp-card-tag {
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 20px;
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+}
+.opp-tag-active   { background: var(--info-bg);  color: var(--info);   }
+.opp-tag-proposed { background: var(--warn-bg);  color: var(--warn);   }
+.opp-tag-won      { background: var(--good-bg);  color: var(--good);   }
+.opp-tag-lost     { background: var(--bg-row);   color: var(--text-3); }
+.opp-card-date    { font-size: 11px; color: var(--text-3); font-family: 'Courier New', monospace; }
+.opp-card-last    { font-size: 11px; color: var(--text-2); margin-top: 4px; }
+.opp-card-last strong { color: var(--text); font-weight: normal; }
+
+.opp-card-right { text-align: right; flex-shrink: 0; }
+.opp-card-val   { font-size: 14px; color: var(--text); }
+.opp-card-activity {
+  display: flex;
+  gap: 8px;
+  margin-top: 5px;
+  justify-content: flex-end;
+}
+.opp-act-item {
+  font-size: 10px;
+  color: var(--text-3);
+  font-family: 'Courier New', monospace;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* ── Timeline bar (same pattern as memory/opp bars) ── */
+.timeline-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  margin-bottom: 0;
+  cursor: pointer;
+  gap: 12px;
+  flex-wrap: wrap;
+  transition: background 0.1s;
+}
+.timeline-bar:hover { background: var(--bg-row); }
+.timeline-bar-meta { font-size: 11px; color: var(--text-2); font-family: 'Courier New', monospace; }
+
+.timeline-expanded {
+  display: none;
+  border: 1px solid var(--border);
+  border-top: none;
+  background: var(--bg-panel);
+  padding: 0 16px 12px;
+  margin-bottom: 12px;
+}
+.timeline-expanded.open { display: block; }
+
+/* ── Timeline entries ── */
+.timeline-list { position: relative; padding-top: 16px; }
+.timeline-list::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 20px;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+
+.timeline-entry {
+  display: flex;
+  gap: 14px;
+  padding: 6px 0;
+  position: relative;
+}
+.timeline-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-panel);
+  flex-shrink: 0;
+  margin-top: 3px;
+  position: relative;
+  z-index: 1;
+}
+.td-proposal  { background: var(--warn);   }
+.td-review    { background: var(--info);   }
+.td-decision  { background: var(--good);   }
+.td-alert     { background: var(--danger); }
+.td-note      { background: var(--text-3); }
+.td-email     { background: var(--info);   }
+.td-opp       { background: var(--good);   }
+
+.timeline-body { flex: 1; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.timeline-entry:last-child .timeline-body { border-bottom: none; padding-bottom: 0; }
+.timeline-date {
+  font-size: 10px;
+  color: var(--text-3);
+  font-family: 'Courier New', monospace;
+  margin-bottom: 2px;
+}
+.timeline-title { font-size: 13px; color: var(--text); line-height: 1.35; }
+.timeline-detail { font-size: 11px; color: var(--text-2); margin-top: 3px; line-height: 1.4; }
+.timeline-val {
+  font-size: 11px;
+  color: var(--info);
+  font-family: 'Courier New', monospace;
+  margin-top: 3px;
+}
+
+/* ── Opportunity detail modal additions ── */
+.opp-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.opp-modal-val { font-size: 22px; color: var(--text); }
+.opp-modal-status-row { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; align-items: center; }
+.opp-modal-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+.omg-cell { background: var(--bg-panel); padding: 8px 10px; }
+.omg-val  { font-size: 13px; }
+.omg-lbl  { font-size: 10px; color: var(--text-3); font-family: 'Courier New', monospace; margin-top: 2px; }
+.opp-modal-timeline { margin-top: 4px; }
+.opp-modal-tl-label {
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-2); font-family: 'Courier New', monospace;
+  margin-bottom: 10px;
+}
