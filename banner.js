@@ -480,6 +480,8 @@ function syncLayerCardsFromState() {
     }
   });
 }
+
+function loadLayerFile(file, idx) {
   const reader = new FileReader();
   reader.onload = ev => {
     const img = new Image();
