@@ -30,6 +30,7 @@
         </div>
       </div>
       <div class="topbar-actions">
+        <button id="btn-undo" class="btn-ghost-top" title="Undo (Ctrl+Z / Cmd+Z)" disabled>↩ Undo</button>
         <button id="btn-clear" class="btn-ghost-top">↺ Clear</button>
         <button id="btn-save" class="btn-secondary">💾 Save</button>
         <div class="export-mode-wrap">
@@ -216,7 +217,8 @@
           </label>
           <div id="text-controls" style="display:none">
             <div class="ctrl-group" style="margin-top:8px">
-              <input type="text" id="inp-text" placeholder="e.g. Tagline · Address · Section heading" />
+              <textarea id="inp-text" rows="3" placeholder="e.g. Protect Cloud&#10;Application Data&#10;(Shift+Enter for new line)"></textarea>
+              <p style="font-size:10px;color:var(--text-dim);margin-top:3px">Press Shift+Enter for a new line.</p>
             </div>
             <div class="ctrl-row" style="margin-top:8px">
               <div class="ctrl-group half">
