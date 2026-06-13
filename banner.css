@@ -248,12 +248,12 @@ kbd {
 #pv-logo.selected { outline: 2px dashed rgba(34,117,224,.7); outline-offset: 3px; }
 #pv-logo:active { cursor: grabbing; }
 
-#pv-text {
+#pv-text, #pv-sub {
   position: absolute; cursor: grab;
-  user-select: none; white-space: pre; line-height: 1.2;
+  user-select: none; white-space: pre-wrap; line-height: 1.25;
 }
-#pv-text.selected { outline: 2px dashed rgba(34,117,224,.7); outline-offset: 3px; }
-#pv-text:active { cursor: grabbing; }
+#pv-text.selected, #pv-sub.selected { outline: 2px dashed rgba(34,117,224,.7); outline-offset: 3px; }
+#pv-text:active, #pv-sub:active { cursor: grabbing; }
 
 .preview-note { font-size: 11px; color: var(--text-dim); text-align: center; }
 
