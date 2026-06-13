@@ -779,20 +779,98 @@ function sendToSalesbuildr() {
   openSalesbuildrModal(html, title);
 }
 
+/* ── Salesbuildr Credentials ─────────────────────────────────── */
+const LS_API_KEY    = 'sb_api_key';
+const LS_TENANT_URL = 'sb_tenant_url';
+
 function openSalesbuildrModal(html, title) {
   const modal = document.getElementById('modal-backdrop');
-  document.getElementById('modal-title').textContent = 'Send to Salesbuildr';
+  const savedApi    = localStorage.getItem(LS_API_KEY)    || '';
+  const savedTenant = localStorage.getItem(LS_TENANT_URL) || '';
+  const remembered  = !!(savedApi && savedTenant);
+
+  document.getElementById('modal-title').textContent = '↑ Send to Salesbuildr';
+  document.getElementById('modal-sub').textContent   = 'Enter your Salesbuildr credentials to push this matrix as an HTML widget.';
   document.getElementById('modal-body').innerHTML = `
-    <p style="color:var(--text-secondary);font-size:13px;margin-bottom:12px;">
-      The Salesbuildr Public API connection is not configured for this instance.
-      You can copy the HTML and paste it directly into a TinyMCE widget in Salesbuildr.
-    </p>
-    <div style="display:flex;gap:8px;margin-top:8px;">
-      <button class="btn btn-primary" onclick="copyHtml();closeModal()">Copy HTML & Close</button>
-      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-    </div>`;
-  document.getElementById('modal-footer').innerHTML = '';
+    <div class="sb-fields">
+      <div class="sb-field">
+        <label class="sb-label">Tenant URL <span class="sb-where">e.g. https://acme.salesbuildr.com</span></label>
+        <input type="text" id="sbTenantUrl" class="sb-input"
+               placeholder="https://yourcompany.salesbuildr.com"
+               value="${savedTenant}" autocomplete="off">
+      </div>
+      <div class="sb-field">
+        <label class="sb-label">API Key <span class="sb-where">Admin → Integrations → API Key</span></label>
+        <input type="password" id="sbApiKey" class="sb-input"
+               placeholder="Your API key"
+               value="${savedApi}" autocomplete="new-password">
+      </div>
+    </div>
+    <label class="sb-remember">
+      <input type="checkbox" id="sbRemember" ${remembered ? 'checked' : ''}>
+      Remember credentials in this browser
+    </label>`;
+
+  document.getElementById('modal-footer').innerHTML = `
+    <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-primary" id="sbPushBtn" onclick="executeSbPush(${JSON.stringify(html).replace(/'/g, '&#39;')}, ${JSON.stringify(title).replace(/'/g, '&#39;')})">
+      ↑ Send to Salesbuildr
+    </button>`;
+
+  // Enable/disable push button based on field values
   modal.classList.add('open');
+
+  setTimeout(() => {
+    const apiInp    = document.getElementById('sbApiKey');
+    const tenantInp = document.getElementById('sbTenantUrl');
+    const pushBtn   = document.getElementById('sbPushBtn');
+    const updateBtn = () => {
+      pushBtn.disabled = !(apiInp.value.trim() && tenantInp.value.trim());
+    };
+    updateBtn();
+    apiInp.addEventListener('input', updateBtn);
+    tenantInp.addEventListener('input', updateBtn);
+  }, 0);
+}
+
+async function executeSbPush(html, title) {
+  const apiKey    = document.getElementById('sbApiKey').value.trim();
+  const tenantUrl = document.getElementById('sbTenantUrl').value.trim();
+  if (!apiKey || !tenantUrl) return;
+
+  if (document.getElementById('sbRemember').checked) {
+    localStorage.setItem(LS_API_KEY,    apiKey);
+    localStorage.setItem(LS_TENANT_URL, tenantUrl);
+  } else {
+    localStorage.removeItem(LS_API_KEY);
+    localStorage.removeItem(LS_TENANT_URL);
+  }
+
+  const pushBtn = document.getElementById('sbPushBtn');
+  if (pushBtn) { pushBtn.disabled = true; pushBtn.textContent = 'Sending…'; }
+
+  try {
+    const widgets = [{ type: 'html', content: html, title }];
+    const prefix  = title || 'Matrix';
+
+    const res = await fetch('/api/push-widgets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ widgets, prefix, apiKey, tenantUrl })
+    });
+    const data = await res.json();
+
+    closeModal();
+    if (data.ok) {
+      showToast('✓ Sent to Salesbuildr', 'success');
+    } else {
+      showToast('Salesbuildr error: ' + (data.error || 'Unknown error'), 'error');
+    }
+  } catch (err) {
+    closeModal();
+    showToast('Network error — check console', 'error');
+    console.error('[SB push]', err);
+  }
 }
 
 /* ── Navigation ──────────────────────────────────────────────── */
@@ -1139,6 +1217,7 @@ window.deleteColumn = deleteColumn;
 window.onColColorChange = onColColorChange;
 window.copyHtml = copyHtml;
 window.sendToSalesbuildr = sendToSalesbuildr;
+window.executeSbPush = executeSbPush;
 window.closeModal = closeModal;
 window.addSuggestedRows = addSuggestedRows;
 window.setScheme = setScheme;
