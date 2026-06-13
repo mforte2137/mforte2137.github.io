@@ -67,6 +67,16 @@ function defaultState() {
     textX:       40,
     textY:       40,
     textSelected: false,
+    subOn:       false,
+    subStr:      '',
+    subFont:     'Arial, sans-serif',
+    subWeight:   '400',
+    subSize:     20,
+    subAlign:    'left',
+    subColor:    '#dddddd',
+    subX:        40,
+    subY:        100,
+    subSelected: false,
     layers:      Array.from({ length: NUM_LAYERS }, defaultLayer),
     _cleared:    true,
   };
@@ -133,6 +143,17 @@ const fontSizeVal     = $('font-size-val');
 const segTextAlign    = $('seg-text-align');
 const inpTextColor    = $('inp-text-color');
 const inpHexText      = $('inp-hex-text');
+const inpSubOn        = $('inp-sub-on');
+const subCtrls        = $('sub-controls');
+const inpSub          = $('inp-sub');
+const inpSubFont      = $('inp-sub-font');
+const segSubWeight    = $('seg-sub-weight');
+const inpSubSize      = $('inp-sub-size');
+const subSizeVal      = $('sub-size-val');
+const segSubAlign     = $('seg-sub-align');
+const inpSubColor     = $('inp-sub-color');
+const inpHexSub       = $('inp-hex-sub');
+const pvSub           = $('pv-sub');
 const logoSection     = $('logo-section');
 const imageLayersList = $('image-layers-list');
 const pvBanner        = $('preview-banner');
@@ -573,9 +594,9 @@ function startImgDrag(e, idx) {
 
 pvText.addEventListener('mousedown', e => {
   if (!state.textOn || !state.textStr) return;
-  state.textSelected = true;
+  state.textSelected = true; state.subSelected = false;
   state.layers.forEach(l => { l.selected = false; });
-  pvText.classList.add('selected');
+  pvText.classList.add('selected'); pvSub.classList.remove('selected');
   pvImgEls.forEach(el => el.classList.remove('selected'));
   updateLayerCardSelectedState();
   dragging = true;
@@ -583,6 +604,21 @@ pvText.addEventListener('mousedown', e => {
   dragStartX  = e.clientX; dragStartY = e.clientY;
   dragOriginX = state.textX; dragOriginY = state.textY;
   pvText.style.cursor = 'grabbing';
+  e.preventDefault();
+});
+
+pvSub.addEventListener('mousedown', e => {
+  if (!state.subOn || !state.subStr) return;
+  state.subSelected = true; state.textSelected = false;
+  state.layers.forEach(l => { l.selected = false; });
+  pvSub.classList.add('selected'); pvText.classList.remove('selected');
+  pvImgEls.forEach(el => el.classList.remove('selected'));
+  updateLayerCardSelectedState();
+  dragging = true;
+  dragCtx  = { type: 'sub' };
+  dragStartX  = e.clientX; dragStartY = e.clientY;
+  dragOriginX = state.subX; dragOriginY = state.subY;
+  pvSub.style.cursor = 'grabbing';
   e.preventDefault();
 });
 
@@ -596,28 +632,31 @@ document.addEventListener('mousemove', e => {
     state.layers[dragCtx.idx].y = dragOriginY + dy;
     pvImgEls[dragCtx.idx].style.left = state.layers[dragCtx.idx].x + 'px';
     pvImgEls[dragCtx.idx].style.top  = state.layers[dragCtx.idx].y + 'px';
-  } else {
-    state.textX = dragOriginX + dx;
-    state.textY = dragOriginY + dy;
+  } else if (dragCtx.type === 'text') {
+    state.textX = dragOriginX + dx; state.textY = dragOriginY + dy;
     positionText();
+  } else if (dragCtx.type === 'sub') {
+    state.subX = dragOriginX + dx; state.subY = dragOriginY + dy;
+    positionSub();
   }
 });
 
 document.addEventListener('mouseup', () => {
   if (dragging && dragCtx) {
     if (dragCtx.type === 'img') pvImgEls[dragCtx.idx].style.cursor = 'grab';
-    else pvText.style.cursor = 'grab';
+    else if (dragCtx.type === 'text') pvText.style.cursor = 'grab';
+    else if (dragCtx.type === 'sub')  pvSub.style.cursor  = 'grab';
   }
   dragging = false; dragCtx = null;
 });
 
 pvBanner.addEventListener('mousedown', e => {
   const clickedImg = e.target.classList.contains('pv-img-layer');
-  if (!clickedImg && e.target !== pvText) {
+  if (!clickedImg && e.target !== pvText && e.target !== pvSub) {
     state.layers.forEach(l => { l.selected = false; });
-    state.textSelected = false;
+    state.textSelected = false; state.subSelected = false;
     pvImgEls.forEach(el => el.classList.remove('selected'));
-    pvText.classList.remove('selected');
+    pvText.classList.remove('selected'); pvSub.classList.remove('selected');
     updateLayerCardSelectedState();
   }
 });
@@ -640,6 +679,14 @@ document.addEventListener('keydown', e => {
       case 'ArrowDown':  state.textY += step; moved = true; break;
     }
     if (moved) positionText();
+  } else if (state.subSelected && state.subOn) {
+    switch (e.key) {
+      case 'ArrowLeft':  state.subX -= step; moved = true; break;
+      case 'ArrowRight': state.subX += step; moved = true; break;
+      case 'ArrowUp':    state.subY -= step; moved = true; break;
+      case 'ArrowDown':  state.subY += step; moved = true; break;
+    }
+    if (moved) positionSub();
   }
   if (moved) e.preventDefault();
 });
@@ -718,7 +765,7 @@ function sliderHistory(el) {
   el.addEventListener('touchstart', () => pushHistory(), { passive: true });
 }
 [inpHeight, inpRadius, inpBorderW, inpAh1, inpAh2,
- inpShadowX, inpShadowY, inpShadowBlur, inpFontSize].forEach(sliderHistory);
+ inpShadowX, inpShadowY, inpShadowBlur, inpFontSize, inpSubSize].forEach(sliderHistory);
 
 inpCompany.addEventListener('input', () => { state.company = inpCompany.value; });
 inpHeight.addEventListener('input', () => { state.height = +inpHeight.value; heightVal.textContent = state.height + 'px'; render(); });
@@ -758,6 +805,16 @@ initSeg(segFontWeight, val => { pushHistory(); state.textWeight = val; render();
 inpFontSize.addEventListener('input', () => { state.textSize = +inpFontSize.value; fontSizeVal.textContent = state.textSize + 'px'; render(); });
 initSeg(segTextAlign, val => { pushHistory(); state.textAlign = val; state.textX = 0; render(); });
 syncColor(inpTextColor, inpHexText, 'textColor', 'swatches-text');
+
+// Sub-heading controls
+inpSubOn.addEventListener('change', () => { pushHistory(); state.subOn = inpSubOn.checked; subCtrls.style.display = state.subOn ? '' : 'none'; render(); });
+inpSub.addEventListener('input', () => { pushHistory(); state.subStr = inpSub.value; render(); });
+inpSub.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) e.preventDefault(); });
+inpSubFont.addEventListener('change', () => { pushHistory(); state.subFont = inpSubFont.value; render(); });
+initSeg(segSubWeight, val => { pushHistory(); state.subWeight = val; render(); });
+inpSubSize.addEventListener('input', () => { state.subSize = +inpSubSize.value; subSizeVal.textContent = state.subSize + 'px'; render(); });
+initSeg(segSubAlign, val => { pushHistory(); state.subAlign = val; state.subX = 0; render(); });
+syncColor(inpSubColor, inpHexSub, 'subColor', 'swatches-sub');
 
 initSeg(segExport, val => { exportMode = val; updateDimLabel(); });
 
@@ -865,6 +922,15 @@ function positionText() {
   else                                  pvText.style.left = (bInset + state.textX) + 'px';
 }
 
+function positionSub() {
+  const bInset = state.borderOn ? state.borderW + 16 : 16;
+  pvSub.style.width  = (A4_W - bInset * 2) + 'px';
+  pvSub.style.top    = state.subY + 'px';
+  if (state.subAlign === 'left')       pvSub.style.left = (bInset + state.subX) + 'px';
+  else if (state.subAlign === 'right') pvSub.style.left = (bInset - state.subX) + 'px';
+  else                                 pvSub.style.left = (bInset + state.subX) + 'px';
+}
+
 const btnUndo = $('btn-undo');
 if (btnUndo) btnUndo.addEventListener('click', doUndo);
 
@@ -929,9 +995,20 @@ function render(force) {
     pvText.classList.toggle('selected', state.textSelected);
     positionText();
     pvText.textContent = state.textStr;
-  } else { pvText.style.display = 'none'; }
-
-  scalePreview();
+  // Sub-heading
+  if (state.subOn && state.subStr) {
+    pvSub.style.display    = '';
+    pvSub.style.fontFamily = state.subFont;
+    pvSub.style.fontWeight = state.subWeight;
+    pvSub.style.fontSize   = state.subSize + 'px';
+    pvSub.style.color      = state.subColor;
+    pvSub.style.textAlign  = state.subAlign;
+    pvSub.style.whiteSpace = 'pre-wrap';
+    pvSub.style.lineHeight = '1.25';
+    pvSub.classList.toggle('selected', state.subSelected);
+    positionSub();
+    pvSub.textContent = state.subStr;
+  } else { pvSub.style.display = 'none'; }
   updateDimLabel();
 }
 
@@ -1025,8 +1102,19 @@ async function exportToPNG(overrideMode) {
     });
   }
 
-  // Border
-  if (state.borderOn) {
+  // Sub-heading
+  if (state.subOn && state.subStr) {
+    const bInset = state.borderOn ? Math.round((state.borderW+16)*sc) : Math.round(16*sc);
+    cc.font = `${state.subWeight} ${Math.round(state.subSize*sc)}px ${state.subFont}`;
+    cc.fillStyle = state.subColor; cc.textAlign = state.subAlign; cc.textBaseline = 'top';
+    const lineH = Math.round(state.subSize * sc * 1.25);
+    const tx = state.subAlign === 'center' ? outW/2 + Math.round(state.subX*sc)
+             : state.subAlign === 'right'  ? outW - bInset - Math.round(state.subX*sc)
+             : bInset + Math.round(state.subX*sc);
+    state.subStr.split('\n').forEach((line, i) => {
+      cc.fillText(line, tx, Math.round(state.subY*sc) + i * lineH);
+    });
+  }
     const bw = Math.round(state.borderW*sc);
     cc.strokeStyle = state.borderColor; cc.lineWidth = bw*2;
     if (r > 0) { cc.beginPath(); cc.roundRect(0,0,outW,outH,r); cc.stroke(); }
@@ -1183,6 +1271,13 @@ function syncUIFromState() {
   inpFontSize.value=state.textSize; fontSizeVal.textContent=state.textSize+'px';
   setSegActive(segTextAlign,state.textAlign);
   inpTextColor.value=state.textColor; inpHexText.value=state.textColor; highlightSwatch('swatches-text',state.textColor);
+
+  inpSubOn.checked=state.subOn; subCtrls.style.display=state.subOn?'':'none';
+  inpSub.value=state.subStr || ''; inpSubFont.value=state.subFont;
+  setSegActive(segSubWeight, state.subWeight);
+  inpSubSize.value=state.subSize; subSizeVal.textContent=state.subSize+'px';
+  setSegActive(segSubAlign, state.subAlign);
+  inpSubColor.value=state.subColor; inpHexSub.value=state.subColor; highlightSwatch('swatches-sub', state.subColor);
 
   // Sync layer cards
   state.layers.forEach((layer, i) => {
@@ -1344,10 +1439,12 @@ buildSwatches('swatches-accent1', inpAccent1,    inpHexA1,     'accent1');
 buildSwatches('swatches-accent2', inpAccent2,    inpHexA2,     'accent2');
 buildSwatches('swatches-border',  inpBorderColor,inpHexBorder, 'borderColor');
 buildSwatches('swatches-text',    inpTextColor,  inpHexText,   'textColor', SWATCHES_TEXT);
+buildSwatches('swatches-sub',     inpSubColor,   inpHexSub,    'subColor',  SWATCHES_TEXT);
 highlightSwatch('swatches-color1', state.color1);
 highlightSwatch('swatches-color2', state.color2);
 highlightSwatch('swatches-border', state.borderColor);
 highlightSwatch('swatches-text',   state.textColor);
+highlightSwatch('swatches-sub',    state.subColor);
 renderSidebar();
 syncUIFromState();
 render();
