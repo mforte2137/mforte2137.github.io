@@ -558,6 +558,8 @@ function bindRowDrag() {
     });
   });
 }
+
+function renderCellContent(val, ri, ci) {
   if (val === 'yes')     return CELL_ICONS.yes;
   if (val === 'no')      return CELL_ICONS.no;
   if (val === 'partial') return CELL_ICONS.partial;
