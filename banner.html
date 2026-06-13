@@ -210,15 +210,14 @@
           </div>
         </div>
 
-        <!-- Text Overlay -->
+        <!-- Text Overlay — Heading -->
         <div class="ctrl-group">
-          <label class="ctrl-label">Text Overlay
+          <label class="ctrl-label">Heading Text
             <label class="toggle-switch"><input type="checkbox" id="inp-text-on" /><span class="toggle-track"></span></label>
           </label>
           <div id="text-controls" style="display:none">
             <div class="ctrl-group" style="margin-top:8px">
-              <textarea id="inp-text" rows="3" placeholder="e.g. Protect Cloud&#10;Application Data&#10;(Shift+Enter for new line)"></textarea>
-              <p style="font-size:10px;color:var(--text-dim);margin-top:3px">Press Shift+Enter for a new line.</p>
+              <textarea id="inp-text" rows="2" placeholder="e.g. Protect Cloud Application Data&#10;(Shift+Enter for new line)"></textarea>
             </div>
             <div class="ctrl-row" style="margin-top:8px">
               <div class="ctrl-group half">
@@ -253,7 +252,7 @@
               </div>
             </div>
             <div class="ctrl-group" style="margin-top:8px">
-              <label class="ctrl-label">Text Color</label>
+              <label class="ctrl-label">Color</label>
               <div class="swatch-row" id="swatches-text"></div>
               <div class="color-row">
                 <input type="color" id="inp-text-color" value="#ffffff" />
@@ -261,7 +260,62 @@
               </div>
             </div>
             <div class="hint-box" style="margin-top:8px">
-              <strong>Tip:</strong> Click text on preview then <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> to nudge. <kbd>Shift</kbd>=10px.
+              <strong>Tip:</strong> Click heading on preview then <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> to nudge. <kbd>Shift</kbd>=10px.
+            </div>
+          </div>
+        </div>
+
+        <!-- Text Overlay — Sub-heading -->
+        <div class="ctrl-group">
+          <label class="ctrl-label">Sub-heading Text
+            <label class="toggle-switch"><input type="checkbox" id="inp-sub-on" /><span class="toggle-track"></span></label>
+          </label>
+          <div id="sub-controls" style="display:none">
+            <div class="ctrl-group" style="margin-top:8px">
+              <textarea id="inp-sub" rows="2" placeholder="e.g. Effortlessly backup, search and restore&#10;(Shift+Enter for new line)"></textarea>
+            </div>
+            <div class="ctrl-row" style="margin-top:8px">
+              <div class="ctrl-group half">
+                <label class="ctrl-label">Font</label>
+                <select id="inp-sub-font" class="select-inp">
+                  <option value="Arial, sans-serif">Arial</option>
+                  <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+                  <option value="Georgia, serif">Georgia (Serif)</option>
+                  <option value="'Courier New', monospace">Courier New</option>
+                </select>
+              </div>
+              <div class="ctrl-group half">
+                <label class="ctrl-label">Weight</label>
+                <div class="seg-control" id="seg-sub-weight">
+                  <button class="seg active" data-val="400">Regular</button>
+                  <button class="seg" data-val="700">Bold</button>
+                </div>
+              </div>
+            </div>
+            <div class="ctrl-row" style="margin-top:8px">
+              <div class="ctrl-group half">
+                <label class="ctrl-label">Size <span id="sub-size-val" class="val-badge">20px</span></label>
+                <input type="range" id="inp-sub-size" min="10" max="80" value="20" />
+              </div>
+              <div class="ctrl-group half">
+                <label class="ctrl-label">Align</label>
+                <div class="seg-control" id="seg-sub-align">
+                  <button class="seg active" data-val="left">◀</button>
+                  <button class="seg" data-val="center">■</button>
+                  <button class="seg" data-val="right">▶</button>
+                </div>
+              </div>
+            </div>
+            <div class="ctrl-group" style="margin-top:8px">
+              <label class="ctrl-label">Color</label>
+              <div class="swatch-row" id="swatches-sub"></div>
+              <div class="color-row">
+                <input type="color" id="inp-sub-color" value="#dddddd" />
+                <input type="text"  id="inp-hex-sub"   value="#dddddd" maxlength="7" class="hex-inp" />
+              </div>
+            </div>
+            <div class="hint-box" style="margin-top:8px">
+              <strong>Tip:</strong> Click sub-heading on preview then <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> to nudge. <kbd>Shift</kbd>=10px.
             </div>
           </div>
         </div>
@@ -288,6 +342,7 @@
               <div id="pv-main"></div>
               <div id="pv-images"></div>
               <div id="pv-text" style="display:none"></div>
+              <div id="pv-sub" style="display:none"></div>
               <div id="pv-border"></div>
             </div>
           </div>
