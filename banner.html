@@ -8,22 +8,19 @@
 </head>
 <body>
 
-  <!-- ── LEFT SIDEBAR — Recent Banners ────────────────── -->
+  <!-- ── LEFT SIDEBAR ─────────────────────────────────── -->
   <aside id="sidebar">
     <div class="sidebar-header">
       <span class="sidebar-logo">⬡</span>
       <span>Banner Creator</span>
     </div>
     <div class="sidebar-section-label">Recent Banners</div>
-    <div id="recent-list">
-      <p class="empty-note">No saved banners yet.</p>
-    </div>
+    <div id="recent-list"><p class="empty-note">No saved banners yet.</p></div>
   </aside>
 
   <!-- ── MAIN ──────────────────────────────────────────── -->
   <main id="main">
 
-    <!-- TOPBAR -->
     <header id="topbar">
       <div class="topbar-left">
         <h1>Banner Creator <span class="tag">MSP Toolkit</span></h1>
@@ -33,22 +30,21 @@
         </div>
       </div>
       <div class="topbar-actions">
-        <button id="btn-clear" class="btn-ghost-top" title="Reset to blank canvas">↺ Clear</button>
+        <button id="btn-clear" class="btn-ghost-top">↺ Clear</button>
         <button id="btn-save" class="btn-secondary">💾 Save</button>
         <div class="export-mode-wrap">
           <div class="seg-control" id="seg-export">
-            <button class="seg active" data-val="print" title="2481px wide · 300dpi">🖨 300 dpi</button>
-            <button class="seg" data-val="web" title="794px wide · 96dpi">🌐 96 dpi</button>
+            <button class="seg active" data-val="print">🖨 300 dpi</button>
+            <button class="seg" data-val="web">🌐 96 dpi</button>
           </div>
         </div>
         <button id="btn-download" class="btn-primary">⬇ Download PNG</button>
       </div>
     </header>
 
-    <!-- WORKSPACE -->
     <div id="workspace">
 
-      <!-- ══ LEFT CONTROLS ══════════════════════════════ -->
+      <!-- ══ CONTROLS ══════════════════════════════════════ -->
       <section id="controls">
 
         <div class="ctrl-group">
@@ -109,12 +105,8 @@
 
         <!-- Border -->
         <div class="ctrl-group">
-          <label class="ctrl-label">
-            Border
-            <label class="toggle-switch">
-              <input type="checkbox" id="inp-border" />
-              <span class="toggle-track"></span>
-            </label>
+          <label class="ctrl-label">Border
+            <label class="toggle-switch"><input type="checkbox" id="inp-border" /><span class="toggle-track"></span></label>
           </label>
           <div id="border-controls" style="display:none">
             <div class="ctrl-row" style="margin-top:8px">
@@ -187,21 +179,17 @@
 
         <!-- Drop Shadow -->
         <div class="ctrl-group">
-          <label class="ctrl-label">
-            Drop Shadow
-            <label class="toggle-switch">
-              <input type="checkbox" id="inp-shadow" />
-              <span class="toggle-track"></span>
-            </label>
+          <label class="ctrl-label">Drop Shadow
+            <label class="toggle-switch"><input type="checkbox" id="inp-shadow" /><span class="toggle-track"></span></label>
           </label>
           <div id="shadow-controls" style="display:none">
             <div class="ctrl-row" style="margin-top:8px">
               <div class="ctrl-group half">
-                <label class="ctrl-label">X Offset <span id="shadow-x-val" class="val-badge">4px</span></label>
+                <label class="ctrl-label">X <span id="shadow-x-val" class="val-badge">4px</span></label>
                 <input type="range" id="inp-shadow-x" min="-20" max="20" value="4" />
               </div>
               <div class="ctrl-group half">
-                <label class="ctrl-label">Y Offset <span id="shadow-y-val" class="val-badge">4px</span></label>
+                <label class="ctrl-label">Y <span id="shadow-y-val" class="val-badge">4px</span></label>
                 <input type="range" id="inp-shadow-y" min="-20" max="20" value="4" />
               </div>
             </div>
@@ -223,12 +211,8 @@
 
         <!-- Text Overlay -->
         <div class="ctrl-group">
-          <label class="ctrl-label">
-            Text Overlay
-            <label class="toggle-switch">
-              <input type="checkbox" id="inp-text-on" />
-              <span class="toggle-track"></span>
-            </label>
+          <label class="ctrl-label">Text Overlay
+            <label class="toggle-switch"><input type="checkbox" id="inp-text-on" /><span class="toggle-track"></span></label>
           </label>
           <div id="text-controls" style="display:none">
             <div class="ctrl-group" style="margin-top:8px">
@@ -275,67 +259,44 @@
               </div>
             </div>
             <div class="hint-box" style="margin-top:8px">
-              <strong>Tip:</strong> Click text on preview then <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> to nudge. <kbd>Shift</kbd> = 10px.
+              <strong>Tip:</strong> Click text on preview then <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> to nudge. <kbd>Shift</kbd>=10px.
             </div>
           </div>
         </div>
 
-        <!-- Logo Upload (logo mode only) -->
+        <!-- ── IMAGE LAYERS (logo mode only) ──────────── -->
         <div id="logo-section">
-          <div class="ctrl-group">
-            <label class="ctrl-label">Logo</label>
-            <label class="file-drop" id="logo-drop">
-              <input type="file" id="inp-logo" accept="image/*" />
-              <span id="logo-drop-text">Click or drag to upload logo</span>
-            </label>
-            <div id="logo-controls" style="display:none">
-              <div class="ctrl-row" style="margin-top:10px">
-                <div class="ctrl-group half">
-                  <label class="ctrl-label">Width <span id="logo-w-val" class="val-badge">200px</span></label>
-                  <input type="range" id="inp-logo-w" min="40" max="700" value="200" />
-                </div>
-                <div class="ctrl-group half">
-                  <label class="ctrl-label">Height <span id="logo-h-val" class="val-badge">auto</span></label>
-                  <div class="seg-control" id="seg-logo-lock">
-                    <button class="seg active" data-val="locked">⛓ Locked</button>
-                    <button class="seg" data-val="free">Free</button>
-                  </div>
-                </div>
-              </div>
-              <div id="logo-h-wrap" style="display:none;margin-top:6px">
-                <label class="ctrl-label">Logo Height <span id="logo-hh-val" class="val-badge">100px</span></label>
-                <input type="range" id="inp-logo-h" min="20" max="500" value="100" />
-              </div>
-              <button class="btn-ghost" id="btn-remove-logo" style="margin-top:8px">✕ Remove Logo</button>
-            </div>
+          <div class="ctrl-label" style="margin-bottom:6px">Image Layers
+            <span class="val-badge" style="font-size:10px;margin-left:4px">1=back · 4=front</span>
           </div>
-          <div class="hint-box" id="nudge-hint" style="display:none">
-            <strong>Tip:</strong> Click logo on preview then <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> to nudge 1px. <kbd>Shift</kbd> = 10px.
+          <div class="hint-box" style="margin-bottom:10px;font-size:10px">
+            Upload up to 4 images. Drag on preview to position. Use <strong>remove.bg</strong> first for transparent PNG cutouts.
           </div>
+          <div id="image-layers-list"></div>
         </div>
 
       </section><!-- /controls -->
 
-      <!-- PREVIEW PANEL -->
+      <!-- PREVIEW -->
       <section id="preview-panel">
         <div class="preview-label">Preview <span id="preview-dims"></span></div>
         <div id="preview-scroll">
           <div id="preview-outer">
             <div id="preview-banner">
               <div id="pv-main"></div>
-              <img id="pv-logo" draggable="false" style="display:none" alt="logo" />
+              <div id="pv-images"></div>
               <div id="pv-text" style="display:none"></div>
               <div id="pv-border"></div>
             </div>
           </div>
         </div>
-        <p class="preview-note">Drag logo or text to reposition. Arrow-key nudge when selected.</p>
+        <p class="preview-note">Click an image to select it, then drag or use arrow keys to reposition.</p>
       </section>
 
     </div><!-- /workspace -->
   </main>
 
-  <!-- ── RIGHT SIDEBAR — Brand Extractor ──────────────── -->
+  <!-- ── RIGHT SIDEBAR — Brand Extractor ───────────────── -->
   <aside id="brand-sidebar">
     <div class="bs-header">
       <span class="bs-icon">✦</span>
@@ -343,40 +304,31 @@
     </div>
     <div class="bs-body">
       <p class="bs-hint">Paste the client's website URL to auto-extract brand colors and logo.</p>
-
       <div class="bs-input-row">
         <input type="text" id="be-url" placeholder="https://clientwebsite.com" class="bs-url-inp" />
       </div>
       <button id="be-extract-btn" class="btn-extract-full">✦ Extract Brand</button>
-
       <div id="be-status" style="display:none"></div>
-
-      <!-- Results -->
       <div id="be-results" style="display:none">
-
         <div class="bs-section-label">Brand Colors</div>
         <div class="bs-colors-row" id="be-colors-row"></div>
         <p class="bs-sub-hint">Click a color to apply it to the banner.</p>
-
         <div id="be-logo-preview-wrap" style="display:none">
           <div class="bs-section-label" style="margin-top:16px">Logo Found</div>
           <div class="bs-logo-card">
             <img id="be-logo-preview" alt="Logo preview" class="bs-logo-img" />
           </div>
         </div>
-
         <div class="bs-notes-wrap">
           <div class="bs-section-label" style="margin-top:16px">Analysis</div>
           <div class="be-notes" id="be-notes"></div>
         </div>
-
         <div class="bs-actions">
           <button id="be-apply-all" class="btn-be-apply-full" style="display:none">✓ Load Logo onto Banner</button>
           <button id="be-reset" class="btn-be-reset">↺ New Search</button>
         </div>
-
-      </div><!-- /be-results -->
-    </div><!-- /bs-body -->
+      </div>
+    </div>
   </aside>
 
   <script src="banner.js"></script>
