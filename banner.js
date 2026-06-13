@@ -412,6 +412,7 @@ function buildLayerCards() {
     });
 
     // Width slider
+    wSlider.addEventListener('mousedown', () => pushHistory());
     wSlider.addEventListener('input', () => {
       state.layers[idx].w = +wSlider.value;
       wBadge.textContent = wSlider.value + 'px';
@@ -431,6 +432,7 @@ function buildLayerCards() {
     });
 
     // Height slider (free mode)
+    hSlider.addEventListener('mousedown', () => pushHistory());
     hSlider.addEventListener('input', () => {
       state.layers[idx].h = +hSlider.value;
       hBadge.textContent = hSlider.value + 'px';
@@ -708,9 +710,19 @@ btnClear.addEventListener('click', () => {
 /* ─────────────────────────────────────────────────
    CONTROL WIRING
 ───────────────────────────────────────────────── */
+
+// Sliders: capture history ONCE on mousedown (drag start), not on every input tick.
+// This means undo jumps back to where you started dragging, not one pixel at a time.
+function sliderHistory(el) {
+  el.addEventListener('mousedown', () => pushHistory());
+  el.addEventListener('touchstart', () => pushHistory(), { passive: true });
+}
+[inpHeight, inpRadius, inpBorderW, inpAh1, inpAh2,
+ inpShadowX, inpShadowY, inpShadowBlur, inpFontSize].forEach(sliderHistory);
+
 inpCompany.addEventListener('input', () => { state.company = inpCompany.value; });
-inpHeight.addEventListener('input', () => { pushHistory(); state.height = +inpHeight.value; heightVal.textContent = state.height + 'px'; render(); });
-inpRadius.addEventListener('input', () => { pushHistory(); state.radius = +inpRadius.value; radiusVal.textContent = state.radius + 'px'; render(); });
+inpHeight.addEventListener('input', () => { state.height = +inpHeight.value; heightVal.textContent = state.height + 'px'; render(); });
+inpRadius.addEventListener('input', () => { state.radius = +inpRadius.value; radiusVal.textContent = state.radius + 'px'; render(); });
 
 initSeg(segBgTypeLogo,   val => { state.bgType = val; updateBgControls(); render(); });
 initSeg(segBgTypeHeader, val => { state.bgType = val; updateBgControls(); render(); });
@@ -720,31 +732,30 @@ syncColor(inpColor1, inpHex1, 'color1', 'swatches-color1');
 syncColor(inpColor2, inpHex2, 'color2', 'swatches-color2');
 
 inpBorder.addEventListener('change', () => { pushHistory(); state.borderOn = inpBorder.checked; borderCtrls.style.display = state.borderOn ? '' : 'none'; render(); });
-inpBorderW.addEventListener('input', () => { pushHistory(); state.borderW = +inpBorderW.value; borderWVal.textContent = state.borderW + 'px'; render(); });
+inpBorderW.addEventListener('input', () => { state.borderW = +inpBorderW.value; borderWVal.textContent = state.borderW + 'px'; render(); });
 syncColor(inpBorderColor, inpHexBorder, 'borderColor', 'swatches-border');
 
 initSeg(segAccent, val => { state.accentMode = val; accentCtrls.style.display = val === 'none' ? 'none' : ''; accent2Wrap.style.display = val === 'double' ? '' : 'none'; render(); });
 initSeg(segAccentPos, val => { state.accentPos = val; render(); });
 syncColor(inpAccent1, inpHexA1, 'accent1', 'swatches-accent1');
 syncColor(inpAccent2, inpHexA2, 'accent2', 'swatches-accent2');
-inpAh1.addEventListener('input', () => { pushHistory(); state.accent1H = +inpAh1.value; ah1Val.textContent = state.accent1H + 'px'; render(); });
-inpAh2.addEventListener('input', () => { pushHistory(); state.accent2H = +inpAh2.value; ah2Val.textContent = state.accent2H + 'px'; render(); });
+inpAh1.addEventListener('input', () => { state.accent1H = +inpAh1.value; ah1Val.textContent = state.accent1H + 'px'; render(); });
+inpAh2.addEventListener('input', () => { state.accent2H = +inpAh2.value; ah2Val.textContent = state.accent2H + 'px'; render(); });
 
 inpShadow.addEventListener('change', () => { pushHistory(); state.shadowOn = inpShadow.checked; shadowCtrls.style.display = state.shadowOn ? '' : 'none'; render(); });
-inpShadowX.addEventListener('input', () => { pushHistory(); state.shadowX = +inpShadowX.value; shadowXVal.textContent = state.shadowX + 'px'; render(); });
-inpShadowY.addEventListener('input', () => { pushHistory(); state.shadowY = +inpShadowY.value; shadowYVal.textContent = state.shadowY + 'px'; render(); });
-inpShadowBlur.addEventListener('input', () => { pushHistory(); state.shadowBlur = +inpShadowBlur.value; shadowBlurVal.textContent = state.shadowBlur + 'px'; render(); });
+inpShadowX.addEventListener('input', () => { state.shadowX = +inpShadowX.value; shadowXVal.textContent = state.shadowX + 'px'; render(); });
+inpShadowY.addEventListener('input', () => { state.shadowY = +inpShadowY.value; shadowYVal.textContent = state.shadowY + 'px'; render(); });
+inpShadowBlur.addEventListener('input', () => { state.shadowBlur = +inpShadowBlur.value; shadowBlurVal.textContent = state.shadowBlur + 'px'; render(); });
 syncColor(inpShadowColor, inpHexShadow, 'shadowColor', null);
 
 inpTextOn.addEventListener('change', () => { pushHistory(); state.textOn = inpTextOn.checked; textCtrls.style.display = state.textOn ? '' : 'none'; pvText.style.display = (state.textOn && state.textStr) ? '' : 'none'; render(); });
 inpText.addEventListener('input', () => { pushHistory(); state.textStr = inpText.value; render(); });
 inpText.addEventListener('keydown', e => {
-  // Allow Shift+Enter for newlines, prevent plain Enter submitting
   if (e.key === 'Enter' && !e.shiftKey) e.preventDefault();
 });
 inpFont.addEventListener('change', () => { pushHistory(); state.textFont = inpFont.value; render(); });
 initSeg(segFontWeight, val => { pushHistory(); state.textWeight = val; render(); });
-inpFontSize.addEventListener('input', () => { pushHistory(); state.textSize = +inpFontSize.value; fontSizeVal.textContent = state.textSize + 'px'; render(); });
+inpFontSize.addEventListener('input', () => { state.textSize = +inpFontSize.value; fontSizeVal.textContent = state.textSize + 'px'; render(); });
 initSeg(segTextAlign, val => { pushHistory(); state.textAlign = val; state.textX = 0; render(); });
 syncColor(inpTextColor, inpHexText, 'textColor', 'swatches-text');
 
