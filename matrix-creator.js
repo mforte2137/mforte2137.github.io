@@ -736,17 +736,25 @@ function updateExportCode() {
 
 function copyHtml() {
   const code = generateHtml();
-  navigator.clipboard.writeText(code).then(() => {
-    showToast('✓ HTML copied to clipboard', 'success');
-  }).catch(() => {
-    // Fallback
+  const btn = document.getElementById('btn-copy-html');
+
+  const confirm = () => {
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied';
+      btn.disabled = true;
+      setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2000);
+    }
+  };
+
+  navigator.clipboard.writeText(code).then(confirm).catch(() => {
     const ta = document.createElement('textarea');
     ta.value = code;
     document.body.appendChild(ta);
     ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
-    showToast('✓ HTML copied', 'success');
+    confirm();
   });
 }
 
@@ -813,11 +821,8 @@ function openSalesbuildrModal(html, title) {
 
   document.getElementById('modal-footer').innerHTML = `
     <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-primary" id="sbPushBtn" onclick="executeSbPush(${JSON.stringify(html).replace(/'/g, '&#39;')}, ${JSON.stringify(title).replace(/'/g, '&#39;')})">
-      ↑ Send to Salesbuildr
-    </button>`;
+    <button class="btn btn-primary" id="sbPushBtn">↑ Send to Salesbuildr</button>`;
 
-  // Enable/disable push button based on field values
   modal.classList.add('open');
 
   setTimeout(() => {
@@ -830,6 +835,7 @@ function openSalesbuildrModal(html, title) {
     updateBtn();
     apiInp.addEventListener('input', updateBtn);
     tenantInp.addEventListener('input', updateBtn);
+    pushBtn.addEventListener('click', () => executeSbPush(html, title));
   }, 0);
 }
 
