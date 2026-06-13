@@ -325,6 +325,7 @@ a:hover { color: var(--accent-hover); }
 .icon-forest  { background: rgba(20,83,45,0.10);   color: #14532d; }
 .icon-purple  { background: rgba(76,29,149,0.10);  color: #4c1d95; }
 .icon-crimson { background: rgba(127,29,29,0.10);  color: #7f1d1d; }
+.icon-coral   { background: rgba(124,45,18,0.10);  color: #c2410c; }
 
 /* Badge */
 .card-badge {
