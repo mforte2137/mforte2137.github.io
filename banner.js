@@ -165,6 +165,68 @@ function toast(msg) {
 }
 
 /* ─────────────────────────────────────────────────
+   UNDO HISTORY
+   Snapshots are deep-copied state objects.
+   Image data URLs are large but we cap at 30 steps.
+───────────────────────────────────────────────── */
+const UNDO_LIMIT = 30;
+const undoStack  = [];
+let   undoPaused = false; // prevent pushes during undo restore
+
+function pushHistory() {
+  if (undoPaused) return;
+  // Deep copy — layers contain data URLs so use JSON round-trip
+  const snap = JSON.parse(JSON.stringify(state));
+  undoStack.push(snap);
+  if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+  updateUndoBtn();
+}
+
+function updateUndoBtn() {
+  const btn = $('btn-undo');
+  if (!btn) return;
+  btn.disabled = undoStack.length === 0;
+}
+
+function doUndo() {
+  if (undoStack.length === 0) return;
+  const snap = undoStack.pop();
+  undoPaused = true;
+  Object.assign(state, snap);
+  currentMode = state.mode || 'logo';
+  // Rebuild layer card UI to reflect restored image state
+  layerUI.forEach((ui, i) => {
+    const layer = state.layers[i];
+    if (layer && layer.src) {
+      ui.thumb.src = layer.src; ui.thumb.style.display = 'block';
+      ui.controls.style.display = ''; ui.card.classList.add('has-image');
+      ui.wSlider.value = layer.w; ui.wBadge.textContent = layer.w + 'px';
+      ui.dropText.textContent = 'Image loaded';
+      const lockVal = layer.lock !== false ? 'locked' : 'free';
+      [ui.lockBtn, ui.freeBtn].forEach(b => b.classList.toggle('active', b.dataset.val === lockVal));
+      ui.hWrap.style.display = layer.lock ? 'none' : '';
+      if (!layer.lock && layer.h) { ui.hSlider.value = layer.h; ui.hBadge.textContent = layer.h + 'px'; }
+    } else {
+      ui.thumb.style.display = 'none'; ui.controls.style.display = 'none';
+      ui.card.classList.remove('has-image', 'selected-layer');
+      ui.dropText.textContent = 'Click or drag image here';
+    }
+  });
+  syncUIFromState();
+  undoPaused = false;
+  render();
+  updateUndoBtn();
+  toast('↩ Undone');
+}
+
+// Keyboard shortcut
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+    e.preventDefault(); doUndo();
+  }
+});
+
+/* ─────────────────────────────────────────────────
    HELPERS
 ───────────────────────────────────────────────── */
 function initSeg(el, onChange) {
@@ -297,7 +359,18 @@ function buildLayerCards() {
     const removeBtn = document.createElement('button');
     removeBtn.className = 'img-layer-remove'; removeBtn.textContent = '✕ Remove Image';
 
-    controls.append(wRow, lockRow, hWrap, removeBtn);
+    // Layer order buttons
+    const orderRow = document.createElement('div');
+    orderRow.className = 'img-layer-row'; orderRow.style.marginTop = '4px';
+    const btnBack = document.createElement('button');
+    btnBack.className = 'btn-layer-order'; btnBack.textContent = '↓ Move Back';
+    btnBack.title = 'Move this image one layer back (further behind)';
+    const btnFront = document.createElement('button');
+    btnFront.className = 'btn-layer-order'; btnFront.textContent = '↑ Move Forward';
+    btnFront.title = 'Move this image one layer forward (closer to front)';
+    orderRow.append(btnBack, btnFront);
+
+    controls.append(wRow, lockRow, hWrap, orderRow, removeBtn);
     body.append(dropLabel, controls);
     card.append(header, body);
     imageLayersList.appendChild(card);
@@ -307,6 +380,11 @@ function buildLayerCards() {
 
     // ── Wire events ──
     const idx = i; // capture
+
+    // Move forward (swap with next layer toward front)
+    btnFront.addEventListener('click', e => { e.stopPropagation(); swapLayers(idx, idx + 1); });
+    // Move back (swap with previous layer toward back)
+    btnBack.addEventListener('click',  e => { e.stopPropagation(); swapLayers(idx, idx - 1); });
 
     // Collapse/expand header
     header.addEventListener('click', () => {
@@ -370,7 +448,38 @@ function buildLayerCards() {
   }
 }
 
-function loadLayerFile(file, idx) {
+function swapLayers(idxA, idxB) {
+  if (idxB < 0 || idxB >= NUM_LAYERS) { toast('Already at ' + (idxB < 0 ? 'back' : 'front')); return; }
+  // Swap state
+  [state.layers[idxA], state.layers[idxB]] = [state.layers[idxB], state.layers[idxA]];
+  // Rebuild card UI to reflect new order
+  syncLayerCardsFromState();
+  render();
+  toast(`Image moved ${idxB > idxA ? 'forward' : 'back'}`);
+}
+
+function syncLayerCardsFromState() {
+  state.layers.forEach((layer, i) => {
+    const ui = layerUI[i];
+    if (layer.src) {
+      ui.thumb.src = layer.src; ui.thumb.style.display = 'block';
+      ui.controls.style.display = ''; ui.card.classList.add('has-image');
+      ui.wSlider.value = layer.w; ui.wBadge.textContent = layer.w + 'px';
+      ui.nameEl.textContent = layer._name || `Image ${i + 1}`;
+      ui.dropText.textContent = 'Image loaded';
+      const lockVal = layer.lock !== false ? 'locked' : 'free';
+      [ui.lockBtn, ui.freeBtn].forEach(b => b.classList.toggle('active', b.dataset.val === lockVal));
+      ui.hWrap.style.display = layer.lock ? 'none' : '';
+      if (!layer.lock && layer.h) { ui.hSlider.value = layer.h; ui.hBadge.textContent = layer.h + 'px'; }
+    } else {
+      ui.thumb.src = ''; ui.thumb.style.display = 'none';
+      ui.controls.style.display = 'none';
+      ui.card.classList.remove('has-image', 'selected-layer');
+      ui.nameEl.textContent = `Image ${i + 1}`;
+      ui.dropText.textContent = 'Click or drag image here';
+    }
+  });
+}
   const reader = new FileReader();
   reader.onload = ev => {
     const img = new Image();
@@ -382,6 +491,7 @@ function loadLayerFile(file, idx) {
       layer.lock = true;
       layer.x    = 40;
       layer.y    = Math.round((state.height - layer.w / (img.naturalWidth / img.naturalHeight)) / 2);
+      layer._name = file.name.replace(/\.[^.]+$/, '').slice(0, 18);
       state._cleared = false;
 
       // Update card UI
@@ -623,6 +733,10 @@ syncColor(inpShadowColor, inpHexShadow, 'shadowColor', null);
 
 inpTextOn.addEventListener('change', () => { state.textOn = inpTextOn.checked; textCtrls.style.display = state.textOn ? '' : 'none'; pvText.style.display = (state.textOn && state.textStr) ? '' : 'none'; render(); });
 inpText.addEventListener('input', () => { state.textStr = inpText.value; render(); });
+inpText.addEventListener('keydown', e => {
+  // Allow Shift+Enter for newlines, prevent plain Enter submitting
+  if (e.key === 'Enter' && !e.shiftKey) e.preventDefault();
+});
 inpFont.addEventListener('change', () => { state.textFont = inpFont.value; render(); });
 initSeg(segFontWeight, val => { state.textWeight = val; render(); });
 inpFontSize.addEventListener('input', () => { state.textSize = +inpFontSize.value; fontSizeVal.textContent = state.textSize + 'px'; render(); });
@@ -735,10 +849,15 @@ function positionText() {
   else                                  pvText.style.left = (bInset + state.textX) + 'px';
 }
 
+const btnUndo = $('btn-undo');
+if (btnUndo) btnUndo.addEventListener('click', doUndo);
+
 /* ─────────────────────────────────────────────────
    RENDER PREVIEW
 ───────────────────────────────────────────────── */
 function render(force) {
+  // Snapshot state before every render (which is called after every user action)
+  pushHistory();
   if (force) state._cleared = false;
   const hasImage = state.layers.some(l => l.src);
   const isEmpty  = state._cleared && !hasImage && !state.textOn && state.accentMode === 'none' && !state.shadowOn && !state.borderOn;
@@ -791,6 +910,8 @@ function render(force) {
     pvText.style.fontSize   = state.textSize + 'px';
     pvText.style.color      = state.textColor;
     pvText.style.textAlign  = state.textAlign;
+    pvText.style.whiteSpace = 'pre-wrap'; // enables \n line breaks
+    pvText.style.lineHeight = '1.25';
     pvText.classList.toggle('selected', state.textSelected);
     positionText();
     pvText.textContent = state.textStr;
@@ -875,15 +996,19 @@ async function exportToPNG(overrideMode) {
     }
   }
 
-  // Text
+  // Text — multi-line support
   if (state.textOn && state.textStr) {
     const bInset = state.borderOn ? Math.round((state.borderW+16)*sc) : Math.round(16*sc);
     cc.font = `${state.textWeight} ${Math.round(state.textSize*sc)}px ${state.textFont}`;
     cc.fillStyle = state.textColor; cc.textAlign = state.textAlign; cc.textBaseline = 'top';
+    const lineH = Math.round(state.textSize * sc * 1.25);
     const tx = state.textAlign === 'center' ? outW/2 + Math.round(state.textX*sc)
              : state.textAlign === 'right'  ? outW - bInset - Math.round(state.textX*sc)
              : bInset + Math.round(state.textX*sc);
-    cc.fillText(state.textStr, tx, Math.round(state.textY*sc));
+    const lines = state.textStr.split('\n');
+    lines.forEach((line, i) => {
+      cc.fillText(line, tx, Math.round(state.textY*sc) + i * lineH);
+    });
   }
 
   // Border
