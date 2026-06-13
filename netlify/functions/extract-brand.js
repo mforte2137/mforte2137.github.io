@@ -95,6 +95,21 @@ function extractRelevantHTML(html, baseUrl) {
     imgs.push(m[1]); imgCount++;
   }
 
+  // Extract og:image — reliable logo source even on JS-rendered sites
+  const ogImages = [];
+  const ogRe = /<meta[^>]+(?:property=["']og:image["'][^>]+content=["']([^"']+)["']|content=["']([^"']+)["'][^>]+property=["']og:image["'])[^>]*>/gi;
+  while ((m = ogRe.exec(html)) !== null) ogImages.push(m[1] || m[2]);
+
+  // Extract <link rel="icon"> / apple-touch-icon as logo fallback
+  const iconLinks = [];
+  const iconRe = /<link[^>]+rel=["'][^"']*(?:icon|apple-touch-icon)[^"']*["'][^>]+href=["']([^"']+)["'][^>]*>/gi;
+  while ((m = iconRe.exec(html)) !== null) iconLinks.push(m[1]);
+
+  // Extract <link rel="logo"> or any link with "logo" in href
+  const logoLinks = [];
+  const logoLinkRe = /<link[^>]+href=["']([^"']*logo[^"']*)["'][^>]*>/gi;
+  while ((m = logoLinkRe.exec(html)) !== null) logoLinks.push(m[1]);
+
   const svgColors = [];
   const svgRe = /(?:fill|stroke)=["']([^"'#none]{0,30})["']/gi;
   while ((m = svgRe.exec(html)) !== null) svgColors.push(m[1]);
@@ -105,7 +120,8 @@ function extractRelevantHTML(html, baseUrl) {
   const inlineHex = [...new Set((html.match(/(?:color|background)[^;'"]{0,20}#[0-9a-fA-F]{3,6}/gi) || []))].slice(0, 40);
 
   return { baseUrl, head: head.slice(0, 2000), hexColors, cssVars, inlineHex,
-           svgColors: [...new Set(svgColors)].slice(0, 20), imgSrcs: imgs };
+           svgColors: [...new Set(svgColors)].slice(0, 20), imgSrcs: imgs,
+           ogImages, iconLinks, logoLinks };
 }
 
 function resolveUrl(src, base) {
@@ -188,7 +204,12 @@ exports.handler = async (event) => {
 
 1. The PRIMARY brand color (dominant intentional brand color — buttons, headings, nav backgrounds, key UI elements). Return as a 6-digit hex code.
 2. A SECONDARY brand color if clearly present (accent, highlight, complementary). Return as 6-digit hex or null.
-3. The most likely LOGO IMAGE URL — look for filenames containing "logo", "brand", or the company name, or SVGs in the header. Return as full absolute URL or null.
+3. The most likely LOGO IMAGE URL — check in this priority order:
+   a) og:image URLs (most reliable — set explicitly by the site owner)
+   b) img src URLs containing "logo", "brand", or the company name
+   c) link icon/apple-touch-icon hrefs (if they look like a logo not a favicon)
+   d) Any other clearly logo-like image
+   Return as full absolute URL or null. Resolve relative URLs against the Base URL.
 
 Base URL: ${extracted.baseUrl}
 
@@ -196,17 +217,19 @@ CSS hex colors found: ${extracted.hexColors.join(', ')}
 CSS custom properties: ${extracted.cssVars.join(', ')}
 Inline style colors: ${extracted.inlineHex.join(', ')}
 SVG fill/stroke values: ${extracted.svgColors.join(', ')}
-Image src URLs:
-${extracted.imgSrcs.join('\n')}
+og:image URLs (highest priority for logo): ${extracted.ogImages.join('\n') || 'none'}
+Link icon/apple-touch-icon hrefs: ${extracted.iconLinks.join('\n') || 'none'}
+Link hrefs containing "logo": ${extracted.logoLinks.join('\n') || 'none'}
+Image src URLs: ${extracted.imgSrcs.join('\n')}
 
-Head HTML:
-${extracted.head}
+Head HTML: ${extracted.head}
 
 Rules:
 - Ignore near-white (#f0f0f0 and lighter) and near-black (#111111 and darker) unless clearly the only brand color
 - Ignore generic greys unless clearly intentional
 - Prefer colors appearing multiple times
-- For logo: prefer PNG or SVG, prefer transparent-background images, resolve relative URLs against the Base URL
+- og:image is usually the best logo source — prefer it over other images
+- Prefer PNG or SVG over JPG for logos; prefer larger images over tiny icons
 - Return ONLY valid JSON with no markdown fences or explanation:
 {"primaryColor":"#xxxxxx","secondaryColor":"#xxxxxx or null","logoUrl":"https://... or null","confidence":"high|medium|low","notes":"one sentence"}`;
 
