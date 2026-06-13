@@ -283,6 +283,7 @@ kbd {
   cursor: pointer; transition: color .15s, border-color .15s, background .15s;
 }
 .btn-ghost-top:hover { color: var(--text); border-color: var(--text-dim); background: var(--surface2); }
+.btn-ghost-top:disabled { opacity: .35; cursor: not-allowed; pointer-events: none; }
 
 /* ── RIGHT SIDEBAR — Brand Extractor ─────────────── */
 #brand-sidebar {
@@ -413,6 +414,25 @@ kbd {
   width: 100%; text-align: center; transition: background .15s, color .15s;
 }
 .btn-be-reset:hover { background: var(--surface2); color: var(--text); }
+
+/* Textarea for multi-line text overlay */
+textarea#inp-text {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text);
+  padding: 8px 10px; font-size: 13px; width: 100%;
+  outline: none; transition: border-color .15s; font-family: inherit;
+  resize: vertical; min-height: 64px; line-height: 1.4;
+}
+textarea#inp-text:focus { border-color: var(--accent); }
+
+/* Layer order buttons */
+.btn-layer-order {
+  flex: 1; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 5px 6px; font-size: 10px; font-weight: 600;
+  cursor: pointer; color: var(--text-dim); transition: background .15s, border-color .15s, color .15s;
+  text-align: center;
+}
+.btn-layer-order:hover { background: #e8f0fe; border-color: var(--accent); color: var(--accent); }
 
 /* ── IMAGE LAYERS ────────────────────────────────── */
 #image-layers-list { display: flex; flex-direction: column; gap: 10px; }
