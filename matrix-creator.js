@@ -1018,6 +1018,30 @@ function setAiResult(msg) {
     '</div>';
 }
 
+/* ── Sanitise AI output — remove phantom Feature columns, fix cell counts ── */
+function sanitizeParsed(parsed) {
+  if (!parsed || !Array.isArray(parsed.cols_data)) return parsed;
+
+  // Drop any column whose label is a generic "Feature" placeholder —
+  // the AI sometimes echoes the row-label column as a data column.
+  const FEATURE_LABELS = /^(feature|features|row|category|item|service)s?$/i;
+  parsed.cols_data = parsed.cols_data.filter(c => !FEATURE_LABELS.test((c.label || '').trim()));
+
+  const colCount = parsed.cols_data.length;
+
+  // Trim or pad each feature's cells array to match the real column count
+  if (Array.isArray(parsed.features)) {
+    parsed.features = parsed.features.map(f => {
+      // If the first cell aligns with a dropped "Feature" column, drop it too
+      while (f.cells.length > colCount) f.cells.shift();
+      while (f.cells.length < colCount) f.cells.push('no');
+      return f;
+    });
+  }
+
+  return parsed;
+}
+
 /* ── Robust JSON parser — strips fences, extracts first JSON object/array ── */
 function safeParseJson(raw) {
   if (!raw || typeof raw !== 'string') throw new Error('Empty response from AI');
@@ -1080,11 +1104,13 @@ async function aiGenerateMatrix() {
     const system = `You are an MSP quoting expert. Generate a comparison matrix.
 CRITICAL: Return a raw JSON object ONLY. No prose, no markdown, no code fences, no explanation.
 Exactly this structure: {"title":"...","desc":"...","cols_data":[{"label":"...","sublabel":"","color":"#hexcode"}],"features":[{"label":"...","cells":["yes","no","partial","or short text"]}]}
+IMPORTANT: cols_data contains ONLY the product/tier columns (e.g. "Basic", "Standard", "Premium"). Do NOT include a "Feature" or row-label column in cols_data — that column is handled separately by the UI.
+Each feature's cells array must have exactly the same number of entries as cols_data.
 Do NOT include pricing or cost in sublabel — leave sublabel as empty string always.
 Use 2-4 columns, 5-10 features. Use real hex color codes. Cells: "yes", "no", "partial", or short text like "24/7" or "10GB".`;
 
     const raw = await callClaude(system, `Generate a MSP service comparison matrix for: ${prompt}`);
-    const parsed = safeParseJson(raw);
+    const parsed = sanitizeParsed(safeParseJson(raw));
 
     parsed.id = 'tpl-ai-' + Date.now();
     parsed.category = 'AI Generated';
@@ -1218,12 +1244,14 @@ async function aiCompetitiveFill() {
     const system = `You are a technology product expert specializing in MSP/IT vendor comparisons.
 CRITICAL: Return a raw JSON object ONLY. No prose, no markdown, no code fences, no explanation.
 Exactly this structure: {"cols_data":[{"label":"...","sublabel":"","color":"#hexcode"}],"features":[{"label":"...","cells":["yes","no","partial","or short text"]}]}
+IMPORTANT: cols_data contains ONLY the vendor/product columns (e.g. "Datto", "Acronis"). Do NOT include a "Feature" or row-label column in cols_data — that column is handled separately by the UI.
+Each feature's cells array must have exactly the same number of entries as cols_data.
 Do NOT include pricing or cost in sublabel — leave sublabel as empty string always.
 Use 8-12 features. Use real hex color codes appropriate for each vendor/product brand.`;
 
     const raw = await callClaude(system,
       `${prompt}. ${cols ? `Current columns: ${cols}.` : ''} Fill a competitive comparison matrix.`);
-    const parsed = safeParseJson(raw);
+    const parsed = sanitizeParsed(safeParseJson(raw));
 
     if (tpl) {
       tpl.cols_data = parsed.cols_data;
