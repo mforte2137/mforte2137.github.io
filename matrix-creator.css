@@ -456,6 +456,7 @@ body {
 .feat-label-cell {
   background: var(--bg-card); padding: 13px 16px;
   border-right: 1px solid var(--border); vertical-align: middle;
+  display: flex; align-items: center;
 }
 .feat-label-text {
   font-size: 13px; font-weight: 600; color: var(--text-primary);
@@ -792,6 +793,30 @@ body {
 @keyframes slideInToast {
   from { transform: translateX(20px); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* ── Drag to reorder rows ────────────────────────────────────── */
+.drag-handle {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: grab;
+  padding: 0 6px 0 0;
+  user-select: none;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+tr:hover .drag-handle { opacity: 1; }
+.drag-handle:active { cursor: grabbing; }
+
+.drag-row-dragging {
+  opacity: 0.4;
+}
+.drag-row-over td {
+  background: rgba(37, 99, 235, 0.07) !important;
+  border-top: 2px solid var(--col-1) !important;
 }
 
 /* ── Salesbuildr credential fields (modal) ───────────────────── */
