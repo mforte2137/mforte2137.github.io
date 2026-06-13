@@ -480,8 +480,9 @@ function renderMatrix() {
       </thead>
       <tbody>
         ${tpl.features.map((feat, ri) => `
-          <tr data-row="${ri}">
+          <tr data-row="${ri}" draggable="true">
             <td class="feat-label-cell">
+              <span class="drag-handle" title="Drag to reorder">⠿</span>
               <span class="feat-label-text"
                     contenteditable="true"
                     spellcheck="false"
@@ -507,10 +508,56 @@ function renderMatrix() {
   </div>`;
 
   dom.matrixWrapper.innerHTML = html;
+  bindRowDrag();
   updateExportCode();
 }
 
-function renderCellContent(val, ri, ci) {
+/* ── Row Drag-to-Reorder ─────────────────────────────────────── */
+function bindRowDrag() {
+  const tbody = dom.matrixWrapper.querySelector('tbody');
+  if (!tbody) return;
+
+  let dragSrcIndex = null;
+
+  tbody.querySelectorAll('tr').forEach(row => {
+    row.addEventListener('dragstart', e => {
+      dragSrcIndex = parseInt(row.dataset.row);
+      row.classList.add('drag-row-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      // Required for Firefox
+      e.dataTransfer.setData('text/plain', dragSrcIndex);
+    });
+
+    row.addEventListener('dragend', () => {
+      row.classList.remove('drag-row-dragging');
+      tbody.querySelectorAll('tr').forEach(r => r.classList.remove('drag-row-over'));
+    });
+
+    row.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      tbody.querySelectorAll('tr').forEach(r => r.classList.remove('drag-row-over'));
+      row.classList.add('drag-row-over');
+    });
+
+    row.addEventListener('dragleave', () => {
+      row.classList.remove('drag-row-over');
+    });
+
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      const dropIndex = parseInt(row.dataset.row);
+      if (dragSrcIndex === null || dragSrcIndex === dropIndex) return;
+
+      const features = state.activeTemplate.features;
+      const moved = features.splice(dragSrcIndex, 1)[0];
+      features.splice(dropIndex, 0, moved);
+
+      dragSrcIndex = null;
+      renderMatrix();
+    });
+  });
+}
   if (val === 'yes')     return CELL_ICONS.yes;
   if (val === 'no')      return CELL_ICONS.no;
   if (val === 'partial') return CELL_ICONS.partial;
