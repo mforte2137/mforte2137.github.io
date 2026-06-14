@@ -102,6 +102,7 @@
           <div class="panel-header">
             <span class="panel-title">CHANGE SIGNALS</span>
             <span class="signal-count" id="signal-count">5 signals</span>
+            <div class="micro-fb" data-section="Change Signals"><button class="micro-btn micro-up" data-val="up" title="Useful">&#128077;</button><button class="micro-btn micro-down" data-val="down" title="Not useful">&#128078;</button></div>
           </div>
           <!-- Nudge: signal drill-down -->
           <div class="nudge nudge-inline" id="nudge-signal">
@@ -128,6 +129,7 @@
         <div class="opp-bar-left">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
           <span class="opp-bar-label">Opportunities</span>
+          <div class="micro-fb micro-fb-inline" data-section="Opportunity Workspace"><button class="micro-btn micro-up" data-val="up" title="Useful">&#128077;</button><button class="micro-btn micro-down" data-val="down" title="Not useful">&#128078;</button></div>
           <span class="opp-bar-meta" id="opp-bar-meta">3 opportunities &middot; $21,950 potential</span>
           <div class="opp-categories" id="opp-categories"></div>
         </div>
@@ -144,6 +146,7 @@
         <div class="panel-header">
           <span class="panel-title">LIFECYCLE &amp; RENEWALS</span>
           <span class="lifecycle-total" id="lifecycle-total">$18,400 potential</span>
+          <div class="micro-fb" data-section="Lifecycle &amp; Renewals"><button class="micro-btn micro-up" data-val="up" title="Useful">&#128077;</button><button class="micro-btn micro-down" data-val="down" title="Not useful">&#128078;</button></div>
         </div>
         <div id="lifecycle-list"></div>
       </section>
@@ -391,33 +394,46 @@
          FEEDBACK PANEL
     ══════════════════════════════════ -->
     <aside class="feedback-panel open" id="feedback-panel" aria-hidden="false">
+
       <div class="fb-header">
         <span class="fb-title">BETA FEEDBACK</span>
         <button class="fb-close" id="fb-close" aria-label="Close feedback panel">&times;</button>
       </div>
-      <p class="fb-intro">You're previewing an early build. Tell us what you'd want this tool to do — your input shapes what gets built next.</p>
+
+      <p class="fb-intro">Almost every feature in this build came from MSP feedback. Tell us what you think — it directly shapes what gets built next.</p>
+
+      <!-- Section 1: Identity -->
       <div class="fb-section">
-        <div class="fb-section-label">YOUR DETAILS <span class="fb-optional">(optional)</span></div>
+        <div class="fb-section-label">YOUR DETAILS <span class="fb-optional">(optional — helps us follow up)</span></div>
         <input type="text" class="fb-input" id="fb-name" placeholder="Name">
         <input type="text" class="fb-input" id="fb-company" placeholder="Company / MSP name">
       </div>
+
+      <!-- Section 2: Most useful section -->
       <div class="fb-section">
-        <div class="fb-section-label">WHAT ACTIONS WOULD YOU WANT FROM HERE?</div>
-        <div class="fb-checks" id="fb-actions">
-          <label class="fb-check"><input type="checkbox" value="Generate a quote or proposal"> Generate a quote or proposal</label>
-          <label class="fb-check"><input type="checkbox" value="Build a slide deck for the customer"> Build a slide deck for the customer</label>
-          <label class="fb-check"><input type="checkbox" value="Create a one-page executive report"> Create a one-page executive report</label>
-          <label class="fb-check"><input type="checkbox" value="Schedule or log an appointment"> Schedule or log an appointment</label>
-          <label class="fb-check"><input type="checkbox" value="Drill down on a specific signal"> Drill down on a specific signal</label>
-          <label class="fb-check"><input type="checkbox" value="Add notes to the customer record"> Add notes to the customer record</label>
-          <label class="fb-check"><input type="checkbox" value="Email a summary to the account manager"> Email a summary to the account manager</label>
-          <label class="fb-check"><input type="checkbox" value="Export a tech roadmap PDF"> Export a tech roadmap PDF</label>
-          <label class="fb-check"><input type="checkbox" value="Compare this customer against similar accounts"> Compare this customer against similar accounts</label>
-          <label class="fb-check"><input type="checkbox" value="Set an alert or follow-up reminder"> Set an alert or follow-up reminder</label>
+        <div class="fb-section-label">WHICH SECTION WAS MOST USEFUL TO YOU?</div>
+        <div class="fb-checks" id="fb-sections">
+          <label class="fb-check"><input type="checkbox" value="Portfolio View"> Portfolio View</label>
+          <label class="fb-check"><input type="checkbox" value="Customer Briefing"> Customer Briefing</label>
+          <label class="fb-check"><input type="checkbox" value="Change Signals"> Change Signals</label>
+          <label class="fb-check"><input type="checkbox" value="Agreement Alignment"> Agreement Alignment</label>
+          <label class="fb-check"><input type="checkbox" value="Lifecycle &amp; Renewals"> Lifecycle &amp; Renewals</label>
+          <label class="fb-check"><input type="checkbox" value="Strategic Memory"> Strategic Memory</label>
+          <label class="fb-check"><input type="checkbox" value="AI Conversation Brief"> AI Conversation Brief</label>
+          <label class="fb-check"><input type="checkbox" value="Opportunity Workspace"> Opportunity Workspace</label>
+          <label class="fb-check"><input type="checkbox" value="Team Performance"> Team Performance</label>
         </div>
       </div>
+
+      <!-- Section 3: Missing action -->
       <div class="fb-section">
-        <div class="fb-section-label">WHAT DATA SOURCES MATTER MOST?</div>
+        <div class="fb-section-label">WHAT ACTION IS CURRENTLY MISSING FROM YOUR QBR OR ACCOUNT REVIEW PROCESS?</div>
+        <textarea class="fb-textarea" id="fb-missing-action" placeholder="e.g. scheduling follow-ups, creating proposals directly, notifying the customer..."></textarea>
+      </div>
+
+      <!-- Section 4: Data sources -->
+      <div class="fb-section">
+        <div class="fb-section-label">WHAT DATA SOURCES MATTER MOST TO YOU?</div>
         <div class="fb-checks" id="fb-sources">
           <label class="fb-check"><input type="checkbox" value="NinjaRMM"> NinjaRMM</label>
           <label class="fb-check"><input type="checkbox" value="ConnectWise Automate"> ConnectWise Automate</label>
@@ -428,41 +444,63 @@
           <label class="fb-check"><input type="checkbox" value="Microsoft 365 / Entra ID"> Microsoft 365 / Entra ID</label>
           <label class="fb-check"><input type="checkbox" value="CRM (HubSpot, Salesforce, etc.)"> CRM (HubSpot, Salesforce, etc.)</label>
           <label class="fb-check"><input type="checkbox" value="Security platform (Huntress, SentinelOne, etc.)"> Security platform (Huntress, SentinelOne, etc.)</label>
-          <label class="fb-check"><input type="checkbox" value="Distributor pricing (Ingram, TD Synnex, etc.)"> Distributor pricing (Ingram, TD Synnex, etc.)</label>
+          <label class="fb-check"><input type="checkbox" value="Distributor / vendor pricing"> Distributor / vendor pricing</label>
         </div>
       </div>
+
+      <!-- Section 5: Priority rank -->
       <div class="fb-section">
-        <div class="fb-section-label">WHAT WOULD YOU INVESTIGATE FIRST ON THIS PAGE?</div>
-        <div class="fb-radios" id="fb-investigate">
-          <label class="fb-radio"><input type="radio" name="investigate" value="Change Signals"> Change Signals</label>
-          <label class="fb-radio"><input type="radio" name="investigate" value="Agreement Alignment"> Agreement Alignment</label>
-          <label class="fb-radio"><input type="radio" name="investigate" value="Strategic Memory"> Strategic Memory</label>
-          <label class="fb-radio"><input type="radio" name="investigate" value="Opportunities"> Opportunities</label>
-          <label class="fb-radio"><input type="radio" name="investigate" value="Suggested Next Conversation"> Suggested Next Conversation</label>
-          <label class="fb-radio fb-radio-other">
-            <input type="radio" name="investigate" value="Other"> Other
-            <input type="text" class="fb-other-input" id="fb-investigate-other" placeholder="Please specify">
-          </label>
+        <div class="fb-section-label">RANK THESE BY VALUE TO YOUR BUSINESS <span class="fb-optional">(drag to reorder)</span></div>
+        <div class="fb-rank-list" id="fb-rank-list">
+          <div class="fb-rank-item" draggable="true" data-val="Agreement Alignment">
+            <span class="fb-rank-handle">&#9776;</span>
+            <span class="fb-rank-num">1</span>
+            Agreement Alignment
+          </div>
+          <div class="fb-rank-item" draggable="true" data-val="Lifecycle &amp; Renewals">
+            <span class="fb-rank-handle">&#9776;</span>
+            <span class="fb-rank-num">2</span>
+            Lifecycle &amp; Renewals
+          </div>
+          <div class="fb-rank-item" draggable="true" data-val="AI Conversation Brief">
+            <span class="fb-rank-handle">&#9776;</span>
+            <span class="fb-rank-num">3</span>
+            AI Conversation Brief
+          </div>
+          <div class="fb-rank-item" draggable="true" data-val="Portfolio Intelligence">
+            <span class="fb-rank-handle">&#9776;</span>
+            <span class="fb-rank-num">4</span>
+            Portfolio Intelligence
+          </div>
+          <div class="fb-rank-item" draggable="true" data-val="Team Performance">
+            <span class="fb-rank-handle">&#9776;</span>
+            <span class="fb-rank-num">5</span>
+            Team Performance
+          </div>
         </div>
       </div>
+
+      <!-- Section 6: Timecost -->
       <div class="fb-section">
-        <div class="fb-section-label">WHAT IS THE MOST TIME-CONSUMING PART OF PREPARING FOR CUSTOMER REVIEWS TODAY?</div>
-        <textarea class="fb-textarea" id="fb-timecost" placeholder="e.g. gathering data from multiple systems, writing up notes..."></textarea>
+        <div class="fb-section-label">MOST TIME-CONSUMING PART OF PREPARING FOR CUSTOMER REVIEWS TODAY?</div>
+        <textarea class="fb-textarea" id="fb-timecost" placeholder="e.g. gathering data from multiple systems, remembering what was discussed last time..."></textarea>
       </div>
-      <div class="fb-section">
-        <div class="fb-section-label">IF THIS EXISTED TOMORROW, WHAT PROBLEM WOULD IT SOLVE FOR YOU?</div>
-        <textarea class="fb-textarea" id="fb-problem" placeholder="Describe the specific pain point this would address..."></textarea>
-      </div>
-      <div class="fb-section">
-        <div class="fb-section-label">WHAT INFORMATION DO YOU WISH WAS AUTOMATICALLY ASSEMBLED BEFORE EVERY CUSTOMER REVIEW?</div>
-        <textarea class="fb-textarea" id="fb-autoassemble" placeholder="e.g. ticket history, device status, contract changes..."></textarea>
-      </div>
+
+      <!-- Section 7: One thing -->
       <div class="fb-section">
         <div class="fb-section-label">WHAT'S THE ONE THING YOU WISH YOU KNEW ABOUT EVERY CUSTOMER?</div>
         <textarea class="fb-textarea" id="fb-onething" placeholder="The single insight that would change how you approach every conversation..."></textarea>
       </div>
+
+      <!-- Section 8: Feature suggestions -->
+      <div class="fb-section">
+        <div class="fb-section-label">WHAT WOULD YOU ADD OR CHANGE?</div>
+        <textarea class="fb-textarea" id="fb-suggestions" placeholder="Feature ideas, workflow gaps, anything missing..."></textarea>
+      </div>
+
       <button class="fb-submit" id="fb-submit">Send Feedback</button>
       <div class="fb-status" id="fb-status"></div>
+
     </aside>
 
   </div><!-- /.page-layout -->
