@@ -1727,69 +1727,113 @@ function closeFeedback() { feedbackPanel.classList.remove('open'); feedbackPanel
 feedbackToggle.addEventListener('click', () => feedbackPanel.classList.contains('open') ? closeFeedback() : openFeedback());
 fbClose.addEventListener('click', closeFeedback);
 
-/* Show/hide Other text input when Other radio selected */
-document.querySelectorAll('input[name="investigate"]').forEach(radio => {
-  radio.addEventListener('change', () => {
-    const otherInput = document.getElementById('fb-investigate-other');
-    otherInput.classList.toggle('visible', radio.value === 'Other' && radio.checked);
+/* ── Drag-to-rank ── */
+let dragSrc = null;
+function initRankList() {
+  const list = document.getElementById('fb-rank-list');
+  if (!list) return;
+  list.querySelectorAll('.fb-rank-item').forEach(item => {
+    item.addEventListener('dragstart', () => { dragSrc = item; item.style.opacity = '0.4'; });
+    item.addEventListener('dragend',   () => { item.style.opacity = '1'; updateRankNums(); });
+    item.addEventListener('dragover',  e => { e.preventDefault(); item.classList.add('drag-over'); });
+    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      item.classList.remove('drag-over');
+      if (dragSrc && dragSrc !== item) {
+        const items   = Array.from(list.querySelectorAll('.fb-rank-item'));
+        const srcIdx  = items.indexOf(dragSrc);
+        const destIdx = items.indexOf(item);
+        if (srcIdx < destIdx) item.after(dragSrc); else item.before(dragSrc);
+        updateRankNums();
+      }
+    });
   });
-});
+}
+function updateRankNums() {
+  document.querySelectorAll('#fb-rank-list .fb-rank-item').forEach((item, i) => {
+    item.querySelector('.fb-rank-num').textContent = i + 1;
+  });
+}
+function getRankOrder() {
+  return Array.from(document.querySelectorAll('#fb-rank-list .fb-rank-item')).map(item => item.dataset.val);
+}
 
+/* ── Micro-feedback accumulator ── */
+const microVotes = {};
+
+function initMicroFeedback() {
+  document.querySelectorAll('.micro-fb').forEach(group => {
+    const section = group.dataset.section;
+    group.querySelectorAll('.micro-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        microVotes[section] = btn.dataset.val;
+        group.querySelectorAll('.micro-btn').forEach(b => b.classList.remove('voted'));
+        btn.classList.add('voted');
+      });
+    });
+  });
+}
+
+/* ── Helpers ── */
 function getChecked(id) {
   return Array.from(document.querySelectorAll(`#${id} input[type="checkbox"]:checked`)).map(cb => cb.value);
 }
 
+/* ── Main submit ── */
 async function submitFeedback() {
-  const actions       = getChecked('fb-actions');
-  const sources       = getChecked('fb-sources');
   const name          = document.getElementById('fb-name').value.trim();
   const company       = document.getElementById('fb-company').value.trim();
+  const sections      = getChecked('fb-sections');
+  const sources       = getChecked('fb-sources');
+  const missingAction = document.getElementById('fb-missing-action').value.trim();
   const timecost      = document.getElementById('fb-timecost').value.trim();
-  const problem       = document.getElementById('fb-problem').value.trim();
-  const autoassemble  = document.getElementById('fb-autoassemble').value.trim();
   const onething      = document.getElementById('fb-onething').value.trim();
+  const suggestions   = document.getElementById('fb-suggestions').value.trim();
+  const rankOrder     = getRankOrder();
+  const microSummary  = Object.keys(microVotes).length > 0
+    ? Object.entries(microVotes).map(([s, v]) => `${s}: ${v === 'up' ? '👍' : '👎'}`).join(', ')
+    : null;
 
-  // Investigate radio
-  const investigateRadio = document.querySelector('input[name="investigate"]:checked');
-  let investigate = investigateRadio ? investigateRadio.value : null;
-  if (investigate === 'Other') {
-    const otherVal = document.getElementById('fb-investigate-other').value.trim();
-    if (otherVal) investigate = `Other: ${otherVal}`;
-  }
-
-  if (!actions.length && !sources.length && !investigate && !timecost && !problem && !autoassemble && !onething) {
+  if (!sections.length && !sources.length && !missingAction && !timecost && !onething && !suggestions && !microSummary) {
     fbStatus.textContent = 'Please fill in at least one field.';
     fbStatus.className   = 'fb-status err';
     return;
   }
+
   fbSubmit.disabled    = true;
   fbSubmit.textContent = 'Sending...';
   fbStatus.textContent = '';
   fbStatus.className   = 'fb-status';
 
-  const activeView = document.getElementById('view-portfolio').style.display === 'none'
+  const vBriefing  = document.getElementById('view-briefing');
+  const vPortfolio = document.getElementById('view-portfolio');
+  const activeView = vBriefing && vBriefing.style.display !== 'none'
     ? `Briefing — ${customerSelect.options[customerSelect.selectedIndex].text}`
-    : 'Portfolio view';
+    : vPortfolio && vPortfolio.style.display !== 'none'
+      ? 'Portfolio View' : 'Team Performance';
 
   try {
     const res  = await fetch('/api/send-feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, company, actions, sources,
-        investigate, timecost, problem, autoassemble, onething,
-        viewedCustomer: activeView, submittedAt: new Date().toISOString() })
+      body: JSON.stringify({
+        name, company, sections, sources, rankOrder,
+        missingAction, timecost, onething, suggestions, microSummary,
+        viewedCustomer: activeView, submittedAt: new Date().toISOString()
+      })
     });
     const data = await res.json();
     if (data.ok) {
       fbStatus.textContent = 'Feedback sent — thank you!';
       fbStatus.className   = 'fb-status ok';
       document.querySelectorAll('.fb-check input').forEach(cb => cb.checked = false);
-      document.querySelectorAll('input[name="investigate"]').forEach(r => r.checked = false);
-      document.getElementById('fb-investigate-other').classList.remove('visible');
-      document.getElementById('fb-timecost').value     = '';
-      document.getElementById('fb-problem').value      = '';
-      document.getElementById('fb-autoassemble').value = '';
-      document.getElementById('fb-onething').value     = '';
+      ['fb-missing-action','fb-timecost','fb-onething','fb-suggestions'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+      });
+      document.querySelectorAll('.micro-btn').forEach(b => b.classList.remove('voted'));
+      Object.keys(microVotes).forEach(k => delete microVotes[k]);
     } else {
       fbStatus.textContent = 'Error: ' + (data.error || 'Could not send.');
       fbStatus.className   = 'fb-status err';
@@ -1964,7 +2008,7 @@ function renderActivityTimeline(c) {
   }
   const count = c.activityTimeline.length;
   const last  = c.activityTimeline[0];
-  if (meta) meta.textContent = `${count} events &middot; last activity ${last.date}`;
+  if (meta) meta.innerHTML = `${count} events &middot; last activity ${last.date}`;
 
   const list = document.getElementById('timeline-list');
   if (list) list.innerHTML = '';
@@ -2342,6 +2386,8 @@ document.addEventListener('DOMContentLoaded', () => {
   renderPortfolio('all');
   initWelcomeBanner();
   initPortfolioIntel();
+  initRankList();
+  initMicroFeedback();
 });
 
 // Briefing renders lazily the first time the tab is clicked or a portfolio row is clicked
