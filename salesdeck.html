@@ -4,363 +4,370 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Salesbuildr — Innovation Suite</title>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg:           #FAFAF7;
+  --card:         #FFFFFF;
+  --accent:       #2E74DC;
+  --accent-sec:   #1E5BB8;
+  --text-primary: #0B0E14;
+  --text-sec:     #4B5563;
+  --border:       rgba(11,14,20,0.09);
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Inter', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
 html, body {
-  width: 100%; height: 100%;
-  background: #000;
-  font-family: 'DM Sans', sans-serif;
-  overflow: hidden;
+  width:100%; height:100%;
+  background:#000;
+  font-family: var(--font-body);
+  overflow:hidden;
+  color: var(--text-primary);
 }
 
 #deck {
-  width: 100vw; height: 100vh;
-  display: flex; align-items: center; justify-content: center;
+  width:100vw; height:100vh;
+  display:flex; align-items:center; justify-content:center;
 }
 
-/* ── TRUE 16:9 SLIDE ── */
+/* ── TRUE 16:9 LETTERBOXED SLIDE ── */
 .slide {
-  display: none;
-  position: relative;
-  overflow: hidden;
-  background: #164DF1;
-  /* letterbox: fill viewport maintaining 16:9 */
+  display:none;
+  position:relative;
+  overflow:hidden;
+  background: var(--bg);
   width: min(100vw, 177.78vh);
   height: min(100vh, 56.25vw);
-  flex-shrink: 0;
+  flex-shrink:0;
 }
-.slide.active { display: flex; }
+.slide.active { display:flex; }
 
-/* grid texture */
-.slide::before {
-  content: '';
-  position: absolute; inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
-  background-size: 48px 48px;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* glow top-right */
-.slide::after {
-  content: '';
-  position: absolute;
-  top: -100px; right: -80px;
-  width: 380px; height: 380px;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 65%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* ── COVER ── */
+/* ── COVER SLIDE ── */
 .slide-cover {
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: 0;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  gap:0;
 }
 
-.cover-eyebrow {
-  font-size: clamp(10px,1.1vw,13px);
-  font-weight: 500;
-  letter-spacing: 0.22em;
+.accent-bar {
+  width: clamp(40px,5vw,60px);
+  height: 3px;
+  background: var(--accent);
+  border-radius: 2px;
+  margin: 0 auto 1.4em;
+}
+
+.cover-kicker {
+  font-family: var(--font-mono);
+  font-size: clamp(0.75rem,1vw,0.95rem);
+  font-weight: 600;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.8);
-  margin-bottom: 1.4em;
-  display: flex; align-items: center; gap: 12px;
-  position: relative; z-index: 2;
-}
-.cover-eyebrow::before, .cover-eyebrow::after {
-  content: ''; display: block;
-  width: 36px; height: 1px;
-  background: rgba(22,77,241,0.4);
-}
-
-.cover-logo {
-  display: flex; align-items: center; gap: 12px;
-  justify-content: center;
-  margin-bottom: 1.2em;
-  position: relative; z-index: 2;
-}
-.cover-logo-text {
-  font-family: 'Sora', sans-serif;
-  font-size: clamp(20px,2.8vw,36px);
-  font-weight: 700; color: #fff;
-  letter-spacing: -0.02em;
+  color: var(--accent-sec);
+  margin-bottom: 0.9em;
+  position:relative; z-index:2;
 }
 
 .cover-headline {
-  font-family: 'Sora', sans-serif;
-  font-size: clamp(28px,5.2vw,68px);
-  font-weight: 700; color: #fff;
-  line-height: 1.08; letter-spacing: -0.03em;
-  margin-bottom: 0.5em;
-  position: relative; z-index: 2;
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem,6vw,5.5rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.45em;
+  position:relative; z-index:2;
 }
-.cover-headline em { font-style: normal; color: rgba(255,255,255,0.75); }
+.cover-headline em {
+  font-style:normal;
+  color: var(--accent);
+}
 
 .cover-sub {
-  font-size: clamp(13px,1.4vw,17px);
-  font-weight: 300; color: rgba(255,255,255,0.5);
-  line-height: 1.6; max-width: 500px;
-  margin: 0 auto 1.8em;
-  position: relative; z-index: 2;
+  font-family: var(--font-body);
+  font-size: clamp(0.95rem,1.4vw,1.15rem);
+  font-weight: 400;
+  color: var(--text-sec);
+  line-height: 1.65;
+  max-width: 500px;
+  margin: 0 auto 2em;
+  position:relative; z-index:2;
 }
 
 .cover-pill {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.35);
-  color: rgba(255,255,255,0.9);
-  font-size: clamp(10px,1vw,12px); font-weight: 500;
-  letter-spacing: 0.1em; padding: 7px 18px; border-radius: 30px;
-  position: relative; z-index: 2;
+  display:inline-flex; align-items:center; gap:8px;
+  background: rgba(46,116,220,0.08);
+  border: 1px solid rgba(46,116,220,0.25);
+  color: var(--accent-sec);
+  font-family: var(--font-mono);
+  font-size: clamp(0.75rem,1vw,0.85rem);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 7px 16px;
+  border-radius: 30px;
+  position:relative; z-index:2;
 }
 .cover-pill::before {
-  content: ''; width: 6px; height: 6px;
-  border-radius: 50%; background: #164DF1;
+  content:''; width:6px; height:6px;
+  border-radius:50%; background:var(--accent);
   animation: pulse 2s infinite;
 }
 @keyframes pulse {
   0%,100% { opacity:1; transform:scale(1); }
-  50% { opacity:0.4; transform:scale(0.7); }
+  50%      { opacity:0.4; transform:scale(0.7); }
 }
 
-/* ── APP SLIDE — matches original mockup exactly ── */
+/* ── APP SLIDE ── */
 .slide-app {
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
+  flex-direction:row;
+  align-items:center;
+  justify-content:center;
   padding: 5% 6%;
   gap: 5%;
 }
 
-/* LEFT: 38% fixed, centered vertically */
 .app-left {
   flex: 0 0 38%;
-  min-width: 0;
-  display: flex; flex-direction: column; justify-content: center;
-  position: relative; z-index: 2;
-  overflow: hidden;
+  min-width:0;
+  display:flex; flex-direction:column; justify-content:center;
+  position:relative; z-index:2;
+  overflow:hidden;
 }
 
 .app-tool-name {
-  font-family: 'Sora', sans-serif;
+  font-family: var(--font-display);
   font-size: clamp(13px,1.3vw,17px);
   font-weight: 600;
-  color: rgba(255,255,255,0.55);
-  letter-spacing: 0.01em;
-  margin-bottom: 0.4em;
+  color: var(--text-primary);
+  letter-spacing:-0.01em;
+  margin-bottom:0.35em;
 }
 
-.app-category {
-  font-size: clamp(9px,0.85vw,11px);
+.app-kicker {
+  font-family: var(--font-mono);
+  font-size: clamp(0.75rem,0.85vw,0.9rem);
   font-weight: 600;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #164DF1;
-  margin-bottom: 0.7em;
-  display: flex; align-items: center; gap: 8px;
+  color: var(--accent-sec);
+  margin-bottom: 0.65em;
+  display:flex; align-items:center; gap:8px;
 }
-.app-category::before {
-  content: '';
-  display: block; width: 18px; height: 2px;
-  background: #164DF1; flex-shrink: 0;
+.app-kicker::before {
+  content:'';
+  display:block; width:18px; height:2px;
+  background: var(--accent-sec); flex-shrink:0;
 }
 
 .app-headline {
-  font-family: 'Sora', sans-serif;
+  font-family: var(--font-display);
   font-size: clamp(22px,3.6vw,48px);
-  font-weight: 700; color: #fff;
-  line-height: 1.1; letter-spacing: -0.03em;
-  margin-bottom: 0.5em;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height:1.1;
+  letter-spacing:-0.03em;
+  margin-bottom:0.5em;
 }
 
 .app-tagline {
+  font-family: var(--font-body);
   font-size: clamp(13px,1.25vw,16px);
-  font-weight: 300;
-  color: rgba(255,255,255,0.5);
-  line-height: 1.65;
-  max-width: 100%;
-  overflow-wrap: break-word;
+  font-weight: 400;
+  color: var(--text-sec);
+  line-height:1.65;
+  max-width:100%;
+  overflow-wrap:break-word;
 }
 
 .app-badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  margin-top: 1.2em;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.3);
-  color: rgba(255,255,255,0.9);
-  font-size: clamp(9px,0.85vw,11px); font-weight: 500;
-  letter-spacing: 0.1em; padding: 5px 12px;
-  border-radius: 20px; width: fit-content;
+  display:inline-flex; align-items:center; gap:6px;
+  margin-top:1.2em;
+  background: rgba(46,116,220,0.06);
+  border: 1px solid rgba(46,116,220,0.25);
+  color: var(--accent-sec);
+  font-family: var(--font-mono);
+  font-size: clamp(9px,0.85vw,11px);
+  font-weight:600;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  padding:5px 12px;
+  border-radius:20px;
+  width:fit-content;
 }
 
-/* RIGHT: takes remaining space, window floats inside */
 .app-right {
-  flex: 1;
-  min-width: 0;
-  max-width: 56%;
-  display: flex; align-items: center; justify-content: center;
-  position: relative; z-index: 2;
-  overflow: hidden;
+  flex:1;
+  min-width:0;
+  max-width:56%;
+  display:flex; align-items:center; justify-content:center;
+  position:relative; z-index:2;
+  overflow:hidden;
 }
 
-/* Browser window chrome */
+/* Browser window */
 .app-window {
-  width: 100%;
-  background: #ffffff;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.3);
-  overflow: hidden;
-  box-shadow:
-    0 0 0 1px rgba(22,77,241,0.08),
-    0 20px 56px rgba(0,0,0,0.6),
-    inset 0 1px 0 rgba(255,255,255,0.04);
+  width:100%;
+  background: var(--card);
+  border-radius:10px;
+  border:1px solid var(--border);
+  overflow:hidden;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
 }
 
 .window-bar {
-  background: #f0f2f7;
-  padding: 9px 13px;
-  display: flex; align-items: center; gap: 6px;
-  border-bottom: 1px solid #e2e6f0;
-  flex-shrink: 0;
+  background:#F0F2F5;
+  padding:9px 13px;
+  display:flex; align-items:center; gap:6px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
 }
-.dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-.dot-r { background: #ff5f57; }
-.dot-y { background: #febc2e; }
-.dot-g { background: #28c840; }
+.dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.dot-r { background:#ff5f57; }
+.dot-y { background:#febc2e; }
+.dot-g { background:#28c840; }
 
-.window-url {
-  margin-left: 8px; flex: 1;
-  background: rgba(255,255,255,0.06);
-  border-radius: 4px; padding: 3px 10px;
-  font-size: clamp(9px,0.85vw,11px);
-  color: rgba(255,255,255,0.25);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-
-/* Screenshot fills naturally — no height constraint, no cropping */
+/* Screenshot */
 .window-content img {
-  display: block;
-  width: 100%; height: auto;
+  display:block;
+  width:100%; height:auto;
 }
+.window-content img + .placeholder-wrap { display:none; }
 
-/* Placeholder shown when no image */
 .placeholder-wrap {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 10px;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:10px;
   padding: clamp(28px,5vh,56px) 0;
-  background: #ffffff;
+  background: var(--card);
 }
-.window-content img + .placeholder-wrap { display: none; }
-
 .placeholder-icon {
-  width: 44px; height: 44px;
-  background: rgba(22,77,241,0.08);
-  border: 1px solid rgba(22,77,241,0.2);
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px;
+  width:44px; height:44px;
+  background:rgba(46,116,220,0.08);
+  border:1px solid rgba(46,116,220,0.2);
+  border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px;
 }
 .placeholder-label {
-  font-size: 11px; color: rgba(0,0,0,0.3);
-  letter-spacing: 0.14em; text-transform: uppercase;
+  font-family:var(--font-mono);
+  font-size:11px; color:var(--text-sec);
+  letter-spacing:0.14em; text-transform:uppercase;
 }
 .placeholder-hint {
-  font-size: 10px; color: rgba(0,0,0,0.2);
-  font-style: italic;
+  font-size:10px; color:rgba(11,14,20,0.25);
+  font-style:italic;
 }
 
-/* ── CLOSING ── */
+/* ── CLOSING SLIDE ── */
 .slide-close {
-  flex-direction: column;
-  align-items: center; justify-content: center;
-  text-align: center; gap: 0;
-}
-.close-headline {
-  font-family: 'Sora', sans-serif;
-  font-size: clamp(24px,4.8vw,62px);
-  font-weight: 700; color: #fff;
-  line-height: 1.1; letter-spacing: -0.03em;
-  margin-bottom: 0.5em;
-  position: relative; z-index: 2;
-}
-.close-headline em { font-style: normal; color: rgba(255,255,255,0.75); }
-.close-sub {
-  font-size: clamp(13px,1.3vw,17px);
-  font-weight: 300; color: rgba(255,255,255,0.5);
-  margin-bottom: 2em;
-  position: relative; z-index: 2;
-}
-.close-cta {
-  display: inline-flex; align-items: center; gap: 10px;
-  background: #fff; color: #164DF1;
-  font-family: 'Sora', sans-serif;
-  font-size: clamp(12px,1.1vw,15px); font-weight: 600;
-  letter-spacing: 0.04em;
-  padding: clamp(12px,1.4vw,16px) clamp(24px,2.8vw,34px);
-  border-radius: 6px; text-decoration: none;
-  position: relative; z-index: 2;
+  flex-direction:column;
+  align-items:center; justify-content:center;
+  text-align:center; gap:0;
 }
 
-/* ── CHROME ── */
-.slide-counter {
-  position: absolute; bottom: 3%; left: 4%;
-  font-size: clamp(9px,0.8vw,11px);
-  color: rgba(255,255,255,0.5);
-  letter-spacing: 0.12em; z-index: 10;
+.close-headline {
+  font-family: var(--font-display);
+  font-size: clamp(2rem,4.8vw,5rem);
+  font-weight:700;
+  color: var(--text-primary);
+  line-height:1.08;
+  letter-spacing:-0.03em;
+  margin-bottom:0.45em;
+  position:relative; z-index:2;
 }
-.slide-logo {
-  position: absolute; bottom: 3%; right: 4%;
-  display: flex; align-items: center; gap: 7px;
-  opacity: 0.35; z-index: 10;
+.close-headline em { font-style:normal; color:var(--accent); }
+
+.close-sub {
+  font-size: clamp(0.95rem,1.4vw,1.15rem);
+  font-weight:400;
+  color: var(--text-sec);
+  margin-bottom:2em;
+  position:relative; z-index:2;
 }
-.slide-logo span {
-  font-family: 'Sora', sans-serif;
+
+.close-cta {
+  display:inline-flex; align-items:center; gap:10px;
+  background: var(--accent);
+  color:#fff;
+  font-family: var(--font-display);
+  font-size: clamp(12px,1.1vw,15px);
+  font-weight:600;
+  letter-spacing:0.02em;
+  padding: clamp(12px,1.4vw,16px) clamp(24px,2.8vw,34px);
+  border-radius:8px;
+  text-decoration:none;
+  position:relative; z-index:2;
+  transition:opacity 0.2s;
+}
+.close-cta:hover { opacity:0.85; }
+
+/* ── FOOTER CHROME ── */
+.slide-footer {
+  position:absolute;
+  bottom:3%; left:4%; right:4%;
+  display:flex; align-items:center; justify-content:space-between;
+  z-index:10;
+}
+.slide-company {
+  font-family: var(--font-display);
   font-size: clamp(10px,0.95vw,13px);
-  font-weight: 600; color: #fff;
+  font-weight:600;
+  color: var(--text-sec);
+  letter-spacing:0.01em;
+}
+.slide-counter {
+  font-family: var(--font-mono);
+  font-size: clamp(9px,0.8vw,11px);
+  color: rgba(11,14,20,0.3);
+  letter-spacing:0.12em;
 }
 
 /* nav arrows */
 .nav-btn {
-  position: fixed; top: 50%; transform: translateY(-50%);
-  width: 38px; height: 38px;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; z-index: 100; color: rgba(255,255,255,0.8);
-  font-size: 16px; transition: background 0.2s;
+  position:fixed; top:50%; transform:translateY(-50%);
+  width:38px; height:38px;
+  background:rgba(11,14,20,0.06);
+  border:1px solid var(--border);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; z-index:100;
+  color:var(--text-sec); font-size:16px;
+  transition:background 0.2s;
 }
-.nav-btn:hover { background: rgba(255,255,255,0.3); color: #fff; }
-.nav-btn.hidden { opacity: 0; pointer-events: none; }
-#nav-prev { left: 14px; }
-#nav-next { right: 14px; }
+.nav-btn:hover { background:rgba(46,116,220,0.12); color:var(--accent); }
+.nav-btn.hidden { opacity:0; pointer-events:none; }
+#nav-prev { left:14px; }
+#nav-next { right:14px; }
 
 #progress {
-  position: fixed; top: 0; left: 0; height: 2px;
-  background: rgba(255,255,255,0.7);
-  transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
-  z-index: 200;
+  position:fixed; top:0; left:0; height:3px;
+  background:var(--accent);
+  transition:width 0.4s cubic-bezier(0.4,0,0.2,1);
+  z-index:200;
 }
 
-.slide.enter { animation: fadeUp 0.35s ease forwards; }
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* ── REVEAL ANIMATION ── */
+.slide.active .reveal {
+  animation: revealUp 0.6s cubic-bezier(0.16,1,0.3,1) both;
 }
+.slide.active .reveal:nth-child(1) { animation-delay:0.05s; }
+.slide.active .reveal:nth-child(2) { animation-delay:0.15s; }
+.slide.active .reveal:nth-child(3) { animation-delay:0.25s; }
+.slide.active .reveal:nth-child(4) { animation-delay:0.35s; }
+.slide.active .reveal:nth-child(5) { animation-delay:0.45s; }
+.slide.active .reveal:nth-child(6) { animation-delay:0.55s; }
 
-/* glow variants */
-.glow-teal::after  { background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 65%); }
-.glow-coral::after { background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 65%); }
-.glow-purple::after{ background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 65%); }
+@keyframes revealUp {
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
 </style>
 </head>
 <body>
@@ -371,404 +378,438 @@ html, body {
 
 <div id="deck">
 
-<!-- COVER -->
+<!-- ══ COVER ══ -->
 <div class="slide slide-cover active" data-index="0">
-  <div class="cover-eyebrow">Innovation Suite</div>
-  <div class="cover-logo">
-    <svg width="32" height="32" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="#164DF1" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="#164DF1"/></svg>
-    <span class="cover-logo-text">Salesbuildr</span>
+  <div class="accent-bar reveal"></div>
+  <div class="cover-kicker reveal">Innovation Suite</div>
+  <h1 class="cover-headline reveal">Built for MSPs.<br>Powered by <em>AI</em>.</h1>
+  <p class="cover-sub reveal">19 tools that eliminate the friction between winning and proposing — from blank page to brilliant quote in minutes.</p>
+  <div class="cover-pill reveal">Beta Suite Preview</div>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">01 / 19</span>
   </div>
-  <h1 class="cover-headline">Built for MSPs.<br>Powered by <em>AI</em>.</h1>
-  <p class="cover-sub">14 tools that eliminate the friction between winning and proposing — from blank page to brilliant quote in minutes.</p>
-  <div class="cover-pill">Beta Suite Preview</div>
-  <div class="slide-counter">01 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
 </div>
 
-<!-- MACRO for app slides — reused pattern -->
-
-<!-- 00 Customer Growth Operating System -->
-<div class="slide slide-app" data-index="2">
+<!-- ══ 00 Customer Growth Operating System ══ -->
+<div class="slide slide-app" data-index="1">
   <div class="app-left">
-    <div class="app-tool-name">Customer Growth Operating System</div>
-    <div class="app-category">Proposal</div>
-    <h2 class="app-headline">The best<br>opportunities<br>start with change.</h2>
-    <p class="app-tagline">The opportunity isn't the product — it's the change. Change happens quietly. This tool makes sure you see it first.</p>
-    <div class="app-badge">✦ AI-powered · NEW</div>
+    <div class="app-tool-name reveal">Customer Growth Operating System</div>
+    <div class="app-kicker reveal">Proposal</div>
+    <h2 class="app-headline reveal">The best<br>opportunities<br>start with change.</h2>
+    <p class="app-tagline reveal">The opportunity isn't the product — it's the change. Change happens quietly. This tool makes sure you see it first.</p>
+    <div class="app-badge reveal">✦ AI-powered · NEW</div>
   </div>
-  <div class="app-right">
+  <div class="app-right reveal">
     <div class="app-window">
-      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="window-url">widgetcreator.netlify.app / customer-growth</div></div>
+      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
       <div class="window-content">
         <img src="/images/deck-00-customer-growth.png" alt="Customer Growth Operating System" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="placeholder-wrap"><div class="placeholder-icon">🌱</div><div class="placeholder-label">Screenshot Placeholder</div><div class="placeholder-hint">images/deck-00-customer-growth.png</div></div>
       </div>
     </div>
   </div>
-  <div class="slide-counter">02 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">02 / 19</span>
+  </div>
 </div>
 
-<!-- 01 Proposal Evaluator -->
+<!-- ══ 01 Proposal Evaluator ══ -->
 <div class="slide slide-app" data-index="2">
   <div class="app-left">
-    <div class="app-tool-name">Proposal Evaluator</div>
-    <div class="app-category">Proposal</div>
-    <h2 class="app-headline">Your proposal,<br>seen through<br>the buyer's eyes.</h2>
-    <p class="app-tagline">Upload any MSP proposal and get an instant audit against the five questions every buyer silently asks — before it's too late to fix them.</p>
-    <div class="app-badge">✦ AI-powered</div>
+    <div class="app-tool-name reveal">Proposal Evaluator</div>
+    <div class="app-kicker reveal">Proposal</div>
+    <h2 class="app-headline reveal">Your proposal,<br>seen through<br>the buyer's eyes.</h2>
+    <p class="app-tagline reveal">Upload any MSP proposal and get an instant audit against the five questions every buyer silently asks — before it's too late to fix them.</p>
+    <div class="app-badge reveal">✦ AI-powered</div>
   </div>
-  <div class="app-right">
+  <div class="app-right reveal">
     <div class="app-window">
-      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="window-url">widgetcreator.netlify.app / proposal-evaluator</div></div>
+      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
       <div class="window-content">
         <img src="/images/deck-01-proposal-evaluator.png" alt="Proposal Evaluator" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="placeholder-wrap"><div class="placeholder-icon">📋</div><div class="placeholder-label">Screenshot Placeholder</div><div class="placeholder-hint">images/deck-01-proposal-evaluator.png</div></div>
       </div>
     </div>
   </div>
-  <div class="slide-counter">03 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">03 / 19</span>
+  </div>
 </div>
 
-<!-- 02 Proposal Widget Builder -->
+<!-- ══ 02 Proposal Widget Builder ══ -->
 <div class="slide slide-app" data-index="3">
   <div class="app-left">
-    <div class="app-tool-name">Proposal Widget Builder</div>
-    <div class="app-category">Proposal</div>
-    <h2 class="app-headline">Five buyer-journey<br>widgets. Zero<br>blank-page dread.</h2>
-    <p class="app-tagline">Tell us what you're selling and who you're selling it to. AI generates five ready-to-use widgets — paste straight into Salesbuildr.</p>
-    <div class="app-badge">✦ AI-powered</div>
+    <div class="app-tool-name reveal">Proposal Widget Builder</div>
+    <div class="app-kicker reveal">Proposal</div>
+    <h2 class="app-headline reveal">Five buyer-journey<br>widgets. Zero<br>blank-page dread.</h2>
+    <p class="app-tagline reveal">Tell us what you're selling and who you're selling it to. AI generates five ready-to-use widgets — paste straight into Salesbuildr.</p>
+    <div class="app-badge reveal">✦ AI-powered</div>
   </div>
-  <div class="app-right">
+  <div class="app-right reveal">
     <div class="app-window">
-      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="window-url">widgetcreator.netlify.app / widget-builder</div></div>
+      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
       <div class="window-content">
         <img src="/images/deck-02-widget-builder.png" alt="Proposal Widget Builder" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="placeholder-wrap"><div class="placeholder-icon">🧩</div><div class="placeholder-label">Screenshot Placeholder</div><div class="placeholder-hint">images/deck-02-widget-builder.png</div></div>
       </div>
     </div>
   </div>
-  <div class="slide-counter">04 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">04 / 19</span>
+  </div>
 </div>
 
-<!-- 03 Guided Sales Tool -->
-<div class="slide slide-app glow-teal" data-index="4">
+<!-- ══ 03 Guided Sales Tool ══ -->
+<div class="slide slide-app" data-index="4">
   <div class="app-left">
-    <div class="app-tool-name">Guided Sales Tool</div>
-    <div class="app-category">Proposal</div>
-    <h2 class="app-headline">Start with the<br>problem.<br>Win the deal.</h2>
-    <p class="app-tagline">The Guided Sales Tool builds buyer-focused proposals from the customer's pain — not your product catalog. Proposals that move businesses forward.</p>
-    <div class="app-badge">✦ AI-powered · NEW</div>
+    <div class="app-tool-name reveal">Guided Sales Tool</div>
+    <div class="app-kicker reveal">Proposal</div>
+    <h2 class="app-headline reveal">Start with the<br>problem.<br>Win the deal.</h2>
+    <p class="app-tagline reveal">The Guided Sales Tool builds buyer-focused proposals from the customer's pain — not your product catalog. Proposals that move businesses forward.</p>
+    <div class="app-badge reveal">✦ AI-powered · NEW</div>
   </div>
-  <div class="app-right">
+  <div class="app-right reveal">
     <div class="app-window">
-      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="window-url">widgetcreator.netlify.app / guided-sales</div></div>
+      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
       <div class="window-content">
         <img src="/images/deck-03-guided-sales.png" alt="Guided Sales Tool" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="placeholder-wrap"><div class="placeholder-icon">🎯</div><div class="placeholder-label">Screenshot Placeholder</div><div class="placeholder-hint">images/deck-03-guided-sales.png</div></div>
       </div>
     </div>
   </div>
-  <div class="slide-counter">05 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">05 / 19</span>
+  </div>
 </div>
 
-<!-- 04 SOW Widget Generator -->
+<!-- ══ 04 SOW Widget Generator ══ -->
 <div class="slide slide-app" data-index="5">
   <div class="app-left">
-    <div class="app-tool-name">SOW Widget Generator</div>
-    <div class="app-category">Scoping</div>
-    <h2 class="app-headline">Professional SOWs.<br>Any project.<br>In seconds.</h2>
-    <p class="app-tagline">Select from pre-built project presets or let AI write a Statement of Work from scratch — polished, customer-facing, and quote-ready.</p>
-    <div class="app-badge">✦ AI-powered · NEW</div>
+    <div class="app-tool-name reveal">SOW Widget Generator</div>
+    <div class="app-kicker reveal">Scoping</div>
+    <h2 class="app-headline reveal">Professional SOWs.<br>Any project.<br>In seconds.</h2>
+    <p class="app-tagline reveal">Select from pre-built project presets or let AI write a Statement of Work from scratch — polished, customer-facing, and quote-ready.</p>
+    <div class="app-badge reveal">✦ AI-powered · NEW</div>
   </div>
-  <div class="app-right">
+  <div class="app-right reveal">
     <div class="app-window">
-      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="window-url">widgetcreator.netlify.app / sow-generator</div></div>
+      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
       <div class="window-content">
         <img src="/images/deck-04-sow-generator.png" alt="SOW Widget Generator" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="placeholder-wrap"><div class="placeholder-icon">📝</div><div class="placeholder-label">Screenshot Placeholder</div><div class="placeholder-hint">images/deck-04-sow-generator.png</div></div>
       </div>
     </div>
   </div>
-  <div class="slide-counter">06 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">06 / 19</span>
+  </div>
 </div>
 
-<!-- 05 ROI Builder -->
-<div class="slide slide-app glow-teal" data-index="6">
+<!-- ══ 05 ROI Builder ══ -->
+<div class="slide slide-app" data-index="6">
   <div class="app-left">
-    <div class="app-tool-name">ROI Builder</div>
-    <div class="app-category">Proposal</div>
-    <h2 class="app-headline">Turn your quote<br>into a financial<br>argument.</h2>
-    <p class="app-tagline">Enter a few numbers — we calculate the ROI and generate a customer-facing widget that makes the business case for you.</p>
-    <div class="app-badge">✦ AI-powered</div>
+    <div class="app-tool-name reveal">ROI Builder</div>
+    <div class="app-kicker reveal">Proposal</div>
+    <h2 class="app-headline reveal">Turn your quote<br>into a financial<br>argument.</h2>
+    <p class="app-tagline reveal">Enter a few numbers — we calculate the ROI and generate a customer-facing widget that makes the business case for you.</p>
+    <div class="app-badge reveal">✦ AI-powered</div>
   </div>
-  <div class="app-right">
+  <div class="app-right reveal">
     <div class="app-window">
-      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="window-url">widgetcreator.netlify.app / roi-builder</div></div>
+      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
       <div class="window-content">
         <img src="/images/deck-05-roi-builder.png" alt="ROI Builder" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="placeholder-wrap"><div class="placeholder-icon">📈</div><div class="placeholder-label">Screenshot Placeholder</div><div class="placeholder-hint">images/deck-05-roi-builder.png</div></div>
       </div>
     </div>
   </div>
-  <div class="slide-counter">07 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">07 / 19</span>
+  </div>
 </div>
 
-<!-- 06b MSP Document to Widget -->
-<div class="slide slide-app" data-index="8">
+<!-- ══ 06 Cover Page Creator ══ -->
+<div class="slide slide-app" data-index="7">
   <div class="app-left">
-    <div class="app-tool-name">MSP Document to Widget</div>
-    <div class="app-category">Conversion</div>
-    <h2 class="app-headline">Existing Word doc?<br>Widget-ready<br>in seconds.</h2>
-    <p class="app-tagline">Paste your existing scope straight into Salesbuildr — no reformatting, no rebuilding from scratch.</p>
-    <div class="app-badge">✦ Conversion tool</div>
+    <div class="app-tool-name reveal">Cover Page Creator</div>
+    <div class="app-kicker reveal">Design</div>
+    <h2 class="app-headline reveal">Their brand.<br>Your proposal.<br>Instant impression.</h2>
+    <p class="app-tagline reveal">Enter your prospect's details and get a branded cover page in their colours — ready to drop into a Salesbuildr demo quote in seconds.</p>
+    <div class="app-badge reveal">✦ AI-powered</div>
   </div>
-  <div class="app-right">
+  <div class="app-right reveal">
     <div class="app-window">
-      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="window-url">widgetcreator.netlify.app / doc-to-widget</div></div>
-      <div class="window-content">
-        <img src="/images/deck-06b-doc-to-widget.png" alt="MSP Document to Widget" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-        <div class="placeholder-wrap"><div class="placeholder-icon">📝</div><div class="placeholder-label">Screenshot Placeholder</div><div class="placeholder-hint">images/deck-06b-doc-to-widget.png</div></div>
-      </div>
-    </div>
-  </div>
-  <div class="slide-counter">08 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
-</div>
-
-<!-- 06 Cover Page Creator -->
-<div class="slide slide-app glow-purple" data-index="7">
-  <div class="app-left">
-    <div class="app-tool-name">Cover Page Creator</div>
-    <div class="app-category">Design</div>
-    <h2 class="app-headline">Their brand.<br>Your proposal.<br>Instant impression.</h2>
-    <p class="app-tagline">Enter your prospect's details and get a branded cover page in their colours — ready to drop into a Salesbuildr demo quote in seconds.</p>
-    <div class="app-badge">✦ AI-powered</div>
-  </div>
-  <div class="app-right">
-    <div class="app-window">
-      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="window-url">widgetcreator.netlify.app / cover-page</div></div>
+      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
       <div class="window-content">
         <img src="/images/deck-06-cover-page.png" alt="Cover Page Creator" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="placeholder-wrap"><div class="placeholder-icon">🎨</div><div class="placeholder-label">Screenshot Placeholder</div><div class="placeholder-hint">images/deck-06-cover-page.png</div></div>
       </div>
     </div>
   </div>
-  <div class="slide-counter">09 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">08 / 19</span>
+  </div>
 </div>
 
-<!-- 07 Widget Banner Tool -->
-<div class="slide slide-app glow-purple" data-index="9">
+<!-- ══ 06b MSP Document to Widget ══ -->
+<div class="slide slide-app" data-index="8">
   <div class="app-left">
-    <div class="app-tool-name">Widget Banner Tool</div>
-    <div class="app-category">Design</div>
-    <h2 class="app-headline">Eye-catching banners.<br>No design skills<br>required.</h2>
-    <p class="app-tagline">Create widget banners using your own logos or custom text overlays — export straight into Salesbuildr widgets, ready to impress.</p>
-    <div class="app-badge">✦ NEW</div>
+    <div class="app-tool-name reveal">MSP Document to Widget</div>
+    <div class="app-kicker reveal">Conversion</div>
+    <h2 class="app-headline reveal">Existing Word doc?<br>Widget-ready<br>in seconds.</h2>
+    <p class="app-tagline reveal">Paste your existing scope straight into Salesbuildr — no reformatting, no rebuilding from scratch.</p>
+    <div class="app-badge reveal">✦ Conversion tool</div>
   </div>
-  <div class="app-right">
+  <div class="app-right reveal">
     <div class="app-window">
-      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="window-url">widgetcreator.netlify.app / banner-tool</div></div>
+      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+      <div class="window-content">
+        <img src="/images/deck-06b-doc-to-widget.png" alt="MSP Document to Widget" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div class="placeholder-wrap"><div class="placeholder-icon">📝</div><div class="placeholder-label">Screenshot Placeholder</div><div class="placeholder-hint">images/deck-06b-doc-to-widget.png</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">09 / 19</span>
+  </div>
+</div>
+
+<!-- ══ 07 Widget Banner Tool ══ -->
+<div class="slide slide-app" data-index="9">
+  <div class="app-left">
+    <div class="app-tool-name reveal">Widget Banner Tool</div>
+    <div class="app-kicker reveal">Design</div>
+    <h2 class="app-headline reveal">Eye-catching banners.<br>No design skills<br>required.</h2>
+    <p class="app-tagline reveal">Create widget banners using your own logos or custom text overlays — export straight into Salesbuildr widgets, ready to impress.</p>
+    <div class="app-badge reveal">✦ NEW</div>
+  </div>
+  <div class="app-right reveal">
+    <div class="app-window">
+      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
       <div class="window-content">
         <img src="/images/deck-07-banner-tool.png" alt="Widget Banner Tool" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="placeholder-wrap"><div class="placeholder-icon">🖼️</div><div class="placeholder-label">Screenshot Placeholder</div><div class="placeholder-hint">images/deck-07-banner-tool.png</div></div>
       </div>
     </div>
   </div>
-  <div class="slide-counter">10 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">10 / 19</span>
+  </div>
 </div>
 
-<!-- 08 Product Catalog Cleanup -->
-<div class="slide slide-app glow-coral" data-index="10">
+<!-- ══ 08 Product Catalog Cleanup ══ -->
+<div class="slide slide-app" data-index="10">
   <div class="app-left">
-    <div class="app-tool-name">Product Catalog — Guided Cleanup</div>
-    <div class="app-category">Conversion</div>
-    <h2 class="app-headline">A clean catalog<br>is a<br>faster close.</h2>
-    <p class="app-tagline">AI-assisted guided cleanup fixes duplicate MPNs, bulk-unlists EOL products, and keeps your catalog sharp — step by step.</p>
-    <div class="app-badge">✦ AI-powered · NEW</div>
+    <div class="app-tool-name reveal">Product Catalog — Guided Cleanup</div>
+    <div class="app-kicker reveal">Conversion</div>
+    <h2 class="app-headline reveal">A clean catalog<br>is a<br>faster close.</h2>
+    <p class="app-tagline reveal">AI-assisted guided cleanup fixes duplicate MPNs, bulk-unlists EOL products, and keeps your catalog sharp — step by step.</p>
+    <div class="app-badge reveal">✦ AI-powered · NEW</div>
   </div>
-  <div class="app-right">
+  <div class="app-right reveal">
     <div class="app-window">
-      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="window-url">widgetcreator.netlify.app / catalog-cleanup</div></div>
+      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
       <div class="window-content">
         <img src="/images/deck-08-catalog-cleanup.png" alt="Product Catalog Cleanup" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="placeholder-wrap"><div class="placeholder-icon">🗂️</div><div class="placeholder-label">Screenshot Placeholder</div><div class="placeholder-hint">images/deck-08-catalog-cleanup.png</div></div>
       </div>
     </div>
   </div>
-  <div class="slide-counter">11 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">11 / 19</span>
+  </div>
 </div>
 
-<!-- 09 MSP Quote Preflight -->
-<div class="slide slide-app glow-coral" data-index="11">
+<!-- ══ 09 MSP Quote Preflight ══ -->
+<div class="slide slide-app" data-index="11">
   <div class="app-left">
-    <div class="app-tool-name">MSP Quote Preflight</div>
-    <div class="app-category">Quote</div>
-    <h2 class="app-headline">Spot the gaps<br>before your<br>buyer does.</h2>
-    <p class="app-tagline">Preflight reviews your quote for issues that could cause problems — before it leaves your hands. Fix early, send with confidence.</p>
-    <div class="app-badge">✦ AI-powered</div>
+    <div class="app-tool-name reveal">MSP Quote Preflight</div>
+    <div class="app-kicker reveal">Quote</div>
+    <h2 class="app-headline reveal">Spot the gaps<br>before your<br>buyer does.</h2>
+    <p class="app-tagline reveal">Preflight reviews your quote for issues that could cause problems — before it leaves your hands. Fix early, send with confidence.</p>
+    <div class="app-badge reveal">✦ AI-powered</div>
   </div>
-  <div class="app-right">
+  <div class="app-right reveal">
     <div class="app-window">
-      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="window-url">widgetcreator.netlify.app / quote-preflight</div></div>
+      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
       <div class="window-content">
         <img src="/images/deck-09-quote-preflight.png" alt="MSP Quote Preflight" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="placeholder-wrap"><div class="placeholder-icon">✅</div><div class="placeholder-label">Screenshot Placeholder</div><div class="placeholder-hint">images/deck-09-quote-preflight.png</div></div>
       </div>
     </div>
   </div>
-  <div class="slide-counter">12 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">12 / 19</span>
+  </div>
 </div>
 
-<!-- 10 Document Converter -->
+<!-- ══ 10 Document Converter ══ -->
 <div class="slide slide-app" data-index="12">
   <div class="app-left">
-    <div class="app-tool-name">Document Converter</div>
-    <div class="app-category">Conversion</div>
-    <h2 class="app-headline">Any document.<br>Widget-ready<br>in one click.</h2>
-    <p class="app-tagline">Convert PDFs, Word, and Excel into TinyMCE-ready HTML — paste content directly into any Salesbuildr widget without reformatting.</p>
-    <div class="app-badge">✦ Conversion tool</div>
+    <div class="app-tool-name reveal">Document Converter</div>
+    <div class="app-kicker reveal">Conversion</div>
+    <h2 class="app-headline reveal">Any document.<br>Widget-ready<br>in one click.</h2>
+    <p class="app-tagline reveal">Convert PDFs, Word, and Excel into TinyMCE-ready HTML — paste content directly into any Salesbuildr widget without reformatting.</p>
+    <div class="app-badge reveal">✦ Conversion tool</div>
   </div>
-  <div class="app-right">
+  <div class="app-right reveal">
     <div class="app-window">
-      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="window-url">widgetcreator.netlify.app / doc-converter</div></div>
+      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
       <div class="window-content">
         <img src="/images/deck-10-doc-converter.png" alt="Document Converter" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="placeholder-wrap"><div class="placeholder-icon">📄</div><div class="placeholder-label">Screenshot Placeholder</div><div class="placeholder-hint">images/deck-10-doc-converter.png</div></div>
       </div>
     </div>
   </div>
-  <div class="slide-counter">13 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">13 / 19</span>
+  </div>
 </div>
 
-<!-- 11 Import Special Pricing -->
+<!-- ══ 11 Import Special Pricing ══ -->
 <div class="slide slide-app" data-index="13">
   <div class="app-left">
-    <div class="app-tool-name">Import Special Pricing</div>
-    <div class="app-category">Conversion</div>
-    <h2 class="app-headline">Vendor deal-reg<br>to import-ready.<br>In seconds.</h2>
-    <p class="app-tagline">Upload any vendor special pricing file — xlsx, xls, or csv — and get it converted into a Salesbuildr import-ready format instantly.</p>
-    <div class="app-badge">✦ Conversion tool</div>
+    <div class="app-tool-name reveal">Import Special Pricing</div>
+    <div class="app-kicker reveal">Conversion</div>
+    <h2 class="app-headline reveal">Vendor deal-reg<br>to import-ready.<br>In seconds.</h2>
+    <p class="app-tagline reveal">Upload any vendor special pricing file — xlsx, xls, or csv — and get it converted into a Salesbuildr import-ready format instantly.</p>
+    <div class="app-badge reveal">✦ Conversion tool</div>
   </div>
-  <div class="app-right">
+  <div class="app-right reveal">
     <div class="app-window">
-      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="window-url">widgetcreator.netlify.app / import-pricing</div></div>
+      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
       <div class="window-content">
         <img src="/images/deck-11-import-pricing.png" alt="Import Special Pricing" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="placeholder-wrap"><div class="placeholder-icon">💰</div><div class="placeholder-label">Screenshot Placeholder</div><div class="placeholder-hint">images/deck-11-import-pricing.png</div></div>
       </div>
     </div>
   </div>
-  <div class="slide-counter">14 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">14 / 19</span>
+  </div>
 </div>
 
-<!-- 12 Project Reports -->
-<div class="slide slide-app glow-teal" data-index="14">
+<!-- ══ 12 Project Reports ══ -->
+<div class="slide slide-app" data-index="14">
   <div class="app-left">
-    <div class="app-tool-name">Project Reports</div>
-    <div class="app-category">Scoping</div>
-    <h2 class="app-headline">Project updates<br>clients actually<br>read.</h2>
-    <p class="app-tagline">Generate executive-style PDF status reports written in plain, non-technical language — keeping clients informed and confident throughout every project.</p>
-    <div class="app-badge">✦ AI-powered · NEW</div>
+    <div class="app-tool-name reveal">Project Reports</div>
+    <div class="app-kicker reveal">Scoping</div>
+    <h2 class="app-headline reveal">Project updates<br>clients actually<br>read.</h2>
+    <p class="app-tagline reveal">Generate executive-style PDF status reports written in plain, non-technical language — keeping clients informed and confident throughout every project.</p>
+    <div class="app-badge reveal">✦ AI-powered · NEW</div>
   </div>
-  <div class="app-right">
+  <div class="app-right reveal">
     <div class="app-window">
-      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="window-url">widgetcreator.netlify.app / project-reports</div></div>
+      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
       <div class="window-content">
         <img src="/images/deck-12-project-reports.png" alt="Project Reports" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="placeholder-wrap"><div class="placeholder-icon">📊</div><div class="placeholder-label">Screenshot Placeholder</div><div class="placeholder-hint">images/deck-12-project-reports.png</div></div>
       </div>
     </div>
   </div>
-  <div class="slide-counter">15 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">15 / 19</span>
+  </div>
 </div>
 
-<!-- 13 MSP Security Assessment -->
-<div class="slide slide-app glow-coral" data-index="15">
+<!-- ══ 13 MSP Security Assessment ══ -->
+<div class="slide slide-app" data-index="15">
   <div class="app-left">
-    <div class="app-tool-name">MSP Security Assessment Tool</div>
-    <div class="app-category">Security</div>
-    <h2 class="app-headline">Every security<br>framework.<br>Ready to propose.</h2>
-    <p class="app-tagline">Generate proposal widgets for all major security framework assessments — includes technician checklists and tools to show current vs ideal state.</p>
-    <div class="app-badge">✦ AI-powered · NEW</div>
+    <div class="app-tool-name reveal">MSP Security Assessment Tool</div>
+    <div class="app-kicker reveal">Security</div>
+    <h2 class="app-headline reveal">Every security<br>framework.<br>Ready to propose.</h2>
+    <p class="app-tagline reveal">Generate proposal widgets for all major security framework assessments — includes technician checklists and tools to show current vs ideal state.</p>
+    <div class="app-badge reveal">✦ AI-powered · NEW</div>
   </div>
-  <div class="app-right">
+  <div class="app-right reveal">
     <div class="app-window">
-      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="window-url">widgetcreator.netlify.app / security-assessment</div></div>
+      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
       <div class="window-content">
         <img src="/images/deck-13-security-assessment.png" alt="MSP Security Assessment" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="placeholder-wrap"><div class="placeholder-icon">🛡️</div><div class="placeholder-label">Screenshot Placeholder</div><div class="placeholder-hint">images/deck-13-security-assessment.png</div></div>
       </div>
     </div>
   </div>
-  <div class="slide-counter">16 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">16 / 19</span>
+  </div>
 </div>
 
-<!-- 14 Project Tasks Calculator -->
+<!-- ══ 14 Project Tasks Calculator ══ -->
 <div class="slide slide-app" data-index="16">
   <div class="app-left">
-    <div class="app-tool-name">Project Tasks → Calculator</div>
-    <div class="app-category">Scoping</div>
-    <h2 class="app-headline">Complex projects.<br>Accurate hours.<br>No guesswork.</h2>
-    <p class="app-tagline">Build a task list for any complex project, then generate a clean effort-hours table — ready to paste directly into a Salesbuildr Quote Widget.</p>
-    <div class="app-badge">✦ Scoping tool</div>
+    <div class="app-tool-name reveal">Project Tasks → Calculator</div>
+    <div class="app-kicker reveal">Scoping</div>
+    <h2 class="app-headline reveal">Complex projects.<br>Accurate hours.<br>No guesswork.</h2>
+    <p class="app-tagline reveal">Build a task list for any complex project, then generate a clean effort-hours table — ready to paste directly into a Salesbuildr Quote Widget.</p>
+    <div class="app-badge reveal">✦ Scoping tool</div>
   </div>
-  <div class="app-right">
+  <div class="app-right reveal">
     <div class="app-window">
-      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="window-url">widgetcreator.netlify.app / task-calculator</div></div>
+      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
       <div class="window-content">
         <img src="/images/deck-14-task-calculator.png" alt="Project Tasks Calculator" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="placeholder-wrap"><div class="placeholder-icon">⚙️</div><div class="placeholder-label">Screenshot Placeholder</div><div class="placeholder-hint">images/deck-14-task-calculator.png</div></div>
       </div>
     </div>
   </div>
-  <div class="slide-counter">17 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">17 / 19</span>
+  </div>
 </div>
 
-<!-- 15b MSP Matrix Widgets -->
-<div class="slide slide-app" data-index="18">
+<!-- ══ 15b MSP Matrix Widgets ══ -->
+<div class="slide slide-app" data-index="17">
   <div class="app-left">
-    <div class="app-tool-name">MSP Matrix Widgets</div>
-    <div class="app-category">Proposal</div>
-    <h2 class="app-headline">Why you win.<br>Side by side.<br>No debate.</h2>
-    <p class="app-tagline">Choose from a dozen MSP-ready comparison templates, or let AI build a matrix for any product or service — Datto vs Acronis, your stack vs theirs, anything.</p>
-    <div class="app-badge">✦ AI-powered</div>
+    <div class="app-tool-name reveal">MSP Matrix Widgets</div>
+    <div class="app-kicker reveal">Proposal</div>
+    <h2 class="app-headline reveal">Why you win.<br>Side by side.<br>No debate.</h2>
+    <p class="app-tagline reveal">Choose from a dozen MSP-ready comparison templates, or let AI build a matrix for any product or service — Datto vs Acronis, your stack vs theirs, anything.</p>
+    <div class="app-badge reveal">✦ AI-powered</div>
   </div>
-  <div class="app-right">
+  <div class="app-right reveal">
     <div class="app-window">
-      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div><div class="window-url">widgetcreator.netlify.app / matrix-creator</div></div>
+      <div class="window-bar"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
       <div class="window-content">
         <img src="/images/deck-15b-matrix-widgets.png" alt="MSP Matrix Widgets" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
         <div class="placeholder-wrap"><div class="placeholder-icon">⚖️</div><div class="placeholder-label">Screenshot Placeholder</div><div class="placeholder-hint">images/deck-15b-matrix-widgets.png</div></div>
       </div>
     </div>
   </div>
-  <div class="slide-counter">18 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">18 / 19</span>
+  </div>
 </div>
 
-<!-- CLOSING -->
-<div class="slide slide-close" data-index="17">
-  <div class="cover-eyebrow" style="position:relative;z-index:2;">What's next</div>
-  <h2 class="close-headline">Ready to see it<br>working in <em>your</em> Salesbuildr?</h2>
-  <p class="close-sub">These tools are live today — and this is just the beginning.</p>
-  <a href="https://salesbuildr.com" class="close-cta" target="_blank">Book a Demo &nbsp;→</a>
-  <div class="slide-counter">19 / 19</div>
-  <div class="slide-logo"><svg width="16" height="16" viewBox="0 0 40 40" fill="none"><path d="M8 28 C8 18,14 14,20 20 C26 26,32 22,32 12" stroke="white" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="12" r="4" fill="white"/></svg><span>Salesbuildr</span></div>
+<!-- ══ CLOSING ══ -->
+<div class="slide slide-close" data-index="18">
+  <div class="accent-bar reveal"></div>
+  <div class="cover-kicker reveal">What's next</div>
+  <h2 class="close-headline reveal">Ready to see it<br>working in <em>your</em> Salesbuildr?</h2>
+  <p class="close-sub reveal">These tools are live today — and this is just the beginning.</p>
+  <a href="https://widgetcreator.netlify.app/salesdeck.html" class="close-cta reveal" target="_blank">Visit the Tool Hub &nbsp;→</a>
+  <div class="slide-footer">
+    <span class="slide-company">Salesbuildr</span>
+    <span class="slide-counter">19 / 19</span>
+  </div>
 </div>
 
 </div><!-- /deck -->
@@ -782,9 +823,9 @@ const nextBtn = document.getElementById('nav-next');
 const progress = document.getElementById('progress');
 
 function goTo(n) {
-  slides[cur].classList.remove('active','enter');
+  slides[cur].classList.remove('active');
   cur = Math.max(0, Math.min(n, total - 1));
-  slides[cur].classList.add('active','enter');
+  slides[cur].classList.add('active');
   prevBtn.classList.toggle('hidden', cur === 0);
   nextBtn.classList.toggle('hidden', cur === total - 1);
   progress.style.width = ((cur / (total - 1)) * 100) + '%';
@@ -794,15 +835,15 @@ prevBtn.addEventListener('click', () => goTo(cur - 1));
 nextBtn.addEventListener('click', () => goTo(cur + 1));
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(cur + 1); }
-  if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(cur - 1); }
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); goTo(cur + 1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'PageUp')                    { e.preventDefault(); goTo(cur - 1); }
   if (e.key === 'Home') goTo(0);
-  if (e.key === 'End') goTo(total - 1);
+  if (e.key === 'End')  goTo(total - 1);
 });
 
 let tx = 0;
 document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; });
-document.addEventListener('touchend', e => {
+document.addEventListener('touchend',   e => {
   const dx = e.changedTouches[0].clientX - tx;
   if (Math.abs(dx) > 50) goTo(dx < 0 ? cur + 1 : cur - 1);
 });
