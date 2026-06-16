@@ -69,14 +69,13 @@ async function fetchAndAnalyse() {
     localStorage.removeItem(LS_TENANT_URL);
   }
 
-  setFetchStatus('Connecting to Salesbuildr…', '');
+  setFetchStatus('Connecting to Salesbuildr...', '');
   fetchBtn.disabled = true;
   emptyState.style.display   = 'none';
   resultsArea.style.display  = 'none';
   statsSection.style.display = 'none';
   queueSection.style.display = 'none';
 
-  // 1. Fetch full widget list from Salesbuildr (via server-side function)
   let widgets;
   try {
     const res  = await fetch('/api/widget-cleaner-api', {
@@ -103,24 +102,24 @@ async function fetchAndAnalyse() {
     return;
   }
 
-  setFetchStatus(`Fetched ${widgets.length} widget${widgets.length !== 1 ? 's' : ''}. Analysing…`, '');
-  const stopPulse = startStatusPulse(`Analysing ${widgets.length} widgets with AI`, fetchStatus);
+  setFetchStatus('Fetched ' + widgets.length + ' widget' + (widgets.length !== 1 ? 's' : '') + '. Analysing...', '');
+  const stopPulse = startStatusPulse('Analysing ' + widgets.length + ' widgets with AI', fetchStatus);
 
-  // 2. Build slim summary client-side — never send full widget config blobs to the function
-  const summary = widgets.map(w => ({
-    id:   w.id,
-    name: (w.name || '').slice(0, 80),
-    type: inferWidgetType(w.widget),
-    keys: w.widget ? Object.keys(w.widget).slice(0, 10) : []
-  }));
+  const summary = widgets.map(function(w) {
+    return {
+      id:   w.id,
+      name: (w.name || '').slice(0, 80),
+      type: inferWidgetType(w.widget),
+      keys: w.widget ? Object.keys(w.widget).slice(0, 10) : []
+    };
+  });
 
-  // 3. Send slim summary to Claude for classification
   let groups;
   try {
     const res  = await fetch('/api/analyse-widgets', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ summary })
+      body:    JSON.stringify({ summary: summary })
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Analysis failed');
@@ -134,21 +133,31 @@ async function fetchAndAnalyse() {
 
   stopPulse();
 
-  // 4. Marry classification back to full widget objects for rendering
   const reasonMap = {};
-  (groups.safe   || []).forEach(item => { reasonMap[item.id] = { group: 'safe',   reason: item.reason || '' }; });
-  (groups.review || []).forEach(item => { reasonMap[item.id] = { group: 'review', reason: item.reason || '' }; });
-  (groups.ok     || []).forEach(item => { reasonMap[item.id] = { group: 'ok',     reason: '' }; });
+  (groups.safe   || []).forEach(function(item) {
+    reasonMap[item.id] = { group: 'safe', reason: item.reason || '' };
+  });
+  (groups.review || []).forEach(function(item) {
+    reasonMap[item.id] = {
+      group:   'review',
+      reason:  item.reason  || '',
+      groupId: item.groupId || null,
+      keepId:  item.keepId  || null
+    };
+  });
+  (groups.ok || []).forEach(function(item) {
+    reasonMap[item.id] = { group: 'ok', reason: '' };
+  });
 
   analysed = { safe: [], review: [], ok: [] };
-  widgets.forEach(w => {
+  widgets.forEach(function(w) {
     const entry = reasonMap[w.id] || { group: 'ok', reason: '' };
-    analysed[entry.group].push({ ...w, reason: entry.reason });
+    analysed[entry.group].push(Object.assign({}, w, entry));
   });
 
   renderResults();
   fetchBtn.disabled = false;
-  setFetchStatus(`Analysis complete — ${widgets.length} widgets reviewed.`, 'success');
+  setFetchStatus('Analysis complete - ' + widgets.length + ' widgets reviewed.', 'success');
 }
 
 /* ── RENDER RESULTS ── */
@@ -158,9 +167,9 @@ function renderResults() {
   listOk.innerHTML     = '';
   stagedIds.clear();
 
-  analysed.safe.forEach(w   => renderCard(w, listDelete, true));
-  analysed.review.forEach(w => renderCard(w, listReview, false));
-  analysed.ok.forEach(w     => renderCard(w, listOk,     false));
+  analysed.safe.forEach(function(w) { renderCard(w, listDelete, true, false); });
+  renderReviewGroups(analysed.review, listReview);
+  analysed.ok.forEach(function(w) { renderCard(w, listOk, false, true); });
 
   countDelete.textContent = analysed.safe.length;
   countReview.textContent = analysed.review.length;
@@ -177,61 +186,214 @@ function renderResults() {
   document.getElementById('groupOk').style.display     = analysed.ok.length     ? 'block' : 'none';
 
   resultsArea.style.display = 'block';
-
   syncQueueFromCheckboxes();
   updateStageBtn();
   queueSection.style.display = 'block';
 }
 
-function renderCard(widget, container, defaultChecked) {
+/* ── RENDER REVIEW GROUPS ── */
+function renderReviewGroups(reviewWidgets, container) {
+  const grouped   = {};
+  const ungrouped = [];
+
+  reviewWidgets.forEach(function(w) {
+    if (w.groupId) {
+      if (!grouped[w.groupId]) grouped[w.groupId] = [];
+      grouped[w.groupId].push(w);
+    } else {
+      ungrouped.push(w);
+    }
+  });
+
+  Object.values(grouped).forEach(function(members) {
+    if (members.length === 1) {
+      renderCard(members[0], container, false, false);
+      return;
+    }
+
+    const cluster = document.createElement('div');
+    cluster.className = 'review-cluster';
+
+    const clusterLabel = document.createElement('div');
+    clusterLabel.className   = 'cluster-label';
+    clusterLabel.textContent = 'Similar group  ' + members.length + ' widgets';
+    cluster.appendChild(clusterLabel);
+
+    const grid = document.createElement('div');
+    grid.className = 'cluster-grid cluster-grid--' + Math.min(members.length, 3);
+
+    members.forEach(function(w) {
+      const cardWrap = document.createElement('div');
+      cardWrap.className = w.keepId === w.id ? 'cluster-card cluster-card--keep' : 'cluster-card';
+      renderCardInto(w, cardWrap, false, false);
+      grid.appendChild(cardWrap);
+    });
+
+    cluster.appendChild(grid);
+    container.appendChild(cluster);
+  });
+
+  ungrouped.forEach(function(w) { renderCard(w, container, false, false); });
+}
+
+/* ── RENDER CARD ── */
+function renderCard(widget, container, defaultChecked, hideCheckbox) {
+  const wrap = document.createElement('div');
+  renderCardInto(widget, wrap, defaultChecked, hideCheckbox);
+  container.appendChild(wrap);
+}
+
+function renderCardInto(widget, wrap, defaultChecked, hideCheckbox) {
   const clone = cardTemplate.content.cloneNode(true);
   const card  = clone.querySelector('.widget-card');
   card.dataset.id = widget.id;
 
   const checkbox = clone.querySelector('.widget-checkbox');
-  checkbox.checked    = defaultChecked;
-  checkbox.dataset.id = widget.id;
-  checkbox.addEventListener('change', () => {
-    syncQueueFromCheckboxes();
-    updateStageBtn();
-  });
+  if (hideCheckbox) {
+    checkbox.closest('.widget-check-label').style.pointerEvents = 'none';
+    checkbox.style.display = 'none';
+  } else {
+    checkbox.checked    = defaultChecked;
+    checkbox.dataset.id = widget.id;
+    checkbox.addEventListener('change', function() {
+      syncQueueFromCheckboxes();
+      updateStageBtn();
+    });
+  }
 
-  clone.querySelector('.widget-name').textContent      = widget.name;
+  clone.querySelector('.widget-name').textContent       = widget.name;
   clone.querySelector('.widget-type-badge').textContent = inferWidgetType(widget.widget);
-  clone.querySelector('.widget-reason').textContent    = widget.reason || '';
-  clone.querySelector('.widget-json').textContent      = JSON.stringify(widget.widget, null, 2);
+
+  const reasonEl = clone.querySelector('.widget-reason');
+  if (widget.keepId === widget.id) {
+    reasonEl.textContent = 'Keep this one';
+    reasonEl.className   = 'widget-reason widget-reason--keep';
+  } else {
+    reasonEl.textContent = widget.reason || '';
+  }
+
+  const htmlContent = getWidgetHtml(widget.widget);
+  const jsonText    = JSON.stringify(widget.widget, null, 2);
 
   const expandBtn  = clone.querySelector('.expand-btn');
   const detailPane = clone.querySelector('.widget-detail');
-  expandBtn.addEventListener('click', () => {
-    const open = expandBtn.getAttribute('aria-expanded') === 'true';
-    expandBtn.setAttribute('aria-expanded', String(!open));
-    expandBtn.textContent    = open ? 'Details' : 'Hide';
-    detailPane.style.display = open ? 'none' : 'block';
-  });
+  const jsonEl     = clone.querySelector('.widget-json');
+  jsonEl.textContent = jsonText;
 
-  container.appendChild(clone);
+  if (htmlContent) {
+    // Build preview/JSON toggle
+    const toggleBar  = document.createElement('div');
+    toggleBar.className = 'detail-toggle-bar';
+
+    const previewBtn = document.createElement('button');
+    previewBtn.className   = 'detail-tab detail-tab--active';
+    previewBtn.textContent = 'Preview';
+
+    const codeBtn = document.createElement('button');
+    codeBtn.className   = 'detail-tab';
+    codeBtn.textContent = 'JSON';
+
+    toggleBar.appendChild(previewBtn);
+    toggleBar.appendChild(codeBtn);
+    detailPane.insertBefore(toggleBar, detailPane.firstChild);
+
+    const iframe = document.createElement('iframe');
+    iframe.className = 'widget-preview-frame';
+    iframe.setAttribute('sandbox', 'allow-same-origin');
+    iframe.setAttribute('scrolling', 'yes');
+    detailPane.insertBefore(iframe, jsonEl);
+
+    // Default: preview visible, JSON hidden
+    iframe.style.display  = 'block';
+    jsonEl.style.display  = 'none';
+
+    previewBtn.addEventListener('click', function() {
+      previewBtn.classList.add('detail-tab--active');
+      codeBtn.classList.remove('detail-tab--active');
+      iframe.style.display = 'block';
+      jsonEl.style.display = 'none';
+    });
+
+    codeBtn.addEventListener('click', function() {
+      codeBtn.classList.add('detail-tab--active');
+      previewBtn.classList.remove('detail-tab--active');
+      iframe.style.display = 'none';
+      jsonEl.style.display = 'block';
+    });
+
+    // Lazy-load iframe on first open
+    var iframeLoaded = false;
+    expandBtn.addEventListener('click', function() {
+      const open = expandBtn.getAttribute('aria-expanded') === 'true';
+      expandBtn.setAttribute('aria-expanded', String(!open));
+      expandBtn.textContent    = open ? 'Details' : 'Hide';
+      detailPane.style.display = open ? 'none' : 'block';
+      if (!open && !iframeLoaded) {
+        writeIframe(iframe, htmlContent);
+        iframeLoaded = true;
+      }
+    });
+
+  } else {
+    // No HTML — plain JSON only
+    expandBtn.addEventListener('click', function() {
+      const open = expandBtn.getAttribute('aria-expanded') === 'true';
+      expandBtn.setAttribute('aria-expanded', String(!open));
+      expandBtn.textContent    = open ? 'Details' : 'Hide';
+      detailPane.style.display = open ? 'none' : 'block';
+    });
+  }
+
+  wrap.appendChild(clone);
+}
+
+/* ── HTML PREVIEW HELPERS ── */
+function getWidgetHtml(widgetObj) {
+  if (!widgetObj) return null;
+  const html = widgetObj.contentTemplate || widgetObj.html || widgetObj.content || null;
+  if (!html || typeof html !== 'string') return null;
+  // Only treat as HTML if it actually contains tags
+  if (!/<[a-z][\s\S]*>/i.test(html)) return null;
+  return html;
+}
+
+function renderMergeTags(html) {
+  return html.replace(/\{\{([^}]+)\}\}/g, function(_, token) {
+    var label = token.trim();
+    return '<span style="display:inline-block;background:#e8edf5;color:#2d4a8a;border:1px solid #b8c8e8;border-radius:3px;padding:0 4px;font-size:11px;font-family:monospace;white-space:nowrap;">{{' + label + '}}</span>';
+  });
+}
+
+function writeIframe(iframe, rawHtml) {
+  const processed = renderMergeTags(rawHtml);
+  const isFullDoc = /^\s*(<!DOCTYPE|<html)/i.test(rawHtml);
+  const doc = isFullDoc ? processed : '<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{box-sizing:border-box;}body{margin:0;padding:0;background:#fff;}</style></head><body>' + processed + '</body></html>';
+  iframe.srcdoc = doc;
+  iframe.onload = function() {
+    try {
+      const h = iframe.contentDocument && iframe.contentDocument.body && iframe.contentDocument.body.scrollHeight;
+      if (h) iframe.style.height = Math.min(h + 20, 600) + 'px';
+    } catch(e) {}
+  };
 }
 
 /* ── SELECT ALL ── */
-selectAllDelete.addEventListener('change', () => {
-  listDelete.querySelectorAll('.widget-checkbox').forEach(cb => {
+selectAllDelete.addEventListener('change', function() {
+  listDelete.querySelectorAll('.widget-checkbox').forEach(function(cb) {
     cb.checked = selectAllDelete.checked;
   });
   syncQueueFromCheckboxes();
-  updateStageBtn();
 });
 
-selectAllReview.addEventListener('change', () => {
-  listReview.querySelectorAll('.widget-checkbox').forEach(cb => {
+selectAllReview.addEventListener('change', function() {
+  listReview.querySelectorAll('.widget-checkbox').forEach(function(cb) {
     cb.checked = selectAllReview.checked;
   });
   syncQueueFromCheckboxes();
-  updateStageBtn();
 });
 
 /* ── TOGGLE OK ── */
-toggleOkBtn.addEventListener('click', () => {
+toggleOkBtn.addEventListener('click', function() {
   const open = listOk.style.display !== 'none';
   listOk.style.display    = open ? 'none' : 'flex';
   toggleOkBtn.textContent = open ? 'Show' : 'Hide';
@@ -241,7 +403,7 @@ toggleOkBtn.addEventListener('click', () => {
 function syncQueueFromCheckboxes() {
   const checked = new Set();
   document.querySelectorAll('#listDelete .widget-checkbox:checked, #listReview .widget-checkbox:checked')
-    .forEach(cb => checked.add(cb.dataset.id));
+    .forEach(function(cb) { checked.add(cb.dataset.id); });
   stagedIds = checked;
   renderQueue();
 }
@@ -257,8 +419,8 @@ function renderQueue() {
 
   queueEmpty.style.display = 'none';
 
-  stagedIds.forEach(id => {
-    const widget = allWidgets.find(w => w.id === id);
+  stagedIds.forEach(function(id) {
+    const widget = allWidgets.find(function(w) { return w.id === id; });
     if (!widget) return;
 
     const item      = document.createElement('div');
@@ -271,11 +433,11 @@ function renderQueue() {
 
     const removeBtn       = document.createElement('button');
     removeBtn.className   = 'queue-remove';
-    removeBtn.textContent = '×';
+    removeBtn.textContent = 'x';
     removeBtn.title       = 'Remove from queue';
-    removeBtn.addEventListener('click', () => {
+    removeBtn.addEventListener('click', function() {
       stagedIds.delete(id);
-      const cb = document.querySelector(`.widget-checkbox[data-id="${id}"]`);
+      const cb = document.querySelector('.widget-checkbox[data-id="' + id + '"]');
       if (cb) cb.checked = false;
       renderQueue();
     });
@@ -297,15 +459,15 @@ function updateStageBtn() {
 }
 
 /* ── DELETE CONFIRM ── */
-deleteConfirmInput.addEventListener('input', () => {
+deleteConfirmInput.addEventListener('input', function() {
   executeDeleteBtn.disabled = deleteConfirmInput.value.trim() !== 'DELETE' || stagedIds.size === 0;
 });
 
 /* ── EXECUTE DELETE ── */
-executeDeleteBtn.addEventListener('click', async () => {
+executeDeleteBtn.addEventListener('click', async function() {
   if (deleteConfirmInput.value.trim() !== 'DELETE') return;
 
-  const ids       = [...stagedIds];
+  const ids       = Array.from(stagedIds);
   const apiKey    = sbApiKey.value.trim();
   const tenantUrl = sbTenantUrl.value.trim();
   if (!apiKey || !tenantUrl) return;
@@ -314,31 +476,37 @@ executeDeleteBtn.addEventListener('click', async () => {
   deleteConfirmInput.value  = '';
   let deleted = 0, failed = 0;
 
-  for (const id of ids) {
-    const widget = allWidgets.find(w => w.id === id);
-    setDeleteStatus(`Deleting ${deleted + failed + 1} of ${ids.length}: ${widget ? widget.name : id}…`, '');
+  for (var i = 0; i < ids.length; i++) {
+    const id     = ids[i];
+    const widget = allWidgets.find(function(w) { return w.id === id; });
+    setDeleteStatus('Deleting ' + (deleted + failed + 1) + ' of ' + ids.length + ': ' + (widget ? widget.name : id) + '...', '');
 
     try {
       const res  = await fetch('/api/widget-cleaner-api', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ action: 'delete', apiKey, tenantUrl, widgetId: id })
+        body:    JSON.stringify({ action: 'delete', apiKey: apiKey, tenantUrl: tenantUrl, widgetId: id })
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || 'Delete failed');
       deleted++;
-      const card = document.querySelector(`.widget-card[data-id="${id}"]`);
-      if (card) card.remove();
+      const card = document.querySelector('.widget-card[data-id="' + id + '"]');
+      if (card) {
+        const cluster = card.closest('.review-cluster');
+        const cardWrap = card.closest('.cluster-card') || card.parentElement;
+        if (cardWrap) cardWrap.remove();
+        if (cluster && !cluster.querySelector('.widget-card')) cluster.remove();
+      }
     } catch (err) {
       failed++;
       console.error('Delete failed for', id, err.message);
     }
   }
 
-  allWidgets      = allWidgets.filter(w => !ids.includes(w.id));
-  analysed.safe   = analysed.safe.filter(w   => !ids.includes(w.id));
-  analysed.review = analysed.review.filter(w => !ids.includes(w.id));
-  analysed.ok     = analysed.ok.filter(w     => !ids.includes(w.id));
+  allWidgets      = allWidgets.filter(function(w) { return ids.indexOf(w.id) === -1; });
+  analysed.safe   = analysed.safe.filter(function(w)   { return ids.indexOf(w.id) === -1; });
+  analysed.review = analysed.review.filter(function(w) { return ids.indexOf(w.id) === -1; });
+  analysed.ok     = analysed.ok.filter(function(w)     { return ids.indexOf(w.id) === -1; });
 
   stagedIds.clear();
   renderQueue();
@@ -352,8 +520,8 @@ executeDeleteBtn.addEventListener('click', async () => {
   statOk.textContent      = analysed.ok.length;
 
   const msg = failed
-    ? `Deleted ${deleted}, failed ${failed}. Check console for details.`
-    : `Successfully deleted ${deleted} widget${deleted !== 1 ? 's' : ''}.`;
+    ? 'Deleted ' + deleted + ', failed ' + failed + '. Check console for details.'
+    : 'Successfully deleted ' + deleted + ' widget' + (deleted !== 1 ? 's' : '') + '.';
   setDeleteStatus(msg, failed ? 'error' : 'success');
 });
 
@@ -370,25 +538,25 @@ function setDeleteStatus(msg, cls) {
 
 function startStatusPulse(baseText, el) {
   const frames = ['.', '..', '...'];
-  let i = 0;
+  var i = 0;
   el.textContent = baseText + frames[0];
   el.className   = 'status-line';
-  const id = setInterval(() => {
+  const id = setInterval(function() {
     i = (i + 1) % frames.length;
     el.textContent = baseText + frames[i];
   }, 500);
-  return () => clearInterval(id);
+  return function() { clearInterval(id); };
 }
 
 function inferWidgetType(widgetObj) {
-  if (!widgetObj)                         return 'unknown';
-  if (widgetObj.type)                     return widgetObj.type;
-  if (widgetObj.items    !== undefined)   return 'items';
-  if (widgetObj.html     !== undefined)   return 'html-content';
-  if (widgetObj.content  !== undefined)   return 'content';
-  if (widgetObj.mediaUrl !== undefined)   return 'single-media';
-  if (widgetObj.imageUrl !== undefined)   return 'image';
-  if (widgetObj.fields   !== undefined)   return 'form';
+  if (!widgetObj)                        return 'unknown';
+  if (widgetObj.type)                    return widgetObj.type;
+  if (widgetObj.items    !== undefined)  return 'items';
+  if (widgetObj.html     !== undefined)  return 'html-content';
+  if (widgetObj.content  !== undefined)  return 'content';
+  if (widgetObj.mediaUrl !== undefined)  return 'single-media';
+  if (widgetObj.imageUrl !== undefined)  return 'image';
+  if (widgetObj.fields   !== undefined)  return 'form';
   return 'widget';
 }
 
