@@ -21,9 +21,8 @@ exports.handler = async (event) => {
   const base = tenantUrl.replace(/\/$/, '');
 
   const headers = {
-    'Content-Type':  'application/json',
-    'Authorization': `Bearer ${apiKey}`,
-    'x-api-key':     apiKey
+    'Content-Type': 'application/json',
+    'api-key':      apiKey
   };
 
   // ── LIST ──
