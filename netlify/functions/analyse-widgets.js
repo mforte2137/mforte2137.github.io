@@ -28,7 +28,6 @@ exports.handler = async (event) => {
 
   console.log(`Processing ${batches.length} batch(es)`);
 
-  // Collect classification results across all batches
   const safeIds   = {};
   const reviewIds = {};
   const okIds     = {};
@@ -48,14 +47,13 @@ exports.handler = async (event) => {
     (classification.ok     || []).forEach(item => { okIds[item.id]     = true; });
   }
 
-  // Return classification maps — client will marry back to full widget objects
   const groups = {
     safe:   Object.entries(safeIds).map(([id, reason]) => ({ id, reason })),
     review: Object.entries(reviewIds).map(([id, reason]) => ({ id, reason })),
     ok:     Object.keys(okIds).map(id => ({ id }))
   };
 
-  // Any IDs not classified → ok
+  // Any IDs not classified fall to ok
   summary.forEach(w => {
     if (!safeIds[w.id] && !reviewIds[w.id] && !okIds[w.id]) {
       groups.ok.push({ id: w.id });
@@ -86,7 +84,16 @@ Classify every widget into exactly one group:
 
 3. "ok" — unique and distinct
 
-Every input ID must appear in exactly one group. Include a "reason" (max 10 words) for safe and review items. Output raw JSON only.`;
+Every input ID must appear in exactly one group.
+
+Reason field rules (required for safe and review, max 12 words):
+- ALWAYS reference widgets by their NAME, never by ID
+- Keyword match: write  →  Name contains 'test'  (use the actual word found, lowercase)
+- Exact duplicate: write  →  Duplicate of "[other widget name]"
+- Version: write  →  Versioned copy of "[base widget name]"
+- Overlap: write  →  Similar purpose to "[other widget name]"
+
+Output raw JSON only — no markdown, no explanation.`;
 
   const userMessage = `Classify these ${batch.length} widgets:\n${JSON.stringify(batch)}`;
 
@@ -147,10 +154,10 @@ function extractJSON(str) {
   let depth = 0, inStr = false, esc = false;
   for (let i = start; i < s.length; i++) {
     const c = s[i];
-    if (esc)              { esc = false; continue; }
+    if (esc)               { esc = false; continue; }
     if (c === '\\' && inStr) { esc = true; continue; }
-    if (c === '"')        { inStr = !inStr; continue; }
-    if (inStr)            continue;
+    if (c === '"')         { inStr = !inStr; continue; }
+    if (inStr)             continue;
     if (c === '{') depth++;
     if (c === '}') { depth--; if (depth === 0) return s.slice(start, i + 1); }
   }
