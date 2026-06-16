@@ -1008,3 +1008,175 @@ body { font-family: 'Georgia', serif; background: var(--bg); color: var(--text);
 }
 .micro-btn:hover { opacity: 0.8; transform: scale(1.15); }
 .micro-btn.voted { opacity: 1; transform: scale(1.1); }
+
+/* ══════════════════════════════════
+   PHASE 2 — WORKFLOW LAYER
+   ══════════════════════════════════ */
+
+/* ── Inline action buttons ── */
+.inline-action {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity 0.1s;
+}
+.inline-action:hover { opacity: 0.75; }
+.act-primary { background: var(--info-bg);   color: var(--info);   border-color: #B8D0EE; }
+.act-warn    { background: var(--warn-bg);   color: var(--warn);   border-color: #EFC97A; }
+.act-danger  { background: var(--danger-bg); color: var(--danger); border-color: #F09595; }
+.act-ok      { background: var(--good-bg);   color: var(--good);   border-color: #97C459; }
+
+/* Signal row updated for inline action */
+.signal-row { flex-wrap: wrap; }
+.signal-body { min-width: 0; }
+
+/* Alignment row updated */
+.align-row { flex-wrap: wrap; }
+
+/* ── Primary contact bar ── */
+.contact-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-2);
+  background: var(--bg-panel);
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.contact-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--info-bg); color: var(--info);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 500; flex-shrink: 0;
+  font-family: 'Courier New', monospace;
+}
+.contact-info { flex: 1; min-width: 0; }
+.contact-name { font-size: 13px; }
+.contact-role { font-size: 11px; color: var(--text-2); margin-top: 2px; font-family: 'Courier New', monospace; }
+.contact-email { color: var(--info); text-decoration: none; }
+.contact-email:hover { text-decoration: underline; }
+.contact-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+.contact-action-btn {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; padding: 5px 12px;
+  border: 1px solid var(--border-2);
+  background: var(--bg); color: var(--text);
+  cursor: pointer; font-family: 'Courier New', monospace;
+  transition: background 0.1s;
+}
+.contact-action-btn:hover { background: var(--bg-row); }
+.contact-action-btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.contact-action-btn.primary:hover { opacity: 0.88; }
+
+/* ── Notes panel ── */
+.notes-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 0;
+}
+.notes-list { max-height: 180px; overflow-y: auto; }
+.note-entry {
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.note-entry:last-child { border-bottom: none; }
+.note-meta { font-size: 10px; color: var(--text-3); font-family: 'Courier New', monospace; margin-bottom: 3px; }
+.note-text { font-size: 12px; color: var(--text); line-height: 1.5; }
+.note-input-row { display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid var(--border); margin-top: 2px; }
+.note-input {
+  flex: 1; font-size: 12px; padding: 6px 9px;
+  border: 1px solid var(--border-2); background: var(--bg);
+  color: var(--text); font-family: 'Georgia', serif;
+}
+.note-input:focus { outline: 2px solid var(--text); outline-offset: 1px; }
+.note-save-btn {
+  font-size: 11px; padding: 6px 14px;
+  background: var(--text); color: var(--bg);
+  border: none; cursor: pointer; font-family: 'Courier New', monospace;
+}
+
+/* ── Portfolio + My Work Today grid ── */
+.work-portfolio-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 14px;
+  align-items: flex-start;
+}
+@media (max-width: 800px) { .work-portfolio-grid { grid-template-columns: 1fr; } }
+.port-right-col { min-width: 0; }
+.work-today-container { padding: 0; }
+
+/* ── My Work Today panel ── */
+.work-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+}
+.work-title { font-size: 10px; letter-spacing: 0.1em; color: var(--text-2); font-family: 'Courier New', monospace; }
+.work-date  { font-size: 10px; color: var(--text-3); font-family: 'Courier New', monospace; }
+
+.work-customer { border-bottom: 1px solid var(--border); padding: 10px 12px; }
+.work-customer:last-of-type { border-bottom: none; }
+.work-cust-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 6px;
+}
+.work-cust-name { font-size: 12px; font-weight: normal; color: var(--text); }
+.work-priority  { font-size: 10px; padding: 1px 7px; border-radius: 20px; font-family: 'Courier New', monospace; }
+.wp-urgent { background: var(--danger-bg); color: var(--danger); }
+.wp-review { background: var(--warn-bg);   color: var(--warn);   }
+.wp-ok     { background: var(--good-bg);   color: var(--good);   }
+
+.work-activity {
+  display: flex; align-items: flex-start; gap: 7px;
+  padding: 5px 0; cursor: pointer; transition: background 0.1s;
+}
+.work-activity:hover { background: var(--bg-row); margin: 0 -12px; padding-left: 12px; padding-right: 12px; }
+.work-activity.done { opacity: 0.5; }
+.wa-checkbox {
+  width: 15px; height: 15px; border: 1px solid var(--border-2);
+  border-radius: 3px; flex-shrink: 0; margin-top: 1px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: var(--good); cursor: pointer;
+  transition: background 0.1s;
+}
+.wa-checkbox.checked { background: var(--good-bg); border-color: var(--good); }
+.wa-body { flex: 1; min-width: 0; }
+.wa-text   { font-size: 12px; color: var(--text); line-height: 1.3; }
+.wa-source { font-size: 10px; color: var(--text-3); font-family: 'Courier New', monospace; margin-top: 1px; }
+.wa-open-btn {
+  background: none; border: none; color: var(--text-3);
+  font-size: 14px; cursor: pointer; padding: 0 2px; flex-shrink: 0;
+  margin-top: 1px;
+}
+.wa-open-btn:hover { color: var(--text); }
+
+.work-add-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 12px; font-size: 11px; color: var(--text-3);
+  cursor: pointer; border-top: 1px solid var(--border);
+  font-family: 'Courier New', monospace; transition: color 0.1s;
+}
+.work-add-row:hover { color: var(--text); }
+.work-add-form { padding: 10px 12px; border-top: 1px solid var(--border); display:flex; flex-direction:column; gap:6px; }
+.work-add-select, .work-add-input {
+  font-size: 12px; padding: 5px 8px;
+  border: 1px solid var(--border-2); background: var(--bg);
+  color: var(--text); font-family: 'Georgia', serif; width: 100%;
+}
+.work-add-btns { display: flex; gap: 5px; }
+.work-save-btn {
+  font-size: 11px; padding: 5px 12px;
+  background: var(--text); color: var(--bg); border: none;
+  cursor: pointer; font-family: 'Courier New', monospace;
+}
+.work-cancel-btn {
+  font-size: 11px; padding: 5px 12px;
+  background: none; color: var(--text-2);
+  border: 1px solid var(--border-2); cursor: pointer;
+  font-family: 'Courier New', monospace;
+}
