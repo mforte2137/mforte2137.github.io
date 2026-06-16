@@ -3,189 +3,162 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Salesbuildr Document Converter</title>
-
-  <!-- Client-side conversion libraries — no server required -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-  <link rel="stylesheet" href="tinymce.css">
+  <title>Widget Library Cleaner — Salesbuildr</title>
+  <link rel="stylesheet" href="widget-cleaner.css">
 </head>
 <body>
 
-<header>
-  <div class="logo-badge">SB</div>
-  <h1>Salesbuildr Document Converter</h1>
-</header>
-
-<main>
-
-  <!-- PAGE INTRO -->
-  <div class="page-intro">
-    <h2>Convert documents to TinyMCE-ready HTML</h2>
-    <p class="intro-sub">Upload a PDF, Word, or Excel file and get clean inline-CSS HTML you can paste straight into any Salesbuildr widget — no manual formatting required.</p>
-    <div class="how-it-works">
-      <div class="how-step">
-        <div class="how-step-num">1</div>
-        <div class="how-step-text">
-          <strong>Upload your document</strong>
-          <span>Drop or browse for a PDF, Word (.docx), or Excel (.xlsx) file</span>
-        </div>
-      </div>
-      <div class="how-step">
-        <div class="how-step-num">2</div>
-        <div class="how-step-text">
-          <strong>Review &amp; adjust styling</strong>
-          <span>Preview the output and pick an accent colour to match your brand</span>
-        </div>
-      </div>
-      <div class="how-step">
-        <div class="how-step-num">3</div>
-        <div class="how-step-text">
-          <strong>Copy or push to Salesbuildr</strong>
-          <span>Copy the HTML to paste into a widget, or save it directly to your widget library</span>
-        </div>
-      </div>
+  <header class="site-header">
+    <div class="header-inner">
+      <span class="header-tool">Widget Library Cleaner</span>
+      <span class="header-sub">Salesbuildr</span>
     </div>
-  </div>
+  </header>
 
-  <!-- UPLOAD ZONE -->
-  <div id="upload-zone" class="upload-zone">
-    <div class="upload-icon">📄</div>
-    <h2>Drop your document here</h2>
-    <p>or <label for="file-input" class="browse-link">browse to select a file</label></p>
-    <input type="file" id="file-input" accept=".pdf,.doc,.docx,.xlsx,.xls" hidden>
-    <div class="format-badges">
-      <span class="format-badge">📄 PDF</span>
-      <span class="format-badge">📝 Word (.docx)</span>
-      <span class="format-badge">📊 Excel (.xlsx)</span>
-    </div>
-  </div>
+  <main class="layout">
 
-  <!-- PROCESSING -->
-  <div id="processing" class="processing hidden">
-    <div class="spinner"></div>
-    <p id="processing-msg">Converting your document&hellip;</p>
-  </div>
+    <!-- LEFT PANEL -->
+    <aside class="panel panel--left">
 
-  <!-- RESULTS -->
-  <div id="results" class="results hidden">
-
-    <!-- File name + primary actions -->
-    <div class="results-header">
-      <div class="file-info">
-        <span id="file-name-display"></span>
-        <span id="file-type-badge" class="type-badge"></span>
-      </div>
-      <div class="results-actions">
-        <button id="copy-btn" class="btn-copy">📋 Copy HTML</button>
-        <button id="reset-btn" class="btn-reset">↩ Convert Another</button>
-      </div>
-    </div>
-
-    <!-- Conversion notes -->
-    <div id="conversion-notes"></div>
-
-    <!-- Color picker -->
-    <div class="color-row">
-      <span class="color-row-label">Accent color:</span>
-      <div class="color-presets" id="color-presets">
-        <div class="color-preset active" data-color="#0d2d5e" style="background:#0d2d5e" title="Navy"></div>
-        <div class="color-preset" data-color="#2563eb" style="background:#2563eb" title="Blue"></div>
-        <div class="color-preset" data-color="#1e6b4c" style="background:#1e6b4c" title="Green"></div>
-        <div class="color-preset" data-color="#7c3aed" style="background:#7c3aed" title="Purple"></div>
-        <div class="color-preset" data-color="#b91c1c" style="background:#b91c1c" title="Red"></div>
-        <div class="color-preset" data-color="#0f766e" style="background:#0f766e" title="Teal"></div>
-      </div>
-      <div class="color-divider"></div>
-      <div class="color-custom">
-        <div class="color-picker-wrap" title="Custom color">
-          <div class="color-picker-preview" id="accent-preview" style="background:#0d2d5e"></div>
-          <input type="color" id="accent-picker" value="#0d2d5e">
-        </div>
-        <input type="text" id="accent-hex" class="hex-input" value="#0D2D5E" maxlength="7" spellcheck="false">
-      </div>
-      <button id="reapply-btn" class="btn-reapply">↻ Re-apply styles</button>
-    </div>
-
-    <!-- Widget list (multi-section documents) -->
-    <div id="widget-list-section" class="widget-list-section hidden">
-      <div class="widget-list-header">
-        <div>
-          <span id="widget-count-label" class="widget-count-label"></span>
-          <span class="widget-list-hint">Rename sections or uncheck any to exclude from the push. Decorative cover pages are excluded automatically.</span>
-        </div>
-        <div class="widget-list-controls">
-          <button type="button" class="btn-text-sm" id="select-all-btn">Select all</button>
-          <button type="button" class="btn-text-sm" id="deselect-all-btn">Deselect all</button>
-        </div>
-      </div>
-      <div id="widget-list"></div>
-    </div>
-
-    <!-- Tabs -->
-    <div>
-      <div class="tabs">
-        <button class="tab-btn active" data-tab="preview">👁 Preview</button>
-        <button class="tab-btn" data-tab="code">⟨⟩ HTML Code</button>
-      </div>
-
-      <div id="tab-preview">
-        <iframe id="preview-frame" class="preview-frame" sandbox="allow-same-origin"></iframe>
-      </div>
-
-      <div id="tab-code" class="hidden">
-        <textarea id="html-output" class="html-output" readonly spellcheck="false"></textarea>
-      </div>
-    </div>
-
-    <!-- Save to Salesbuildr -->
-    <div class="sb-section">
-      <button type="button" class="sb-toggle" id="sb-toggle">
-        <span>⚡ Save to Salesbuildr</span>
-        <span class="sb-arrow" id="sb-arrow">▼</span>
-      </button>
-      <div class="sb-body hidden" id="sb-body">
-        <p class="sb-hint">Push the converted HTML directly into your Salesbuildr widget library — no copy/paste required. Your credentials are never stored on our servers.</p>
-
+      <section class="panel-section">
+        <h2 class="section-label">Salesbuildr Credentials</h2>
         <div class="sb-fields">
           <div class="sb-field">
             <label class="sb-label">Tenant URL <span class="sb-where">e.g. https://acme.salesbuildr.com</span></label>
-            <input type="text" id="sb-tenant-url" class="sb-input" placeholder="https://yourcompany.salesbuildr.com" autocomplete="off">
+            <input type="text" id="sbTenantUrl" class="sb-input" placeholder="https://yourcompany.salesbuildr.com" autocomplete="off">
           </div>
           <div class="sb-field">
             <label class="sb-label">API Key <span class="sb-where">Admin → Integrations → API Key</span></label>
-            <input type="password" id="sb-api-key" class="sb-input" placeholder="Your API key" autocomplete="new-password">
+            <input type="text" id="sbApiKey" class="sb-input" placeholder="Your API key" autocomplete="off">
           </div>
         </div>
-
-        <label class="sb-remember">
-          <input type="checkbox" id="sb-remember"> Remember on this device
+        <label class="remember-label">
+          <input type="checkbox" id="sbRemember"> Remember credentials
         </label>
+      </section>
 
-        <div id="sb-widget-title-row" class="sb-title-row">
-          <label class="sb-label">Widget title <span class="sb-where">How it will appear in your widget library</span></label>
-          <input type="text" id="sb-widget-title" class="sb-input" placeholder="e.g. MSA Agreement">
-        </div>
+      <section class="panel-section">
+        <h2 class="section-label">Analysis</h2>
+        <p class="panel-note">Fetches your full widget library and uses AI to group duplicates, near-duplicates, and suspicious names for review.</p>
+        <button id="fetchBtn" class="btn btn--primary" disabled>Fetch &amp; Analyse</button>
+        <div id="fetchStatus" class="status-line" aria-live="polite"></div>
+      </section>
 
-        <div class="sb-actions">
-          <button type="button" id="sb-push-btn" class="btn-push" disabled>Save to Salesbuildr →</button>
-          <div id="sb-result" class="sb-result hidden"></div>
+      <section class="panel-section" id="statsSection" style="display:none">
+        <h2 class="section-label">Library Stats</h2>
+        <div class="stats-grid">
+          <div class="stat">
+            <span class="stat-num" id="statTotal">—</span>
+            <span class="stat-label">Total widgets</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num stat-num--red" id="statDelete">—</span>
+            <span class="stat-label">Safe to delete</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num stat-num--amber" id="statReview">—</span>
+            <span class="stat-label">Needs review</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num stat-num--green" id="statOk">—</span>
+            <span class="stat-label">Looks fine</span>
+          </div>
         </div>
+      </section>
+
+      <!-- CLEAN-UP LIST -->
+      <section class="panel-section" id="queueSection" style="display:none">
+        <h2 class="section-label">Clean-up List</h2>
+        <p class="panel-note">Check the widgets you want to remove, then copy the list to guide your clean-up in Salesbuildr.</p>
+        <div id="queueList" class="queue-list"></div>
+        <div id="queueEmpty" class="queue-empty">No widgets selected. Check boxes in the results to add.</div>
+        <div id="queueActions" style="display:none">
+          <button id="copyListBtn" class="btn btn--secondary">Copy list to clipboard</button>
+          <div id="copyStatus" class="status-line" aria-live="polite"></div>
+        </div>
+        <button id="stageBtn" class="btn btn--secondary" style="display:none">Stage selected</button>
+        <div id="deleteStatus" class="status-line" aria-live="polite"></div>
+      </section>
+
+    </aside>
+
+    <!-- RIGHT PANEL -->
+    <div class="panel panel--right">
+
+      <div id="emptyState" class="empty-state">
+        <p class="empty-title">No analysis yet</p>
+        <p class="empty-sub">Enter your credentials and click Fetch &amp; Analyse to scan your widget library.</p>
+      </div>
+
+      <div id="resultsArea" style="display:none">
+
+        <!-- SAFE TO DELETE -->
+        <section class="result-group" id="groupDelete">
+          <div class="group-header group-header--red">
+            <div class="group-header-left">
+              <span class="group-badge group-badge--red">Safe to Delete</span>
+              <span class="group-count" id="countDelete">0</span>
+            </div>
+            <label class="select-all-label">
+              <input type="checkbox" id="selectAllDelete" checked> Select all
+            </label>
+          </div>
+          <p class="group-desc">Obvious duplicates, test widgets, and named copies. Pre-selected — uncheck any you want to keep.</p>
+          <div id="listDelete" class="widget-list"></div>
+        </section>
+
+        <!-- NEEDS REVIEW -->
+        <section class="result-group" id="groupReview">
+          <div class="group-header group-header--amber">
+            <div class="group-header-left">
+              <span class="group-badge group-badge--amber">Needs Review</span>
+              <span class="group-count" id="countReview">0</span>
+            </div>
+            <label class="select-all-label">
+              <input type="checkbox" id="selectAllReview"> Select all
+            </label>
+          </div>
+          <p class="group-desc">Widgets that appear similar in purpose. Review each group and check the ones you no longer need.</p>
+          <div id="listReview" class="widget-list"></div>
+        </section>
+
+        <!-- LOOKS FINE -->
+        <section class="result-group" id="groupOk">
+          <div class="group-header group-header--green">
+            <div class="group-header-left">
+              <span class="group-badge group-badge--green">Looks Fine</span>
+              <span class="group-count" id="countOk">0</span>
+            </div>
+            <button class="toggle-ok-btn" id="toggleOkBtn">Show</button>
+          </div>
+          <div id="listOk" class="widget-list" style="display:none"></div>
+        </section>
+
       </div>
     </div>
 
-  </div>
+  </main>
 
-</main>
+  <!-- WIDGET CARD TEMPLATE -->
+  <template id="widgetCardTemplate">
+    <div class="widget-card">
+      <div class="widget-card-header">
+        <label class="widget-check-label">
+          <input type="checkbox" class="widget-checkbox">
+          <span class="widget-name"></span>
+        </label>
+        <div class="widget-meta">
+          <span class="widget-type-badge"></span>
+          <button class="expand-btn" aria-expanded="false">Details</button>
+        </div>
+      </div>
+      <div class="widget-reason"></div>
+      <div class="widget-detail" style="display:none">
+        <pre class="widget-json"></pre>
+      </div>
+    </div>
+  </template>
 
-<footer>
-  <strong>Salesbuildr Document Converter</strong> &nbsp;·&nbsp;
-  Copy HTML and paste into the widget editor, or use <strong>Save to Salesbuildr</strong> to push directly to your library.
-</footer>
-
-<script src="tinymce.js"></script>
-
+  <script src="widget-cleaner.js"></script>
 </body>
 </html>
