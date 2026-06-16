@@ -18,59 +18,55 @@ exports.handler = async (event) => {
 
   // Build a compact summary for Claude — id, name, type (inferred), and a shallow config snapshot
   const summary = widgets.map(w => ({
-    id:     w.id,
-    name:   w.name,
-    type:   inferType(w.widget),
-    labels: w.entityLabels || [],
-    // Send a shallow config snapshot — enough for semantic comparison without huge tokens
+    id:         w.id,
+    name:       w.name,
+    type:       inferType(w.widget),
+    labels:     w.entityLabels || [],
     configKeys: w.widget ? Object.keys(w.widget) : []
   }));
 
-  const systemPrompt = `You are a widget library analyst for an MSP quoting tool called Salesbuildr. Your job is to analyse a list of widget templates and identify duplicates, near-duplicates, and candidates for cleanup.
+  const systemPrompt = `You are a widget library analyst for an MSP quoting tool called Salesbuildr. Analyse a list of widget templates and identify duplicates, near-duplicates, and candidates for cleanup.
 
-You will receive a JSON array of widget summaries. Each has: id, name, type, labels, configKeys.
+Each widget summary has: id, name, type, labels, configKeys.
 
-Classify each widget into one of three groups:
+Classify every widget into exactly one of three groups:
 
 1. "safe" — High-confidence candidates for deletion:
-   - Name contains words like: test, temp, copy, draft, old, backup, v2, v3, v4, final, new, (1), (2), duplicate, unused, delete, remove, demo, sample, example, placeholder
-   - Exact or near-exact duplicate names (e.g. "Product Table" and "Product table" and "Product Table ")
-   - Widgets with generic placeholder-style names
+   - Name contains: test, temp, copy, draft, old, backup, v2, v3, v4, final, new, (1), (2), duplicate, unused, delete, remove, demo, sample, example, placeholder
+   - Exact or near-exact duplicate names (case/spacing variations)
+   - Generic placeholder-style names
 
-2. "review" — Widgets that may overlap in purpose with others:
-   - Widgets of the same type with similar names or purposes (e.g. "Standard Items", "Default Product List", "Items Widget")
-   - Pairs or groups where multiple widgets seem to serve the same function
-   - Widgets with very similar configKeys suggesting near-identical structure
+2. "review" — May overlap in purpose with another widget:
+   - Same type with similar names (e.g. "Standard Items" and "Default Product List")
+   - Very similar configKeys suggesting near-identical structure
+   - Pairs or groups that seem to serve the same function
 
-3. "ok" — Unique, clearly distinct widgets with no obvious overlap
+3. "ok" — Unique, clearly distinct, no overlap
 
-For every widget in "safe" and "review", include a short "reason" string (max 12 words) explaining why it was flagged. Be specific — reference the name, the duplicate, or the pattern.
+Rules:
+- Every input ID must appear in exactly one group — no omissions, no duplicates
+- For "safe" and "review" items include a "reason" string of max 12 words
+- Respond with ONLY the JSON object — no explanation, no markdown, no preamble`;
 
-Return ONLY a valid JSON object in this exact shape, nothing else:
-{
-  "safe":   [ { "id": "...", "reason": "..." }, ... ],
-  "review": [ { "id": "...", "reason": "..." }, ... ],
-  "ok":     [ { "id": "..." }, ... ]
-}
-
-Every widget ID from the input must appear in exactly one group. Do not omit any IDs.`;
-
-  const userMessage = `Analyse these ${summary.length} widget templates:\n\n${JSON.stringify(summary, null, 2)}`;
+  const userMessage = `Classify these ${summary.length} widgets:\n\n${JSON.stringify(summary)}`;
 
   let claudeRes;
   try {
     claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Content-Type':    'application/json',
-        'x-api-key':       process.env.ANTHROPIC_API_KEY,
+        'Content-Type':      'application/json',
+        'x-api-key':         process.env.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
         model:      'claude-haiku-4-5-20251001',
-        max_tokens: 2000,
+        max_tokens: 4000,
         system:     systemPrompt,
-        messages:   [{ role: 'user', content: userMessage }]
+        messages: [
+          { role: 'user',      content: userMessage },
+          { role: 'assistant', content: '{' }   // prefill forces JSON-only response
+        ]
       })
     });
   } catch (err) {
@@ -79,41 +75,49 @@ Every widget ID from the input must appear in exactly one group. Do not omit any
 
   if (!claudeRes.ok) {
     const errText = await claudeRes.text().catch(() => '');
-    return { statusCode: 502, body: JSON.stringify({ ok: false, error: `Claude API error ${claudeRes.status}: ${errText.slice(0, 200)}` }) };
+    return { statusCode: 502, body: JSON.stringify({ ok: false, error: `Claude API error ${claudeRes.status}: ${errText.slice(0, 300)}` }) };
   }
 
   let claudeData;
   try { claudeData = await claudeRes.json(); }
-  catch { return { statusCode: 502, body: JSON.stringify({ ok: false, error: 'Invalid JSON from Claude.' }) }; }
+  catch { return { statusCode: 502, body: JSON.stringify({ ok: false, error: 'Invalid JSON from Claude API.' }) }; }
 
-  const rawText = claudeData.content?.[0]?.text || '';
+  // Reconstruct full response — we prefilled '{' so prepend it back
+  const rawText = '{' + (claudeData.content?.[0]?.text || '');
 
-  // Parse Claude's JSON response
+  // Robust JSON extraction — find the outermost { ... } block
   let classification;
   try {
-    // Strip any accidental markdown fences
-    const cleaned = rawText.replace(/```json|```/g, '').trim();
-    classification = JSON.parse(cleaned);
-  } catch {
-    return { statusCode: 502, body: JSON.stringify({ ok: false, error: 'Could not parse Claude response as JSON.', raw: rawText.slice(0, 500) }) };
+    const extracted = extractJSON(rawText);
+    classification = JSON.parse(extracted);
+  } catch (err) {
+    return {
+      statusCode: 502,
+      body: JSON.stringify({
+        ok:    false,
+        error: 'Could not parse Claude response as JSON: ' + err.message,
+        raw:   rawText.slice(0, 800)
+      })
+    };
   }
 
-  // Build a lookup map from the classification
+  // Validate expected shape
+  if (!classification.safe && !classification.review && !classification.ok) {
+    return { statusCode: 502, body: JSON.stringify({ ok: false, error: 'Claude response missing expected groups.', raw: rawText.slice(0, 400) }) };
+  }
+
+  // Build lookup map
   const reasonMap = {};
   (classification.safe   || []).forEach(item => { reasonMap[item.id] = { group: 'safe',   reason: item.reason || '' }; });
   (classification.review || []).forEach(item => { reasonMap[item.id] = { group: 'review', reason: item.reason || '' }; });
   (classification.ok     || []).forEach(item => { reasonMap[item.id] = { group: 'ok',     reason: '' }; });
 
-  // Assemble full widget objects with reasons
+  // Assemble full widget objects — anything unclassified falls to 'ok'
   const groups = { safe: [], review: [], ok: [] };
-
   widgets.forEach(w => {
     const entry = reasonMap[w.id] || { group: 'ok', reason: '' };
     groups[entry.group].push({ ...w, reason: entry.reason });
   });
-
-  // Any widget not classified by Claude (shouldn't happen) → ok
-  // Already handled by defaulting to 'ok' above
 
   return {
     statusCode: 200,
@@ -122,14 +126,43 @@ Every widget ID from the input must appear in exactly one group. Do not omit any
   };
 };
 
+// Extract the outermost JSON object from a string that may have surrounding text
+function extractJSON(str) {
+  // Strip markdown fences first
+  const stripped = str.replace(/```json|```/g, '').trim();
+
+  // Find the first { and match to its closing }
+  const start = stripped.indexOf('{');
+  if (start === -1) throw new Error('No JSON object found in response');
+
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = start; i < stripped.length; i++) {
+    const ch = stripped[i];
+    if (escape) { escape = false; continue; }
+    if (ch === '\\' && inString) { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === '{') depth++;
+    if (ch === '}') {
+      depth--;
+      if (depth === 0) return stripped.slice(start, i + 1);
+    }
+  }
+  // If we never closed, try parsing what we have (truncation recovery)
+  throw new Error('Unbalanced JSON braces — response may have been truncated');
+}
+
 function inferType(widgetObj) {
   if (!widgetObj) return 'unknown';
-  if (widgetObj.type) return widgetObj.type;
-  if (widgetObj.items    !== undefined) return 'items';
-  if (widgetObj.html     !== undefined) return 'html-content';
-  if (widgetObj.content  !== undefined) return 'content';
-  if (widgetObj.mediaUrl !== undefined) return 'single-media';
-  if (widgetObj.imageUrl !== undefined) return 'image';
-  if (widgetObj.fields   !== undefined) return 'form';
+  if (widgetObj.type)                      return widgetObj.type;
+  if (widgetObj.items    !== undefined)    return 'items';
+  if (widgetObj.html     !== undefined)    return 'html-content';
+  if (widgetObj.content  !== undefined)    return 'content';
+  if (widgetObj.mediaUrl !== undefined)    return 'single-media';
+  if (widgetObj.imageUrl !== undefined)    return 'image';
+  if (widgetObj.fields   !== undefined)    return 'form';
   return 'widget';
 }
