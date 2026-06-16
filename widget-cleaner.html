@@ -29,7 +29,7 @@
           </div>
           <div class="sb-field">
             <label class="sb-label">API Key <span class="sb-where">Admin → Integrations → API Key</span></label>
-            <input type="password" id="sbApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
+            <input type="text" id="sbApiKey" class="sb-input" placeholder="Your API key" autocomplete="off">
           </div>
         </div>
         <label class="remember-label">
@@ -66,18 +66,17 @@
         </div>
       </section>
 
-      <!-- DELETION QUEUE -->
+      <!-- CLEAN-UP LIST -->
       <section class="panel-section" id="queueSection" style="display:none">
-        <h2 class="section-label">Deletion Queue</h2>
-        <p class="panel-note">Review before committing. This cannot be undone.</p>
+        <h2 class="section-label">Clean-up List</h2>
+        <p class="panel-note">Check the widgets you want to remove, then copy the list to guide your clean-up in Salesbuildr.</p>
         <div id="queueList" class="queue-list"></div>
-        <div id="queueEmpty" class="queue-empty" style="display:none">No widgets staged. Check boxes in the results to add.</div>
-        <div class="queue-confirm" id="queueConfirm" style="display:none">
-          <label class="sb-label">Type DELETE to confirm</label>
-          <input type="text" id="deleteConfirmInput" class="sb-input" placeholder="DELETE" autocomplete="off">
-          <button id="executeDeleteBtn" class="btn btn--danger" disabled>Delete <span id="deleteCount">0</span> widget<span id="deletePlural">s</span></button>
+        <div id="queueEmpty" class="queue-empty">No widgets selected. Check boxes in the results to add.</div>
+        <div id="queueActions" style="display:none">
+          <button id="copyListBtn" class="btn btn--secondary">Copy list to clipboard</button>
+          <div id="copyStatus" class="status-line" aria-live="polite"></div>
         </div>
-        <button id="stageBtn" class="btn btn--secondary" style="display:none">Stage selected for deletion</button>
+        <button id="stageBtn" class="btn btn--secondary" style="display:none">Stage selected</button>
         <div id="deleteStatus" class="status-line" aria-live="polite"></div>
       </section>
 
@@ -119,7 +118,7 @@
               <input type="checkbox" id="selectAllReview"> Select all
             </label>
           </div>
-          <p class="group-desc">Widgets that appear similar in purpose. Not pre-selected — review each pair before deciding.</p>
+          <p class="group-desc">Widgets that appear similar in purpose. Review each group and check the ones you no longer need.</p>
           <div id="listReview" class="widget-list"></div>
         </section>
 
@@ -140,7 +139,7 @@
 
   </main>
 
-  <!-- WIDGET CARD TEMPLATE (cloned by JS) -->
+  <!-- WIDGET CARD TEMPLATE -->
   <template id="widgetCardTemplate">
     <div class="widget-card">
       <div class="widget-card-header">
