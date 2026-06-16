@@ -103,7 +103,8 @@ async function fetchAndAnalyse() {
     return;
   }
 
-  setFetchStatus(`Fetched ${widgets.length} widget${widgets.length !== 1 ? 's' : ''}. Analysing with AI…`, '');
+  setFetchStatus(`Fetched ${widgets.length} widget${widgets.length !== 1 ? 's' : ''}. Analysing…`, '');
+  const stopPulse = startStatusPulse(`Analysing ${widgets.length} widgets with AI`, fetchStatus);
 
   // 2. Send to Claude for analysis
   let groups;
@@ -117,10 +118,13 @@ async function fetchAndAnalyse() {
     if (!data.ok) throw new Error(data.error || 'Analysis failed');
     groups = data.groups;
   } catch (err) {
+    stopPulse();
     setFetchStatus('Analysis error: ' + err.message, 'error');
     fetchBtn.disabled = false;
     return;
   }
+
+  stopPulse();
 
   // 3. Render
   analysed = groups;
@@ -367,6 +371,19 @@ function setFetchStatus(msg, cls) {
 function setDeleteStatus(msg, cls) {
   deleteStatus.textContent = msg;
   deleteStatus.className   = 'status-line' + (cls ? ' ' + cls : '');
+}
+
+// Animates "base text . / .. / ..." in an element until the returned stop() is called
+function startStatusPulse(baseText, el) {
+  const frames = ['.', '..', '...'];
+  let i = 0;
+  el.textContent = baseText + frames[0];
+  el.className   = 'status-line';
+  const id = setInterval(() => {
+    i = (i + 1) % frames.length;
+    el.textContent = baseText + frames[i];
+  }, 500);
+  return () => clearInterval(id);
 }
 
 /* ── EVENT LISTENERS ── */
