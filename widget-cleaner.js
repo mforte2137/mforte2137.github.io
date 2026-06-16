@@ -25,6 +25,7 @@ const queueList       = document.getElementById('queueList');
 const queueEmpty      = document.getElementById('queueEmpty');
 const queueActions    = document.getElementById('queueActions');
 const copyListBtn     = document.getElementById('copyListBtn');
+const openReportBtn   = document.getElementById('openReportBtn');
 const copyStatus      = document.getElementById('copyStatus');
 const stageBtn        = document.getElementById('stageBtn');
 const cardTemplate    = document.getElementById('widgetCardTemplate');
@@ -523,3 +524,119 @@ fetchBtn.addEventListener('click',    fetchAndAnalyse);
 
 /* ── BOOT ── */
 initSbCredentials();
+
+/* ── OPEN REPORT BUTTON ── */
+openReportBtn.addEventListener('click', function() {
+  openReferenceReport();
+});
+
+function buildReportItems() {
+  var safeItems   = [];
+  var reviewItems = [];
+
+  stagedIds.forEach(function(id) {
+    var widget = allWidgets.find(function(w) { return w.id === id; });
+    if (!widget) return;
+    var inSafe = analysed.safe.find(function(w) { return w.id === id; });
+    if (inSafe) {
+      safeItems.push({ name: widget.name, reason: inSafe.reason || '' });
+    } else {
+      var inReview = analysed.review.find(function(w) { return w.id === id; });
+      reviewItems.push({ name: widget.name, reason: inReview ? (inReview.reason || '') : '' });
+    }
+  });
+
+  return { safeItems: safeItems, reviewItems: reviewItems };
+}
+
+function openReferenceReport() {
+  var items = buildReportItems();
+  var safeItems   = items.safeItems;
+  var reviewItems = items.reviewItems;
+  var total = safeItems.length + reviewItems.length;
+  var date  = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  function itemRow(name, reason, index) {
+    return '<tr>' +
+      '<td class="col-num">' + (index + 1) + '</td>' +
+      '<td class="col-check"><span class="checkbox-ui"></span></td>' +
+      '<td class="col-name">' + escHtml(name) + '</td>' +
+      '<td class="col-reason">' + escHtml(reason) + '</td>' +
+    '</tr>';
+  }
+
+  function escHtml(str) {
+    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  var safeRows   = safeItems.map(function(item, i) { return itemRow(item.name, item.reason, i); }).join('');
+  var reviewRows = reviewItems.map(function(item, i) { return itemRow(item.name, item.reason, i); }).join('');
+
+  var html = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">' +
+  '<title>Widget Clean-up Report</title>' +
+  '<style>' +
+    'body { margin: 0; padding: 32px 40px; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; color: #1a1814; background: #f5f2eb; }' +
+    'h1 { font-family: Georgia, serif; font-weight: normal; font-size: 22px; margin: 0 0 4px 0; }' +
+    '.meta { font-size: 12px; color: #7a756e; margin-bottom: 32px; }' +
+    '.section { margin-bottom: 32px; }' +
+    '.section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid #1a1814; }' +
+    '.badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; padding: 3px 8px; }' +
+    '.badge--red { background: #b91c1c; color: #fff; }' +
+    '.badge--amber { background: #92400e; color: #fff; }' +
+    '.section-count { font-family: Georgia, serif; font-size: 18px; color: #4a4640; }' +
+    'table { width: 100%; border-collapse: collapse; background: #faf8f4; }' +
+    'th { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #7a756e; padding: 8px 10px; text-align: left; border-bottom: 1px solid #c8c2b4; }' +
+    'td { padding: 10px 10px; border-bottom: 1px solid #e8e4dc; vertical-align: top; }' +
+    'tr:last-child td { border-bottom: none; }' +
+    '.col-num { width: 32px; color: #a09a90; font-size: 12px; }' +
+    '.col-check { width: 28px; }' +
+    '.col-name { font-weight: 600; }' +
+    '.col-reason { color: #4a4640; font-size: 13px; }' +
+    '.checkbox-ui { display: inline-block; width: 16px; height: 16px; border: 1.5px solid #c8c2b4; background: #fff; vertical-align: middle; }' +
+    '.footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #c8c2b4; font-size: 12px; color: #7a756e; }' +
+    '.footer strong { color: #1a1814; }' +
+    '@media print { body { background: #fff; padding: 16px; } }' +
+  '</style>' +
+  '</head><body>' +
+  '<h1>Widget Clean-up Report</h1>' +
+  '<div class="meta">Generated ' + date + ' &nbsp;&middot;&nbsp; ' + total + ' widget' + (total !== 1 ? 's' : '') + ' selected for removal</div>';
+
+  if (safeItems.length) {
+    html += '<div class="section">' +
+      '<div class="section-header">' +
+        '<span class="badge badge--red">Safe to Delete</span>' +
+        '<span class="section-count">' + safeItems.length + ' widget' + (safeItems.length !== 1 ? 's' : '') + '</span>' +
+      '</div>' +
+      '<table><thead><tr>' +
+        '<th>#</th><th></th><th>Widget Name</th><th>Reason Flagged</th>' +
+      '</tr></thead><tbody>' + safeRows + '</tbody></table>' +
+    '</div>';
+  }
+
+  if (reviewItems.length) {
+    html += '<div class="section">' +
+      '<div class="section-header">' +
+        '<span class="badge badge--amber">Needs Review</span>' +
+        '<span class="section-count">' + reviewItems.length + ' widget' + (reviewItems.length !== 1 ? 's' : '') + '</span>' +
+      '</div>' +
+      '<table><thead><tr>' +
+        '<th>#</th><th></th><th>Widget Name</th><th>Reason Flagged</th>' +
+      '</tr></thead><tbody>' + reviewRows + '</tbody></table>' +
+    '</div>';
+  }
+
+  html += '<div class="footer">' +
+    '<strong>To delete:</strong> Salesbuildr &rarr; Settings &rarr; Widget Templates &rarr; find each name above and delete individually.' +
+  '</div>' +
+  '</body></html>';
+
+  var popup = window.open('', 'widget_report', 'width=820,height=900,scrollbars=yes,resizable=yes');
+  if (!popup) {
+    copyStatus.textContent = 'Popup blocked — please allow popups for this site.';
+    copyStatus.className   = 'status-line error';
+    return;
+  }
+  popup.document.open();
+  popup.document.write(html);
+  popup.document.close();
+}
