@@ -166,6 +166,18 @@ const TOOLS = [
     icon: "swap"
   },
   {
+    title: "Widget Library Cleanup",
+    shortLabel: "Widget Cleanup",
+    description:
+      "Fetches your full widget library and uses AI to group duplicates, near-duplicates, and suspicious names for review — keeping your library clean and manageable.",
+    category: "Conversion",
+    url: "https://widgetcreator.netlify.app/widget-cleaner.html",
+    badge: "new",
+    updated: "2026-06-16",
+    gradient: "mint",
+    icon: "search"
+  },
+  {
     title: "Document Converter",
     shortLabel: "Document Converter",
     description:
@@ -372,6 +384,7 @@ const GRADIENTS = {
   gold:    "linear-gradient(135deg, #78350f 0%, #d97706 55%, #fbbf24 100%)",
   sky:     "linear-gradient(135deg, #0c4a6e 0%, #0284c7 55%, #7dd3fc 100%)",
   coral:   "linear-gradient(135deg, #7c2d12 0%, #ea580c 55%, #fdba74 100%)",
+  mint:    "linear-gradient(135deg, #022c22 0%, #059669 55%, #6ee7b7 100%)",
   cyan:    "linear-gradient(135deg, #164e63 0%, #0891b2 55%, #67e8f9 100%)",
   forest:  "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #86efac 100%)",
   crimson: "linear-gradient(135deg, #7f1d1d 0%, #dc2626 55%, #f87171 100%)"
