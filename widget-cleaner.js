@@ -1,36 +1,33 @@
 /* ── DOM REFS ── */
-const sbTenantUrl        = document.getElementById('sbTenantUrl');
-const sbApiKey           = document.getElementById('sbApiKey');
-const sbRemember         = document.getElementById('sbRemember');
-const fetchBtn           = document.getElementById('fetchBtn');
-const fetchStatus        = document.getElementById('fetchStatus');
-const statsSection       = document.getElementById('statsSection');
-const statTotal          = document.getElementById('statTotal');
-const statDelete         = document.getElementById('statDelete');
-const statReview         = document.getElementById('statReview');
-const statOk             = document.getElementById('statOk');
-const emptyState         = document.getElementById('emptyState');
-const resultsArea        = document.getElementById('resultsArea');
-const listDelete         = document.getElementById('listDelete');
-const listReview         = document.getElementById('listReview');
-const listOk             = document.getElementById('listOk');
-const countDelete        = document.getElementById('countDelete');
-const countReview        = document.getElementById('countReview');
-const countOk            = document.getElementById('countOk');
-const selectAllDelete    = document.getElementById('selectAllDelete');
-const selectAllReview    = document.getElementById('selectAllReview');
-const toggleOkBtn        = document.getElementById('toggleOkBtn');
-const queueSection       = document.getElementById('queueSection');
-const queueList          = document.getElementById('queueList');
-const queueEmpty         = document.getElementById('queueEmpty');
-const queueConfirm       = document.getElementById('queueConfirm');
-const stageBtn           = document.getElementById('stageBtn');
-const deleteConfirmInput = document.getElementById('deleteConfirmInput');
-const executeDeleteBtn   = document.getElementById('executeDeleteBtn');
-const deleteCount        = document.getElementById('deleteCount');
-const deletePlural       = document.getElementById('deletePlural');
-const deleteStatus       = document.getElementById('deleteStatus');
-const cardTemplate       = document.getElementById('widgetCardTemplate');
+const sbTenantUrl     = document.getElementById('sbTenantUrl');
+const sbApiKey        = document.getElementById('sbApiKey');
+const sbRemember      = document.getElementById('sbRemember');
+const fetchBtn        = document.getElementById('fetchBtn');
+const fetchStatus     = document.getElementById('fetchStatus');
+const statsSection    = document.getElementById('statsSection');
+const statTotal       = document.getElementById('statTotal');
+const statDelete      = document.getElementById('statDelete');
+const statReview      = document.getElementById('statReview');
+const statOk          = document.getElementById('statOk');
+const emptyState      = document.getElementById('emptyState');
+const resultsArea     = document.getElementById('resultsArea');
+const listDelete      = document.getElementById('listDelete');
+const listReview      = document.getElementById('listReview');
+const listOk          = document.getElementById('listOk');
+const countDelete     = document.getElementById('countDelete');
+const countReview     = document.getElementById('countReview');
+const countOk         = document.getElementById('countOk');
+const selectAllDelete = document.getElementById('selectAllDelete');
+const selectAllReview = document.getElementById('selectAllReview');
+const toggleOkBtn     = document.getElementById('toggleOkBtn');
+const queueSection    = document.getElementById('queueSection');
+const queueList       = document.getElementById('queueList');
+const queueEmpty      = document.getElementById('queueEmpty');
+const queueActions    = document.getElementById('queueActions');
+const copyListBtn     = document.getElementById('copyListBtn');
+const copyStatus      = document.getElementById('copyStatus');
+const stageBtn        = document.getElementById('stageBtn');
+const cardTemplate    = document.getElementById('widgetCardTemplate');
 
 /* ── CONSTANTS ── */
 const LS_API_KEY    = 'sb_api_key';
@@ -102,7 +99,7 @@ async function fetchAndAnalyse() {
     return;
   }
 
-  setFetchStatus('Fetched ' + widgets.length + ' widget' + (widgets.length !== 1 ? 's' : '') + '. Analysing...', '');
+  setFetchStatus('Fetched ' + widgets.length + ' widgets. Analysing...', '');
   const stopPulse = startStatusPulse('Analysing ' + widgets.length + ' widgets with AI', fetchStatus);
 
   const summary = widgets.map(function(w) {
@@ -157,7 +154,7 @@ async function fetchAndAnalyse() {
 
   renderResults();
   fetchBtn.disabled = false;
-  setFetchStatus('Analysis complete - ' + widgets.length + ' widgets reviewed.', 'success');
+  setFetchStatus('Analysis complete — ' + widgets.length + ' widgets reviewed.', 'success');
 }
 
 /* ── RENDER RESULTS ── */
@@ -185,10 +182,9 @@ function renderResults() {
   document.getElementById('groupReview').style.display = analysed.review.length ? 'block' : 'none';
   document.getElementById('groupOk').style.display     = analysed.ok.length     ? 'block' : 'none';
 
-  resultsArea.style.display = 'block';
-  syncQueueFromCheckboxes();
-  updateStageBtn();
+  resultsArea.style.display  = 'block';
   queueSection.style.display = 'block';
+  syncQueueFromCheckboxes();
 }
 
 /* ── RENDER REVIEW GROUPS ── */
@@ -216,7 +212,7 @@ function renderReviewGroups(reviewWidgets, container) {
 
     const clusterLabel = document.createElement('div');
     clusterLabel.className   = 'cluster-label';
-    clusterLabel.textContent = 'Similar group  ' + members.length + ' widgets';
+    clusterLabel.textContent = 'Similar group  \u00b7  ' + members.length + ' widgets';
     cluster.appendChild(clusterLabel);
 
     const grid = document.createElement('div');
@@ -255,10 +251,7 @@ function renderCardInto(widget, wrap, defaultChecked, hideCheckbox) {
   } else {
     checkbox.checked    = defaultChecked;
     checkbox.dataset.id = widget.id;
-    checkbox.addEventListener('change', function() {
-      syncQueueFromCheckboxes();
-      updateStageBtn();
-    });
+    checkbox.addEventListener('change', function() { syncQueueFromCheckboxes(); });
   }
 
   clone.querySelector('.widget-name').textContent       = widget.name;
@@ -281,7 +274,6 @@ function renderCardInto(widget, wrap, defaultChecked, hideCheckbox) {
   jsonEl.textContent = jsonText;
 
   if (htmlContent) {
-    // Build preview/JSON toggle
     const toggleBar  = document.createElement('div');
     toggleBar.className = 'detail-toggle-bar';
 
@@ -303,9 +295,8 @@ function renderCardInto(widget, wrap, defaultChecked, hideCheckbox) {
     iframe.setAttribute('scrolling', 'yes');
     detailPane.insertBefore(iframe, jsonEl);
 
-    // Default: preview visible, JSON hidden
-    iframe.style.display  = 'block';
-    jsonEl.style.display  = 'none';
+    iframe.style.display = 'block';
+    jsonEl.style.display = 'none';
 
     previewBtn.addEventListener('click', function() {
       previewBtn.classList.add('detail-tab--active');
@@ -321,7 +312,6 @@ function renderCardInto(widget, wrap, defaultChecked, hideCheckbox) {
       jsonEl.style.display = 'block';
     });
 
-    // Lazy-load iframe on first open
     var iframeLoaded = false;
     expandBtn.addEventListener('click', function() {
       const open = expandBtn.getAttribute('aria-expanded') === 'true';
@@ -333,9 +323,7 @@ function renderCardInto(widget, wrap, defaultChecked, hideCheckbox) {
         iframeLoaded = true;
       }
     });
-
   } else {
-    // No HTML — plain JSON only
     expandBtn.addEventListener('click', function() {
       const open = expandBtn.getAttribute('aria-expanded') === 'true';
       expandBtn.setAttribute('aria-expanded', String(!open));
@@ -352,7 +340,6 @@ function getWidgetHtml(widgetObj) {
   if (!widgetObj) return null;
   const html = widgetObj.contentTemplate || widgetObj.html || widgetObj.content || null;
   if (!html || typeof html !== 'string') return null;
-  // Only treat as HTML if it actually contains tags
   if (!/<[a-z][\s\S]*>/i.test(html)) return null;
   return html;
 }
@@ -399,7 +386,7 @@ toggleOkBtn.addEventListener('click', function() {
   toggleOkBtn.textContent = open ? 'Show' : 'Hide';
 });
 
-/* ── QUEUE ── */
+/* ── CLEAN-UP LIST ── */
 function syncQueueFromCheckboxes() {
   const checked = new Set();
   document.querySelectorAll('#listDelete .widget-checkbox:checked, #listReview .widget-checkbox:checked')
@@ -413,11 +400,13 @@ function renderQueue() {
 
   if (stagedIds.size === 0) {
     queueEmpty.style.display   = 'block';
-    queueConfirm.style.display = 'none';
+    queueActions.style.display = 'none';
     return;
   }
 
-  queueEmpty.style.display = 'none';
+  queueEmpty.style.display   = 'none';
+  queueActions.style.display = 'block';
+  copyStatus.textContent     = '';
 
   stagedIds.forEach(function(id) {
     const widget = allWidgets.find(function(w) { return w.id === id; });
@@ -433,8 +422,8 @@ function renderQueue() {
 
     const removeBtn       = document.createElement('button');
     removeBtn.className   = 'queue-remove';
-    removeBtn.textContent = 'x';
-    removeBtn.title       = 'Remove from queue';
+    removeBtn.textContent = '\u00d7';
+    removeBtn.title       = 'Remove from list';
     removeBtn.addEventListener('click', function() {
       stagedIds.delete(id);
       const cb = document.querySelector('.widget-checkbox[data-id="' + id + '"]');
@@ -446,94 +435,61 @@ function renderQueue() {
     item.appendChild(removeBtn);
     queueList.appendChild(item);
   });
-
-  deleteCount.textContent  = stagedIds.size;
-  deletePlural.textContent = stagedIds.size === 1 ? '' : 's';
-  queueConfirm.style.display = 'block';
-  deleteConfirmInput.value   = '';
-  executeDeleteBtn.disabled  = true;
 }
 
-function updateStageBtn() {
-  stageBtn.style.display = 'none';
-}
+/* ── COPY TO CLIPBOARD ── */
+copyListBtn.addEventListener('click', function() {
+  const lines = ['Widget Clean-up List', '='.repeat(40), ''];
 
-/* ── DELETE CONFIRM ── */
-deleteConfirmInput.addEventListener('input', function() {
-  executeDeleteBtn.disabled = deleteConfirmInput.value.trim() !== 'DELETE' || stagedIds.size === 0;
-});
+  // Group by category
+  const safeItems   = [];
+  const reviewItems = [];
 
-/* ── EXECUTE DELETE ── */
-executeDeleteBtn.addEventListener('click', async function() {
-  if (deleteConfirmInput.value.trim() !== 'DELETE') return;
-
-  const ids       = Array.from(stagedIds);
-  const apiKey    = sbApiKey.value.trim();
-  const tenantUrl = sbTenantUrl.value.trim();
-  if (!apiKey || !tenantUrl) return;
-
-  executeDeleteBtn.disabled = true;
-  deleteConfirmInput.value  = '';
-  let deleted = 0, failed = 0;
-
-  for (var i = 0; i < ids.length; i++) {
-    const id     = ids[i];
+  stagedIds.forEach(function(id) {
     const widget = allWidgets.find(function(w) { return w.id === id; });
-    setDeleteStatus('Deleting ' + (deleted + failed + 1) + ' of ' + ids.length + ': ' + (widget ? widget.name : id) + '...', '');
-
-    try {
-      const res  = await fetch('/api/widget-cleaner-api', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ action: 'delete', apiKey: apiKey, tenantUrl: tenantUrl, widgetId: id })
-      });
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error || 'Delete failed');
-      deleted++;
-      const card = document.querySelector('.widget-card[data-id="' + id + '"]');
-      if (card) {
-        const cluster = card.closest('.review-cluster');
-        const cardWrap = card.closest('.cluster-card') || card.parentElement;
-        if (cardWrap) cardWrap.remove();
-        if (cluster && !cluster.querySelector('.widget-card')) cluster.remove();
-      }
-    } catch (err) {
-      failed++;
-      console.error('Delete failed for', id, err.message);
+    if (!widget) return;
+    const inSafe = analysed.safe.find(function(w) { return w.id === id; });
+    if (inSafe) {
+      safeItems.push({ name: widget.name, reason: inSafe.reason });
+    } else {
+      const inReview = analysed.review.find(function(w) { return w.id === id; });
+      reviewItems.push({ name: widget.name, reason: inReview ? inReview.reason : '' });
     }
+  });
+
+  if (safeItems.length) {
+    lines.push('SAFE TO DELETE (' + safeItems.length + ')');
+    lines.push('-'.repeat(30));
+    safeItems.forEach(function(item) {
+      lines.push('  \u2022 ' + item.name + (item.reason ? '  —  ' + item.reason : ''));
+    });
+    lines.push('');
   }
 
-  allWidgets      = allWidgets.filter(function(w) { return ids.indexOf(w.id) === -1; });
-  analysed.safe   = analysed.safe.filter(function(w)   { return ids.indexOf(w.id) === -1; });
-  analysed.review = analysed.review.filter(function(w) { return ids.indexOf(w.id) === -1; });
-  analysed.ok     = analysed.ok.filter(function(w)     { return ids.indexOf(w.id) === -1; });
+  if (reviewItems.length) {
+    lines.push('NEEDS REVIEW (' + reviewItems.length + ')');
+    lines.push('-'.repeat(30));
+    reviewItems.forEach(function(item) {
+      lines.push('  \u2022 ' + item.name + (item.reason ? '  —  ' + item.reason : ''));
+    });
+    lines.push('');
+  }
 
-  stagedIds.clear();
-  renderQueue();
+  lines.push('To delete: go to Salesbuildr \u2192 Settings \u2192 Widget Templates');
 
-  countDelete.textContent = analysed.safe.length;
-  countReview.textContent = analysed.review.length;
-  countOk.textContent     = analysed.ok.length;
-  statTotal.textContent   = allWidgets.length;
-  statDelete.textContent  = analysed.safe.length;
-  statReview.textContent  = analysed.review.length;
-  statOk.textContent      = analysed.ok.length;
-
-  const msg = failed
-    ? 'Deleted ' + deleted + ', failed ' + failed + '. Check console for details.'
-    : 'Successfully deleted ' + deleted + ' widget' + (deleted !== 1 ? 's' : '') + '.';
-  setDeleteStatus(msg, failed ? 'error' : 'success');
+  navigator.clipboard.writeText(lines.join('\n')).then(function() {
+    copyStatus.textContent = 'Copied to clipboard.';
+    copyStatus.className   = 'status-line success';
+  }).catch(function() {
+    copyStatus.textContent = 'Copy failed — try selecting and copying manually.';
+    copyStatus.className   = 'status-line error';
+  });
 });
 
 /* ── HELPERS ── */
 function setFetchStatus(msg, cls) {
   fetchStatus.textContent = msg;
   fetchStatus.className   = 'status-line' + (cls ? ' ' + cls : '');
-}
-
-function setDeleteStatus(msg, cls) {
-  deleteStatus.textContent = msg;
-  deleteStatus.className   = 'status-line' + (cls ? ' ' + cls : '');
 }
 
 function startStatusPulse(baseText, el) {
