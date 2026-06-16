@@ -1183,3 +1183,135 @@ body { font-family: 'Georgia', serif; background: var(--bg); color: var(--text);
   border: 1px solid var(--border-2); cursor: pointer;
   font-family: 'Courier New', monospace;
 }
+
+/* ══════════════════════════════════
+   REVIEW WORKFLOW PANEL
+   ══════════════════════════════════ */
+
+.workflow-panel { margin-bottom: 12px; padding: 0; overflow: hidden; }
+
+.wf-panel-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-row);
+  flex-wrap: wrap; gap: 8px;
+}
+.wf-panel-left { display: flex; flex-direction: column; gap: 6px; }
+.wf-panel-right {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-top: 2px;
+}
+
+.wf-context-chips { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+.wf-priority-chip {
+  font-size: 10px; padding: 2px 8px; border-radius: 20px;
+  font-family: 'Courier New', monospace;
+}
+.wf-customer-chip, .wf-contact-chip {
+  font-size: 11px; padding: 2px 8px;
+  border: 1px solid var(--border); border-radius: 20px;
+  color: var(--text-2); font-family: 'Courier New', monospace;
+}
+
+.wf-progress-dots { display: flex; gap: 4px; align-items: center; }
+.wf-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--border-2);
+}
+.wf-dot.done   { background: var(--good); }
+.wf-dot.active { background: var(--text); }
+.wf-progress-label {
+  font-size: 10px; color: var(--text-3);
+  font-family: 'Courier New', monospace; white-space: nowrap;
+}
+
+/* Steps list */
+.wf-steps-list { padding: 0; }
+
+.wf-step {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.wf-step:last-child { border-bottom: none; }
+.wf-step.done    { opacity: 0.5; }
+.wf-step.active  { background: var(--info-bg); }
+.wf-step.pending { }
+
+.wf-step-left {
+  display: flex; flex-direction: column; align-items: center;
+  flex-shrink: 0; width: 22px;
+}
+.wf-step-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 1px solid var(--border-2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: var(--text-2);
+  background: var(--bg-panel); flex-shrink: 0;
+}
+.wf-step-num.done {
+  background: var(--good-bg); border-color: var(--good);
+  color: var(--good); font-size: 12px;
+}
+.wf-step-num.active {
+  background: var(--text); border-color: var(--text);
+  color: var(--bg);
+}
+.wf-step-connector {
+  width: 1px; flex: 1; min-height: 18px;
+  background: var(--border); margin-top: 3px;
+}
+.wf-step-connector.done { background: var(--good); opacity: 0.35; }
+
+.wf-step-body { flex: 1; min-width: 0; }
+.wf-step-label {
+  font-size: 13px; color: var(--text); line-height: 1.3; font-weight: normal;
+}
+.wf-step-label.done {
+  text-decoration: line-through; color: var(--text-2);
+}
+.wf-step-desc {
+  font-size: 11px; color: var(--text-2); margin-top: 3px; line-height: 1.45;
+}
+.wf-step-log {
+  font-size: 10px; color: var(--good); margin-top: 5px;
+  font-family: 'Courier New', monospace;
+}
+.wf-step-preview-action {
+  font-size: 11px; color: var(--text-3); margin-top: 4px;
+  font-family: 'Courier New', monospace;
+}
+.wf-step-actions {
+  display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;
+}
+.wf-action-btn {
+  font-size: 11px; letter-spacing: 0.04em; padding: 6px 14px;
+  border: 1px solid var(--border-2); background: var(--bg-panel);
+  color: var(--text); cursor: pointer; font-family: 'Courier New', monospace;
+  transition: background 0.1s;
+}
+.wf-action-btn:hover { background: var(--bg-row); }
+.wf-action-btn.primary {
+  background: var(--text); color: var(--bg); border-color: var(--text);
+}
+.wf-action-btn.primary:hover { opacity: 0.88; }
+.wf-action-btn.secondary { color: var(--text-2); }
+.wf-auto-log-note {
+  font-size: 10px; color: var(--info); margin-top: 6px;
+  font-family: 'Courier New', monospace;
+}
+
+/* Footer */
+.wf-panel-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-row);
+}
+.wf-note-link, .wf-add-step-link {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--text-2);
+  font-family: 'Courier New', monospace; cursor: pointer;
+  transition: color 0.1s;
+}
+.wf-note-link:hover, .wf-add-step-link:hover { color: var(--text); }
