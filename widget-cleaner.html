@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Widget Library Cleaner — Salesbuildr</title>
+  <link rel="stylesheet" href="widget-cleaner.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <span class="header-tool">Widget Library Cleaner</span>
+      <span class="header-sub">Salesbuildr</span>
+    </div>
+  </header>
+
+  <main class="layout">
+
+    <!-- LEFT PANEL -->
+    <aside class="panel panel--left">
+
+      <section class="panel-section">
+        <h2 class="section-label">Salesbuildr Credentials</h2>
+        <div class="sb-fields">
+          <div class="sb-field">
+            <label class="sb-label">Tenant URL <span class="sb-where">e.g. https://acme.salesbuildr.com</span></label>
+            <input type="text" id="sbTenantUrl" class="sb-input" placeholder="https://yourcompany.salesbuildr.com" autocomplete="off">
+          </div>
+          <div class="sb-field">
+            <label class="sb-label">API Key <span class="sb-where">Admin → Integrations → API Key</span></label>
+            <input type="password" id="sbApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
+          </div>
+        </div>
+        <label class="remember-label">
+          <input type="checkbox" id="sbRemember"> Remember credentials
+        </label>
+      </section>
+
+      <section class="panel-section">
+        <h2 class="section-label">Analysis</h2>
+        <p class="panel-note">Fetches your full widget library and uses AI to group duplicates, near-duplicates, and suspicious names for review.</p>
+        <button id="fetchBtn" class="btn btn--primary" disabled>Fetch &amp; Analyse</button>
+        <div id="fetchStatus" class="status-line" aria-live="polite"></div>
+      </section>
+
+      <section class="panel-section" id="statsSection" style="display:none">
+        <h2 class="section-label">Library Stats</h2>
+        <div class="stats-grid">
+          <div class="stat">
+            <span class="stat-num" id="statTotal">—</span>
+            <span class="stat-label">Total widgets</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num stat-num--red" id="statDelete">—</span>
+            <span class="stat-label">Safe to delete</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num stat-num--amber" id="statReview">—</span>
+            <span class="stat-label">Needs review</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num stat-num--green" id="statOk">—</span>
+            <span class="stat-label">Looks fine</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- DELETION QUEUE -->
+      <section class="panel-section" id="queueSection" style="display:none">
+        <h2 class="section-label">Deletion Queue</h2>
+        <p class="panel-note">Review before committing. This cannot be undone.</p>
+        <div id="queueList" class="queue-list"></div>
+        <div id="queueEmpty" class="queue-empty" style="display:none">No widgets staged. Check boxes in the results to add.</div>
+        <div class="queue-confirm" id="queueConfirm" style="display:none">
+          <label class="sb-label">Type DELETE to confirm</label>
+          <input type="text" id="deleteConfirmInput" class="sb-input" placeholder="DELETE" autocomplete="off">
+          <button id="executeDeleteBtn" class="btn btn--danger" disabled>Delete <span id="deleteCount">0</span> widget<span id="deletePlural">s</span></button>
+        </div>
+        <button id="stageBtn" class="btn btn--secondary" style="display:none">Stage selected for deletion</button>
+        <div id="deleteStatus" class="status-line" aria-live="polite"></div>
+      </section>
+
+    </aside>
+
+    <!-- RIGHT PANEL -->
+    <div class="panel panel--right">
+
+      <div id="emptyState" class="empty-state">
+        <p class="empty-title">No analysis yet</p>
+        <p class="empty-sub">Enter your credentials and click Fetch &amp; Analyse to scan your widget library.</p>
+      </div>
+
+      <div id="resultsArea" style="display:none">
+
+        <!-- SAFE TO DELETE -->
+        <section class="result-group" id="groupDelete">
+          <div class="group-header group-header--red">
+            <div class="group-header-left">
+              <span class="group-badge group-badge--red">Safe to Delete</span>
+              <span class="group-count" id="countDelete">0</span>
+            </div>
+            <label class="select-all-label">
+              <input type="checkbox" id="selectAllDelete" checked> Select all
+            </label>
+          </div>
+          <p class="group-desc">Obvious duplicates, test widgets, and named copies. Pre-selected — uncheck any you want to keep.</p>
+          <div id="listDelete" class="widget-list"></div>
+        </section>
+
+        <!-- NEEDS REVIEW -->
+        <section class="result-group" id="groupReview">
+          <div class="group-header group-header--amber">
+            <div class="group-header-left">
+              <span class="group-badge group-badge--amber">Needs Review</span>
+              <span class="group-count" id="countReview">0</span>
+            </div>
+            <label class="select-all-label">
+              <input type="checkbox" id="selectAllReview"> Select all
+            </label>
+          </div>
+          <p class="group-desc">Widgets that appear similar in purpose. Not pre-selected — review each pair before deciding.</p>
+          <div id="listReview" class="widget-list"></div>
+        </section>
+
+        <!-- LOOKS FINE -->
+        <section class="result-group" id="groupOk">
+          <div class="group-header group-header--green">
+            <div class="group-header-left">
+              <span class="group-badge group-badge--green">Looks Fine</span>
+              <span class="group-count" id="countOk">0</span>
+            </div>
+            <button class="toggle-ok-btn" id="toggleOkBtn">Show</button>
+          </div>
+          <div id="listOk" class="widget-list" style="display:none"></div>
+        </section>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- WIDGET CARD TEMPLATE (cloned by JS) -->
+  <template id="widgetCardTemplate">
+    <div class="widget-card">
+      <div class="widget-card-header">
+        <label class="widget-check-label">
+          <input type="checkbox" class="widget-checkbox">
+          <span class="widget-name"></span>
+        </label>
+        <div class="widget-meta">
+          <span class="widget-type-badge"></span>
+          <button class="expand-btn" aria-expanded="false">Details</button>
+        </div>
+      </div>
+      <div class="widget-reason"></div>
+      <div class="widget-detail" style="display:none">
+        <pre class="widget-json"></pre>
+      </div>
+    </div>
+  </template>
+
+  <script src="widget-cleaner.js"></script>
+</body>
+</html>
