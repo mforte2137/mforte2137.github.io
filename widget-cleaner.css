@@ -462,7 +462,7 @@ body {
   background: var(--amber-border);
 }
 .cluster-grid--2 { grid-template-columns: 1fr 1fr; }
-.cluster-grid--3 { grid-template-columns: 1fr 1fr 1fr; }
+.cluster-grid--3 { grid-template-columns: 1fr 1fr; }
 
 .cluster-card {
   background: var(--bg-white);
