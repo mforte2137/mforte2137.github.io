@@ -215,6 +215,16 @@ const CUSTOMERS = {
       ],
       action: 'Schedule Strategic Review'
     },
+    workflow: {
+      title: 'Prepare for strategic review',
+      steps: [
+        { id: 's1', label: 'Draft outreach email to Tom',        desc: 'Explain the key signals and why a review makes sense now. Set a partnership tone.',             action: 'Draft email',            actionFn: 'email',   done: true,  autoLog: 'Email drafted · Jun 10' },
+        { id: 's2', label: 'Schedule the review meeting',        desc: 'Once Tom responds, lock in a date and generate an agenda based on current signals.',           action: 'Generate agenda',        actionFn: 'agenda',  done: false, waiting: 'Waiting for response'   },
+        { id: 's3', label: 'Generate conversation brief',        desc: 'AI-written brief: how to open, what to raise first, how to close with a next step.',          action: 'Generate brief',         actionFn: 'brief',   done: false  },
+        { id: 's4', label: 'Build presentation deck',            desc: 'Slide deck summarising signals, alignment gaps, and recommendations to share with Tom.',       action: 'Build deck',             actionFn: 'deck',    done: false  },
+        { id: 's5', label: 'Create opportunity in Salesbuildr',  desc: 'Convert the review outcome into a tracked opportunity and link to a proposal when ready.',    action: 'Create opportunity',     actionFn: 'opp',     done: false  }
+      ]
+    },
     dataConfidence: {
       score: 92,
       cls: 'full',
@@ -353,6 +363,16 @@ const CUSTOMERS = {
       ],
       action: 'Schedule Server & DR Review'
     },
+    workflow: {
+      title: 'Prepare for server & DR review',
+      steps: [
+        { id: 'r1', label: 'Escalate backup disk failure to Marcus', desc: 'SRV-RIVER-03 SMART errors are urgent — client needs to know immediately.',               action: 'Draft urgent email',     actionFn: 'email',   done: true,  autoLog: 'Email sent · Jun 8'     },
+        { id: 'r2', label: 'Follow up on server refresh proposal',   desc: 'No response in 8 days. A brief check-in call may be needed to keep momentum.',          action: 'Draft follow-up',        actionFn: 'email',   done: false, waiting: 'Awaiting proposal decision' },
+        { id: 'r3', label: 'Generate conversation brief',            desc: 'AI-written brief covering server warranty, backup risk, and DR options.',                 action: 'Generate brief',         actionFn: 'brief',   done: false  },
+        { id: 'r4', label: 'Schedule server review meeting',         desc: 'Discuss server refresh vs cloud migration and agree on a path forward.',                 action: 'Generate agenda',        actionFn: 'agenda',  done: false  },
+        { id: 'r5', label: 'Create opportunity in Salesbuildr',      desc: 'Server refresh or cloud migration — whichever direction Marcus chooses.',               action: 'Create opportunity',     actionFn: 'opp',     done: false  }
+      ]
+    },
     dataConfidence: {
       score: 78,
       cls: 'warn',
@@ -450,6 +470,16 @@ const CUSTOMERS = {
       ],
       action: 'Schedule Compliance Prep Call'
     },
+    workflow: {
+      title: 'Prepare for compliance review',
+      steps: [
+        { id: 'p1', label: 'Confirm audit scope with Rachel',       desc: 'Scope is agreed — confirm the four workstreams are ready and nothing has changed.',       action: 'View notes',             actionFn: 'notes',   done: true,  autoLog: 'Scope confirmed · May 28' },
+        { id: 'p2', label: 'Generate conversation brief',           desc: 'AI brief for the compliance prep call — what to cover and how to close.',               action: 'Generate brief',         actionFn: 'brief',   done: false  },
+        { id: 'p3', label: 'Prepare audit documentation checklist', desc: 'Confirm all four workstream documents are ready before the audit date.',               action: 'Open audit detail',      actionFn: 'audit',   done: false  },
+        { id: 'p4', label: 'Propose dark web monitoring expansion', desc: 'Rachel expressed interest. Expand coverage to personal emails — $480/yr addition.',     action: 'Draft proposal email',   actionFn: 'email',   done: false  },
+        { id: 'p5', label: 'Create opportunity in Salesbuildr',     desc: 'Compliance audit engagement ($4,000) plus potential dark web expansion.',              action: 'Create opportunity',     actionFn: 'opp',     done: false  }
+      ]
+    },
     dataConfidence: {
       score: 98,
       cls: 'full',
@@ -477,6 +507,154 @@ const CUSTOMERS = {
     ]
   }
 };
+
+/* ══════════════════════════════════════════
+   RENDER WORKFLOW PANEL
+   ══════════════════════════════════════════ */
+const workflowStepDone = new Set(['s1','r1','p1']); // seeded completed steps
+
+function renderWorkflow(c) {
+  const wf = c.workflow;
+  if (!wf) return;
+
+  // Context chips
+  const priorityChip = document.getElementById('wf-priority-chip');
+  const customerChip = document.getElementById('wf-customer-chip');
+  const contactChip  = document.getElementById('wf-contact-chip');
+  if (priorityChip) {
+    priorityChip.textContent = `★ Priority ${c.priority.score}`;
+    priorityChip.style.background = c.priority.score >= 80 ? 'var(--danger-bg)' : c.priority.score >= 60 ? 'var(--warn-bg)' : 'var(--good-bg)';
+    priorityChip.style.color      = c.priority.score >= 80 ? 'var(--danger)'    : c.priority.score >= 60 ? 'var(--warn)'    : 'var(--good)';
+  }
+  if (customerChip) customerChip.textContent = c.name;
+  if (contactChip && c.contact) contactChip.textContent = c.contact.name;
+
+  const steps = wf.steps;
+  const doneCount = steps.filter(s => workflowStepDone.has(s.id) || s.done).length;
+  const activeIdx = Math.min(doneCount, steps.length - 1);
+
+  // Progress dots
+  const dotsEl = document.getElementById('wf-progress-dots');
+  const labelEl = document.getElementById('wf-progress-label');
+  if (dotsEl) {
+    dotsEl.innerHTML = steps.map((s, i) => {
+      const isDone   = workflowStepDone.has(s.id) || s.done;
+      const isActive = !isDone && i === activeIdx;
+      return `<div class="wf-dot ${isDone ? 'done' : isActive ? 'active' : ''}"></div>`;
+    }).join('');
+  }
+  if (labelEl) labelEl.textContent = `Step ${activeIdx + 1} of ${steps.length}`;
+
+  // Steps
+  const stepsEl = document.getElementById('wf-steps-list');
+  if (!stepsEl) return;
+
+  stepsEl.innerHTML = steps.map((s, i) => {
+    const isDone   = workflowStepDone.has(s.id) || s.done;
+    const isActive = !isDone && i === activeIdx;
+    const isLast   = i === steps.length - 1;
+
+    return `
+      <div class="wf-step ${isDone ? 'done' : isActive ? 'active' : 'pending'}" data-step="${s.id}">
+        <div class="wf-step-left">
+          <div class="wf-step-num ${isDone ? 'done' : isActive ? 'active' : ''}">
+            ${isDone ? '&#10003;' : i + 1}
+          </div>
+          ${!isLast ? `<div class="wf-step-connector ${isDone ? 'done' : ''}"></div>` : ''}
+        </div>
+        <div class="wf-step-body">
+          <div class="wf-step-label ${isDone ? 'done' : ''}">${s.label}</div>
+          <div class="wf-step-desc">${s.desc}</div>
+          ${isDone && s.autoLog ? `<div class="wf-step-log">&#10003; ${s.autoLog} · auto-logged to activity timeline</div>` : ''}
+          ${isActive ? `
+            <div class="wf-step-actions">
+              <button class="wf-action-btn primary" data-fn="${s.actionFn}" data-step="${s.id}">${s.action}</button>
+              ${s.waiting ? `<button class="wf-action-btn secondary" data-step="${s.id}" data-waitbtn="1">${s.waiting}</button>` : ''}
+            </div>
+            <div class="wf-auto-log-note">&#8505; This action will be auto-logged to the customer activity timeline</div>
+          ` : ''}
+          ${!isDone && !isActive && s.action ? `
+            <div class="wf-step-preview-action">${s.action} ›</div>
+          ` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  // Wire action buttons
+  stepsEl.querySelectorAll('.wf-action-btn[data-fn]').forEach(btn => {
+    btn.addEventListener('click', () => handleWorkflowAction(btn.dataset.fn, btn.dataset.step, c));
+  });
+
+  // Wire "waiting" soft-state toggle
+  stepsEl.querySelectorAll('.wf-action-btn[data-waitbtn]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.textContent = btn.textContent === '✓ Marked as waiting' ? (c.workflow.steps.find(s => s.id === btn.dataset.step)?.waiting || 'Waiting') : '✓ Marked as waiting';
+    });
+  });
+
+  // Wire step completion by clicking done state
+  stepsEl.querySelectorAll('.wf-step.active .wf-step-num').forEach(num => {
+    const stepId = num.closest('.wf-step').dataset.step;
+    num.style.cursor = 'default';
+  });
+
+  // Footer links
+  const noteLink = document.getElementById('wf-note-link');
+  if (noteLink) {
+    noteLink.onclick = () => {
+      const noteInput = document.getElementById('note-input');
+      if (noteInput) { noteInput.focus(); noteInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    };
+  }
+}
+
+function handleWorkflowAction(fn, stepId, c) {
+  const step = c.workflow.steps.find(s => s.id === stepId);
+  if (!step) return;
+
+  // Auto-log to activity timeline
+  const now = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  if (c.activityTimeline) {
+    c.activityTimeline.unshift({
+      date: now, type: 'note',
+      title: step.label,
+      detail: 'Action taken via review workflow'
+    });
+  }
+
+  if (fn === 'email')  { generateAlignmentEmail(c); return; }
+  if (fn === 'brief')  { generateAIBrief(); return; }
+  if (fn === 'exec' || fn === 'notes')   { generateExecSummary(); return; }
+  if (fn === 'audit')  { openModal('audit'); return; }
+  if (fn === 'agenda') {
+    openAlignmentModal('Call agenda — ' + c.name, 'Generating agenda...', true);
+    const sys = `You are helping an MSP account manager prepare a meeting agenda. Plain text only, no markdown. Write a concise agenda: greeting/opening (1 sentence), 4-5 agenda items with suggested time per item drawn from the signals, and a proposed close with next steps. Be specific.`;
+    const prompt = `Customer: ${c.name} | Contact: ${c.contact?.name} (${c.contact?.role})\nSignals: ${c.signals.map(s => s.title).join('; ')}\nWorkflow title: ${c.workflow.title}\nGenerate a meeting agenda.`;
+    callAI(prompt, sys)
+      .then(text => updateAlignmentModal(text, [{ label: 'Copy agenda', primary: true, action: 'copy' }, { label: 'Close' }]))
+      .catch(() => updateAlignmentModal('Could not reach AI service.', [{ label: 'Close' }]));
+    return;
+  }
+  if (fn === 'opp') {
+    openAlignmentModal('Create opportunity — ' + c.name, 'This will open in Salesbuildr in the production version. In this demo, here is a summary of the opportunity to create:', false);
+    document.getElementById('modal-body').innerHTML = `
+      <div style="font-size:13px;line-height:1.7;color:var(--text-2);">
+        <strong style="color:var(--text);">Customer:</strong> ${c.name}<br>
+        <strong style="color:var(--text);">Contact:</strong> ${c.contact?.name || 'N/A'}<br>
+        <strong style="color:var(--text);">Pipeline:</strong> ${c.oppTotal}<br>
+        <strong style="color:var(--text);">Source:</strong> ${c.workflow.title}<br>
+        <strong style="color:var(--text);">Recommended action:</strong> ${c.priority.action}
+      </div>`;
+    document.getElementById('modal-footer').innerHTML = `<button class="modal-btn primary">Open in Salesbuildr ↗</button><button class="modal-btn" onclick="document.getElementById('modal-overlay').classList.remove('open');document.body.style.overflow='';">Close</button>`;
+    document.getElementById('modal-overlay').classList.add('open');
+    document.getElementById('modal-overlay').setAttribute('aria-hidden','false');
+    document.body.style.overflow = 'hidden';
+    return;
+  }
+  // Mark step done for any unhandled action
+  workflowStepDone.add(stepId);
+  renderWorkflow(c);
+}
 
 /* ══════════════════════════════════════════
    MY WORK TODAY DATA
@@ -1794,6 +1972,7 @@ function renderCustomer(key) {
   renderLifecycle(c);
   renderPriority(c);
   renderDataConfidence(c);
+  renderWorkflow(c);
   renderActivityTimeline(c);
   initTimelineBar(c);
   renderContact(c);
@@ -2162,8 +2341,8 @@ customerSelect.addEventListener('change', e => {
   oppExpanded.classList.remove('open');
   ensureBriefingRendered(e.target.value);
 });
-aiBtn.addEventListener('click', generateAIBrief);
-execBtn.addEventListener('click', generateExecSummary);
+if (aiBtn)   aiBtn.addEventListener('click', generateAIBrief);
+if (execBtn) execBtn.addEventListener('click', generateExecSummary);
 closeAi.addEventListener('click',     () => { aiOutput.style.display   = 'none'; });
 closeExec.addEventListener('click',   () => { execOutput.style.display = 'none'; });
 portAiBtn.addEventListener('click',   generatePortfolioAI);
