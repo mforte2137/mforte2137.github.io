@@ -220,7 +220,7 @@ function renderReviewGroups(reviewWidgets, container) {
     cluster.appendChild(clusterLabel);
 
     const grid = document.createElement('div');
-    grid.className = 'cluster-grid cluster-grid--' + Math.min(members.length, 3);
+    grid.className = 'cluster-grid cluster-grid--' + Math.min(members.length, 2);
 
     members.forEach(function(w) {
       const cardWrap = document.createElement('div');
