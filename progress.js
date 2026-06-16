@@ -283,6 +283,8 @@ function openTemplateModal() {
   document.getElementById('template-footer').style.display = 'none';
   document.getElementById('template-customer').value = '';
   document.getElementById('template-msp').value = '';
+  document.getElementById('template-title-input').value = '';
+  document.getElementById('template-title-wrap').style.display = 'none';
   renderTemplateGrid();
   document.getElementById('modal-template').classList.add('open');
 }
@@ -290,6 +292,26 @@ function openTemplateModal() {
 function renderTemplateGrid() {
   const grid = document.getElementById('template-grid');
   grid.innerHTML = '';
+
+  // Custom project card — always first
+  const customCard = document.createElement('div');
+  customCard.className = 'template-card custom-template-card' + (selectedTemplateId === '__custom__' ? ' selected' : '');
+  customCard.innerHTML = `
+    <div class="template-icon">✦</div>
+    <div class="template-name">Custom Project</div>
+    <div class="template-meta">Start blank — add your own tasks</div>`;
+  customCard.addEventListener('click', () => {
+    selectedTemplateId = '__custom__';
+    const footer = document.getElementById('template-footer');
+    footer.style.display = 'flex';
+    footer.style.alignItems = 'flex-end';
+    footer.style.gap = '1rem';
+    // Show extra project title field for custom
+    document.getElementById('template-title-wrap').style.display = 'flex';
+    renderTemplateGrid();
+  });
+  grid.appendChild(customCard);
+
   TEMPLATES.forEach(t => {
     const card = document.createElement('div');
     card.className = 'template-card' + (t.id === selectedTemplateId ? ' selected' : '');
@@ -300,9 +322,12 @@ function renderTemplateGrid() {
       <div class="template-meta">${t.tasks.length} tasks · ${totalHours}h estimated</div>`;
     card.addEventListener('click', () => {
       selectedTemplateId = t.id;
-      document.getElementById('template-footer').style.display = 'flex';
-      document.getElementById('template-footer').style.alignItems = 'flex-end';
-      document.getElementById('template-footer').style.gap = '1rem';
+      const footer = document.getElementById('template-footer');
+      footer.style.display = 'flex';
+      footer.style.alignItems = 'flex-end';
+      footer.style.gap = '1rem';
+      // Hide title field for templates (title comes from template)
+      document.getElementById('template-title-wrap').style.display = 'none';
       renderTemplateGrid();
     });
     grid.appendChild(card);
@@ -310,18 +335,31 @@ function renderTemplateGrid() {
 }
 
 function createFromTemplate() {
-  const tmpl = TEMPLATES.find(t => t.id === selectedTemplateId);
-  if (!tmpl) return;
   const customer = document.getElementById('template-customer').value.trim();
   const msp = document.getElementById('template-msp').value.trim();
+
+  let title, overview, tasks;
+
+  if (selectedTemplateId === '__custom__') {
+    title = document.getElementById('template-title-input').value.trim() || 'Custom Project';
+    overview = '';
+    tasks = [];
+  } else {
+    const tmpl = TEMPLATES.find(t => t.id === selectedTemplateId);
+    if (!tmpl) return;
+    title = tmpl.title;
+    overview = tmpl.overview;
+    tasks = tmpl.tasks.map(t => ({ ...t, completed: false, completionNote: '', actualHours: null }));
+  }
+
   const project = {
     id: 'proj_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-    title: tmpl.title,
+    title,
     customerName: customer,
     mspName: msp,
-    overview: tmpl.overview,
+    overview,
     exclusions: '',
-    tasks: tmpl.tasks.map(t => ({ ...t, completed: false, completionNote: '', actualHours: null })),
+    tasks,
     blockers: [],
     scopeChanges: [],
     internalNotes: '',
@@ -333,6 +371,10 @@ function createFromTemplate() {
   document.getElementById('modal-template').classList.remove('open');
   renderDashboard();
   openProject(project.id);
+  // For custom projects, immediately open the Add Task modal
+  if (selectedTemplateId === '__custom__') {
+    setTimeout(() => openTaskModal(), 300);
+  }
 }
 
 // ─── PERSISTENCE ──────────────────────────────────────
