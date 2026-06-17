@@ -621,7 +621,7 @@ body { font-family: 'Georgia', serif; background: var(--bg); color: var(--text);
 /* ── Portfolio intelligence grid ── */
 .port-intel-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr;
   gap: 8px;
   margin-bottom: 16px;
 }
@@ -1315,3 +1315,11 @@ body { font-family: 'Georgia', serif; background: var(--bg); color: var(--text);
   transition: color 0.1s;
 }
 .wf-note-link:hover, .wf-add-step-link:hover { color: var(--text); }
+
+/* ── Combined stat card ── */
+.port-intel-stat-combined { padding: 12px 14px; }
+.pic-stat-row { display: flex; align-items: center; gap: 12px; }
+.pic-stat-divider {
+  width: 1px; height: 36px; background: var(--border);
+  flex-shrink: 0;
+}
