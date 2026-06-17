@@ -241,15 +241,20 @@
 
       <!-- Portfolio intelligence summary -->
       <div class="port-intel-grid" id="port-intel-grid">
-        <div class="port-intel-card port-intel-stat">
-          <div class="pic-val" id="pi-attention">2</div>
-          <div class="pic-label">Customers needing attention</div>
-          <div class="pic-sub" id="pi-attention-sub">1 urgent &middot; 1 review soon</div>
-        </div>
-        <div class="port-intel-card port-intel-stat">
-          <div class="pic-val" id="pi-pipeline">$43,450</div>
-          <div class="pic-label">Total potential pipeline</div>
-          <div class="pic-sub">Across all accounts</div>
+        <div class="port-intel-card port-intel-stat port-intel-stat-combined">
+          <div class="pic-stat-row">
+            <div>
+              <div class="pic-val" id="pi-attention">2</div>
+              <div class="pic-label">Needing attention</div>
+              <div class="pic-sub" id="pi-attention-sub">1 urgent &middot; 1 review soon</div>
+            </div>
+            <div class="pic-stat-divider"></div>
+            <div>
+              <div class="pic-val" id="pi-pipeline">$43,450</div>
+              <div class="pic-label">Total pipeline</div>
+              <div class="pic-sub">Across all accounts</div>
+            </div>
+          </div>
         </div>
         <div class="port-intel-card port-intel-signal" data-filter-signal="win10" id="pi-win10">
           <div class="pic-signal-val">14</div>
