@@ -2818,13 +2818,11 @@ function openTaskModal(act, custKey) {
     });
   });
 
-  // Done for now — logs action, sets follow-up if waiting
+  // Done for now — ticks checkbox, logs action, closes
   document.getElementById('tm-done-btn').addEventListener('click', () => {
     const currentStatus = (taskStatus[act.id] || {}).status || 'pending';
-    if (currentStatus === 'won' || currentStatus === 'deferred') {
-      completedActivities.add(act.id);
-    }
-    autoLogToTimeline(c, act.text, `Marked done for now · Status: ${currentStatus}`);
+    completedActivities.add(act.id);
+    autoLogToTimeline(c, act.text, `Done for now · Status: ${currentStatus}`);
     overlay.classList.remove('open');
     document.body.style.overflow = '';
     renderWorkToday();
