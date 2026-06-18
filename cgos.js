@@ -517,6 +517,10 @@ function renderWorkflow(c) {
   const wf = c.workflow;
   if (!wf) return;
 
+  // Panel title includes deal/workflow name
+  const wfPanelTitle = document.querySelector('#workflow-panel .panel-title');
+  if (wfPanelTitle) wfPanelTitle.textContent = `PREPARE FOR REVIEW — ${wf.title.toUpperCase()}`;
+
   // Context chips
   const priorityChip = document.getElementById('wf-priority-chip');
   const customerChip = document.getElementById('wf-customer-chip');
@@ -2372,6 +2376,7 @@ document.getElementById('chip-health').addEventListener('click', () => {
 
 /* ── Wiring ── */
 customerSelect.addEventListener('change', e => {
+  setBriefingMode('intelligence'); // reset to intelligence on customer change
   memoryOpen = false;
   memoryChevron.classList.remove('open');
   memoryExpanded.classList.remove('open');
@@ -3118,6 +3123,153 @@ async function generateTeamAI() {
 }
 
 /* ══════════════════════════════════════════
+   BRIEFING MODE SWITCHING
+   ══════════════════════════════════════════ */
+let briefingMode = 'intelligence';
+
+function setBriefingMode(mode) {
+  briefingMode = mode;
+  const intelSections    = document.getElementById('intelligence-sections');
+  const pipelineSections = document.getElementById('pipeline-sections');
+  const btnIntel         = document.getElementById('mode-intelligence');
+  const btnPipeline      = document.getElementById('mode-pipeline');
+
+  if (mode === 'pipeline') {
+    if (intelSections)    intelSections.style.display    = 'none';
+    if (pipelineSections) pipelineSections.style.display = '';
+    if (btnIntel)         btnIntel.classList.remove('active');
+    if (btnPipeline)      btnPipeline.classList.add('active');
+    renderPipelineMode(customerSelect.value);
+  } else {
+    if (intelSections)    intelSections.style.display    = '';
+    if (pipelineSections) pipelineSections.style.display = 'none';
+    if (btnIntel)         btnIntel.classList.add('active');
+    if (btnPipeline)      btnPipeline.classList.remove('active');
+  }
+}
+
+function initModeToggle() {
+  const btnIntel    = document.getElementById('mode-intelligence');
+  const btnPipeline = document.getElementById('mode-pipeline');
+  if (btnIntel)    btnIntel.addEventListener('click',    () => setBriefingMode('intelligence'));
+  if (btnPipeline) btnPipeline.addEventListener('click', () => setBriefingMode('pipeline'));
+
+  // New opportunity buttons — open Salesbuildr
+  ['new-opp-btn','new-opp-btn-pipeline'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', () => {
+      const custKey = customerSelect.value;
+      const c = CUSTOMERS[custKey];
+      // In production this would deep-link into Salesbuildr with customer pre-filled
+      openAlignmentModal(
+        'Create Opportunity — ' + (c ? c.name : 'Customer'),
+        `In production, this opens the Salesbuildr opportunity form with ${c ? c.name : 'the customer'} pre-filled. The AM completes the form in Salesbuildr and the opportunity appears here automatically.`,
+        false
+      );
+      document.getElementById('modal-footer').innerHTML = `
+        <button class="modal-btn primary" onclick="window.open('https://app.salesbuildr.com/opportunities/new','_blank')">Open in Salesbuildr ↗</button>
+        <button class="modal-btn" onclick="document.getElementById('modal-overlay').classList.remove('open');document.body.style.overflow='';">Close</button>`;
+      document.getElementById('modal-overlay').classList.add('open');
+      document.getElementById('modal-overlay').setAttribute('aria-hidden','false');
+      document.body.style.overflow = 'hidden';
+    });
+  });
+}
+
+function renderPipelineMode(custKey) {
+  const c = CUSTOMERS[custKey];
+  if (!c || !c.opportunities) return;
+
+  // Count and header
+  const countEl = document.getElementById('pipeline-count');
+  const active = c.opportunities.length;
+  if (countEl) countEl.textContent = `${active} active deal${active !== 1 ? 's' : ''} · ${c.oppTotal}`;
+
+  // Opportunity list — richer cards in pipeline mode
+  const listEl = document.getElementById('pipeline-opp-list');
+  if (!listEl) return;
+
+  const urgencyColor = (u) => u === 'danger' ? 'var(--danger)' : u === 'warn' ? 'var(--warn)' : 'var(--accent-2)';
+  const urgencyBg    = (u) => u === 'danger' ? 'var(--danger-bg)' : u === 'warn' ? 'var(--warn-bg)' : 'var(--info-bg)';
+
+  listEl.innerHTML = c.opportunities.map(opp => {
+    const hasProgress = opp.emails > 0 || opp.meetings > 0 || opp.proposalSent;
+    const uc = urgencyColor(opp.nextStepUrgency);
+    const ub = urgencyBg(opp.nextStepUrgency);
+    return `
+    <div class="pipeline-card" data-opp="${opp.id}">
+      <div class="pipeline-card-header">
+        <div class="pipeline-card-left">
+          <div class="pipeline-card-status opp-status-${opp.status}"></div>
+          <div>
+            <div class="pipeline-card-title">${opp.title}</div>
+            <div class="pipeline-card-meta">
+              ${statusTagHtml(opp.status, opp.statusLabel)}
+              <span class="opp-card-date">Created ${opp.created}</span>
+              ${hasProgress ? '<span class="pipeline-wip-badge">In progress</span>' : ''}
+            </div>
+          </div>
+        </div>
+        <div class="pipeline-card-right">
+          <div class="pipeline-card-val">${opp.value}</div>
+          <div class="opp-card-activity">
+            ${opp.emails    ? `<span class="opp-act-item"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>${opp.emails}</span>` : ''}
+            ${opp.meetings  ? `<span class="opp-act-item"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${opp.meetings}</span>` : ''}
+            ${opp.proposalSent ? `<span class="opp-act-item"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Proposal</span>` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="pipeline-card-last">
+        <strong>Last:</strong> ${opp.lastActivity}
+        <span style="color:var(--text-3);">&middot; ${opp.lastActivityAge}</span>
+      </div>
+      ${opp.nextStep ? `
+      <div class="pipeline-nextstep" style="border-color:${uc};background:${ub};">
+        <span class="opp-next-label" style="color:${uc};">NEXT STEP</span>
+        <span class="opp-next-text" style="color:${uc};">${opp.nextStep}</span>
+        ${opp.taskId ? `<button class="opp-followup-btn pipeline-followup" data-taskid="${opp.taskId}" data-custkey="${custKey}" style="border-color:${uc};color:${uc};">Follow up &rarr;</button>` : ''}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+
+  // Wire card click → opp modal
+  listEl.querySelectorAll('.pipeline-card[data-opp]').forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.opp-followup-btn')) return;
+      openOppModal(card.dataset.opp, c);
+    });
+  });
+
+  // Wire follow up buttons
+  listEl.querySelectorAll('.pipeline-followup').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const custData = WORK_TODAY.customers.find(cu => cu.key === btn.dataset.custkey);
+      const act = custData?.activities.find(a => a.id === btn.dataset.taskid);
+      if (act && act.taskSignal) openTaskModal(act, btn.dataset.custkey);
+    });
+  });
+
+  // Timeline in pipeline mode
+  const tlMeta = document.getElementById('pipeline-timeline-meta');
+  const tlList = document.getElementById('pipeline-timeline-list');
+  const tlChevron = document.getElementById('pipeline-timeline-chevron');
+  const tlExpanded = document.getElementById('pipeline-timeline-expanded');
+  if (c.activityTimeline && tlMeta) {
+    tlMeta.innerHTML = `${c.activityTimeline.length} events &middot; last activity ${c.activityTimeline[0]?.date || ''}`;
+  }
+  if (tlChevron && tlExpanded && tlList) {
+    let open = false;
+    document.getElementById('pipeline-timeline-bar').onclick = () => {
+      open = !open;
+      tlChevron.classList.toggle('open', open);
+      if (open) { tlList.innerHTML = renderTimelineEntries(c.activityTimeline); tlExpanded.classList.add('open'); }
+      else tlExpanded.classList.remove('open');
+    };
+  }
+}
+
+/* ══════════════════════════════════════════
    INIT
    ══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
@@ -3138,4 +3290,7 @@ function ensureBriefingRendered(key) {
   renderCustomer(customerSelect.value);
   briefingRendered = true;
   initNudges();
+  initModeToggle();
+  // Re-render pipeline if in pipeline mode
+  if (briefingMode === 'pipeline') renderPipelineMode(customerSelect.value);
 }
