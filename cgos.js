@@ -2777,11 +2777,8 @@ function openTaskModal(act, custKey) {
     </div>`;
 
   footer.innerHTML = `
-    <div class="tm-footer-left">
-      <button class="modal-btn primary" id="tm-done-btn">&#10003; Done for now</button>
-      <button class="modal-btn" id="tm-close-btn">Close</button>
-    </div>
-    <button class="tm-briefing-link" id="tm-briefing-btn">Open full briefing &rarr;</button>`;
+    <button class="modal-btn primary" id="tm-done-btn">&#10003; Done for now</button>
+    <button class="modal-btn" id="tm-close-btn">Close</button>`;
 
   overlay.classList.add('open');
   overlay.setAttribute('aria-hidden', 'false');
@@ -2834,13 +2831,7 @@ function openTaskModal(act, custKey) {
     document.body.style.overflow = '';
   });
 
-  // Open full briefing
-  document.getElementById('tm-briefing-btn').addEventListener('click', () => {
-    overlay.classList.remove('open');
-    document.body.style.overflow = '';
-    switchView('briefing');
-    ensureBriefingRendered(custKey);
-  });
+
 }
 
 function updateTaskStatus(actId, status, c) {
