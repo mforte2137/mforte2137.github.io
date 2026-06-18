@@ -91,6 +91,14 @@ const CUSTOMERS = {
   abc: {
     name: 'ABC Manufacturing', type: 'Fully Managed', location: 'Houston, TX',
     mrr: '$3,840', since: 'May 2021', health: 82, am: 'Sarah Johnson',
+    contact: {
+      name: 'Tom Mitchell', initials: 'TM', role: 'IT Manager',
+      email: 'tom.mitchell@abcmfg.com', phone: '+1 713 555 0142'
+    },
+    notes: [
+      { author: 'Sarah Johnson', date: 'Jun 10, 2026 · 2:14pm', text: 'Tom confirmed budget for device refresh but wants to phase over 2 quarters. Revised proposal to reflect phased approach.' },
+      { author: 'Sarah Johnson', date: 'May 21, 2026 · after strategic review', text: 'MFA rollout agreed — targeting 90 days. Security assessment deferred to Q3. Tom flagged concern about backup reliability.' }
+    ],
     memory: {
       meta: 'Last review: Nov 2025 &middot; 3 open items',
       items: [
@@ -100,12 +108,12 @@ const CUSTOMERS = {
       ]
     },
     signals: [
-      { src: 'RMM',         icon: iconLaptop(), cls: 'high', title: '14 devices reaching Windows 10 EOL',    sub: 'RMM &middot; 10 months away',           modal: 'eol'     },
-      { src: 'PSA',         icon: iconLabor(),  cls: 'high', title: 'Labor utilization 27% over agreement',  sub: 'PSA &middot; Last 30 days',             modal: 'labor'   },
-      { src: 'PSA',         icon: iconUsers(),  cls: 'med',  title: 'User count increased 18% — 7 unlicensed', sub: 'PSA / M365 &middot; Action needed',   modal: 'users'   },
-      { src: 'RMM',         icon: iconBackup(), cls: 'med',  title: 'Backup failure rate increased this month', sub: 'RMM &middot; 14% failure rate',      modal: 'backup_abc' },
-      { src: 'Salesbuildr', icon: iconShield(), cls: 'med',  title: 'No security review in 14 months',       sub: 'Salesbuildr &middot; Overdue',          modal: 'secrev'  },
-      { src: 'Salesbuildr', icon: iconMs(),     cls: 'ok',   title: 'M365 licensing aligned',                sub: 'Salesbuildr &middot; On track',         modal: 'm365ok'  }
+      { src: 'RMM',         icon: iconLaptop(), cls: 'high', title: '14 devices reaching Windows 10 EOL',    sub: 'RMM &middot; 10 months away',           modal: 'eol',       action: 'Create opportunity', actionCls: 'act-primary' },
+      { src: 'PSA',         icon: iconLabor(),  cls: 'high', title: 'Labor utilization 27% over agreement',  sub: 'PSA &middot; Last 30 days',             modal: 'labor',     action: 'Review scope', actionCls: 'act-warn' },
+      { src: 'PSA',         icon: iconUsers(),  cls: 'med',  title: 'User count increased 18% — 7 unlicensed', sub: 'PSA / M365 &middot; Action needed',   modal: 'users',     action: 'Review users', actionCls: 'act-warn' },
+      { src: 'RMM',         icon: iconBackup(), cls: 'med',  title: 'Backup failure rate increased this month', sub: 'RMM &middot; 14% failure rate',      modal: 'backup_abc', action: 'Create ticket', actionCls: 'act-danger' },
+      { src: 'Salesbuildr', icon: iconShield(), cls: 'med',  title: 'No security review in 14 months',       sub: 'Salesbuildr &middot; Overdue',          modal: 'secrev',    action: 'Schedule review', actionCls: 'act-warn' },
+      { src: 'Salesbuildr', icon: iconMs(),     cls: 'ok',   title: 'M365 licensing aligned',                sub: 'Salesbuildr &middot; On track',         modal: 'm365ok',    action: 'View detail', actionCls: 'act-ok' }
     ],
     recs: [
       { title: 'Device refresh planning',          sub: '14 Win10 devices reach EOL in 10 months. Budget conversation needed now.',  val: '$12,000 – $18,000' },
@@ -207,6 +215,16 @@ const CUSTOMERS = {
       ],
       action: 'Schedule Strategic Review'
     },
+    workflow: {
+      title: 'Prepare for strategic review',
+      steps: [
+        { id: 's1', label: 'Draft outreach email to Tom',        desc: 'Explain the key signals and why a review makes sense now. Set a partnership tone.',             action: 'Draft email',            actionFn: 'email',   done: true,  autoLog: 'Email drafted · Jun 10' },
+        { id: 's2', label: 'Schedule the review meeting',        desc: 'Once Tom responds, lock in a date and generate an agenda based on current signals.',           action: 'Generate agenda',        actionFn: 'agenda',  done: false, waiting: 'Waiting for response'   },
+        { id: 's3', label: 'Generate conversation brief',        desc: 'AI-written brief: how to open, what to raise first, how to close with a next step.',          action: 'Generate brief',         actionFn: 'brief',   done: false  },
+        { id: 's4', label: 'Build presentation deck',            desc: 'Slide deck summarising signals, alignment gaps, and recommendations to share with Tom.',       action: 'Build deck',             actionFn: 'deck',    done: false  },
+        { id: 's5', label: 'Create opportunity in Salesbuildr',  desc: 'Convert the review outcome into a tracked opportunity and link to a proposal when ready.',    action: 'Create opportunity',     actionFn: 'opp',     done: false  }
+      ]
+    },
     dataConfidence: {
       score: 92,
       cls: 'full',
@@ -239,6 +257,14 @@ const CUSTOMERS = {
   river: {
     name: 'River Tech Solutions', type: 'Co-Managed', location: 'Austin, TX',
     mrr: '$2,100', since: 'Jan 2022', health: 71, am: 'Mark Davies',
+    contact: {
+      name: 'Marcus Webb', initials: 'MW', role: 'Director',
+      email: 'marcus.webb@rivertech.com', phone: '+1 512 555 0198'
+    },
+    notes: [
+      { author: 'Mark Davies', date: 'Jun 8, 2026 · 10:22am', text: 'Escalated SMART disk errors to Marcus immediately. He was unaware. Agreed to proceed with urgent remediation.' },
+      { author: 'Mark Davies', date: 'Jun 3, 2026', text: 'Presented cloud vs on-prem options for server refresh. Marcus is leaning toward hybrid. Following up next week.' }
+    ],
     memory: {
       meta: 'Last review: Aug 2025 &middot; 2 open items',
       items: [
@@ -247,11 +273,11 @@ const CUSTOMERS = {
       ]
     },
     signals: [
-      { src: 'RMM', icon: iconServer(),  cls: 'high', title: '3 servers approaching end of warranty',  sub: 'RMM &middot; 6 months away',            modal: 'servers'     },
-      { src: 'RMM', icon: iconBackup(),  cls: 'high', title: 'Backup failure rate up 22%',             sub: 'RMM &middot; Last 30 days',             modal: 'backup_river'},
-      { src: 'PSA', icon: iconUsers(),   cls: 'med',  title: 'User & device audit recommended',        sub: 'PSA / RMM &middot; 2 dormant found',    modal: 'users_river' },
-      { src: 'RMM', icon: iconCert(),    cls: 'med',  title: 'SSL certificates expiring in 45 days',   sub: 'RMM &middot; 2 certificates affected',  modal: 'ssl'         },
-      { src: 'Salesbuildr', icon: iconMs(), cls: 'ok', title: 'M365 licensing aligned',                sub: 'Salesbuildr &middot; On track',         modal: 'm365ok'      }
+      { src: 'RMM', icon: iconServer(),  cls: 'high', title: '3 servers approaching end of warranty',  sub: 'RMM &middot; 6 months away',            modal: 'servers',      action: 'Create opportunity', actionCls: 'act-primary' },
+      { src: 'RMM', icon: iconBackup(),  cls: 'high', title: 'Backup failure rate up 22%',             sub: 'RMM &middot; Last 30 days',             modal: 'backup_river', action: 'Create urgent ticket', actionCls: 'act-danger' },
+      { src: 'PSA', icon: iconUsers(),   cls: 'med',  title: 'User & device audit recommended',        sub: 'PSA / RMM &middot; 2 dormant found',    modal: 'users_river',  action: 'Schedule audit', actionCls: 'act-warn' },
+      { src: 'RMM', icon: iconCert(),    cls: 'med',  title: 'SSL certificates expiring in 45 days',   sub: 'RMM &middot; 2 certificates affected',  modal: 'ssl',          action: 'Log reminder', actionCls: 'act-ok' },
+      { src: 'Salesbuildr', icon: iconMs(), cls: 'ok', title: 'M365 licensing aligned',                sub: 'Salesbuildr &middot; On track',         modal: 'm365ok',       action: 'View detail', actionCls: 'act-ok' }
     ],
     recs: [
       { title: 'Server refresh planning', sub: '3 servers out of warranty in 6 months. Disaster recovery risk needs discussion.', val: '$8,000 – $15,000'      },
@@ -337,6 +363,16 @@ const CUSTOMERS = {
       ],
       action: 'Schedule Server & DR Review'
     },
+    workflow: {
+      title: 'Prepare for server & DR review',
+      steps: [
+        { id: 'r1', label: 'Escalate backup disk failure to Marcus', desc: 'SRV-RIVER-03 SMART errors are urgent — client needs to know immediately.',               action: 'Draft urgent email',     actionFn: 'email',   done: true,  autoLog: 'Email sent · Jun 8'     },
+        { id: 'r2', label: 'Follow up on server refresh proposal',   desc: 'No response in 8 days. A brief check-in call may be needed to keep momentum.',          action: 'Draft follow-up',        actionFn: 'email',   done: false, waiting: 'Awaiting proposal decision' },
+        { id: 'r3', label: 'Generate conversation brief',            desc: 'AI-written brief covering server warranty, backup risk, and DR options.',                 action: 'Generate brief',         actionFn: 'brief',   done: false  },
+        { id: 'r4', label: 'Schedule server review meeting',         desc: 'Discuss server refresh vs cloud migration and agree on a path forward.',                 action: 'Generate agenda',        actionFn: 'agenda',  done: false  },
+        { id: 'r5', label: 'Create opportunity in Salesbuildr',      desc: 'Server refresh or cloud migration — whichever direction Marcus chooses.',               action: 'Create opportunity',     actionFn: 'opp',     done: false  }
+      ]
+    },
     dataConfidence: {
       score: 78,
       cls: 'warn',
@@ -367,6 +403,14 @@ const CUSTOMERS = {
   peak: {
     name: 'Peak Financial Group', type: 'Fully Managed', location: 'Denver, CO',
     mrr: '$5,200', since: 'Mar 2020', health: 91, am: 'Lisa Tran',
+    contact: {
+      name: 'Rachel Chen', initials: 'RC', role: 'CFO',
+      email: 'r.chen@peakfinancial.com', phone: '+1 303 555 0176'
+    },
+    notes: [
+      { author: 'Lisa Tran', date: 'May 28, 2026', text: 'Rachel confirmed audit scope — all four workstreams approved. She mentioned interest in expanding dark web monitoring to personal emails.' },
+      { author: 'Lisa Tran', date: 'Apr 30, 2026 · after QBR', text: 'Excellent review. M365 E3 upgrade well received. Rachel asked about technology roadmap for next 18 months.' }
+    ],
     memory: {
       meta: 'Last review: Apr 2026 &middot; 1 open item',
       items: [
@@ -376,9 +420,9 @@ const CUSTOMERS = {
       ]
     },
     signals: [
-      { src: 'Salesbuildr', icon: iconAudit(),    cls: 'med', title: 'Annual compliance audit due in 60 days', sub: 'Salesbuildr &middot; Scheduled',      modal: 'audit'   },
-      { src: 'RMM',         icon: iconShieldOk(), cls: 'ok',  title: 'All security patches current',           sub: 'RMM &middot; Last scan today',        modal: 'patches' },
-      { src: 'PSA',         icon: iconDown(),     cls: 'ok',  title: 'Ticket volume down 8%',                  sub: 'PSA &middot; Service delivery strong', modal: 'tickets' }
+      { src: 'Salesbuildr', icon: iconAudit(),    cls: 'med', title: 'Annual compliance audit due in 60 days', sub: 'Salesbuildr &middot; Scheduled',      modal: 'audit',    action: 'Prepare agenda', actionCls: 'act-warn' },
+      { src: 'RMM',         icon: iconShieldOk(), cls: 'ok',  title: 'All security patches current',           sub: 'RMM &middot; Last scan today',        modal: 'patches',  action: 'View detail', actionCls: 'act-ok' },
+      { src: 'PSA',         icon: iconDown(),     cls: 'ok',  title: 'Ticket volume down 8%',                  sub: 'PSA &middot; Service delivery strong', modal: 'tickets',  action: 'View detail', actionCls: 'act-ok' }
     ],
     recs: [
       { title: 'Annual compliance review',  sub: 'Scheduled audit in 60 days. Prep checklist and confirm scope with client.', val: '$4,000 engagement'  },
@@ -426,6 +470,16 @@ const CUSTOMERS = {
       ],
       action: 'Schedule Compliance Prep Call'
     },
+    workflow: {
+      title: 'Prepare for compliance review',
+      steps: [
+        { id: 'p1', label: 'Confirm audit scope with Rachel',       desc: 'Scope is agreed — confirm the four workstreams are ready and nothing has changed.',       action: 'View notes',             actionFn: 'notes',   done: true,  autoLog: 'Scope confirmed · May 28' },
+        { id: 'p2', label: 'Generate conversation brief',           desc: 'AI brief for the compliance prep call — what to cover and how to close.',               action: 'Generate brief',         actionFn: 'brief',   done: false  },
+        { id: 'p3', label: 'Prepare audit documentation checklist', desc: 'Confirm all four workstream documents are ready before the audit date.',               action: 'Open audit detail',      actionFn: 'audit',   done: false  },
+        { id: 'p4', label: 'Propose dark web monitoring expansion', desc: 'Rachel expressed interest. Expand coverage to personal emails — $480/yr addition.',     action: 'Draft proposal email',   actionFn: 'email',   done: false  },
+        { id: 'p5', label: 'Create opportunity in Salesbuildr',     desc: 'Compliance audit engagement ($4,000) plus potential dark web expansion.',              action: 'Create opportunity',     actionFn: 'opp',     done: false  }
+      ]
+    },
     dataConfidence: {
       score: 98,
       cls: 'full',
@@ -453,6 +507,187 @@ const CUSTOMERS = {
     ]
   }
 };
+
+/* ══════════════════════════════════════════
+   RENDER WORKFLOW PANEL
+   ══════════════════════════════════════════ */
+const workflowStepDone = new Set(['s1','r1','p1']); // seeded completed steps
+
+function renderWorkflow(c) {
+  const wf = c.workflow;
+  if (!wf) return;
+
+  // Context chips
+  const priorityChip = document.getElementById('wf-priority-chip');
+  const customerChip = document.getElementById('wf-customer-chip');
+  const contactChip  = document.getElementById('wf-contact-chip');
+  if (priorityChip) {
+    priorityChip.textContent = `★ Priority ${c.priority.score}`;
+    priorityChip.style.background = c.priority.score >= 80 ? 'var(--danger-bg)' : c.priority.score >= 60 ? 'var(--warn-bg)' : 'var(--good-bg)';
+    priorityChip.style.color      = c.priority.score >= 80 ? 'var(--danger)'    : c.priority.score >= 60 ? 'var(--warn)'    : 'var(--good)';
+  }
+  if (customerChip) customerChip.textContent = c.name;
+  if (contactChip && c.contact) contactChip.textContent = c.contact.name;
+
+  const steps = wf.steps;
+  const doneCount = steps.filter(s => workflowStepDone.has(s.id) || s.done).length;
+  const activeIdx = Math.min(doneCount, steps.length - 1);
+
+  // Progress dots
+  const dotsEl = document.getElementById('wf-progress-dots');
+  const labelEl = document.getElementById('wf-progress-label');
+  if (dotsEl) {
+    dotsEl.innerHTML = steps.map((s, i) => {
+      const isDone   = workflowStepDone.has(s.id) || s.done;
+      const isActive = !isDone && i === activeIdx;
+      return `<div class="wf-dot ${isDone ? 'done' : isActive ? 'active' : ''}"></div>`;
+    }).join('');
+  }
+  if (labelEl) labelEl.textContent = `Step ${activeIdx + 1} of ${steps.length}`;
+
+  // Steps
+  const stepsEl = document.getElementById('wf-steps-list');
+  if (!stepsEl) return;
+
+  stepsEl.innerHTML = steps.map((s, i) => {
+    const isDone   = workflowStepDone.has(s.id) || s.done;
+    const isActive = !isDone && i === activeIdx;
+    const isLast   = i === steps.length - 1;
+
+    return `
+      <div class="wf-step ${isDone ? 'done' : isActive ? 'active' : 'pending'}" data-step="${s.id}">
+        <div class="wf-step-left">
+          <div class="wf-step-num ${isDone ? 'done' : isActive ? 'active' : ''}">
+            ${isDone ? '&#10003;' : i + 1}
+          </div>
+          ${!isLast ? `<div class="wf-step-connector ${isDone ? 'done' : ''}"></div>` : ''}
+        </div>
+        <div class="wf-step-body">
+          <div class="wf-step-label ${isDone ? 'done' : ''}">${s.label}</div>
+          <div class="wf-step-desc">${s.desc}</div>
+          ${isDone && s.autoLog ? `<div class="wf-step-log">&#10003; ${s.autoLog} · auto-logged to activity timeline</div>` : ''}
+          ${isActive ? `
+            <div class="wf-step-actions">
+              <button class="wf-action-btn primary" data-fn="${s.actionFn}" data-step="${s.id}">${s.action}</button>
+              ${s.waiting ? `<button class="wf-action-btn secondary" data-step="${s.id}" data-waitbtn="1">${s.waiting}</button>` : ''}
+            </div>
+            <div class="wf-auto-log-note">&#8505; This action will be auto-logged to the customer activity timeline</div>
+          ` : ''}
+          ${!isDone && !isActive && s.action ? `
+            <div class="wf-step-preview-action">${s.action} ›</div>
+          ` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  // Wire action buttons
+  stepsEl.querySelectorAll('.wf-action-btn[data-fn]').forEach(btn => {
+    btn.addEventListener('click', () => handleWorkflowAction(btn.dataset.fn, btn.dataset.step, c));
+  });
+
+  // Wire "waiting" soft-state toggle
+  stepsEl.querySelectorAll('.wf-action-btn[data-waitbtn]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.textContent = btn.textContent === '✓ Marked as waiting' ? (c.workflow.steps.find(s => s.id === btn.dataset.step)?.waiting || 'Waiting') : '✓ Marked as waiting';
+    });
+  });
+
+  // Wire step completion by clicking done state
+  stepsEl.querySelectorAll('.wf-step.active .wf-step-num').forEach(num => {
+    const stepId = num.closest('.wf-step').dataset.step;
+    num.style.cursor = 'default';
+  });
+
+  // Footer links
+  const noteLink = document.getElementById('wf-note-link');
+  if (noteLink) {
+    noteLink.onclick = () => {
+      const noteInput = document.getElementById('note-input');
+      if (noteInput) { noteInput.focus(); noteInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    };
+  }
+}
+
+function handleWorkflowAction(fn, stepId, c) {
+  const step = c.workflow.steps.find(s => s.id === stepId);
+  if (!step) return;
+
+  // Auto-log to activity timeline
+  const now = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  if (c.activityTimeline) {
+    c.activityTimeline.unshift({
+      date: now, type: 'note',
+      title: step.label,
+      detail: 'Action taken via review workflow'
+    });
+  }
+
+  if (fn === 'email')  { generateAlignmentEmail(c); return; }
+  if (fn === 'brief')  { generateAIBrief(); return; }
+  if (fn === 'exec' || fn === 'notes')   { generateExecSummary(); return; }
+  if (fn === 'audit')  { openModal('audit'); return; }
+  if (fn === 'agenda') {
+    openAlignmentModal('Call agenda — ' + c.name, 'Generating agenda...', true);
+    const sys = `You are helping an MSP account manager prepare a meeting agenda. Plain text only, no markdown. Write a concise agenda: greeting/opening (1 sentence), 4-5 agenda items with suggested time per item drawn from the signals, and a proposed close with next steps. Be specific.`;
+    const prompt = `Customer: ${c.name} | Contact: ${c.contact?.name} (${c.contact?.role})\nSignals: ${c.signals.map(s => s.title).join('; ')}\nWorkflow title: ${c.workflow.title}\nGenerate a meeting agenda.`;
+    callAI(prompt, sys)
+      .then(text => updateAlignmentModal(text, [{ label: 'Copy agenda', primary: true, action: 'copy' }, { label: 'Close' }]))
+      .catch(() => updateAlignmentModal('Could not reach AI service.', [{ label: 'Close' }]));
+    return;
+  }
+  if (fn === 'opp') {
+    openAlignmentModal('Create opportunity — ' + c.name, 'This will open in Salesbuildr in the production version. In this demo, here is a summary of the opportunity to create:', false);
+    document.getElementById('modal-body').innerHTML = `
+      <div style="font-size:13px;line-height:1.7;color:var(--text-2);">
+        <strong style="color:var(--text);">Customer:</strong> ${c.name}<br>
+        <strong style="color:var(--text);">Contact:</strong> ${c.contact?.name || 'N/A'}<br>
+        <strong style="color:var(--text);">Pipeline:</strong> ${c.oppTotal}<br>
+        <strong style="color:var(--text);">Source:</strong> ${c.workflow.title}<br>
+        <strong style="color:var(--text);">Recommended action:</strong> ${c.priority.action}
+      </div>`;
+    document.getElementById('modal-footer').innerHTML = `<button class="modal-btn primary">Open in Salesbuildr ↗</button><button class="modal-btn" onclick="document.getElementById('modal-overlay').classList.remove('open');document.body.style.overflow='';">Close</button>`;
+    document.getElementById('modal-overlay').classList.add('open');
+    document.getElementById('modal-overlay').setAttribute('aria-hidden','false');
+    document.body.style.overflow = 'hidden';
+    return;
+  }
+  // Mark step done for any unhandled action
+  workflowStepDone.add(stepId);
+  renderWorkflow(c);
+}
+
+/* ══════════════════════════════════════════
+   MY WORK TODAY DATA
+   ══════════════════════════════════════════ */
+const WORK_TODAY = {
+  date: 'Tue Jun 16',
+  customers: [
+    {
+      key: 'abc', name: 'ABC Manufacturing', priority: 'urgent',
+      activities: [
+        { id: 'w1', text: 'Review backup failure signals',          done: true,  source: 'RMM · completed 9:14am',                modal: 'backup_abc'   },
+        { id: 'w2', text: 'Schedule Windows 10 refresh discussion', done: false, source: 'Signal · 14 devices · EOL Oct 2026',     modal: 'eol'          },
+        { id: 'w3', text: 'Email Tom re: revised device pricing',   done: false, source: 'Opportunity · awaiting decision',        modal: 'opp_abc_1'    }
+      ]
+    },
+    {
+      key: 'river', name: 'River Tech Solutions', priority: 'review',
+      activities: [
+        { id: 'w4', text: 'Follow up on server refresh proposal',   done: false, source: 'Opportunity · no response in 8 days',   modal: 'opp_river_1'  },
+        { id: 'w5', text: 'Escalate backup target disk failure',    done: false, source: 'RMM · SMART errors · urgent',           modal: 'backup_river' }
+      ]
+    },
+    {
+      key: 'peak', name: 'Peak Financial Group', priority: 'ok',
+      activities: [
+        { id: 'w6', text: 'Prepare Q3 compliance audit agenda',     done: false, source: 'Salesbuildr · audit in 60 days',        modal: 'audit'        }
+      ]
+    }
+  ]
+};
+
+/* Track completed activities in session */
+const completedActivities = new Set(['w1']);
 
 /* ══════════════════════════════════════════
    PORTFOLIO DATA
@@ -1283,6 +1518,207 @@ modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) clo
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
 /* ══════════════════════════════════════════
+   RENDER PRIMARY CONTACT
+   ══════════════════════════════════════════ */
+function renderContact(c) {
+  const contactBar = document.getElementById('contact-bar');
+  if (!contactBar) return;
+  const ct = c.contact;
+  contactBar.innerHTML = `
+    <div class="contact-avatar">${ct.initials}</div>
+    <div class="contact-info">
+      <div class="contact-name">${ct.name}</div>
+      <div class="contact-role">${ct.role} &middot; <a href="mailto:${ct.email}" class="contact-email">${ct.email}</a></div>
+    </div>
+    <div class="contact-actions">
+      <button class="contact-action-btn primary" id="draft-email-btn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Draft email
+      </button>
+      <button class="contact-action-btn" id="schedule-call-btn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Schedule call
+      </button>
+      <button class="contact-action-btn" title="${ct.phone}">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38a2 2 0 0 1 1.95-2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6.17 6.17l.87-.87a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        Call
+      </button>
+    </div>`;
+
+  const draftBtn = document.getElementById('draft-email-btn');
+  if (draftBtn) draftBtn.addEventListener('click', () => generateAlignmentEmail(c));
+
+  const schedBtn = document.getElementById('schedule-call-btn');
+  if (schedBtn) schedBtn.addEventListener('click', () => {
+    openAlignmentModal('Schedule call — ' + c.name, 'Generating call agenda...', true);
+    const sys = `You are helping an MSP account manager prepare a call agenda. Plain text only, no markdown. Write a concise call agenda: opening (2 sentences), 3-4 agenda items based on the signals, suggested duration per item, and a proposed close. Be specific and direct.`;
+    const prompt = `Customer: ${c.name} | Contact: ${ct.name} (${ct.role})\nSignals: ${c.signals.map(s => s.title).join('; ')}\nGenerate a call agenda.`;
+    callAI(prompt, sys).then(text => {
+      updateAlignmentModal(text, [
+        { label: 'Copy agenda', primary: true, action: 'copy' },
+        { label: 'Close' }
+      ]);
+    }).catch(() => updateAlignmentModal('Could not reach AI service.', [{ label: 'Close' }]));
+  });
+}
+
+/* ══════════════════════════════════════════
+   RENDER NOTES
+   ══════════════════════════════════════════ */
+function renderNotes(c) {
+  const notesPanel = document.getElementById('notes-panel');
+  if (!notesPanel) return;
+
+  const sessionNotes = window._sessionNotes = window._sessionNotes || {};
+  if (!sessionNotes[customerSelect.value]) sessionNotes[customerSelect.value] = [];
+  const allNotes = [...(sessionNotes[customerSelect.value] || []), ...(c.notes || [])];
+
+  notesPanel.innerHTML = `
+    <div class="notes-header">
+      <span class="panel-title">NOTES</span>
+      <span style="font-size:10px;color:var(--text-3);font-family:'Courier New',monospace;">${allNotes.length} note${allNotes.length !== 1 ? 's' : ''}</span>
+    </div>
+    <div class="notes-list" id="notes-list">
+      ${allNotes.map(n => `
+        <div class="note-entry">
+          <div class="note-meta">${n.author} &middot; ${n.date}</div>
+          <div class="note-text">${n.text}</div>
+        </div>`).join('')}
+    </div>
+    <div class="note-input-row">
+      <input type="text" class="note-input" id="note-input" placeholder="Add a note about this customer..." />
+      <button class="note-save-btn" id="note-save-btn">Save</button>
+    </div>`;
+
+  document.getElementById('note-save-btn').addEventListener('click', () => {
+    const input = document.getElementById('note-input');
+    const text  = input.value.trim();
+    if (!text) return;
+    const key = customerSelect.value;
+    if (!sessionNotes[key]) sessionNotes[key] = [];
+    const now = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    sessionNotes[key].unshift({ author: CUSTOMERS[key].am, date: `${now} · just now`, text });
+    input.value = '';
+    renderNotes(CUSTOMERS[key]);
+  });
+
+  document.getElementById('note-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('note-save-btn').click();
+  });
+}
+
+/* ══════════════════════════════════════════
+   RENDER MY WORK TODAY
+   ══════════════════════════════════════════ */
+function renderWorkToday() {
+  const panel = document.getElementById('work-today-panel');
+  if (!panel) return;
+
+  const priorityCls = { urgent: 'wp-urgent', review: 'wp-review', ok: 'wp-ok' };
+  const priorityLabel = { urgent: 'Urgent', review: 'Review', ok: 'On track' };
+
+  panel.innerHTML = `
+    <div class="work-header">
+      <span class="work-title">MY WORK TODAY</span>
+      <span class="work-date">${WORK_TODAY.date}</span>
+    </div>
+    ${WORK_TODAY.customers.map(cust => `
+      <div class="work-customer">
+        <div class="work-cust-row">
+          <span class="work-cust-name">${cust.name}</span>
+          <span class="work-priority ${priorityCls[cust.priority]}">${priorityLabel[cust.priority]}</span>
+        </div>
+        ${cust.activities.map(act => `
+          <div class="work-activity ${completedActivities.has(act.id) ? 'done' : ''}"
+               data-id="${act.id}" data-modal="${act.modal}" data-custkey="${cust.key}">
+            <div class="wa-checkbox ${completedActivities.has(act.id) ? 'checked' : ''}" data-id="${act.id}">
+              ${completedActivities.has(act.id) ? '&#10003;' : ''}
+            </div>
+            <div class="wa-body">
+              <div class="wa-text">${act.text}</div>
+              <div class="wa-source">${act.source}</div>
+            </div>
+            <button class="wa-open-btn" data-modal="${act.modal}" data-custkey="${cust.key}" title="Open detail">&#8250;</button>
+          </div>`).join('')}
+      </div>`).join('')}
+    <div class="work-add-row" id="work-add-row">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add activity
+    </div>
+    <div class="work-add-form" id="work-add-form" style="display:none;">
+      <select class="work-add-select" id="work-add-cust">
+        ${WORK_TODAY.customers.map(c => `<option value="${c.key}">${c.name}</option>`).join('')}
+      </select>
+      <input type="text" class="work-add-input" id="work-add-text" placeholder="What do you need to do?">
+      <div class="work-add-btns">
+        <button class="work-save-btn" id="work-save-btn">Add</button>
+        <button class="work-cancel-btn" id="work-cancel-btn">Cancel</button>
+      </div>
+    </div>`;
+
+  // Checkbox toggle
+  panel.querySelectorAll('.wa-checkbox').forEach(cb => {
+    cb.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = cb.dataset.id;
+      if (completedActivities.has(id)) completedActivities.delete(id);
+      else completedActivities.add(id);
+      renderWorkToday();
+    });
+  });
+
+  // Open detail button — switches to briefing and opens modal
+  panel.querySelectorAll('.wa-open-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const custKey = btn.dataset.custkey;
+      const modal   = btn.dataset.modal;
+      if (CUSTOMERS[custKey]) {
+        switchView('briefing');
+        ensureBriefingRendered(custKey);
+        setTimeout(() => openModal(modal), 300);
+      }
+    });
+  });
+
+  // Activity row click — same as open button
+  panel.querySelectorAll('.work-activity').forEach(row => {
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('.wa-checkbox') || e.target.closest('.wa-open-btn')) return;
+      const custKey = row.dataset.custkey;
+      const modal   = row.dataset.modal;
+      if (CUSTOMERS[custKey]) {
+        switchView('briefing');
+        ensureBriefingRendered(custKey);
+        setTimeout(() => openModal(modal), 300);
+      }
+    });
+  });
+
+  // Add activity form
+  document.getElementById('work-add-row').addEventListener('click', () => {
+    document.getElementById('work-add-form').style.display = 'block';
+    document.getElementById('work-add-row').style.display  = 'none';
+    document.getElementById('work-add-text').focus();
+  });
+  document.getElementById('work-save-btn').addEventListener('click', () => {
+    const text    = document.getElementById('work-add-text').value.trim();
+    const custKey = document.getElementById('work-add-cust').value;
+    if (!text) return;
+    const cust = WORK_TODAY.customers.find(c => c.key === custKey);
+    if (cust) {
+      const newId = 'w' + Date.now();
+      cust.activities.push({ id: newId, text, done: false, source: 'Added manually', modal: null });
+    }
+    renderWorkToday();
+  });
+  document.getElementById('work-cancel-btn').addEventListener('click', () => {
+    document.getElementById('work-add-form').style.display = 'none';
+    document.getElementById('work-add-row').style.display  = 'flex';
+  });
+}
+
+/* ══════════════════════════════════════════
    RENDER LIFECYCLE & RENEWALS
    ══════════════════════════════════════════ */
 function iconForLifecycle(type) {
@@ -1303,13 +1739,17 @@ function renderLifecycle(c) {
         <div class="lifecycle-sub">${item.sub}</div>
       </div>
       <div class="lifecycle-val">${item.val}</div>
+      ${item.modal ? `<button class="inline-action act-primary" data-modal="${item.modal}">Plan now</button>` : ''}
       ${item.modal ? '<span class="signal-arrow">&#8250;</span>' : ''}
     </div>
   `).join('');
 
   document.querySelectorAll('.lifecycle-row[data-modal]').forEach(row => {
-    row.addEventListener('click', () => openModal(row.dataset.modal));
+    row.addEventListener('click', (e) => { if (e.target.closest('.inline-action')) return; openModal(row.dataset.modal); });
     row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openModal(row.dataset.modal); });
+  });
+  document.querySelectorAll('.lifecycle-row .inline-action').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.stopPropagation(); openModal(btn.dataset.modal); });
   });
 }
 
@@ -1401,7 +1841,10 @@ function renderAlignment(c) {
   alignmentOverall.textContent = `Overall ${a.overall}%`;
   alignmentOverall.style.color = overallCls === 'good' ? 'var(--good)' : overallCls === 'warn' ? 'var(--warn)' : 'var(--danger)';
 
-  alignmentList.innerHTML = a.items.map(item => `
+  alignmentList.innerHTML = a.items.map(item => {
+    const alignAction = item.cls === 'danger' ? 'Fix gap' : item.cls === 'warn' ? 'Review' : 'View detail';
+    const alignActCls = item.cls === 'danger' ? 'act-danger' : item.cls === 'warn' ? 'act-warn' : 'act-ok';
+    return `
     <div class="align-row" data-modal="${item.modal}" tabindex="0" role="button" aria-label="View details: ${item.label}">
       <div class="align-indicator ${item.cls}"></div>
       <div class="align-label-wrap">
@@ -1412,13 +1855,16 @@ function renderAlignment(c) {
         <div class="align-bar-bg"><div class="align-bar-fill ${item.cls}" style="width:${item.score}%"></div></div>
       </div>
       <div class="align-score ${item.cls}">${item.score}%</div>
+      <button class="inline-action ${alignActCls}" data-modal="${item.modal}">${alignAction}</button>
       <span class="signal-arrow">&#8250;</span>
-    </div>
-  `).join('');
+    </div>`; }).join('');
 
   document.querySelectorAll('.align-row[data-modal]').forEach(row => {
-    row.addEventListener('click', () => openModal(row.dataset.modal));
+    row.addEventListener('click', (e) => { if (e.target.closest('.inline-action')) return; openModal(row.dataset.modal); });
     row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openModal(row.dataset.modal); });
+  });
+  document.querySelectorAll('.align-row .inline-action').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.stopPropagation(); openModal(btn.dataset.modal); });
   });
 
   const rec = a.rec;
@@ -1503,13 +1949,20 @@ function renderCustomer(key) {
         <div class="signal-title">${s.title}</div>
         <div class="signal-sub">${s.sub}</div>
       </div>
+      ${s.action ? `<button class="inline-action ${s.actionCls || ''}" data-modal="${s.modal}">${s.action}</button>` : ''}
       <span class="signal-arrow">&#8250;</span>
     </div>
   `).join('');
 
   document.querySelectorAll('.signal-row').forEach(row => {
-    row.addEventListener('click', () => openModal(row.dataset.modal));
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('.inline-action')) return;
+      openModal(row.dataset.modal);
+    });
     row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openModal(row.dataset.modal); });
+  });
+  document.querySelectorAll('.signal-row .inline-action').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.stopPropagation(); openModal(btn.dataset.modal); });
   });
 
   oppTotal_val             = c.oppTotal;
@@ -1519,8 +1972,11 @@ function renderCustomer(key) {
   renderLifecycle(c);
   renderPriority(c);
   renderDataConfidence(c);
+  renderWorkflow(c);
   renderActivityTimeline(c);
   initTimelineBar(c);
+  renderContact(c);
+  renderNotes(c);
   oppOpen = false;
   oppChevron.classList.remove('open');
   oppExpanded.classList.remove('open');
@@ -1575,6 +2031,7 @@ function renderPortfolioRows(rows) {
 }
 
 function renderPortfolio(filter) {
+  renderWorkToday();
   activeSignalFilter = null;
   document.querySelectorAll('.port-intel-signal').forEach(c => c.classList.remove('active'));
   let rows = PORTFOLIO;
@@ -1884,8 +2341,8 @@ customerSelect.addEventListener('change', e => {
   oppExpanded.classList.remove('open');
   ensureBriefingRendered(e.target.value);
 });
-aiBtn.addEventListener('click', generateAIBrief);
-execBtn.addEventListener('click', generateExecSummary);
+if (aiBtn)   aiBtn.addEventListener('click', generateAIBrief);
+if (execBtn) execBtn.addEventListener('click', generateExecSummary);
 closeAi.addEventListener('click',     () => { aiOutput.style.display   = 'none'; });
 closeExec.addEventListener('click',   () => { execOutput.style.display = 'none'; });
 portAiBtn.addEventListener('click',   generatePortfolioAI);
