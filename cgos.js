@@ -670,14 +670,14 @@ const WORK_TODAY = {
           taskSignal: true,
           taskBrief: '14 devices are hitting Windows 10 EOL in 10 months. The refresh planning window opens now — waiting until EOL creates emergency pricing and rushed deployments. Tom hasn\'t discussed this yet, which means you have the advantage of raising it proactively.',
           taskWhy: 'Longest planning horizon · $12–18k revenue · First-mover advantage',
-          taskContext: { devices: '14 endpoints', eol: 'Oct 14, 2026 · 10 months', budget: '$12,000 – $18,000', lastDiscussed: 'Not yet raised' },
+          taskContext: { devices: '14 endpoints', eol: 'Oct 14, 2026 · 10 months', budget: '$12,000 – $18,000', lastDiscussed: 'Not yet raised', source: 'RMM · NinjaRMM', confidence: '94% — verified device scan' },
           oppTitle: 'Device Refresh — Windows 10 EOL'
         },
         { id: 'w3', text: 'Email Tom re: revised device pricing',   done: false, source: 'Opportunity · awaiting decision',        modal: 'opp_abc_1',
           taskSignal: true,
           taskBrief: 'Tom requested revised pricing 3 days ago. The proposal has been updated to reflect 3 fewer units. A follow-up email keeps the deal moving — no response in over 3 days means momentum is slipping.',
           taskWhy: 'Deal at risk · $13,200 pipeline · Awaiting decision',
-          taskContext: { proposal: 'Revised — $13,200', lastActivity: 'Jun 4 · 3 days ago', units: '11 devices (revised)', status: 'Awaiting decision' },
+          taskContext: { proposal: 'Revised — $13,200', lastActivity: 'Jun 4 · 3 days ago', units: '11 devices (revised)', status: 'Awaiting decision', source: 'Salesbuildr · Opportunity', confidence: '100% — proposal sent' },
           oppTitle: 'Device Refresh — Windows 10 EOL'
         }
       ]
@@ -689,14 +689,14 @@ const WORK_TODAY = {
           taskSignal: true,
           taskBrief: 'Marcus has not responded to the server refresh proposal in 8 days. Server warranty expires in 6 months — delay now compresses the implementation window. A brief check-in call or email re-opens the conversation without pressure.',
           taskWhy: '$12,000 pipeline · Warranty window closing · No response 8 days',
-          taskContext: { proposal: 'Sent May 20', lastActivity: 'Jun 3 · 8 days ago', value: '$12,000', status: 'No response' },
+          taskContext: { proposal: 'Sent May 20', lastActivity: 'Jun 3 · 8 days ago', value: '$12,000', status: 'No response', source: 'RMM · Warranty data', confidence: '91% — vendor warranty record' },
           oppTitle: 'Server Refresh — 3 Servers EOW'
         },
         { id: 'w5', text: 'Escalate backup target disk failure',    done: false, source: 'RMM · SMART errors · urgent',           modal: 'backup_river',
           taskSignal: true,
           taskBrief: 'SMART errors detected on SRV-RIVER-03 indicate imminent disk failure. The backup target is at risk — if it fails, the backup SLA is breached. Marcus must be notified immediately. This is not a sales conversation — it\'s a service obligation.',
           taskWhy: 'SLA breach risk · Urgent remediation · Client notification required',
-          taskContext: { server: 'SRV-RIVER-03', detected: 'Jun 8 · today', risk: 'Imminent disk failure', sla: 'Backup SLA at risk' },
+          taskContext: { server: 'SRV-RIVER-03', detected: 'Jun 8 · today', risk: 'Imminent disk failure', sla: 'Backup SLA at risk', source: 'RMM · SMART monitoring', confidence: '98% — real-time sensor alert' },
           oppTitle: null
         }
       ]
@@ -708,7 +708,7 @@ const WORK_TODAY = {
           taskSignal: true,
           taskBrief: 'The Q3 compliance audit is 60 days away. Rachel confirmed all four workstreams in May. Preparing the agenda now ensures nothing is missed and shows Peak Financial that you\'re ahead of the schedule.',
           taskWhy: 'Audit in 60 days · Scope confirmed · $4,000 engagement',
-          taskContext: { auditDate: 'Aug 2026 · 60 days', scope: '4 workstreams confirmed', value: '$4,000', contact: 'Rachel Chen · CFO' },
+          taskContext: { auditDate: 'Aug 2026 · 60 days', scope: '4 workstreams confirmed', value: '$4,000', contact: 'Rachel Chen · CFO', source: 'Salesbuildr · Agreement', confidence: '100% — scope confirmed by CFO' },
           oppTitle: 'Annual Compliance Audit'
         }
       ]
@@ -2702,11 +2702,16 @@ function openTaskModal(act, custKey) {
     deferred:  { text: 'Set a reminder to revisit', date: null }
   };
 
-  const ctxRows = Object.entries(ctx).map(([k, v]) => `
-    <div class="tm-ctx-row">
-      <span class="tm-ctx-key">${k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())}</span>
-      <span class="tm-ctx-val">${v}</span>
-    </div>`).join('');
+  const metaKeys = ['source', 'confidence'];
+  const ctxRows = Object.entries(ctx).map(([k, v]) => {
+    const isMeta = metaKeys.includes(k);
+    const label  = k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
+    return `
+    <div class="tm-ctx-row ${isMeta ? 'tm-ctx-meta' : ''}">
+      <span class="tm-ctx-key">${label}</span>
+      <span class="tm-ctx-val ${isMeta ? 'tm-ctx-meta-val' : ''}">${v}</span>
+    </div>`;
+  }).join('');
 
   const overlay = document.getElementById('modal-overlay');
   const title   = document.getElementById('modal-title');
