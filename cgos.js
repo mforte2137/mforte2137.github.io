@@ -2694,7 +2694,7 @@ function openTaskModal(act, custKey) {
   ];
 
   const nextStepSuggestions = {
-    pending:   { text: 'Choose a contact method below to get started', date: null },
+    pending:   { text: 'Select a contact method and take the first action to get started', date: null },
     contacted: { text: `Follow up if no response by ${act.id === 'w4' ? 'Today' : 'Jun 19'}`, date: act.id === 'w4' ? 'Today' : 'Jun 19' },
     meeting:   { text: 'Prepare brief 1 day before the meeting', date: null },
     quote:     { text: 'Build proposal — move to Salesbuildr', date: null },
