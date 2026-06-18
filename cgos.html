@@ -77,8 +77,29 @@
         </div>
       </div>
 
+      <!-- Mode toggle + New Opportunity -->
+      <div class="briefing-mode-bar">
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="mode-intelligence" data-mode="intelligence">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            Intelligence
+          </button>
+          <button class="mode-btn" id="mode-pipeline" data-mode="pipeline">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            Pipeline
+          </button>
+        </div>
+        <button class="new-opp-btn" id="new-opp-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New opportunity
+        </button>
+      </div>
+
       <!-- Primary contact bar -->
       <div class="contact-bar" id="contact-bar"></div>
+
+      <!-- INTELLIGENCE MODE SECTIONS -->
+      <div id="intelligence-sections">
 
       <!-- Nudge: health chip -->
       <div class="nudge" id="nudge-health">
@@ -173,6 +194,33 @@
       </div>
       <div class="timeline-expanded" id="timeline-expanded">
         <div id="timeline-list"></div>
+      </div>
+
+      </div><!-- /#intelligence-sections -->
+
+      <!-- PIPELINE MODE PANEL -->
+      <div id="pipeline-sections" style="display:none;">
+        <section class="panel pipeline-panel" id="pipeline-panel">
+          <div class="panel-header">
+            <span class="panel-title">ACTIVE PIPELINE</span>
+            <span class="pipeline-count" id="pipeline-count"></span>
+            <button class="new-opp-btn-inline" id="new-opp-btn-pipeline">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              New opportunity
+            </button>
+          </div>
+          <div id="pipeline-opp-list"></div>
+        </section>
+
+        <div class="pipeline-timeline-bar" id="pipeline-timeline-bar">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          <span class="opp-bar-label">Customer Activity Timeline</span>
+          <span class="timeline-bar-meta" id="pipeline-timeline-meta"></span>
+          <svg class="opp-chevron" id="pipeline-timeline-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="timeline-expanded" id="pipeline-timeline-expanded">
+          <div id="pipeline-timeline-list"></div>
+        </div>
       </div>
 
       <!-- Review Workflow Panel -->
