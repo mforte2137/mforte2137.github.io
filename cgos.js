@@ -131,10 +131,10 @@ const CUSTOMERS = {
     opportunities: [
       {
         id: 'opp_abc_1', title: 'Device Refresh — Windows 10 EOL',
-        status: 'proposed', statusLabel: 'Proposal Sent',
+        status: 'active', statusLabel: 'Waiting for response',
         value: '$14,800', created: 'Apr 2, 2026',
-        emails: 4, meetings: 2, proposalSent: true,
-        lastActivity: 'Customer requested revised pricing', lastActivityAge: '3 days ago',
+        emails: 2, meetings: 1, proposalSent: false,
+        lastActivity: 'Email drafted re: revised device pricing', lastActivityAge: '3 days ago',
         timeline: [
           { date: 'Jun 10', type: 'review',   title: 'Security review scheduled',             detail: 'Booked for Jun 24 — Sarah attending' },
           { date: 'Jun 4',  type: 'proposal', title: 'Revised proposal sent',                  detail: 'Updated pricing per customer request', val: '$13,200' },
