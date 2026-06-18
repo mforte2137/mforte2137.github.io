@@ -666,21 +666,51 @@ const WORK_TODAY = {
       key: 'abc', name: 'ABC Manufacturing', priority: 'urgent',
       activities: [
         { id: 'w1', text: 'Review backup failure signals',          done: true,  source: 'RMM · completed 9:14am',                modal: 'backup_abc'   },
-        { id: 'w2', text: 'Schedule Windows 10 refresh discussion', done: false, source: 'Signal · 14 devices · EOL Oct 2026',     modal: 'eol'          },
-        { id: 'w3', text: 'Email Tom re: revised device pricing',   done: false, source: 'Opportunity · awaiting decision',        modal: 'opp_abc_1'    }
+        { id: 'w2', text: 'Schedule Windows 10 refresh discussion', done: false, source: 'Signal · 14 devices · EOL Oct 2026',     modal: 'eol',
+          taskSignal: true,
+          taskBrief: '14 devices are hitting Windows 10 EOL in 10 months. The refresh planning window opens now — waiting until EOL creates emergency pricing and rushed deployments. Tom hasn\'t discussed this yet, which means you have the advantage of raising it proactively.',
+          taskWhy: 'Longest planning horizon · $12–18k revenue · First-mover advantage',
+          taskContext: { devices: '14 endpoints', eol: 'Oct 14, 2026 · 10 months', budget: '$12,000 – $18,000', lastDiscussed: 'Not yet raised' },
+          oppTitle: 'Device Refresh — Windows 10 EOL'
+        },
+        { id: 'w3', text: 'Email Tom re: revised device pricing',   done: false, source: 'Opportunity · awaiting decision',        modal: 'opp_abc_1',
+          taskSignal: true,
+          taskBrief: 'Tom requested revised pricing 3 days ago. The proposal has been updated to reflect 3 fewer units. A follow-up email keeps the deal moving — no response in over 3 days means momentum is slipping.',
+          taskWhy: 'Deal at risk · $13,200 pipeline · Awaiting decision',
+          taskContext: { proposal: 'Revised — $13,200', lastActivity: 'Jun 4 · 3 days ago', units: '11 devices (revised)', status: 'Awaiting decision' },
+          oppTitle: 'Device Refresh — Windows 10 EOL'
+        }
       ]
     },
     {
       key: 'river', name: 'River Tech Solutions', priority: 'review',
       activities: [
-        { id: 'w4', text: 'Follow up on server refresh proposal',   done: false, source: 'Opportunity · no response in 8 days',   modal: 'opp_river_1'  },
-        { id: 'w5', text: 'Escalate backup target disk failure',    done: false, source: 'RMM · SMART errors · urgent',           modal: 'backup_river' }
+        { id: 'w4', text: 'Follow up on server refresh proposal',   done: false, source: 'Opportunity · no response in 8 days',   modal: 'opp_river_1',
+          taskSignal: true,
+          taskBrief: 'Marcus has not responded to the server refresh proposal in 8 days. Server warranty expires in 6 months — delay now compresses the implementation window. A brief check-in call or email re-opens the conversation without pressure.',
+          taskWhy: '$12,000 pipeline · Warranty window closing · No response 8 days',
+          taskContext: { proposal: 'Sent May 20', lastActivity: 'Jun 3 · 8 days ago', value: '$12,000', status: 'No response' },
+          oppTitle: 'Server Refresh — 3 Servers EOW'
+        },
+        { id: 'w5', text: 'Escalate backup target disk failure',    done: false, source: 'RMM · SMART errors · urgent',           modal: 'backup_river',
+          taskSignal: true,
+          taskBrief: 'SMART errors detected on SRV-RIVER-03 indicate imminent disk failure. The backup target is at risk — if it fails, the backup SLA is breached. Marcus must be notified immediately. This is not a sales conversation — it\'s a service obligation.',
+          taskWhy: 'SLA breach risk · Urgent remediation · Client notification required',
+          taskContext: { server: 'SRV-RIVER-03', detected: 'Jun 8 · today', risk: 'Imminent disk failure', sla: 'Backup SLA at risk' },
+          oppTitle: null
+        }
       ]
     },
     {
       key: 'peak', name: 'Peak Financial Group', priority: 'ok',
       activities: [
-        { id: 'w6', text: 'Prepare Q3 compliance audit agenda',     done: false, source: 'Salesbuildr · audit in 60 days',        modal: 'audit'        }
+        { id: 'w6', text: 'Prepare Q3 compliance audit agenda',     done: false, source: 'Salesbuildr · audit in 60 days',        modal: 'audit',
+          taskSignal: true,
+          taskBrief: 'The Q3 compliance audit is 60 days away. Rachel confirmed all four workstreams in May. Preparing the agenda now ensures nothing is missed and shows Peak Financial that you\'re ahead of the schedule.',
+          taskWhy: 'Audit in 60 days · Scope confirmed · $4,000 engagement',
+          taskContext: { auditDate: 'Aug 2026 · 60 days', scope: '4 workstreams confirmed', value: '$4,000', contact: 'Rachel Chen · CFO' },
+          oppTitle: 'Annual Compliance Audit'
+        }
       ]
     }
   ]
@@ -688,6 +718,15 @@ const WORK_TODAY = {
 
 /* Track completed activities in session */
 const completedActivities = new Set(['w1']);
+
+/* Track task status — persists through session */
+const taskStatus = {
+  w2: { status: 'pending', lastAction: null, nextStep: null, followUpDate: null },
+  w3: { status: 'waiting', lastAction: 'Proposal sent Jun 4', nextStep: 'Follow up if no response', followUpDate: 'Jun 19' },
+  w4: { status: 'waiting', lastAction: 'Proposal sent May 20', nextStep: 'Call Marcus — 8 days no response', followUpDate: 'Today' },
+  w5: { status: 'pending', lastAction: null, nextStep: 'Notify client immediately', followUpDate: null },
+  w6: { status: 'pending', lastAction: 'Scope confirmed May 28', nextStep: 'Prepare agenda', followUpDate: null }
+};
 
 /* ══════════════════════════════════════════
    PORTFOLIO DATA
@@ -1667,31 +1706,31 @@ function renderWorkToday() {
     });
   });
 
-  // Open detail button — switches to briefing and opens modal
+  // Open detail — use task modal for signal tasks, briefing for manual tasks
+  function handleTaskClick(actId, custKey, e) {
+    const cust = WORK_TODAY.customers.find(c => c.key === custKey);
+    const act  = cust?.activities.find(a => a.id === actId);
+    if (!act || !CUSTOMERS[custKey]) return;
+    if (act.taskSignal) {
+      openTaskModal(act, custKey);
+    } else {
+      switchView('briefing');
+      ensureBriefingRendered(custKey);
+      if (act.modal) setTimeout(() => openModal(act.modal), 300);
+    }
+  }
+
   panel.querySelectorAll('.wa-open-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const custKey = btn.dataset.custkey;
-      const modal   = btn.dataset.modal;
-      if (CUSTOMERS[custKey]) {
-        switchView('briefing');
-        ensureBriefingRendered(custKey);
-        setTimeout(() => openModal(modal), 300);
-      }
+      handleTaskClick(btn.closest('.work-activity').dataset.id, btn.dataset.custkey, e);
     });
   });
 
-  // Activity row click — same as open button
   panel.querySelectorAll('.work-activity').forEach(row => {
     row.addEventListener('click', (e) => {
       if (e.target.closest('.wa-checkbox') || e.target.closest('.wa-open-btn')) return;
-      const custKey = row.dataset.custkey;
-      const modal   = row.dataset.modal;
-      if (CUSTOMERS[custKey]) {
-        switchView('briefing');
-        ensureBriefingRendered(custKey);
-        setTimeout(() => openModal(modal), 300);
-      }
+      handleTaskClick(row.dataset.id, row.dataset.custkey, e);
     });
   });
 
@@ -1739,7 +1778,7 @@ function renderLifecycle(c) {
         <div class="lifecycle-sub">${item.sub}</div>
       </div>
       <div class="lifecycle-val">${item.val}</div>
-      ${item.modal ? `<button class="inline-action act-primary" data-modal="${item.modal}">Plan now</button>` : ''}
+      ${item.modal ? `<button class="inline-action act-primary" data-modal="${item.modal}">${item.icon === "eol" ? "Create opportunity" : item.icon === "renewal" ? "Plan renewal" : item.icon === "warranty" ? "Create opportunity" : "Plan now"}</button>` : ''}
       ${item.modal ? '<span class="signal-arrow">&#8250;</span>' : ''}
     </div>
   `).join('');
@@ -2611,6 +2650,220 @@ function updateAlignmentModal(text, buttons) {
 
 function escapeHtml(str) {
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ══════════════════════════════════════════
+   TASK MODAL
+   ══════════════════════════════════════════ */
+
+function openTaskModal(act, custKey) {
+  const c  = CUSTOMERS[custKey];
+  const ts = taskStatus[act.id] || { status: 'pending', lastAction: null, nextStep: null, followUpDate: null };
+  const ctx = act.taskContext || {};
+
+  const statusOptions = [
+    { val: 'pending',   label: 'Not contacted yet' },
+    { val: 'contacted', label: 'Contacted — waiting for response' },
+    { val: 'meeting',   label: 'Meeting scheduled' },
+    { val: 'quote',     label: 'Quote requested' },
+    { val: 'won',       label: 'Won' },
+    { val: 'deferred',  label: 'Deferred' }
+  ];
+
+  const nextStepSuggestions = {
+    pending:   { text: 'Choose a contact method below to get started', date: null },
+    contacted: { text: `Follow up if no response by ${act.id === 'w4' ? 'Today' : 'Jun 19'}`, date: act.id === 'w4' ? 'Today' : 'Jun 19' },
+    meeting:   { text: 'Prepare brief 1 day before the meeting', date: null },
+    quote:     { text: 'Build proposal — move to Salesbuildr', date: null },
+    won:       { text: 'Create opportunity and log outcome', date: null },
+    deferred:  { text: 'Set a reminder to revisit', date: null }
+  };
+
+  const ctxRows = Object.entries(ctx).map(([k, v]) => `
+    <div class="tm-ctx-row">
+      <span class="tm-ctx-key">${k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())}</span>
+      <span class="tm-ctx-val">${v}</span>
+    </div>`).join('');
+
+  const overlay = document.getElementById('modal-overlay');
+  const title   = document.getElementById('modal-title');
+  const tabs    = document.getElementById('modal-tabs');
+  const body    = document.getElementById('modal-body');
+  const footer  = document.getElementById('modal-footer');
+
+  title.textContent = act.text;
+  tabs.style.display = 'none';
+
+  body.innerHTML = `
+    <div class="tm-source-bar">
+      <span class="tm-source-tag">${act.source.split(' · ')[0]}</span>
+      <span class="tm-source-detail">${act.source.split(' · ').slice(1).join(' · ')} &middot; ${c.name} &middot; ${c.contact?.name || ''}</span>
+    </div>
+
+    <div class="tm-section">
+      <div class="tm-section-label">Why this matters</div>
+      <div class="tm-brief">${act.taskBrief}</div>
+      <div class="tm-why">${act.taskWhy}</div>
+    </div>
+
+    ${ctxRows ? `
+    <div class="tm-section tm-ctx-grid">
+      <div class="tm-section-label">Signal detail</div>
+      ${ctxRows}
+    </div>` : ''}
+
+    <div class="tm-section">
+      <div class="tm-section-label">How do you want to reach ${c.contact?.name?.split(' ')[0] || 'them'}?</div>
+      <div class="tm-contact-btns">
+        <button class="tm-contact-btn" data-contact="call">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38a2 2 0 0 1 1.95-2.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6.17 6.17l.87-.87a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <div><div class="tm-cb-title">Call now</div><div class="tm-cb-desc">Get talking points</div></div>
+        </button>
+        <button class="tm-contact-btn" data-contact="email">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <div><div class="tm-cb-title">Draft email</div><div class="tm-cb-desc">AI writes it</div></div>
+        </button>
+        <button class="tm-contact-btn" data-contact="meeting">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div><div class="tm-cb-title">Schedule meeting</div><div class="tm-cb-desc">Generate agenda</div></div>
+        </button>
+        <button class="tm-contact-btn" data-contact="quote">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <div><div class="tm-cb-title">Send quote</div><div class="tm-cb-desc">Open in Salesbuildr</div></div>
+        </button>
+      </div>
+      <div class="tm-action-output" id="tm-action-output" style="display:none;"></div>
+    </div>
+
+    <div class="tm-section">
+      <div class="tm-section-label">Status</div>
+      <div class="tm-status-options" id="tm-status-options">
+        ${statusOptions.map(s => `
+          <label class="tm-status-option ${ts.status === s.val ? 'selected' : ''}">
+            <input type="radio" name="tmstatus" value="${s.val}" ${ts.status === s.val ? 'checked' : ''} />
+            ${s.label}
+          </label>`).join('')}
+      </div>
+    </div>
+
+    <div class="tm-section tm-nextstep-section" id="tm-nextstep-section">
+      <div class="tm-section-label">Next step</div>
+      <div class="tm-nextstep" id="tm-nextstep-text">${nextStepSuggestions[ts.status]?.text || ''}</div>
+      ${nextStepSuggestions[ts.status]?.date ? `<div class="tm-nextstep-date">Due: ${nextStepSuggestions[ts.status].date}</div>` : ''}
+      <div class="tm-autolog-note">&#8505; Status changes are auto-logged to the customer activity timeline</div>
+    </div>`;
+
+  footer.innerHTML = `
+    <button class="modal-btn primary" id="tm-done-btn">&#10003; Mark done</button>
+    <button class="modal-btn" id="tm-briefing-btn">Open full briefing &rarr;</button>`;
+
+  overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+
+  // Wire contact method buttons
+  body.querySelectorAll('.tm-contact-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      body.querySelectorAll('.tm-contact-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      handleTaskContactAction(btn.dataset.contact, act, c);
+      // Auto-set status to contacted if pending
+      if ((taskStatus[act.id] || {}).status === 'pending') {
+        const radio = body.querySelector('input[name="tmstatus"][value="contacted"]');
+        if (radio) { radio.checked = true; updateTaskStatus(act.id, 'contacted', c); }
+      }
+    });
+  });
+
+  // Wire status radio changes
+  body.querySelectorAll('input[name="tmstatus"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      body.querySelectorAll('.tm-status-option').forEach(o => o.classList.remove('selected'));
+      radio.closest('.tm-status-option').classList.add('selected');
+      updateTaskStatus(act.id, radio.value, c);
+      const ns = nextStepSuggestions[radio.value];
+      const nsEl = document.getElementById('tm-nextstep-text');
+      if (nsEl && ns) nsEl.textContent = ns.text;
+    });
+  });
+
+  // Mark done
+  document.getElementById('tm-done-btn').addEventListener('click', () => {
+    completedActivities.add(act.id);
+    if (taskStatus[act.id]) taskStatus[act.id].status = 'won';
+    autoLogToTimeline(c, act.text, 'Task completed');
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    renderWorkToday();
+  });
+
+  // Open full briefing
+  document.getElementById('tm-briefing-btn').addEventListener('click', () => {
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    switchView('briefing');
+    ensureBriefingRendered(custKey);
+  });
+}
+
+function updateTaskStatus(actId, status, c) {
+  if (!taskStatus[actId]) taskStatus[actId] = {};
+  taskStatus[actId].status = status;
+  const now = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  taskStatus[actId].lastAction = `Status updated to "${status}" · ${now}`;
+  autoLogToTimeline(c, `Task status updated`, `Changed to: ${status}`);
+}
+
+async function handleTaskContactAction(method, act, c) {
+  const output = document.getElementById('tm-action-output');
+  if (!output) return;
+  output.style.display = 'block';
+  output.innerHTML = `<div class="tm-output-loading"><span class="spinner"></span> Generating...</div>`;
+
+  const contactName = c.contact?.name?.split(' ')[0] || 'the contact';
+  let sys = '', prompt = '';
+
+  if (method === 'call') {
+    sys = `You are preparing talking points for a brief phone call. Plain text only. Write 4 concise talking points — opening line, key message, one question to ask, suggested close. Each point one sentence. Label each: OPEN, KEY POINT, ASK, CLOSE.`;
+    prompt = `Customer: ${c.name} | Contact: ${c.contact?.name} | Task: ${act.text} | Why: ${act.taskBrief} | Context: ${JSON.stringify(act.taskContext)}`;
+  } else if (method === 'email') {
+    sys = `Draft a short professional email from an MSP account manager to a customer contact. Format: SUBJECT: [line]\n\n[body — 2-3 short paragraphs]\n\n[sign-off]. Warm, direct, partnership tone. No dollar amounts. No markdown.`;
+    prompt = `To: ${c.contact?.name} (${c.contact?.role}) at ${c.name} | From: ${c.am} | Task: ${act.text} | Context: ${act.taskBrief}`;
+  } else if (method === 'meeting') {
+    sys = `Write a meeting agenda. Format: AGENDA: [title]\nDuration: [time]\n\n1. [item] — [X mins]\n2. [item] — [X mins]\netc.\n\nClose: [proposed next step]. Plain text only. 4-5 items.`;
+    prompt = `Meeting: ${act.text} | Customer: ${c.name} | Contact: ${c.contact?.name} | Context: ${act.taskBrief}`;
+  } else if (method === 'quote') {
+    output.innerHTML = `<div class="tm-output-quote">
+      <div class="tm-output-label">Quote ready to build in Salesbuildr</div>
+      <div class="tm-output-detail">Customer: ${c.name} &middot; ${act.oppTitle || act.text}</div>
+      <button class="modal-btn primary" style="margin-top:8px;">Open in Salesbuildr ↗</button>
+    </div>`;
+    autoLogToTimeline(c, 'Quote requested', `${act.oppTitle || act.text} — sent to Salesbuildr`);
+    return;
+  }
+
+  try {
+    const text = await callAI(prompt, sys);
+    output.innerHTML = `
+      <div class="tm-output-label">${method === 'call' ? 'Talking points' : method === 'email' ? 'Draft email' : 'Meeting agenda'}</div>
+      <div class="tm-output-text">${escapeHtml(text)}</div>
+      <button class="tm-copy-btn" data-text="${encodeURIComponent(text)}">Copy</button>`;
+    output.querySelector('.tm-copy-btn').addEventListener('click', btn => {
+      navigator.clipboard.writeText(decodeURIComponent(btn.dataset.text)).then(() => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy', 1500);
+      });
+    });
+    autoLogToTimeline(c, `${method === 'call' ? 'Call prep' : method === 'email' ? 'Email drafted' : 'Meeting agenda generated'}`, act.text);
+  } catch {
+    output.innerHTML = `<div class="tm-output-text" style="color:var(--danger);">Could not reach AI service.</div>`;
+  }
+}
+
+function autoLogToTimeline(c, title, detail) {
+  if (!c.activityTimeline) return;
+  const now = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  c.activityTimeline.unshift({ date: now, type: 'note', title, detail });
 }
 
 /* ══════════════════════════════════════════
