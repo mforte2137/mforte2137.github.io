@@ -2427,7 +2427,10 @@ function renderOppCards(c) {
     return;
   }
 
-  container.innerHTML = `<div class="opp-cards-grid">${c.opportunities.map(opp => `
+  container.innerHTML = `<div class="opp-cards-grid">${c.opportunities.map(opp => {
+    const urgencyColor = opp.nextStepUrgency === 'danger' ? 'var(--danger)' : opp.nextStepUrgency === 'warn' ? 'var(--warn)' : 'var(--accent-2)';
+    const urgencyBg    = opp.nextStepUrgency === 'danger' ? 'var(--danger-bg)' : opp.nextStepUrgency === 'warn' ? 'var(--warn-bg)' : 'var(--info-bg)';
+    return `
     <div class="opp-card" data-opp="${opp.id}" tabindex="0" role="button" aria-label="View opportunity: ${opp.title}">
       <div class="opp-card-status opp-status-${opp.status}"></div>
       <div class="opp-card-body">
@@ -2437,6 +2440,12 @@ function renderOppCards(c) {
           <span class="opp-card-date">Created ${opp.created}</span>
         </div>
         <div class="opp-card-last"><strong>Last:</strong> ${opp.lastActivity} <span style="color:var(--text-3);">&middot; ${opp.lastActivityAge}</span></div>
+        ${opp.nextStep ? `
+        <div class="opp-next-step" style="border-color:${urgencyColor};background:${urgencyBg};">
+          <span class="opp-next-label" style="color:${urgencyColor};">NEXT STEP</span>
+          <span class="opp-next-text" style="color:${urgencyColor};">${opp.nextStep}</span>
+          ${opp.taskId ? `<button class="opp-followup-btn" data-taskid="${opp.taskId}" data-custkey="${customerSelect.value}" style="border-color:${urgencyColor};color:${urgencyColor};">Follow up &rarr;</button>` : ''}
+        </div>` : ''}
       </div>
       <div class="opp-card-right">
         <div class="opp-card-val">${opp.value}</div>
@@ -2447,13 +2456,27 @@ function renderOppCards(c) {
         </div>
       </div>
       <span class="signal-arrow">&#8250;</span>
-    </div>`).join('')}
+    </div>`; }).join('')}
   </div>`;
 
   document.querySelectorAll('.opp-card[data-opp]').forEach(card => {
-    const open = () => openOppModal(card.dataset.opp, c);
+    const open = (e) => {
+      if (e && e.target.closest('.opp-followup-btn')) return;
+      openOppModal(card.dataset.opp, c);
+    };
     card.addEventListener('click', open);
-    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') open(); });
+    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') open(e); });
+  });
+
+  document.querySelectorAll('.opp-followup-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const taskId  = btn.dataset.taskid;
+      const custKey = btn.dataset.custkey;
+      const custData = WORK_TODAY.customers.find(cu => cu.key === custKey);
+      const act = custData?.activities.find(a => a.id === taskId);
+      if (act && act.taskSignal) openTaskModal(act, custKey);
+    });
   });
 }
 
@@ -2754,8 +2777,11 @@ function openTaskModal(act, custKey) {
     </div>`;
 
   footer.innerHTML = `
-    <button class="modal-btn primary" id="tm-done-btn">&#10003; Mark done</button>
-    <button class="modal-btn" id="tm-briefing-btn">Open full briefing &rarr;</button>`;
+    <div class="tm-footer-left">
+      <button class="modal-btn primary" id="tm-done-btn">&#10003; Done for now</button>
+      <button class="modal-btn" id="tm-close-btn">Close</button>
+    </div>
+    <button class="tm-briefing-link" id="tm-briefing-btn">Open full briefing &rarr;</button>`;
 
   overlay.classList.add('open');
   overlay.setAttribute('aria-hidden', 'false');
@@ -2787,14 +2813,22 @@ function openTaskModal(act, custKey) {
     });
   });
 
-  // Mark done
+  // Done for now — logs action, sets follow-up if waiting
   document.getElementById('tm-done-btn').addEventListener('click', () => {
-    completedActivities.add(act.id);
-    if (taskStatus[act.id]) taskStatus[act.id].status = 'won';
-    autoLogToTimeline(c, act.text, 'Task completed');
+    const currentStatus = (taskStatus[act.id] || {}).status || 'pending';
+    if (currentStatus === 'won' || currentStatus === 'deferred') {
+      completedActivities.add(act.id);
+    }
+    autoLogToTimeline(c, act.text, `Marked done for now · Status: ${currentStatus}`);
     overlay.classList.remove('open');
     document.body.style.overflow = '';
     renderWorkToday();
+  });
+
+  // Close — dismiss without logging
+  document.getElementById('tm-close-btn').addEventListener('click', () => {
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
   });
 
   // Open full briefing
