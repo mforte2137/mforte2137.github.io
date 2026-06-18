@@ -2793,6 +2793,9 @@ function openTaskModal(act, custKey) {
       body.querySelectorAll('.tm-contact-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       handleTaskContactAction(btn.dataset.contact, act, c);
+      // Hide next step section once a method is chosen
+      const nsSection = document.getElementById('tm-nextstep-section');
+      if (nsSection) nsSection.style.display = 'none';
       // Auto-set status to contacted if pending
       if ((taskStatus[act.id] || {}).status === 'pending') {
         const radio = body.querySelector('input[name="tmstatus"][value="contacted"]');
