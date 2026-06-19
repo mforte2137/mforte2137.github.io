@@ -131,10 +131,10 @@ const CUSTOMERS = {
     opportunities: [
       {
         id: 'opp_abc_1', title: 'Device Refresh — Windows 10 EOL',
-        status: 'proposed', statusLabel: 'Proposal Sent',
+        status: 'active', statusLabel: 'Waiting for response',
         value: '$14,800', created: 'Apr 2, 2026',
-        emails: 4, meetings: 2, proposalSent: true,
-        lastActivity: 'Customer requested revised pricing', lastActivityAge: '3 days ago',
+        emails: 2, meetings: 1, proposalSent: false,
+        lastActivity: 'Email drafted re: revised device pricing', lastActivityAge: '3 days ago',
         timeline: [
           { date: 'Jun 10', type: 'review',   title: 'Security review scheduled',             detail: 'Booked for Jun 24 — Sarah attending' },
           { date: 'Jun 4',  type: 'proposal', title: 'Revised proposal sent',                  detail: 'Updated pricing per customer request', val: '$13,200' },
@@ -218,11 +218,11 @@ const CUSTOMERS = {
     workflow: {
       title: 'Prepare for strategic review',
       steps: [
-        { id: 's1', label: 'Draft outreach email to Tom',        desc: 'Explain the key signals and why a review makes sense now. Set a partnership tone.',             action: 'Draft email',            actionFn: 'email',   done: true,  autoLog: 'Email drafted · Jun 10' },
-        { id: 's2', label: 'Schedule the review meeting',        desc: 'Once Tom responds, lock in a date and generate an agenda based on current signals.',           action: 'Generate agenda',        actionFn: 'agenda',  done: false, waiting: 'Waiting for response'   },
-        { id: 's3', label: 'Generate conversation brief',        desc: 'AI-written brief: how to open, what to raise first, how to close with a next step.',          action: 'Generate brief',         actionFn: 'brief',   done: false  },
-        { id: 's4', label: 'Build presentation deck',            desc: 'Slide deck summarising signals, alignment gaps, and recommendations to share with Tom.',       action: 'Build deck',             actionFn: 'deck',    done: false  },
-        { id: 's5', label: 'Create opportunity in Salesbuildr',  desc: 'Convert the review outcome into a tracked opportunity and link to a proposal when ready.',    action: 'Create opportunity',     actionFn: 'opp',     done: false  }
+        { id: 's1', label: 'Device Refresh EOL — Draft outreach email to Tom',        desc: 'Explain the key signals and why a review makes sense now. Set a partnership tone.',             action: 'Draft email',            actionFn: 'email',   done: true,  autoLog: 'Email drafted · Jun 10' },
+        { id: 's2', label: 'Device Refresh EOL — Schedule the review meeting',        desc: 'Once Tom responds, lock in a date and generate an agenda based on current signals.',           action: 'Generate agenda',        actionFn: 'agenda',  done: false, waiting: 'Waiting for response'   },
+        { id: 's3', label: 'Device Refresh EOL — Generate conversation brief', desc: 'AI-written brief: how to open, what to raise first, how to close with a next step.',          action: 'Generate brief',         actionFn: 'brief',   done: false  },
+        { id: 's4', label: 'Device Refresh EOL — Build presentation deck',            desc: 'Slide deck summarising signals, alignment gaps, and recommendations to share with Tom.',       action: 'Build deck',             actionFn: 'deck',    done: false  },
+        { id: 's5', label: 'Device Refresh EOL — Create opportunity in Salesbuildr', desc: 'Convert the review outcome into a tracked opportunity and link to a proposal when ready.',    action: 'Create opportunity',     actionFn: 'opp',     done: false  }
       ]
     },
     dataConfidence: {
@@ -366,11 +366,11 @@ const CUSTOMERS = {
     workflow: {
       title: 'Prepare for server & DR review',
       steps: [
-        { id: 'r1', label: 'Escalate backup disk failure to Marcus', desc: 'SRV-RIVER-03 SMART errors are urgent — client needs to know immediately.',               action: 'Draft urgent email',     actionFn: 'email',   done: true,  autoLog: 'Email sent · Jun 8'     },
-        { id: 'r2', label: 'Follow up on server refresh proposal',   desc: 'No response in 8 days. A brief check-in call may be needed to keep momentum.',          action: 'Draft follow-up',        actionFn: 'email',   done: false, waiting: 'Awaiting proposal decision' },
+        { id: 'r1', label: 'Server Refresh — Escalate backup disk failure to Marcus', desc: 'SRV-RIVER-03 SMART errors are urgent — client needs to know immediately.',               action: 'Draft urgent email',     actionFn: 'email',   done: true,  autoLog: 'Email sent · Jun 8'     },
+        { id: 'r2', label: 'Server Refresh — Follow up on proposal',   desc: 'No response in 8 days. A brief check-in call may be needed to keep momentum.',          action: 'Draft follow-up',        actionFn: 'email',   done: false, waiting: 'Awaiting proposal decision' },
         { id: 'r3', label: 'Generate conversation brief',            desc: 'AI-written brief covering server warranty, backup risk, and DR options.',                 action: 'Generate brief',         actionFn: 'brief',   done: false  },
-        { id: 'r4', label: 'Schedule server review meeting',         desc: 'Discuss server refresh vs cloud migration and agree on a path forward.',                 action: 'Generate agenda',        actionFn: 'agenda',  done: false  },
-        { id: 'r5', label: 'Create opportunity in Salesbuildr',      desc: 'Server refresh or cloud migration — whichever direction Marcus chooses.',               action: 'Create opportunity',     actionFn: 'opp',     done: false  }
+        { id: 'r4', label: 'Server Refresh — Schedule review meeting',         desc: 'Discuss server refresh vs cloud migration and agree on a path forward.',                 action: 'Generate agenda',        actionFn: 'agenda',  done: false  },
+        { id: 'r5', label: 'Server Refresh — Create opportunity in Salesbuildr', desc: 'Server refresh or cloud migration — whichever direction Marcus chooses.',               action: 'Create opportunity',     actionFn: 'opp',     done: false  }
       ]
     },
     dataConfidence: {
@@ -473,11 +473,11 @@ const CUSTOMERS = {
     workflow: {
       title: 'Prepare for compliance review',
       steps: [
-        { id: 'p1', label: 'Confirm audit scope with Rachel',       desc: 'Scope is agreed — confirm the four workstreams are ready and nothing has changed.',       action: 'View notes',             actionFn: 'notes',   done: true,  autoLog: 'Scope confirmed · May 28' },
-        { id: 'p2', label: 'Generate conversation brief',           desc: 'AI brief for the compliance prep call — what to cover and how to close.',               action: 'Generate brief',         actionFn: 'brief',   done: false  },
-        { id: 'p3', label: 'Prepare audit documentation checklist', desc: 'Confirm all four workstream documents are ready before the audit date.',               action: 'Open audit detail',      actionFn: 'audit',   done: false  },
-        { id: 'p4', label: 'Propose dark web monitoring expansion', desc: 'Rachel expressed interest. Expand coverage to personal emails — $480/yr addition.',     action: 'Draft proposal email',   actionFn: 'email',   done: false  },
-        { id: 'p5', label: 'Create opportunity in Salesbuildr',     desc: 'Compliance audit engagement ($4,000) plus potential dark web expansion.',              action: 'Create opportunity',     actionFn: 'opp',     done: false  }
+        { id: 'p1', label: 'Compliance Audit — Confirm scope with Rachel',       desc: 'Scope is agreed — confirm the four workstreams are ready and nothing has changed.',       action: 'View notes',             actionFn: 'notes',   done: true,  autoLog: 'Scope confirmed · May 28' },
+        { id: 'p2', label: 'Compliance Audit — Generate conversation brief', desc: 'AI brief for the compliance prep call — what to cover and how to close.',               action: 'Generate brief',         actionFn: 'brief',   done: false  },
+        { id: 'p3', label: 'Compliance Audit — Prepare documentation checklist', desc: 'Confirm all four workstream documents are ready before the audit date.',               action: 'Open audit detail',      actionFn: 'audit',   done: false  },
+        { id: 'p4', label: 'Compliance Audit — Propose dark web monitoring expansion', desc: 'Rachel expressed interest. Expand coverage to personal emails — $480/yr addition.',     action: 'Draft proposal email',   actionFn: 'email',   done: false  },
+        { id: 'p5', label: 'Compliance Audit — Create opportunity in Salesbuildr', desc: 'Compliance audit engagement ($4,000) plus potential dark web expansion.',              action: 'Create opportunity',     actionFn: 'opp',     done: false  }
       ]
     },
     dataConfidence: {
@@ -516,6 +516,10 @@ const workflowStepDone = new Set(['s1','r1','p1']); // seeded completed steps
 function renderWorkflow(c) {
   const wf = c.workflow;
   if (!wf) return;
+
+  // Panel title — concise deal-focused label
+  const wfPanelTitle = document.querySelector('#workflow-panel .panel-title');
+  if (wfPanelTitle) wfPanelTitle.textContent = 'REVIEW WORKFLOW';
 
   // Context chips
   const priorityChip = document.getElementById('wf-priority-chip');
@@ -657,37 +661,111 @@ function handleWorkflowAction(fn, stepId, c) {
 }
 
 /* ══════════════════════════════════════════
-   MY WORK TODAY DATA
+   MY WORK TODAY DATA — Full week structure
    ══════════════════════════════════════════ */
-const WORK_TODAY = {
-  date: 'Tue Jun 16',
-  customers: [
-    {
-      key: 'abc', name: 'ABC Manufacturing', priority: 'urgent',
-      activities: [
-        { id: 'w1', text: 'Review backup failure signals',          done: true,  source: 'RMM · completed 9:14am',                modal: 'backup_abc'   },
-        { id: 'w2', text: 'Schedule Windows 10 refresh discussion', done: false, source: 'Signal · 14 devices · EOL Oct 2026',     modal: 'eol'          },
-        { id: 'w3', text: 'Email Tom re: revised device pricing',   done: false, source: 'Opportunity · awaiting decision',        modal: 'opp_abc_1'    }
-      ]
-    },
-    {
-      key: 'river', name: 'River Tech Solutions', priority: 'review',
-      activities: [
-        { id: 'w4', text: 'Follow up on server refresh proposal',   done: false, source: 'Opportunity · no response in 8 days',   modal: 'opp_river_1'  },
-        { id: 'w5', text: 'Escalate backup target disk failure',    done: false, source: 'RMM · SMART errors · urgent',           modal: 'backup_river' }
-      ]
-    },
-    {
-      key: 'peak', name: 'Peak Financial Group', priority: 'ok',
-      activities: [
-        { id: 'w6', text: 'Prepare Q3 compliance audit agenda',     done: false, source: 'Salesbuildr · audit in 60 days',        modal: 'audit'        }
-      ]
-    }
-  ]
+
+const TASK_LIBRARY = {
+  w1: { id: 'w1', text: 'Review backup failure signals',             source: 'RMM · completed 9:14am',              modal: 'backup_abc',   custKey: 'abc',   taskSignal: false },
+  w2: { id: 'w2', text: 'Schedule Windows 10 refresh discussion',    source: 'Signal · 14 devices · EOL Oct 2026',  modal: 'eol',          custKey: 'abc',   taskSignal: true,
+    taskBrief: '14 devices are hitting Windows 10 EOL in 10 months. The refresh planning window opens now — waiting until EOL creates emergency pricing and rushed deployments. Tom hasn\'t discussed this yet.',
+    taskWhy: 'Longest planning horizon · $12–18k revenue · First-mover advantage',
+    taskContext: { devices: '14 endpoints', eol: 'Oct 14, 2026 · 10 months', budget: '$12,000 – $18,000', lastDiscussed: 'Not yet raised', source: 'RMM · NinjaRMM', confidence: '94% — verified device scan' },
+    oppTitle: 'Device Refresh — Windows 10 EOL' },
+  w3: { id: 'w3', text: 'Follow up — device refresh email to Tom',   source: 'Opportunity · awaiting response',     modal: 'opp_abc_1',    custKey: 'abc',   taskSignal: true,
+    taskBrief: 'Tom was contacted 3 days ago about the revised device pricing. No response yet. A brief follow-up keeps the deal moving without pressure.',
+    taskWhy: 'Deal at risk · $14,800 pipeline · Awaiting response',
+    taskContext: { contacted: 'Jun 15 · 3 days ago', value: '$14,800', units: '14 devices', status: 'Waiting for response', source: 'Salesbuildr · Opportunity', confidence: '100% — email logged' },
+    oppTitle: 'Device Refresh — Windows 10 EOL' },
+  w4: { id: 'w4', text: 'Follow up on server refresh proposal',      source: 'Opportunity · no response in 8 days', modal: 'opp_river_1',  custKey: 'river', taskSignal: true,
+    taskBrief: 'Marcus has not responded to the server refresh proposal in 8 days. Server warranty expires in 6 months — delay now compresses the implementation window.',
+    taskWhy: '$12,000 pipeline · Warranty window closing · No response 8 days',
+    taskContext: { proposal: 'Sent May 20', lastActivity: 'Jun 3 · 8 days ago', value: '$12,000', status: 'No response', source: 'RMM · Warranty data', confidence: '91% — vendor warranty record' },
+    oppTitle: 'Server Refresh — 3 Servers EOW' },
+  w5: { id: 'w5', text: 'Escalate backup target disk failure',       source: 'RMM · SMART errors · urgent',         modal: 'backup_river', custKey: 'river', taskSignal: true,
+    taskBrief: 'SMART errors on SRV-RIVER-03 indicate imminent disk failure. Backup SLA at risk — Marcus must be notified immediately.',
+    taskWhy: 'SLA breach risk · Urgent remediation · Client notification required',
+    taskContext: { server: 'SRV-RIVER-03', detected: 'Jun 8', risk: 'Imminent disk failure', sla: 'Backup SLA at risk', source: 'RMM · SMART monitoring', confidence: '98% — real-time sensor alert' },
+    oppTitle: null },
+  w6: { id: 'w6', text: 'Prepare Q3 compliance audit agenda',        source: 'Salesbuildr · audit in 60 days',      modal: 'audit',        custKey: 'peak',  taskSignal: true,
+    taskBrief: 'The Q3 compliance audit is 60 days away. Rachel confirmed all four workstreams in May. Preparing the agenda now shows Peak Financial you\'re ahead of schedule.',
+    taskWhy: 'Audit in 60 days · Scope confirmed · $4,000 engagement',
+    taskContext: { auditDate: 'Aug 2026 · 60 days', scope: '4 workstreams confirmed', value: '$4,000', contact: 'Rachel Chen · CFO', source: 'Salesbuildr · Agreement', confidence: '100% — scope confirmed by CFO' },
+    oppTitle: 'Annual Compliance Audit' },
+  w7: { id: 'w7', text: 'Call Marcus — server refresh decision due', source: 'Scheduled follow-up · Jun 19',        modal: 'opp_river_1',  custKey: 'river', taskSignal: true,
+    taskBrief: 'Marcus was given until Jun 19 to decide on cloud vs on-prem for the server refresh. Today is the day to call and close the direction.',
+    taskWhy: '$12,000 pipeline · Decision deadline today',
+    taskContext: { deadline: 'Jun 19 · today', value: '$12,000', options: 'Cloud vs on-prem', source: 'CGOS · Scheduled follow-up', confidence: '100% — manually scheduled' },
+    oppTitle: 'Server Refresh — 3 Servers EOW' },
+  w8: { id: 'w8', text: 'Peak Financial — pre-call brief review',    source: 'Scheduled · Jun 20 call at 2pm',      modal: 'audit',        custKey: 'peak',  taskSignal: true,
+    taskBrief: 'You have a call with Rachel Chen on Friday at 2pm. Review the compliance audit brief and confirm all four workstreams are documented before the call.',
+    taskWhy: 'Call Friday 2pm · $4,000 audit · Rachel Chen CFO',
+    taskContext: { callDate: 'Jun 20 · Friday 2pm', contact: 'Rachel Chen · CFO', prep: 'Audit brief + workstream checklist', source: 'Calendar · Scheduled', confidence: '100% — call confirmed' },
+    oppTitle: 'Annual Compliance Audit' },
+  w9: { id: 'w9', text: 'ABC — security scope — draft email to Tom', source: 'Carried over · was due Jun 17',       modal: 'secrev',       custKey: 'abc',   taskSignal: true, overdue: true, overdueLabel: 'From yesterday',
+    taskBrief: 'This task was due yesterday. The security assessment conversation with Tom has not been started. Every day of delay reduces urgency.',
+    taskWhy: 'Overdue · Security review 14 months · $3,500 opportunity',
+    taskContext: { originalDue: 'Jun 17 · yesterday', status: 'Not started', value: '$3,500', source: 'Salesbuildr · Signal', confidence: '88% — overdue flag' },
+    oppTitle: 'Security & Compliance Assessment' }
 };
+
+const WEEK_SCHEDULE = {
+  'Tue Jun 16': { done: ['w1'], tasks: [
+    { id: 'w1', custKey: 'abc' }, { id: 'w2', custKey: 'abc' },
+    { id: 'w4', custKey: 'river' }, { id: 'w5', custKey: 'river' }
+  ]},
+  'Wed Jun 17': { done: [], tasks: [
+    { id: 'w9', custKey: 'abc' },
+    { id: 'w3', custKey: 'abc' },
+    { id: 'w6', custKey: 'peak' }
+  ]},
+  'Thu Jun 18': { done: ['w1'], tasks: [
+    { id: 'w1', custKey: 'abc' }, { id: 'w2', custKey: 'abc' },
+    { id: 'w3', custKey: 'abc' }, { id: 'w4', custKey: 'river' },
+    { id: 'w5', custKey: 'river' }, { id: 'w6', custKey: 'peak' }
+  ]},
+  'Fri Jun 19': { done: [], tasks: [
+    { id: 'w7', custKey: 'river' }, { id: 'w6', custKey: 'peak' }
+  ]},
+  'Sat Jun 20': { done: [], tasks: [
+    { id: 'w8', custKey: 'peak' }
+  ]}
+};
+
+const TODAY_KEY = 'Thu Jun 18';
+
+function buildDayCustomers(dayKey) {
+  const day = WEEK_SCHEDULE[dayKey];
+  if (!day) return [];
+  const byCustomer = {};
+  day.tasks.forEach(t => {
+    const task = Object.assign({}, TASK_LIBRARY[t.id]);
+    task.done = day.done.includes(t.id) || completedActivities.has(t.id);
+    if (!byCustomer[t.custKey]) byCustomer[t.custKey] = [];
+    byCustomer[t.custKey].push(task);
+  });
+  const priorityMap = { abc: 'urgent', river: 'review', peak: 'ok' };
+  const nameMap     = { abc: 'ABC Manufacturing', river: 'River Tech Solutions', peak: 'Peak Financial Group' };
+  return Object.entries(byCustomer).map(([key, activities]) => ({
+    key, name: nameMap[key], priority: priorityMap[key], activities
+  }));
+}
+
+const WORK_TODAY = { date: TODAY_KEY, customers: [] }; // populated after completedActivities is defined
 
 /* Track completed activities in session */
 const completedActivities = new Set(['w1']);
+
+// Populate today's tasks now that completedActivities exists
+WORK_TODAY.customers = buildDayCustomers(TODAY_KEY);
+
+/* Track task status — persists through session */
+const taskStatus = {
+  w2: { status: 'pending', lastAction: null, nextStep: null, followUpDate: null },
+  w3: { status: 'waiting', lastAction: 'Proposal sent Jun 4', nextStep: 'Follow up if no response', followUpDate: 'Jun 19' },
+  w4: { status: 'waiting', lastAction: 'Proposal sent May 20', nextStep: 'Call Marcus — 8 days no response', followUpDate: 'Today' },
+  w5: { status: 'pending', lastAction: null, nextStep: 'Notify client immediately', followUpDate: null },
+  w6: { status: 'pending', lastAction: 'Scope confirmed May 28', nextStep: 'Prepare agenda', followUpDate: null }
+};
 
 /* ══════════════════════════════════════════
    PORTFOLIO DATA
@@ -968,7 +1046,7 @@ const MODALS = {
         </table>
         <div class="modal-stat">Estimated audit engagement: <strong>$4,000</strong>. Financial sector compliance carries elevated penalties for lapses.</div>`
     }],
-    footer: [{ label: 'Create audit engagement opportunity', primary: true }]
+    footer: [{ label: 'Generate agenda', primary: true, actionFn: 'generate-audit-agenda' }, { label: 'Create audit opportunity', actionFn: 'create-audit-opp' }]
   },
 
   patches: {
@@ -1610,6 +1688,8 @@ function renderNotes(c) {
 /* ══════════════════════════════════════════
    RENDER MY WORK TODAY
    ══════════════════════════════════════════ */
+let weekMode = false;  // persists across renderWorkToday calls
+let currentViewDay = TODAY_KEY;
 function renderWorkToday() {
   const panel = document.getElementById('work-today-panel');
   if (!panel) return;
@@ -1617,44 +1697,112 @@ function renderWorkToday() {
   const priorityCls = { urgent: 'wp-urgent', review: 'wp-review', ok: 'wp-ok' };
   const priorityLabel = { urgent: 'Urgent', review: 'Review', ok: 'On track' };
 
-  panel.innerHTML = `
-    <div class="work-header">
-      <span class="work-title">MY WORK TODAY</span>
-      <span class="work-date">${WORK_TODAY.date}</span>
-    </div>
-    ${WORK_TODAY.customers.map(cust => `
-      <div class="work-customer">
-        <div class="work-cust-row">
-          <span class="work-cust-name">${cust.name}</span>
-          <span class="work-priority ${priorityCls[cust.priority]}">${priorityLabel[cust.priority]}</span>
+  const weekDays = Object.keys(WEEK_SCHEDULE);
+
+  function buildWorkHTML(mode) {
+    if (mode === 'week') {
+      const dayBlocks = weekDays.map(day => {
+        const isToday   = day === TODAY_KEY;
+        const isPast    = weekDays.indexOf(day) < weekDays.indexOf(TODAY_KEY);
+        const isFuture  = weekDays.indexOf(day) > weekDays.indexOf(TODAY_KEY);
+        const customers = buildDayCustomers(day);
+        const totalTasks = WEEK_SCHEDULE[day].tasks.length;
+        const doneTasks  = WEEK_SCHEDULE[day].tasks.filter(t =>
+          WEEK_SCHEDULE[day].done.includes(t.id) || completedActivities.has(t.id)).length;
+
+        return `
+          <div class="week-day-block ${isToday ? 'week-day-today' : isPast ? 'week-day-past' : 'week-day-future'}">
+            <div class="week-day-header">
+              <span class="week-day-label">${day}${isToday ? ' · TODAY' : isPast ? ' · Past' : ' · Upcoming'}</span>
+              <span class="week-day-count">${doneTasks}/${totalTasks} done</span>
+            </div>
+            ${customers.map(cust => `
+              <div class="work-customer">
+                <div class="work-cust-row">
+                  <span class="work-cust-name">${cust.name}</span>
+                  <span class="work-priority ${cust.priority === 'urgent' ? 'wp-urgent' : cust.priority === 'review' ? 'wp-review' : 'wp-ok'}">${cust.priority === 'urgent' ? 'Urgent' : cust.priority === 'review' ? 'Review' : 'On track'}</span>
+                </div>
+                ${cust.activities.map(act => `
+                  <div class="work-activity ${act.done ? 'done' : ''} ${act.overdue ? 'overdue' : ''}"
+                       data-id="${act.id}" data-modal="${act.modal}" data-custkey="${cust.key}">
+                    <div class="wa-checkbox ${act.done ? 'checked' : ''}" data-id="${act.id}">
+                      ${act.done ? '&#10003;' : ''}
+                    </div>
+                    <div class="wa-body">
+                      <div class="wa-text">${act.text}</div>
+                      <div class="wa-source">${act.source}</div>
+                      ${act.overdue ? `<div class="wa-overdue">${act.overdueLabel || 'Overdue'}</div>` : ''}
+                    </div>
+                    <button class="wa-open-btn" data-modal="${act.modal}" data-custkey="${cust.key}" title="Open detail">&#8250;</button>
+                  </div>`).join('')}
+              </div>`).join('')}
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="work-header">
+          <span class="work-title">MY WORK</span>
+          <div class="work-view-toggle">
+            <button class="work-view-btn" data-wv="today">Today</button>
+            <button class="work-view-btn active" data-wv="week">This Week</button>
+          </div>
         </div>
-        ${cust.activities.map(act => `
-          <div class="work-activity ${completedActivities.has(act.id) ? 'done' : ''}"
-               data-id="${act.id}" data-modal="${act.modal}" data-custkey="${cust.key}">
-            <div class="wa-checkbox ${completedActivities.has(act.id) ? 'checked' : ''}" data-id="${act.id}">
-              ${completedActivities.has(act.id) ? '&#10003;' : ''}
-            </div>
-            <div class="wa-body">
-              <div class="wa-text">${act.text}</div>
-              <div class="wa-source">${act.source}</div>
-            </div>
-            <button class="wa-open-btn" data-modal="${act.modal}" data-custkey="${cust.key}" title="Open detail">&#8250;</button>
-          </div>`).join('')}
-      </div>`).join('')}
-    <div class="work-add-row" id="work-add-row">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Add activity
-    </div>
-    <div class="work-add-form" id="work-add-form" style="display:none;">
-      <select class="work-add-select" id="work-add-cust">
-        ${WORK_TODAY.customers.map(c => `<option value="${c.key}">${c.name}</option>`).join('')}
-      </select>
-      <input type="text" class="work-add-input" id="work-add-text" placeholder="What do you need to do?">
-      <div class="work-add-btns">
-        <button class="work-save-btn" id="work-save-btn">Add</button>
-        <button class="work-cancel-btn" id="work-cancel-btn">Cancel</button>
+        <div class="week-view">${dayBlocks}</div>
+        <div class="work-add-row" id="work-add-row">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add activity
+        </div>`;
+    }
+
+    // Today mode
+    const customers = buildDayCustomers(TODAY_KEY);
+    const priorityLabel = { urgent: 'Urgent', review: 'Review', ok: 'On track' };
+    const priorityCls   = { urgent: 'wp-urgent', review: 'wp-review', ok: 'wp-ok' };
+    return `
+      <div class="work-header">
+        <span class="work-title">MY WORK TODAY</span>
+        <div class="work-view-toggle">
+          <button class="work-view-btn active" data-wv="today">Today</button>
+          <button class="work-view-btn" data-wv="week">This Week</button>
+        </div>
       </div>
-    </div>`;
+      ${customers.map(cust => `
+        <div class="work-customer">
+          <div class="work-cust-row">
+            <span class="work-cust-name">${cust.name}</span>
+            <span class="work-priority ${priorityCls[cust.priority]}">${priorityLabel[cust.priority]}</span>
+          </div>
+          ${cust.activities.map(act => `
+            <div class="work-activity ${completedActivities.has(act.id) || act.done ? 'done' : ''} ${act.overdue ? 'overdue' : ''}"
+                 data-id="${act.id}" data-modal="${act.modal}" data-custkey="${cust.key}">
+              <div class="wa-checkbox ${completedActivities.has(act.id) || act.done ? 'checked' : ''}" data-id="${act.id}">
+                ${completedActivities.has(act.id) || act.done ? '&#10003;' : ''}
+              </div>
+              <div class="wa-body">
+                <div class="wa-text">${act.text}</div>
+                <div class="wa-source">${act.source}</div>
+                ${act.overdue ? `<div class="wa-overdue">${act.overdueLabel || 'Overdue'}</div>` : ''}
+              </div>
+              <button class="wa-open-btn" data-modal="${act.modal}" data-custkey="${cust.key}" title="Open detail">&#8250;</button>
+            </div>`).join('')}
+        </div>`).join('')}
+      <div class="work-add-row" id="work-add-row">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add activity
+      </div>`;
+  }
+
+  panel.innerHTML = buildWorkHTML(weekMode ? 'week' : 'today');
+  
+  // Wire view toggle
+  panel.querySelectorAll('.work-view-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      weekMode = btn.dataset.wv === 'week';
+      renderWorkToday();
+    });
+  });
+
+
 
   // Checkbox toggle
   panel.querySelectorAll('.wa-checkbox').forEach(cb => {
@@ -1667,54 +1815,62 @@ function renderWorkToday() {
     });
   });
 
-  // Open detail button — switches to briefing and opens modal
+  // Open detail — use task modal for signal tasks, briefing for manual tasks
+  function handleTaskClick(actId, custKey, e) {
+    const cust = WORK_TODAY.customers.find(c => c.key === custKey);
+    const act  = cust?.activities.find(a => a.id === actId);
+    if (!act || !CUSTOMERS[custKey]) return;
+    if (act.taskSignal) {
+      openTaskModal(act, custKey);
+    } else {
+      switchView('briefing');
+      ensureBriefingRendered(custKey);
+      if (act.modal) setTimeout(() => openModal(act.modal), 300);
+    }
+  }
+
   panel.querySelectorAll('.wa-open-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const custKey = btn.dataset.custkey;
-      const modal   = btn.dataset.modal;
-      if (CUSTOMERS[custKey]) {
-        switchView('briefing');
-        ensureBriefingRendered(custKey);
-        setTimeout(() => openModal(modal), 300);
-      }
+      handleTaskClick(btn.closest('.work-activity').dataset.id, btn.dataset.custkey, e);
     });
   });
 
-  // Activity row click — same as open button
   panel.querySelectorAll('.work-activity').forEach(row => {
     row.addEventListener('click', (e) => {
       if (e.target.closest('.wa-checkbox') || e.target.closest('.wa-open-btn')) return;
-      const custKey = row.dataset.custkey;
-      const modal   = row.dataset.modal;
-      if (CUSTOMERS[custKey]) {
-        switchView('briefing');
-        ensureBriefingRendered(custKey);
-        setTimeout(() => openModal(modal), 300);
-      }
+      handleTaskClick(row.dataset.id, row.dataset.custkey, e);
     });
   });
 
-  // Add activity form
-  document.getElementById('work-add-row').addEventListener('click', () => {
-    document.getElementById('work-add-form').style.display = 'block';
-    document.getElementById('work-add-row').style.display  = 'none';
-    document.getElementById('work-add-text').focus();
+  // Add activity form — guard all elements (may not exist in week mode)
+  const addRow    = document.getElementById('work-add-row');
+  const addForm   = document.getElementById('work-add-form');
+  const saveBtn   = document.getElementById('work-save-btn');
+  const cancelBtn = document.getElementById('work-cancel-btn');
+
+  if (addRow) addRow.addEventListener('click', () => {
+    if (addForm) addForm.style.display = 'block';
+    addRow.style.display = 'none';
+    const tf = document.getElementById('work-add-text');
+    if (tf) tf.focus();
   });
-  document.getElementById('work-save-btn').addEventListener('click', () => {
-    const text    = document.getElementById('work-add-text').value.trim();
-    const custKey = document.getElementById('work-add-cust').value;
+  if (saveBtn) saveBtn.addEventListener('click', () => {
+    const tf      = document.getElementById('work-add-text');
+    const custSel = document.getElementById('work-add-cust');
+    const text    = tf ? tf.value.trim() : '';
+    const custKey = custSel ? custSel.value : 'abc';
     if (!text) return;
-    const cust = WORK_TODAY.customers.find(c => c.key === custKey);
-    if (cust) {
-      const newId = 'w' + Date.now();
-      cust.activities.push({ id: newId, text, done: false, source: 'Added manually', modal: null });
-    }
+    const newId = 'w' + Date.now();
+    TASK_LIBRARY[newId] = { id: newId, text, source: 'Added manually', modal: null, custKey, taskSignal: false };
+    const dayEntry = WEEK_SCHEDULE[TODAY_KEY];
+    if (dayEntry) dayEntry.tasks.push({ id: newId, custKey });
+    WORK_TODAY.customers = buildDayCustomers(TODAY_KEY);
     renderWorkToday();
   });
-  document.getElementById('work-cancel-btn').addEventListener('click', () => {
-    document.getElementById('work-add-form').style.display = 'none';
-    document.getElementById('work-add-row').style.display  = 'flex';
+  if (cancelBtn) cancelBtn.addEventListener('click', () => {
+    if (addForm) addForm.style.display = 'none';
+    if (addRow)  addRow.style.display  = 'flex';
   });
 }
 
@@ -1739,7 +1895,7 @@ function renderLifecycle(c) {
         <div class="lifecycle-sub">${item.sub}</div>
       </div>
       <div class="lifecycle-val">${item.val}</div>
-      ${item.modal ? `<button class="inline-action act-primary" data-modal="${item.modal}">Plan now</button>` : ''}
+      ${item.modal ? `<button class="inline-action act-primary" data-modal="${item.modal}">${item.icon === "eol" ? "Create opportunity" : item.icon === "renewal" ? "Plan renewal" : item.icon === "warranty" ? "Create opportunity" : "Plan now"}</button>` : ''}
       ${item.modal ? '<span class="signal-arrow">&#8250;</span>' : ''}
     </div>
   `).join('');
@@ -2333,6 +2489,7 @@ document.getElementById('chip-health').addEventListener('click', () => {
 
 /* ── Wiring ── */
 customerSelect.addEventListener('change', e => {
+  setBriefingMode('intelligence'); // reset to intelligence on customer change
   memoryOpen = false;
   memoryChevron.classList.remove('open');
   memoryExpanded.classList.remove('open');
@@ -2388,7 +2545,10 @@ function renderOppCards(c) {
     return;
   }
 
-  container.innerHTML = `<div class="opp-cards-grid">${c.opportunities.map(opp => `
+  container.innerHTML = `<div class="opp-cards-grid">${c.opportunities.map(opp => {
+    const urgencyColor = opp.nextStepUrgency === 'danger' ? 'var(--danger)' : opp.nextStepUrgency === 'warn' ? 'var(--warn)' : 'var(--accent-2)';
+    const urgencyBg    = opp.nextStepUrgency === 'danger' ? 'var(--danger-bg)' : opp.nextStepUrgency === 'warn' ? 'var(--warn-bg)' : 'var(--info-bg)';
+    return `
     <div class="opp-card" data-opp="${opp.id}" tabindex="0" role="button" aria-label="View opportunity: ${opp.title}">
       <div class="opp-card-status opp-status-${opp.status}"></div>
       <div class="opp-card-body">
@@ -2398,6 +2558,12 @@ function renderOppCards(c) {
           <span class="opp-card-date">Created ${opp.created}</span>
         </div>
         <div class="opp-card-last"><strong>Last:</strong> ${opp.lastActivity} <span style="color:var(--text-3);">&middot; ${opp.lastActivityAge}</span></div>
+        ${opp.nextStep ? `
+        <div class="opp-next-step" style="border-color:${urgencyColor};background:${urgencyBg};">
+          <span class="opp-next-label" style="color:${urgencyColor};">NEXT STEP</span>
+          <span class="opp-next-text" style="color:${urgencyColor};">${opp.nextStep}</span>
+          ${opp.taskId ? `<button class="opp-followup-btn" data-taskid="${opp.taskId}" data-custkey="${customerSelect.value}" style="border-color:${urgencyColor};color:${urgencyColor};">Follow up &rarr;</button>` : ''}
+        </div>` : ''}
       </div>
       <div class="opp-card-right">
         <div class="opp-card-val">${opp.value}</div>
@@ -2408,13 +2574,27 @@ function renderOppCards(c) {
         </div>
       </div>
       <span class="signal-arrow">&#8250;</span>
-    </div>`).join('')}
+    </div>`; }).join('')}
   </div>`;
 
   document.querySelectorAll('.opp-card[data-opp]').forEach(card => {
-    const open = () => openOppModal(card.dataset.opp, c);
+    const open = (e) => {
+      if (e && e.target.closest('.opp-followup-btn')) return;
+      openOppModal(card.dataset.opp, c);
+    };
     card.addEventListener('click', open);
-    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') open(); });
+    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') open(e); });
+  });
+
+  document.querySelectorAll('.opp-followup-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const taskId  = btn.dataset.taskid;
+      const custKey = btn.dataset.custkey;
+      const custData = WORK_TODAY.customers.find(cu => cu.key === custKey);
+      const act = custData?.activities.find(a => a.id === taskId);
+      if (act && act.taskSignal) openTaskModal(act, custKey);
+    });
   });
 }
 
@@ -2611,6 +2791,228 @@ function updateAlignmentModal(text, buttons) {
 
 function escapeHtml(str) {
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ══════════════════════════════════════════
+   TASK MODAL
+   ══════════════════════════════════════════ */
+
+function openTaskModal(act, custKey) {
+  const c  = CUSTOMERS[custKey];
+  const ts = taskStatus[act.id] || { status: 'pending', lastAction: null, nextStep: null, followUpDate: null };
+  const ctx = act.taskContext || {};
+
+  const statusOptions = [
+    { val: 'pending',   label: 'Not contacted yet' },
+    { val: 'contacted', label: 'Contacted — waiting for response' },
+    { val: 'meeting',   label: 'Meeting scheduled' },
+    { val: 'quote',     label: 'Quote requested' },
+    { val: 'won',       label: 'Won' },
+    { val: 'deferred',  label: 'Deferred' }
+  ];
+
+  const nextStepSuggestions = {
+    pending:   { text: 'Select a contact method and take the first action to get started', date: null },
+    contacted: { text: `Follow up if no response by ${act.id === 'w4' ? 'Today' : 'Jun 19'}`, date: act.id === 'w4' ? 'Today' : 'Jun 19' },
+    meeting:   { text: 'Prepare brief 1 day before the meeting', date: null },
+    quote:     { text: 'Build proposal — move to Salesbuildr', date: null },
+    won:       { text: 'Create opportunity and log outcome', date: null },
+    deferred:  { text: 'Set a reminder to revisit', date: null }
+  };
+
+  const metaKeys = ['source', 'confidence'];
+  const ctxRows = Object.entries(ctx).map(([k, v]) => {
+    const isMeta = metaKeys.includes(k);
+    const label  = k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
+    return `
+    <div class="tm-ctx-row ${isMeta ? 'tm-ctx-meta' : ''}">
+      <span class="tm-ctx-key">${label}</span>
+      <span class="tm-ctx-val ${isMeta ? 'tm-ctx-meta-val' : ''}">${v}</span>
+    </div>`;
+  }).join('');
+
+  const overlay = document.getElementById('modal-overlay');
+  const title   = document.getElementById('modal-title');
+  const tabs    = document.getElementById('modal-tabs');
+  const body    = document.getElementById('modal-body');
+  const footer  = document.getElementById('modal-footer');
+
+  title.textContent = act.text;
+  tabs.style.display = 'none';
+
+  body.innerHTML = `
+    <div class="tm-source-bar">
+      <span class="tm-source-tag">${act.source.split(' · ')[0]}</span>
+      <span class="tm-source-detail">${act.source.split(' · ').slice(1).join(' · ')} &middot; ${c.name} &middot; ${c.contact?.name || ''}</span>
+    </div>
+
+    <div class="tm-section">
+      <div class="tm-section-label">Why this matters</div>
+      <div class="tm-brief">${act.taskBrief}</div>
+      <div class="tm-why">${act.taskWhy}</div>
+    </div>
+
+    ${ctxRows ? `
+    <div class="tm-section tm-ctx-grid">
+      <div class="tm-section-label">Signal detail</div>
+      ${ctxRows}
+    </div>` : ''}
+
+    <div class="tm-section">
+      <div class="tm-section-label">How do you want to reach ${c.contact?.name?.split(' ')[0] || 'them'}?</div>
+      <div class="tm-contact-btns">
+        <button class="tm-contact-btn" data-contact="call">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38a2 2 0 0 1 1.95-2.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6.17 6.17l.87-.87a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <div><div class="tm-cb-title">Call now</div><div class="tm-cb-desc">Get talking points</div></div>
+        </button>
+        <button class="tm-contact-btn" data-contact="email">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <div><div class="tm-cb-title">Draft email</div><div class="tm-cb-desc">AI writes it</div></div>
+        </button>
+        <button class="tm-contact-btn" data-contact="meeting">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div><div class="tm-cb-title">Schedule meeting</div><div class="tm-cb-desc">Generate agenda</div></div>
+        </button>
+        <button class="tm-contact-btn" data-contact="quote">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <div><div class="tm-cb-title">Send quote</div><div class="tm-cb-desc">Open in Salesbuildr</div></div>
+        </button>
+      </div>
+      <div class="tm-action-output" id="tm-action-output" style="display:none;"></div>
+    </div>
+
+    <div class="tm-section">
+      <div class="tm-section-label">Status</div>
+      <div class="tm-status-options" id="tm-status-options">
+        ${statusOptions.map(s => `
+          <label class="tm-status-option ${ts.status === s.val ? 'selected' : ''}">
+            <input type="radio" name="tmstatus" value="${s.val}" ${ts.status === s.val ? 'checked' : ''} />
+            ${s.label}
+          </label>`).join('')}
+      </div>
+    </div>
+
+    <div class="tm-section tm-nextstep-section" id="tm-nextstep-section">
+      <div class="tm-section-label">Next step</div>
+      <div class="tm-nextstep" id="tm-nextstep-text">${nextStepSuggestions[ts.status]?.text || ''}</div>
+      ${nextStepSuggestions[ts.status]?.date ? `<div class="tm-nextstep-date">Due: ${nextStepSuggestions[ts.status].date}</div>` : ''}
+      <div class="tm-autolog-note">&#8505; Status changes are auto-logged to the customer activity timeline</div>
+    </div>`;
+
+  footer.innerHTML = `
+    <button class="modal-btn primary" id="tm-done-btn">&#10003; Done for now</button>
+    <button class="modal-btn" id="tm-close-btn">Close</button>`;
+
+  overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+
+  // Wire contact method buttons
+  body.querySelectorAll('.tm-contact-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      body.querySelectorAll('.tm-contact-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      handleTaskContactAction(btn.dataset.contact, act, c);
+      // Hide next step section once a method is chosen
+      const nsSection = document.getElementById('tm-nextstep-section');
+      if (nsSection) nsSection.style.display = 'none';
+      // Auto-set status to contacted if pending
+      if ((taskStatus[act.id] || {}).status === 'pending') {
+        const radio = body.querySelector('input[name="tmstatus"][value="contacted"]');
+        if (radio) { radio.checked = true; updateTaskStatus(act.id, 'contacted', c); }
+      }
+    });
+  });
+
+  // Wire status radio changes
+  body.querySelectorAll('input[name="tmstatus"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      body.querySelectorAll('.tm-status-option').forEach(o => o.classList.remove('selected'));
+      radio.closest('.tm-status-option').classList.add('selected');
+      updateTaskStatus(act.id, radio.value, c);
+      const ns = nextStepSuggestions[radio.value];
+      const nsEl = document.getElementById('tm-nextstep-text');
+      if (nsEl && ns) nsEl.textContent = ns.text;
+    });
+  });
+
+  // Done for now — ticks checkbox, logs action, closes
+  document.getElementById('tm-done-btn').addEventListener('click', () => {
+    const currentStatus = (taskStatus[act.id] || {}).status || 'pending';
+    completedActivities.add(act.id);
+    autoLogToTimeline(c, act.text, `Done for now · Status: ${currentStatus}`);
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    renderWorkToday();
+  });
+
+  // Close — dismiss without logging
+  document.getElementById('tm-close-btn').addEventListener('click', () => {
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+  });
+
+
+}
+
+function updateTaskStatus(actId, status, c) {
+  if (!taskStatus[actId]) taskStatus[actId] = {};
+  taskStatus[actId].status = status;
+  const now = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  taskStatus[actId].lastAction = `Status updated to "${status}" · ${now}`;
+  autoLogToTimeline(c, `Task status updated`, `Changed to: ${status}`);
+}
+
+async function handleTaskContactAction(method, act, c) {
+  const output = document.getElementById('tm-action-output');
+  if (!output) return;
+  output.style.display = 'block';
+  output.innerHTML = `<div class="tm-output-loading"><span class="spinner"></span> Generating...</div>`;
+
+  const contactName = c.contact?.name?.split(' ')[0] || 'the contact';
+  let sys = '', prompt = '';
+
+  if (method === 'call') {
+    sys = `You are preparing talking points for a brief phone call. Plain text only. Write 4 concise talking points — opening line, key message, one question to ask, suggested close. Each point one sentence. Label each: OPEN, KEY POINT, ASK, CLOSE.`;
+    prompt = `Customer: ${c.name} | Contact: ${c.contact?.name} | Task: ${act.text} | Why: ${act.taskBrief} | Context: ${JSON.stringify(act.taskContext)}`;
+  } else if (method === 'email') {
+    sys = `Draft a short professional email from an MSP account manager to a customer contact. Format: SUBJECT: [line]\n\n[body — 2-3 short paragraphs]\n\n[sign-off]. Warm, direct, partnership tone. No dollar amounts. No markdown.`;
+    prompt = `To: ${c.contact?.name} (${c.contact?.role}) at ${c.name} | From: ${c.am} | Task: ${act.text} | Context: ${act.taskBrief}`;
+  } else if (method === 'meeting') {
+    sys = `Write a meeting agenda. Format: AGENDA: [title]\nDuration: [time]\n\n1. [item] — [X mins]\n2. [item] — [X mins]\netc.\n\nClose: [proposed next step]. Plain text only. 4-5 items.`;
+    prompt = `Meeting: ${act.text} | Customer: ${c.name} | Contact: ${c.contact?.name} | Context: ${act.taskBrief}`;
+  } else if (method === 'quote') {
+    output.innerHTML = `<div class="tm-output-quote">
+      <div class="tm-output-label">Quote ready to build in Salesbuildr</div>
+      <div class="tm-output-detail">Customer: ${c.name} &middot; ${act.oppTitle || act.text}</div>
+      <button class="modal-btn primary" style="margin-top:8px;">Open in Salesbuildr ↗</button>
+    </div>`;
+    autoLogToTimeline(c, 'Quote requested', `${act.oppTitle || act.text} — sent to Salesbuildr`);
+    return;
+  }
+
+  try {
+    const text = await callAI(prompt, sys);
+    output.innerHTML = `
+      <div class="tm-output-label">${method === 'call' ? 'Talking points' : method === 'email' ? 'Draft email' : 'Meeting agenda'}</div>
+      <div class="tm-output-text">${escapeHtml(text)}</div>
+      <button class="tm-copy-btn" data-text="${encodeURIComponent(text)}">Copy</button>`;
+    output.querySelector('.tm-copy-btn').addEventListener('click', btn => {
+      navigator.clipboard.writeText(decodeURIComponent(btn.dataset.text)).then(() => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy', 1500);
+      });
+    });
+    autoLogToTimeline(c, `${method === 'call' ? 'Call prep' : method === 'email' ? 'Email drafted' : 'Meeting agenda generated'}`, act.text);
+  } catch {
+    output.innerHTML = `<div class="tm-output-text" style="color:var(--danger);">Could not reach AI service.</div>`;
+  }
+}
+
+function autoLogToTimeline(c, title, detail) {
+  if (!c.activityTimeline) return;
+  const now = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  c.activityTimeline.unshift({ date: now, type: 'note', title, detail });
 }
 
 /* ══════════════════════════════════════════
@@ -2834,6 +3236,153 @@ async function generateTeamAI() {
 }
 
 /* ══════════════════════════════════════════
+   BRIEFING MODE SWITCHING
+   ══════════════════════════════════════════ */
+let briefingMode = 'intelligence';
+
+function setBriefingMode(mode) {
+  briefingMode = mode;
+  const intelSections    = document.getElementById('intelligence-sections');
+  const pipelineSections = document.getElementById('pipeline-sections');
+  const btnIntel         = document.getElementById('mode-intelligence');
+  const btnPipeline      = document.getElementById('mode-pipeline');
+
+  if (mode === 'pipeline') {
+    if (intelSections)    intelSections.style.display    = 'none';
+    if (pipelineSections) pipelineSections.style.display = '';
+    if (btnIntel)         btnIntel.classList.remove('active');
+    if (btnPipeline)      btnPipeline.classList.add('active');
+    renderPipelineMode(customerSelect.value);
+  } else {
+    if (intelSections)    intelSections.style.display    = '';
+    if (pipelineSections) pipelineSections.style.display = 'none';
+    if (btnIntel)         btnIntel.classList.add('active');
+    if (btnPipeline)      btnPipeline.classList.remove('active');
+  }
+}
+
+function initModeToggle() {
+  const btnIntel    = document.getElementById('mode-intelligence');
+  const btnPipeline = document.getElementById('mode-pipeline');
+  if (btnIntel)    btnIntel.addEventListener('click',    () => setBriefingMode('intelligence'));
+  if (btnPipeline) btnPipeline.addEventListener('click', () => setBriefingMode('pipeline'));
+
+  // New opportunity buttons — open Salesbuildr
+  ['new-opp-btn','new-opp-btn-pipeline'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', () => {
+      const custKey = customerSelect.value;
+      const c = CUSTOMERS[custKey];
+      // In production this would deep-link into Salesbuildr with customer pre-filled
+      openAlignmentModal(
+        'Create Opportunity — ' + (c ? c.name : 'Customer'),
+        `In production, this opens the Salesbuildr opportunity form with ${c ? c.name : 'the customer'} pre-filled. The AM completes the form in Salesbuildr and the opportunity appears here automatically.`,
+        false
+      );
+      document.getElementById('modal-footer').innerHTML = `
+        <button class="modal-btn primary" onclick="window.open('https://app.salesbuildr.com/opportunities/new','_blank')">Open in Salesbuildr ↗</button>
+        <button class="modal-btn" onclick="document.getElementById('modal-overlay').classList.remove('open');document.body.style.overflow='';">Close</button>`;
+      document.getElementById('modal-overlay').classList.add('open');
+      document.getElementById('modal-overlay').setAttribute('aria-hidden','false');
+      document.body.style.overflow = 'hidden';
+    });
+  });
+}
+
+function renderPipelineMode(custKey) {
+  const c = CUSTOMERS[custKey];
+  if (!c || !c.opportunities) return;
+
+  // Count and header
+  const countEl = document.getElementById('pipeline-count');
+  const active = c.opportunities.length;
+  if (countEl) countEl.textContent = `${active} active deal${active !== 1 ? 's' : ''} · ${c.oppTotal}`;
+
+  // Opportunity list — richer cards in pipeline mode
+  const listEl = document.getElementById('pipeline-opp-list');
+  if (!listEl) return;
+
+  const urgencyColor = (u) => u === 'danger' ? 'var(--danger)' : u === 'warn' ? 'var(--warn)' : 'var(--accent-2)';
+  const urgencyBg    = (u) => u === 'danger' ? 'var(--danger-bg)' : u === 'warn' ? 'var(--warn-bg)' : 'var(--info-bg)';
+
+  listEl.innerHTML = c.opportunities.map(opp => {
+    const hasProgress = opp.emails > 0 || opp.meetings > 0 || opp.proposalSent;
+    const uc = urgencyColor(opp.nextStepUrgency);
+    const ub = urgencyBg(opp.nextStepUrgency);
+    return `
+    <div class="pipeline-card" data-opp="${opp.id}">
+      <div class="pipeline-card-header">
+        <div class="pipeline-card-left">
+          <div class="pipeline-card-status opp-status-${opp.status}"></div>
+          <div>
+            <div class="pipeline-card-title">${opp.title}</div>
+            <div class="pipeline-card-meta">
+              ${statusTagHtml(opp.status, opp.statusLabel)}
+              <span class="opp-card-date">Created ${opp.created}</span>
+              ${hasProgress ? '<span class="pipeline-wip-badge">In progress</span>' : ''}
+            </div>
+          </div>
+        </div>
+        <div class="pipeline-card-right">
+          <div class="pipeline-card-val">${opp.value}</div>
+          <div class="opp-card-activity">
+            ${opp.emails    ? `<span class="opp-act-item"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>${opp.emails}</span>` : ''}
+            ${opp.meetings  ? `<span class="opp-act-item"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${opp.meetings}</span>` : ''}
+            ${opp.proposalSent ? `<span class="opp-act-item"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Proposal</span>` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="pipeline-card-last">
+        <strong>Last:</strong> ${opp.lastActivity}
+        <span style="color:var(--text-3);">&middot; ${opp.lastActivityAge}</span>
+      </div>
+      ${opp.nextStep ? `
+      <div class="pipeline-nextstep" style="border-color:${uc};background:${ub};">
+        <span class="opp-next-label" style="color:${uc};">NEXT STEP</span>
+        <span class="opp-next-text" style="color:${uc};">${opp.nextStep}</span>
+        ${opp.taskId ? `<button class="opp-followup-btn pipeline-followup" data-taskid="${opp.taskId}" data-custkey="${custKey}" style="border-color:${uc};color:${uc};">Follow up &rarr;</button>` : ''}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+
+  // Wire card click → opp modal
+  listEl.querySelectorAll('.pipeline-card[data-opp]').forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.opp-followup-btn')) return;
+      openOppModal(card.dataset.opp, c);
+    });
+  });
+
+  // Wire follow up buttons
+  listEl.querySelectorAll('.pipeline-followup').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const custData = WORK_TODAY.customers.find(cu => cu.key === btn.dataset.custkey);
+      const act = custData?.activities.find(a => a.id === btn.dataset.taskid);
+      if (act && act.taskSignal) openTaskModal(act, btn.dataset.custkey);
+    });
+  });
+
+  // Timeline in pipeline mode
+  const tlMeta = document.getElementById('pipeline-timeline-meta');
+  const tlList = document.getElementById('pipeline-timeline-list');
+  const tlChevron = document.getElementById('pipeline-timeline-chevron');
+  const tlExpanded = document.getElementById('pipeline-timeline-expanded');
+  if (c.activityTimeline && tlMeta) {
+    tlMeta.innerHTML = `${c.activityTimeline.length} events &middot; last activity ${c.activityTimeline[0]?.date || ''}`;
+  }
+  if (tlChevron && tlExpanded && tlList) {
+    let open = false;
+    document.getElementById('pipeline-timeline-bar').onclick = () => {
+      open = !open;
+      tlChevron.classList.toggle('open', open);
+      if (open) { tlList.innerHTML = renderTimelineEntries(c.activityTimeline); tlExpanded.classList.add('open'); }
+      else tlExpanded.classList.remove('open');
+    };
+  }
+}
+
+/* ══════════════════════════════════════════
    INIT
    ══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
@@ -2854,4 +3403,7 @@ function ensureBriefingRendered(key) {
   renderCustomer(customerSelect.value);
   briefingRendered = true;
   initNudges();
+  initModeToggle();
+  // Re-render pipeline if in pipeline mode
+  if (briefingMode === 'pipeline') renderPipelineMode(customerSelect.value);
 }
