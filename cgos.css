@@ -991,3 +991,48 @@ body {
   margin-bottom: 0; transition: background 0.1s;
 }
 .pipeline-timeline-bar:hover { background: var(--bg-row); }
+
+/* ══════════════════════════════════
+   WEEK VIEW
+   ══════════════════════════════════ */
+
+.work-view-toggle {
+  display: flex; gap: 0;
+  border: 1px solid var(--border-2); border-radius: 20px; overflow: hidden;
+}
+.work-view-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 0.05em; padding: 3px 10px;
+  border: none; background: transparent; color: var(--text-2);
+  cursor: pointer; transition: background 0.1s, color 0.1s;
+}
+.work-view-btn.active { background: var(--text); color: #fff; }
+
+.week-view { overflow-y: auto; max-height: calc(100vh - 280px); }
+
+.week-day-block { border-bottom: 1px solid var(--border); }
+.week-day-block:last-child { border-bottom: none; }
+
+.week-day-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 12px; background: var(--bg-row);
+  border-bottom: 1px solid var(--border);
+}
+.week-day-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em; color: var(--text-2); text-transform: uppercase; }
+.week-day-count { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-3); }
+
+.week-day-today .week-day-header { background: var(--accent-bg); }
+.week-day-today .week-day-label  { color: var(--accent-2); }
+.week-day-past  { opacity: 0.6; }
+.week-day-future .week-day-header { background: var(--bg-panel); }
+.week-day-future .week-day-label  { color: var(--text-3); }
+
+/* Overdue task styling */
+.work-activity.overdue {
+  border-left: 3px solid var(--danger);
+  padding-left: 9px; margin-left: -12px; padding-right: 12px;
+}
+.wa-overdue {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: var(--danger); margin-top: 2px;
+}
