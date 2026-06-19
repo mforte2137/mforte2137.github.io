@@ -3778,3 +3778,17 @@ Max 4 priorities, 2 strengths, 2 gaps. Be specific, forward-looking, business-fo
 </div>
 </div>`;
 }
+
+
+/* ══════════════════════════════════════════
+   INIT
+   ══════════════════════════════════════════ */
+
+document.addEventListener('DOMContentLoaded', () => {
+  WORK_TODAY.customers = buildDayCustomers(TODAY_KEY);
+  initRankList();
+  initMicroFeedback();
+  initDocPanel();
+  // Feedback closed by default — user opens when ready
+  switchView('portfolio');
+});
