@@ -2214,6 +2214,9 @@ function switchView(view) {
   if (view === 'portfolio') renderPortfolio(activeFilter);
   if (view === 'team')      renderTeam();
   if (view === 'briefing')  ensureBriefingRendered();
+  // Show/hide doc tab based on view
+  const pl = document.querySelector('.page-layout');
+  if (pl) pl.classList.toggle('briefing-active', view === 'briefing');
 }
 
 document.querySelectorAll('.view-tab').forEach(btn => {
