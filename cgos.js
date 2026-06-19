@@ -2490,6 +2490,7 @@ document.getElementById('chip-health').addEventListener('click', () => {
 /* ── Wiring ── */
 customerSelect.addEventListener('change', e => {
   setBriefingMode('intelligence'); // reset to intelligence on customer change
+  updateDocPanel(e.target.value);
   memoryOpen = false;
   memoryChevron.classList.remove('open');
   memoryExpanded.classList.remove('open');
@@ -3383,6 +3384,304 @@ function renderPipelineMode(custKey) {
 }
 
 /* ══════════════════════════════════════════
+   DOCUMENT GENERATOR
+   ══════════════════════════════════════════ */
+
+/* Session document history */
+const docHistory = {};  // { custKey: [{type, label, date, content}] }
+
+/* Seeded history for demo */
+const SEEDED_DOC_HISTORY = {
+  abc:   [{ type:'health', label:'Health Report', date:'Jun 10' }, { type:'qbr', label:'QBR Document', date:'Apr 2026' }],
+  river: [{ type:'qbr', label:'QBR Document', date:'Mar 2026' }],
+  peak:  [{ type:'health', label:'Health Report', date:'May 2026' }, { type:'roadmap', label:'Technology Roadmap', date:'Jan 2026' }]
+};
+
+function initDocPanel() {
+  const trigger   = document.getElementById('doc-tab-trigger');
+  const panel     = document.getElementById('doc-panel');
+  const closeBtn  = document.getElementById('doc-panel-close');
+  const layout    = document.querySelector('.page-layout');
+  if (!trigger || !panel) return;
+
+  trigger.addEventListener('click', () => {
+    const isOpen = panel.classList.contains('open');
+    if (isOpen) {
+      panel.classList.remove('open');
+      panel.setAttribute('aria-hidden', 'true');
+      if (layout) layout.classList.remove('doc-open');
+    } else {
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+      if (layout) layout.classList.add('doc-open');
+      updateDocPanel(customerSelect.value);
+    }
+  });
+
+  if (closeBtn) closeBtn.addEventListener('click', () => {
+    panel.classList.remove('open');
+    panel.setAttribute('aria-hidden', 'true');
+    if (layout) layout.classList.remove('doc-open');
+  });
+
+  // Wire generate buttons
+  panel.querySelectorAll('.doc-gen-btn').forEach(btn => {
+    btn.addEventListener('click', () => generateDocument(btn.dataset.doctype, customerSelect.value));
+  });
+
+  // Build output overlay
+  if (!document.getElementById('doc-output-overlay')) {
+    const overlay = document.createElement('div');
+    overlay.className = 'doc-output-overlay';
+    overlay.id = 'doc-output-overlay';
+    overlay.innerHTML = `
+      <div class="doc-output-window">
+        <div class="doc-output-header">
+          <div class="doc-output-title" id="doc-output-title">Document</div>
+          <div class="doc-output-actions">
+            <button class="modal-btn" id="doc-print-btn">Print / Save PDF</button>
+            <button class="doc-close-btn" id="doc-output-close">&times;</button>
+          </div>
+        </div>
+        <div class="doc-output-body" id="doc-output-body"></div>
+      </div>`;
+    document.body.appendChild(overlay);
+    document.getElementById('doc-output-close').addEventListener('click', () => {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    });
+    document.getElementById('doc-print-btn').addEventListener('click', () => {
+      window.print();
+    });
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) { overlay.classList.remove('open'); document.body.style.overflow = ''; }
+    });
+  }
+}
+
+function updateDocPanel(custKey) {
+  const c = CUSTOMERS[custKey];
+  if (!c) return;
+  const custEl = document.getElementById('doc-panel-cust');
+  if (custEl) custEl.textContent = c.name;
+
+  // Build history list
+  const historyEl = document.getElementById('doc-history-list');
+  if (!historyEl) return;
+  const seeded   = SEEDED_DOC_HISTORY[custKey] || [];
+  const session  = docHistory[custKey] || [];
+  const all      = [...session, ...seeded];
+  if (all.length === 0) {
+    historyEl.innerHTML = '<div style="font-size:11px;color:var(--text-3);padding:2px 0;">No documents generated yet</div>';
+    return;
+  }
+  historyEl.innerHTML = all.map(h => `
+    <div class="doc-history-item">
+      <div class="doc-history-dot doc-h-${h.type}"></div>
+      <span class="doc-history-name">${h.label}</span>
+      <span class="doc-history-date">${h.date}</span>
+      <span class="doc-history-open" data-doctype="${h.type}" data-custkey="${custKey}">Open ↗</span>
+    </div>`).join('');
+
+  historyEl.querySelectorAll('.doc-history-open').forEach(link => {
+    link.addEventListener('click', () => {
+      const existing = (docHistory[link.dataset.custkey] || []).find(h => h.type === link.dataset.doctype);
+      if (existing) showDocOutput(existing.label, existing.content);
+      else generateDocument(link.dataset.doctype, link.dataset.custkey);
+    });
+  });
+}
+
+async function generateDocument(type, custKey) {
+  const c = CUSTOMERS[custKey];
+  if (!c) return;
+
+  const labels = { health: 'Health Report', qbr: 'QBR Document', roadmap: 'Technology Roadmap' };
+  const label  = labels[type];
+
+  // Disable the button and show loading
+  const btn = document.querySelector(`.doc-gen-btn[data-doctype="${type}"]`);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Generating...'; }
+
+  const now  = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  const shortDate = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric' });
+
+  let content = '';
+  try {
+    if (type === 'health')  content = await generateHealthReport(c, now);
+    if (type === 'qbr')     content = await generateQBR(c, now);
+    if (type === 'roadmap') content = await generateRoadmap(c, now);
+  } catch(e) {
+    content = `<div style="padding:24px;color:var(--danger);">Could not reach AI service. Please try again.</div>`;
+  }
+
+  // Restore button
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> ${type === 'health' ? 'Generate Health Report' : type === 'qbr' ? 'Generate QBR' : 'Generate Roadmap'}`;
+    if (type === 'health') { btn.classList.add('doc-gen-primary'); }
+  }
+
+  // Save to session history
+  if (!docHistory[custKey]) docHistory[custKey] = [];
+  docHistory[custKey].unshift({ type, label, date: shortDate, content });
+
+  // Auto-log to activity timeline
+  autoLogToTimeline(c, `${label} generated`, `Generated ${now} · auto-logged to strategic memory`);
+
+  // Update history display
+  updateDocPanel(custKey);
+
+  // Show output
+  showDocOutput(`${label} — ${c.name}`, content);
+}
+
+function showDocOutput(title, content) {
+  const overlay = document.getElementById('doc-output-overlay');
+  const titleEl = document.getElementById('doc-output-title');
+  const bodyEl  = document.getElementById('doc-output-body');
+  if (!overlay || !titleEl || !bodyEl) return;
+  titleEl.textContent = title;
+  bodyEl.innerHTML    = content;
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+/* ─── Document templates ─────────────────────────────────────────────── */
+
+async function generateHealthReport(c, date) {
+  const sys = `You are generating a professional one-page Health Report for an MSP customer review. Output ONLY valid HTML using inline CSS. Use this exact structure:
+
+<div style="font-family:'Inter',system-ui,sans-serif;max-width:680px;margin:0 auto;padding:32px;color:#0B0E14;">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #2E74DC;">
+    <div>
+      <div style="font-size:11px;letter-spacing:0.1em;color:#9CA3AF;font-family:monospace;text-transform:uppercase;margin-bottom:4px;">Health Report</div>
+      <div style="font-size:22px;font-weight:700;font-family:'Space Grotesk',sans-serif;">[CUSTOMER NAME]</div>
+      <div style="font-size:12px;color:#4B5563;margin-top:3px;">[TYPE] · [MRR] MRR · Prepared [DATE]</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:36px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:[HEALTH COLOR];">[HEALTH SCORE]</div>
+      <div style="font-size:11px;color:#9CA3AF;font-family:monospace;">/100 Health Score</div>
+    </div>
+  </div>
+
+  <!-- Health dimensions 2-col grid -->
+  ...6 dimension rows with score bars...
+
+  <!-- Top signals section -->
+  ...top 3 signals...
+
+  <!-- Alignment summary -->
+  ...overall alignment score with colored indicator...
+
+  <!-- Three next steps -->
+  ...numbered action items with owner and suggested date...
+
+</div>
+
+Rules: inline CSS only. No external fonts. Use #2E74DC for accent, #DCFCE7/#166534 for good, #FEF3C7/#92400E for warn, #FEE2E2/#991B1B for danger. Sharp, clean, corporate. No charts that require JS.`;
+
+  const healthColor = c.health >= 85 ? '#166534' : c.health >= 70 ? '#92400E' : '#991B1B';
+  const signals     = c.signals.slice(0,3).map(s => `${s.title} (${s.cls})`).join('; ');
+  const alignment   = c.alignment;
+
+  const prompt = `Generate a professional Health Report HTML document for:
+Customer: ${c.name} | Type: ${c.type} | MRR: ${c.mrr} | Since: ${c.since}
+Health score: ${c.health}/100 | Health color: ${healthColor}
+Account manager: ${c.am} | Contact: ${c.contact?.name} (${c.contact?.role})
+Date: ${date}
+
+Health dimensions:
+- Relationship: ${c.healthBreakdown.dimensions[0].score} — ${c.healthBreakdown.dimensions[0].note}
+- Technical: ${c.healthBreakdown.dimensions[1].score} — ${c.healthBreakdown.dimensions[1].note}
+- Security: ${c.healthBreakdown.dimensions[2].score} — ${c.healthBreakdown.dimensions[2].note}
+- Alignment: ${c.healthBreakdown.dimensions[3].score} — ${c.healthBreakdown.dimensions[3].note}
+- Lifecycle: ${c.healthBreakdown.dimensions[4].score} — ${c.healthBreakdown.dimensions[4].note}
+- Strategic Engagement: ${c.healthBreakdown.dimensions[5].score} — ${c.healthBreakdown.dimensions[5].note}
+
+Top signals: ${signals}
+Overall alignment: ${alignment.overall}%
+Alignment rec: ${alignment.rec.title} · ${alignment.rec.val}
+
+Generate the complete HTML document. Make it sharp and professional.`;
+
+  const resp = await fetch('/api/ai-brief', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys })
+  });
+  const data = await resp.json();
+  return data.brief || data.content || 'Could not generate document.';
+}
+
+async function generateQBR(c, date) {
+  const sys = `You are generating a professional two-page QBR (Quarterly Business Review) document for an MSP. Output ONLY valid HTML with inline CSS. Structure:
+
+PAGE 1: Review — achievements since last review, current health snapshot, open items, risk summary
+PAGE 2: Forward — upcoming lifecycle items, open opportunities, recommended initiatives, investment summary
+
+Use the Salesbuildr brand: #2E74DC accent, #FAFAF7 page bg, #0B0E14 text, Space Grotesk headings. Sharp, boardroom-quality. No external resources. Inline CSS only. Use <div style="page-break-after:always"> between pages.`;
+
+  const completed = c.memory.groups.find(g => g.label === 'Completed')?.items || [];
+  const openItems = c.memory.groups.filter(g => g.label !== 'Completed').flatMap(g => g.items);
+  const opps      = c.opportunities?.map(o => `${o.title} — ${o.value} (${o.statusLabel})`).join('; ') || 'None';
+  const lifecycle = c.lifecycle?.items?.slice(0,4).map(i => `${i.title}: ${i.val} (${i.sub})`).join('; ') || '';
+
+  const prompt = `Generate a professional QBR HTML document for:
+Customer: ${c.name} | Type: ${c.type} | MRR: ${c.mrr}
+Health: ${c.health}/100 | AM: ${c.am} | Contact: ${c.contact?.name}
+Date: ${date} | Last review: ${c.memory.meta}
+
+Completed since last review: ${completed.map(i => i.text).join(', ') || 'None logged'}
+Open items: ${openItems.map(i => i.text).join(', ') || 'None'}
+Active opportunities: ${opps}
+Upcoming lifecycle: ${lifecycle}
+Alignment score: ${c.alignment.overall}% — ${c.alignment.rec.title}
+
+Generate the complete two-page HTML QBR document.`;
+
+  const resp = await fetch('/api/ai-brief', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys })
+  });
+  const data = await resp.json();
+  return data.brief || data.content || 'Could not generate document.';
+}
+
+async function generateRoadmap(c, date) {
+  const sys = `You are generating a professional Technology Roadmap document for an MSP customer. Output ONLY valid HTML with inline CSS. Structure:
+
+PAGE 1: 12-month visual timeline using a horizontal bar/grid layout (use divs, not SVG) showing quarters Q3-Q4 current year and Q1-Q2 next year. Items plotted on the timeline: renewals, EOL dates, planned projects, proposed expansions.
+
+PAGE 2: Current state vs recommended state table, investment overview (committed vs proposed), strategic priorities (3-5 bullet statements about where the technology relationship is heading).
+
+Brand: #2E74DC accent, #FAFAF7 bg, clean corporate. Inline CSS only. No JS. No external resources.`;
+
+  const lifecycle = c.lifecycle?.items?.map(i => `${i.title}: ${i.sub} — ${i.val}`).join('; ') || '';
+  const opps      = c.opportunities?.map(o => `${o.title}: ${o.value} — ${o.statusLabel}`).join('; ') || '';
+
+  const prompt = `Generate a professional Technology Roadmap HTML document for:
+Customer: ${c.name} | Type: ${c.type} | MRR: ${c.mrr}
+AM: ${c.am} | Contact: ${c.contact?.name} (${c.contact?.role})
+Date: ${date}
+
+Lifecycle items (for timeline): ${lifecycle}
+Active opportunities: ${opps}
+Alignment: ${c.alignment.overall}% overall — key gaps: ${c.alignment.items.filter(i => i.cls !== 'good').map(i => i.label).join(', ')}
+Strategic context: ${c.memory.meta}
+
+Generate the complete Technology Roadmap HTML document with a visual timeline.`;
+
+  const resp = await fetch('/api/ai-brief', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys })
+  });
+  const data = await resp.json();
+  return data.brief || data.content || 'Could not generate document.';
+}
+
+/* ══════════════════════════════════════════
    INIT
    ══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
@@ -3394,6 +3693,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initPortfolioIntel();
   initRankList();
   initMicroFeedback();
+  initDocPanel();
 });
 
 // Briefing renders lazily the first time the tab is clicked or a portfolio row is clicked
@@ -3404,6 +3704,7 @@ function ensureBriefingRendered(key) {
   briefingRendered = true;
   initNudges();
   initModeToggle();
+  updateDocPanel(customerSelect.value);
   // Re-render pipeline if in pipeline mode
   if (briefingMode === 'pipeline') renderPipelineMode(customerSelect.value);
 }
