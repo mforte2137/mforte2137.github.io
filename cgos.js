@@ -1688,6 +1688,8 @@ function renderNotes(c) {
 /* ══════════════════════════════════════════
    RENDER MY WORK TODAY
    ══════════════════════════════════════════ */
+let weekMode = false;  // persists across renderWorkToday calls
+let currentViewDay = TODAY_KEY;
 function renderWorkToday() {
   const panel = document.getElementById('work-today-panel');
   if (!panel) return;
@@ -1696,8 +1698,6 @@ function renderWorkToday() {
   const priorityLabel = { urgent: 'Urgent', review: 'Review', ok: 'On track' };
 
   const weekDays = Object.keys(WEEK_SCHEDULE);
-  let currentViewDay = TODAY_KEY;
-  let weekMode = false;
 
   function buildWorkHTML(mode) {
     if (mode === 'week') {
