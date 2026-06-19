@@ -1046,7 +1046,7 @@ const MODALS = {
         </table>
         <div class="modal-stat">Estimated audit engagement: <strong>$4,000</strong>. Financial sector compliance carries elevated penalties for lapses.</div>`
     }],
-    footer: [{ label: 'Create audit engagement opportunity', primary: true }]
+    footer: [{ label: 'Generate agenda', primary: true, actionFn: 'generate-audit-agenda' }, { label: 'Create audit opportunity', actionFn: 'create-audit-opp' }]
   },
 
   patches: {
