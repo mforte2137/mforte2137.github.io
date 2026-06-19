@@ -2216,7 +2216,15 @@ function switchView(view) {
   if (view === 'briefing')  ensureBriefingRendered();
   // Show/hide doc tab based on view
   const pl = document.querySelector('.page-layout');
-  if (pl) pl.classList.toggle('briefing-active', view === 'briefing');
+  if (pl) {
+    pl.classList.toggle('briefing-active', view === 'briefing');
+    // Close doc panel if leaving briefing
+    if (view !== 'briefing') {
+      const dp = document.getElementById('doc-panel');
+      if (dp) { dp.classList.remove('open'); dp.setAttribute('aria-hidden','true'); }
+      pl.classList.remove('doc-open');
+    }
+  }
 }
 
 document.querySelectorAll('.view-tab').forEach(btn => {
@@ -3454,7 +3462,20 @@ function initDocPanel() {
       document.body.style.overflow = '';
     });
     document.getElementById('doc-print-btn').addEventListener('click', () => {
-      window.print();
+      const bodyEl  = document.getElementById('doc-output-body');
+      const content = bodyEl ? bodyEl.innerHTML : '';
+      const win = window.open('', '_blank');
+      win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+        <title>Document</title>
+        <style>
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
+          body { margin: 0; padding: 0; font-family: Inter, system-ui, sans-serif; }
+          @page { margin: 15mm; }
+        </style>
+      </head><body>${content}</body></html>`);
+      win.document.close();
+      win.focus();
+      setTimeout(() => { win.print(); }, 600);
     });
     overlay.addEventListener('click', e => {
       if (e.target === overlay) { overlay.classList.remove('open'); document.body.style.overflow = ''; }
@@ -3571,7 +3592,7 @@ REQUIRED SECTIONS — include all of these, fully populated:
 
 7. FOOTER: "Prepared by [AM name] · [company] · [date]" in small grey text.
 
-Style rules: max-width 680px, padding 32px, font Inter/system-ui, #0B0E14 text, #4B5563 secondary, #9CA3AF muted, #2E74DC accent. ALL CSS inline. No external resources. Sharp, boardroom-quality. Dense but not crowded.`;
+Style rules: max-width 680px, padding 32px, font Inter/system-ui, #0B0E14 text, #4B5563 secondary, #9CA3AF muted, #2E74DC accent. ALL CSS inline. No external resources. Sharp, boardroom-quality. Dense but not crowded. CRITICAL: Add this exact style tag at the very top of the output: <style>* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }</style>`;
 
   const healthColor = c.health >= 85 ? '#166534' : c.health >= 70 ? '#92400E' : '#991B1B';
   const signals     = c.signals.slice(0,3).map(s => `${s.title} (${s.cls})`).join('; ');
@@ -3603,7 +3624,10 @@ Generate the complete HTML document. Make it sharp and professional.`;
   });
   const data = await resp.json();
   const raw = data.brief || data.content || '';
-  return raw.replace(/^```html[\s\S]*?\n/i,'').replace(/^```[\s\S]*?\n/i,'').replace(/\n?```\s*$/,'').trim() || 'Could not generate document.';
+  // Strip any markdown fences — find first HTML tag
+  const firstTag = raw.indexOf('<');
+  const cleaned = firstTag > -1 ? raw.slice(firstTag) : raw;
+  return cleaned.replace(/```\s*$/, '').trim() || 'Could not generate document.';
 }
 
 async function generateQBR(c, date) {
@@ -3614,10 +3638,11 @@ PAGE 2: Forward — upcoming lifecycle items, open opportunities, recommended in
 
 Use the Salesbuildr brand: #2E74DC accent, #FAFAF7 page bg, #0B0E14 text, Space Grotesk headings. Sharp, boardroom-quality. No external resources. Inline CSS only. Use <div style="page-break-after:always"> between pages.`;
 
-  const completed = c.memory.groups.find(g => g.label === 'Completed')?.items || [];
-  const openItems = c.memory.groups.filter(g => g.label !== 'Completed').flatMap(g => g.items);
-  const opps      = c.opportunities?.map(o => `${o.title} — ${o.value} (${o.statusLabel})`).join('; ') || 'None';
-  const lifecycle = c.lifecycle?.items?.slice(0,4).map(i => `${i.title}: ${i.val} (${i.sub})`).join('; ') || '';
+  const memGroups = c.memory?.groups || [];
+  const completed = memGroups.find(g => g.label === 'Completed')?.items || [];
+  const openItems = memGroups.filter(g => g.label !== 'Completed').flatMap(g => g.items || []);
+  const opps      = (c.opportunities||[]).map(o => `${o.title} — ${o.value} (${o.statusLabel})`).join('; ') || 'None';
+  const lifecycle = (c.lifecycle?.items||[]).slice(0,4).map(i => `${i.title}: ${i.val} (${i.sub})`).join('; ') || '';
 
   const prompt = `QBR for ${c.name} | ${c.type} | ${c.mrr} MRR | Health ${c.health}/100 | AM: ${c.am} | ${date}
 Last review: ${c.memory.meta}
@@ -3636,13 +3661,17 @@ Generate complete two-page HTML QBR.`;
     });
     data = await resp.json();
   } catch(err) {
-    return `<div style="padding:24px;font-family:sans-serif;"><h2 style="color:#991B1B;">Connection error</h2><p style="color:#4B5563;margin-top:8px;">Could not reach the AI service: ${err.message}</p></div>`;
+    return `<div style="padding:24px;font-family:sans-serif;"><h2 style="color:#991B1B;">Connection error</h2><p style="color:#4B5563;margin-top:8px;">Error: ${err.message}</p><p style="color:#4B5563;margin-top:8px;">Check that the Netlify function is deployed and the ANTHROPIC_API_KEY is set.</p></div>`;
   }
   if (!resp.ok || data.error) {
-    return `<div style="padding:24px;font-family:sans-serif;"><h2 style="color:#991B1B;">Service error</h2><p style="color:#4B5563;margin-top:8px;">${data.error || 'Unknown error — please try again.'}</p></div>`;
+    const detail = data.detail || data.error || 'Unknown error';
+    return `<div style="padding:24px;font-family:sans-serif;"><h2 style="color:#991B1B;">Service error (${resp.status})</h2><p style="color:#4B5563;margin-top:8px;">${detail}</p></div>`;
   }
   const raw = data.brief || data.content || '';
-  return raw.replace(/^```html[\s\S]*?\n/i,'').replace(/^```[\s\S]*?\n/i,'').replace(/\n?```\s*$/,'').trim() || 'Could not generate document.';
+  // Strip any markdown fences — find first HTML tag
+  const firstTag = raw.indexOf('<');
+  const cleaned = firstTag > -1 ? raw.slice(firstTag) : raw;
+  return cleaned.replace(/```\s*$/, '').trim() || 'Could not generate document.';
 }
 
 async function generateRoadmap(c, date) {
@@ -3652,7 +3681,7 @@ PAGE 1: 12-month visual timeline using a horizontal bar/grid layout (use divs, n
 
 PAGE 2: Current state vs recommended state table, investment overview (committed vs proposed), strategic priorities (3-5 bullet statements about where the technology relationship is heading).
 
-Brand: #2E74DC accent, #FAFAF7 bg, clean corporate. Inline CSS only. No JS. No external resources.`;
+Brand: #2E74DC accent, #FAFAF7 bg, clean corporate. Inline CSS only. No JS. No external resources. CRITICAL: Add <style>* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }</style> at the very top.`;
 
   const lifecycle = c.lifecycle?.items?.map(i => `${i.title}: ${i.sub} — ${i.val}`).join('; ') || '';
   const opps      = c.opportunities?.map(o => `${o.title}: ${o.value} — ${o.statusLabel}`).join('; ') || '';
@@ -3674,7 +3703,10 @@ Generate the complete Technology Roadmap HTML document with a visual timeline.`;
     body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys, maxTokens: 3500 })
   });
   const data = await resp.json();
-  return data.brief || data.content || 'Could not generate document.';
+  const rawH = data.brief || data.content || '';
+  const firstTagH = rawH.indexOf('<');
+  const cleanedH = firstTagH > -1 ? rawH.slice(firstTagH) : rawH;
+  return cleanedH.replace(/```\s*$/, '').trim() || 'Could not generate document.';
 }
 
 /* ══════════════════════════════════════════
