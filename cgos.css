@@ -1048,6 +1048,7 @@ body {
   top: 50%;
   transform: translateY(-50%);
   z-index: 180;
+  display: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1196,3 +1197,6 @@ body {
 
 /* Adjust main layout when doc panel is open */
 .page-layout.doc-open #view-briefing { margin-right: 300px; }
+
+/* Show doc tab only when briefing view is active */
+.briefing-active .doc-tab-trigger { display: flex; }
