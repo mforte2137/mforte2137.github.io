@@ -3599,7 +3599,7 @@ Generate the complete HTML document. Make it sharp and professional.`;
 
   const resp = await fetch('/api/ai-brief', {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys })
+    body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys, maxTokens: 3500 })
   });
   const data = await resp.json();
   const raw = data.brief || data.content || '';
@@ -3632,7 +3632,7 @@ Generate complete two-page HTML QBR.`;
   try {
     resp = await fetch('/api/ai-brief', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys })
+      body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys, maxTokens: 3500 })
     });
     data = await resp.json();
   } catch(err) {
@@ -3671,7 +3671,7 @@ Generate the complete Technology Roadmap HTML document with a visual timeline.`;
 
   const resp = await fetch('/api/ai-brief', {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys })
+    body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys, maxTokens: 3500 })
   });
   const data = await resp.json();
   return data.brief || data.content || 'Could not generate document.';
