@@ -3653,20 +3653,11 @@ Lifecycle: ${lifecycle.slice(0,200)}
 Alignment: ${c.alignment.overall}% — ${c.alignment.rec.title}
 Generate complete two-page HTML QBR.`;
 
-  let resp, data;
-  try {
-    resp = await fetch('/api/ai-brief', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys, maxTokens: 3500 })
-    });
-    data = await resp.json();
-  } catch(err) {
-    return `<div style="padding:24px;font-family:sans-serif;"><h2 style="color:#991B1B;">Connection error</h2><p style="color:#4B5563;margin-top:8px;">Error: ${err.message}</p><p style="color:#4B5563;margin-top:8px;">Check that the Netlify function is deployed and the ANTHROPIC_API_KEY is set.</p></div>`;
-  }
-  if (!resp.ok || data.error) {
-    const detail = data.detail || data.error || 'Unknown error';
-    return `<div style="padding:24px;font-family:sans-serif;"><h2 style="color:#991B1B;">Service error (${resp.status})</h2><p style="color:#4B5563;margin-top:8px;">${detail}</p></div>`;
-  }
+  const resp = await fetch('/api/ai-brief', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys, maxTokens: 3500 })
+  });
+  const data = await resp.json();
   const raw = data.brief || data.content || '';
   // Strip any markdown fences — find first HTML tag
   const firstTag = raw.indexOf('<');
