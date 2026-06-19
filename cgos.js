@@ -2202,6 +2202,14 @@ function renderPortfolio(filter) {
 /* ══════════════════════════════════════════
    VIEW SWITCHING
    ══════════════════════════════════════════ */
+function ensureBriefingRendered(key) {
+  if (key) customerSelect.value = key;
+  renderCustomer(customerSelect.value);
+  initNudges();
+  initModeToggle();
+  updateDocPanel(customerSelect.value);
+}
+
 function switchView(view) {
   const views = { briefing: 'view-briefing', portfolio: 'view-portfolio', team: 'view-team' };
   const tabs  = { briefing: 'nav-briefing',  portfolio: 'nav-portfolio',  team: 'nav-team'  };
