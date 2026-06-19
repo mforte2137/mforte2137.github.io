@@ -1843,26 +1843,34 @@ function renderWorkToday() {
     });
   });
 
-  // Add activity form
-  document.getElementById('work-add-row').addEventListener('click', () => {
-    document.getElementById('work-add-form').style.display = 'block';
-    document.getElementById('work-add-row').style.display  = 'none';
-    document.getElementById('work-add-text').focus();
+  // Add activity form — guard all elements (may not exist in week mode)
+  const addRow    = document.getElementById('work-add-row');
+  const addForm   = document.getElementById('work-add-form');
+  const saveBtn   = document.getElementById('work-save-btn');
+  const cancelBtn = document.getElementById('work-cancel-btn');
+
+  if (addRow) addRow.addEventListener('click', () => {
+    if (addForm) addForm.style.display = 'block';
+    addRow.style.display = 'none';
+    const tf = document.getElementById('work-add-text');
+    if (tf) tf.focus();
   });
-  document.getElementById('work-save-btn').addEventListener('click', () => {
-    const text    = document.getElementById('work-add-text').value.trim();
-    const custKey = document.getElementById('work-add-cust').value;
+  if (saveBtn) saveBtn.addEventListener('click', () => {
+    const tf      = document.getElementById('work-add-text');
+    const custSel = document.getElementById('work-add-cust');
+    const text    = tf ? tf.value.trim() : '';
+    const custKey = custSel ? custSel.value : 'abc';
     if (!text) return;
-    const cust = WORK_TODAY.customers.find(c => c.key === custKey);
-    if (cust) {
-      const newId = 'w' + Date.now();
-      cust.activities.push({ id: newId, text, done: false, source: 'Added manually', modal: null });
-    }
+    const newId = 'w' + Date.now();
+    TASK_LIBRARY[newId] = { id: newId, text, source: 'Added manually', modal: null, custKey, taskSignal: false };
+    const dayEntry = WEEK_SCHEDULE[TODAY_KEY];
+    if (dayEntry) dayEntry.tasks.push({ id: newId, custKey });
+    WORK_TODAY.customers = buildDayCustomers(TODAY_KEY);
     renderWorkToday();
   });
-  document.getElementById('work-cancel-btn').addEventListener('click', () => {
-    document.getElementById('work-add-form').style.display = 'none';
-    document.getElementById('work-add-row').style.display  = 'flex';
+  if (cancelBtn) cancelBtn.addEventListener('click', () => {
+    if (addForm) addForm.style.display = 'none';
+    if (addRow)  addRow.style.display  = 'flex';
   });
 }
 
