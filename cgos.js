@@ -3574,156 +3574,199 @@ function showDocOutput(title, content) {
 /* ─── Document templates ─────────────────────────────────────────────── */
 
 async function generateHealthReport(c, date) {
-  const sys = `You are generating a professional one-page Health Report for an MSP customer review. Output ONLY a complete valid HTML document fragment (no DOCTYPE, no html/head/body tags) with ALL inline CSS.
-
-REQUIRED SECTIONS — include all of these, fully populated:
-
-1. HEADER: Customer name large, health score large right-aligned, type/MRR/date subtitle, blue bottom border (#2E74DC)
-
-2. ACCOUNT INFO ROW: Two-column grid — Account Manager name left, Primary Contact name + role right, Customer Since date
-
-3. HEALTH DIMENSIONS: All 6 dimensions as rows with a visual score bar (div-based, not SVG). Each row: dimension name left, score bar middle (grey bg, colored fill proportional to score), score right. Colors: 85+ green (#166534 on #DCFCE7), 70-84 amber (#92400E on #FEF3C7), below 70 red (#991B1B on #FEE2E2).
-
-4. TOP SIGNALS: 3 rows showing the most important signals. Each row: colored dot (red/amber/green), signal title, source badge, action label right.
-
-5. AGREEMENT ALIGNMENT: Overall score as a large number with label. Show all 6 alignment categories as a compact grid with scores.
-
-6. NEXT STEPS: 3 numbered action items. Each: action description, suggested owner, suggested date.
-
-7. FOOTER: "Prepared by [AM name] · [company] · [date]" in small grey text.
-
-Style rules: max-width 680px, padding 32px, font Inter/system-ui, #0B0E14 text, #4B5563 secondary, #9CA3AF muted, #2E74DC accent. ALL CSS inline. No external resources. Sharp, boardroom-quality. Dense but not crowded. CRITICAL: Add this exact style tag at the very top of the output: <style>* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }</style>`;
-
-  const healthColor = c.health >= 85 ? '#166534' : c.health >= 70 ? '#92400E' : '#991B1B';
-  const signals     = c.signals.slice(0,3).map(s => `${s.title} (${s.cls})`).join('; ');
-  const alignment   = c.alignment;
-
-  const prompt = `Generate a professional Health Report HTML document for:
-Customer: ${c.name} | Type: ${c.type} | MRR: ${c.mrr} | Since: ${c.since}
-Health score: ${c.health}/100 | Health color: ${healthColor}
-Account manager: ${c.am} | Contact: ${c.contact?.name} (${c.contact?.role})
-Date: ${date}
-
-Health dimensions:
-- Relationship: ${c.healthBreakdown.dimensions[0].score} — ${c.healthBreakdown.dimensions[0].note}
-- Technical: ${c.healthBreakdown.dimensions[1].score} — ${c.healthBreakdown.dimensions[1].note}
-- Security: ${c.healthBreakdown.dimensions[2].score} — ${c.healthBreakdown.dimensions[2].note}
-- Alignment: ${c.healthBreakdown.dimensions[3].score} — ${c.healthBreakdown.dimensions[3].note}
-- Lifecycle: ${c.healthBreakdown.dimensions[4].score} — ${c.healthBreakdown.dimensions[4].note}
-- Strategic Engagement: ${c.healthBreakdown.dimensions[5].score} — ${c.healthBreakdown.dimensions[5].note}
-
-Top signals: ${signals}
-Overall alignment: ${alignment.overall}%
-Alignment rec: ${alignment.rec.title} · ${alignment.rec.val}
-
-Generate the complete HTML document. Make it sharp and professional.`;
-
-  const resp = await fetch('/api/ai-brief', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys, maxTokens: 3500 })
-  });
+  const sys = `You are a data assistant. Output ONLY valid JSON with these exact fields, no other text:
+{"next_step_1_title":"...","next_step_1_detail":"...","next_step_1_date":"...","next_step_2_title":"...","next_step_2_detail":"...","next_step_2_date":"...","next_step_3_title":"...","next_step_3_detail":"...","next_step_3_date":"...","summary_sentence":"One sentence max 25 words on health status and biggest priority."}`;
+  const prompt = `Customer: ${c.name} | Type: ${c.type} | MRR: ${c.mrr} | Health: ${c.health}/100 | AM: ${c.am} | Signals: ${c.signals.slice(0,3).map(s=>s.title+' ('+s.cls+')').join('; ')} | Alignment: ${c.alignment?.overall||0}% — ${c.alignment?.rec?.title||''} ${c.alignment?.rec?.val||''} | Dims: ${(c.healthBreakdown?.dimensions||[]).map(d=>d.label+':'+d.score).join(',')}. Generate 3 next steps and summary.`;
+  const resp = await fetch('/api/ai-brief', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys, maxTokens: 500 }) });
   const data = await resp.json();
-  const raw = data.brief || data.content || '';
-  // Strip any markdown fences — find first HTML tag
-  const firstTag = raw.indexOf('<');
-  const cleaned = firstTag > -1 ? raw.slice(firstTag) : raw;
-  return cleaned.replace(/```\s*$/, '').trim() || 'Could not generate document.';
+  let ai = { next_step_1_title:'Schedule strategic review', next_step_1_detail:'Address top priority signals', next_step_1_date:'Next 30 days', next_step_2_title:'Review agreement alignment', next_step_2_detail:'Close identified gaps', next_step_2_date:'Next 60 days', next_step_3_title:'Security assessment', next_step_3_detail:'Overdue — schedule now', next_step_3_date:'Q3 2026', summary_sentence:`${c.name} health is ${c.health}/100 — priority action is ${c.signals[0]?.title || 'agreement review'}.` };
+  try { const r = data.brief||''; const s=r.indexOf('{'),e=r.lastIndexOf('}'); if(s>-1&&e>-1) ai={...ai,...JSON.parse(r.slice(s,e+1))}; } catch(e){}
+  const dims = c.healthBreakdown?.dimensions || [{label:'Relationship',score:95},{label:'Technical',score:78},{label:'Security',score:62},{label:'Alignment',score:86},{label:'Lifecycle',score:71},{label:'Engagement',score:88}];
+  const dc = s => s>=85?'#16a34a':s>=70?'#d97706':'#dc2626';
+  const dtc = s => s>=85?'#166534':s>=70?'#92400E':'#991B1B';
+  const hc = c.health>=85?'#166534':c.health>=70?'#92400E':'#991B1B';
+  const sd = cls => cls==='high'?'#dc2626':cls==='med'?'#d97706':'#16a34a';
+  const sb = cls => cls==='high'?'#fee2e2':cls==='med'?'#fffbeb':'#f0fdf4';
+  const stc = cls => cls==='high'?'#991B1B':cls==='med'?'#92400E':'#166534';
+  const als = s => s>=85?'#166534':s>=70?'#92400E':'#991B1B';
+  const al = c.alignment?.items || [];
+  return `<style>*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;box-sizing:border-box;margin:0;padding:0;}</style>
+<div style="font-family:Inter,system-ui,sans-serif;max-width:680px;margin:0 auto;padding:32px;color:#0B0E14;">
+<div style="font-size:10px;letter-spacing:.1em;color:#9CA3AF;text-transform:uppercase;margin-bottom:5px;">Health Report · Confidential</div>
+<div style="display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:14px;border-bottom:2.5px solid #2E74DC;margin-bottom:18px;">
+  <div>
+    <div style="font-size:24px;font-weight:700;color:#0B0E14;letter-spacing:-.02em;">${c.name}</div>
+    <div style="font-size:12px;color:#4B5563;margin-top:4px;">${c.type} · ${c.mrr} MRR · Prepared ${date} · ${c.am}</div>
+    <div style="font-size:12px;color:#6B7280;margin-top:3px;font-style:italic;">${ai.summary_sentence}</div>
+  </div>
+  <div style="text-align:right;flex-shrink:0;margin-left:20px;">
+    <div style="font-size:42px;font-weight:700;line-height:1;color:${hc};">${c.health}</div>
+    <div style="font-size:10px;letter-spacing:.08em;color:#9CA3AF;margin-top:2px;">HEALTH SCORE</div>
+  </div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;">
+  <div style="background:#F5F5F2;padding:10px 12px;border-radius:6px;"><div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#9CA3AF;">Account Manager</div><div style="font-size:13px;font-weight:600;color:#0B0E14;margin-top:3px;">${c.am}</div></div>
+  <div style="background:#F5F5F2;padding:10px 12px;border-radius:6px;"><div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#9CA3AF;">Primary Contact</div><div style="font-size:13px;font-weight:600;color:#0B0E14;margin-top:3px;">${c.contact?.name||'—'}</div><div style="font-size:11px;color:#6B7280;">${c.contact?.role||''}</div></div>
+  <div style="background:#F5F5F2;padding:10px 12px;border-radius:6px;"><div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#9CA3AF;">Customer Since</div><div style="font-size:13px;font-weight:600;color:#0B0E14;margin-top:3px;">${c.since||'—'}</div></div>
+  <div style="background:#F5F5F2;padding:10px 12px;border-radius:6px;"><div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#9CA3AF;">Last Review</div><div style="font-size:13px;font-weight:600;color:#0B0E14;margin-top:3px;">${(c.memory?.meta||'—').replace('Last review: ','')}</div></div>
+</div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">Health Dimensions</div>
+<div style="margin-bottom:18px;">
+  ${dims.map(d=>`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:.5px solid #F0EFE8;"><span style="font-size:12px;color:#0B0E14;width:140px;flex-shrink:0;">${d.label}</span><div style="flex:1;height:7px;background:#F0EFE8;border-radius:4px;overflow:hidden;"><div style="width:${d.score}%;height:7px;background:${dc(d.score)};border-radius:4px;"></div></div><span style="font-size:12px;font-weight:600;width:28px;text-align:right;color:${dtc(d.score)};">${d.score}</span></div>`).join('')}
+</div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">Top Signals</div>
+<div style="margin-bottom:18px;">
+  ${c.signals.slice(0,3).map(s=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:${sb(s.cls)};border-radius:6px;margin-bottom:5px;"><div style="width:8px;height:8px;border-radius:50%;background:${sd(s.cls)};flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:12px;color:#0B0E14;">${s.title}</div><div style="font-size:10px;color:#6B7280;margin-top:1px;">${s.source||s.sub||''}</div></div><span style="font-size:10px;padding:2px 8px;border-radius:20px;background:${sb(s.cls)};color:${stc(s.cls)};border:.5px solid ${sd(s.cls)}55;flex-shrink:0;">${s.action||(s.cls==='high'?'Urgent':s.cls==='med'?'Review':'OK')}</span></div>`).join('')}
+</div>
+<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;"><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;">Agreement Alignment</div><div style="font-size:10px;color:#6B7280;">Overall ${c.alignment?.overall||0}%</div></div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:18px;">
+  ${al.slice(0,6).map(a=>`<div style="padding:8px 10px;border-radius:6px;border:.5px solid #E5E7EB;"><div style="font-size:10px;color:#6B7280;">${a.label}</div><div style="font-size:15px;font-weight:600;color:${als(a.score)};margin-top:2px;">${a.score}%</div></div>`).join('')}
+</div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">Recommended Next Steps</div>
+<div style="margin-bottom:20px;">
+  ${[1,2,3].map(n=>`<div style="display:flex;gap:12px;padding:9px 0;border-bottom:.5px solid #F0EFE8;align-items:flex-start;"><div style="width:20px;height:20px;border-radius:50%;background:#2E74DC;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:1px;">${n}</div><div style="flex:1;"><div style="font-size:12px;font-weight:500;color:#0B0E14;">${ai['next_step_'+n+'_title']}</div><div style="font-size:11px;color:#6B7280;margin-top:2px;">${ai['next_step_'+n+'_detail']}</div></div><span style="font-size:10px;color:#2E74DC;flex-shrink:0;margin-top:2px;">${ai['next_step_'+n+'_date']}</span></div>`).join('')}
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:.5px solid #E5E7EB;">
+  <span style="font-size:11px;font-weight:700;color:#2E74DC;letter-spacing:.06em;">Salesbuildr</span>
+  <span style="font-size:10px;color:#9CA3AF;">Prepared by ${c.am} · ${c.name} · ${date} · Confidential</span>
+</div>
+</div>`;
 }
 
 async function generateQBR(c, date) {
-  const sys = `You are generating a professional two-page QBR (Quarterly Business Review) document for an MSP. Output ONLY valid HTML with inline CSS. Structure:
-
-PAGE 1: Review — achievements since last review, current health snapshot, open items, risk summary
-PAGE 2: Forward — upcoming lifecycle items, open opportunities, recommended initiatives, investment summary
-
-Use the Salesbuildr brand: #2E74DC accent, #FAFAF7 page bg, #0B0E14 text, Space Grotesk headings. Sharp, boardroom-quality. No external resources. Inline CSS only. Use <div style="page-break-after:always"> between pages.`;
-
+  const sys = `You are a data assistant. Output ONLY valid JSON, no other text:
+{"achievements":[{"title":"...","detail":"..."}],"open_items":[{"title":"...","detail":"...","severity":"warn|danger"}],"risks":[{"title":"...","detail":"..."}],"strategic_priorities":["...","...","..."]}
+Max 3 achievements, 2 open items, 2 risks, 3 priorities. Be specific and commercial.`;
   const memGroups = c.memory?.groups || [];
-  const completed = memGroups.find(g => g.label === 'Completed')?.items || [];
-  const openItems = memGroups.filter(g => g.label !== 'Completed').flatMap(g => g.items || []);
-  const opps      = (c.opportunities||[]).map(o => `${o.title} — ${o.value} (${o.statusLabel})`).join('; ') || 'None';
-  const lifecycle = (c.lifecycle?.items||[]).slice(0,4).map(i => `${i.title}: ${i.val} (${i.sub})`).join('; ') || '';
-
-  const prompt = `QBR for ${c.name} | ${c.type} | ${c.mrr} MRR | Health ${c.health}/100 | AM: ${c.am} | ${date}
-Last review: ${c.memory.meta}
-Completed: ${completed.slice(0,3).map(i=>i.text).join(', ')||'None'}
-Open: ${openItems.slice(0,3).map(i=>i.text).join(', ')||'None'}
-Opportunities: ${opps.slice(0,200)}
-Lifecycle: ${lifecycle.slice(0,200)}
-Alignment: ${c.alignment.overall}% — ${c.alignment.rec.title}
-Generate complete two-page HTML QBR.`;
-
-  const resp = await fetch('/api/ai-brief', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys, maxTokens: 3500 })
-  });
+  const completed = memGroups.find(g=>g.label==='Completed')?.items||[];
+  const openItems = memGroups.filter(g=>g.label!=='Completed').flatMap(g=>g.items||[]);
+  const opps = (c.opportunities||[]).map(o=>`${o.title} ${o.value} (${o.statusLabel})`).join('; ')||'None';
+  const prompt = `QBR data for ${c.name} | ${c.type} | ${c.mrr} MRR | Health ${c.health}/100 | AM: ${c.am} | ${date} | Last review: ${c.memory?.meta||''} | Completed: ${completed.slice(0,3).map(i=>i.text).join(', ')||'None'} | Open: ${openItems.slice(0,3).map(i=>i.text).join(', ')||'None'} | Opportunities: ${opps.slice(0,150)} | Alignment: ${c.alignment?.overall||0}% | Signals: ${c.signals.slice(0,3).map(s=>s.title).join('; ')}. Generate QBR JSON.`;
+  const resp = await fetch('/api/ai-brief', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys, maxTokens: 700 }) });
   const data = await resp.json();
-  const raw = data.brief || data.content || '';
-  // Strip any markdown fences — find first HTML tag
-  const firstTag = raw.indexOf('<');
-  const cleaned = firstTag > -1 ? raw.slice(firstTag) : raw;
-  return cleaned.replace(/```\s*$/, '').trim() || 'Could not generate document.';
+  let ai = { achievements:[{title:'Strategic review completed',detail:'Account roadmap updated and agreed'},{title:'Technical alignment improved',detail:'Key gaps addressed this quarter'}], open_items:[{title:'Security review outstanding',detail:'Schedule before end of quarter',severity:'warn'}], risks:[{title:'EOL devices unplanned',detail:'Action required before deadline'}], strategic_priorities:['Maintain proactive review cadence','Address open security items','Align technology with business growth'] };
+  try { const r=data.brief||''; const s=r.indexOf('{'),e=r.lastIndexOf('}'); if(s>-1&&e>-1) ai={...ai,...JSON.parse(r.slice(s,e+1))}; } catch(err){}
+  const hc = c.health>=85?'#166534':c.health>=70?'#92400E':'#991B1B';
+  const oppsTotal = c.opportunities?.reduce((t,o)=>{const v=parseFloat((o.value||'0').replace(/[^0-9.]/g,''));return t+(isNaN(v)?0:v);},0)||0;
+  const lifecycle = (c.lifecycle?.items||[]).slice(0,4);
+  const al = c.alignment?.items||[];
+  const als = s=>s>=85?'#166534':s>=70?'#92400E':'#991B1B';
+  return `<style>*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;box-sizing:border-box;margin:0;padding:0;}</style>
+<div style="font-family:Inter,system-ui,sans-serif;max-width:680px;margin:0 auto;padding:32px;color:#0B0E14;">
+<div style="font-size:10px;letter-spacing:.1em;color:#9CA3AF;text-transform:uppercase;margin-bottom:5px;">Quarterly Business Review · Confidential</div>
+<div style="display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:14px;border-bottom:2.5px solid #2E74DC;margin-bottom:18px;">
+  <div><div style="font-size:24px;font-weight:700;color:#0B0E14;letter-spacing:-.02em;">${c.name}</div><div style="font-size:12px;color:#4B5563;margin-top:4px;">${c.type} · ${c.mrr} MRR · ${date} · ${c.am}</div></div>
+  <div style="text-align:right;flex-shrink:0;margin-left:20px;"><div style="font-size:42px;font-weight:700;line-height:1;color:${hc};">${c.health}</div><div style="font-size:10px;letter-spacing:.08em;color:#9CA3AF;margin-top:2px;">HEALTH SCORE</div></div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px;">
+  <div style="background:#F5F5F2;padding:10px;border-radius:6px;text-align:center;"><div style="font-size:20px;font-weight:700;color:#166534;">${ai.achievements?.length||0}</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">Completed</div></div>
+  <div style="background:#F5F5F2;padding:10px;border-radius:6px;text-align:center;"><div style="font-size:20px;font-weight:700;color:#92400E;">${ai.open_items?.length||0}</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">Open items</div></div>
+  <div style="background:#F5F5F2;padding:10px;border-radius:6px;text-align:center;"><div style="font-size:20px;font-weight:700;color:#991B1B;">${ai.risks?.length||0}</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">Risks</div></div>
+  <div style="background:#F5F5F2;padding:10px;border-radius:6px;text-align:center;"><div style="font-size:16px;font-weight:700;color:#2E74DC;">$${oppsTotal.toLocaleString()}</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">Pipeline</div></div>
+</div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">This Quarter — Achievements</div>
+${(ai.achievements||[]).map(a=>`<div style="padding:10px 12px;border-radius:6px;border-left:3px solid #16a34a;background:#f0fdf4;margin-bottom:6px;"><div style="font-size:12px;font-weight:600;color:#166534;">✓ ${a.title}</div><div style="font-size:11px;color:#4B5563;margin-top:2px;">${a.detail}</div></div>`).join('')}
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin:16px 0 10px;">Open Items &amp; Risks</div>
+${(ai.open_items||[]).map(a=>`<div style="padding:10px 12px;border-radius:6px;border-left:3px solid ${a.severity==='danger'?'#dc2626':'#d97706'};background:${a.severity==='danger'?'#fef2f2':'#fffbeb'};margin-bottom:6px;"><div style="font-size:12px;font-weight:600;color:${a.severity==='danger'?'#991B1B':'#92400E'};">⚠ ${a.title}</div><div style="font-size:11px;color:#4B5563;margin-top:2px;">${a.detail}</div></div>`).join('')}
+${(ai.risks||[]).map(a=>`<div style="padding:10px 12px;border-radius:6px;border-left:3px solid #dc2626;background:#fef2f2;margin-bottom:6px;"><div style="font-size:12px;font-weight:600;color:#991B1B;">✕ ${a.title}</div><div style="font-size:11px;color:#4B5563;margin-top:2px;">${a.detail}</div></div>`).join('')}
+<div style="border-top:2px dashed #E5E7EB;margin:22px 0 18px;text-align:center;"><span style="background:#fff;padding:0 10px;font-size:10px;color:#9CA3AF;letter-spacing:.06em;text-transform:uppercase;">Page 2 — Forward View</span></div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">Coming Up — Next 12 Months</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;">
+  ${lifecycle.map(l=>`<div style="padding:10px 12px;border-radius:6px;border:.5px solid #E5E7EB;"><div style="font-size:11px;font-weight:600;color:#0B0E14;">${l.title}</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">${l.sub}</div><div style="font-size:12px;font-weight:600;color:#2E74DC;margin-top:4px;">${l.val}</div></div>`).join('')}
+  ${(c.opportunities||[]).slice(0,4-lifecycle.length).map(o=>`<div style="padding:10px 12px;border-radius:6px;border:.5px solid #E5E7EB;"><div style="font-size:11px;font-weight:600;color:#0B0E14;">${o.title}</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">${o.statusLabel}</div><div style="font-size:12px;font-weight:600;color:#2E74DC;margin-top:4px;">${o.value}</div></div>`).join('')}
+</div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">Agreement Alignment · ${c.alignment?.overall||0}%</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:18px;">
+  ${al.slice(0,6).map(a=>`<div style="padding:8px 10px;border-radius:6px;border:.5px solid #E5E7EB;"><div style="font-size:10px;color:#6B7280;">${a.label}</div><div style="font-size:15px;font-weight:600;color:${als(a.score)};margin-top:2px;">${a.score}%</div></div>`).join('')}
+</div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">Strategic Priorities</div>
+<div style="margin-bottom:20px;">
+  ${(ai.strategic_priorities||[]).map(p=>`<div style="display:flex;gap:10px;padding:7px 0;border-bottom:.5px solid #F0EFE8;align-items:flex-start;"><div style="width:6px;height:6px;border-radius:50%;background:#2E74DC;flex-shrink:0;margin-top:5px;"></div><div style="font-size:12px;color:#0B0E14;line-height:1.5;">${p}</div></div>`).join('')}
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:.5px solid #E5E7EB;">
+  <span style="font-size:11px;font-weight:700;color:#2E74DC;letter-spacing:.06em;">Salesbuildr</span>
+  <span style="font-size:10px;color:#9CA3AF;">QBR · ${c.name} · ${date} · Confidential</span>
+</div>
+</div>`;
 }
 
 async function generateRoadmap(c, date) {
-  const sys = `You are generating a professional Technology Roadmap document for an MSP customer. Output ONLY valid HTML with inline CSS. Structure:
-
-PAGE 1: 12-month visual timeline using a horizontal bar/grid layout (use divs, not SVG) showing quarters Q3-Q4 current year and Q1-Q2 next year. Items plotted on the timeline: renewals, EOL dates, planned projects, proposed expansions.
-
-PAGE 2: Current state vs recommended state table, investment overview (committed vs proposed), strategic priorities (3-5 bullet statements about where the technology relationship is heading).
-
-Brand: #2E74DC accent, #FAFAF7 bg, clean corporate. Inline CSS only. No JS. No external resources. CRITICAL: Add <style>* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }</style> at the very top.`;
-
-  const lifecycle = c.lifecycle?.items?.map(i => `${i.title}: ${i.sub} — ${i.val}`).join('; ') || '';
-  const opps      = c.opportunities?.map(o => `${o.title}: ${o.value} — ${o.statusLabel}`).join('; ') || '';
-
-  const prompt = `Generate a professional Technology Roadmap HTML document for:
-Customer: ${c.name} | Type: ${c.type} | MRR: ${c.mrr}
-AM: ${c.am} | Contact: ${c.contact?.name} (${c.contact?.role})
-Date: ${date}
-
-Lifecycle items (for timeline): ${lifecycle}
-Active opportunities: ${opps}
-Alignment: ${c.alignment.overall}% overall — key gaps: ${c.alignment.items.filter(i => i.cls !== 'good').map(i => i.label).join(', ')}
-Strategic context: ${c.memory.meta}
-
-Generate the complete Technology Roadmap HTML document with a visual timeline.`;
-
-  const resp = await fetch('/api/ai-brief', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys, maxTokens: 3500 })
-  });
+  const sys = `You are a data assistant. Output ONLY valid JSON, no other text:
+{"strategic_priorities":["...","...","...","..."],"current_state":{"strengths":["...","..."],"gaps":["...","..."]},"investment_notes":"One sentence on total investment rationale."}
+Max 4 priorities, 2 strengths, 2 gaps. Be specific, forward-looking, business-focused.`;
+  const lifecycle = (c.lifecycle?.items||[]).slice(0,6);
+  const opps = (c.opportunities||[]);
+  const prompt = `Roadmap data for ${c.name} | ${c.type} | ${c.mrr} MRR | Health ${c.health}/100 | AM: ${c.am} | ${date} | Lifecycle: ${lifecycle.map(l=>l.title+' '+l.sub+' '+l.val).join('; ')} | Opportunities: ${opps.map(o=>o.title+' '+o.value).join('; ')} | Alignment: ${c.alignment?.overall||0}% | Signals: ${c.signals.slice(0,3).map(s=>s.title).join('; ')}. Generate roadmap JSON.`;
+  const resp = await fetch('/api/ai-brief', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys, maxTokens: 600 }) });
   const data = await resp.json();
-  const rawH = data.brief || data.content || '';
-  const firstTagH = rawH.indexOf('<');
-  const cleanedH = firstTagH > -1 ? rawH.slice(firstTagH) : rawH;
-  return cleanedH.replace(/```\s*$/, '').trim() || 'Could not generate document.';
-}
+  let ai = { strategic_priorities:['Proactively manage technology lifecycle to avoid emergency costs','Close security gaps before they become compliance issues','Align service agreements with actual usage and business growth','Establish quarterly review cadence for strategic alignment'], current_state:{strengths:['Strong relationship and communication','Core infrastructure stable'],gaps:['Security review overdue','Device refresh planning required']}, investment_notes:'Investment focused on proactive refresh and security to protect business continuity.' };
+  try { const r=data.brief||''; const s=r.indexOf('{'),e=r.lastIndexOf('}'); if(s>-1&&e>-1) ai={...ai,...JSON.parse(r.slice(s,e+1))}; } catch(err){}
+  const hc = c.health>=85?'#166534':c.health>=70?'#92400E':'#991B1B';
+  const qtr = ['Q3 2026','Q4 2026','Q1 2027','Q2 2027'];
+  const qtrSub = ['Jul · Aug · Sep','Oct · Nov · Dec','Jan · Feb · Mar','Apr · May · Jun'];
+  const oppsTotal = opps.reduce((t,o)=>{const v=parseFloat((o.value||'0').replace(/[^0-9.]/g,''));return t+(isNaN(v)?0:v);},0)||0;
+  const renewalTotal = lifecycle.filter(l=>l.icon==='renewal'||l.icon==='warranty').reduce((t,l)=>{const v=parseFloat((l.val||'0').replace(/[^0-9.]/g,''));return t+(isNaN(v)?0:v);},0)||0;
 
-/* ══════════════════════════════════════════
-   INIT
-   ══════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
-  // Show portfolio immediately — no briefing render needed yet
-  // Feedback closed by default — user opens when ready
-  switchView('portfolio');
-  renderPortfolio('all');
-  initWelcomeBanner();
-  initPortfolioIntel();
-  initRankList();
-  initMicroFeedback();
-  initDocPanel();
-});
+  // Assign lifecycle items to quarters
+  const q = [[],[],[],[]];
+  lifecycle.forEach((l,i) => { q[Math.min(i,3)].push(l); });
+  opps.slice(0,2).forEach((o,i) => { q[i].push({title:o.title, val:o.value, icon:'opp', sub:o.statusLabel}); });
 
-// Briefing renders lazily the first time the tab is clicked or a portfolio row is clicked
-let briefingRendered = false;
-function ensureBriefingRendered(key) {
-  customerSelect.value = key || customerSelect.value;
-  renderCustomer(customerSelect.value);
-  briefingRendered = true;
-  initNudges();
-  initModeToggle();
-  updateDocPanel(customerSelect.value);
-  // Re-render pipeline if in pipeline mode
-  if (briefingMode === 'pipeline') renderPipelineMode(customerSelect.value);
+  const itemColor = icon => icon==='eol'?{bg:'#fee2e2',text:'#991B1B'}:icon==='warranty'?{bg:'#dbeafe',text:'#1E40AF'}:icon==='renewal'?{bg:'#fffbeb',text:'#92400E'}:icon==='opp'?{bg:'#dcfce7',text:'#166534'}:{bg:'#f3f4f6',text:'#374151'};
+
+  return `<style>*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;box-sizing:border-box;margin:0;padding:0;}</style>
+<div style="font-family:Inter,system-ui,sans-serif;max-width:680px;margin:0 auto;padding:32px;color:#0B0E14;">
+<div style="font-size:10px;letter-spacing:.1em;color:#9CA3AF;text-transform:uppercase;margin-bottom:5px;">Technology Roadmap · 12-Month Plan · Confidential</div>
+<div style="display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:14px;border-bottom:2.5px solid #2E74DC;margin-bottom:18px;">
+  <div><div style="font-size:24px;font-weight:700;color:#0B0E14;letter-spacing:-.02em;">${c.name}</div><div style="font-size:12px;color:#4B5563;margin-top:4px;">${c.type} · ${c.mrr} MRR · ${date} – ${date.replace('2026','2027')} · ${c.am}</div></div>
+  <div style="text-align:right;flex-shrink:0;margin-left:20px;"><div style="font-size:12px;color:#9CA3AF;">Health</div><div style="font-size:28px;font-weight:700;color:${hc};line-height:1.1;">${c.health}</div></div>
+</div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">12-Month Technology Timeline</div>
+<div style="border:.5px solid #E5E7EB;border-radius:8px;overflow:hidden;margin-bottom:18px;">
+  <div style="display:grid;grid-template-columns:120px repeat(4,1fr);background:#2E74DC;">
+    <div style="padding:8px 10px;font-size:10px;color:rgba(255,255,255,0.6);background:rgba(0,0,0,0.15);"></div>
+    ${qtr.map((q,i)=>`<div style="padding:8px 10px;font-size:10px;color:#fff;font-weight:600;border-left:.5px solid rgba(255,255,255,0.2);">${q}<br><span style="font-size:9px;opacity:.7;">${qtrSub[i]}</span></div>`).join('')}
+  </div>
+  <div style="display:grid;grid-template-columns:120px repeat(4,1fr);border-top:.5px solid #E5E7EB;">
+    <div style="padding:10px;font-size:11px;font-weight:600;color:#2E74DC;border-right:.5px solid #E5E7EB;">EOL &amp; Refresh</div>
+    ${q.map(items=>`<div style="padding:8px;border-right:.5px solid #E5E7EB;min-height:52px;vertical-align:top;">${items.filter(l=>l.icon==='eol').map(l=>{const co=itemColor(l.icon);return `<div style="padding:3px 7px;border-radius:4px;font-size:10px;margin-bottom:3px;line-height:1.3;background:${co.bg};color:${co.text};">${l.title} · ${l.val}</div>`}).join('')}</div>`).join('')}
+  </div>
+  <div style="display:grid;grid-template-columns:120px repeat(4,1fr);border-top:.5px solid #E5E7EB;background:#FAFAF7;">
+    <div style="padding:10px;font-size:11px;font-weight:600;color:#2E74DC;border-right:.5px solid #E5E7EB;">Renewals</div>
+    ${q.map(items=>`<div style="padding:8px;border-right:.5px solid #E5E7EB;min-height:52px;">${items.filter(l=>l.icon==='renewal'||l.icon==='warranty').map(l=>{const co=itemColor(l.icon);return `<div style="padding:3px 7px;border-radius:4px;font-size:10px;margin-bottom:3px;line-height:1.3;background:${co.bg};color:${co.text};">${l.title} · ${l.val}</div>`}).join('')}</div>`).join('')}
+  </div>
+  <div style="display:grid;grid-template-columns:120px repeat(4,1fr);border-top:.5px solid #E5E7EB;">
+    <div style="padding:10px;font-size:11px;font-weight:600;color:#2E74DC;border-right:.5px solid #E5E7EB;">Opportunities</div>
+    ${q.map(items=>`<div style="padding:8px;border-right:.5px solid #E5E7EB;min-height:52px;">${items.filter(l=>l.icon==='opp').map(l=>{const co=itemColor('opp');return `<div style="padding:3px 7px;border-radius:4px;font-size:10px;margin-bottom:3px;line-height:1.3;background:${co.bg};color:${co.text};">${l.title} · ${l.val}</div>`}).join('')}</div>`).join('')}
+  </div>
+</div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">Investment Summary</div>
+<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:18px;">
+  <thead><tr style="border-bottom:.5px solid #E5E7EB;"><th style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#9CA3AF;text-align:left;padding:6px 0;font-weight:500;">Item</th><th style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#9CA3AF;text-align:right;padding:6px 0;font-weight:500;">Value</th><th style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#9CA3AF;text-align:right;padding:6px 0;font-weight:500;">Quarter</th></tr></thead>
+  <tbody>
+    ${opps.map((o,i)=>`<tr style="border-bottom:.5px solid #F0EFE8;"><td style="padding:7px 0;color:#0B0E14;">${o.title}</td><td style="padding:7px 0;text-align:right;font-weight:600;color:#2E74DC;">${o.value}</td><td style="padding:7px 0;text-align:right;font-size:11px;color:#9CA3AF;">Q${i+3} 2026</td></tr>`).join('')}
+    ${lifecycle.slice(0,2).map((l,i)=>`<tr style="border-bottom:.5px solid #F0EFE8;"><td style="padding:7px 0;color:#0B0E14;">${l.title}</td><td style="padding:7px 0;text-align:right;font-weight:600;color:#2E74DC;">${l.val}</td><td style="padding:7px 0;text-align:right;font-size:11px;color:#9CA3AF;">${l.sub}</td></tr>`).join('')}
+    <tr><td style="padding:8px 0;font-weight:700;color:#0B0E14;">Total 12-month investment</td><td style="padding:8px 0;text-align:right;font-size:16px;font-weight:700;color:#2E74DC;" colspan="2">$${(oppsTotal+renewalTotal).toLocaleString()}</td></tr>
+  </tbody>
+</table>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">
+  <div>
+    <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#166534;font-weight:600;margin-bottom:8px;">Current Strengths</div>
+    ${(ai.current_state?.strengths||[]).map(s=>`<div style="display:flex;gap:8px;padding:5px 0;border-bottom:.5px solid #F0EFE8;font-size:12px;"><div style="width:6px;height:6px;border-radius:50%;background:#16a34a;flex-shrink:0;margin-top:4px;"></div>${s}</div>`).join('')}
+  </div>
+  <div>
+    <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#92400E;font-weight:600;margin-bottom:8px;">Gaps to Address</div>
+    ${(ai.current_state?.gaps||[]).map(g=>`<div style="display:flex;gap:8px;padding:5px 0;border-bottom:.5px solid #F0EFE8;font-size:12px;"><div style="width:6px;height:6px;border-radius:50%;background:#d97706;flex-shrink:0;margin-top:4px;"></div>${g}</div>`).join('')}
+  </div>
+</div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">Strategic Priorities</div>
+<div style="margin-bottom:20px;">
+  ${(ai.strategic_priorities||[]).map((p,i)=>`<div style="display:flex;gap:12px;padding:9px 0;border-bottom:.5px solid #F0EFE8;align-items:flex-start;"><div style="width:20px;height:20px;border-radius:50%;background:#2E74DC;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:1px;">${i+1}</div><div style="font-size:12px;color:#0B0E14;line-height:1.5;">${p}</div></div>`).join('')}
+</div>
+<div style="font-size:11px;color:#6B7280;padding:10px 12px;background:#F5F5F2;border-radius:6px;margin-bottom:18px;font-style:italic;">${ai.investment_notes}</div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:.5px solid #E5E7EB;">
+  <span style="font-size:11px;font-weight:700;color:#2E74DC;letter-spacing:.06em;">Salesbuildr</span>
+  <span style="font-size:10px;color:#9CA3AF;">Technology Roadmap · ${c.name} · ${date} · Confidential</span>
+</div>
+</div>`;
 }
