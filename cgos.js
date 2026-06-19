@@ -3615,7 +3615,8 @@ Generate the complete HTML document. Make it sharp and professional.`;
     body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys })
   });
   const data = await resp.json();
-  return data.brief || data.content || 'Could not generate document.';
+  const raw = data.brief || data.content || '';
+  return raw.replace(/^```html\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/,'').trim() || 'Could not generate document.';
 }
 
 async function generateQBR(c, date) {
@@ -3631,25 +3632,22 @@ Use the Salesbuildr brand: #2E74DC accent, #FAFAF7 page bg, #0B0E14 text, Space 
   const opps      = c.opportunities?.map(o => `${o.title} — ${o.value} (${o.statusLabel})`).join('; ') || 'None';
   const lifecycle = c.lifecycle?.items?.slice(0,4).map(i => `${i.title}: ${i.val} (${i.sub})`).join('; ') || '';
 
-  const prompt = `Generate a professional QBR HTML document for:
-Customer: ${c.name} | Type: ${c.type} | MRR: ${c.mrr}
-Health: ${c.health}/100 | AM: ${c.am} | Contact: ${c.contact?.name}
-Date: ${date} | Last review: ${c.memory.meta}
-
-Completed since last review: ${completed.map(i => i.text).join(', ') || 'None logged'}
-Open items: ${openItems.map(i => i.text).join(', ') || 'None'}
-Active opportunities: ${opps}
-Upcoming lifecycle: ${lifecycle}
-Alignment score: ${c.alignment.overall}% — ${c.alignment.rec.title}
-
-Generate the complete two-page HTML QBR document.`;
+  const prompt = `QBR for ${c.name} | ${c.type} | ${c.mrr} MRR | Health ${c.health}/100 | AM: ${c.am} | ${date}
+Last review: ${c.memory.meta}
+Completed: ${completed.slice(0,3).map(i=>i.text).join(', ')||'None'}
+Open: ${openItems.slice(0,3).map(i=>i.text).join(', ')||'None'}
+Opportunities: ${opps.slice(0,200)}
+Lifecycle: ${lifecycle.slice(0,200)}
+Alignment: ${c.alignment.overall}% — ${c.alignment.rec.title}
+Generate complete two-page HTML QBR.`;
 
   const resp = await fetch('/api/ai-brief', {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys })
   });
   const data = await resp.json();
-  return data.brief || data.content || 'Could not generate document.';
+  const raw = data.brief || data.content || '';
+  return raw.replace(/^```html\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/,'').trim() || 'Could not generate document.';
 }
 
 async function generateRoadmap(c, date) {
@@ -3689,7 +3687,7 @@ Generate the complete Technology Roadmap HTML document with a visual timeline.`;
    ══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   // Show portfolio immediately — no briefing render needed yet
-  openFeedback();
+  // Feedback closed by default — user opens when ready
   switchView('portfolio');
   renderPortfolio('all');
   initWelcomeBanner();
