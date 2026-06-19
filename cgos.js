@@ -661,67 +661,102 @@ function handleWorkflowAction(fn, stepId, c) {
 }
 
 /* ══════════════════════════════════════════
-   MY WORK TODAY DATA
+   MY WORK TODAY DATA — Full week structure
    ══════════════════════════════════════════ */
-const WORK_TODAY = {
-  date: 'Tue Jun 16',
-  customers: [
-    {
-      key: 'abc', name: 'ABC Manufacturing', priority: 'urgent',
-      activities: [
-        { id: 'w1', text: 'Review backup failure signals',          done: true,  source: 'RMM · completed 9:14am',                modal: 'backup_abc'   },
-        { id: 'w2', text: 'Schedule Windows 10 refresh discussion', done: false, source: 'Signal · 14 devices · EOL Oct 2026',     modal: 'eol',
-          taskSignal: true,
-          taskBrief: '14 devices are hitting Windows 10 EOL in 10 months. The refresh planning window opens now — waiting until EOL creates emergency pricing and rushed deployments. Tom hasn\'t discussed this yet, which means you have the advantage of raising it proactively.',
-          taskWhy: 'Longest planning horizon · $12–18k revenue · First-mover advantage',
-          taskContext: { devices: '14 endpoints', eol: 'Oct 14, 2026 · 10 months', budget: '$12,000 – $18,000', lastDiscussed: 'Not yet raised', source: 'RMM · NinjaRMM', confidence: '94% — verified device scan' },
-          oppTitle: 'Device Refresh — Windows 10 EOL'
-        },
-        { id: 'w3', text: 'Email Tom re: revised device pricing',   done: false, source: 'Opportunity · awaiting decision',        modal: 'opp_abc_1',
-          taskSignal: true,
-          taskBrief: 'Tom requested revised pricing 3 days ago. The proposal has been updated to reflect 3 fewer units. A follow-up email keeps the deal moving — no response in over 3 days means momentum is slipping.',
-          taskWhy: 'Deal at risk · $13,200 pipeline · Awaiting decision',
-          taskContext: { proposal: 'Revised — $13,200', lastActivity: 'Jun 4 · 3 days ago', units: '11 devices (revised)', status: 'Awaiting decision', source: 'Salesbuildr · Opportunity', confidence: '100% — proposal sent' },
-          oppTitle: 'Device Refresh — Windows 10 EOL'
-        }
-      ]
-    },
-    {
-      key: 'river', name: 'River Tech Solutions', priority: 'review',
-      activities: [
-        { id: 'w4', text: 'Follow up on server refresh proposal',   done: false, source: 'Opportunity · no response in 8 days',   modal: 'opp_river_1',
-          taskSignal: true,
-          taskBrief: 'Marcus has not responded to the server refresh proposal in 8 days. Server warranty expires in 6 months — delay now compresses the implementation window. A brief check-in call or email re-opens the conversation without pressure.',
-          taskWhy: '$12,000 pipeline · Warranty window closing · No response 8 days',
-          taskContext: { proposal: 'Sent May 20', lastActivity: 'Jun 3 · 8 days ago', value: '$12,000', status: 'No response', source: 'RMM · Warranty data', confidence: '91% — vendor warranty record' },
-          oppTitle: 'Server Refresh — 3 Servers EOW'
-        },
-        { id: 'w5', text: 'Escalate backup target disk failure',    done: false, source: 'RMM · SMART errors · urgent',           modal: 'backup_river',
-          taskSignal: true,
-          taskBrief: 'SMART errors detected on SRV-RIVER-03 indicate imminent disk failure. The backup target is at risk — if it fails, the backup SLA is breached. Marcus must be notified immediately. This is not a sales conversation — it\'s a service obligation.',
-          taskWhy: 'SLA breach risk · Urgent remediation · Client notification required',
-          taskContext: { server: 'SRV-RIVER-03', detected: 'Jun 8 · today', risk: 'Imminent disk failure', sla: 'Backup SLA at risk', source: 'RMM · SMART monitoring', confidence: '98% — real-time sensor alert' },
-          oppTitle: null
-        }
-      ]
-    },
-    {
-      key: 'peak', name: 'Peak Financial Group', priority: 'ok',
-      activities: [
-        { id: 'w6', text: 'Prepare Q3 compliance audit agenda',     done: false, source: 'Salesbuildr · audit in 60 days',        modal: 'audit',
-          taskSignal: true,
-          taskBrief: 'The Q3 compliance audit is 60 days away. Rachel confirmed all four workstreams in May. Preparing the agenda now ensures nothing is missed and shows Peak Financial that you\'re ahead of the schedule.',
-          taskWhy: 'Audit in 60 days · Scope confirmed · $4,000 engagement',
-          taskContext: { auditDate: 'Aug 2026 · 60 days', scope: '4 workstreams confirmed', value: '$4,000', contact: 'Rachel Chen · CFO', source: 'Salesbuildr · Agreement', confidence: '100% — scope confirmed by CFO' },
-          oppTitle: 'Annual Compliance Audit'
-        }
-      ]
-    }
-  ]
+
+const TASK_LIBRARY = {
+  w1: { id: 'w1', text: 'Review backup failure signals',             source: 'RMM · completed 9:14am',              modal: 'backup_abc',   custKey: 'abc',   taskSignal: false },
+  w2: { id: 'w2', text: 'Schedule Windows 10 refresh discussion',    source: 'Signal · 14 devices · EOL Oct 2026',  modal: 'eol',          custKey: 'abc',   taskSignal: true,
+    taskBrief: '14 devices are hitting Windows 10 EOL in 10 months. The refresh planning window opens now — waiting until EOL creates emergency pricing and rushed deployments. Tom hasn\'t discussed this yet.',
+    taskWhy: 'Longest planning horizon · $12–18k revenue · First-mover advantage',
+    taskContext: { devices: '14 endpoints', eol: 'Oct 14, 2026 · 10 months', budget: '$12,000 – $18,000', lastDiscussed: 'Not yet raised', source: 'RMM · NinjaRMM', confidence: '94% — verified device scan' },
+    oppTitle: 'Device Refresh — Windows 10 EOL' },
+  w3: { id: 'w3', text: 'Follow up — device refresh email to Tom',   source: 'Opportunity · awaiting response',     modal: 'opp_abc_1',    custKey: 'abc',   taskSignal: true,
+    taskBrief: 'Tom was contacted 3 days ago about the revised device pricing. No response yet. A brief follow-up keeps the deal moving without pressure.',
+    taskWhy: 'Deal at risk · $14,800 pipeline · Awaiting response',
+    taskContext: { contacted: 'Jun 15 · 3 days ago', value: '$14,800', units: '14 devices', status: 'Waiting for response', source: 'Salesbuildr · Opportunity', confidence: '100% — email logged' },
+    oppTitle: 'Device Refresh — Windows 10 EOL' },
+  w4: { id: 'w4', text: 'Follow up on server refresh proposal',      source: 'Opportunity · no response in 8 days', modal: 'opp_river_1',  custKey: 'river', taskSignal: true,
+    taskBrief: 'Marcus has not responded to the server refresh proposal in 8 days. Server warranty expires in 6 months — delay now compresses the implementation window.',
+    taskWhy: '$12,000 pipeline · Warranty window closing · No response 8 days',
+    taskContext: { proposal: 'Sent May 20', lastActivity: 'Jun 3 · 8 days ago', value: '$12,000', status: 'No response', source: 'RMM · Warranty data', confidence: '91% — vendor warranty record' },
+    oppTitle: 'Server Refresh — 3 Servers EOW' },
+  w5: { id: 'w5', text: 'Escalate backup target disk failure',       source: 'RMM · SMART errors · urgent',         modal: 'backup_river', custKey: 'river', taskSignal: true,
+    taskBrief: 'SMART errors on SRV-RIVER-03 indicate imminent disk failure. Backup SLA at risk — Marcus must be notified immediately.',
+    taskWhy: 'SLA breach risk · Urgent remediation · Client notification required',
+    taskContext: { server: 'SRV-RIVER-03', detected: 'Jun 8', risk: 'Imminent disk failure', sla: 'Backup SLA at risk', source: 'RMM · SMART monitoring', confidence: '98% — real-time sensor alert' },
+    oppTitle: null },
+  w6: { id: 'w6', text: 'Prepare Q3 compliance audit agenda',        source: 'Salesbuildr · audit in 60 days',      modal: 'audit',        custKey: 'peak',  taskSignal: true,
+    taskBrief: 'The Q3 compliance audit is 60 days away. Rachel confirmed all four workstreams in May. Preparing the agenda now shows Peak Financial you\'re ahead of schedule.',
+    taskWhy: 'Audit in 60 days · Scope confirmed · $4,000 engagement',
+    taskContext: { auditDate: 'Aug 2026 · 60 days', scope: '4 workstreams confirmed', value: '$4,000', contact: 'Rachel Chen · CFO', source: 'Salesbuildr · Agreement', confidence: '100% — scope confirmed by CFO' },
+    oppTitle: 'Annual Compliance Audit' },
+  w7: { id: 'w7', text: 'Call Marcus — server refresh decision due', source: 'Scheduled follow-up · Jun 19',        modal: 'opp_river_1',  custKey: 'river', taskSignal: true,
+    taskBrief: 'Marcus was given until Jun 19 to decide on cloud vs on-prem for the server refresh. Today is the day to call and close the direction.',
+    taskWhy: '$12,000 pipeline · Decision deadline today',
+    taskContext: { deadline: 'Jun 19 · today', value: '$12,000', options: 'Cloud vs on-prem', source: 'CGOS · Scheduled follow-up', confidence: '100% — manually scheduled' },
+    oppTitle: 'Server Refresh — 3 Servers EOW' },
+  w8: { id: 'w8', text: 'Peak Financial — pre-call brief review',    source: 'Scheduled · Jun 20 call at 2pm',      modal: 'audit',        custKey: 'peak',  taskSignal: true,
+    taskBrief: 'You have a call with Rachel Chen on Friday at 2pm. Review the compliance audit brief and confirm all four workstreams are documented before the call.',
+    taskWhy: 'Call Friday 2pm · $4,000 audit · Rachel Chen CFO',
+    taskContext: { callDate: 'Jun 20 · Friday 2pm', contact: 'Rachel Chen · CFO', prep: 'Audit brief + workstream checklist', source: 'Calendar · Scheduled', confidence: '100% — call confirmed' },
+    oppTitle: 'Annual Compliance Audit' },
+  w9: { id: 'w9', text: 'ABC — security scope — draft email to Tom', source: 'Carried over · was due Jun 17',       modal: 'secrev',       custKey: 'abc',   taskSignal: true, overdue: true, overdueLabel: 'From yesterday',
+    taskBrief: 'This task was due yesterday. The security assessment conversation with Tom has not been started. Every day of delay reduces urgency.',
+    taskWhy: 'Overdue · Security review 14 months · $3,500 opportunity',
+    taskContext: { originalDue: 'Jun 17 · yesterday', status: 'Not started', value: '$3,500', source: 'Salesbuildr · Signal', confidence: '88% — overdue flag' },
+    oppTitle: 'Security & Compliance Assessment' }
 };
+
+const WEEK_SCHEDULE = {
+  'Mon Jun 16': { done: ['w1'], tasks: [
+    { id: 'w1', custKey: 'abc' }, { id: 'w2', custKey: 'abc' },
+    { id: 'w4', custKey: 'river' }, { id: 'w5', custKey: 'river' }
+  ]},
+  'Tue Jun 17': { done: [], tasks: [
+    { id: 'w9', custKey: 'abc' },
+    { id: 'w3', custKey: 'abc' },
+    { id: 'w6', custKey: 'peak' }
+  ]},
+  'Wed Jun 18': { done: ['w1'], tasks: [
+    { id: 'w1', custKey: 'abc' }, { id: 'w2', custKey: 'abc' },
+    { id: 'w3', custKey: 'abc' }, { id: 'w4', custKey: 'river' },
+    { id: 'w5', custKey: 'river' }, { id: 'w6', custKey: 'peak' }
+  ]},
+  'Thu Jun 19': { done: [], tasks: [
+    { id: 'w7', custKey: 'river' }, { id: 'w6', custKey: 'peak' }
+  ]},
+  'Fri Jun 20': { done: [], tasks: [
+    { id: 'w8', custKey: 'peak' }
+  ]}
+};
+
+const TODAY_KEY = 'Wed Jun 18';
+
+function buildDayCustomers(dayKey) {
+  const day = WEEK_SCHEDULE[dayKey];
+  if (!day) return [];
+  const byCustomer = {};
+  day.tasks.forEach(t => {
+    const task = Object.assign({}, TASK_LIBRARY[t.id]);
+    task.done = day.done.includes(t.id) || completedActivities.has(t.id);
+    if (!byCustomer[t.custKey]) byCustomer[t.custKey] = [];
+    byCustomer[t.custKey].push(task);
+  });
+  const priorityMap = { abc: 'urgent', river: 'review', peak: 'ok' };
+  const nameMap     = { abc: 'ABC Manufacturing', river: 'River Tech Solutions', peak: 'Peak Financial Group' };
+  return Object.entries(byCustomer).map(([key, activities]) => ({
+    key, name: nameMap[key], priority: priorityMap[key], activities
+  }));
+}
+
+const WORK_TODAY = { date: TODAY_KEY, customers: [] }; // populated after completedActivities is defined
 
 /* Track completed activities in session */
 const completedActivities = new Set(['w1']);
+
+// Populate today's tasks now that completedActivities exists
+WORK_TODAY.customers = buildDayCustomers(TODAY_KEY);
 
 /* Track task status — persists through session */
 const taskStatus = {
@@ -1660,44 +1695,114 @@ function renderWorkToday() {
   const priorityCls = { urgent: 'wp-urgent', review: 'wp-review', ok: 'wp-ok' };
   const priorityLabel = { urgent: 'Urgent', review: 'Review', ok: 'On track' };
 
-  panel.innerHTML = `
-    <div class="work-header">
-      <span class="work-title">MY WORK TODAY</span>
-      <span class="work-date">${WORK_TODAY.date}</span>
-    </div>
-    ${WORK_TODAY.customers.map(cust => `
-      <div class="work-customer">
-        <div class="work-cust-row">
-          <span class="work-cust-name">${cust.name}</span>
-          <span class="work-priority ${priorityCls[cust.priority]}">${priorityLabel[cust.priority]}</span>
+  const weekDays = Object.keys(WEEK_SCHEDULE);
+  let currentViewDay = TODAY_KEY;
+  let weekMode = false;
+
+  function buildWorkHTML(mode) {
+    if (mode === 'week') {
+      const dayBlocks = weekDays.map(day => {
+        const isToday   = day === TODAY_KEY;
+        const isPast    = weekDays.indexOf(day) < weekDays.indexOf(TODAY_KEY);
+        const isFuture  = weekDays.indexOf(day) > weekDays.indexOf(TODAY_KEY);
+        const customers = buildDayCustomers(day);
+        const totalTasks = WEEK_SCHEDULE[day].tasks.length;
+        const doneTasks  = WEEK_SCHEDULE[day].tasks.filter(t =>
+          WEEK_SCHEDULE[day].done.includes(t.id) || completedActivities.has(t.id)).length;
+
+        return `
+          <div class="week-day-block ${isToday ? 'week-day-today' : isPast ? 'week-day-past' : 'week-day-future'}">
+            <div class="week-day-header">
+              <span class="week-day-label">${day}${isToday ? ' · TODAY' : isPast ? ' · Past' : ' · Upcoming'}</span>
+              <span class="week-day-count">${doneTasks}/${totalTasks} done</span>
+            </div>
+            ${customers.map(cust => `
+              <div class="work-customer">
+                <div class="work-cust-row">
+                  <span class="work-cust-name">${cust.name}</span>
+                  <span class="work-priority ${cust.priority === 'urgent' ? 'wp-urgent' : cust.priority === 'review' ? 'wp-review' : 'wp-ok'}">${cust.priority === 'urgent' ? 'Urgent' : cust.priority === 'review' ? 'Review' : 'On track'}</span>
+                </div>
+                ${cust.activities.map(act => `
+                  <div class="work-activity ${act.done ? 'done' : ''} ${act.overdue ? 'overdue' : ''}"
+                       data-id="${act.id}" data-modal="${act.modal}" data-custkey="${cust.key}">
+                    <div class="wa-checkbox ${act.done ? 'checked' : ''}" data-id="${act.id}">
+                      ${act.done ? '&#10003;' : ''}
+                    </div>
+                    <div class="wa-body">
+                      <div class="wa-text">${act.text}</div>
+                      <div class="wa-source">${act.source}</div>
+                      ${act.overdue ? `<div class="wa-overdue">${act.overdueLabel || 'Overdue'}</div>` : ''}
+                    </div>
+                    <button class="wa-open-btn" data-modal="${act.modal}" data-custkey="${cust.key}" title="Open detail">&#8250;</button>
+                  </div>`).join('')}
+              </div>`).join('')}
+          </div>`;
+      }).join('');
+
+      return `
+        <div class="work-header">
+          <span class="work-title">MY WORK</span>
+          <div class="work-view-toggle">
+            <button class="work-view-btn" data-wv="today">Today</button>
+            <button class="work-view-btn active" data-wv="week">This Week</button>
+          </div>
         </div>
-        ${cust.activities.map(act => `
-          <div class="work-activity ${completedActivities.has(act.id) ? 'done' : ''}"
-               data-id="${act.id}" data-modal="${act.modal}" data-custkey="${cust.key}">
-            <div class="wa-checkbox ${completedActivities.has(act.id) ? 'checked' : ''}" data-id="${act.id}">
-              ${completedActivities.has(act.id) ? '&#10003;' : ''}
-            </div>
-            <div class="wa-body">
-              <div class="wa-text">${act.text}</div>
-              <div class="wa-source">${act.source}</div>
-            </div>
-            <button class="wa-open-btn" data-modal="${act.modal}" data-custkey="${cust.key}" title="Open detail">&#8250;</button>
-          </div>`).join('')}
-      </div>`).join('')}
-    <div class="work-add-row" id="work-add-row">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Add activity
-    </div>
-    <div class="work-add-form" id="work-add-form" style="display:none;">
-      <select class="work-add-select" id="work-add-cust">
-        ${WORK_TODAY.customers.map(c => `<option value="${c.key}">${c.name}</option>`).join('')}
-      </select>
-      <input type="text" class="work-add-input" id="work-add-text" placeholder="What do you need to do?">
-      <div class="work-add-btns">
-        <button class="work-save-btn" id="work-save-btn">Add</button>
-        <button class="work-cancel-btn" id="work-cancel-btn">Cancel</button>
+        <div class="week-view">${dayBlocks}</div>
+        <div class="work-add-row" id="work-add-row">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add activity
+        </div>`;
+    }
+
+    // Today mode
+    const customers = buildDayCustomers(TODAY_KEY);
+    const priorityLabel = { urgent: 'Urgent', review: 'Review', ok: 'On track' };
+    const priorityCls   = { urgent: 'wp-urgent', review: 'wp-review', ok: 'wp-ok' };
+    return `
+      <div class="work-header">
+        <span class="work-title">MY WORK TODAY</span>
+        <div class="work-view-toggle">
+          <button class="work-view-btn active" data-wv="today">Today</button>
+          <button class="work-view-btn" data-wv="week">This Week</button>
+        </div>
       </div>
-    </div>`;
+      ${customers.map(cust => `
+        <div class="work-customer">
+          <div class="work-cust-row">
+            <span class="work-cust-name">${cust.name}</span>
+            <span class="work-priority ${priorityCls[cust.priority]}">${priorityLabel[cust.priority]}</span>
+          </div>
+          ${cust.activities.map(act => `
+            <div class="work-activity ${completedActivities.has(act.id) || act.done ? 'done' : ''} ${act.overdue ? 'overdue' : ''}"
+                 data-id="${act.id}" data-modal="${act.modal}" data-custkey="${cust.key}">
+              <div class="wa-checkbox ${completedActivities.has(act.id) || act.done ? 'checked' : ''}" data-id="${act.id}">
+                ${completedActivities.has(act.id) || act.done ? '&#10003;' : ''}
+              </div>
+              <div class="wa-body">
+                <div class="wa-text">${act.text}</div>
+                <div class="wa-source">${act.source}</div>
+                ${act.overdue ? `<div class="wa-overdue">${act.overdueLabel || 'Overdue'}</div>` : ''}
+              </div>
+              <button class="wa-open-btn" data-modal="${act.modal}" data-custkey="${cust.key}" title="Open detail">&#8250;</button>
+            </div>`).join('')}
+        </div>`).join('')}
+      <div class="work-add-row" id="work-add-row">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add activity
+      </div>`;
+  }
+
+  panel.innerHTML = buildWorkHTML(weekMode ? 'week' : 'today');
+  
+  // Wire view toggle
+  panel.querySelectorAll('.work-view-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      weekMode = btn.dataset.wv === 'week';
+      renderWorkToday();
+    });
+  });
+
+
 
   // Checkbox toggle
   panel.querySelectorAll('.wa-checkbox').forEach(cb => {
