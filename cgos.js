@@ -709,29 +709,29 @@ const TASK_LIBRARY = {
 };
 
 const WEEK_SCHEDULE = {
-  'Mon Jun 16': { done: ['w1'], tasks: [
+  'Tue Jun 16': { done: ['w1'], tasks: [
     { id: 'w1', custKey: 'abc' }, { id: 'w2', custKey: 'abc' },
     { id: 'w4', custKey: 'river' }, { id: 'w5', custKey: 'river' }
   ]},
-  'Tue Jun 17': { done: [], tasks: [
+  'Wed Jun 17': { done: [], tasks: [
     { id: 'w9', custKey: 'abc' },
     { id: 'w3', custKey: 'abc' },
     { id: 'w6', custKey: 'peak' }
   ]},
-  'Wed Jun 18': { done: ['w1'], tasks: [
+  'Thu Jun 18': { done: ['w1'], tasks: [
     { id: 'w1', custKey: 'abc' }, { id: 'w2', custKey: 'abc' },
     { id: 'w3', custKey: 'abc' }, { id: 'w4', custKey: 'river' },
     { id: 'w5', custKey: 'river' }, { id: 'w6', custKey: 'peak' }
   ]},
-  'Thu Jun 19': { done: [], tasks: [
+  'Fri Jun 19': { done: [], tasks: [
     { id: 'w7', custKey: 'river' }, { id: 'w6', custKey: 'peak' }
   ]},
-  'Fri Jun 20': { done: [], tasks: [
+  'Sat Jun 20': { done: [], tasks: [
     { id: 'w8', custKey: 'peak' }
   ]}
 };
 
-const TODAY_KEY = 'Wed Jun 18';
+const TODAY_KEY = 'Thu Jun 18';
 
 function buildDayCustomers(dayKey) {
   const day = WEEK_SCHEDULE[dayKey];
