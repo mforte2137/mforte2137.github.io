@@ -3553,38 +3553,25 @@ function showDocOutput(title, content) {
 /* ─── Document templates ─────────────────────────────────────────────── */
 
 async function generateHealthReport(c, date) {
-  const sys = `You are generating a professional one-page Health Report for an MSP customer review. Output ONLY valid HTML using inline CSS. Use this exact structure:
+  const sys = `You are generating a professional one-page Health Report for an MSP customer review. Output ONLY a complete valid HTML document fragment (no DOCTYPE, no html/head/body tags) with ALL inline CSS.
 
-<div style="font-family:'Inter',system-ui,sans-serif;max-width:680px;margin:0 auto;padding:32px;color:#0B0E14;">
+REQUIRED SECTIONS — include all of these, fully populated:
 
-  <!-- Header -->
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #2E74DC;">
-    <div>
-      <div style="font-size:11px;letter-spacing:0.1em;color:#9CA3AF;font-family:monospace;text-transform:uppercase;margin-bottom:4px;">Health Report</div>
-      <div style="font-size:22px;font-weight:700;font-family:'Space Grotesk',sans-serif;">[CUSTOMER NAME]</div>
-      <div style="font-size:12px;color:#4B5563;margin-top:3px;">[TYPE] · [MRR] MRR · Prepared [DATE]</div>
-    </div>
-    <div style="text-align:right;">
-      <div style="font-size:36px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:[HEALTH COLOR];">[HEALTH SCORE]</div>
-      <div style="font-size:11px;color:#9CA3AF;font-family:monospace;">/100 Health Score</div>
-    </div>
-  </div>
+1. HEADER: Customer name large, health score large right-aligned, type/MRR/date subtitle, blue bottom border (#2E74DC)
 
-  <!-- Health dimensions 2-col grid -->
-  ...6 dimension rows with score bars...
+2. ACCOUNT INFO ROW: Two-column grid — Account Manager name left, Primary Contact name + role right, Customer Since date
 
-  <!-- Top signals section -->
-  ...top 3 signals...
+3. HEALTH DIMENSIONS: All 6 dimensions as rows with a visual score bar (div-based, not SVG). Each row: dimension name left, score bar middle (grey bg, colored fill proportional to score), score right. Colors: 85+ green (#166534 on #DCFCE7), 70-84 amber (#92400E on #FEF3C7), below 70 red (#991B1B on #FEE2E2).
 
-  <!-- Alignment summary -->
-  ...overall alignment score with colored indicator...
+4. TOP SIGNALS: 3 rows showing the most important signals. Each row: colored dot (red/amber/green), signal title, source badge, action label right.
 
-  <!-- Three next steps -->
-  ...numbered action items with owner and suggested date...
+5. AGREEMENT ALIGNMENT: Overall score as a large number with label. Show all 6 alignment categories as a compact grid with scores.
 
-</div>
+6. NEXT STEPS: 3 numbered action items. Each: action description, suggested owner, suggested date.
 
-Rules: inline CSS only. No external fonts. Use #2E74DC for accent, #DCFCE7/#166534 for good, #FEF3C7/#92400E for warn, #FEE2E2/#991B1B for danger. Sharp, clean, corporate. No charts that require JS.`;
+7. FOOTER: "Prepared by [AM name] · [company] · [date]" in small grey text.
+
+Style rules: max-width 680px, padding 32px, font Inter/system-ui, #0B0E14 text, #4B5563 secondary, #9CA3AF muted, #2E74DC accent. ALL CSS inline. No external resources. Sharp, boardroom-quality. Dense but not crowded.`;
 
   const healthColor = c.health >= 85 ? '#166534' : c.health >= 70 ? '#92400E' : '#991B1B';
   const signals     = c.signals.slice(0,3).map(s => `${s.title} (${s.cls})`).join('; ');
@@ -3616,7 +3603,7 @@ Generate the complete HTML document. Make it sharp and professional.`;
   });
   const data = await resp.json();
   const raw = data.brief || data.content || '';
-  return raw.replace(/^```html\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/,'').trim() || 'Could not generate document.';
+  return raw.replace(/^```html[\s\S]*?\n/i,'').replace(/^```[\s\S]*?\n/i,'').replace(/\n?```\s*$/,'').trim() || 'Could not generate document.';
 }
 
 async function generateQBR(c, date) {
@@ -3641,13 +3628,21 @@ Lifecycle: ${lifecycle.slice(0,200)}
 Alignment: ${c.alignment.overall}% — ${c.alignment.rec.title}
 Generate complete two-page HTML QBR.`;
 
-  const resp = await fetch('/api/ai-brief', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys })
-  });
-  const data = await resp.json();
+  let resp, data;
+  try {
+    resp = await fetch('/api/ai-brief', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys })
+    });
+    data = await resp.json();
+  } catch(err) {
+    return `<div style="padding:24px;font-family:sans-serif;"><h2 style="color:#991B1B;">Connection error</h2><p style="color:#4B5563;margin-top:8px;">Could not reach the AI service: ${err.message}</p></div>`;
+  }
+  if (!resp.ok || data.error) {
+    return `<div style="padding:24px;font-family:sans-serif;"><h2 style="color:#991B1B;">Service error</h2><p style="color:#4B5563;margin-top:8px;">${data.error || 'Unknown error — please try again.'}</p></div>`;
+  }
   const raw = data.brief || data.content || '';
-  return raw.replace(/^```html\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/,'').trim() || 'Could not generate document.';
+  return raw.replace(/^```html[\s\S]*?\n/i,'').replace(/^```[\s\S]*?\n/i,'').replace(/\n?```\s*$/,'').trim() || 'Could not generate document.';
 }
 
 async function generateRoadmap(c, date) {
