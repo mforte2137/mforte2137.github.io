@@ -53,8 +53,17 @@
       <!-- Customer bar -->
       <div class="cust-bar">
         <div class="cust-bar-left">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--text-2);flex-shrink:0;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          <select id="customer-select" class="cust-select">
+          <div class="cust-search-wrap" id="cust-search-wrap">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-3);flex-shrink:0;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="cust-search-input" class="cust-search-input" placeholder="Search customers..." autocomplete="off" />
+            <div class="cust-search-dropdown" id="cust-search-dropdown">
+              <div class="cust-search-item" data-key="abc"><div class="csi-name">ABC Manufacturing</div><div class="csi-meta">Fully Managed · Houston TX · Urgent</div></div>
+              <div class="cust-search-item" data-key="river"><div class="csi-name">River Tech Solutions</div><div class="csi-meta">Co-Managed · Austin TX · Review soon</div></div>
+              <div class="cust-search-item" data-key="peak"><div class="csi-name">Peak Financial Group</div><div class="csi-meta">Fully Managed · Denver CO · On track</div></div>
+            </div>
+          </div>
+          <!-- Hidden select keeps existing JS working -->
+          <select id="customer-select" class="cust-select" style="display:none;">
             <option value="abc">ABC Manufacturing</option>
             <option value="river">River Tech Solutions</option>
             <option value="peak">Peak Financial Group</option>
