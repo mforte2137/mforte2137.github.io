@@ -2208,6 +2208,7 @@ function ensureBriefingRendered(key) {
   initNudges();
   initModeToggle();
   updateDocPanel(customerSelect.value);
+  initCustomerSearch();
 }
 
 function switchView(view) {
@@ -3107,7 +3108,11 @@ function renderTeam() {
         <span class="team-pipeline">${am.pipeline}</span>
         <span style="font-size:14px;color:${hColor};">${am.avgHealth}</span>
         <span style="font-size:12px;">${am.openOpps}</span>
-        <span style="font-size:11px;color:var(--text-2);font-family:'Courier New',monospace;">${am.lastReview}</span>
+        <span style="font-size:11px;color:var(--text-2);font-family:'JetBrains Mono',monospace;">${am.lastReview}</span>
+        <div class="team-tasks-cell">
+          <span class="team-tasks-count">${am.tasksDue}</span>
+          ${am.tasksOverdue > 0 ? `<span class="team-tasks-overdue">${am.tasksOverdue} overdue</span>` : `<span class="team-tasks-ok">On track</span>`}
+        </div>
         <span class="perf-badge ${s.cls}">${s.label}</span>
       </div>`;
   }).join('');
@@ -3253,6 +3258,65 @@ async function generateTeamAI() {
   teamBtn.innerHTML = 'Generate &rarr;';
   teamBtn.disabled  = false;
   out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/* ══════════════════════════════════════════
+   CUSTOMER SEARCH (Phase C)
+   ══════════════════════════════════════════ */
+function initCustomerSearch() {
+  const input    = document.getElementById('cust-search-input');
+  const dropdown = document.getElementById('cust-search-dropdown');
+  const select   = document.getElementById('customer-select');
+  if (!input || !dropdown || !select) return;
+
+  // Set initial display value
+  const currentName = select.options[select.selectedIndex]?.text || '';
+  input.value = currentName;
+
+  // Show dropdown on focus
+  input.addEventListener('focus', () => {
+    input.select();
+    dropdown.classList.add('open');
+    filterItems('');
+  });
+
+  // Filter on type
+  input.addEventListener('input', () => {
+    dropdown.classList.add('open');
+    filterItems(input.value);
+  });
+
+  // Hide on blur
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      dropdown.classList.remove('open');
+      // Restore current customer name if search was abandoned
+      input.value = select.options[select.selectedIndex]?.text || '';
+    }, 150);
+  });
+
+  function filterItems(query) {
+    const q = query.toLowerCase();
+    dropdown.querySelectorAll('.cust-search-item').forEach(item => {
+      const name = item.querySelector('.csi-name').textContent.toLowerCase();
+      const meta = item.querySelector('.csi-meta').textContent.toLowerCase();
+      item.style.display = (name.includes(q) || meta.includes(q)) ? '' : 'none';
+    });
+  }
+
+  // Select customer on click
+  dropdown.querySelectorAll('.cust-search-item').forEach(item => {
+    item.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      const key  = item.dataset.key;
+      const name = item.querySelector('.csi-name').textContent;
+      select.value = key;
+      input.value  = name;
+      dropdown.classList.remove('open');
+      // Trigger the existing customer change handler
+      select.dispatchEvent(new Event('change'));
+    });
+  });
 }
 
 /* ══════════════════════════════════════════
