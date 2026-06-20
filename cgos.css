@@ -623,7 +623,7 @@ body {
 .ts-val  { font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; color: var(--text); }
 .ts-label{ font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-2); margin-top: 4px; }
 .ts-sub  { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-3); margin-top: 3px; }
-.team-row { display: grid; grid-template-columns: 1.6fr 70px 90px 70px 70px 90px 90px; gap: 8px; padding: 10px 16px; align-items: center; font-size: 12px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
+.team-row { display: grid; grid-template-columns: 1.6fr 60px 90px 70px 70px 90px 90px 90px; gap: 8px; padding: 10px 16px; align-items: center; font-size: 12px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
 .team-row:last-child { border-bottom: none; }
 .team-row:hover { background: var(--bg-row); }
 .team-table-hdr { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: var(--text-3); cursor: default; padding-bottom: 8px; }
