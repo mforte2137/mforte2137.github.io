@@ -3040,29 +3040,12 @@ function autoLogToTimeline(c, title, detail) {
    TEAM DATA
    ══════════════════════════════════════════ */
 const TEAM = [
-  {
-    key: 'sarah', name: 'Sarah Johnson', title: 'Senior Account Manager',
-    accounts: ['ABC Manufacturing'],
-    pipeline: '$21,950', avgHealth: 82, openOpps: 4,
-    lastReview: '8 months ago', status: 'watch',
-    note: 'Strong relationship but QBR overdue. Pipeline is healthy.'
-  },
-  {
-    key: 'mark', name: 'Mark Davies', title: 'Account Manager',
-    accounts: ['River Tech Solutions'],
-    pipeline: '$17,500', avgHealth: 71, openOpps: 4,
-    lastReview: '4 months ago', status: 'good',
-    note: 'Actively working server refresh. Backup urgency needs escalation.'
-  },
-  {
-    key: 'lisa', name: 'Lisa Tran', title: 'Senior Account Manager',
-    accounts: ['Peak Financial Group'],
-    pipeline: '$4,000', avgHealth: 91, openOpps: 2,
-    lastReview: '2 months ago', status: 'strong',
-    note: 'Exemplary account management. Best practice for the team.'
-  }
+  { key:'sarah', name:'Sarah Johnson', title:'Senior Account Manager', accounts:['ABC Manufacturing'],     pipeline:'$21,950', avgHealth:82, openOpps:4, lastReview:'8 months ago',  status:'watch',  tasksDue:3, tasksOverdue:1, note:'Strong relationship but QBR overdue. Pipeline is healthy.' },
+  { key:'mark',  name:'Mark Davies',   title:'Account Manager',        accounts:['River Tech Solutions'],   pipeline:'$17,500', avgHealth:71, openOpps:4, lastReview:'4 months ago',  status:'good',   tasksDue:2, tasksOverdue:0, note:'Server refresh stalled. Needs follow-up on proposal.' },
+  { key:'lisa',  name:'Lisa Tran',     title:'Senior Account Manager', accounts:['Peak Financial Group'],   pipeline:'$4,000',  avgHealth:91, openOpps:2, lastReview:'2 months ago',  status:'strong', tasksDue:1, tasksOverdue:0, note:'Excellent retention. Compliance audit on track.' },
+  { key:'james', name:'James Okafor',  title:'Account Manager',        accounts:[],                         pipeline:'$8,200',  avgHealth:78, openOpps:4, lastReview:'6 months ago',  status:'good',   tasksDue:4, tasksOverdue:2, note:'Two reviews overdue. Pipeline activity low this month.' },
+  { key:'priya', name:'Priya Nair',    title:'Account Manager',        accounts:[],                         pipeline:'$3,100',  avgHealth:65, openOpps:2, lastReview:'11 months ago', status:'coach',  tasksDue:5, tasksOverdue:3, note:'Needs coaching on outreach cadence and follow-through.' }
 ];
-
 const ATTENTION = [
   {
     key: 'abc', name: 'ABC Manufacturing', am: 'Sarah Johnson',
