@@ -1,6 +1,6 @@
 // netlify/functions/ai-brief.js
 // Generates AI briefs for the Customer Growth Operating System
-// POST /api/ai-brief  — accepts { customerName, prompt, systemPrompt }
+// POST /api/ai-brief  — accepts { customerName, prompt, systemPrompt, maxTokens }
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -19,6 +19,9 @@ exports.handler = async (event) => {
 Write a concise, practical conversation brief. Plain text only — no markdown, no headers, no bullets.
 Write 4 short paragraphs: opening, first topic, second/third topics, close with next step. Be direct and commercial.`;
 
+  // Allow caller to request more tokens for document generation (default 800, max 4000)
+  const maxTokens = Math.min(parseInt(body.maxTokens || 800, 10), 4000);
+
   let anthropicRes;
   try {
     anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
@@ -30,7 +33,7 @@ Write 4 short paragraphs: opening, first topic, second/third topics, close with 
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 700,
+        max_tokens: maxTokens,
         system: systemPrompt,
         messages: [{ role: 'user', content: body.prompt }]
       })

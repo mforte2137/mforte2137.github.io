@@ -2202,6 +2202,15 @@ function renderPortfolio(filter) {
 /* ══════════════════════════════════════════
    VIEW SWITCHING
    ══════════════════════════════════════════ */
+function ensureBriefingRendered(key) {
+  if (key) customerSelect.value = key;
+  renderCustomer(customerSelect.value);
+  initNudges();
+  initModeToggle();
+  updateDocPanel(customerSelect.value);
+  initCustomerSearch();
+}
+
 function switchView(view) {
   const views = { briefing: 'view-briefing', portfolio: 'view-portfolio', team: 'view-team' };
   const tabs  = { briefing: 'nav-briefing',  portfolio: 'nav-portfolio',  team: 'nav-team'  };
@@ -2214,6 +2223,17 @@ function switchView(view) {
   if (view === 'portfolio') renderPortfolio(activeFilter);
   if (view === 'team')      renderTeam();
   if (view === 'briefing')  ensureBriefingRendered();
+  // Show/hide doc tab based on view
+  const pl = document.querySelector('.page-layout');
+  if (pl) {
+    pl.classList.toggle('briefing-active', view === 'briefing');
+    // Close doc panel if leaving briefing
+    if (view !== 'briefing') {
+      const dp = document.getElementById('doc-panel');
+      if (dp) { dp.classList.remove('open'); dp.setAttribute('aria-hidden','true'); }
+      pl.classList.remove('doc-open');
+    }
+  }
 }
 
 document.querySelectorAll('.view-tab').forEach(btn => {
@@ -2490,6 +2510,7 @@ document.getElementById('chip-health').addEventListener('click', () => {
 /* ── Wiring ── */
 customerSelect.addEventListener('change', e => {
   setBriefingMode('intelligence'); // reset to intelligence on customer change
+  updateDocPanel(e.target.value);
   memoryOpen = false;
   memoryChevron.classList.remove('open');
   memoryExpanded.classList.remove('open');
@@ -3019,29 +3040,12 @@ function autoLogToTimeline(c, title, detail) {
    TEAM DATA
    ══════════════════════════════════════════ */
 const TEAM = [
-  {
-    key: 'sarah', name: 'Sarah Johnson', title: 'Senior Account Manager',
-    accounts: ['ABC Manufacturing'],
-    pipeline: '$21,950', avgHealth: 82, openOpps: 4,
-    lastReview: '8 months ago', status: 'watch',
-    note: 'Strong relationship but QBR overdue. Pipeline is healthy.'
-  },
-  {
-    key: 'mark', name: 'Mark Davies', title: 'Account Manager',
-    accounts: ['River Tech Solutions'],
-    pipeline: '$17,500', avgHealth: 71, openOpps: 4,
-    lastReview: '4 months ago', status: 'good',
-    note: 'Actively working server refresh. Backup urgency needs escalation.'
-  },
-  {
-    key: 'lisa', name: 'Lisa Tran', title: 'Senior Account Manager',
-    accounts: ['Peak Financial Group'],
-    pipeline: '$4,000', avgHealth: 91, openOpps: 2,
-    lastReview: '2 months ago', status: 'strong',
-    note: 'Exemplary account management. Best practice for the team.'
-  }
+  { key:'sarah', name:'Sarah Johnson', title:'Senior Account Manager', accounts:['ABC Manufacturing'],     pipeline:'$21,950', avgHealth:82, openOpps:4, lastReview:'8 months ago',  status:'watch',  tasksDue:3, tasksOverdue:1, note:'Strong relationship but QBR overdue. Pipeline is healthy.' },
+  { key:'mark',  name:'Mark Davies',   title:'Account Manager',        accounts:['River Tech Solutions'],   pipeline:'$17,500', avgHealth:71, openOpps:4, lastReview:'4 months ago',  status:'good',   tasksDue:2, tasksOverdue:0, note:'Server refresh stalled. Needs follow-up on proposal.' },
+  { key:'lisa',  name:'Lisa Tran',     title:'Senior Account Manager', accounts:['Peak Financial Group'],   pipeline:'$4,000',  avgHealth:91, openOpps:2, lastReview:'2 months ago',  status:'strong', tasksDue:1, tasksOverdue:0, note:'Excellent retention. Compliance audit on track.' },
+  { key:'james', name:'James Okafor',  title:'Account Manager',        accounts:[],                         pipeline:'$8,200',  avgHealth:78, openOpps:4, lastReview:'6 months ago',  status:'good',   tasksDue:4, tasksOverdue:2, note:'Two reviews overdue. Pipeline activity low this month.' },
+  { key:'priya', name:'Priya Nair',    title:'Account Manager',        accounts:[],                         pipeline:'$3,100',  avgHealth:65, openOpps:2, lastReview:'11 months ago', status:'coach',  tasksDue:5, tasksOverdue:3, note:'Needs coaching on outreach cadence and follow-through.' }
 ];
-
 const ATTENTION = [
   {
     key: 'abc', name: 'ABC Manufacturing', am: 'Sarah Johnson',
@@ -3087,7 +3091,11 @@ function renderTeam() {
         <span class="team-pipeline">${am.pipeline}</span>
         <span style="font-size:14px;color:${hColor};">${am.avgHealth}</span>
         <span style="font-size:12px;">${am.openOpps}</span>
-        <span style="font-size:11px;color:var(--text-2);font-family:'Courier New',monospace;">${am.lastReview}</span>
+        <span style="font-size:11px;color:var(--text-2);font-family:'JetBrains Mono',monospace;">${am.lastReview}</span>
+        <div class="team-tasks-cell">
+          <span class="team-tasks-count">${am.tasksDue}</span>
+          ${am.tasksOverdue > 0 ? `<span class="team-tasks-overdue">${am.tasksOverdue} overdue</span>` : `<span class="team-tasks-ok">On track</span>`}
+        </div>
         <span class="perf-badge ${s.cls}">${s.label}</span>
       </div>`;
   }).join('');
@@ -3233,6 +3241,65 @@ async function generateTeamAI() {
   teamBtn.innerHTML = 'Generate &rarr;';
   teamBtn.disabled  = false;
   out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/* ══════════════════════════════════════════
+   CUSTOMER SEARCH (Phase C)
+   ══════════════════════════════════════════ */
+function initCustomerSearch() {
+  const input    = document.getElementById('cust-search-input');
+  const dropdown = document.getElementById('cust-search-dropdown');
+  const select   = document.getElementById('customer-select');
+  if (!input || !dropdown || !select) return;
+
+  // Set initial display value
+  const currentName = select.options[select.selectedIndex]?.text || '';
+  input.value = currentName;
+
+  // Show dropdown on focus
+  input.addEventListener('focus', () => {
+    input.select();
+    dropdown.classList.add('open');
+    filterItems('');
+  });
+
+  // Filter on type
+  input.addEventListener('input', () => {
+    dropdown.classList.add('open');
+    filterItems(input.value);
+  });
+
+  // Hide on blur
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      dropdown.classList.remove('open');
+      // Restore current customer name if search was abandoned
+      input.value = select.options[select.selectedIndex]?.text || '';
+    }, 150);
+  });
+
+  function filterItems(query) {
+    const q = query.toLowerCase();
+    dropdown.querySelectorAll('.cust-search-item').forEach(item => {
+      const name = item.querySelector('.csi-name').textContent.toLowerCase();
+      const meta = item.querySelector('.csi-meta').textContent.toLowerCase();
+      item.style.display = (name.includes(q) || meta.includes(q)) ? '' : 'none';
+    });
+  }
+
+  // Select customer on click
+  dropdown.querySelectorAll('.cust-search-item').forEach(item => {
+    item.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      const key  = item.dataset.key;
+      const name = item.querySelector('.csi-name').textContent;
+      select.value = key;
+      input.value  = name;
+      dropdown.classList.remove('open');
+      // Trigger the existing customer change handler
+      select.dispatchEvent(new Event('change'));
+    });
+  });
 }
 
 /* ══════════════════════════════════════════
@@ -3383,27 +3450,392 @@ function renderPipelineMode(custKey) {
 }
 
 /* ══════════════════════════════════════════
+   DOCUMENT GENERATOR
+   ══════════════════════════════════════════ */
+
+/* Session document history */
+const docHistory = {};  // { custKey: [{type, label, date, content}] }
+
+/* Seeded history for demo */
+const SEEDED_DOC_HISTORY = {
+  abc:   [{ type:'health', label:'Health Report', date:'Jun 10' }, { type:'qbr', label:'QBR Document', date:'Apr 2026' }],
+  river: [{ type:'qbr', label:'QBR Document', date:'Mar 2026' }],
+  peak:  [{ type:'health', label:'Health Report', date:'May 2026' }, { type:'roadmap', label:'Technology Roadmap', date:'Jan 2026' }]
+};
+
+function initDocPanel() {
+  const trigger   = document.getElementById('doc-tab-trigger');
+  const panel     = document.getElementById('doc-panel');
+  const closeBtn  = document.getElementById('doc-panel-close');
+  const layout    = document.querySelector('.page-layout');
+  if (!trigger || !panel) return;
+
+  trigger.addEventListener('click', () => {
+    const isOpen = panel.classList.contains('open');
+    if (isOpen) {
+      panel.classList.remove('open');
+      panel.setAttribute('aria-hidden', 'true');
+      if (layout) layout.classList.remove('doc-open');
+    } else {
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+      if (layout) layout.classList.add('doc-open');
+      updateDocPanel(customerSelect.value);
+    }
+  });
+
+  if (closeBtn) closeBtn.addEventListener('click', () => {
+    panel.classList.remove('open');
+    panel.setAttribute('aria-hidden', 'true');
+    if (layout) layout.classList.remove('doc-open');
+  });
+
+  // Wire generate buttons
+  panel.querySelectorAll('.doc-gen-btn').forEach(btn => {
+    btn.addEventListener('click', () => generateDocument(btn.dataset.doctype, customerSelect.value));
+  });
+
+  // Build output overlay
+  if (!document.getElementById('doc-output-overlay')) {
+    const overlay = document.createElement('div');
+    overlay.className = 'doc-output-overlay';
+    overlay.id = 'doc-output-overlay';
+    overlay.innerHTML = `
+      <div class="doc-output-window">
+        <div class="doc-output-header">
+          <div class="doc-output-title" id="doc-output-title">Document</div>
+          <div class="doc-output-actions">
+            <button class="modal-btn" id="doc-print-btn">Print / Save PDF</button>
+            <button class="doc-close-btn" id="doc-output-close">&times;</button>
+          </div>
+        </div>
+        <div class="doc-output-body" id="doc-output-body"></div>
+      </div>`;
+    document.body.appendChild(overlay);
+    document.getElementById('doc-output-close').addEventListener('click', () => {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    });
+    document.getElementById('doc-print-btn').addEventListener('click', () => {
+      const bodyEl  = document.getElementById('doc-output-body');
+      const content = bodyEl ? bodyEl.innerHTML : '';
+      const win = window.open('', '_blank');
+      win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+        <title>Document</title>
+        <style>
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
+          body { margin: 0; padding: 0; font-family: Inter, system-ui, sans-serif; }
+          @page { margin: 15mm; }
+        </style>
+      </head><body>${content}</body></html>`);
+      win.document.close();
+      win.focus();
+      setTimeout(() => { win.print(); }, 600);
+    });
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) { overlay.classList.remove('open'); document.body.style.overflow = ''; }
+    });
+  }
+}
+
+function updateDocPanel(custKey) {
+  const c = CUSTOMERS[custKey];
+  if (!c) return;
+  const custEl = document.getElementById('doc-panel-cust');
+  if (custEl) custEl.textContent = c.name;
+
+  // Build history list
+  const historyEl = document.getElementById('doc-history-list');
+  if (!historyEl) return;
+  const seeded   = SEEDED_DOC_HISTORY[custKey] || [];
+  const session  = docHistory[custKey] || [];
+  const all      = [...session, ...seeded];
+  if (all.length === 0) {
+    historyEl.innerHTML = '<div style="font-size:11px;color:var(--text-3);padding:2px 0;">No documents generated yet</div>';
+    return;
+  }
+  historyEl.innerHTML = all.map(h => `
+    <div class="doc-history-item">
+      <div class="doc-history-dot doc-h-${h.type}"></div>
+      <span class="doc-history-name">${h.label}</span>
+      <span class="doc-history-date">${h.date}</span>
+      <span class="doc-history-open" data-doctype="${h.type}" data-custkey="${custKey}">Open ↗</span>
+    </div>`).join('');
+
+  historyEl.querySelectorAll('.doc-history-open').forEach(link => {
+    link.addEventListener('click', () => {
+      const existing = (docHistory[link.dataset.custkey] || []).find(h => h.type === link.dataset.doctype);
+      if (existing) showDocOutput(existing.label, existing.content);
+      else generateDocument(link.dataset.doctype, link.dataset.custkey);
+    });
+  });
+}
+
+async function generateDocument(type, custKey) {
+  const c = CUSTOMERS[custKey];
+  if (!c) return;
+
+  const labels = { health: 'Health Report', qbr: 'QBR Document', roadmap: 'Technology Roadmap' };
+  const label  = labels[type];
+
+  // Disable the button and show loading
+  const btn = document.querySelector(`.doc-gen-btn[data-doctype="${type}"]`);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Generating...'; }
+
+  const now  = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  const shortDate = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric' });
+
+  let content = '';
+  try {
+    if (type === 'health')  content = await generateHealthReport(c, now);
+    if (type === 'qbr')     content = await generateQBR(c, now);
+    if (type === 'roadmap') content = await generateRoadmap(c, now);
+  } catch(e) {
+    content = `<div style="padding:24px;color:var(--danger);">Could not reach AI service. Please try again.</div>`;
+  }
+
+  // Restore button
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> ${type === 'health' ? 'Generate Health Report' : type === 'qbr' ? 'Generate QBR' : 'Generate Roadmap'}`;
+    if (type === 'health') { btn.classList.add('doc-gen-primary'); }
+  }
+
+  // Save to session history
+  if (!docHistory[custKey]) docHistory[custKey] = [];
+  docHistory[custKey].unshift({ type, label, date: shortDate, content });
+
+  // Auto-log to activity timeline
+  autoLogToTimeline(c, `${label} generated`, `Generated ${now} · auto-logged to strategic memory`);
+
+  // Update history display
+  updateDocPanel(custKey);
+
+  // Show output
+  showDocOutput(`${label} — ${c.name}`, content);
+}
+
+function showDocOutput(title, content) {
+  const overlay = document.getElementById('doc-output-overlay');
+  const titleEl = document.getElementById('doc-output-title');
+  const bodyEl  = document.getElementById('doc-output-body');
+  if (!overlay || !titleEl || !bodyEl) return;
+  titleEl.textContent = title;
+  bodyEl.innerHTML    = content;
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+/* ─── Document templates ─────────────────────────────────────────────── */
+
+async function generateHealthReport(c, date) {
+  const sys = `You are a data assistant. Output ONLY valid JSON with these exact fields, no other text:
+{"next_step_1_title":"...","next_step_1_detail":"...","next_step_1_date":"...","next_step_2_title":"...","next_step_2_detail":"...","next_step_2_date":"...","next_step_3_title":"...","next_step_3_detail":"...","next_step_3_date":"...","summary_sentence":"One sentence max 25 words on health status and biggest priority."}`;
+  const prompt = `Customer: ${c.name} | Type: ${c.type} | MRR: ${c.mrr} | Health: ${c.health}/100 | AM: ${c.am} | Signals: ${c.signals.slice(0,3).map(s=>s.title+' ('+s.cls+')').join('; ')} | Alignment: ${c.alignment?.overall||0}% — ${c.alignment?.rec?.title||''} ${c.alignment?.rec?.val||''} | Dims: ${(c.healthBreakdown?.dimensions||[]).map(d=>d.label+':'+d.score).join(',')}. Generate 3 next steps and summary.`;
+  const resp = await fetch('/api/ai-brief', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys, maxTokens: 500 }) });
+  const data = await resp.json();
+  let ai = { next_step_1_title:'Schedule strategic review', next_step_1_detail:'Address top priority signals', next_step_1_date:'Next 30 days', next_step_2_title:'Review agreement alignment', next_step_2_detail:'Close identified gaps', next_step_2_date:'Next 60 days', next_step_3_title:'Security assessment', next_step_3_detail:'Overdue — schedule now', next_step_3_date:'Q3 2026', summary_sentence:`${c.name} health is ${c.health}/100 — priority action is ${c.signals[0]?.title || 'agreement review'}.` };
+  try { const r = data.brief||''; const s=r.indexOf('{'),e=r.lastIndexOf('}'); if(s>-1&&e>-1) ai={...ai,...JSON.parse(r.slice(s,e+1))}; } catch(e){}
+  const dims = c.healthBreakdown?.dimensions || [{label:'Relationship',score:95},{label:'Technical',score:78},{label:'Security',score:62},{label:'Alignment',score:86},{label:'Lifecycle',score:71},{label:'Engagement',score:88}];
+  const dc = s => s>=85?'#16a34a':s>=70?'#d97706':'#dc2626';
+  const dtc = s => s>=85?'#166534':s>=70?'#92400E':'#991B1B';
+  const hc = c.health>=85?'#166534':c.health>=70?'#92400E':'#991B1B';
+  const sd = cls => cls==='high'?'#dc2626':cls==='med'?'#d97706':'#16a34a';
+  const sb = cls => cls==='high'?'#fee2e2':cls==='med'?'#fffbeb':'#f0fdf4';
+  const stc = cls => cls==='high'?'#991B1B':cls==='med'?'#92400E':'#166534';
+  const als = s => s>=85?'#166534':s>=70?'#92400E':'#991B1B';
+  const al = c.alignment?.items || [];
+  return `<style>*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;box-sizing:border-box;margin:0;padding:0;}</style>
+<div style="font-family:Inter,system-ui,sans-serif;max-width:680px;margin:0 auto;padding:32px;color:#0B0E14;">
+<div style="font-size:10px;letter-spacing:.1em;color:#9CA3AF;text-transform:uppercase;margin-bottom:5px;">Health Report · Confidential</div>
+<div style="display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:14px;border-bottom:2.5px solid #2E74DC;margin-bottom:18px;">
+  <div>
+    <div style="font-size:24px;font-weight:700;color:#0B0E14;letter-spacing:-.02em;">${c.name}</div>
+    <div style="font-size:12px;color:#4B5563;margin-top:4px;">${c.type} · ${c.mrr} MRR · Prepared ${date} · ${c.am}</div>
+    <div style="font-size:12px;color:#6B7280;margin-top:3px;font-style:italic;">${ai.summary_sentence}</div>
+  </div>
+  <div style="text-align:right;flex-shrink:0;margin-left:20px;">
+    <div style="font-size:42px;font-weight:700;line-height:1;color:${hc};">${c.health}</div>
+    <div style="font-size:10px;letter-spacing:.08em;color:#9CA3AF;margin-top:2px;">HEALTH SCORE</div>
+  </div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;">
+  <div style="background:#F5F5F2;padding:10px 12px;border-radius:6px;"><div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#9CA3AF;">Account Manager</div><div style="font-size:13px;font-weight:600;color:#0B0E14;margin-top:3px;">${c.am}</div></div>
+  <div style="background:#F5F5F2;padding:10px 12px;border-radius:6px;"><div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#9CA3AF;">Primary Contact</div><div style="font-size:13px;font-weight:600;color:#0B0E14;margin-top:3px;">${c.contact?.name||'—'}</div><div style="font-size:11px;color:#6B7280;">${c.contact?.role||''}</div></div>
+  <div style="background:#F5F5F2;padding:10px 12px;border-radius:6px;"><div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#9CA3AF;">Customer Since</div><div style="font-size:13px;font-weight:600;color:#0B0E14;margin-top:3px;">${c.since||'—'}</div></div>
+  <div style="background:#F5F5F2;padding:10px 12px;border-radius:6px;"><div style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#9CA3AF;">Last Review</div><div style="font-size:13px;font-weight:600;color:#0B0E14;margin-top:3px;">${(c.memory?.meta||'—').replace('Last review: ','')}</div></div>
+</div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">Health Dimensions</div>
+<div style="margin-bottom:18px;">
+  ${dims.map(d=>`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:.5px solid #F0EFE8;"><span style="font-size:12px;color:#0B0E14;width:140px;flex-shrink:0;">${d.label}</span><div style="flex:1;height:7px;background:#F0EFE8;border-radius:4px;overflow:hidden;"><div style="width:${d.score}%;height:7px;background:${dc(d.score)};border-radius:4px;"></div></div><span style="font-size:12px;font-weight:600;width:28px;text-align:right;color:${dtc(d.score)};">${d.score}</span></div>`).join('')}
+</div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">Top Signals</div>
+<div style="margin-bottom:18px;">
+  ${c.signals.slice(0,3).map(s=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:${sb(s.cls)};border-radius:6px;margin-bottom:5px;"><div style="width:8px;height:8px;border-radius:50%;background:${sd(s.cls)};flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:12px;color:#0B0E14;">${s.title}</div><div style="font-size:10px;color:#6B7280;margin-top:1px;">${s.source||s.sub||''}</div></div><span style="font-size:10px;padding:2px 8px;border-radius:20px;background:${sb(s.cls)};color:${stc(s.cls)};border:.5px solid ${sd(s.cls)}55;flex-shrink:0;">${s.action||(s.cls==='high'?'Urgent':s.cls==='med'?'Review':'OK')}</span></div>`).join('')}
+</div>
+<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;"><div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;">Agreement Alignment</div><div style="font-size:10px;color:#6B7280;">Overall ${c.alignment?.overall||0}%</div></div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:18px;">
+  ${al.slice(0,6).map(a=>`<div style="padding:8px 10px;border-radius:6px;border:.5px solid #E5E7EB;"><div style="font-size:10px;color:#6B7280;">${a.label}</div><div style="font-size:15px;font-weight:600;color:${als(a.score)};margin-top:2px;">${a.score}%</div></div>`).join('')}
+</div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">Recommended Next Steps</div>
+<div style="margin-bottom:20px;">
+  ${[1,2,3].map(n=>`<div style="display:flex;gap:12px;padding:9px 0;border-bottom:.5px solid #F0EFE8;align-items:flex-start;"><div style="width:20px;height:20px;border-radius:50%;background:#2E74DC;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:1px;">${n}</div><div style="flex:1;"><div style="font-size:12px;font-weight:500;color:#0B0E14;">${ai['next_step_'+n+'_title']}</div><div style="font-size:11px;color:#6B7280;margin-top:2px;">${ai['next_step_'+n+'_detail']}</div></div><span style="font-size:10px;color:#2E74DC;flex-shrink:0;margin-top:2px;">${ai['next_step_'+n+'_date']}</span></div>`).join('')}
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:.5px solid #E5E7EB;">
+  <span style="font-size:11px;font-weight:700;color:#2E74DC;letter-spacing:.06em;">Salesbuildr</span>
+  <span style="font-size:10px;color:#9CA3AF;">Prepared by ${c.am} · ${c.name} · ${date} · Confidential</span>
+</div>
+</div>`;
+}
+
+async function generateQBR(c, date) {
+  const sys = `You are a data assistant. Output ONLY valid JSON, no other text:
+{"achievements":[{"title":"...","detail":"..."}],"open_items":[{"title":"...","detail":"...","severity":"warn|danger"}],"risks":[{"title":"...","detail":"..."}],"strategic_priorities":["...","...","..."]}
+Max 3 achievements, 2 open items, 2 risks, 3 priorities. Be specific and commercial.`;
+  const memGroups = c.memory?.groups || [];
+  const completed = memGroups.find(g=>g.label==='Completed')?.items||[];
+  const openItems = memGroups.filter(g=>g.label!=='Completed').flatMap(g=>g.items||[]);
+  const opps = (c.opportunities||[]).map(o=>`${o.title} ${o.value} (${o.statusLabel})`).join('; ')||'None';
+  const prompt = `QBR data for ${c.name} | ${c.type} | ${c.mrr} MRR | Health ${c.health}/100 | AM: ${c.am} | ${date} | Last review: ${c.memory?.meta||''} | Completed: ${completed.slice(0,3).map(i=>i.text).join(', ')||'None'} | Open: ${openItems.slice(0,3).map(i=>i.text).join(', ')||'None'} | Opportunities: ${opps.slice(0,150)} | Alignment: ${c.alignment?.overall||0}% | Signals: ${c.signals.slice(0,3).map(s=>s.title).join('; ')}. Generate QBR JSON.`;
+  const resp = await fetch('/api/ai-brief', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys, maxTokens: 700 }) });
+  const data = await resp.json();
+  let ai = { achievements:[{title:'Strategic review completed',detail:'Account roadmap updated and agreed'},{title:'Technical alignment improved',detail:'Key gaps addressed this quarter'}], open_items:[{title:'Security review outstanding',detail:'Schedule before end of quarter',severity:'warn'}], risks:[{title:'EOL devices unplanned',detail:'Action required before deadline'}], strategic_priorities:['Maintain proactive review cadence','Address open security items','Align technology with business growth'] };
+  try { const r=data.brief||''; const s=r.indexOf('{'),e=r.lastIndexOf('}'); if(s>-1&&e>-1) ai={...ai,...JSON.parse(r.slice(s,e+1))}; } catch(err){}
+  const hc = c.health>=85?'#166534':c.health>=70?'#92400E':'#991B1B';
+  const oppsTotal = c.opportunities?.reduce((t,o)=>{const v=parseFloat((o.value||'0').replace(/[^0-9.]/g,''));return t+(isNaN(v)?0:v);},0)||0;
+  const lifecycle = (c.lifecycle?.items||[]).slice(0,4);
+  const al = c.alignment?.items||[];
+  const als = s=>s>=85?'#166534':s>=70?'#92400E':'#991B1B';
+  return `<style>*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;box-sizing:border-box;margin:0;padding:0;}</style>
+<div style="font-family:Inter,system-ui,sans-serif;max-width:680px;margin:0 auto;padding:32px;color:#0B0E14;">
+<div style="font-size:10px;letter-spacing:.1em;color:#9CA3AF;text-transform:uppercase;margin-bottom:5px;">Quarterly Business Review · Confidential</div>
+<div style="display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:14px;border-bottom:2.5px solid #2E74DC;margin-bottom:18px;">
+  <div><div style="font-size:24px;font-weight:700;color:#0B0E14;letter-spacing:-.02em;">${c.name}</div><div style="font-size:12px;color:#4B5563;margin-top:4px;">${c.type} · ${c.mrr} MRR · ${date} · ${c.am}</div></div>
+  <div style="text-align:right;flex-shrink:0;margin-left:20px;"><div style="font-size:42px;font-weight:700;line-height:1;color:${hc};">${c.health}</div><div style="font-size:10px;letter-spacing:.08em;color:#9CA3AF;margin-top:2px;">HEALTH SCORE</div></div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px;">
+  <div style="background:#F5F5F2;padding:10px;border-radius:6px;text-align:center;"><div style="font-size:20px;font-weight:700;color:#166534;">${ai.achievements?.length||0}</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">Completed</div></div>
+  <div style="background:#F5F5F2;padding:10px;border-radius:6px;text-align:center;"><div style="font-size:20px;font-weight:700;color:#92400E;">${ai.open_items?.length||0}</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">Open items</div></div>
+  <div style="background:#F5F5F2;padding:10px;border-radius:6px;text-align:center;"><div style="font-size:20px;font-weight:700;color:#991B1B;">${ai.risks?.length||0}</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">Risks</div></div>
+  <div style="background:#F5F5F2;padding:10px;border-radius:6px;text-align:center;"><div style="font-size:16px;font-weight:700;color:#2E74DC;">$${oppsTotal.toLocaleString()}</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">Pipeline</div></div>
+</div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">This Quarter — Achievements</div>
+${(ai.achievements||[]).map(a=>`<div style="padding:10px 12px;border-radius:6px;border-left:3px solid #16a34a;background:#f0fdf4;margin-bottom:6px;"><div style="font-size:12px;font-weight:600;color:#166534;">✓ ${a.title}</div><div style="font-size:11px;color:#4B5563;margin-top:2px;">${a.detail}</div></div>`).join('')}
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin:16px 0 10px;">Open Items &amp; Risks</div>
+${(ai.open_items||[]).map(a=>`<div style="padding:10px 12px;border-radius:6px;border-left:3px solid ${a.severity==='danger'?'#dc2626':'#d97706'};background:${a.severity==='danger'?'#fef2f2':'#fffbeb'};margin-bottom:6px;"><div style="font-size:12px;font-weight:600;color:${a.severity==='danger'?'#991B1B':'#92400E'};">⚠ ${a.title}</div><div style="font-size:11px;color:#4B5563;margin-top:2px;">${a.detail}</div></div>`).join('')}
+${(ai.risks||[]).map(a=>`<div style="padding:10px 12px;border-radius:6px;border-left:3px solid #dc2626;background:#fef2f2;margin-bottom:6px;"><div style="font-size:12px;font-weight:600;color:#991B1B;">✕ ${a.title}</div><div style="font-size:11px;color:#4B5563;margin-top:2px;">${a.detail}</div></div>`).join('')}
+<div style="border-top:2px dashed #E5E7EB;margin:22px 0 18px;text-align:center;"><span style="background:#fff;padding:0 10px;font-size:10px;color:#9CA3AF;letter-spacing:.06em;text-transform:uppercase;">Page 2 — Forward View</span></div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">Coming Up — Next 12 Months</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;">
+  ${lifecycle.map(l=>`<div style="padding:10px 12px;border-radius:6px;border:.5px solid #E5E7EB;"><div style="font-size:11px;font-weight:600;color:#0B0E14;">${l.title}</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">${l.sub}</div><div style="font-size:12px;font-weight:600;color:#2E74DC;margin-top:4px;">${l.val}</div></div>`).join('')}
+  ${(c.opportunities||[]).slice(0,4-lifecycle.length).map(o=>`<div style="padding:10px 12px;border-radius:6px;border:.5px solid #E5E7EB;"><div style="font-size:11px;font-weight:600;color:#0B0E14;">${o.title}</div><div style="font-size:10px;color:#6B7280;margin-top:2px;">${o.statusLabel}</div><div style="font-size:12px;font-weight:600;color:#2E74DC;margin-top:4px;">${o.value}</div></div>`).join('')}
+</div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">Agreement Alignment · ${c.alignment?.overall||0}%</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:18px;">
+  ${al.slice(0,6).map(a=>`<div style="padding:8px 10px;border-radius:6px;border:.5px solid #E5E7EB;"><div style="font-size:10px;color:#6B7280;">${a.label}</div><div style="font-size:15px;font-weight:600;color:${als(a.score)};margin-top:2px;">${a.score}%</div></div>`).join('')}
+</div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">Strategic Priorities</div>
+<div style="margin-bottom:20px;">
+  ${(ai.strategic_priorities||[]).map(p=>`<div style="display:flex;gap:10px;padding:7px 0;border-bottom:.5px solid #F0EFE8;align-items:flex-start;"><div style="width:6px;height:6px;border-radius:50%;background:#2E74DC;flex-shrink:0;margin-top:5px;"></div><div style="font-size:12px;color:#0B0E14;line-height:1.5;">${p}</div></div>`).join('')}
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:.5px solid #E5E7EB;">
+  <span style="font-size:11px;font-weight:700;color:#2E74DC;letter-spacing:.06em;">Salesbuildr</span>
+  <span style="font-size:10px;color:#9CA3AF;">QBR · ${c.name} · ${date} · Confidential</span>
+</div>
+</div>`;
+}
+
+async function generateRoadmap(c, date) {
+  const sys = `You are a data assistant. Output ONLY valid JSON, no other text:
+{"strategic_priorities":["...","...","...","..."],"current_state":{"strengths":["...","..."],"gaps":["...","..."]},"investment_notes":"One sentence on total investment rationale."}
+Max 4 priorities, 2 strengths, 2 gaps. Be specific, forward-looking, business-focused.`;
+  const lifecycle = (c.lifecycle?.items||[]).slice(0,6);
+  const opps = (c.opportunities||[]);
+  const prompt = `Roadmap data for ${c.name} | ${c.type} | ${c.mrr} MRR | Health ${c.health}/100 | AM: ${c.am} | ${date} | Lifecycle: ${lifecycle.map(l=>l.title+' '+l.sub+' '+l.val).join('; ')} | Opportunities: ${opps.map(o=>o.title+' '+o.value).join('; ')} | Alignment: ${c.alignment?.overall||0}% | Signals: ${c.signals.slice(0,3).map(s=>s.title).join('; ')}. Generate roadmap JSON.`;
+  const resp = await fetch('/api/ai-brief', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ customerName: c.name, prompt, systemPrompt: sys, maxTokens: 600 }) });
+  const data = await resp.json();
+  let ai = { strategic_priorities:['Proactively manage technology lifecycle to avoid emergency costs','Close security gaps before they become compliance issues','Align service agreements with actual usage and business growth','Establish quarterly review cadence for strategic alignment'], current_state:{strengths:['Strong relationship and communication','Core infrastructure stable'],gaps:['Security review overdue','Device refresh planning required']}, investment_notes:'Investment focused on proactive refresh and security to protect business continuity.' };
+  try { const r=data.brief||''; const s=r.indexOf('{'),e=r.lastIndexOf('}'); if(s>-1&&e>-1) ai={...ai,...JSON.parse(r.slice(s,e+1))}; } catch(err){}
+  const hc = c.health>=85?'#166534':c.health>=70?'#92400E':'#991B1B';
+  const qtr = ['Q3 2026','Q4 2026','Q1 2027','Q2 2027'];
+  const qtrSub = ['Jul · Aug · Sep','Oct · Nov · Dec','Jan · Feb · Mar','Apr · May · Jun'];
+  const oppsTotal = opps.reduce((t,o)=>{const v=parseFloat((o.value||'0').replace(/[^0-9.]/g,''));return t+(isNaN(v)?0:v);},0)||0;
+  const renewalTotal = lifecycle.filter(l=>l.icon==='renewal'||l.icon==='warranty').reduce((t,l)=>{const v=parseFloat((l.val||'0').replace(/[^0-9.]/g,''));return t+(isNaN(v)?0:v);},0)||0;
+
+  // Assign lifecycle items to quarters
+  const q = [[],[],[],[]];
+  lifecycle.forEach((l,i) => { q[Math.min(i,3)].push(l); });
+  opps.slice(0,2).forEach((o,i) => { q[i].push({title:o.title, val:o.value, icon:'opp', sub:o.statusLabel}); });
+
+  const itemColor = icon => icon==='eol'?{bg:'#fee2e2',text:'#991B1B'}:icon==='warranty'?{bg:'#dbeafe',text:'#1E40AF'}:icon==='renewal'?{bg:'#fffbeb',text:'#92400E'}:icon==='opp'?{bg:'#dcfce7',text:'#166534'}:{bg:'#f3f4f6',text:'#374151'};
+
+  return `<style>*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;box-sizing:border-box;margin:0;padding:0;}</style>
+<div style="font-family:Inter,system-ui,sans-serif;max-width:680px;margin:0 auto;padding:32px;color:#0B0E14;">
+<div style="font-size:10px;letter-spacing:.1em;color:#9CA3AF;text-transform:uppercase;margin-bottom:5px;">Technology Roadmap · 12-Month Plan · Confidential</div>
+<div style="display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:14px;border-bottom:2.5px solid #2E74DC;margin-bottom:18px;">
+  <div><div style="font-size:24px;font-weight:700;color:#0B0E14;letter-spacing:-.02em;">${c.name}</div><div style="font-size:12px;color:#4B5563;margin-top:4px;">${c.type} · ${c.mrr} MRR · ${date} – ${date.replace('2026','2027')} · ${c.am}</div></div>
+  <div style="text-align:right;flex-shrink:0;margin-left:20px;"><div style="font-size:12px;color:#9CA3AF;">Health</div><div style="font-size:28px;font-weight:700;color:${hc};line-height:1.1;">${c.health}</div></div>
+</div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">12-Month Technology Timeline</div>
+<div style="border:.5px solid #E5E7EB;border-radius:8px;overflow:hidden;margin-bottom:18px;">
+  <div style="display:grid;grid-template-columns:120px repeat(4,1fr);background:#2E74DC;">
+    <div style="padding:8px 10px;font-size:10px;color:rgba(255,255,255,0.6);background:rgba(0,0,0,0.15);"></div>
+    ${qtr.map((q,i)=>`<div style="padding:8px 10px;font-size:10px;color:#fff;font-weight:600;border-left:.5px solid rgba(255,255,255,0.2);">${q}<br><span style="font-size:9px;opacity:.7;">${qtrSub[i]}</span></div>`).join('')}
+  </div>
+  <div style="display:grid;grid-template-columns:120px repeat(4,1fr);border-top:.5px solid #E5E7EB;">
+    <div style="padding:10px;font-size:11px;font-weight:600;color:#2E74DC;border-right:.5px solid #E5E7EB;">EOL &amp; Refresh</div>
+    ${q.map(items=>`<div style="padding:8px;border-right:.5px solid #E5E7EB;min-height:52px;vertical-align:top;">${items.filter(l=>l.icon==='eol').map(l=>{const co=itemColor(l.icon);return `<div style="padding:3px 7px;border-radius:4px;font-size:10px;margin-bottom:3px;line-height:1.3;background:${co.bg};color:${co.text};">${l.title} · ${l.val}</div>`}).join('')}</div>`).join('')}
+  </div>
+  <div style="display:grid;grid-template-columns:120px repeat(4,1fr);border-top:.5px solid #E5E7EB;background:#FAFAF7;">
+    <div style="padding:10px;font-size:11px;font-weight:600;color:#2E74DC;border-right:.5px solid #E5E7EB;">Renewals</div>
+    ${q.map(items=>`<div style="padding:8px;border-right:.5px solid #E5E7EB;min-height:52px;">${items.filter(l=>l.icon==='renewal'||l.icon==='warranty').map(l=>{const co=itemColor(l.icon);return `<div style="padding:3px 7px;border-radius:4px;font-size:10px;margin-bottom:3px;line-height:1.3;background:${co.bg};color:${co.text};">${l.title} · ${l.val}</div>`}).join('')}</div>`).join('')}
+  </div>
+  <div style="display:grid;grid-template-columns:120px repeat(4,1fr);border-top:.5px solid #E5E7EB;">
+    <div style="padding:10px;font-size:11px;font-weight:600;color:#2E74DC;border-right:.5px solid #E5E7EB;">Opportunities</div>
+    ${q.map(items=>`<div style="padding:8px;border-right:.5px solid #E5E7EB;min-height:52px;">${items.filter(l=>l.icon==='opp').map(l=>{const co=itemColor('opp');return `<div style="padding:3px 7px;border-radius:4px;font-size:10px;margin-bottom:3px;line-height:1.3;background:${co.bg};color:${co.text};">${l.title} · ${l.val}</div>`}).join('')}</div>`).join('')}
+  </div>
+</div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">Investment Summary</div>
+<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:18px;">
+  <thead><tr style="border-bottom:.5px solid #E5E7EB;"><th style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#9CA3AF;text-align:left;padding:6px 0;font-weight:500;">Item</th><th style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#9CA3AF;text-align:right;padding:6px 0;font-weight:500;">Value</th><th style="font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#9CA3AF;text-align:right;padding:6px 0;font-weight:500;">Quarter</th></tr></thead>
+  <tbody>
+    ${opps.map((o,i)=>`<tr style="border-bottom:.5px solid #F0EFE8;"><td style="padding:7px 0;color:#0B0E14;">${o.title}</td><td style="padding:7px 0;text-align:right;font-weight:600;color:#2E74DC;">${o.value}</td><td style="padding:7px 0;text-align:right;font-size:11px;color:#9CA3AF;">Q${i+3} 2026</td></tr>`).join('')}
+    ${lifecycle.slice(0,2).map((l,i)=>`<tr style="border-bottom:.5px solid #F0EFE8;"><td style="padding:7px 0;color:#0B0E14;">${l.title}</td><td style="padding:7px 0;text-align:right;font-weight:600;color:#2E74DC;">${l.val}</td><td style="padding:7px 0;text-align:right;font-size:11px;color:#9CA3AF;">${l.sub}</td></tr>`).join('')}
+    <tr><td style="padding:8px 0;font-weight:700;color:#0B0E14;">Total 12-month investment</td><td style="padding:8px 0;text-align:right;font-size:16px;font-weight:700;color:#2E74DC;" colspan="2">$${(oppsTotal+renewalTotal).toLocaleString()}</td></tr>
+  </tbody>
+</table>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">
+  <div>
+    <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#166534;font-weight:600;margin-bottom:8px;">Current Strengths</div>
+    ${(ai.current_state?.strengths||[]).map(s=>`<div style="display:flex;gap:8px;padding:5px 0;border-bottom:.5px solid #F0EFE8;font-size:12px;"><div style="width:6px;height:6px;border-radius:50%;background:#16a34a;flex-shrink:0;margin-top:4px;"></div>${s}</div>`).join('')}
+  </div>
+  <div>
+    <div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#92400E;font-weight:600;margin-bottom:8px;">Gaps to Address</div>
+    ${(ai.current_state?.gaps||[]).map(g=>`<div style="display:flex;gap:8px;padding:5px 0;border-bottom:.5px solid #F0EFE8;font-size:12px;"><div style="width:6px;height:6px;border-radius:50%;background:#d97706;flex-shrink:0;margin-top:4px;"></div>${g}</div>`).join('')}
+  </div>
+</div>
+<div style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#2E74DC;font-weight:600;margin-bottom:10px;">Strategic Priorities</div>
+<div style="margin-bottom:20px;">
+  ${(ai.strategic_priorities||[]).map((p,i)=>`<div style="display:flex;gap:12px;padding:9px 0;border-bottom:.5px solid #F0EFE8;align-items:flex-start;"><div style="width:20px;height:20px;border-radius:50%;background:#2E74DC;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:1px;">${i+1}</div><div style="font-size:12px;color:#0B0E14;line-height:1.5;">${p}</div></div>`).join('')}
+</div>
+<div style="font-size:11px;color:#6B7280;padding:10px 12px;background:#F5F5F2;border-radius:6px;margin-bottom:18px;font-style:italic;">${ai.investment_notes}</div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:.5px solid #E5E7EB;">
+  <span style="font-size:11px;font-weight:700;color:#2E74DC;letter-spacing:.06em;">Salesbuildr</span>
+  <span style="font-size:10px;color:#9CA3AF;">Technology Roadmap · ${c.name} · ${date} · Confidential</span>
+</div>
+</div>`;
+}
+
+
+/* ══════════════════════════════════════════
    INIT
    ══════════════════════════════════════════ */
+
 document.addEventListener('DOMContentLoaded', () => {
-  // Show portfolio immediately — no briefing render needed yet
-  openFeedback();
-  switchView('portfolio');
-  renderPortfolio('all');
-  initWelcomeBanner();
-  initPortfolioIntel();
+  WORK_TODAY.customers = buildDayCustomers(TODAY_KEY);
   initRankList();
   initMicroFeedback();
+  initDocPanel();
+  // Feedback closed by default — user opens when ready
+  switchView('portfolio');
 });
-
-// Briefing renders lazily the first time the tab is clicked or a portfolio row is clicked
-let briefingRendered = false;
-function ensureBriefingRendered(key) {
-  customerSelect.value = key || customerSelect.value;
-  renderCustomer(customerSelect.value);
-  briefingRendered = true;
-  initNudges();
-  initModeToggle();
-  // Re-render pipeline if in pipeline mode
-  if (briefingMode === 'pipeline') renderPipelineMode(customerSelect.value);
-}
