@@ -1200,3 +1200,49 @@ body {
 
 /* Show doc tab only when briefing view is active */
 .briefing-active .doc-tab-trigger { display: flex; }
+
+/* ══════════════════════════════════
+   CUSTOMER SEARCH (Phase C)
+   ══════════════════════════════════ */
+
+.cust-search-wrap {
+  position: relative; display: flex; align-items: center; gap: 6px;
+  background: var(--bg-panel); border: 1px solid var(--border-2);
+  border-radius: 6px; padding: 4px 10px; min-width: 220px;
+  transition: border-color 0.1s;
+}
+.cust-search-wrap:focus-within { border-color: var(--accent); }
+
+.cust-search-input {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px; font-weight: 600;
+  border: none; background: transparent; color: var(--text);
+  outline: none; width: 100%; min-width: 160px;
+}
+.cust-search-input::placeholder { color: var(--text-3); font-weight: 400; font-size: 13px; }
+
+.cust-search-dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--bg-panel); border: 1px solid var(--border-2);
+  border-radius: 8px; box-shadow: 0 8px 24px rgba(11,14,20,0.12);
+  z-index: 300; display: none; overflow: hidden;
+}
+.cust-search-dropdown.open { display: block; }
+
+.cust-search-item {
+  padding: 10px 14px; cursor: pointer;
+  border-bottom: 1px solid var(--border); transition: background 0.1s;
+}
+.cust-search-item:last-child { border-bottom: none; }
+.cust-search-item:hover { background: var(--accent-bg); }
+.csi-name { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; color: var(--text); }
+.csi-meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-3); margin-top: 2px; }
+
+/* ══════════════════════════════════
+   TEAM TASKS COLUMN (Phase D)
+   ══════════════════════════════════ */
+
+.team-tasks-cell { display: flex; flex-direction: column; gap: 2px; }
+.team-tasks-count { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; color: var(--text); line-height: 1; }
+.team-tasks-overdue { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--danger); }
+.team-tasks-ok      { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--good); }
