@@ -273,53 +273,86 @@ Respond ONLY with valid JSON, no markdown:
       // Fallback: if AI found no logo, pick first logo candidate
       if (!logoUrl && logoImages.length > 0) logoUrl = logoImages[0].url;
 
-      // Use 4 different Unsplash searches — one per template, guaranteed fetchable
-      // Each uses a distinct query AND a different random offset to ensure variety
-      const unsplashSearches = {
-        chevron:     'modern office team professional workspace people',
-        half_circle: 'IT consulting meeting technology boardroom professionals',
-        corporate:   'network server data center infrastructure technology',
-        modern:      'cybersecurity digital technology abstract neon'
+      // ── Photo selection from curated GitHub library ────────
+      // 6 categories × 12 images each — guaranteed fetchable, MSP-appropriate
+      const PHOTO_BASE = 'https://raw.githubusercontent.com/mforte2137/mforte2137.github.io/main/images/photos/';
+      const PHOTO_CATEGORIES = ['office', 'datacenter', 'network', 'security', 'team', 'abstract'];
+      const PHOTO_COUNT = 12;
+
+      // Assign a category per template — varied but consistent themes
+      const templateCategories = {
+        chevron:     'office',
+        half_circle: 'team',
+        corporate:   'datacenter',
+        modern:      'abstract'
       };
 
-      // Generate 4 different random page offsets so reruns give different images
+      // Pick a random image from each template's category
+      // Use time-based seed so reruns give different results
       const seed = Date.now();
-      const offsets = [0, 1, 2, 3].map(i => (Math.floor(seed / 1000 + i * 37) % 8));
-
-      const unsplashResults = await Promise.all(
-        Object.entries(unsplashSearches).map(async ([templateId, query], i) => {
-          const params = new URLSearchParams({
-            query,
-            orientation: 'portrait',
-            per_page:    '10',
-            page:        String(Math.floor(offsets[i] / 5) + 1), // page 1 or 2
-            order_by:    'relevant',
-            client_id:   process.env.UNSPLASH_ACCESS_KEY
-          });
-          const res   = await fetch(`${UNSPLASH_API}?${params}`).then(r => r.json()).catch(() => null);
-          const pool  = res?.results || [];
-          const photo = pool[offsets[i] % Math.max(pool.length, 1)] || pool[0];
-          return { templateId, url: photo ? photo.urls.regular + '&w=1200&q=80' : null };
-        })
-      );
-
-      // Map results by templateId
       const photoByTemplate = {};
-      unsplashResults.forEach(({ templateId, url }) => { photoByTemplate[templateId] = url; });
+      Object.entries(templateCategories).forEach(([templateId, category], i) => {
+        const idx = (Math.floor(seed / 1000 + i * 37) % PHOTO_COUNT) + 1;
+        photoByTemplate[templateId] = `${PHOTO_BASE}${category}-${idx}.jpg`;
+      });
 
-      // Fallback if any search failed
-      const FALLBACK = 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80';
-      Object.keys(unsplashSearches).forEach(id => { if (!photoByTemplate[id]) photoByTemplate[id] = FALLBACK; });
+      // Also pick a random category for each template for refresh capability
+      // Return the full category map so client can refresh individual tiles
+      const categoryMap = templateCategories;
 
       return ok200({
         brandColor:      color || '#1a4da0',
         logoUrl,
         photoByTemplate,
-        // Keep photoUrl/photo2Url for backward compat with manual mode
-        photoUrl:  photoByTemplate.chevron,
-        photo2Url: photoByTemplate.half_circle
+        categoryMap,
+        photoBase:   PHOTO_BASE,
+        photoCount:  PHOTO_COUNT,
+        photoUrl:    photoByTemplate.chevron,
+        photo2Url:   photoByTemplate.half_circle
       });
 
+    } catch (e) {
+      return err(e.message);
+    }
+  }
+
+  // ── ACTION: refresh-tile ───────────────────────────────
+  // Re-render a single template with a new random photo from the curated library
+  if (action === 'refresh-tile') {
+    const { templateId, brandColor, logoUrl, category, excludeUrl } = body;
+    if (!templateId || !brandColor) return err('templateId and brandColor required.', 400);
+
+    const PHOTO_BASE  = 'https://raw.githubusercontent.com/mforte2137/mforte2137.github.io/main/images/photos/';
+    const PHOTO_COUNT = 12;
+    const DEFAULT_CATEGORIES = { chevron: 'office', half_circle: 'team', corporate: 'datacenter', modern: 'abstract' };
+    const cat = category || DEFAULT_CATEGORIES[templateId] || 'office';
+
+    // Pick a random photo, avoiding the one currently shown
+    let photoUrl, attempts = 0;
+    do {
+      const idx = Math.floor(Math.random() * PHOTO_COUNT) + 1;
+      photoUrl = `${PHOTO_BASE}${cat}-${idx}.jpg`;
+      attempts++;
+    } while (photoUrl === excludeUrl && attempts < 5);
+
+    const template = TEMPLATES[templateId];
+    if (!template) return err('Unknown template.', 400);
+
+    const hex8  = brandColor.replace('#', '').padEnd(6,'0').slice(0,6).toUpperCase() + 'FF';
+    const color = '#' + hex8;
+    const layers = { photo: { image: photoUrl } };
+    if (logoUrl) layers.logo = { image: logoUrl };
+    for (const layer of template.colorLayers) layers[layer] = { background_color: color };
+
+    try {
+      const res  = await fetch(PLACID_API, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.PLACID_API_TOKEN}` },
+        body:    JSON.stringify({ template_uuid: template.uuid, layers })
+      });
+      const data = await res.json();
+      if (!res.ok) return err(data.message || `Placid error ${res.status}`);
+      return ok200({ imageId: data.id, imageUrl: data.image_url || null, photoUrl });
     } catch (e) {
       return err(e.message);
     }
