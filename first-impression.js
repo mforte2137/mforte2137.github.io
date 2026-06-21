@@ -96,6 +96,8 @@ const txtSubSize        = document.getElementById('txt-sub-size');
 const txtSubSizeVal     = document.getElementById('txt-sub-size-val');
 const txtColor          = document.getElementById('txt-color');
 const txtColorHex       = document.getElementById('txt-color-hex');
+const txtSubColor       = document.getElementById('txt-sub-color');
+const txtSubColorHex    = document.getElementById('txt-sub-color-hex');
 const txtShadow         = document.getElementById('txt-shadow');
 const txtShadowBlur     = document.getElementById('txt-shadow-blur');
 const txtResetPosBtn    = document.getElementById('txt-reset-pos-btn');
@@ -947,7 +949,8 @@ function teDrawCanvas() {
   const font       = txtFont.value;
   const headSize   = parseInt(txtSize.value);
   const subSz      = parseInt(txtSubSize.value);
-  const color      = txtColor.value || '#ffffff';
+  const color      = txtColor.value    || '#ffffff';
+  const subColor   = txtSubColor.value || '#ffffff';
   const shadow     = txtShadow.checked;
   const blur       = parseInt(txtShadowBlur.value);
   const scale      = w / teImg.naturalWidth;
@@ -962,7 +965,6 @@ function teDrawCanvas() {
 
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'top';
-  ctx.fillStyle    = color;
 
   if (shadow) {
     ctx.shadowColor   = 'rgba(0,0,0,0.7)';
@@ -977,8 +979,8 @@ function teDrawCanvas() {
   let curY = ty;
 
   if (heading) {
+    ctx.fillStyle = color;
     ctx.font = `700 ${hSz}px "${font}", sans-serif`;
-    // Word-wrap heading at ~80% canvas width
     const words    = heading.split(' ');
     const maxWidth = w * 0.82;
     let   line     = '';
@@ -991,10 +993,11 @@ function teDrawCanvas() {
       } else { line = test; }
     }
     if (line) { ctx.fillText(line, tx, curY); curY += hSz * 1.2; }
-    curY += sSz * 0.4; // gap between heading and sub
+    curY += sSz * 0.4;
   }
 
   if (subheading) {
+    ctx.fillStyle    = subColor;
     ctx.font         = `400 ${sSz}px "${font}", sans-serif`;
     ctx.shadowBlur   = shadow ? blur * scale * 0.6 : 0;
     const words    = subheading.split(' ');
@@ -1049,12 +1052,14 @@ function teOpenEditor(imageUrl, returnView) {
   txtHeading.value      = '';
   txtSubheading.value   = '';
   txtFont.value         = 'Inter';
-  txtSize.value         = '52';
-  txtSizeVal.textContent = '52';
-  txtSubSize.value      = '28';
-  txtSubSizeVal.textContent = '28';
+  txtSize.value         = '120';
+  txtSizeVal.textContent = '120';
+  txtSubSize.value      = '60';
+  txtSubSizeVal.textContent = '60';
   txtColor.value        = '#ffffff';
-  txtColorHex.value     = '#ffffff';
+  txtColorHex.value     = '#FFFFFF';
+  txtSubColor.value     = '#ffffff';
+  txtSubColorHex.value  = '#FFFFFF';
   txtShadow.checked     = true;
   txtShadowBlur.value   = '8';
 
@@ -1083,6 +1088,14 @@ txtColor.addEventListener('input', () => {
 txtColorHex.addEventListener('input', () => {
   const v = txtColorHex.value.trim();
   if (/^#[0-9a-fA-F]{6}$/.test(v)) { txtColor.value = v; teDrawCanvas(); }
+});
+txtSubColor.addEventListener('input', () => {
+  txtSubColorHex.value = txtSubColor.value.toUpperCase();
+  teDrawCanvas();
+});
+txtSubColorHex.addEventListener('input', () => {
+  const v = txtSubColorHex.value.trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) { txtSubColor.value = v; teDrawCanvas(); }
 });
 
 // Drag to reposition
@@ -1158,7 +1171,8 @@ txtDownloadBtn.addEventListener('click', () => {
   const font        = txtFont.value;
   const headSize    = parseInt(txtSize.value);
   const subSz       = parseInt(txtSubSize.value);
-  const color       = txtColor.value || '#ffffff';
+  const color       = txtColor.value    || '#ffffff';
+  const subColor    = txtSubColor.value || '#ffffff';
   const shadow      = txtShadow.checked;
   const blur        = parseInt(txtShadowBlur.value);
   const w           = hiCanvas.width;
@@ -1168,7 +1182,6 @@ txtDownloadBtn.addEventListener('click', () => {
 
   hiCtx.textAlign    = 'left';
   hiCtx.textBaseline = 'top';
-  hiCtx.fillStyle    = color;
 
   if (shadow) {
     hiCtx.shadowColor   = 'rgba(0,0,0,0.7)';
@@ -1178,10 +1191,9 @@ txtDownloadBtn.addEventListener('click', () => {
   }
 
   let curY = ty;
-  const heading    = txtHeading.value.trim();
-  const subheading = txtSubheading.value.trim();
 
   if (heading) {
+    hiCtx.fillStyle = color;
     hiCtx.font = `700 ${headSize}px "${font}", sans-serif`;
     const words    = heading.split(' ');
     const maxWidth = w * 0.82;
@@ -1199,6 +1211,7 @@ txtDownloadBtn.addEventListener('click', () => {
   }
 
   if (subheading) {
+    hiCtx.fillStyle  = subColor;
     hiCtx.font       = `400 ${subSz}px "${font}", sans-serif`;
     hiCtx.shadowBlur = shadow ? blur * 0.6 : 0;
     const words    = subheading.split(' ');
