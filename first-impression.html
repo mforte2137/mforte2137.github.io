@@ -37,10 +37,6 @@
           <label class="field-label" for="auto-website">Their website URL <span class="field-required">Required</span></label>
           <input type="url" id="auto-website" class="field-input" placeholder="https://tierneys.com">
         </div>
-        <div class="auto-field">
-          <label class="field-label" for="auto-rep">Your name <span class="field-optional">Optional</span></label>
-          <input type="text" id="auto-rep" class="field-input" maxlength="80" placeholder="e.g. Glen Brown, Salesbuildr">
-        </div>
       </div>
 
       <div class="auto-footer">
@@ -107,20 +103,12 @@
             <select id="industry" class="field-select">
               <optgroup label="With People">
                 <option value="office">Modern Office &amp; Team</option>
-                <option value="consulting">IT Consulting</option>
-                <option value="technician">Field Technician</option>
-              </optgroup>
-              <optgroup label="Infrastructure &amp; Technology">
-                <option value="datacenter">Data Centre</option>
-                <option value="cloud">Cloud &amp; Infrastructure</option>
-                <option value="network">Network &amp; Connectivity</option>
-                <option value="security">Cybersecurity</option>
-              </optgroup>
-              <optgroup label="Abstract — No People">
-                <option value="abstract_lines">Abstract — Lines &amp; Light</option>
-                <option value="abstract_circuit">Abstract — Circuit &amp; Code</option>
-                <option value="abstract_fiber">Abstract — Fiber &amp; Glow</option>
-              </optgroup>
+              <option value="office">Office</option>
+              <option value="team">Team</option>
+              <option value="datacenter">Data Centre</option>
+              <option value="network">Network</option>
+              <option value="security">Security</option>
+              <option value="abstract">Abstract</option>
             </select>
             <button type="button" id="find-photos-btn" class="find-photos-btn">Find Photos →</button>
           </div>
@@ -209,14 +197,6 @@
         </div>
       </div>
 
-      <div class="step">
-        <div class="step-label">Step 5 — Your details</div>
-        <div class="field-group">
-          <label class="field-label" for="rep-name">Your name <span class="field-optional">Optional</span></label>
-          <input type="text" id="rep-name" class="field-input" maxlength="80" placeholder="e.g. Glen Brown, Salesbuildr">
-        </div>
-      </div>
-
       <div class="form-footer">
         <button type="button" id="generate-btn" class="generate-btn">Generate Cover Page →</button>
         <p class="form-note">Generates the selected template only.</p>
@@ -254,7 +234,7 @@
       </div>
     </div>
 
-    <p class="result-auto-lead">All four templates rendered with their branding. Click one to select it, then download or save to Salesbuildr.</p>
+    <p class="result-auto-lead">All four templates rendered with their branding. Click one to select it, then download.</p>
 
     <!-- Logo missing warning — shown when auto mode couldn't find/fetch a logo -->
     <div id="logo-missing-banner" class="logo-missing-banner" hidden>
@@ -269,11 +249,9 @@
     </div>
 
     <!-- 4-up grid -->
-    <div class="covers-grid" id="covers-grid">
-      <!-- Populated by JS -->
-    </div>
+    <div class="covers-grid" id="covers-grid"></div>
 
-    <!-- Selected cover actions — appears when rep clicks a cover -->
+    <!-- Selected cover actions -->
     <div id="selected-cover-actions" class="selected-cover-actions" hidden>
       <div class="selected-cover-preview-wrap">
         <img id="selected-cover-img" class="selected-cover-img" src="" alt="">
@@ -281,32 +259,8 @@
       <div class="result-actions">
         <div class="action-card">
           <div class="action-card-title">📥 Download PNG</div>
-          <p class="action-card-desc">Save the cover page as a high-resolution PNG.</p>
+          <p class="action-card-desc">Save the cover page as a high-resolution PNG — ready to upload to Salesbuildr's Cover Page section.</p>
           <a id="auto-download-btn" class="action-btn action-btn-download" download>Download Cover Page</a>
-        </div>
-        <div class="action-card">
-          <div class="action-card-title">⚡ Save to Widget Library</div>
-          <p class="action-card-desc">Push directly to your Salesbuildr template library with variable overlays pre-wired.</p>
-          <div class="mini-connect" id="auto-mini-connect">
-            <button type="button" class="mini-connect-toggle" id="auto-mini-toggle">
-              Connect Salesbuildr <span class="mini-arrow" id="auto-mini-arrow">▼</span>
-            </button>
-            <div class="mini-connect-body" id="auto-mini-body" hidden>
-              <div class="mini-fields">
-                <div class="mini-field">
-                  <label class="mini-label">Tenant URL <span class="mini-where">e.g. https://acme.salesbuildr.com</span></label>
-                  <input type="text" id="auto-sb-tenant-url" class="mini-input" placeholder="https://yourcompany.salesbuildr.com" autocomplete="off">
-                </div>
-                <div class="mini-field">
-                  <label class="mini-label">API Key <span class="mini-where">Admin → Integrations → API Key</span></label>
-                  <input type="password" id="auto-sb-api-key" class="mini-input" placeholder="Your API key" autocomplete="new-password">
-                </div>
-              </div>
-              <label class="mini-remember"><input type="checkbox" id="auto-sb-remember"> Remember on this device</label>
-            </div>
-          </div>
-          <button type="button" id="auto-push-btn" class="action-btn action-btn-push">Save to Salesbuildr →</button>
-          <div id="auto-push-result" class="push-result" hidden></div>
         </div>
       </div>
     </div>
@@ -331,32 +285,8 @@
       <div class="result-actions">
         <div class="action-card">
           <div class="action-card-title">📥 Download PNG</div>
-          <p class="action-card-desc">Save the cover page as a high-resolution PNG.</p>
+          <p class="action-card-desc">Save the cover page as a high-resolution PNG — ready to upload to Salesbuildr's Cover Page section.</p>
           <a id="download-btn" class="action-btn action-btn-download" download>Download Cover Page</a>
-        </div>
-        <div class="action-card">
-          <div class="action-card-title">⚡ Save to Widget Library</div>
-          <p class="action-card-desc">Push directly to your Salesbuildr template library with variable overlays pre-wired.</p>
-          <div class="mini-connect" id="mini-connect">
-            <button type="button" class="mini-connect-toggle" id="mini-toggle">
-              Connect Salesbuildr <span class="mini-arrow" id="mini-arrow">▼</span>
-            </button>
-            <div class="mini-connect-body" id="mini-body" hidden>
-              <div class="mini-fields">
-                <div class="mini-field">
-                  <label class="mini-label">Tenant URL <span class="mini-where">e.g. https://acme.salesbuildr.com</span></label>
-                  <input type="text" id="sb-tenant-url" class="mini-input" placeholder="https://yourcompany.salesbuildr.com" autocomplete="off">
-                </div>
-                <div class="mini-field">
-                  <label class="mini-label">API Key <span class="mini-where">Admin → Integrations → API Key</span></label>
-                  <input type="password" id="sb-api-key" class="mini-input" placeholder="Your API key" autocomplete="new-password">
-                </div>
-              </div>
-              <label class="mini-remember"><input type="checkbox" id="sb-remember"> Remember on this device</label>
-            </div>
-          </div>
-          <button type="button" id="push-btn" class="action-btn action-btn-push">Save to Salesbuildr →</button>
-          <div id="push-result" class="push-result" hidden></div>
         </div>
       </div>
     </div>
