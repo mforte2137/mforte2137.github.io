@@ -614,6 +614,21 @@ footer.tag { margin-top: 64px; font-family: 'JetBrains Mono', monospace; font-si
 .text-ctrl-toggle input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
 .text-ctrl-toggle-label { font-size: 13px; color: var(--text-2); }
 .text-editor-actions { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; border-top: 1px solid var(--border); }
+.text-ctrl-block {
+  background: var(--bg-row); border: 1px solid var(--border);
+  border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px;
+}
+.text-ctrl-block-title {
+  font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 700;
+  color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 8px;
+}
+.text-ctrl-select-sm {
+  font-family: 'Inter', sans-serif; font-size: 12px;
+  color: var(--text); background: var(--bg);
+  border: 1px solid var(--border-2); padding: 6px 8px;
+  outline: none; border-radius: 0; width: 100%; cursor: pointer;
+}
+.text-ctrl-select-sm:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .text-ctrl-btn-primary {
   font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
   letter-spacing: 0.08em; text-transform: uppercase;
