@@ -4,17 +4,21 @@
 
 const LS_API_KEY    = 'sb_api_key';
 const LS_TENANT_URL = 'sb_tenant_url';
-const LS_REP_NAME = 'fi_rep_name';
 
 // ── State ─────────────────────────────────────────────────
 let generatedImageUrl  = '';
 let selectedTemplate   = 'chevron';
 let autoResults        = {};   // templateId → imageUrl
-let autoSelectedId     = null; // currently selected template in auto result
+let autoSelectedId     = null;
 let autoCompanyName    = '';
 let autoBrandColor     = '#1a4da0';
+let autoLogoUrl        = null;
 let autoPhotoUrl       = '';
 let autoPhoto2Url      = '';
+let autoCategoryMap    = {};   // templateId → category
+let autoPhotoBase      = '';
+let autoPhotoCount     = 12;
+let autoCurrentPhotos  = {};   // templateId → current photoUrl (for exclude on refresh)
 
 // ── DOM — Views ───────────────────────────────────────────
 const formView       = document.getElementById('form-view');
@@ -26,7 +30,6 @@ const workSub        = document.getElementById('working-sub');
 
 // ── DOM — Auto mode ───────────────────────────────────────
 const autoWebsiteInput   = document.getElementById('auto-website');
-const autoRepInput       = document.getElementById('auto-rep');
 const autoBtn            = document.getElementById('auto-btn');
 const autoError          = document.getElementById('auto-error');
 const resultAutoTitle    = document.getElementById('result-auto-title');
@@ -34,15 +37,8 @@ const coversGrid         = document.getElementById('covers-grid');
 const selectedCoverActions = document.getElementById('selected-cover-actions');
 const selectedCoverImg   = document.getElementById('selected-cover-img');
 const autoDownloadBtn    = document.getElementById('auto-download-btn');
-const autoPushBtn        = document.getElementById('auto-push-btn');
-const autoPushResult     = document.getElementById('auto-push-result');
-const autoMiniToggle     = document.getElementById('auto-mini-toggle');
-const autoMiniArrow      = document.getElementById('auto-mini-arrow');
-const autoMiniBody       = document.getElementById('auto-mini-body');
-const autoSbApiKey       = document.getElementById('auto-sb-api-key');
-const autoSbTenantUrl    = document.getElementById('auto-sb-tenant-url');
-const autoSbRemember     = document.getElementById('auto-sb-remember');
 const restartAutoBtn     = document.getElementById('restart-auto-btn');
+const refreshAllBtn      = document.getElementById('refresh-all-btn');
 const logoMissingBanner  = document.getElementById('logo-missing-banner');
 const logoMissingInput   = document.getElementById('logo-missing-input');
 const logoMissingBtn     = document.getElementById('logo-missing-btn');
@@ -70,16 +66,9 @@ const photoGrid        = document.getElementById('photo-grid');
 const morePhotosBtn    = document.getElementById('more-photos-btn');
 const photoLoading     = document.getElementById('photo-loading');
 const photoCredit      = document.getElementById('photo-credit');
-const websitePhotosBtn      = document.getElementById('website-photos-btn');
-const websitePhotoPicker    = document.getElementById('website-photo-picker');
-const websitePhotoGrid      = document.getElementById('website-photo-grid');
-const websitePhotoLoading   = document.getElementById('website-photo-loading');
-const websitePhotoEmpty     = document.getElementById('website-photo-empty');
-const websitePhotosBackBtn  = document.getElementById('website-photos-back-btn');
 let   selectedPhotoUrl = '';
 let   photoPage        = 1;
 let   photoFocalPoint  = 0.5;
-const repNameInput   = document.getElementById('rep-name');
 const focalControl    = document.getElementById('focal-control');
 const focalSlider     = document.getElementById('focal-slider');
 const focalValueLabel = document.getElementById('focal-value-label');
@@ -88,37 +77,59 @@ const focalViewport   = document.getElementById('focal-viewport');
 const generateBtn    = document.getElementById('generate-btn');
 const formError      = document.getElementById('form-error');
 const restartBtn     = document.getElementById('restart-btn');
+const coverPreview   = document.getElementById('cover-preview');
+const resultTitle    = document.getElementById('result-title');
+const downloadBtn    = document.getElementById('download-btn');
 
-const coverPreview = document.getElementById('cover-preview');
-const resultTitle  = document.getElementById('result-title');
-const downloadBtn  = document.getElementById('download-btn');
-const pushBtn      = document.getElementById('push-btn');
-const pushResult   = document.getElementById('push-result');
+// ── Text editor DOM refs ──────────────────────────────────
+const textEditorView    = document.getElementById('text-editor-view');
+const textEditorBackBtn = document.getElementById('text-editor-back-btn');
+const autoAddTextBtn    = document.getElementById('auto-add-text-btn');
+const manualAddTextBtn  = document.getElementById('manual-add-text-btn');
+const textCanvas        = document.getElementById('text-canvas');
+const txtHeading        = document.getElementById('txt-heading');
+const txtSubheading     = document.getElementById('txt-subheading');
+const txtFont           = document.getElementById('txt-font');
+const txtSize           = document.getElementById('txt-size');
+const txtSizeVal        = document.getElementById('txt-size-val');
+const txtSubSize        = document.getElementById('txt-sub-size');
+const txtSubSizeVal     = document.getElementById('txt-sub-size-val');
+const txtColor          = document.getElementById('txt-color');
+const txtColorHex       = document.getElementById('txt-color-hex');
+const txtSubColor       = document.getElementById('txt-sub-color');
+const txtSubColorHex    = document.getElementById('txt-sub-color-hex');
+const txtStyle          = document.getElementById('txt-style');
+const txtSubStyle       = document.getElementById('txt-sub-style');
+const txtShadow         = document.getElementById('txt-shadow');
+const txtShadowBlur     = document.getElementById('txt-shadow-blur');
+const txtResetPosBtn    = document.getElementById('txt-reset-pos-btn');
+const txtDownloadBtn    = document.getElementById('txt-download-btn');
 
-const miniToggle = document.getElementById('mini-toggle');
-const miniArrow  = document.getElementById('mini-arrow');
-const miniBody   = document.getElementById('mini-body');
-const sbApiKey    = document.getElementById('sb-api-key');
-const sbTenantUrl = document.getElementById('sb-tenant-url');
-const sbRemember  = document.getElementById('sb-remember');
+// Text editor state
+let teSourceUrl  = '';    // Placid image URL being edited
+let teReturnView = '';    // which view to go back to
+let teX          = 0.5;  // heading position as fraction of canvas width
+let teY          = 0.6;  // heading position as fraction of canvas height
+let teDragging   = false;
+let teDragStartX = 0;
+let teDragStartY = 0;
+let teDragTeXStart = 0;
+let teDragTeYStart = 0;
+let teImg        = null; // loaded HTMLImageElement
+let teCanvasW    = 500;  // display canvas width in px
 
 // ── Init ──────────────────────────────────────────────────
 function init() {
-  const savedApi    = localStorage.getItem(LS_API_KEY);
-  const savedTenant = localStorage.getItem(LS_TENANT_URL);
-  const savedRep    = localStorage.getItem(LS_REP_NAME);
-  if (savedApi)    { sbApiKey.value = savedApi; autoSbApiKey.value = savedApi; }
-  if (savedTenant) { sbTenantUrl.value = savedTenant; autoSbTenantUrl.value = savedTenant; }
-  if (savedRep)    { repNameInput.value = savedRep; autoRepInput.value = savedRep; }
-  if (savedApi && savedTenant) { sbRemember.checked = true; autoSbRemember.checked = true; }
+  // No credentials to restore — push removed
 }
 
 // ── View switching ────────────────────────────────────────
 function showView(name) {
-  formView.hidden       = name !== 'form';
-  workingView.hidden    = name !== 'working';
-  resultAutoView.hidden = name !== 'result-auto';
-  resultView.hidden     = name !== 'result';
+  formView.hidden         = name !== 'form';
+  workingView.hidden      = name !== 'working';
+  resultAutoView.hidden   = name !== 'result-auto';
+  resultView.hidden       = name !== 'result';
+  textEditorView.hidden   = name !== 'text-editor';
 }
 
 // ── Colour picker sync ────────────────────────────────────
@@ -172,9 +183,6 @@ autoBtn.addEventListener('click', async () => {
     return;
   }
 
-  const repName = autoRepInput.value.trim();
-  if (repName) localStorage.setItem(LS_REP_NAME, repName);
-
   autoBtn.disabled = true;
   showView('working');
 
@@ -191,11 +199,15 @@ autoBtn.addEventListener('click', async () => {
     const analyseData = await analyseRes.json();
     if (!analyseRes.ok || !analyseData.ok) throw new Error(analyseData.error || 'Could not scan website.');
 
-    const { brandColor, logoUrl: foundLogoUrl, photoUrl, photo2Url, photoByTemplate } = analyseData;
+    const { brandColor, logoUrl: foundLogoUrl, photoUrl, photo2Url, photoByTemplate, categoryMap, photoBase, photoCount } = analyseData;
     autoBrandColor  = brandColor;
     autoPhotoUrl    = photoUrl;
     autoPhoto2Url   = photo2Url || photoUrl;
-    let autoLogoUrl = foundLogoUrl || null;
+    autoLogoUrl     = foundLogoUrl || null;
+    autoCategoryMap = categoryMap || {};
+    autoPhotoBase   = photoBase || '';
+    autoPhotoCount  = photoCount || 12;
+    autoCurrentPhotos = { ...photoByTemplate };
 
     // Extract company name from URL for display
     try {
@@ -242,16 +254,30 @@ autoBtn.addEventListener('click', async () => {
       tile.dataset.templateId = templateId;
       tile.innerHTML = `
         <div class="cover-tile-spinner"><div class="spinner-sm"></div></div>
-        <div class="cover-tile-label">${name}</div>
+        <div class="cover-tile-footer">
+          <span class="cover-tile-label">${name}</span>
+          <div class="cover-tile-btns">
+            <button type="button" class="cover-tile-undo" title="Undo refresh" hidden>↩</button>
+            <button type="button" class="cover-tile-refresh" title="Try a different photo">↺</button>
+          </div>
+        </div>
         <div class="cover-tile-check">✓</div>
       `;
+      tile.querySelector('.cover-tile-refresh').addEventListener('click', (e) => {
+        e.stopPropagation();
+        refreshTile(templateId);
+      });
+      tile.querySelector('.cover-tile-undo').addEventListener('click', (e) => {
+        e.stopPropagation();
+        undoTile(templateId);
+      });
       tile.addEventListener('click', () => selectCover(templateId));
       coversGrid.appendChild(tile);
 
-      // If already done, populate immediately
       if (imageUrl) {
         setTileImage(tile, imageUrl);
         autoResults[templateId] = imageUrl;
+        autoCurrentPhotos[templateId] = photoByTemplate?.[templateId] || '';
       }
     });
 
@@ -305,6 +331,119 @@ function setTileImage(tile, imageUrl) {
   }
 }
 
+// ── Per-tile and all-tile refresh ─────────────────────────
+const autoPreviousPhotos = {}; // templateId → previous imageUrl (one level undo)
+
+async function refreshTile(templateId) {
+  const tile = coversGrid.querySelector(`[data-template-id="${templateId}"]`);
+  if (!tile) return;
+
+  // Store current image for undo before replacing
+  const prevUrl = autoResults[templateId];
+  if (prevUrl) autoPreviousPhotos[templateId] = prevUrl;
+
+  // Show spinner
+  const existingImg = tile.querySelector('.cover-tile-img');
+  if (existingImg) {
+    const spinner = document.createElement('div');
+    spinner.className = 'cover-tile-spinner';
+    spinner.innerHTML = '<div class="spinner-sm"></div>';
+    existingImg.replaceWith(spinner);
+  }
+  tile.classList.remove('is-selected');
+  if (autoSelectedId === templateId) {
+    selectedCoverActions.hidden = true;
+    autoSelectedId = null;
+  }
+
+  const refreshBtn = tile.querySelector('.cover-tile-refresh');
+  const undoBtn    = tile.querySelector('.cover-tile-undo');
+  if (refreshBtn) refreshBtn.disabled = true;
+  if (undoBtn)    undoBtn.hidden = true;
+
+  try {
+    const res  = await fetch('/api/generate-cover', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        action:     'refresh-tile',
+        templateId,
+        brandColor: autoBrandColor,
+        logoUrl:    autoLogoUrl,
+        category:   autoCategoryMap[templateId] || null,
+        excludeUrl: autoCurrentPhotos[templateId] || null
+      })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Refresh failed.');
+
+    // Poll until ready
+    let imageUrl = data.imageUrl;
+    if (!imageUrl && data.imageId) {
+      for (let i = 0; i < 20; i++) {
+        await new Promise(r => setTimeout(r, 2000));
+        const pollRes  = await fetch('/api/generate-cover', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ action: 'poll', imageId: data.imageId })
+        });
+        const pollData = await pollRes.json();
+        if (pollData.ready && pollData.imageUrl) { imageUrl = pollData.imageUrl; break; }
+      }
+    }
+    if (!imageUrl) throw new Error('Timed out.');
+
+    autoResults[templateId]       = imageUrl;
+    autoCurrentPhotos[templateId] = data.photoUrl || '';
+    setTileImage(tile, imageUrl);
+
+    // Show undo button now that we have something to go back to
+    if (undoBtn && prevUrl) undoBtn.hidden = false;
+
+  } catch (e) {
+    // Restore previous image if refresh failed
+    if (prevUrl) setTileImage(tile, prevUrl);
+    delete autoPreviousPhotos[templateId];
+  } finally {
+    if (refreshBtn) refreshBtn.disabled = false;
+  }
+}
+
+function undoTile(templateId) {
+  const prevUrl = autoPreviousPhotos[templateId];
+  if (!prevUrl) return;
+
+  const tile = coversGrid.querySelector(`[data-template-id="${templateId}"]`);
+  if (!tile) return;
+
+  // Restore previous image
+  autoResults[templateId] = prevUrl;
+  setTileImage(tile, prevUrl);
+  delete autoPreviousPhotos[templateId];
+
+  // Hide undo button — only one level of undo
+  const undoBtn = tile.querySelector('.cover-tile-undo');
+  if (undoBtn) undoBtn.hidden = true;
+
+  // If this tile was selected, update the preview
+  if (autoSelectedId === templateId) selectCover(templateId);
+}
+
+async function refreshAll() {
+  refreshAllBtn.disabled    = true;
+  refreshAllBtn.textContent = '↺ Refreshing…';
+  selectedCoverActions.hidden = true;
+  autoSelectedId = null;
+
+  const templateIds = Object.keys(TEMPLATE_NAMES);
+  await Promise.all(templateIds.map(id => refreshTile(id)));
+
+  refreshAllBtn.disabled    = false;
+  refreshAllBtn.textContent = '↺ New Photos';
+}
+
+refreshAllBtn.addEventListener('click', refreshAll);
+
 function selectCover(templateId) {
   const imageUrl = autoResults[templateId];
   if (!imageUrl) return;
@@ -321,83 +460,21 @@ function selectCover(templateId) {
   autoDownloadBtn.href         = imageUrl;
   autoDownloadBtn.download     = `${autoCompanyName}-${templateId}-cover.png`;
   autoDownloadBtn.textContent  = '⬇ Download Cover Page';
-  autoPushResult.hidden        = true;
-  autoPushBtn.disabled         = false;
-  autoPushBtn.textContent      = 'Save to Salesbuildr →';
-  autoPushBtn.classList.remove('is-done');
   selectedCoverActions.hidden  = false;
   selectedCoverActions.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// Auto Salesbuildr connect toggle
-autoMiniToggle.addEventListener('click', () => {
-  const open = !autoMiniBody.hidden;
-  autoMiniBody.hidden = open;
-  autoMiniArrow.classList.toggle('is-open', !open);
-});
-
-// Auto push to Salesbuildr
-autoPushBtn.addEventListener('click', async () => {
-  const apiKey    = autoSbApiKey.value.trim();
-  const tenantUrl = autoSbTenantUrl.value.trim();
-  if (!apiKey || !tenantUrl) {
-    autoMiniBody.hidden = false;
-    autoMiniArrow.classList.add('is-open');
-    autoSbApiKey.focus();
-    return;
-  }
-  if (autoSbRemember.checked) {
-    localStorage.setItem(LS_API_KEY, apiKey);
-    localStorage.setItem(LS_TENANT_URL, tenantUrl);
-  } else {
-    localStorage.removeItem(LS_API_KEY);
-    localStorage.removeItem(LS_TENANT_URL);
-  }
-
-  autoPushBtn.disabled    = true;
-  autoPushBtn.textContent = 'Saving…';
-  autoPushResult.hidden   = true;
-
-  const imageUrl = autoResults[autoSelectedId];
-  const name     = TEMPLATE_NAMES[autoSelectedId] || autoSelectedId;
-
-  try {
-    const res  = await fetch('/api/generate-cover', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
-        action: 'push', imageUrl,
-        companyName: autoCompanyName,
-        brandColor:  autoBrandColor,
-        apiKey, tenantUrl
-      })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      autoPushResult.textContent = `✓ Saved as "${data.name}" in your Salesbuildr widget library.`;
-      autoPushResult.className   = 'push-result';
-      autoPushResult.hidden      = false;
-      autoPushBtn.textContent    = '✓ Saved to Salesbuildr';
-      autoPushBtn.classList.add('is-done');
-    } else throw new Error(data.error || 'Push failed.');
-  } catch (err) {
-    autoPushResult.textContent = `✕ ${err.message}`;
-    autoPushResult.className   = 'push-result is-error';
-    autoPushResult.hidden      = false;
-    autoPushBtn.disabled       = false;
-    autoPushBtn.textContent    = 'Save to Salesbuildr →';
-  }
-});
-
 // Restart from auto result
 restartAutoBtn.addEventListener('click', () => {
-  autoResults     = {};
-  autoSelectedId  = null;
-  autoPhotoUrl    = '';
-  autoPhoto2Url   = '';
-  coversGrid.innerHTML = '';
+  autoResults       = {};
+  autoSelectedId    = null;
+  autoPhotoUrl      = '';
+  autoPhoto2Url     = '';
+  autoCategoryMap   = {};
+  autoCurrentPhotos = {};
+  autoLogoUrl       = null;
+  coversGrid.innerHTML        = '';
   selectedCoverActions.hidden = true;
-  autoPushResult.hidden       = true;
   logoMissingBanner.hidden    = true;
   showView('form');
 });
@@ -537,23 +614,58 @@ focalSlider.addEventListener('input', () => {
 
 
 // ── Photo picker ──────────────────────────────────────────
+const PHOTO_BASE  = 'https://raw.githubusercontent.com/mforte2137/mforte2137.github.io/main/images/photos/';
+const PHOTO_COUNT = 12;
+const CATEGORY_MAP = {
+  office:     'office',
+  team:       'team',
+  datacenter: 'datacenter',
+  network:    'network',
+  security:   'security',
+  abstract:   'abstract'
+};
+
+// Track which indices have been shown per category to avoid repeats
+let shownIndices = {};
+
+function getRandomPhotos(category, count = 4) {
+  if (!shownIndices[category]) shownIndices[category] = [];
+  const available = Array.from({length: PHOTO_COUNT}, (_, i) => i + 1)
+    .filter(i => !shownIndices[category].includes(i));
+
+  // If we've shown all, reset
+  if (available.length < count) {
+    shownIndices[category] = [];
+    return getRandomPhotos(category, count);
+  }
+
+  // Pick `count` random from available
+  const picked = [];
+  const pool   = [...available];
+  for (let i = 0; i < count && pool.length; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    picked.push(pool.splice(idx, 1)[0]);
+  }
+  shownIndices[category].push(...picked);
+  return picked.map(i => ({
+    thumb: `${PHOTO_BASE}${category}-${i}.jpg`,
+    full:  `${PHOTO_BASE}${category}-${i}.jpg`,
+    alt:   `${category} photo ${i}`
+  }));
+}
+
 async function fetchPhotos() {
   findPhotosBtn.disabled    = true;
-  findPhotosBtn.textContent = 'Searching…';
+  findPhotosBtn.textContent = 'Loading…';
   photoLoading.hidden       = false;
   photoPicker.hidden        = true;
   selectedPhotoUrl          = '';
+  focalControl.hidden       = true;
 
   try {
-    const res  = await fetch('/api/generate-cover', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action: 'photos', industry: industrySelect.value, page: photoPage })
-    });
-    const data = await res.json();
-    if (!data.ok || !data.photos.length) throw new Error('No photos found.');
-
-    renderPhotos(data.photos);
+    const category = industrySelect.value;
+    const photos   = getRandomPhotos(category, 4);
+    renderPhotos(photos);
     photoPicker.hidden = false;
   } catch (e) {
     showFormError('Could not load photos: ' + e.message);
@@ -568,7 +680,7 @@ function renderPhotos(photos) {
   photoGrid.innerHTML = '';
   selectedPhotoUrl    = '';
   photoCredit.textContent = '';
-  photoLoading.hidden = true;  // belt-and-suspenders — always hide spinner when rendering
+  photoLoading.hidden = true;
 
   photos.forEach(photo => {
     const tile = document.createElement('div');
@@ -579,12 +691,10 @@ function renderPhotos(photos) {
       document.querySelectorAll('.photo-thumb').forEach(t => t.classList.remove('is-selected'));
       tile.classList.add('is-selected');
       selectedPhotoUrl = photo.full;
-      photoCredit.textContent = `Photo by ${photo.credit} on Unsplash`;
-      // Show focal point control and reset to centre
+      photoCredit.textContent = '';
       focalSlider.value   = 50;
       photoFocalPoint     = 0.5;
       focalValueLabel.textContent = 'Centre';
-      // Load the thumb into the live preview (thumb is faster than full)
       focalPreviewImg.src = photo.thumb;
       focalPreviewImg.onload = () => updateFocalPreview(50);
       focalControl.hidden = false;
@@ -593,80 +703,11 @@ function renderPhotos(photos) {
   });
 }
 
-findPhotosBtn.addEventListener('click', () => { photoPage = 1; fetchPhotos(); });
-morePhotosBtn.addEventListener('click', () => { photoPage++; fetchPhotos(); });
-industrySelect.addEventListener('change', () => { photoPicker.hidden = true; selectedPhotoUrl = ''; photoPage = 1; focalControl.hidden = true; });
+findPhotosBtn.addEventListener('click', () => { fetchPhotos(); });
+morePhotosBtn.addEventListener('click', () => { fetchPhotos(); });
+industrySelect.addEventListener('change', () => { photoPicker.hidden = true; selectedPhotoUrl = ''; shownIndices[industrySelect.value] = []; focalControl.hidden = true; });
 
 // ── Website photos (extract.pics) ─────────────────────────
-websitePhotosBtn.addEventListener('click', async () => {
-  const url = websiteInput.value.trim();
-  if (!url) {
-    showFormError('Please enter their website URL in Step 1 first.');
-    websiteInput.focus();
-    return;
-  }
-
-  // Hide Unsplash picker, show website picker
-  photoPicker.hidden        = true;
-  focalControl.hidden       = true;
-  websitePhotoPicker.hidden = false;
-  websitePhotoGrid.innerHTML = '';
-  websitePhotoEmpty.hidden  = true;
-  websitePhotoLoading.hidden = false;
-  selectedPhotoUrl = '';
-
-  try {
-    const res  = await fetch('/api/generate-cover', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action: 'website-photos', websiteUrl: url })
-    });
-    const data = await res.json();
-    if (!res.ok || !data.ok) throw new Error(data.error || 'Could not extract photos.');
-
-    websitePhotoLoading.hidden = true;
-
-    if (!data.photos || data.photos.length === 0) {
-      websitePhotoEmpty.hidden = false;
-      return;
-    }
-
-    // Render into the website photo grid (reuse photo-thumb style)
-    data.photos.forEach(photo => {
-      const tile = document.createElement('button');
-      tile.type      = 'button';
-      tile.className = 'photo-thumb';
-      tile.innerHTML = `<img src="${photo.thumb}" alt="${photo.alt}" loading="lazy">`;
-      tile.addEventListener('click', () => {
-        document.querySelectorAll('#website-photo-grid .photo-thumb').forEach(t => t.classList.remove('is-selected'));
-        tile.classList.add('is-selected');
-        selectedPhotoUrl = photo.url;
-        photoCredit.textContent = '';
-        // Show focal control
-        focalSlider.value   = 50;
-        photoFocalPoint     = 0.5;
-        focalValueLabel.textContent = 'Centre';
-        focalPreviewImg.src = photo.thumb;
-        focalPreviewImg.onload = () => updateFocalPreview(50);
-        focalControl.hidden = false;
-      });
-      websitePhotoGrid.appendChild(tile);
-    });
-
-  } catch (e) {
-    websitePhotoLoading.hidden = true;
-    websitePhotoEmpty.hidden   = false;
-    websitePhotoEmpty.textContent = e.message || 'Could not load photos from their website.';
-  }
-});
-
-websitePhotosBackBtn.addEventListener('click', () => {
-  websitePhotoPicker.hidden = true;
-  websitePhotoEmpty.hidden  = true;
-  selectedPhotoUrl          = '';
-  focalControl.hidden       = true;
-});
-
 // ── Template selection ────────────────────────────────────
 document.querySelectorAll('.template-tile:not(.is-soon)').forEach(tile => {
   tile.addEventListener('click', () => {
@@ -764,13 +805,6 @@ logoClearBtn.addEventListener('click', () => {
 
 // ── Logo file upload ──────────────────────────────────────
 
-// ── Connect section toggle ────────────────────────────────
-miniToggle.addEventListener('click', () => {
-  const open = !miniBody.hidden;
-  miniBody.hidden = open;
-  miniArrow.classList.toggle('is-open', !open);
-});
-
 // ── Form error ────────────────────────────────────────────
 function showFormError(msg) {
   formError.textContent = msg;
@@ -806,10 +840,6 @@ function validate() {
 // ── Generate ──────────────────────────────────────────────
 generateBtn.addEventListener('click', async () => {
   if (!validate()) return;
-
-  // Save rep name
-  const repName = repNameInput.value.trim();
-  if (repName) localStorage.setItem(LS_REP_NAME, repName);
 
   generateBtn.disabled = true;
   clearFormError();
@@ -889,82 +919,347 @@ generateBtn.addEventListener('click', async () => {
   }
 });
 
-// ── Push to Salesbuildr ───────────────────────────────────
-pushBtn.addEventListener('click', async () => {
-  const apiKey    = sbApiKey.value.trim();
-  const tenantUrl = sbTenantUrl.value.trim();
-
-  if (!apiKey || !tenantUrl) {
-    miniBody.hidden = false;
-    miniArrow.classList.add('is-open');
-    sbApiKey.focus();
-    return;
-  }
-
-  if (sbRemember.checked) {
-    localStorage.setItem(LS_API_KEY, apiKey);
-    localStorage.setItem(LS_TENANT_URL, tenantUrl);
-  } else {
-    localStorage.removeItem(LS_API_KEY);
-    localStorage.removeItem(LS_TENANT_URL);
-  }
-
-  pushBtn.disabled    = true;
-  pushBtn.textContent = 'Saving…';
-  pushResult.hidden   = true;
-
-  const brandColor  = colorHex.value.trim().startsWith('#') ? colorHex.value.trim() : '#' + colorHex.value.trim();
-  const companyName = companyInput.value.trim();
-
-  try {
-    const res  = await fetch('/api/generate-cover', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
-        action:     'push',
-        imageUrl:   generatedImageUrl,
-        companyName,
-        brandColor,
-        apiKey,
-        tenantUrl
-      })
-    });
-    const data = await res.json();
-
-    if (data.ok) {
-      pushResult.textContent = `✓ Saved as "${data.name}" in your Salesbuildr widget library — ready to drag into any quote.`;
-      pushResult.className   = 'push-result';
-      pushResult.hidden      = false;
-      pushBtn.textContent    = '✓ Saved to Salesbuildr';
-      pushBtn.classList.add('is-done');
-    } else {
-      throw new Error(data.error || 'Push failed.');
-    }
-  } catch (err) {
-    pushResult.textContent = `✕ ${err.message}`;
-    pushResult.className   = 'push-result is-error';
-    pushResult.hidden      = false;
-    pushBtn.disabled       = false;
-    pushBtn.textContent    = 'Save to Salesbuildr →';
-  }
-});
-
 // ── Restart ───────────────────────────────────────────────
 restartBtn.addEventListener('click', () => {
   generatedImageUrl = '';
-  logoPreviewArea.hidden  = true;
-  pushResult.hidden       = true;
+  logoPreviewArea.hidden    = true;
   focalControl.hidden       = true;
   focalSlider.value         = 50;
   photoFocalPoint           = 0.5;
-  websitePhotoPicker.hidden = true;
-  websitePhotoGrid.innerHTML = '';
-  websitePhotoEmpty.hidden  = true;
-  pushBtn.classList.remove('is-done');
-  pushBtn.disabled        = false;
-  pushBtn.textContent     = 'Save to Salesbuildr →';
   clearFormError();
   showView('form');
+});
+
+// ── Text Overlay Editor ───────────────────────────────────
+
+const CANVAS_W = 500; // display width — proportional height calculated from image
+
+function teDrawCanvas() {
+  if (!teImg) return;
+  const ctx = textCanvas.getContext('2d');
+  const w   = textCanvas.width;
+  const h   = textCanvas.height;
+
+  // Draw cover image
+  ctx.clearRect(0, 0, w, h);
+  ctx.drawImage(teImg, 0, 0, w, h);
+
+  const heading    = txtHeading.value.trim();
+  const subheading = txtSubheading.value.trim();
+  if (!heading && !subheading) return;
+
+  const font       = txtFont.value;
+  const headSize   = parseInt(txtSize.value);
+  const subSz      = parseInt(txtSubSize.value);
+  const color      = txtColor.value    || '#ffffff';
+  const subColor   = txtSubColor.value || '#ffffff';
+  const headStyle  = txtStyle.value    || 'bold normal';    // "weight style"
+  const subStyle   = txtSubStyle.value || 'normal italic';
+  const [headW, headS] = headStyle.split(' ');
+  const [subW,  subS]  = subStyle.split(' ');
+  const shadow     = txtShadow.checked;
+  const blur       = parseInt(txtShadowBlur.value);
+  const scale      = w / teImg.naturalWidth;
+
+  // Scale font sizes proportionally to canvas display size
+  const hSz = Math.round(headSize * scale);
+  const sSz = Math.round(subSz * scale);
+
+  // Text position in canvas pixels
+  const tx = teX * w;
+  const ty = teY * h;
+
+  ctx.textAlign    = 'left';
+  ctx.textBaseline = 'top';
+
+  if (shadow) {
+    ctx.shadowColor   = 'rgba(0,0,0,0.7)';
+    ctx.shadowBlur    = blur * scale;
+    ctx.shadowOffsetX = 2 * scale;
+    ctx.shadowOffsetY = 2 * scale;
+  } else {
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur  = 0;
+  }
+
+  let curY = ty;
+
+  if (heading) {
+    ctx.fillStyle = color;
+    ctx.font = `${headS} ${headW} ${hSz}px "${font}", sans-serif`;
+    const words    = heading.split(' ');
+    const maxWidth = w * 0.82;
+    let   line     = '';
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        ctx.fillText(line, tx, curY);
+        curY += hSz * 1.2;
+        line  = word;
+      } else { line = test; }
+    }
+    if (line) { ctx.fillText(line, tx, curY); curY += hSz * 1.2; }
+    curY += sSz * 0.4;
+  }
+
+  if (subheading) {
+    ctx.fillStyle    = subColor;
+    ctx.font         = `${subS} ${subW} ${sSz}px "${font}", sans-serif`;
+    ctx.shadowBlur   = shadow ? blur * scale * 0.6 : 0;
+    const words    = subheading.split(' ');
+    const maxWidth = w * 0.82;
+    let   line     = '';
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        ctx.fillText(line, tx, curY);
+        curY += sSz * 1.3;
+        line  = word;
+      } else { line = test; }
+    }
+    if (line) ctx.fillText(line, tx, curY);
+  }
+
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur  = 0;
+}
+
+function teOpenEditor(imageUrl, returnView) {
+  teSourceUrl  = imageUrl;
+  teReturnView = returnView;
+  teX          = 0.06;
+  teY          = 0.60;
+
+  // Load image, size canvas proportionally
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    teImg = img;
+    const ratio = img.naturalHeight / img.naturalWidth;
+    textCanvas.width  = CANVAS_W;
+    textCanvas.height = Math.round(CANVAS_W * ratio);
+    teDrawCanvas();
+  };
+  img.onerror = () => {
+    // Try without crossOrigin if CORS fails
+    const img2 = new Image();
+    img2.onload = () => {
+      teImg = img2;
+      const ratio = img2.naturalHeight / img2.naturalWidth;
+      textCanvas.width  = CANVAS_W;
+      textCanvas.height = Math.round(CANVAS_W * ratio);
+      teDrawCanvas();
+    };
+    img2.src = imageUrl;
+  };
+  img.src = imageUrl;
+
+  // Reset controls
+  txtHeading.value      = '';
+  txtSubheading.value   = '';
+  txtFont.value         = 'Inter';
+  txtSize.value         = '150';
+  txtSizeVal.textContent = '150';
+  txtSubSize.value      = '90';
+  txtSubSizeVal.textContent = '90';
+  txtColor.value        = '#ffffff';
+  txtColorHex.value     = '#FFFFFF';
+  txtSubColor.value     = '#ffffff';
+  txtSubColorHex.value  = '#FFFFFF';
+  txtShadow.checked     = true;
+  txtShadowBlur.value   = '8';
+
+  showView('text-editor');
+  window.scrollTo(0, 0);
+}
+
+// Control event listeners
+[txtHeading, txtSubheading, txtFont, txtShadow, txtShadowBlur, txtStyle, txtSubStyle].forEach(el => {
+  el.addEventListener('input', teDrawCanvas);
+});
+
+txtSize.addEventListener('input', () => {
+  txtSizeVal.textContent = txtSize.value;
+  teDrawCanvas();
+});
+txtSubSize.addEventListener('input', () => {
+  txtSubSizeVal.textContent = txtSubSize.value;
+  teDrawCanvas();
+});
+
+txtColor.addEventListener('input', () => {
+  txtColorHex.value = txtColor.value.toUpperCase();
+  teDrawCanvas();
+});
+txtColorHex.addEventListener('input', () => {
+  const v = txtColorHex.value.trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) { txtColor.value = v; teDrawCanvas(); }
+});
+txtSubColor.addEventListener('input', () => {
+  txtSubColorHex.value = txtSubColor.value.toUpperCase();
+  teDrawCanvas();
+});
+txtSubColorHex.addEventListener('input', () => {
+  const v = txtSubColorHex.value.trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) { txtSubColor.value = v; teDrawCanvas(); }
+});
+
+// Drag to reposition
+textCanvas.addEventListener('mousedown', (e) => {
+  teDragging     = true;
+  teDragStartX   = e.clientX;
+  teDragStartY   = e.clientY;
+  teDragTeXStart = teX;
+  teDragTeYStart = teY;
+  textCanvas.style.cursor = 'grabbing';
+});
+window.addEventListener('mousemove', (e) => {
+  if (!teDragging) return;
+  const dx = (e.clientX - teDragStartX) / textCanvas.width;
+  const dy = (e.clientY - teDragStartY) / textCanvas.height;
+  teX = Math.max(0.02, Math.min(0.96, teDragTeXStart + dx));
+  teY = Math.max(0.02, Math.min(0.96, teDragTeYStart + dy));
+  teDrawCanvas();
+});
+window.addEventListener('mouseup', () => {
+  teDragging = false;
+  textCanvas.style.cursor = 'move';
+});
+
+// Touch support
+textCanvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const t      = e.touches[0];
+  teDragging   = true;
+  teDragStartX = t.clientX;
+  teDragStartY = t.clientY;
+  teDragTeXStart = teX;
+  teDragTeYStart = teY;
+}, { passive: false });
+window.addEventListener('touchmove', (e) => {
+  if (!teDragging) return;
+  e.preventDefault();
+  const t  = e.touches[0];
+  const dx = (t.clientX - teDragStartX) / textCanvas.width;
+  const dy = (t.clientY - teDragStartY) / textCanvas.height;
+  teX = Math.max(0.02, Math.min(0.96, teDragTeXStart + dx));
+  teY = Math.max(0.02, Math.min(0.96, teDragTeYStart + dy));
+  teDrawCanvas();
+}, { passive: false });
+window.addEventListener('touchend', () => { teDragging = false; });
+
+// Arrow key nudging
+window.addEventListener('keydown', (e) => {
+  if (textEditorView.hidden) return;
+  const step = e.shiftKey ? 10 / textCanvas.width : 1 / textCanvas.width;
+  const vstep = e.shiftKey ? 10 / textCanvas.height : 1 / textCanvas.height;
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); teX = Math.max(0.02, teX - step);  teDrawCanvas(); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); teX = Math.min(0.96, teX + step);  teDrawCanvas(); }
+  if (e.key === 'ArrowUp')    { e.preventDefault(); teY = Math.max(0.02, teY - vstep); teDrawCanvas(); }
+  if (e.key === 'ArrowDown')  { e.preventDefault(); teY = Math.min(0.96, teY + vstep); teDrawCanvas(); }
+});
+
+txtResetPosBtn.addEventListener('click', () => {
+  teX = 0.06; teY = 0.60;
+  teDrawCanvas();
+});
+
+// Download at full resolution
+txtDownloadBtn.addEventListener('click', () => {
+  if (!teImg) return;
+  // Render at full Placid resolution
+  const hiCanvas    = document.createElement('canvas');
+  hiCanvas.width    = teImg.naturalWidth;
+  hiCanvas.height   = teImg.naturalHeight;
+  const hiCtx       = hiCanvas.getContext('2d');
+  hiCtx.drawImage(teImg, 0, 0);
+
+  const font        = txtFont.value;
+  const headSize    = parseInt(txtSize.value);
+  const subSz       = parseInt(txtSubSize.value);
+  const color       = txtColor.value    || '#ffffff';
+  const subColor    = txtSubColor.value || '#ffffff';
+  const headStyle   = txtStyle.value    || 'bold normal';
+  const subStyle    = txtSubStyle.value || 'normal italic';
+  const [headW, headS] = headStyle.split(' ');
+  const [subW,  subS]  = subStyle.split(' ');
+  const shadow      = txtShadow.checked;
+  const blur        = parseInt(txtShadowBlur.value);
+  const heading     = txtHeading.value.trim();
+  const subheading  = txtSubheading.value.trim();
+  const w           = hiCanvas.width;
+  const h           = hiCanvas.height;
+  const tx          = teX * w;
+  const ty          = teY * h;
+
+  hiCtx.textAlign    = 'left';
+  hiCtx.textBaseline = 'top';
+
+  if (shadow) {
+    hiCtx.shadowColor   = 'rgba(0,0,0,0.7)';
+    hiCtx.shadowBlur    = blur;
+    hiCtx.shadowOffsetX = 4;
+    hiCtx.shadowOffsetY = 4;
+  }
+
+  let curY = ty;
+
+  if (heading) {
+    hiCtx.fillStyle = color;
+    hiCtx.font = `${headS} ${headW} ${headSize}px "${font}", sans-serif`;
+    const words    = heading.split(' ');
+    const maxWidth = w * 0.82;
+    let   line     = '';
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      if (hiCtx.measureText(test).width > maxWidth && line) {
+        hiCtx.fillText(line, tx, curY);
+        curY += headSize * 1.2;
+        line  = word;
+      } else { line = test; }
+    }
+    if (line) { hiCtx.fillText(line, tx, curY); curY += headSize * 1.2; }
+    curY += subSz * 0.4;
+  }
+
+  if (subheading) {
+    hiCtx.fillStyle  = subColor;
+    hiCtx.font       = `${subS} ${subW} ${subSz}px "${font}", sans-serif`;
+    hiCtx.shadowBlur = shadow ? blur * 0.6 : 0;
+    const words    = subheading.split(' ');
+    const maxWidth = w * 0.82;
+    let   line     = '';
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      if (hiCtx.measureText(test).width > maxWidth && line) {
+        hiCtx.fillText(line, tx, curY);
+        curY += subSz * 1.3;
+        line  = word;
+      } else { line = test; }
+    }
+    if (line) hiCtx.fillText(line, tx, curY);
+  }
+
+  const link = document.createElement('a');
+  link.download = 'cover-with-text.png';
+  link.href = hiCanvas.toDataURL('image/png');
+  link.click();
+});
+
+// Open editor buttons
+autoAddTextBtn.addEventListener('click', () => {
+  const imageUrl = autoResults[autoSelectedId];
+  if (!imageUrl) return;
+  teOpenEditor(imageUrl, 'result-auto');
+});
+manualAddTextBtn.addEventListener('click', () => {
+  if (!generatedImageUrl) return;
+  teOpenEditor(generatedImageUrl, 'result');
+});
+
+// Back button
+textEditorBackBtn.addEventListener('click', () => {
+  showView(teReturnView);
 });
 
 // ── Boot ──────────────────────────────────────────────────
