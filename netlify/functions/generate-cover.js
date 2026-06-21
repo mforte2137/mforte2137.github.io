@@ -218,7 +218,8 @@ exports.handler = async (event) => {
       const logoKeywords = ['logo', 'icon', 'favicon', 'brand', 'symbol', 'mark', 'thumb', 'badge', 'seal', 'crest'];
 
       const logoImages = allImages.filter(img => {
-        if (!img.url || img.url.toLowerCase().endsWith('.svg')) return false;
+        if (!img.url) return false;
+        // Allow SVGs for logos — often highest quality version
         const url = img.url.toLowerCase();
         const alt = (img.alt || '').toLowerCase();
         const isLogo = logoKeywords.some(k => url.includes(k) || alt.includes(k));
@@ -228,8 +229,8 @@ exports.handler = async (event) => {
         return isLogo || isTypicalLogoShape;
       });
 
-      // Pass all images to Haiku to find the best logo
-      const allForAI = allImages.filter(img => img.url && !img.url.toLowerCase().endsWith('.svg')).slice(0, 30);
+      // Pass all images to Haiku — SVGs included since they're often the best logo source
+      const allForAI = allImages.filter(img => img.url).slice(0, 30);
 
       // Use Haiku to pick the best logo
       const haikusPrompt = `You are helping find a company logo for a professional proposal cover page.
@@ -240,11 +241,12 @@ ALL IMAGES FROM SITE (${allForAI.length} total):
 ${allForAI.map((img, i) => `${i+1}. URL: ${img.url} | alt: "${img.alt || ''}" | size: ${img.width||'?'}x${img.height||'?'}`).join('\n')}
 
 Task: Pick the single best logo for the company at ${websiteUrl}.
-- Look for the company's own logo (match domain name in alt text or filename)
-- Prefer PNG over JPG
-- Avoid Microsoft, vendor, or partner logos
-- Avoid certification badges and award images
-- Return null if no suitable logo found
+PREFER in this order:
+1. Full lockup logo (company name + icon together) — SVG format ideal
+2. Full lockup logo in PNG
+3. Icon/mark only if no full lockup exists
+AVOID: Microsoft/vendor logos, certification badges, partner logos, favicon-sized images
+Return null if no suitable logo found.
 
 Respond ONLY with valid JSON, no markdown:
 {"logoUrl": "url or null"}`;
