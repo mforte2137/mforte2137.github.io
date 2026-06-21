@@ -98,7 +98,7 @@
         <div class="step-label">Step 3 — Background photo</div>
         <div class="field-group">
           <label class="field-label" for="industry">Theme <span class="field-required">Required</span></label>
-          <p class="field-hint">We search Unsplash for professional MSP-themed photos. Pick your favourite.</p>
+          <p class="field-hint">Choose a theme and click Find Photos to browse our curated MSP photo library. Pick your favourite.</p>
           <div class="industry-row">
             <select id="industry" class="field-select">
               <optgroup label="With People">
@@ -111,27 +111,6 @@
               <option value="abstract">Abstract</option>
             </select>
             <button type="button" id="find-photos-btn" class="find-photos-btn">Find Photos →</button>
-          </div>
-        </div>
-
-        <!-- Website photos option -->
-        <div class="website-photos-strip" id="website-photos-strip">
-          <div class="website-photos-or">or</div>
-          <button type="button" id="website-photos-btn" class="website-photos-btn">Use photos from their website →</button>
-        </div>
-
-        <div id="website-photo-picker" hidden>
-          <div class="website-photo-header">
-            <span class="website-photo-title">Photos from their website</span>
-            <button type="button" id="website-photos-back-btn" class="website-photos-back-btn">← Back to Unsplash</button>
-          </div>
-          <div class="photo-grid" id="website-photo-grid"></div>
-          <div id="website-photo-loading" class="photo-loading" hidden>
-            <div class="spinner-sm"></div>
-            <span>Scanning their website for photos…</span>
-          </div>
-          <div id="website-photo-empty" class="website-photo-empty" hidden>
-            No large photos found on their website. Try Unsplash instead.
           </div>
         </div>
 
