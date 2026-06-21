@@ -4,7 +4,6 @@
 
 const LS_API_KEY    = 'sb_api_key';
 const LS_TENANT_URL = 'sb_tenant_url';
-const LS_REP_NAME = 'fi_rep_name';
 
 // ── State ─────────────────────────────────────────────────
 let generatedImageUrl  = '';
@@ -31,7 +30,6 @@ const workSub        = document.getElementById('working-sub');
 
 // ── DOM — Auto mode ───────────────────────────────────────
 const autoWebsiteInput   = document.getElementById('auto-website');
-const autoRepInput       = document.getElementById('auto-rep');
 const autoBtn            = document.getElementById('auto-btn');
 const autoError          = document.getElementById('auto-error');
 const resultAutoTitle    = document.getElementById('result-auto-title');
@@ -39,14 +37,6 @@ const coversGrid         = document.getElementById('covers-grid');
 const selectedCoverActions = document.getElementById('selected-cover-actions');
 const selectedCoverImg   = document.getElementById('selected-cover-img');
 const autoDownloadBtn    = document.getElementById('auto-download-btn');
-const autoPushBtn        = document.getElementById('auto-push-btn');
-const autoPushResult     = document.getElementById('auto-push-result');
-const autoMiniToggle     = document.getElementById('auto-mini-toggle');
-const autoMiniArrow      = document.getElementById('auto-mini-arrow');
-const autoMiniBody       = document.getElementById('auto-mini-body');
-const autoSbApiKey       = document.getElementById('auto-sb-api-key');
-const autoSbTenantUrl    = document.getElementById('auto-sb-tenant-url');
-const autoSbRemember     = document.getElementById('auto-sb-remember');
 const restartAutoBtn     = document.getElementById('restart-auto-btn');
 const refreshAllBtn      = document.getElementById('refresh-all-btn');
 const logoMissingBanner  = document.getElementById('logo-missing-banner');
@@ -85,7 +75,6 @@ const websitePhotosBackBtn  = document.getElementById('website-photos-back-btn')
 let   selectedPhotoUrl = '';
 let   photoPage        = 1;
 let   photoFocalPoint  = 0.5;
-const repNameInput   = document.getElementById('rep-name');
 const focalControl    = document.getElementById('focal-control');
 const focalSlider     = document.getElementById('focal-slider');
 const focalValueLabel = document.getElementById('focal-value-label');
@@ -94,29 +83,13 @@ const focalViewport   = document.getElementById('focal-viewport');
 const generateBtn    = document.getElementById('generate-btn');
 const formError      = document.getElementById('form-error');
 const restartBtn     = document.getElementById('restart-btn');
-
-const coverPreview = document.getElementById('cover-preview');
-const resultTitle  = document.getElementById('result-title');
-const downloadBtn  = document.getElementById('download-btn');
-const pushBtn      = document.getElementById('push-btn');
-const pushResult   = document.getElementById('push-result');
-
-const miniToggle = document.getElementById('mini-toggle');
-const miniArrow  = document.getElementById('mini-arrow');
-const miniBody   = document.getElementById('mini-body');
-const sbApiKey    = document.getElementById('sb-api-key');
-const sbTenantUrl = document.getElementById('sb-tenant-url');
-const sbRemember  = document.getElementById('sb-remember');
+const coverPreview   = document.getElementById('cover-preview');
+const resultTitle    = document.getElementById('result-title');
+const downloadBtn    = document.getElementById('download-btn');
 
 // ── Init ──────────────────────────────────────────────────
 function init() {
-  const savedApi    = localStorage.getItem(LS_API_KEY);
-  const savedTenant = localStorage.getItem(LS_TENANT_URL);
-  const savedRep    = localStorage.getItem(LS_REP_NAME);
-  if (savedApi)    { sbApiKey.value = savedApi; autoSbApiKey.value = savedApi; }
-  if (savedTenant) { sbTenantUrl.value = savedTenant; autoSbTenantUrl.value = savedTenant; }
-  if (savedRep)    { repNameInput.value = savedRep; autoRepInput.value = savedRep; }
-  if (savedApi && savedTenant) { sbRemember.checked = true; autoSbRemember.checked = true; }
+  // No credentials to restore — push removed
 }
 
 // ── View switching ────────────────────────────────────────
@@ -177,9 +150,6 @@ autoBtn.addEventListener('click', async () => {
     autoWebsiteInput.focus();
     return;
   }
-
-  const repName = autoRepInput.value.trim();
-  if (repName) localStorage.setItem(LS_REP_NAME, repName);
 
   autoBtn.disabled = true;
   showView('working');
@@ -419,73 +389,9 @@ function selectCover(templateId) {
   autoDownloadBtn.href         = imageUrl;
   autoDownloadBtn.download     = `${autoCompanyName}-${templateId}-cover.png`;
   autoDownloadBtn.textContent  = '⬇ Download Cover Page';
-  autoPushResult.hidden        = true;
-  autoPushBtn.disabled         = false;
-  autoPushBtn.textContent      = 'Save to Salesbuildr →';
-  autoPushBtn.classList.remove('is-done');
   selectedCoverActions.hidden  = false;
   selectedCoverActions.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
-
-// Auto Salesbuildr connect toggle
-autoMiniToggle.addEventListener('click', () => {
-  const open = !autoMiniBody.hidden;
-  autoMiniBody.hidden = open;
-  autoMiniArrow.classList.toggle('is-open', !open);
-});
-
-// Auto push to Salesbuildr
-autoPushBtn.addEventListener('click', async () => {
-  const apiKey    = autoSbApiKey.value.trim();
-  const tenantUrl = autoSbTenantUrl.value.trim();
-  if (!apiKey || !tenantUrl) {
-    autoMiniBody.hidden = false;
-    autoMiniArrow.classList.add('is-open');
-    autoSbApiKey.focus();
-    return;
-  }
-  if (autoSbRemember.checked) {
-    localStorage.setItem(LS_API_KEY, apiKey);
-    localStorage.setItem(LS_TENANT_URL, tenantUrl);
-  } else {
-    localStorage.removeItem(LS_API_KEY);
-    localStorage.removeItem(LS_TENANT_URL);
-  }
-
-  autoPushBtn.disabled    = true;
-  autoPushBtn.textContent = 'Saving…';
-  autoPushResult.hidden   = true;
-
-  const imageUrl = autoResults[autoSelectedId];
-  const name     = TEMPLATE_NAMES[autoSelectedId] || autoSelectedId;
-
-  try {
-    const res  = await fetch('/api/generate-cover', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
-        action: 'push', imageUrl,
-        companyName: autoCompanyName,
-        brandColor:  autoBrandColor,
-        apiKey, tenantUrl
-      })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      autoPushResult.textContent = `✓ Saved as "${data.name}" in your Salesbuildr widget library.`;
-      autoPushResult.className   = 'push-result';
-      autoPushResult.hidden      = false;
-      autoPushBtn.textContent    = '✓ Saved to Salesbuildr';
-      autoPushBtn.classList.add('is-done');
-    } else throw new Error(data.error || 'Push failed.');
-  } catch (err) {
-    autoPushResult.textContent = `✕ ${err.message}`;
-    autoPushResult.className   = 'push-result is-error';
-    autoPushResult.hidden      = false;
-    autoPushBtn.disabled       = false;
-    autoPushBtn.textContent    = 'Save to Salesbuildr →';
-  }
-});
 
 // Restart from auto result
 restartAutoBtn.addEventListener('click', () => {
@@ -498,7 +404,6 @@ restartAutoBtn.addEventListener('click', () => {
   autoLogoUrl       = null;
   coversGrid.innerHTML        = '';
   selectedCoverActions.hidden = true;
-  autoPushResult.hidden       = true;
   logoMissingBanner.hidden    = true;
   showView('form');
 });
@@ -638,23 +543,58 @@ focalSlider.addEventListener('input', () => {
 
 
 // ── Photo picker ──────────────────────────────────────────
+const PHOTO_BASE  = 'https://raw.githubusercontent.com/mforte2137/mforte2137.github.io/main/images/photos/';
+const PHOTO_COUNT = 12;
+const CATEGORY_MAP = {
+  office:     'office',
+  team:       'team',
+  datacenter: 'datacenter',
+  network:    'network',
+  security:   'security',
+  abstract:   'abstract'
+};
+
+// Track which indices have been shown per category to avoid repeats
+let shownIndices = {};
+
+function getRandomPhotos(category, count = 4) {
+  if (!shownIndices[category]) shownIndices[category] = [];
+  const available = Array.from({length: PHOTO_COUNT}, (_, i) => i + 1)
+    .filter(i => !shownIndices[category].includes(i));
+
+  // If we've shown all, reset
+  if (available.length < count) {
+    shownIndices[category] = [];
+    return getRandomPhotos(category, count);
+  }
+
+  // Pick `count` random from available
+  const picked = [];
+  const pool   = [...available];
+  for (let i = 0; i < count && pool.length; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    picked.push(pool.splice(idx, 1)[0]);
+  }
+  shownIndices[category].push(...picked);
+  return picked.map(i => ({
+    thumb: `${PHOTO_BASE}${category}-${i}.jpg`,
+    full:  `${PHOTO_BASE}${category}-${i}.jpg`,
+    alt:   `${category} photo ${i}`
+  }));
+}
+
 async function fetchPhotos() {
   findPhotosBtn.disabled    = true;
-  findPhotosBtn.textContent = 'Searching…';
+  findPhotosBtn.textContent = 'Loading…';
   photoLoading.hidden       = false;
   photoPicker.hidden        = true;
   selectedPhotoUrl          = '';
+  focalControl.hidden       = true;
 
   try {
-    const res  = await fetch('/api/generate-cover', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ action: 'photos', industry: industrySelect.value, page: photoPage })
-    });
-    const data = await res.json();
-    if (!data.ok || !data.photos.length) throw new Error('No photos found.');
-
-    renderPhotos(data.photos);
+    const category = industrySelect.value;
+    const photos   = getRandomPhotos(category, 4);
+    renderPhotos(photos);
     photoPicker.hidden = false;
   } catch (e) {
     showFormError('Could not load photos: ' + e.message);
@@ -669,7 +609,7 @@ function renderPhotos(photos) {
   photoGrid.innerHTML = '';
   selectedPhotoUrl    = '';
   photoCredit.textContent = '';
-  photoLoading.hidden = true;  // belt-and-suspenders — always hide spinner when rendering
+  photoLoading.hidden = true;
 
   photos.forEach(photo => {
     const tile = document.createElement('div');
@@ -680,12 +620,10 @@ function renderPhotos(photos) {
       document.querySelectorAll('.photo-thumb').forEach(t => t.classList.remove('is-selected'));
       tile.classList.add('is-selected');
       selectedPhotoUrl = photo.full;
-      photoCredit.textContent = `Photo by ${photo.credit} on Unsplash`;
-      // Show focal point control and reset to centre
+      photoCredit.textContent = '';
       focalSlider.value   = 50;
       photoFocalPoint     = 0.5;
       focalValueLabel.textContent = 'Centre';
-      // Load the thumb into the live preview (thumb is faster than full)
       focalPreviewImg.src = photo.thumb;
       focalPreviewImg.onload = () => updateFocalPreview(50);
       focalControl.hidden = false;
@@ -694,9 +632,9 @@ function renderPhotos(photos) {
   });
 }
 
-findPhotosBtn.addEventListener('click', () => { photoPage = 1; fetchPhotos(); });
-morePhotosBtn.addEventListener('click', () => { photoPage++; fetchPhotos(); });
-industrySelect.addEventListener('change', () => { photoPicker.hidden = true; selectedPhotoUrl = ''; photoPage = 1; focalControl.hidden = true; });
+findPhotosBtn.addEventListener('click', () => { fetchPhotos(); });
+morePhotosBtn.addEventListener('click', () => { fetchPhotos(); });
+industrySelect.addEventListener('change', () => { photoPicker.hidden = true; selectedPhotoUrl = ''; shownIndices[industrySelect.value] = []; focalControl.hidden = true; });
 
 // ── Website photos (extract.pics) ─────────────────────────
 websitePhotosBtn.addEventListener('click', async () => {
@@ -865,13 +803,6 @@ logoClearBtn.addEventListener('click', () => {
 
 // ── Logo file upload ──────────────────────────────────────
 
-// ── Connect section toggle ────────────────────────────────
-miniToggle.addEventListener('click', () => {
-  const open = !miniBody.hidden;
-  miniBody.hidden = open;
-  miniArrow.classList.toggle('is-open', !open);
-});
-
 // ── Form error ────────────────────────────────────────────
 function showFormError(msg) {
   formError.textContent = msg;
@@ -907,10 +838,6 @@ function validate() {
 // ── Generate ──────────────────────────────────────────────
 generateBtn.addEventListener('click', async () => {
   if (!validate()) return;
-
-  // Save rep name
-  const repName = repNameInput.value.trim();
-  if (repName) localStorage.setItem(LS_REP_NAME, repName);
 
   generateBtn.disabled = true;
   clearFormError();
@@ -990,80 +917,16 @@ generateBtn.addEventListener('click', async () => {
   }
 });
 
-// ── Push to Salesbuildr ───────────────────────────────────
-pushBtn.addEventListener('click', async () => {
-  const apiKey    = sbApiKey.value.trim();
-  const tenantUrl = sbTenantUrl.value.trim();
-
-  if (!apiKey || !tenantUrl) {
-    miniBody.hidden = false;
-    miniArrow.classList.add('is-open');
-    sbApiKey.focus();
-    return;
-  }
-
-  if (sbRemember.checked) {
-    localStorage.setItem(LS_API_KEY, apiKey);
-    localStorage.setItem(LS_TENANT_URL, tenantUrl);
-  } else {
-    localStorage.removeItem(LS_API_KEY);
-    localStorage.removeItem(LS_TENANT_URL);
-  }
-
-  pushBtn.disabled    = true;
-  pushBtn.textContent = 'Saving…';
-  pushResult.hidden   = true;
-
-  const brandColor  = colorHex.value.trim().startsWith('#') ? colorHex.value.trim() : '#' + colorHex.value.trim();
-  const companyName = companyInput.value.trim();
-
-  try {
-    const res  = await fetch('/api/generate-cover', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
-        action:     'push',
-        imageUrl:   generatedImageUrl,
-        companyName,
-        brandColor,
-        apiKey,
-        tenantUrl
-      })
-    });
-    const data = await res.json();
-
-    if (data.ok) {
-      pushResult.textContent = `✓ Saved as "${data.name}" in your Salesbuildr widget library — ready to drag into any quote.`;
-      pushResult.className   = 'push-result';
-      pushResult.hidden      = false;
-      pushBtn.textContent    = '✓ Saved to Salesbuildr';
-      pushBtn.classList.add('is-done');
-    } else {
-      throw new Error(data.error || 'Push failed.');
-    }
-  } catch (err) {
-    pushResult.textContent = `✕ ${err.message}`;
-    pushResult.className   = 'push-result is-error';
-    pushResult.hidden      = false;
-    pushBtn.disabled       = false;
-    pushBtn.textContent    = 'Save to Salesbuildr →';
-  }
-});
-
 // ── Restart ───────────────────────────────────────────────
 restartBtn.addEventListener('click', () => {
   generatedImageUrl = '';
-  logoPreviewArea.hidden  = true;
-  pushResult.hidden       = true;
+  logoPreviewArea.hidden    = true;
   focalControl.hidden       = true;
   focalSlider.value         = 50;
   photoFocalPoint           = 0.5;
   websitePhotoPicker.hidden = true;
   websitePhotoGrid.innerHTML = '';
   websitePhotoEmpty.hidden  = true;
-  pushBtn.classList.remove('is-done');
-  pushBtn.disabled        = false;
-  pushBtn.textContent     = 'Save to Salesbuildr →';
   clearFormError();
   showView('form');
 });
