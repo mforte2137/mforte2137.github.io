@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>First Impression — Branded Cover Page Creator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="first-impression.css">
 </head>
 <body>
@@ -245,7 +248,10 @@
         <div class="result-kicker">Choose Your Cover Page</div>
         <h1 class="result-title" id="result-auto-title"></h1>
       </div>
-      <button type="button" id="restart-auto-btn" class="secondary-btn">← Start Over</button>
+      <div class="result-header-actions">
+        <button type="button" id="refresh-all-btn" class="refresh-all-btn">↺ New Photos</button>
+        <button type="button" id="restart-auto-btn" class="secondary-btn">← Start Over</button>
+      </div>
     </div>
 
     <p class="result-auto-lead">All four templates rendered with their branding. Click one to select it, then download or save to Salesbuildr.</p>
