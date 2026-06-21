@@ -6,7 +6,7 @@
   <title>First Impression — Branded Cover Page Creator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:ital,wght@0,400;0,700;1,400;1,700&family=JetBrains+Mono:wght@500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Barlow:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="first-impression.css">
 </head>
 <body>
@@ -17,9 +17,7 @@
     <span>Branded Cover Page Creator</span>
   </header>
 
-  <!-- ===================================================
-       VIEW 1: Form
-       =================================================== -->
+  <!-- VIEW 1: Form -->
   <section id="form-view">
     <h1 class="big-title">Make it personal.</h1>
     <p class="big-lead">Enter your prospect's website and we'll build four branded cover pages — ready to drop into a Salesbuildr demo quote in seconds.</p>
@@ -31,18 +29,12 @@
         <span class="auto-card-title">Build all 4 covers in one click</span>
       </div>
       <p class="auto-card-desc">We'll scan their website, extract their brand colour and logo, find the best photo, and render all four templates — you just pick your favourite.</p>
-
       <div class="auto-fields">
         <div class="auto-field">
           <label class="field-label" for="auto-website">Their website URL <span class="field-required">Required</span></label>
           <input type="url" id="auto-website" class="field-input" placeholder="https://tierneys.com">
         </div>
-        <div class="auto-field">
-          <label class="field-label" for="auto-rep">Your name <span class="field-optional">Optional</span></label>
-          <input type="text" id="auto-rep" class="field-input" maxlength="80" placeholder="e.g. Glen Brown, Salesbuildr">
-        </div>
       </div>
-
       <div class="auto-footer">
         <button type="button" id="auto-btn" class="auto-btn">Build Cover Pages →</button>
         <p class="form-note">Takes about 20 seconds — we scan their site, apply the branding, and render all four templates.</p>
@@ -50,13 +42,12 @@
       <div id="auto-error" class="form-error" hidden></div>
     </div>
 
-    <!-- MANUAL / ADVANCED -->
+    <!-- MANUAL -->
     <div class="manual-toggle-wrap">
       <button type="button" id="manual-toggle-btn" class="manual-toggle-btn">⚙ Customise manually ▼</button>
     </div>
 
     <div id="manual-section" hidden>
-
       <div class="step">
         <div class="step-label">Step 1 — Who is this for?</div>
         <div class="field-group">
@@ -102,51 +93,19 @@
         <div class="step-label">Step 3 — Background photo</div>
         <div class="field-group">
           <label class="field-label" for="industry">Theme <span class="field-required">Required</span></label>
-          <p class="field-hint">We search Unsplash for professional MSP-themed photos. Pick your favourite.</p>
+          <p class="field-hint">Choose a theme and click Find Photos to browse our curated MSP photo library. Pick your favourite.</p>
           <div class="industry-row">
             <select id="industry" class="field-select">
-              <optgroup label="With People">
-                <option value="office">Modern Office &amp; Team</option>
-                <option value="consulting">IT Consulting</option>
-                <option value="technician">Field Technician</option>
-              </optgroup>
-              <optgroup label="Infrastructure &amp; Technology">
-                <option value="datacenter">Data Centre</option>
-                <option value="cloud">Cloud &amp; Infrastructure</option>
-                <option value="network">Network &amp; Connectivity</option>
-                <option value="security">Cybersecurity</option>
-              </optgroup>
-              <optgroup label="Abstract — No People">
-                <option value="abstract_lines">Abstract — Lines &amp; Light</option>
-                <option value="abstract_circuit">Abstract — Circuit &amp; Code</option>
-                <option value="abstract_fiber">Abstract — Fiber &amp; Glow</option>
-              </optgroup>
+              <option value="office">Office</option>
+              <option value="team">Team</option>
+              <option value="datacenter">Data Centre</option>
+              <option value="network">Network</option>
+              <option value="security">Security</option>
+              <option value="abstract">Abstract</option>
             </select>
             <button type="button" id="find-photos-btn" class="find-photos-btn">Find Photos →</button>
           </div>
         </div>
-
-        <!-- Website photos option -->
-        <div class="website-photos-strip" id="website-photos-strip">
-          <div class="website-photos-or">or</div>
-          <button type="button" id="website-photos-btn" class="website-photos-btn">Use photos from their website →</button>
-        </div>
-
-        <div id="website-photo-picker" hidden>
-          <div class="website-photo-header">
-            <span class="website-photo-title">Photos from their website</span>
-            <button type="button" id="website-photos-back-btn" class="website-photos-back-btn">← Back to Unsplash</button>
-          </div>
-          <div class="photo-grid" id="website-photo-grid"></div>
-          <div id="website-photo-loading" class="photo-loading" hidden>
-            <div class="spinner-sm"></div>
-            <span>Scanning their website for photos…</span>
-          </div>
-          <div id="website-photo-empty" class="website-photo-empty" hidden>
-            No large photos found on their website. Try Unsplash instead.
-          </div>
-        </div>
-
         <div id="photo-picker" hidden>
           <div class="photo-grid" id="photo-grid"></div>
           <div class="photo-picker-footer">
@@ -171,14 +130,14 @@
                   <input type="range" id="focal-slider" class="focal-slider" min="0" max="100" value="50" step="5">
                   <span class="focal-end-label">Bottom</span>
                 </div>
-                <p class="focal-hint">Drag to shift the photo up or down within the cover. The preview updates live.</p>
+                <p class="focal-hint">Drag to shift the photo up or down. The preview updates live.</p>
               </div>
             </div>
           </div>
         </div>
         <div id="photo-loading" class="photo-loading" hidden>
           <div class="spinner-sm"></div>
-          <span>Searching Unsplash…</span>
+          <span>Loading photos…</span>
         </div>
       </div>
 
@@ -187,33 +146,25 @@
         <div class="field-hint" style="margin-bottom:16px;">Select one template to generate.</div>
         <div class="template-grid" id="template-grid">
           <button type="button" class="template-tile is-selected" data-template="chevron">
-            <div class="template-preview template-preview-img"><img src="/images/chevron.png" alt="Chevron template preview"></div>
+            <div class="template-preview template-preview-img"><img src="/images/chevron.png" alt="Chevron"></div>
             <div class="template-name">Chevron</div>
             <div class="template-check">✓</div>
           </button>
           <button type="button" class="template-tile" data-template="half_circle">
-            <div class="template-preview template-preview-img"><img src="/images/circle.png" alt="Half Circle template preview"></div>
+            <div class="template-preview template-preview-img"><img src="/images/circle.png" alt="Half Circle"></div>
             <div class="template-name">Half Circle</div>
             <div class="template-check">✓</div>
           </button>
           <button type="button" class="template-tile" data-template="corporate">
-            <div class="template-preview template-preview-img"><img src="/images/corporate.png" alt="Corporate template preview"></div>
+            <div class="template-preview template-preview-img"><img src="/images/corporate.png" alt="Corporate"></div>
             <div class="template-name">Corporate</div>
             <div class="template-check">✓</div>
           </button>
           <button type="button" class="template-tile" data-template="modern">
-            <div class="template-preview template-preview-img"><img src="/images/modern.png" alt="Modern template preview"></div>
+            <div class="template-preview template-preview-img"><img src="/images/modern.png" alt="Modern"></div>
             <div class="template-name">Modern</div>
             <div class="template-check">✓</div>
           </button>
-        </div>
-      </div>
-
-      <div class="step">
-        <div class="step-label">Step 5 — Your details</div>
-        <div class="field-group">
-          <label class="field-label" for="rep-name">Your name <span class="field-optional">Optional</span></label>
-          <input type="text" id="rep-name" class="field-input" maxlength="80" placeholder="e.g. Glen Brown, Salesbuildr">
         </div>
       </div>
 
@@ -224,12 +175,9 @@
       <div id="form-error" class="form-error" hidden></div>
 
     </div><!-- /manual-section -->
-
   </section>
 
-  <!-- ===================================================
-       VIEW 2: Working
-       =================================================== -->
+  <!-- VIEW 2: Working -->
   <section id="working-view" hidden>
     <div class="working-inner">
       <div class="spinner"></div>
@@ -238,22 +186,21 @@
     </div>
   </section>
 
-  <!-- ===================================================
-       VIEW 3: Result — Auto (4 covers)
-       =================================================== -->
+  <!-- VIEW 3: Result — Auto -->
   <section id="result-auto-view" hidden>
-
     <div class="result-header">
       <div>
         <div class="result-kicker">Choose Your Cover Page</div>
         <h1 class="result-title" id="result-auto-title"></h1>
       </div>
-      <button type="button" id="restart-auto-btn" class="secondary-btn">← Start Over</button>
+      <div class="result-header-actions">
+        <button type="button" id="refresh-all-btn" class="refresh-all-btn">↺ New Photos</button>
+        <button type="button" id="restart-auto-btn" class="secondary-btn">← Start Over</button>
+      </div>
     </div>
 
-    <p class="result-auto-lead">All four templates rendered with their branding. Click one to select it, then download or save to Salesbuildr.</p>
+    <p class="result-auto-lead">All four templates rendered with their branding. Click one to select it, then download.</p>
 
-    <!-- Logo missing warning — shown when auto mode couldn't find/fetch a logo -->
     <div id="logo-missing-banner" class="logo-missing-banner" hidden>
       <div class="logo-missing-icon">⚠</div>
       <div class="logo-missing-body">
@@ -265,12 +212,8 @@
       </div>
     </div>
 
-    <!-- 4-up grid -->
-    <div class="covers-grid" id="covers-grid">
-      <!-- Populated by JS -->
-    </div>
+    <div class="covers-grid" id="covers-grid"></div>
 
-    <!-- Selected cover actions — appears when rep clicks a cover -->
     <div id="selected-cover-actions" class="selected-cover-actions" hidden>
       <div class="selected-cover-preview-wrap">
         <img id="selected-cover-img" class="selected-cover-img" src="" alt="">
@@ -278,41 +221,19 @@
       <div class="result-actions">
         <div class="action-card">
           <div class="action-card-title">📥 Download PNG</div>
-          <p class="action-card-desc">Save the cover page as a high-resolution PNG.</p>
+          <p class="action-card-desc">Save the cover page as a high-resolution PNG — ready to upload to Salesbuildr's Cover Page section.</p>
           <a id="auto-download-btn" class="action-btn action-btn-download" download>Download Cover Page</a>
         </div>
         <div class="action-card">
-          <div class="action-card-title">⚡ Save to Widget Library</div>
-          <p class="action-card-desc">Push directly to your Salesbuildr template library with variable overlays pre-wired.</p>
-          <div class="mini-connect" id="auto-mini-connect">
-            <button type="button" class="mini-connect-toggle" id="auto-mini-toggle">
-              Connect Salesbuildr <span class="mini-arrow" id="auto-mini-arrow">▼</span>
-            </button>
-            <div class="mini-connect-body" id="auto-mini-body" hidden>
-              <div class="mini-fields">
-                <div class="mini-field">
-                  <label class="mini-label">Tenant URL <span class="mini-where">e.g. https://acme.salesbuildr.com</span></label>
-                  <input type="text" id="auto-sb-tenant-url" class="mini-input" placeholder="https://yourcompany.salesbuildr.com" autocomplete="off">
-                </div>
-                <div class="mini-field">
-                  <label class="mini-label">API Key <span class="mini-where">Admin → Integrations → API Key</span></label>
-                  <input type="password" id="auto-sb-api-key" class="mini-input" placeholder="Your API key" autocomplete="new-password">
-                </div>
-              </div>
-              <label class="mini-remember"><input type="checkbox" id="auto-sb-remember"> Remember on this device</label>
-            </div>
-          </div>
-          <button type="button" id="auto-push-btn" class="action-btn action-btn-push">Save to Salesbuildr →</button>
-          <div id="auto-push-result" class="push-result" hidden></div>
+          <div class="action-card-title">✏ Add Text</div>
+          <p class="action-card-desc">Overlay a tagline or heading on the cover — drag to position, then download the final PNG.</p>
+          <button type="button" id="auto-add-text-btn" class="action-btn action-btn-text">Add Text Overlay →</button>
         </div>
       </div>
     </div>
-
   </section>
 
-  <!-- ===================================================
-       VIEW 4: Result — Manual (single cover)
-       =================================================== -->
+  <!-- VIEW 4: Result — Manual -->
   <section id="result-view" hidden>
     <div class="result-header">
       <div>
@@ -328,33 +249,139 @@
       <div class="result-actions">
         <div class="action-card">
           <div class="action-card-title">📥 Download PNG</div>
-          <p class="action-card-desc">Save the cover page as a high-resolution PNG.</p>
+          <p class="action-card-desc">Save the cover page as a high-resolution PNG — ready to upload to Salesbuildr's Cover Page section.</p>
           <a id="download-btn" class="action-btn action-btn-download" download>Download Cover Page</a>
         </div>
         <div class="action-card">
-          <div class="action-card-title">⚡ Save to Widget Library</div>
-          <p class="action-card-desc">Push directly to your Salesbuildr template library with variable overlays pre-wired.</p>
-          <div class="mini-connect" id="mini-connect">
-            <button type="button" class="mini-connect-toggle" id="mini-toggle">
-              Connect Salesbuildr <span class="mini-arrow" id="mini-arrow">▼</span>
-            </button>
-            <div class="mini-connect-body" id="mini-body" hidden>
-              <div class="mini-fields">
-                <div class="mini-field">
-                  <label class="mini-label">Tenant URL <span class="mini-where">e.g. https://acme.salesbuildr.com</span></label>
-                  <input type="text" id="sb-tenant-url" class="mini-input" placeholder="https://yourcompany.salesbuildr.com" autocomplete="off">
-                </div>
-                <div class="mini-field">
-                  <label class="mini-label">API Key <span class="mini-where">Admin → Integrations → API Key</span></label>
-                  <input type="password" id="sb-api-key" class="mini-input" placeholder="Your API key" autocomplete="new-password">
-                </div>
+          <div class="action-card-title">✏ Add Text</div>
+          <p class="action-card-desc">Overlay a tagline or heading on the cover — drag to position, then download the final PNG.</p>
+          <button type="button" id="manual-add-text-btn" class="action-btn action-btn-text">Add Text Overlay →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VIEW 5: Text Overlay Editor -->
+  <section id="text-editor-view" hidden>
+    <div class="result-header">
+      <div>
+        <div class="result-kicker">Add Text Overlay</div>
+        <h1 class="result-title" id="text-editor-title">Position your text</h1>
+      </div>
+      <button type="button" id="text-editor-back-btn" class="secondary-btn">← Back</button>
+    </div>
+
+    <div class="text-editor-layout">
+
+      <!-- Canvas -->
+      <div class="text-editor-canvas-wrap">
+        <p class="text-editor-hint">Drag the text to reposition. Use arrow keys for fine adjustments (Shift+arrow = 10px).</p>
+        <div class="text-canvas-container">
+          <canvas id="text-canvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="text-editor-controls">
+
+        <!-- Heading group -->
+        <div class="text-ctrl-block">
+          <div class="text-ctrl-block-title">Heading</div>
+          <div class="text-ctrl-group">
+            <input type="text" id="txt-heading" class="text-ctrl-input" placeholder="e.g. Managed IT Services" maxlength="80">
+          </div>
+          <div class="text-ctrl-row">
+            <div class="text-ctrl-group">
+              <label class="text-ctrl-label">Size</label>
+              <div class="text-ctrl-size-row">
+                <input type="range" id="txt-size" class="text-ctrl-slider" min="40" max="200" value="150" step="4">
+                <span id="txt-size-val" class="text-ctrl-size-val">150</span>
               </div>
-              <label class="mini-remember"><input type="checkbox" id="sb-remember"> Remember on this device</label>
+            </div>
+            <div class="text-ctrl-group">
+              <label class="text-ctrl-label">Style</label>
+              <select id="txt-style" class="text-ctrl-select-sm">
+                <option value="bold normal">Bold</option>
+                <option value="normal normal">Normal</option>
+                <option value="bold italic">Bold Italic</option>
+                <option value="normal italic">Italic</option>
+              </select>
             </div>
           </div>
-          <button type="button" id="push-btn" class="action-btn action-btn-push">Save to Salesbuildr →</button>
-          <div id="push-result" class="push-result" hidden></div>
+          <div class="text-ctrl-group">
+            <label class="text-ctrl-label">Colour</label>
+            <div class="text-ctrl-color-row">
+              <input type="color" id="txt-color" class="text-ctrl-color" value="#ffffff">
+              <input type="text"  id="txt-color-hex" class="text-ctrl-color-hex" value="#FFFFFF" maxlength="7">
+            </div>
+          </div>
         </div>
+
+        <!-- Subheading group -->
+        <div class="text-ctrl-block">
+          <div class="text-ctrl-block-title">Subheading <span class="text-ctrl-optional">Optional</span></div>
+          <div class="text-ctrl-group">
+            <input type="text" id="txt-subheading" class="text-ctrl-input" placeholder="e.g. Tailored solutions for your business" maxlength="100">
+          </div>
+          <div class="text-ctrl-row">
+            <div class="text-ctrl-group">
+              <label class="text-ctrl-label">Size</label>
+              <div class="text-ctrl-size-row">
+                <input type="range" id="txt-sub-size" class="text-ctrl-slider" min="20" max="120" value="90" step="2">
+                <span id="txt-sub-size-val" class="text-ctrl-size-val">90</span>
+              </div>
+            </div>
+            <div class="text-ctrl-group">
+              <label class="text-ctrl-label">Style</label>
+              <select id="txt-sub-style" class="text-ctrl-select-sm">
+                <option value="normal italic">Italic</option>
+                <option value="normal normal">Normal</option>
+                <option value="bold normal">Bold</option>
+                <option value="bold italic">Bold Italic</option>
+              </select>
+            </div>
+          </div>
+          <div class="text-ctrl-group">
+            <label class="text-ctrl-label">Colour</label>
+            <div class="text-ctrl-color-row">
+              <input type="color" id="txt-sub-color" class="text-ctrl-color" value="#ffffff">
+              <input type="text"  id="txt-sub-color-hex" class="text-ctrl-color-hex" value="#FFFFFF" maxlength="7">
+            </div>
+          </div>
+        </div>
+
+        <!-- Shared settings -->
+        <div class="text-ctrl-block">
+          <div class="text-ctrl-block-title">Settings</div>
+          <div class="text-ctrl-group">
+            <label class="text-ctrl-label">Font</label>
+            <select id="txt-font" class="text-ctrl-select">
+              <option value="Inter">Inter — Clean Sans-Serif</option>
+              <option value="Space Grotesk">Space Grotesk — Geometric Sans</option>
+              <option value="Barlow">Barlow — Corporate Sans</option>
+              <option value="Playfair Display">Playfair Display — Serif</option>
+            </select>
+          </div>
+          <div class="text-ctrl-row">
+            <div class="text-ctrl-group">
+              <label class="text-ctrl-label">Drop shadow</label>
+              <label class="text-ctrl-toggle">
+                <input type="checkbox" id="txt-shadow" checked>
+                <span class="text-ctrl-toggle-label">On</span>
+              </label>
+            </div>
+            <div class="text-ctrl-group">
+              <label class="text-ctrl-label">Intensity</label>
+              <input type="range" id="txt-shadow-blur" class="text-ctrl-slider" min="2" max="24" value="8" step="1">
+            </div>
+          </div>
+        </div>
+
+        <div class="text-editor-actions">
+          <button type="button" id="txt-reset-pos-btn" class="text-ctrl-btn-secondary">Reset position</button>
+          <button type="button" id="txt-download-btn" class="text-ctrl-btn-primary">Download with Text →</button>
+        </div>
+
       </div>
     </div>
   </section>
