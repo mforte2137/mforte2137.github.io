@@ -81,6 +81,39 @@ const coverPreview   = document.getElementById('cover-preview');
 const resultTitle    = document.getElementById('result-title');
 const downloadBtn    = document.getElementById('download-btn');
 
+// ── Text editor DOM refs ──────────────────────────────────
+const textEditorView    = document.getElementById('text-editor-view');
+const textEditorBackBtn = document.getElementById('text-editor-back-btn');
+const autoAddTextBtn    = document.getElementById('auto-add-text-btn');
+const manualAddTextBtn  = document.getElementById('manual-add-text-btn');
+const textCanvas        = document.getElementById('text-canvas');
+const txtHeading        = document.getElementById('txt-heading');
+const txtSubheading     = document.getElementById('txt-subheading');
+const txtFont           = document.getElementById('txt-font');
+const txtSize           = document.getElementById('txt-size');
+const txtSizeVal        = document.getElementById('txt-size-val');
+const txtSubSize        = document.getElementById('txt-sub-size');
+const txtSubSizeVal     = document.getElementById('txt-sub-size-val');
+const txtColor          = document.getElementById('txt-color');
+const txtColorHex       = document.getElementById('txt-color-hex');
+const txtShadow         = document.getElementById('txt-shadow');
+const txtShadowBlur     = document.getElementById('txt-shadow-blur');
+const txtResetPosBtn    = document.getElementById('txt-reset-pos-btn');
+const txtDownloadBtn    = document.getElementById('txt-download-btn');
+
+// Text editor state
+let teSourceUrl  = '';    // Placid image URL being edited
+let teReturnView = '';    // which view to go back to
+let teX          = 0.5;  // heading position as fraction of canvas width
+let teY          = 0.6;  // heading position as fraction of canvas height
+let teDragging   = false;
+let teDragStartX = 0;
+let teDragStartY = 0;
+let teDragTeXStart = 0;
+let teDragTeYStart = 0;
+let teImg        = null; // loaded HTMLImageElement
+let teCanvasW    = 500;  // display canvas width in px
+
 // ── Init ──────────────────────────────────────────────────
 function init() {
   // No credentials to restore — push removed
@@ -88,10 +121,11 @@ function init() {
 
 // ── View switching ────────────────────────────────────────
 function showView(name) {
-  formView.hidden       = name !== 'form';
-  workingView.hidden    = name !== 'working';
-  resultAutoView.hidden = name !== 'result-auto';
-  resultView.hidden     = name !== 'result';
+  formView.hidden         = name !== 'form';
+  workingView.hidden      = name !== 'working';
+  resultAutoView.hidden   = name !== 'result-auto';
+  resultView.hidden       = name !== 'result';
+  textEditorView.hidden   = name !== 'text-editor';
 }
 
 // ── Colour picker sync ────────────────────────────────────
@@ -890,6 +924,317 @@ restartBtn.addEventListener('click', () => {
   photoFocalPoint           = 0.5;
   clearFormError();
   showView('form');
+});
+
+// ── Text Overlay Editor ───────────────────────────────────
+
+const CANVAS_W = 500; // display width — proportional height calculated from image
+
+function teDrawCanvas() {
+  if (!teImg) return;
+  const ctx = textCanvas.getContext('2d');
+  const w   = textCanvas.width;
+  const h   = textCanvas.height;
+
+  // Draw cover image
+  ctx.clearRect(0, 0, w, h);
+  ctx.drawImage(teImg, 0, 0, w, h);
+
+  const heading    = txtHeading.value.trim();
+  const subheading = txtSubheading.value.trim();
+  if (!heading && !subheading) return;
+
+  const font       = txtFont.value;
+  const headSize   = parseInt(txtSize.value);
+  const subSz      = parseInt(txtSubSize.value);
+  const color      = txtColor.value || '#ffffff';
+  const shadow     = txtShadow.checked;
+  const blur       = parseInt(txtShadowBlur.value);
+  const scale      = w / teImg.naturalWidth;
+
+  // Scale font sizes proportionally to canvas display size
+  const hSz = Math.round(headSize * scale);
+  const sSz = Math.round(subSz * scale);
+
+  // Text position in canvas pixels
+  const tx = teX * w;
+  const ty = teY * h;
+
+  ctx.textAlign    = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle    = color;
+
+  if (shadow) {
+    ctx.shadowColor   = 'rgba(0,0,0,0.7)';
+    ctx.shadowBlur    = blur * scale;
+    ctx.shadowOffsetX = 2 * scale;
+    ctx.shadowOffsetY = 2 * scale;
+  } else {
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur  = 0;
+  }
+
+  let curY = ty;
+
+  if (heading) {
+    ctx.font = `700 ${hSz}px "${font}", sans-serif`;
+    // Word-wrap heading at ~80% canvas width
+    const words    = heading.split(' ');
+    const maxWidth = w * 0.82;
+    let   line     = '';
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        ctx.fillText(line, tx, curY);
+        curY += hSz * 1.2;
+        line  = word;
+      } else { line = test; }
+    }
+    if (line) { ctx.fillText(line, tx, curY); curY += hSz * 1.2; }
+    curY += sSz * 0.4; // gap between heading and sub
+  }
+
+  if (subheading) {
+    ctx.font         = `400 ${sSz}px "${font}", sans-serif`;
+    ctx.shadowBlur   = shadow ? blur * scale * 0.6 : 0;
+    const words    = subheading.split(' ');
+    const maxWidth = w * 0.82;
+    let   line     = '';
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        ctx.fillText(line, tx, curY);
+        curY += sSz * 1.3;
+        line  = word;
+      } else { line = test; }
+    }
+    if (line) ctx.fillText(line, tx, curY);
+  }
+
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur  = 0;
+}
+
+function teOpenEditor(imageUrl, returnView) {
+  teSourceUrl  = imageUrl;
+  teReturnView = returnView;
+  teX          = 0.06;
+  teY          = 0.60;
+
+  // Load image, size canvas proportionally
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    teImg = img;
+    const ratio = img.naturalHeight / img.naturalWidth;
+    textCanvas.width  = CANVAS_W;
+    textCanvas.height = Math.round(CANVAS_W * ratio);
+    teDrawCanvas();
+  };
+  img.onerror = () => {
+    // Try without crossOrigin if CORS fails
+    const img2 = new Image();
+    img2.onload = () => {
+      teImg = img2;
+      const ratio = img2.naturalHeight / img2.naturalWidth;
+      textCanvas.width  = CANVAS_W;
+      textCanvas.height = Math.round(CANVAS_W * ratio);
+      teDrawCanvas();
+    };
+    img2.src = imageUrl;
+  };
+  img.src = imageUrl;
+
+  // Reset controls
+  txtHeading.value      = '';
+  txtSubheading.value   = '';
+  txtFont.value         = 'Inter';
+  txtSize.value         = '52';
+  txtSizeVal.textContent = '52';
+  txtSubSize.value      = '28';
+  txtSubSizeVal.textContent = '28';
+  txtColor.value        = '#ffffff';
+  txtColorHex.value     = '#ffffff';
+  txtShadow.checked     = true;
+  txtShadowBlur.value   = '8';
+
+  showView('text-editor');
+  window.scrollTo(0, 0);
+}
+
+// Control event listeners
+[txtHeading, txtSubheading, txtFont, txtShadow, txtShadowBlur].forEach(el => {
+  el.addEventListener('input', teDrawCanvas);
+});
+
+txtSize.addEventListener('input', () => {
+  txtSizeVal.textContent = txtSize.value;
+  teDrawCanvas();
+});
+txtSubSize.addEventListener('input', () => {
+  txtSubSizeVal.textContent = txtSubSize.value;
+  teDrawCanvas();
+});
+
+txtColor.addEventListener('input', () => {
+  txtColorHex.value = txtColor.value.toUpperCase();
+  teDrawCanvas();
+});
+txtColorHex.addEventListener('input', () => {
+  const v = txtColorHex.value.trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) { txtColor.value = v; teDrawCanvas(); }
+});
+
+// Drag to reposition
+textCanvas.addEventListener('mousedown', (e) => {
+  teDragging     = true;
+  teDragStartX   = e.clientX;
+  teDragStartY   = e.clientY;
+  teDragTeXStart = teX;
+  teDragTeYStart = teY;
+  textCanvas.style.cursor = 'grabbing';
+});
+window.addEventListener('mousemove', (e) => {
+  if (!teDragging) return;
+  const dx = (e.clientX - teDragStartX) / textCanvas.width;
+  const dy = (e.clientY - teDragStartY) / textCanvas.height;
+  teX = Math.max(0.02, Math.min(0.96, teDragTeXStart + dx));
+  teY = Math.max(0.02, Math.min(0.96, teDragTeYStart + dy));
+  teDrawCanvas();
+});
+window.addEventListener('mouseup', () => {
+  teDragging = false;
+  textCanvas.style.cursor = 'move';
+});
+
+// Touch support
+textCanvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const t      = e.touches[0];
+  teDragging   = true;
+  teDragStartX = t.clientX;
+  teDragStartY = t.clientY;
+  teDragTeXStart = teX;
+  teDragTeYStart = teY;
+}, { passive: false });
+window.addEventListener('touchmove', (e) => {
+  if (!teDragging) return;
+  e.preventDefault();
+  const t  = e.touches[0];
+  const dx = (t.clientX - teDragStartX) / textCanvas.width;
+  const dy = (t.clientY - teDragStartY) / textCanvas.height;
+  teX = Math.max(0.02, Math.min(0.96, teDragTeXStart + dx));
+  teY = Math.max(0.02, Math.min(0.96, teDragTeYStart + dy));
+  teDrawCanvas();
+}, { passive: false });
+window.addEventListener('touchend', () => { teDragging = false; });
+
+// Arrow key nudging
+window.addEventListener('keydown', (e) => {
+  if (textEditorView.hidden) return;
+  const step = e.shiftKey ? 10 / textCanvas.width : 1 / textCanvas.width;
+  const vstep = e.shiftKey ? 10 / textCanvas.height : 1 / textCanvas.height;
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); teX = Math.max(0.02, teX - step);  teDrawCanvas(); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); teX = Math.min(0.96, teX + step);  teDrawCanvas(); }
+  if (e.key === 'ArrowUp')    { e.preventDefault(); teY = Math.max(0.02, teY - vstep); teDrawCanvas(); }
+  if (e.key === 'ArrowDown')  { e.preventDefault(); teY = Math.min(0.96, teY + vstep); teDrawCanvas(); }
+});
+
+txtResetPosBtn.addEventListener('click', () => {
+  teX = 0.06; teY = 0.60;
+  teDrawCanvas();
+});
+
+// Download at full resolution
+txtDownloadBtn.addEventListener('click', () => {
+  if (!teImg) return;
+  // Render at full Placid resolution
+  const hiCanvas    = document.createElement('canvas');
+  hiCanvas.width    = teImg.naturalWidth;
+  hiCanvas.height   = teImg.naturalHeight;
+  const hiCtx       = hiCanvas.getContext('2d');
+  hiCtx.drawImage(teImg, 0, 0);
+
+  const font        = txtFont.value;
+  const headSize    = parseInt(txtSize.value);
+  const subSz       = parseInt(txtSubSize.value);
+  const color       = txtColor.value || '#ffffff';
+  const shadow      = txtShadow.checked;
+  const blur        = parseInt(txtShadowBlur.value);
+  const w           = hiCanvas.width;
+  const h           = hiCanvas.height;
+  const tx          = teX * w;
+  const ty          = teY * h;
+
+  hiCtx.textAlign    = 'left';
+  hiCtx.textBaseline = 'top';
+  hiCtx.fillStyle    = color;
+
+  if (shadow) {
+    hiCtx.shadowColor   = 'rgba(0,0,0,0.7)';
+    hiCtx.shadowBlur    = blur;
+    hiCtx.shadowOffsetX = 4;
+    hiCtx.shadowOffsetY = 4;
+  }
+
+  let curY = ty;
+  const heading    = txtHeading.value.trim();
+  const subheading = txtSubheading.value.trim();
+
+  if (heading) {
+    hiCtx.font = `700 ${headSize}px "${font}", sans-serif`;
+    const words    = heading.split(' ');
+    const maxWidth = w * 0.82;
+    let   line     = '';
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      if (hiCtx.measureText(test).width > maxWidth && line) {
+        hiCtx.fillText(line, tx, curY);
+        curY += headSize * 1.2;
+        line  = word;
+      } else { line = test; }
+    }
+    if (line) { hiCtx.fillText(line, tx, curY); curY += headSize * 1.2; }
+    curY += subSz * 0.4;
+  }
+
+  if (subheading) {
+    hiCtx.font       = `400 ${subSz}px "${font}", sans-serif`;
+    hiCtx.shadowBlur = shadow ? blur * 0.6 : 0;
+    const words    = subheading.split(' ');
+    const maxWidth = w * 0.82;
+    let   line     = '';
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      if (hiCtx.measureText(test).width > maxWidth && line) {
+        hiCtx.fillText(line, tx, curY);
+        curY += subSz * 1.3;
+        line  = word;
+      } else { line = test; }
+    }
+    if (line) hiCtx.fillText(line, tx, curY);
+  }
+
+  const link = document.createElement('a');
+  link.download = 'cover-with-text.png';
+  link.href = hiCanvas.toDataURL('image/png');
+  link.click();
+});
+
+// Open editor buttons
+autoAddTextBtn.addEventListener('click', () => {
+  const imageUrl = autoResults[autoSelectedId];
+  if (!imageUrl) return;
+  teOpenEditor(imageUrl, 'result-auto');
+});
+manualAddTextBtn.addEventListener('click', () => {
+  if (!generatedImageUrl) return;
+  teOpenEditor(generatedImageUrl, 'result');
+});
+
+// Back button
+textEditorBackBtn.addEventListener('click', () => {
+  showView(teReturnView);
 });
 
 // ── Boot ──────────────────────────────────────────────────
