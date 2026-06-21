@@ -10,11 +10,16 @@ const LS_REP_NAME = 'fi_rep_name';
 let generatedImageUrl  = '';
 let selectedTemplate   = 'chevron';
 let autoResults        = {};   // templateId → imageUrl
-let autoSelectedId     = null; // currently selected template in auto result
+let autoSelectedId     = null;
 let autoCompanyName    = '';
 let autoBrandColor     = '#1a4da0';
+let autoLogoUrl        = null;
 let autoPhotoUrl       = '';
 let autoPhoto2Url      = '';
+let autoCategoryMap    = {};   // templateId → category
+let autoPhotoBase      = '';
+let autoPhotoCount     = 12;
+let autoCurrentPhotos  = {};   // templateId → current photoUrl (for exclude on refresh)
 
 // ── DOM — Views ───────────────────────────────────────────
 const formView       = document.getElementById('form-view');
@@ -43,6 +48,7 @@ const autoSbApiKey       = document.getElementById('auto-sb-api-key');
 const autoSbTenantUrl    = document.getElementById('auto-sb-tenant-url');
 const autoSbRemember     = document.getElementById('auto-sb-remember');
 const restartAutoBtn     = document.getElementById('restart-auto-btn');
+const refreshAllBtn      = document.getElementById('refresh-all-btn');
 const logoMissingBanner  = document.getElementById('logo-missing-banner');
 const logoMissingInput   = document.getElementById('logo-missing-input');
 const logoMissingBtn     = document.getElementById('logo-missing-btn');
@@ -191,11 +197,15 @@ autoBtn.addEventListener('click', async () => {
     const analyseData = await analyseRes.json();
     if (!analyseRes.ok || !analyseData.ok) throw new Error(analyseData.error || 'Could not scan website.');
 
-    const { brandColor, logoUrl: foundLogoUrl, photoUrl, photo2Url, photoByTemplate } = analyseData;
+    const { brandColor, logoUrl: foundLogoUrl, photoUrl, photo2Url, photoByTemplate, categoryMap, photoBase, photoCount } = analyseData;
     autoBrandColor  = brandColor;
     autoPhotoUrl    = photoUrl;
     autoPhoto2Url   = photo2Url || photoUrl;
-    let autoLogoUrl = foundLogoUrl || null;
+    autoLogoUrl     = foundLogoUrl || null;
+    autoCategoryMap = categoryMap || {};
+    autoPhotoBase   = photoBase || '';
+    autoPhotoCount  = photoCount || 12;
+    autoCurrentPhotos = { ...photoByTemplate };
 
     // Extract company name from URL for display
     try {
@@ -242,16 +252,23 @@ autoBtn.addEventListener('click', async () => {
       tile.dataset.templateId = templateId;
       tile.innerHTML = `
         <div class="cover-tile-spinner"><div class="spinner-sm"></div></div>
-        <div class="cover-tile-label">${name}</div>
+        <div class="cover-tile-footer">
+          <span class="cover-tile-label">${name}</span>
+          <button type="button" class="cover-tile-refresh" title="Try a different photo">↺</button>
+        </div>
         <div class="cover-tile-check">✓</div>
       `;
+      tile.querySelector('.cover-tile-refresh').addEventListener('click', (e) => {
+        e.stopPropagation();
+        refreshTile(templateId);
+      });
       tile.addEventListener('click', () => selectCover(templateId));
       coversGrid.appendChild(tile);
 
-      // If already done, populate immediately
       if (imageUrl) {
         setTileImage(tile, imageUrl);
         autoResults[templateId] = imageUrl;
+        autoCurrentPhotos[templateId] = photoByTemplate?.[templateId] || '';
       }
     });
 
@@ -304,6 +321,87 @@ function setTileImage(tile, imageUrl) {
     spinner.replaceWith(img);
   }
 }
+
+// ── Per-tile and all-tile refresh ─────────────────────────
+async function refreshTile(templateId) {
+  const tile = coversGrid.querySelector(`[data-template-id="${templateId}"]`);
+  if (!tile) return;
+
+  // Show spinner in tile
+  const existingImg = tile.querySelector('.cover-tile-img');
+  if (existingImg) {
+    const spinner = document.createElement('div');
+    spinner.className = 'cover-tile-spinner';
+    spinner.innerHTML = '<div class="spinner-sm"></div>';
+    existingImg.replaceWith(spinner);
+  }
+  tile.classList.remove('is-selected');
+  if (autoSelectedId === templateId) {
+    selectedCoverActions.hidden = true;
+    autoSelectedId = null;
+  }
+
+  const refreshBtn = tile.querySelector('.cover-tile-refresh');
+  if (refreshBtn) refreshBtn.disabled = true;
+
+  try {
+    const res  = await fetch('/api/generate-cover', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        action:     'refresh-tile',
+        templateId,
+        brandColor: autoBrandColor,
+        logoUrl:    autoLogoUrl,
+        category:   autoCategoryMap[templateId] || null,
+        excludeUrl: autoCurrentPhotos[templateId] || null
+      })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Refresh failed.');
+
+    // Poll until ready
+    let imageUrl = data.imageUrl;
+    if (!imageUrl && data.imageId) {
+      for (let i = 0; i < 20; i++) {
+        await new Promise(r => setTimeout(r, 2000));
+        const pollRes  = await fetch('/api/generate-cover', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ action: 'poll', imageId: data.imageId })
+        });
+        const pollData = await pollRes.json();
+        if (pollData.ready && pollData.imageUrl) { imageUrl = pollData.imageUrl; break; }
+      }
+    }
+    if (!imageUrl) throw new Error('Timed out.');
+
+    autoResults[templateId]      = imageUrl;
+    autoCurrentPhotos[templateId] = data.photoUrl || '';
+    setTileImage(tile, imageUrl);
+  } catch (e) {
+    // Restore previous image if refresh failed
+    const prevUrl = autoResults[templateId];
+    if (prevUrl) setTileImage(tile, prevUrl);
+  } finally {
+    if (refreshBtn) refreshBtn.disabled = false;
+  }
+}
+
+async function refreshAll() {
+  refreshAllBtn.disabled    = true;
+  refreshAllBtn.textContent = '↺ Refreshing…';
+  selectedCoverActions.hidden = true;
+  autoSelectedId = null;
+
+  const templateIds = Object.keys(TEMPLATE_NAMES);
+  await Promise.all(templateIds.map(id => refreshTile(id)));
+
+  refreshAllBtn.disabled    = false;
+  refreshAllBtn.textContent = '↺ New Photos';
+}
+
+refreshAllBtn.addEventListener('click', refreshAll);
 
 function selectCover(templateId) {
   const imageUrl = autoResults[templateId];
@@ -391,11 +489,14 @@ autoPushBtn.addEventListener('click', async () => {
 
 // Restart from auto result
 restartAutoBtn.addEventListener('click', () => {
-  autoResults     = {};
-  autoSelectedId  = null;
-  autoPhotoUrl    = '';
-  autoPhoto2Url   = '';
-  coversGrid.innerHTML = '';
+  autoResults       = {};
+  autoSelectedId    = null;
+  autoPhotoUrl      = '';
+  autoPhoto2Url     = '';
+  autoCategoryMap   = {};
+  autoCurrentPhotos = {};
+  autoLogoUrl       = null;
+  coversGrid.innerHTML        = '';
   selectedCoverActions.hidden = true;
   autoPushResult.hidden       = true;
   logoMissingBanner.hidden    = true;
