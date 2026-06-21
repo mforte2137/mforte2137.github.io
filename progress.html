@@ -6,7 +6,8 @@
   <title>MSP Project Progress</title>
   <link rel="stylesheet" href="progress.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
 </head>
 <body>
 
@@ -26,14 +27,14 @@
           <span class="brand-mark">◆</span>
           <span class="brand-name">Project Progress</span>
         </div>
-        <div style="display:flex;gap:10px;align-items:center">
+        <div style="display:flex;gap:8px;align-items:center">
           <button class="btn-ghost" id="btn-sample-report">View Sample Report</button>
           <button class="btn-ghost" id="btn-use-template">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
             Use Template
           </button>
           <button class="btn-primary" id="btn-import-new">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Import Project
           </button>
         </div>
@@ -92,13 +93,13 @@
     <header class="app-header">
       <div class="header-inner">
         <button class="btn-back" id="btn-back-dashboard">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
           All Projects
         </button>
         <div class="tracker-header-actions">
           <button class="btn-ghost" id="btn-edit-meta">Edit Details</button>
           <button class="btn-primary" id="btn-generate-report">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             <span id="btn-generate-label">Generate Report</span>
           </button>
         </div>
@@ -133,7 +134,7 @@
             <div class="completion-title">Project Complete!</div>
             <div class="completion-sub" id="completion-sub"></div>
           </div>
-          <button class="btn-primary" id="btn-final-report" style="margin-left:auto">
+          <button class="btn-accent" id="btn-final-report" style="margin-left:auto">
             Generate Final Report
           </button>
         </div>
@@ -141,7 +142,7 @@
 
       <div class="tracker-body">
 
-        <!-- CENTRE: Tasks (wider) -->
+        <!-- CENTRE: Tasks -->
         <div class="tasks-panel">
           <div class="panel-header">
             <h2>Tasks</h2>
@@ -156,7 +157,6 @@
         <!-- RIGHT: Blockers + Scope Changes + Notes -->
         <div class="blockers-panel">
 
-          <!-- Blockers & Risks -->
           <div class="panel-header">
             <h2>Blockers &amp; Risks</h2>
             <button class="btn-add-blocker" id="btn-add-blocker">+ Add</button>
@@ -164,7 +164,6 @@
           <div class="blockers-list" id="blockers-list"></div>
           <div class="no-blockers" id="no-blockers"><span>✓</span> No active blockers</div>
 
-          <!-- Scope Changes -->
           <div class="panel-header" style="margin-top:1.5rem">
             <h2>Scope Changes</h2>
             <button class="btn-add-blocker" id="btn-add-scope">+ Add</button>
@@ -172,7 +171,6 @@
           <div class="blockers-list" id="scope-list"></div>
           <div class="no-blockers" id="no-scope"><span>✓</span> No scope changes</div>
 
-          <!-- Internal Notes -->
           <div class="panel-header" style="margin-top:1.5rem">
             <h2>Internal Notes</h2>
           </div>
@@ -190,16 +188,16 @@
     <header class="app-header report-header">
       <div class="header-inner">
         <button class="btn-back" id="btn-back-tracker">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
           Back to Tracker
         </button>
         <div class="tracker-header-actions">
           <button class="btn-ghost" id="btn-regenerate">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
             Regenerate
           </button>
           <button class="btn-primary" id="btn-print">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
             Print / Save PDF
           </button>
         </div>
@@ -221,91 +219,7 @@
       </div>
 
       <div class="report-wrap" id="report-wrap" style="display:none">
-        <div class="report-page" id="report-page">
-
-          <div class="report-masthead">
-            <div class="report-masthead-left">
-              <div class="report-logo">◆ MSP Project Progress</div>
-              <h1 id="rpt-project-title" class="report-project-title"></h1>
-              <p id="rpt-customer-name" class="report-customer"></p>
-            </div>
-            <div class="report-masthead-right">
-              <div class="health-badge" id="rpt-health-badge">
-                <span class="health-icon" id="rpt-health-icon">●</span>
-                <div>
-                  <div class="health-label">Project Health</div>
-                  <div class="health-value" id="rpt-health-value">HEALTHY</div>
-                </div>
-              </div>
-              <div class="report-date" id="rpt-date"></div>
-            </div>
-          </div>
-
-          <div class="report-grid">
-
-            <!-- ① Current Phase -->
-            <div class="report-block block-phase">
-              <div class="block-label">① Current Phase</div>
-              <div class="phase-narrative" id="rpt-phase-narrative"></div>
-              <div class="phase-bar" id="rpt-phase-bar"></div>
-            </div>
-
-            <!-- ② Overall Progress -->
-            <div class="report-block block-progress">
-              <div class="block-label">② Overall Progress</div>
-              <div class="report-progress-wrap">
-                <svg class="report-ring" width="100" height="100" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="#e8e6e0" stroke-width="8"/>
-                  <circle id="rpt-arc" cx="50" cy="50" r="40" fill="none" stroke="var(--accent)" stroke-width="8"
-                    stroke-linecap="round" stroke-dasharray="251.3" stroke-dashoffset="251.3"
-                    transform="rotate(-90 50 50)"/>
-                </svg>
-                <div class="report-progress-label">
-                  <span id="rpt-pct-big"></span>
-                  <small>complete</small>
-                </div>
-              </div>
-              <div class="report-task-summary" id="rpt-task-summary"></div>
-            </div>
-
-            <!-- ③ Risks & Blockers -->
-            <div class="report-block block-risks">
-              <div class="block-label">③ Risks &amp; Blockers</div>
-              <div id="rpt-blockers-list"></div>
-            </div>
-
-            <!-- ④ Decisions Needed -->
-            <div class="report-block block-decisions">
-              <div class="block-label">④ Decisions &amp; Actions Needed</div>
-              <div id="rpt-decisions-list"></div>
-            </div>
-
-            <!-- ⑤ Scope Changes — full width -->
-            <div class="report-block block-scope-changes">
-              <div class="block-label">⑤ Scope Changes</div>
-              <div id="rpt-scope-list"></div>
-            </div>
-
-            <!-- ⑥ Executive Summary -->
-            <div class="report-block block-summary">
-              <div class="block-label">⑥ Executive Summary</div>
-              <div class="exec-summary" id="rpt-exec-summary"></div>
-            </div>
-
-            <!-- ⑦ Outlook -->
-            <div class="report-block block-timeline">
-              <div class="block-label">⑦ Outlook</div>
-              <div class="timeline-conf" id="rpt-timeline-conf"></div>
-              <div class="outlook-narrative" id="rpt-outlook-narrative"></div>
-            </div>
-
-          </div>
-
-          <div class="report-footer">
-            <span id="rpt-footer-msp">Prepared by your MSP team</span>
-            <span id="rpt-footer-date"></span>
-          </div>
-        </div>
+        <!-- injected by JS -->
       </div>
 
       <!-- Internal Team Summary -->
@@ -509,7 +423,7 @@
         <button class="modal-close" id="modal-delete-close">✕</button>
       </div>
       <div class="modal-body">
-        <p style="color:var(--text-muted)">This will permanently remove <strong id="delete-project-name"></strong> and all its progress data. This cannot be undone.</p>
+        <p style="color:var(--text-2)">This will permanently remove <strong id="delete-project-name"></strong> and all its progress data. This cannot be undone.</p>
       </div>
       <div class="modal-footer">
         <button class="btn-ghost" id="btn-delete-cancel">Cancel</button>
@@ -526,7 +440,7 @@
         <button class="modal-close" id="modal-delete-task-close">✕</button>
       </div>
       <div class="modal-body">
-        <p style="color:var(--text-muted)">Remove <strong id="delete-task-name"></strong> from this project?</p>
+        <p style="color:var(--text-2)">Remove <strong id="delete-task-name"></strong> from this project?</p>
       </div>
       <div class="modal-footer">
         <button class="btn-ghost" id="btn-delete-task-cancel">Cancel</button>
@@ -541,7 +455,7 @@
       <div class="modal-header">
         <div>
           <h3>Choose a Project Template</h3>
-          <p style="font-size:13px;color:var(--text-muted);margin-top:3px">Select a template to pre-populate tasks, roles, and estimated hours.</p>
+          <p style="font-size:13px;color:var(--text-2);margin-top:3px">Select a template to pre-populate tasks, roles, and estimated hours.</p>
         </div>
         <button class="modal-close" id="modal-template-close">✕</button>
       </div>
