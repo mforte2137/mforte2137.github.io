@@ -218,13 +218,20 @@ autoBtn.addEventListener('click', async () => {
         <div class="cover-tile-spinner"><div class="spinner-sm"></div></div>
         <div class="cover-tile-footer">
           <span class="cover-tile-label">${name}</span>
-          <button type="button" class="cover-tile-refresh" title="Try a different photo">↺</button>
+          <div class="cover-tile-btns">
+            <button type="button" class="cover-tile-undo" title="Undo refresh" hidden>↩</button>
+            <button type="button" class="cover-tile-refresh" title="Try a different photo">↺</button>
+          </div>
         </div>
         <div class="cover-tile-check">✓</div>
       `;
       tile.querySelector('.cover-tile-refresh').addEventListener('click', (e) => {
         e.stopPropagation();
         refreshTile(templateId);
+      });
+      tile.querySelector('.cover-tile-undo').addEventListener('click', (e) => {
+        e.stopPropagation();
+        undoTile(templateId);
       });
       tile.addEventListener('click', () => selectCover(templateId));
       coversGrid.appendChild(tile);
@@ -287,11 +294,17 @@ function setTileImage(tile, imageUrl) {
 }
 
 // ── Per-tile and all-tile refresh ─────────────────────────
+const autoPreviousPhotos = {}; // templateId → previous imageUrl (one level undo)
+
 async function refreshTile(templateId) {
   const tile = coversGrid.querySelector(`[data-template-id="${templateId}"]`);
   if (!tile) return;
 
-  // Show spinner in tile
+  // Store current image for undo before replacing
+  const prevUrl = autoResults[templateId];
+  if (prevUrl) autoPreviousPhotos[templateId] = prevUrl;
+
+  // Show spinner
   const existingImg = tile.querySelector('.cover-tile-img');
   if (existingImg) {
     const spinner = document.createElement('div');
@@ -306,7 +319,9 @@ async function refreshTile(templateId) {
   }
 
   const refreshBtn = tile.querySelector('.cover-tile-refresh');
+  const undoBtn    = tile.querySelector('.cover-tile-undo');
   if (refreshBtn) refreshBtn.disabled = true;
+  if (undoBtn)    undoBtn.hidden = true;
 
   try {
     const res  = await fetch('/api/generate-cover', {
@@ -340,16 +355,40 @@ async function refreshTile(templateId) {
     }
     if (!imageUrl) throw new Error('Timed out.');
 
-    autoResults[templateId]      = imageUrl;
+    autoResults[templateId]       = imageUrl;
     autoCurrentPhotos[templateId] = data.photoUrl || '';
     setTileImage(tile, imageUrl);
+
+    // Show undo button now that we have something to go back to
+    if (undoBtn && prevUrl) undoBtn.hidden = false;
+
   } catch (e) {
     // Restore previous image if refresh failed
-    const prevUrl = autoResults[templateId];
     if (prevUrl) setTileImage(tile, prevUrl);
+    delete autoPreviousPhotos[templateId];
   } finally {
     if (refreshBtn) refreshBtn.disabled = false;
   }
+}
+
+function undoTile(templateId) {
+  const prevUrl = autoPreviousPhotos[templateId];
+  if (!prevUrl) return;
+
+  const tile = coversGrid.querySelector(`[data-template-id="${templateId}"]`);
+  if (!tile) return;
+
+  // Restore previous image
+  autoResults[templateId] = prevUrl;
+  setTileImage(tile, prevUrl);
+  delete autoPreviousPhotos[templateId];
+
+  // Hide undo button — only one level of undo
+  const undoBtn = tile.querySelector('.cover-tile-undo');
+  if (undoBtn) undoBtn.hidden = true;
+
+  // If this tile was selected, update the preview
+  if (autoSelectedId === templateId) selectCover(templateId);
 }
 
 async function refreshAll() {
