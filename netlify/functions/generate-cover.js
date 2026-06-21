@@ -276,21 +276,21 @@ Respond ONLY with valid JSON, no markdown:
       if (!logoUrl && logoImages.length > 0) logoUrl = logoImages[0].url;
 
       // ── Photo selection from curated GitHub library ────────
-      // 6 categories × 12 images each — guaranteed fetchable, MSP-appropriate
-      const PHOTO_BASE = 'https://raw.githubusercontent.com/mforte2137/mforte2137.github.io/main/images/photos/';
-      const PHOTO_CATEGORIES = ['office', 'datacenter', 'network', 'security', 'team', 'abstract'];
-      const PHOTO_COUNT = 12;
+      const PHOTO_BASE       = 'https://raw.githubusercontent.com/mforte2137/mforte2137.github.io/main/images/photos/';
+      const PHOTO_COUNT      = 12;
+      const NON_ABSTRACT     = ['office', 'datacenter', 'network', 'security', 'team'];
 
-      // Assign a category per template — varied but consistent themes
+      // Modern always uses abstract.
+      // Other 3 templates each get a different randomly-chosen non-abstract category.
+      const pool = [...NON_ABSTRACT].sort(() => Math.random() - 0.5); // shuffle
       const templateCategories = {
-        chevron:     'office',
-        half_circle: 'team',
-        corporate:   'datacenter',
+        chevron:     pool[0],
+        half_circle: pool[1],
+        corporate:   pool[2],
         modern:      'abstract'
       };
 
-      // Pick a random image from each template's category
-      // Use time-based seed so reruns give different results
+      // Pick a random image from each template's assigned category
       const seed = Date.now();
       const photoByTemplate = {};
       Object.entries(templateCategories).forEach(([templateId, category], i) => {
@@ -298,8 +298,6 @@ Respond ONLY with valid JSON, no markdown:
         photoByTemplate[templateId] = `${PHOTO_BASE}${category}-${idx}.jpg`;
       });
 
-      // Also pick a random category for each template for refresh capability
-      // Return the full category map so client can refresh individual tiles
       const categoryMap = templateCategories;
 
       return ok200({
@@ -326,8 +324,12 @@ Respond ONLY with valid JSON, no markdown:
 
     const PHOTO_BASE  = 'https://raw.githubusercontent.com/mforte2137/mforte2137.github.io/main/images/photos/';
     const PHOTO_COUNT = 12;
-    const DEFAULT_CATEGORIES = { chevron: 'office', half_circle: 'team', corporate: 'datacenter', modern: 'abstract' };
-    const cat = category || DEFAULT_CATEGORIES[templateId] || 'office';
+    const NON_ABSTRACT     = ['office', 'datacenter', 'network', 'security', 'team'];
+    const DEFAULT_CATEGORIES = { modern: 'abstract' }; // only modern is fixed
+    // For non-modern: use provided category or pick random non-abstract
+    const cat = templateId === 'modern'
+      ? 'abstract'
+      : (category && category !== 'abstract' ? category : NON_ABSTRACT[Math.floor(Math.random() * NON_ABSTRACT.length)]);
 
     // Pick a random photo, avoiding the one currently shown
     let photoUrl, attempts = 0;
