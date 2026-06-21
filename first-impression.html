@@ -308,27 +308,37 @@
           <div class="text-ctrl-group">
             <label class="text-ctrl-label">Heading size</label>
             <div class="text-ctrl-size-row">
-              <input type="range" id="txt-size" class="text-ctrl-slider" min="20" max="120" value="52" step="2">
-              <span id="txt-size-val" class="text-ctrl-size-val">52</span>
+              <input type="range" id="txt-size" class="text-ctrl-slider" min="40" max="200" value="120" step="4">
+              <span id="txt-size-val" class="text-ctrl-size-val">120</span>
             </div>
           </div>
           <div class="text-ctrl-group">
             <label class="text-ctrl-label">Sub size</label>
             <div class="text-ctrl-size-row">
-              <input type="range" id="txt-sub-size" class="text-ctrl-slider" min="14" max="60" value="28" step="2">
-              <span id="txt-sub-size-val" class="text-ctrl-size-val">28</span>
+              <input type="range" id="txt-sub-size" class="text-ctrl-slider" min="20" max="120" value="60" step="2">
+              <span id="txt-sub-size-val" class="text-ctrl-size-val">60</span>
             </div>
           </div>
         </div>
 
         <div class="text-ctrl-row">
           <div class="text-ctrl-group">
-            <label class="text-ctrl-label">Text colour</label>
+            <label class="text-ctrl-label">Heading colour</label>
             <div class="text-ctrl-color-row">
               <input type="color" id="txt-color" class="text-ctrl-color" value="#ffffff">
-              <input type="text"  id="txt-color-hex" class="text-ctrl-color-hex" value="#ffffff" maxlength="7">
+              <input type="text"  id="txt-color-hex" class="text-ctrl-color-hex" value="#FFFFFF" maxlength="7">
             </div>
           </div>
+          <div class="text-ctrl-group">
+            <label class="text-ctrl-label">Sub colour</label>
+            <div class="text-ctrl-color-row">
+              <input type="color" id="txt-sub-color" class="text-ctrl-color" value="#ffffff">
+              <input type="text"  id="txt-sub-color-hex" class="text-ctrl-color-hex" value="#FFFFFF" maxlength="7">
+            </div>
+          </div>
+        </div>
+
+        <div class="text-ctrl-row">
           <div class="text-ctrl-group">
             <label class="text-ctrl-label">Drop shadow</label>
             <label class="text-ctrl-toggle">
@@ -336,11 +346,10 @@
               <span class="text-ctrl-toggle-label">On</span>
             </label>
           </div>
-        </div>
-
-        <div class="text-ctrl-group">
-          <label class="text-ctrl-label">Shadow intensity</label>
-          <input type="range" id="txt-shadow-blur" class="text-ctrl-slider" min="2" max="24" value="8" step="1">
+          <div class="text-ctrl-group">
+            <label class="text-ctrl-label">Shadow intensity</label>
+            <input type="range" id="txt-shadow-blur" class="text-ctrl-slider" min="2" max="24" value="8" step="1">
+          </div>
         </div>
 
         <div class="text-editor-actions">
