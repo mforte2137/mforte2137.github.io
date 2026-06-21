@@ -6,7 +6,7 @@
   <title>First Impression — Branded Cover Page Creator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&family=Playfair+Display:wght@400;700&family=Barlow:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:ital,wght@0,400;0,700;1,400;1,700&family=JetBrains+Mono:wght@500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Barlow:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="first-impression.css">
 </head>
 <body>
@@ -284,53 +284,65 @@
       <!-- Controls -->
       <div class="text-editor-controls">
 
-        <div class="text-ctrl-group">
-          <label class="text-ctrl-label">Heading</label>
-          <input type="text" id="txt-heading" class="text-ctrl-input" placeholder="e.g. Managed IT Services" maxlength="80">
-        </div>
-
-        <div class="text-ctrl-group">
-          <label class="text-ctrl-label">Subheading <span class="text-ctrl-optional">Optional</span></label>
-          <input type="text" id="txt-subheading" class="text-ctrl-input" placeholder="e.g. Tailored solutions for your business" maxlength="100">
-        </div>
-
-        <div class="text-ctrl-group">
-          <label class="text-ctrl-label">Font</label>
-          <select id="txt-font" class="text-ctrl-select">
-            <option value="Inter">Inter — Clean Sans-Serif</option>
-            <option value="Space Grotesk">Space Grotesk — Geometric Sans</option>
-            <option value="Barlow">Barlow — Corporate Sans</option>
-            <option value="Playfair Display">Playfair Display — Serif</option>
-          </select>
-        </div>
-
-        <div class="text-ctrl-row">
+        <!-- Heading group -->
+        <div class="text-ctrl-block">
+          <div class="text-ctrl-block-title">Heading</div>
           <div class="text-ctrl-group">
-            <label class="text-ctrl-label">Heading size</label>
-            <div class="text-ctrl-size-row">
-              <input type="range" id="txt-size" class="text-ctrl-slider" min="40" max="200" value="120" step="4">
-              <span id="txt-size-val" class="text-ctrl-size-val">120</span>
+            <input type="text" id="txt-heading" class="text-ctrl-input" placeholder="e.g. Managed IT Services" maxlength="80">
+          </div>
+          <div class="text-ctrl-row">
+            <div class="text-ctrl-group">
+              <label class="text-ctrl-label">Size</label>
+              <div class="text-ctrl-size-row">
+                <input type="range" id="txt-size" class="text-ctrl-slider" min="40" max="200" value="150" step="4">
+                <span id="txt-size-val" class="text-ctrl-size-val">150</span>
+              </div>
+            </div>
+            <div class="text-ctrl-group">
+              <label class="text-ctrl-label">Style</label>
+              <select id="txt-style" class="text-ctrl-select-sm">
+                <option value="bold normal">Bold</option>
+                <option value="normal normal">Normal</option>
+                <option value="bold italic">Bold Italic</option>
+                <option value="normal italic">Italic</option>
+              </select>
             </div>
           </div>
           <div class="text-ctrl-group">
-            <label class="text-ctrl-label">Sub size</label>
-            <div class="text-ctrl-size-row">
-              <input type="range" id="txt-sub-size" class="text-ctrl-slider" min="20" max="120" value="60" step="2">
-              <span id="txt-sub-size-val" class="text-ctrl-size-val">60</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="text-ctrl-row">
-          <div class="text-ctrl-group">
-            <label class="text-ctrl-label">Heading colour</label>
+            <label class="text-ctrl-label">Colour</label>
             <div class="text-ctrl-color-row">
               <input type="color" id="txt-color" class="text-ctrl-color" value="#ffffff">
               <input type="text"  id="txt-color-hex" class="text-ctrl-color-hex" value="#FFFFFF" maxlength="7">
             </div>
           </div>
+        </div>
+
+        <!-- Subheading group -->
+        <div class="text-ctrl-block">
+          <div class="text-ctrl-block-title">Subheading <span class="text-ctrl-optional">Optional</span></div>
           <div class="text-ctrl-group">
-            <label class="text-ctrl-label">Sub colour</label>
+            <input type="text" id="txt-subheading" class="text-ctrl-input" placeholder="e.g. Tailored solutions for your business" maxlength="100">
+          </div>
+          <div class="text-ctrl-row">
+            <div class="text-ctrl-group">
+              <label class="text-ctrl-label">Size</label>
+              <div class="text-ctrl-size-row">
+                <input type="range" id="txt-sub-size" class="text-ctrl-slider" min="20" max="120" value="90" step="2">
+                <span id="txt-sub-size-val" class="text-ctrl-size-val">90</span>
+              </div>
+            </div>
+            <div class="text-ctrl-group">
+              <label class="text-ctrl-label">Style</label>
+              <select id="txt-sub-style" class="text-ctrl-select-sm">
+                <option value="normal italic">Italic</option>
+                <option value="normal normal">Normal</option>
+                <option value="bold normal">Bold</option>
+                <option value="bold italic">Bold Italic</option>
+              </select>
+            </div>
+          </div>
+          <div class="text-ctrl-group">
+            <label class="text-ctrl-label">Colour</label>
             <div class="text-ctrl-color-row">
               <input type="color" id="txt-sub-color" class="text-ctrl-color" value="#ffffff">
               <input type="text"  id="txt-sub-color-hex" class="text-ctrl-color-hex" value="#FFFFFF" maxlength="7">
@@ -338,17 +350,30 @@
           </div>
         </div>
 
-        <div class="text-ctrl-row">
+        <!-- Shared settings -->
+        <div class="text-ctrl-block">
+          <div class="text-ctrl-block-title">Settings</div>
           <div class="text-ctrl-group">
-            <label class="text-ctrl-label">Drop shadow</label>
-            <label class="text-ctrl-toggle">
-              <input type="checkbox" id="txt-shadow" checked>
-              <span class="text-ctrl-toggle-label">On</span>
-            </label>
+            <label class="text-ctrl-label">Font</label>
+            <select id="txt-font" class="text-ctrl-select">
+              <option value="Inter">Inter — Clean Sans-Serif</option>
+              <option value="Space Grotesk">Space Grotesk — Geometric Sans</option>
+              <option value="Barlow">Barlow — Corporate Sans</option>
+              <option value="Playfair Display">Playfair Display — Serif</option>
+            </select>
           </div>
-          <div class="text-ctrl-group">
-            <label class="text-ctrl-label">Shadow intensity</label>
-            <input type="range" id="txt-shadow-blur" class="text-ctrl-slider" min="2" max="24" value="8" step="1">
+          <div class="text-ctrl-row">
+            <div class="text-ctrl-group">
+              <label class="text-ctrl-label">Drop shadow</label>
+              <label class="text-ctrl-toggle">
+                <input type="checkbox" id="txt-shadow" checked>
+                <span class="text-ctrl-toggle-label">On</span>
+              </label>
+            </div>
+            <div class="text-ctrl-group">
+              <label class="text-ctrl-label">Intensity</label>
+              <input type="range" id="txt-shadow-blur" class="text-ctrl-slider" min="2" max="24" value="8" step="1">
+            </div>
           </div>
         </div>
 
