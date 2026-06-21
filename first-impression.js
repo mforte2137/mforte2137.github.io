@@ -98,6 +98,8 @@ const txtColor          = document.getElementById('txt-color');
 const txtColorHex       = document.getElementById('txt-color-hex');
 const txtSubColor       = document.getElementById('txt-sub-color');
 const txtSubColorHex    = document.getElementById('txt-sub-color-hex');
+const txtStyle          = document.getElementById('txt-style');
+const txtSubStyle       = document.getElementById('txt-sub-style');
 const txtShadow         = document.getElementById('txt-shadow');
 const txtShadowBlur     = document.getElementById('txt-shadow-blur');
 const txtResetPosBtn    = document.getElementById('txt-reset-pos-btn');
@@ -951,6 +953,10 @@ function teDrawCanvas() {
   const subSz      = parseInt(txtSubSize.value);
   const color      = txtColor.value    || '#ffffff';
   const subColor   = txtSubColor.value || '#ffffff';
+  const headStyle  = txtStyle.value    || 'bold normal';    // "weight style"
+  const subStyle   = txtSubStyle.value || 'normal italic';
+  const [headW, headS] = headStyle.split(' ');
+  const [subW,  subS]  = subStyle.split(' ');
   const shadow     = txtShadow.checked;
   const blur       = parseInt(txtShadowBlur.value);
   const scale      = w / teImg.naturalWidth;
@@ -980,7 +986,7 @@ function teDrawCanvas() {
 
   if (heading) {
     ctx.fillStyle = color;
-    ctx.font = `700 ${hSz}px "${font}", sans-serif`;
+    ctx.font = `${headS} ${headW} ${hSz}px "${font}", sans-serif`;
     const words    = heading.split(' ');
     const maxWidth = w * 0.82;
     let   line     = '';
@@ -998,7 +1004,7 @@ function teDrawCanvas() {
 
   if (subheading) {
     ctx.fillStyle    = subColor;
-    ctx.font         = `400 ${sSz}px "${font}", sans-serif`;
+    ctx.font         = `${subS} ${subW} ${sSz}px "${font}", sans-serif`;
     ctx.shadowBlur   = shadow ? blur * scale * 0.6 : 0;
     const words    = subheading.split(' ');
     const maxWidth = w * 0.82;
@@ -1052,10 +1058,10 @@ function teOpenEditor(imageUrl, returnView) {
   txtHeading.value      = '';
   txtSubheading.value   = '';
   txtFont.value         = 'Inter';
-  txtSize.value         = '120';
-  txtSizeVal.textContent = '120';
-  txtSubSize.value      = '60';
-  txtSubSizeVal.textContent = '60';
+  txtSize.value         = '150';
+  txtSizeVal.textContent = '150';
+  txtSubSize.value      = '90';
+  txtSubSizeVal.textContent = '90';
   txtColor.value        = '#ffffff';
   txtColorHex.value     = '#FFFFFF';
   txtSubColor.value     = '#ffffff';
@@ -1068,7 +1074,7 @@ function teOpenEditor(imageUrl, returnView) {
 }
 
 // Control event listeners
-[txtHeading, txtSubheading, txtFont, txtShadow, txtShadowBlur].forEach(el => {
+[txtHeading, txtSubheading, txtFont, txtShadow, txtShadowBlur, txtStyle, txtSubStyle].forEach(el => {
   el.addEventListener('input', teDrawCanvas);
 });
 
@@ -1173,6 +1179,10 @@ txtDownloadBtn.addEventListener('click', () => {
   const subSz       = parseInt(txtSubSize.value);
   const color       = txtColor.value    || '#ffffff';
   const subColor    = txtSubColor.value || '#ffffff';
+  const headStyle   = txtStyle.value    || 'bold normal';
+  const subStyle    = txtSubStyle.value || 'normal italic';
+  const [headW, headS] = headStyle.split(' ');
+  const [subW,  subS]  = subStyle.split(' ');
   const shadow      = txtShadow.checked;
   const blur        = parseInt(txtShadowBlur.value);
   const heading     = txtHeading.value.trim();
@@ -1196,7 +1206,7 @@ txtDownloadBtn.addEventListener('click', () => {
 
   if (heading) {
     hiCtx.fillStyle = color;
-    hiCtx.font = `700 ${headSize}px "${font}", sans-serif`;
+    hiCtx.font = `${headS} ${headW} ${headSize}px "${font}", sans-serif`;
     const words    = heading.split(' ');
     const maxWidth = w * 0.82;
     let   line     = '';
@@ -1214,7 +1224,7 @@ txtDownloadBtn.addEventListener('click', () => {
 
   if (subheading) {
     hiCtx.fillStyle  = subColor;
-    hiCtx.font       = `400 ${subSz}px "${font}", sans-serif`;
+    hiCtx.font       = `${subS} ${subW} ${subSz}px "${font}", sans-serif`;
     hiCtx.shadowBlur = shadow ? blur * 0.6 : 0;
     const words    = subheading.split(' ');
     const maxWidth = w * 0.82;
