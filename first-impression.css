@@ -310,6 +310,7 @@ header.top .brand { font-weight: 700; color: var(--text); font-family: 'Space Gr
 
 /* ── Working view ── */
 #working-view { display: flex; align-items: center; justify-content: center; min-height: 60vh; }
+#working-view[hidden] { display: none; }
 .working-inner { text-align: center; }
 .working-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: var(--text); margin: 24px 0 8px; }
 .working-sub   { font-size: 14px; color: var(--text-3); }
