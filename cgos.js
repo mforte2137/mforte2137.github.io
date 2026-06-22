@@ -111,7 +111,6 @@ const CUSTOMERS = {
       { src: 'RMM',         icon: iconLaptop(), cls: 'high', title: '14 devices reaching Windows 10 EOL',    sub: 'RMM &middot; 10 months away',           modal: 'eol',       action: 'Create opportunity', actionCls: 'act-primary' },
       { src: 'PSA',         icon: iconLabor(),  cls: 'high', title: 'Labor utilization 27% over agreement',  sub: 'PSA &middot; Last 30 days',             modal: 'labor',     action: 'Review scope', actionCls: 'act-warn' },
       { src: 'PSA',         icon: iconUsers(),  cls: 'med',  title: 'User count increased 18% — 7 unlicensed', sub: 'PSA / M365 &middot; Action needed',   modal: 'users',     action: 'Review users', actionCls: 'act-warn' },
-      { src: 'RMM',         icon: iconBackup(), cls: 'med',  title: 'Backup failure rate increased this month', sub: 'RMM &middot; 14% failure rate',      modal: 'backup_abc', action: 'Create ticket', actionCls: 'act-danger' },
       { src: 'Salesbuildr', icon: iconShield(), cls: 'med',  title: 'No security review in 14 months',       sub: 'Salesbuildr &middot; Overdue',          modal: 'secrev',    action: 'Schedule review', actionCls: 'act-warn' },
       { src: 'Salesbuildr', icon: iconMs(),     cls: 'ok',   title: 'M365 licensing aligned',                sub: 'Salesbuildr &middot; On track',         modal: 'm365ok',    action: 'View detail', actionCls: 'act-ok' }
     ],
@@ -274,9 +273,7 @@ const CUSTOMERS = {
     },
     signals: [
       { src: 'RMM', icon: iconServer(),  cls: 'high', title: '3 servers approaching end of warranty',  sub: 'RMM &middot; 6 months away',            modal: 'servers',      action: 'Create opportunity', actionCls: 'act-primary' },
-      { src: 'RMM', icon: iconBackup(),  cls: 'high', title: 'Backup failure rate up 22%',             sub: 'RMM &middot; Last 30 days',             modal: 'backup_river', action: 'Create urgent ticket', actionCls: 'act-danger' },
       { src: 'PSA', icon: iconUsers(),   cls: 'med',  title: 'User & device audit recommended',        sub: 'PSA / RMM &middot; 2 dormant found',    modal: 'users_river',  action: 'Schedule audit', actionCls: 'act-warn' },
-      { src: 'RMM', icon: iconCert(),    cls: 'med',  title: 'SSL certificates expiring in 45 days',   sub: 'RMM &middot; 2 certificates affected',  modal: 'ssl',          action: 'Log reminder', actionCls: 'act-ok' },
       { src: 'Salesbuildr', icon: iconMs(), cls: 'ok', title: 'M365 licensing aligned',                sub: 'Salesbuildr &middot; On track',         modal: 'm365ok',       action: 'View detail', actionCls: 'act-ok' }
     ],
     recs: [
@@ -771,12 +768,12 @@ const taskStatus = {
    PORTFOLIO DATA
    ══════════════════════════════════════════ */
 const PORTFOLIO = [
-  { key: 'abc',    name: 'ABC Manufacturing',     type: 'Fully Managed', location: 'Houston, TX',   priority: 'urgent', health: 82, highSigs: 2, medSigs: 3, okSigs: 1, mrr: '$3,840', am: 'Sarah Johnson', lastReview: '8 months ago', overdue: true,
-    why: '$18K device refresh — 14 Win10 devices hitting EOL in 10 months. Security review 14 months overdue.', pipeline: '$21,950 pipeline', priorityScore: 96, action: 'Schedule strategic review', actionUrgency: 'urgent' },
-  { key: 'river',  name: 'River Tech Solutions',  type: 'Co-Managed',   location: 'Austin, TX',    priority: 'review', health: 71, highSigs: 2, medSigs: 2, okSigs: 1, mrr: '$2,100', am: 'Mark Davies',   lastReview: '4 months ago', overdue: false,
+  { key: 'abc',    name: 'ABC Manufacturing',     type: 'Fully Managed', location: 'Houston, TX',   priority: 'urgent', health: 82, highSigs: 2, medSigs: 2, okSigs: 1, mrr: '$3,840', am: 'Sarah Johnson', lastReview: '8 months ago', overdue: true,
+    why: '$18K device refresh — 14 Win10 devices hitting EOL in 10 months. Security review 14 months overdue.', pipeline: '$21,950 pipeline', priorityScore: 96, action: 'Schedule strategic review', actionUrgency: 'urgent', actionSub: 'Discuss device refresh plan and security posture', am: 'Sarah Johnson', impact: '$18,000', impactLevel: 'urgent', impactLabel: 'High priority' },
+  { key: 'river',  name: 'River Tech Solutions',  type: 'Co-Managed',   location: 'Austin, TX',    priority: 'review', health: 71, highSigs: 1, medSigs: 1, okSigs: 1, mrr: '$2,100', am: 'Mark Davies',   lastReview: '4 months ago', overdue: false,
     why: 'Server refresh proposal unanswered 8 days. Backup disk failure risk — SLA breach if not actioned this week.', pipeline: '$14,500 pipeline', priorityScore: 88, action: 'Call Marcus this week', actionUrgency: 'warn' },
   { key: 'peak',   name: 'Peak Financial Group',  type: 'Fully Managed', location: 'Denver, CO',    priority: 'ok',     health: 91, highSigs: 0, medSigs: 1, okSigs: 2, mrr: '$5,200', am: 'Lisa Tran',     lastReview: '2 months ago', overdue: false,
-    why: 'Compliance audit in 60 days — agenda preparation due now. Dark web monitoring gap identified.', pipeline: '$4,000 pipeline', priorityScore: 52, action: 'Prepare audit agenda', actionUrgency: 'info' }
+    why: 'Compliance audit in 60 days — agenda preparation due now. Dark web monitoring gap identified.', pipeline: '$4,000 pipeline', priorityScore: 52, action: 'Prepare audit agenda', actionUrgency: 'info', actionSub: 'Align on audit scope and close security monitoring gap', am: 'Lisa Tran', impact: '$3,000', impactLevel: 'info', impactLabel: 'Lower priority' }
 ];
 
 /* ══════════════════════════════════════════
@@ -2172,8 +2169,18 @@ function renderPortfolioRows(rows) {
           <div class="port-why-text">${r.why || '—'}</div>
           <div class="port-why-meta">${r.pipeline || ''} &middot; Priority ${r.priorityScore || '—'}</div>
         </div>
-        <div>
+        <div class="port-action-col">
           <button class="port-action-btn ${urgCls}">${r.action || 'Review'}</button>
+          <div class="port-action-sub">${r.actionSub || ''}</div>
+        </div>
+        <div class="port-owner-col">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>${r.am || 'Account Manager'}</span>
+        </div>
+        <div class="port-impact-col">
+          <div class="port-impact-val">${r.impact || ''}</div>
+          <div class="port-impact-label">Est. opportunity</div>
+          <span class="port-impact-badge port-impact-${r.impactLevel || 'info'}">${r.impactLabel || ''}</span>
         </div>
         <span class="port-arrow">&#8250;</span>
       </div>`;
@@ -3168,14 +3175,9 @@ function renderPortfolioBySignal(sig) {
 function initWelcomeBanner() {
   const banner = document.getElementById('welcome-banner');
   const closeBtn = document.getElementById('welcome-close');
-  if (!banner) return;
-  if (localStorage.getItem('cgos_welcome_dismissed')) {
-    banner.style.display = 'none';
-    return;
-  }
+  if (!banner || !closeBtn) return;
   closeBtn.addEventListener('click', () => {
     banner.style.display = 'none';
-    localStorage.setItem('cgos_welcome_dismissed', '1');
   });
 }
 
@@ -3844,6 +3846,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initRankList();
   initMicroFeedback();
   initDocPanel();
+  initWelcomeBanner();
   // Feedback closed by default — user opens when ready
   switchView('portfolio');
 });
