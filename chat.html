@@ -281,6 +281,35 @@
       </section>
 
     </main>
+
+    <!-- KB Panel (persistent right sidebar) -->
+    <aside class="kb-panel">
+      <div class="kb-panel-header">
+        <div>
+          <h2 class="kb-panel-title">Ask the KB</h2>
+          <p class="kb-panel-subtitle">Get answers grounded in your knowledge base, with article links to share.</p>
+        </div>
+        <span class="kb-panel-brand">Salesbuildr KB</span>
+      </div>
+
+      <div class="kb-panel-body">
+        <textarea class="kb-ask-input" id="kbAskInput" placeholder="e.g. How does the customer set up their email integration?"></textarea>
+        <button class="kb-ask-btn" id="kbAskBtn">
+          <span class="kb-ask-btn-text">Ask</span>
+          <span class="kb-ask-btn-loader hidden">...</span>
+        </button>
+
+        <div class="kb-answer-block hidden" id="kbAnswerBlock">
+          <div class="kb-answer-text" id="kbAnswerText"></div>
+        </div>
+
+        <div class="kb-articles-block hidden" id="kbArticlesBlock">
+          <div class="kb-articles-label">Related Articles</div>
+          <div class="kb-articles-list" id="kbArticlesList"></div>
+        </div>
+      </div>
+    </aside>
+
   </div>
 
   <!-- History drawer -->
