@@ -979,3 +979,47 @@ h1, h2, h3, h4 {
         position: static;
     }
 }
+
+/* ── Ask panel — dev context input ── */
+#askContextArea {
+    margin-top: 12px;
+}
+
+.ask-context-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    color: var(--accent-2);
+    margin-bottom: 6px;
+}
+
+.ask-context-input {
+    width: 100%;
+    min-height: 80px;
+    max-height: 160px;
+    resize: vertical;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 8px 10px;
+    border: 1px solid var(--accent-border);
+    background: var(--accent-bg);
+    color: var(--text);
+    border-radius: 0;
+    box-sizing: border-box;
+    display: block;
+}
+
+.ask-context-input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+    background: var(--bg-panel);
+}
+
+.ask-context-input::placeholder {
+    color: var(--text-3);
+    font-style: italic;
+}
