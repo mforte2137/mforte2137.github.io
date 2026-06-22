@@ -592,18 +592,15 @@ async function askKB() {
     draftBtn.style.display = 'none';
     resultEl.style.display = 'block';
     resultEl.className = 'ask-result loading-state';
-    resultEl.innerHTML = '<div class="loading"></div> Searching help centre articles…';
+    resultEl.innerHTML = '<div class="loading"></div> Deep searching help centre — title, description & body…';
 
     try {
         // Use the existing featurebase.js function — sends query + instructions,
         // gets back a standard Claude API response
-        const response = await fetch('/.netlify/functions/featurebase', {
+        const response = await fetch('/.netlify/functions/kb-featurebase-deep', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                query: question,
-                instructions: 'You are a support assistant for Salesbuildr, a B2B quoting and sales platform for MSPs. Be concise and practical.'
-            })
+            body: JSON.stringify({ query: question })
         });
 
         const data = await response.json();
