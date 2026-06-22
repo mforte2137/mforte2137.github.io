@@ -677,6 +677,8 @@ async function askKB() {
         draftBtn.dataset.gapText  = gapText;
         draftBtn.textContent = hasGap ? '✍️ Draft missing article' : '✍️ Draft article for this topic';
         draftBtn.style.display = 'block';
+        document.getElementById('askDevContext').value = '';
+        document.getElementById('askContextArea').style.display = 'block';
 
     } catch (err) {
         resultEl.className = 'ask-result error-state';
@@ -699,19 +701,22 @@ async function draftMissingArticle() {
     textEl.value = 'Drafting article…';
     draftEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-    const gapContext = btn.dataset.gapText ? `\n\nThe gap identified was: ${btn.dataset.gapText}` : '';
+    const gapContext  = btn.dataset.gapText ? `\n\nGap identified: ${btn.dataset.gapText}` : '';
+    const devContext  = (document.getElementById('askDevContext')?.value || '').trim();
+    const devSection  = devContext ? `\n\nAdditional context from the support/dev team (use this to ensure accuracy — this takes priority over any assumptions):\n${devContext}` : '';
 
     const prompt = `You are a technical writer for Salesbuildr, a B2B quoting and sales platform for MSPs.
 
-A support agent searched for help with: "${question}"${gapContext}
+A support agent searched for help with: "${question}"${gapContext}${devSection}
 
-No existing help centre article covers this topic adequately. Please draft a complete, well-structured help centre article that would answer this question. The article should:
+Please draft a complete, well-structured help centre article that would answer this question. The article should:
 - Have a clear title
 - Include a brief intro paragraph
 - Use numbered steps where relevant
 - Include tips or notes where helpful
 - Be written for end-users (not developers)
 - Be approximately 300–500 words
+${devContext ? '- Make sure to accurately reflect the context provided above — do not make assumptions that contradict it' : ''}
 
 Return ONLY the article content, ready to publish.`;
 
