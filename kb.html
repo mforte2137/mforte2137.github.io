@@ -219,13 +219,14 @@
 
                     <p class="ask-panel-desc">Get answers grounded in the Salesbuildr help centre, with a source link to share with the customer.</p>
 
-                    <div class="form-group" style="margin-bottom:12px;">
-                        <textarea id="askQuestion"
-                                  class="ask-textarea"
-                                  placeholder="e.g. How does the customer set up their email integration?"></textarea>
+                    <div class="ask-actions-row">
+                        <div class="form-group" style="margin-bottom:10px;">
+                            <textarea id="askQuestion"
+                                      class="ask-textarea"
+                                      placeholder="e.g. How does the customer set up their email integration?"></textarea>
+                        </div>
+                        <button class="btn btn-accent ask-btn" onclick="askKB()">Ask</button>
                     </div>
-
-                    <button class="btn btn-accent ask-btn" onclick="askKB()">Ask</button>
 
                     <!-- Result / loading state -->
                     <div class="ask-result" id="askResult" style="display:none;"></div>
