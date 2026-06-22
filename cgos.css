@@ -1315,3 +1315,39 @@ body {
   color: var(--accent-2);
   background: var(--accent-bg);
 }
+
+/* ── Action-first portfolio — extended columns ── */
+.port-row-action {
+  grid-template-columns: 1.6fr 2fr 1.2fr 0.9fr 0.9fr 24px !important;
+}
+
+.port-action-col { display: flex; flex-direction: column; gap: 4px; }
+.port-action-sub { font-family: 'Inter', sans-serif; font-size: 11px; color: var(--text-2); line-height: 1.35; }
+
+.port-owner-col {
+  display: flex; align-items: center; gap: 5px;
+  font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-2);
+}
+.port-owner-col svg { stroke: var(--text-3); flex-shrink: 0; }
+
+.port-impact-col { display: flex; flex-direction: column; gap: 3px; }
+.port-impact-val { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; color: var(--accent); }
+.port-impact-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-3); }
+.port-impact-badge { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 1px 7px; border-radius: 20px; display: inline-block; margin-top: 1px; }
+.port-impact-urgent { background: var(--danger-bg); color: var(--danger); }
+.port-impact-warn   { background: var(--warn-bg);   color: var(--warn);   }
+.port-impact-info   { background: var(--info-bg);   color: var(--info);   }
+
+/* ── Strategic signals section label ── */
+.signals-section-label {
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--accent-2); padding: 8px 0 6px;
+  border-bottom: 1px solid var(--border); margin-bottom: 4px;
+}
+.signals-section-label svg { stroke: var(--accent-2); flex-shrink: 0; }
+.signals-section-sub {
+  font-size: 10px; color: var(--text-3); margin-left: 4px;
+  text-transform: none; letter-spacing: 0; font-weight: 400;
+}
