@@ -1023,3 +1023,27 @@ h1, h2, h3, h4 {
     color: var(--text-3);
     font-style: italic;
 }
+
+/* ── Ask panel clear button ── */
+.ask-clear-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-3);
+    background: none;
+    border: 1px solid var(--border-2);
+    padding: 4px 8px;
+    border-radius: 0;
+    cursor: pointer;
+    align-self: flex-start;
+    margin-top: 2px;
+    transition: all 0.15s;
+}
+
+.ask-clear-btn:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+    background: var(--danger-bg);
+}
