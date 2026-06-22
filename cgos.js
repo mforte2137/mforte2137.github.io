@@ -2179,7 +2179,7 @@ function renderPortfolioRows(rows) {
       </div>`;
   }).join('');
 
-  document.querySelectorAll('.port-row[data-key]').forEach(row => {
+  document.querySelectorAll('.port-row-action[data-key]').forEach(row => {
     const go = () => {
       const key = row.dataset.key;
       if (CUSTOMERS[key]) {
