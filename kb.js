@@ -375,18 +375,42 @@ function toggleAiPanel() {
     }
 }
 
+// ── Shared helper: route "Check Gap" into the right Ask the KB panel ──
+function routeToAskPanel(title, description, solution) {
+    // Build a rich question from the issue fields
+    const questionParts = [title];
+    if (description) questionParts.push(description);
+    const question = questionParts.join(' — ');
+
+    // Pre-fill the Ask question field
+    const askInput = document.getElementById('askQuestion');
+    askInput.value = question;
+
+    // Pre-fill the dev context field with the known solution (if any)
+    const contextInput = document.getElementById('askDevContext');
+    if (solution) {
+        contextInput.value = solution;
+    } else {
+        contextInput.value = '';
+    }
+
+    // Scroll right panel into view and run the search
+    document.querySelector('.col-right').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Short delay so scroll completes before results render
+    setTimeout(() => askKB(), 300);
+}
+
 // Called from the KB list "Check Gap" button
 function checkSingleIssueGap(id) {
     const issue = knowledgeBase.find(i => i.id === id);
     if (!issue) return;
-    openAiPanel(`🤖 Gap Check — "${issue.title}"`);
-    runGapAnalysis(issue);
+    routeToAskPanel(issue.title, issue.description, issue.solution);
 }
 
 // Called from the form "Check Gap" button (uses live form values)
 function checkFormIssueGap() {
     const title       = document.getElementById('issueTitle').value.trim();
-    const category    = document.getElementById('issueCategory').value;
     const description = document.getElementById('issueDescription').value.trim();
     const solution    = document.getElementById('issueSolution').value.trim();
 
@@ -395,9 +419,7 @@ function checkFormIssueGap() {
         return;
     }
 
-    const liveIssue = { title, category, description, solution };
-    openAiPanel(`🤖 Gap Check — "${title}"`);
-    runGapAnalysis(liveIssue);
+    routeToAskPanel(title, description, solution);
 }
 
 // Core analysis — pass a single issue object, or nothing for full KB mode
