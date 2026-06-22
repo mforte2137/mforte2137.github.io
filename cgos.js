@@ -771,9 +771,12 @@ const taskStatus = {
    PORTFOLIO DATA
    ══════════════════════════════════════════ */
 const PORTFOLIO = [
-  { key: 'abc',    name: 'ABC Manufacturing',     type: 'Fully Managed', location: 'Houston, TX',   priority: 'urgent', health: 82, highSigs: 2, medSigs: 3, okSigs: 1, mrr: '$3,840', lastReview: '8 months ago', overdue: true  },
-  { key: 'river',  name: 'River Tech Solutions',  type: 'Co-Managed',   location: 'Austin, TX',    priority: 'review', health: 71, highSigs: 2, medSigs: 2, okSigs: 1, mrr: '$2,100', lastReview: '4 months ago', overdue: false },
-  { key: 'peak',   name: 'Peak Financial Group',  type: 'Fully Managed', location: 'Denver, CO',    priority: 'ok',     health: 91, highSigs: 0, medSigs: 1, okSigs: 2, mrr: '$5,200', lastReview: '2 months ago', overdue: false }
+  { key: 'abc',    name: 'ABC Manufacturing',     type: 'Fully Managed', location: 'Houston, TX',   priority: 'urgent', health: 82, highSigs: 2, medSigs: 3, okSigs: 1, mrr: '$3,840', am: 'Sarah Johnson', lastReview: '8 months ago', overdue: true,
+    why: '$18K device refresh — 14 Win10 devices hitting EOL in 10 months. Security review 14 months overdue.', pipeline: '$21,950 pipeline', priorityScore: 96, action: 'Schedule strategic review', actionUrgency: 'urgent' },
+  { key: 'river',  name: 'River Tech Solutions',  type: 'Co-Managed',   location: 'Austin, TX',    priority: 'review', health: 71, highSigs: 2, medSigs: 2, okSigs: 1, mrr: '$2,100', am: 'Mark Davies',   lastReview: '4 months ago', overdue: false,
+    why: 'Server refresh proposal unanswered 8 days. Backup disk failure risk — SLA breach if not actioned this week.', pipeline: '$14,500 pipeline', priorityScore: 88, action: 'Call Marcus this week', actionUrgency: 'warn' },
+  { key: 'peak',   name: 'Peak Financial Group',  type: 'Fully Managed', location: 'Denver, CO',    priority: 'ok',     health: 91, highSigs: 0, medSigs: 1, okSigs: 2, mrr: '$5,200', am: 'Lisa Tran',     lastReview: '2 months ago', overdue: false,
+    why: 'Compliance audit in 60 days — agenda preparation due now. Dark web monitoring gap identified.', pipeline: '$4,000 pipeline', priorityScore: 52, action: 'Prepare audit agenda', actionUrgency: 'info' }
 ];
 
 /* ══════════════════════════════════════════
@@ -2149,29 +2152,34 @@ function renderCustomer(key) {
    ══════════════════════════════════════════ */
 function renderPortfolioRows(rows) {
   portfolioList.innerHTML = rows.map(r => {
-    const pClass = r.priority === 'urgent' ? 'p-urgent' : r.priority === 'review' ? 'p-review' : 'p-ok';
-    const pLabel = r.priority === 'urgent' ? '&#9679; Urgent' : r.priority === 'review' ? '&#9679; Review soon' : '&#9679; On track';
+    const urgCls = r.actionUrgency === 'urgent' ? 'port-action-urgent'
+                 : r.actionUrgency === 'warn'   ? 'port-action-warn'
+                 : 'port-action-info';
     const hClass = healthClass(r.health);
     const hColor = hClass === 'good' ? 'var(--good)' : hClass === 'warn' ? 'var(--warn)' : 'var(--danger)';
-    const pills  = [
-      r.highSigs ? `<span class="sig-pill sp-h">${r.highSigs} high</span>` : '',
-      r.medSigs  ? `<span class="sig-pill sp-m">${r.medSigs} med</span>`   : '',
-      r.okSigs   ? `<span class="sig-pill sp-o">${r.okSigs} ok</span>`     : ''
-    ].filter(Boolean).join('');
 
     return `
-      <div class="port-row" data-key="${r.key}" tabindex="0" role="button" aria-label="Open briefing for ${r.name}">
-        <div><div class="port-name">${r.name}</div><div class="port-sub-txt">${r.type} &middot; ${r.location}</div></div>
-        <span class="priority-badge ${pClass}">${pLabel}</span>
-        <span class="health-val" style="color:${hColor};">${r.health}</span>
-        <div class="sig-pills">${pills}</div>
-        <span class="port-mrr">${r.mrr}</span>
-        <span class="last-rev">${r.lastReview}</span>
+      <div class="port-row-action" data-key="${r.key}" tabindex="0" role="button" aria-label="Open briefing for ${r.name}">
+        <div>
+          <div class="port-name">${r.name}</div>
+          <div class="port-sub-txt">${r.type} &middot; ${r.mrr} MRR &middot; ${r.am||''}</div>
+          <div class="port-health-inline">
+            <span class="port-health-dot" style="background:${hColor};"></span>
+            <span style="font-size:11px;color:${hColor};">${r.health}/100</span>
+          </div>
+        </div>
+        <div class="port-why-col">
+          <div class="port-why-text">${r.why || '—'}</div>
+          <div class="port-why-meta">${r.pipeline || ''} &middot; Priority ${r.priorityScore || '—'}</div>
+        </div>
+        <div>
+          <button class="port-action-btn ${urgCls}">${r.action || 'Review'}</button>
+        </div>
         <span class="port-arrow">&#8250;</span>
       </div>`;
   }).join('');
 
-  document.querySelectorAll('.port-row[data-key]').forEach(row => {
+  document.querySelectorAll('.port-row-action[data-key]').forEach(row => {
     const go = () => {
       const key = row.dataset.key;
       if (CUSTOMERS[key]) {
