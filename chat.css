@@ -976,6 +976,223 @@ h1, h2, h3, h4 {
 }
 
 /* =============================================
+   KB PANEL (persistent right sidebar)
+============================================= */
+.kb-panel {
+  width: 280px;
+  flex-shrink: 0;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border-2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.kb-panel-header {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+
+.kb-panel-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.kb-panel-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.5;
+}
+
+.kb-panel-brand {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+  white-space: nowrap;
+  padding-top: 2px;
+}
+
+.kb-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kb-ask-input {
+  background: var(--bg);
+  border: 1px solid var(--border-2);
+  border-radius: 0;
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  padding: 10px 12px;
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+  outline: none;
+  line-height: 1.6;
+  transition: outline 0.15s;
+}
+
+.kb-ask-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+.kb-ask-input::placeholder {
+  color: var(--text-3);
+}
+
+.kb-ask-btn {
+  width: 100%;
+  padding: 9px 16px;
+  border-radius: 0;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.kb-ask-btn:hover { opacity: 0.88; }
+.kb-ask-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.kb-ask-btn-loader {
+  font-family: 'JetBrains Mono', monospace;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+/* Answer block */
+.kb-answer-block {
+  background: var(--bg-row);
+  border: 1px solid var(--border);
+  padding: 12px;
+}
+
+.kb-answer-block.hidden { display: none; }
+
+.kb-answer-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Articles block */
+.kb-articles-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kb-articles-block.hidden { display: none; }
+
+.kb-articles-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
+.kb-articles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kb-article-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.kb-article-item:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.kb-article-link {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--accent);
+  text-decoration: none;
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.kb-article-link:hover {
+  text-decoration: underline;
+}
+
+.kb-article-copy {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 0;
+  border: 1px solid var(--border-2);
+  background: var(--bg-row);
+  color: var(--text-2);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.kb-article-copy:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.kb-article-copy.copied {
+  border-color: var(--good);
+  color: var(--good);
+  background: var(--good-bg);
+}
+
+.kb-no-results {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--text-3);
+  text-align: center;
+  padding: 16px 0;
+}
+
+/* =============================================
    SCROLLBAR
 ============================================= */
 ::-webkit-scrollbar { width: 5px; }
