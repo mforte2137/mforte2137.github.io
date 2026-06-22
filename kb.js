@@ -568,8 +568,187 @@ function copyDraft() {
 // ── Simple Markdown → HTML (headings + bullets) ──
 function formatMarkdown(text) {
     return text
-        .replace(/^## (.+)$/gm, '<h3 style="color:#1e293b;margin:16px 0 8px;font-size:1rem;">$1</h3>')
+        .replace(/^## (.+)$/gm, '<h3 style="color:var(--text);margin:16px 0 8px;font-size:0.95rem;font-family:\'Space Grotesk\',sans-serif;">$1</h3>')
         .replace(/^• (.+)$/gm, '<div style="padding:2px 0 2px 12px;">• $1</div>')
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/\n\n/g, '<br>');
 }
+
+// ─────────────────────────────────────────────
+//  ASK THE KB  –  Right panel
+//  Sends question to Claude which searches the
+//  Salesbuildr help centre and returns articles
+// ─────────────────────────────────────────────
+
+async function askKB() {
+    const question = document.getElementById('askQuestion').value.trim();
+    if (!question) return;
+
+    const resultEl   = document.getElementById('askResult');
+    const articlesEl = document.getElementById('askArticles');
+    const draftBtn   = document.getElementById('askDraftBtn');
+
+    articlesEl.innerHTML = '';
+    draftBtn.style.display = 'none';
+    resultEl.style.display = 'block';
+    resultEl.className = 'ask-result loading-state';
+    resultEl.innerHTML = '<div class="loading"></div> Searching help centre articles…';
+
+    try {
+        // Use the existing featurebase.js function — sends query + instructions,
+        // gets back a standard Claude API response
+        const response = await fetch('/.netlify/functions/featurebase', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                query: question,
+                instructions: 'You are a support assistant for Salesbuildr, a B2B quoting and sales platform for MSPs. Be concise and practical.'
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            resultEl.className = 'ask-result error-state';
+            resultEl.style.display = 'block';
+            resultEl.textContent = '⚠️ ' + data.error;
+            return;
+        }
+
+        // featurebase.js returns a standard Claude API response object
+        const text = data.content?.map(b => b.text || '').join('\n') || '';
+
+        if (!text) {
+            resultEl.className = 'ask-result error-state';
+            resultEl.style.display = 'block';
+            resultEl.textContent = '⚠️ No response received.';
+            return;
+        }
+
+        // Check for gap marker
+        const hasGap = text.includes('THE GAP');
+        let mainText = text;
+        let gapText  = '';
+
+        if (hasGap) {
+            const parts = text.split('THE GAP');
+            mainText = parts[0].trim();
+            gapText  = parts[1]?.trim() || '';
+        }
+
+        // Extract any URLs from the response to build clickable article links
+        const urlPattern = /https?:\/\/[^\s)\]>,"]+/g;
+        const foundUrls  = [...new Set(text.match(urlPattern) || [])].filter(u => u.includes('featurebase'));
+
+        // Show the main answer text
+        resultEl.className = 'ask-result';
+        resultEl.style.display = 'block';
+        resultEl.innerHTML = formatMarkdown(mainText);
+
+        // If URLs were found, render them as article links
+        if (foundUrls.length > 0) {
+            articlesEl.innerHTML = '<div class="ask-article-label" style="margin-top:12px;">Related Articles</div>' +
+                foundUrls.map(url => {
+                    const safeUrl = url.replace(/'/g, '%27');
+                    // Extract a readable title from the URL slug
+                    const slug  = url.split('/').pop() || url;
+                    const title = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                    return `
+                    <div class="ask-article-item">
+                        <a href="${url}" target="_blank" class="ask-article-link">${title}</a>
+                        <div style="display:flex;gap:8px;margin-top:6px;">
+                            <button class="btn btn-secondary btn-small" onclick="copyArticleLink('${safeUrl}')">📋 Copy Link</button>
+                            <a href="${url}" target="_blank" class="btn btn-secondary btn-small" style="text-decoration:none;">Open ↗</a>
+                        </div>
+                    </div>`;
+                }).join('');
+        }
+
+        // Show gap section if present
+        if (hasGap && gapText) {
+            const gapDiv = document.createElement('div');
+            gapDiv.className = 'ask-result';
+            gapDiv.style.marginTop = '10px';
+            gapDiv.style.borderColor = 'var(--warn)';
+            gapDiv.style.background = 'var(--warn-bg)';
+            gapDiv.innerHTML = `<span style="color:var(--warn);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;">⚠ Documentation Gap</span><p style="margin-top:8px;color:var(--warn);font-size:0.88rem;">${gapText}</p>`;
+            articlesEl.appendChild(gapDiv);
+        }
+
+        // Always show draft button after a search
+        draftBtn.dataset.question = question;
+        draftBtn.dataset.gapText  = gapText;
+        draftBtn.textContent = hasGap ? '✍️ Draft missing article' : '✍️ Draft article for this topic';
+        draftBtn.style.display = 'block';
+
+    } catch (err) {
+        resultEl.className = 'ask-result error-state';
+        resultEl.style.display = 'block';
+        resultEl.textContent = '⚠️ Error: ' + err.message;
+    }
+}
+
+function copyArticleLink(url) {
+    navigator.clipboard.writeText(url).then(() => showSuccess('Link copied!'));
+}
+
+async function draftMissingArticle() {
+    const btn      = document.getElementById('askDraftBtn');
+    const question = btn.dataset.question || '';
+    const draftEl  = document.getElementById('askDraftArea');
+    const textEl   = document.getElementById('askDraftText');
+
+    draftEl.style.display = 'block';
+    textEl.value = 'Drafting article…';
+    draftEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    const gapContext = btn.dataset.gapText ? `\n\nThe gap identified was: ${btn.dataset.gapText}` : '';
+
+    const prompt = `You are a technical writer for Salesbuildr, a B2B quoting and sales platform for MSPs.
+
+A support agent searched for help with: "${question}"${gapContext}
+
+No existing help centre article covers this topic adequately. Please draft a complete, well-structured help centre article that would answer this question. The article should:
+- Have a clear title
+- Include a brief intro paragraph
+- Use numbered steps where relevant
+- Include tips or notes where helpful
+- Be written for end-users (not developers)
+- Be approximately 300–500 words
+
+Return ONLY the article content, ready to publish.`;
+
+    try {
+        const response = await fetch('/.netlify/functions/kb-claude', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'claude-sonnet-4-6',
+                max_tokens: 1000,
+                messages: [{ role: 'user', content: prompt }]
+            })
+        });
+        const data = await response.json();
+        textEl.value = data.content?.map(b => b.text || '').join('\n') || 'Error generating draft.';
+    } catch (err) {
+        textEl.value = 'Error: ' + err.message;
+    }
+}
+
+function copyAskDraft() {
+    const text = document.getElementById('askDraftText').value;
+    navigator.clipboard.writeText(text).then(() => showSuccess('Draft copied to clipboard!'));
+}
+
+// Allow Enter key (without Shift) to submit the ask question
+document.addEventListener('DOMContentLoaded', function () {
+    const askInput = document.getElementById('askQuestion');
+    if (askInput) {
+        askInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                askKB();
+            }
+        });
+    }
+});
