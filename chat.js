@@ -743,3 +743,134 @@ document.getElementById('articleCopyBtn').addEventListener('click', function() {
     setTimeout(() => { this.textContent = 'Copy article'; this.classList.remove('copied'); }, 2000);
   });
 });
+
+// ─── KB PANEL ─────────────────────────────────
+// Stores last search articles for copy buttons
+let kbLastArticles = [];
+
+async function runKbAsk() {
+  const query = document.getElementById('kbAskInput').value.trim();
+  if (!query) return;
+
+  const btn        = document.getElementById('kbAskBtn');
+  const btnText    = btn.querySelector('.kb-ask-btn-text');
+  const btnLoader  = btn.querySelector('.kb-ask-btn-loader');
+  const answerBlock   = document.getElementById('kbAnswerBlock');
+  const answerText    = document.getElementById('kbAnswerText');
+  const articlesBlock = document.getElementById('kbArticlesBlock');
+  const articlesList  = document.getElementById('kbArticlesList');
+
+  btn.disabled = true;
+  btnText.classList.add('hidden');
+  btnLoader.classList.remove('hidden');
+  answerBlock.classList.add('hidden');
+  articlesBlock.classList.add('hidden');
+
+  try {
+    // Step 1: search KB for matching articles
+    const kbRes = await fetch('/.netlify/functions/featurebase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, instructions })
+    });
+
+    if (!kbRes.ok) throw new Error('KB search failed');
+    const kbData = await kbRes.json();
+    const kbText = kbData.content?.[0]?.text || '';
+
+    // Strip gap section — KB panel just shows articles + answer
+    const gapIdx    = kbText.indexOf('THE GAP');
+    const kbClean   = gapIdx !== -1 ? kbText.slice(0, gapIdx).trim() : kbText.trim();
+    const noResults = kbClean.toLowerCase().includes('no articles') ||
+                      kbClean.toLowerCase().includes('no published') ||
+                      kbClean.toLowerCase().includes('does not exist');
+
+    // Step 2: ask Claude to give a direct answer grounded in KB results
+    const answerPrompt = `You are answering a support question on behalf of Salesbuildr.
+
+QUESTION: "${query}"
+
+${!noResults ? `KNOWLEDGE BASE CONTEXT — use this as your only source of truth:
+${kbClean}
+
+Answer the question directly and concisely based only on the KB context above. 2-3 sentences maximum. If the KB doesn't contain enough to fully answer, say so briefly.` : `No matching article was found in the Salesbuildr knowledge base for this query. Say so clearly in one sentence.`}
+
+Do not invent product details. Do not use double dashes.`;
+
+    const answer = await callClaude(answerPrompt);
+    answerText.innerText = answer;
+    answerBlock.classList.remove('hidden');
+
+    // Step 3: extract article links from KB response and render them
+    const urlRegex = /https?:\/\/[^\s\)\"]+/g;
+    const titleUrlPairs = [];
+    const lines = kbClean.split('\n');
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const urls = line.match(urlRegex);
+      if (urls) {
+        // Try to get title from previous or same line
+        let title = '';
+        const boldMatch = line.match(/\*\*([^*]+)\*\*/);
+        if (boldMatch) {
+          title = boldMatch[1];
+        } else if (i > 0) {
+          const prevBold = lines[i-1].match(/\*\*([^*]+)\*\*/);
+          if (prevBold) title = prevBold[1];
+        }
+        for (const url of urls) {
+          if (url.includes('featurebase') || url.includes('salesbuildr')) {
+            if (!title) {
+              // Derive title from URL slug
+              const slug = url.split('/').pop() || '';
+              title = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).replace(/^\d+\s*/, '');
+            }
+            if (title && !titleUrlPairs.find(p => p.url === url)) {
+              titleUrlPairs.push({ title: title.trim(), url });
+            }
+          }
+        }
+      }
+    }
+
+    kbLastArticles = titleUrlPairs;
+
+    if (titleUrlPairs.length) {
+      articlesList.innerHTML = titleUrlPairs.map((item, i) => `
+        <div class="kb-article-item">
+          <a class="kb-article-link" href="${item.url}" target="_blank" title="${item.title}">${item.title}</a>
+          <button class="kb-article-copy" data-index="${i}">Copy</button>
+        </div>
+      `).join('');
+
+      articlesList.querySelectorAll('.kb-article-copy').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const article = kbLastArticles[parseInt(btn.dataset.index)];
+          if (!article) return;
+          navigator.clipboard.writeText(article.url).then(() => {
+            btn.textContent = 'Copied!';
+            btn.classList.add('copied');
+            setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+          });
+        });
+      });
+
+      articlesBlock.classList.remove('hidden');
+    }
+
+  } catch (e) {
+    document.getElementById('kbAnswerText').innerText = 'Something went wrong: ' + e.message;
+    document.getElementById('kbAnswerBlock').classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btnText.classList.remove('hidden');
+    btnLoader.classList.add('hidden');
+  }
+}
+
+document.getElementById('kbAskBtn').addEventListener('click', runKbAsk);
+
+document.getElementById('kbAskInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) runKbAsk();
+});
