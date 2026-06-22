@@ -716,13 +716,30 @@ h1, h2, h3, h4 {
     background: var(--bg-panel);
     border: 1px solid var(--border);
     border-radius: 8px;
+    overflow: hidden; /* keep border-radius clean */
+}
+
+/* All direct content inside the panel gets consistent side padding */
+.ask-panel-header,
+.ask-panel-desc,
+.ask-panel .form-group,
+.ask-actions-row,
+.ask-result,
+.ask-articles,
+#draftControls,
+.ask-draft-area,
+.ask-footer,
+#askDraftBtn {
+    padding-left: 20px;
+    padding-right: 20px;
 }
 
 .ask-panel-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 18px 20px 0;
+    padding-top: 18px;
+    padding-bottom: 0;
 }
 
 .ask-panel-title {
@@ -748,7 +765,8 @@ h1, h2, h3, h4 {
     font-size: 0.82rem;
     color: var(--text-2);
     line-height: 1.5;
-    padding: 10px 20px 14px;
+    padding-top: 10px;
+    padding-bottom: 14px;
 }
 
 .ask-textarea {
@@ -762,9 +780,8 @@ h1, h2, h3, h4 {
     border-radius: 0;
     background: var(--bg);
     color: var(--text);
-    margin: 0 20px;
-    width: calc(100% - 40px);
     display: block;
+    box-sizing: border-box;
 }
 
 .ask-textarea:focus {
@@ -775,8 +792,8 @@ h1, h2, h3, h4 {
 
 .ask-btn {
     display: block;
-    width: calc(100% - 40px);
-    margin: 10px 20px 0;
+    width: 100%;
+    margin-top: 10px;
     text-align: center;
     font-family: 'JetBrains Mono', monospace;
     font-size: 13px;
@@ -787,6 +804,7 @@ h1, h2, h3, h4 {
     color: #fff;
     cursor: pointer;
     transition: opacity 0.15s;
+    box-sizing: border-box;
 }
 
 .ask-btn:hover { opacity: 0.88; }
@@ -807,7 +825,7 @@ h1, h2, h3, h4 {
 
 /* Result box */
 .ask-result {
-    margin: 12px 20px 0;
+    margin-top: 12px;
     background: var(--bg-row);
     border: 1px solid var(--border-2);
     padding: 12px;
@@ -887,10 +905,11 @@ h1, h2, h3, h4 {
 
 /* Draft area */
 .ask-draft-area {
-    margin: 12px 20px 0;
+    margin-top: 12px;
     background: var(--good-bg);
     border: 1px solid var(--good);
-    padding: 12px;
+    padding-top: 12px;
+    padding-bottom: 12px;
 }
 
 .ask-draft-label {
@@ -924,7 +943,8 @@ h1, h2, h3, h4 {
 
 /* Footer */
 .ask-footer {
-    padding: 12px 20px 16px;
+    padding-top: 12px;
+    padding-bottom: 16px;
     border-top: 1px solid var(--border);
     margin-top: 16px;
 }
@@ -944,9 +964,9 @@ h1, h2, h3, h4 {
 /* Draft btn full-width */
 #askDraftBtn {
     display: none;
-    width: calc(100% - 40px);
-    margin-left: 20px;
-    margin-right: 20px;
+    width: 100%;
+    margin-top: 12px;
+    box-sizing: border-box;
 }
 
 /* ── Responsive: collapse to single column on narrow screens ── */
