@@ -32,6 +32,7 @@ function showAddForm() {
     document.getElementById('issueTitle').focus();
     editingId = null;
     clearForm();
+    clearAskPanel();
 }
 
 function hideAddForm() {
@@ -762,6 +763,18 @@ Return ONLY the article content, ready to publish.`;
 function copyAskDraft() {
     const text = document.getElementById('askDraftText').value;
     navigator.clipboard.writeText(text).then(() => showSuccess('Draft copied to clipboard!'));
+}
+
+function clearAskPanel() {
+    document.getElementById('askQuestion').value    = '';
+    document.getElementById('askResult').style.display   = 'none';
+    document.getElementById('askResult').innerHTML       = '';
+    document.getElementById('askArticles').innerHTML     = '';
+    document.getElementById('askDraftBtn').style.display = 'none';
+    document.getElementById('askContextArea').style.display = 'none';
+    document.getElementById('askDevContext').value       = '';
+    document.getElementById('askDraftArea').style.display = 'none';
+    document.getElementById('askDraftText').value        = '';
 }
 
 // Allow Enter key (without Shift) to submit the ask question
