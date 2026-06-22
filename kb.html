@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Salesbuildr Support KB</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="kb.css">
 </head>
 <body>
@@ -77,10 +80,10 @@
                 <button class="btn btn-ai" onclick="runGapAnalysis()">Run Full KB Analysis</button>
             </div>
 
-            <div class="ai-result" id="aiResult" style="margin-top:16px; display:none;"></div>
+            <div class="ai-result" id="aiResult" style="display:none;"></div>
 
             <!-- Draft Article controls (shown after analysis) -->
-            <div id="draftControls" style="display:none; margin-top:20px;">
+            <div id="draftControls" style="display:none;">
                 <div class="form-group" style="margin-bottom:12px;">
                     <label>Optional: add context for the article draft</label>
                     <textarea id="articleContext"
@@ -99,106 +102,163 @@
             </div>
         </div>
 
-        <!-- ── Main Content ── -->
-        <div class="content">
+        <!-- ── Main Content: two-column ── -->
+        <div class="main-columns">
 
-            <!-- Add / Edit Form (hidden by default) -->
-            <div id="addForm" class="form-section" style="display:none;">
-                <h2>Add New Issue &amp; Solution</h2>
-                <div class="form-grid">
+            <!-- LEFT: KB list + form -->
+            <div class="col-left">
 
-                    <div class="form-group">
-                        <label>Issue Title *</label>
-                        <input type="text" id="issueTitle" placeholder="Brief description of the issue">
-                    </div>
+                <!-- Add / Edit Form (hidden by default) -->
+                <div id="addForm" class="form-section" style="display:none;">
+                    <h2>Add New Issue &amp; Solution</h2>
+                    <div class="form-grid">
 
-                    <div class="form-group">
-                        <label>Category *</label>
-                        <select id="issueCategory">
-                            <option value="">Select Category</option>
-                            <option value="Quotes">Quotes</option>
-                            <option value="Templates">Templates</option>
-                            <option value="Widgets">Widgets</option>
-                            <option value="Opportunities">Opportunities</option>
-                            <option value="Contacts">Contacts</option>
-                            <option value="Companies">Companies</option>
-                            <option value="Integrations">Integrations</option>
-                            <option value="Email">Email</option>
-                            <option value="Branding">Branding</option>
-                            <option value="Products">Products</option>
-                        </select>
-                    </div>
+                        <div class="form-group">
+                            <label>Issue Title *</label>
+                            <input type="text" id="issueTitle" placeholder="Brief description of the issue">
+                        </div>
 
-                    <div class="form-group">
-                        <label>Issue Description</label>
-                        <textarea id="issueDescription" placeholder="Detailed description of the problem..."></textarea>
-                    </div>
+                        <div class="form-group">
+                            <label>Category *</label>
+                            <select id="issueCategory">
+                                <option value="">Select Category</option>
+                                <option value="Quotes">Quotes</option>
+                                <option value="Templates">Templates</option>
+                                <option value="Widgets">Widgets</option>
+                                <option value="Opportunities">Opportunities</option>
+                                <option value="Contacts">Contacts</option>
+                                <option value="Companies">Companies</option>
+                                <option value="Integrations">Integrations</option>
+                                <option value="Email">Email</option>
+                                <option value="Branding">Branding</option>
+                                <option value="Products">Products</option>
+                            </select>
+                        </div>
 
-                    <div class="form-group">
-                        <label>Solution</label>
-                        <textarea id="issueSolution" placeholder="Step-by-step solution (can be added later)..."></textarea>
-                    </div>
+                        <div class="form-group">
+                            <label>Issue Description</label>
+                            <textarea id="issueDescription" placeholder="Detailed description of the problem..."></textarea>
+                        </div>
 
-                    <div class="reference-section">
-                        <h3>📎 References</h3>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label>Jira Ticket Link</label>
-                                <input type="url" id="jiraLink"
-                                       placeholder="https://yourcompany.atlassian.net/browse/TICKET-123">
+                        <div class="form-group">
+                            <label>Solution</label>
+                            <textarea id="issueSolution" placeholder="Step-by-step solution (can be added later)..."></textarea>
+                        </div>
+
+                        <div class="reference-section">
+                            <h3>📎 References</h3>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Jira Ticket Link</label>
+                                    <input type="url" id="jiraLink"
+                                           placeholder="https://yourcompany.atlassian.net/browse/TICKET-123">
+                                </div>
+                                <div class="form-group">
+                                    <label>Intercom Chat ID</label>
+                                    <input type="text" id="intercomId" placeholder="12345678">
+                                </div>
+                                <div class="form-group">
+                                    <label>Loom Video URL</label>
+                                    <input type="url" id="loomUrl"
+                                           placeholder="https://www.loom.com/share/xxxxxxxx">
+                                </div>
+                                <div class="form-group">
+                                    <label>Additional Reference</label>
+                                    <input type="text" id="additionalRef"
+                                           placeholder="Any other reference link or ID">
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label>Intercom Chat ID</label>
-                                <input type="text" id="intercomId" placeholder="12345678">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Screenshot Upload</label>
+                            <div class="file-upload" id="fileUpload">
+                                <p>📷 Click or drag to upload screenshot</p>
+                                <input type="file" id="screenshotFile" style="display:none"
+                                       accept="image/*" multiple>
                             </div>
-                            <div class="form-group">
-                                <label>Loom Video URL</label>
-                                <input type="url" id="loomUrl"
-                                       placeholder="https://www.loom.com/share/xxxxxxxx">
-                            </div>
-                            <div class="form-group">
-                                <label>Additional Reference</label>
-                                <input type="text" id="additionalRef"
-                                       placeholder="Any other reference link or ID">
-                            </div>
+                            <div id="uploadedFiles"></div>
+                        </div>
+
+                        <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;align-items:center;">
+                            <button class="btn btn-primary" onclick="saveIssue()">
+                                <span id="saveButtonText">Save Issue</span>
+                                <div class="loading" id="saveLoading" style="display:none;margin-left:10px;"></div>
+                            </button>
+                            <button class="btn btn-secondary" onclick="hideAddForm()">Cancel</button>
+                            <button class="btn btn-ai" onclick="checkFormIssueGap()">🤖 Check Gap</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KB List -->
+                <div class="knowledge-base">
+                    <div class="kb-header">
+                        <h2>Knowledge Base</h2>
+                    </div>
+                    <div id="kbContent">
+                        <div class="empty-state">
+                            <h3>No issues yet</h3>
+                            <p>Add your first support issue and solution to get started!</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /.col-left -->
+
+            <!-- RIGHT: Ask the KB panel -->
+            <div class="col-right">
+                <div class="ask-panel">
+
+                    <div class="ask-panel-header">
+                        <div>
+                            <h2 class="ask-panel-title">Ask the KB</h2>
+                            <p class="ask-panel-subtitle">Salesbuildr Knowledge Base</p>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Screenshot Upload</label>
-                        <div class="file-upload" id="fileUpload">
-                            <p>📷 Click or drag to upload screenshot</p>
-                            <input type="file" id="screenshotFile" style="display:none"
-                                   accept="image/*" multiple>
-                        </div>
-                        <div id="uploadedFiles"></div>
+                    <p class="ask-panel-desc">Get answers grounded in the Salesbuildr help centre, with a source link to share with the customer.</p>
+
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <textarea id="askQuestion"
+                                  class="ask-textarea"
+                                  placeholder="e.g. How does the customer set up their email integration?"></textarea>
                     </div>
 
-                    <div style="display:flex;gap:15px;margin-top:20px;flex-wrap:wrap;align-items:center;">
-                        <button class="btn btn-primary" onclick="saveIssue()">
-                            <span id="saveButtonText">Save Issue</span>
-                            <div class="loading" id="saveLoading" style="display:none;margin-left:10px;"></div>
+                    <button class="btn btn-accent ask-btn" onclick="askKB()">Ask</button>
+
+                    <!-- Result / loading state -->
+                    <div class="ask-result" id="askResult" style="display:none;"></div>
+
+                    <!-- Article list -->
+                    <div id="askArticles" class="ask-articles"></div>
+
+                    <!-- Draft missing article -->
+                    <button class="btn btn-secondary" id="askDraftBtn"
+                            style="display:none;margin-top:12px;width:100%;"
+                            onclick="draftMissingArticle()">
+                        ✍️ Draft missing article
+                    </button>
+
+                    <!-- Draft output -->
+                    <div class="ask-draft-area" id="askDraftArea" style="display:none;">
+                        <div class="ask-draft-label">Draft Article</div>
+                        <textarea id="askDraftText" class="ask-draft-text"></textarea>
+                        <button class="btn btn-secondary btn-small" style="margin-top:8px;" onclick="copyAskDraft()">
+                            📋 Copy
                         </button>
-                        <button class="btn btn-secondary" onclick="hideAddForm()">Cancel</button>
-                        <button class="btn btn-ai" onclick="checkFormIssueGap()">🤖 Check Gap</button>
                     </div>
-                </div>
-            </div>
 
-            <!-- KB List -->
-            <div class="knowledge-base">
-                <div class="kb-header">
-                    <h2>Knowledge Base</h2>
-                </div>
-                <div id="kbContent">
-                    <div class="empty-state">
-                        <h3>No issues yet</h3>
-                        <p>Add your first support issue and solution to get started!</p>
+                    <div class="ask-footer">
+                        <a href="https://salesbuildr.featurebase.app/en/help" target="_blank" class="ask-footer-link">
+                            Open Help Centre ↗
+                        </a>
                     </div>
-                </div>
-            </div>
 
-        </div><!-- /.content -->
+                </div>
+            </div><!-- /.col-right -->
+
+        </div><!-- /.main-columns -->
     </div><!-- /.container -->
 
     <script src="kb.js"></script>
