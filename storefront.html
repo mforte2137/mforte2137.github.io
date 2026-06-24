@@ -235,53 +235,86 @@
       <!-- Address + options — hidden until cart has items -->
       <div class="drawer-address-section" id="drawerAddressSection" style="display:none;">
 
+        <!-- ── END USER ─────────────────────────────────────────── -->
+        <div class="addr-block" id="endUserBlock">
+          <div class="addr-block-header" data-toggle="endUserBlock">
+            <div class="addr-block-title">End user assignment</div>
+            <svg class="addr-block-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <div class="addr-block-body">
+            <div class="addr-block-body-inner">
+              <div class="eusr-hint">Assign users to devices so your MSP can provision M365 licences, Intune enrolment, and accounts before delivery.</div>
+              <div id="endUserItemList"></div>
+            </div>
+          </div>
+        </div>
+
         <!-- ── BILLING ADDRESS ──────────────────────────────────── -->
-        <div class="addr-block">
-          <div class="addr-block-header">
+        <div class="addr-block" id="billingBlock">
+          <div class="addr-block-header" data-toggle="billingBlock">
             <div class="addr-block-title">Billing address</div>
-            <button class="addr-edit-btn" id="billingEditBtn">Edit</button>
+            <svg class="addr-block-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
-          <div class="addr-display" id="billingDisplay">
-            <div class="addr-line">Acme Corp</div>
-            <div class="addr-line">142 West 36th Street, Suite 800</div>
-            <div class="addr-line">New York, NY 10018</div>
-            <div class="addr-line">United States</div>
-          </div>
-          <div class="addr-form" id="billingForm" style="display:none;">
-            <input type="text" class="addr-input" id="billCompany" placeholder="Company name" value="Acme Corp" />
-            <input type="text" class="addr-input" id="billStreet" placeholder="Street address" value="142 West 36th Street, Suite 800" />
-            <div class="addr-row-2">
-              <input type="text" class="addr-input" id="billCity" placeholder="City" value="New York" />
-              <input type="text" class="addr-input addr-state" id="billState" placeholder="State" value="NY" maxlength="2" />
-              <input type="text" class="addr-input addr-zip" id="billZip" placeholder="ZIP" value="10018" maxlength="10" />
+          <div class="addr-block-body">
+            <div class="addr-block-body-inner">
+              <div class="addr-display" id="billingDisplay">
+                <div class="addr-line">Acme Corp</div>
+                <div class="addr-line">142 West 36th Street, Suite 800</div>
+                <div class="addr-line">New York, NY 10018</div>
+                <div class="addr-line">United States</div>
+              </div>
+              <button class="addr-edit-btn" id="billingEditBtn" style="margin-top:8px;">Edit address</button>
+              <div class="addr-form" id="billingForm" style="display:none;margin-top:8px;">
+                <input type="text" class="addr-input" id="billCompany" placeholder="Company name" value="Acme Corp" />
+                <input type="text" class="addr-input" id="billStreet" placeholder="Street address" value="142 West 36th Street, Suite 800" />
+                <div class="addr-row-2">
+                  <input type="text" class="addr-input" id="billCity" placeholder="City" value="New York" />
+                  <input type="text" class="addr-input addr-state" id="billState" placeholder="ST" value="NY" maxlength="2" />
+                  <input type="text" class="addr-input addr-zip" id="billZip" placeholder="ZIP" value="10018" maxlength="10" />
+                </div>
+                <button class="btn-secondary" id="billingSaveBtn" style="margin-top:4px;font-size:11px;padding:5px 12px;">Save address</button>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- ── SHIP-TO (per item) ──────────────────────────────── -->
-        <div class="addr-block">
-          <div class="addr-block-header">
+        <div class="addr-block" id="shipToBlock">
+          <div class="addr-block-header" data-toggle="shipToBlock">
             <div class="addr-block-title">Ship to</div>
-            <button class="addr-edit-btn" id="applyAllShipBtn">Apply to all</button>
+            <svg class="addr-block-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
-          <div class="shipto-hint">Set a destination per item — useful when some items go to the MSP for staging and others ship direct.</div>
-          <div id="shipToItemList"></div>
+          <div class="addr-block-body">
+            <div class="addr-block-body-inner">
+              <div class="shipto-hint">Set a destination per item — useful when some items go to the MSP for staging and others ship direct.
+                <button class="addr-edit-btn" id="applyAllShipBtn" style="margin-left:6px;">Apply to all</button>
+              </div>
+              <div id="shipToItemList"></div>
+            </div>
+          </div>
         </div>
 
         <!-- ── ORDER OPTIONS ───────────────────────────────────── -->
-        <div class="addr-block">
-          <div class="addr-block-title" style="margin-bottom:10px;">Order options</div>
-          <div class="po-row">
-            <label class="po-label">PO Number <span class="po-opt">(optional)</span></label>
-            <input type="text" id="poNumber" class="po-input" placeholder="e.g. PO-2025-0042" />
+        <div class="addr-block open" id="orderOptsBlock">
+          <div class="addr-block-header" data-toggle="orderOptsBlock">
+            <div class="addr-block-title">Order options</div>
+            <svg class="addr-block-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
-          <div class="shipping-row" style="margin-top:8px;">
-            <label class="shipping-label">Shipping speed</label>
-            <select class="shipping-select" id="shippingSelect">
-              <option value="standard">Standard (2–5 days) — $12.00</option>
-              <option value="express">Express (1–2 days) — $28.00</option>
-              <option value="overnight">Overnight — $55.00</option>
-            </select>
+          <div class="addr-block-body">
+            <div class="addr-block-body-inner">
+              <div class="po-row">
+                <label class="po-label">PO Number <span class="po-opt">(optional)</span></label>
+                <input type="text" id="poNumber" class="po-input" placeholder="e.g. PO-2025-0042" />
+              </div>
+              <div class="shipping-row" style="margin-top:8px;">
+                <label class="shipping-label">Shipping speed</label>
+                <select class="shipping-select" id="shippingSelect">
+                  <option value="standard">Standard (2–5 days) — $12.00</option>
+                  <option value="express">Express (1–2 days) — $28.00</option>
+                  <option value="overnight">Overnight — $55.00</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
