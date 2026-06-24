@@ -220,7 +220,7 @@ const CUSTOMERS = {
         { id: 's1', label: 'Device Refresh EOL — Draft outreach email to Tom',        desc: 'Explain the key signals and why a review makes sense now. Set a partnership tone.',             action: 'Draft email',            actionFn: 'email',   done: true,  autoLog: 'Email drafted · Jun 10' },
         { id: 's2', label: 'Device Refresh EOL — Schedule the review meeting',        desc: 'Once Tom responds, lock in a date and generate an agenda based on current signals.',           action: 'Generate agenda',        actionFn: 'agenda',  done: false, waiting: 'Waiting for response'   },
         { id: 's3', label: 'Device Refresh EOL — Generate conversation brief', desc: 'AI-written brief: how to open, what to raise first, how to close with a next step.',          action: 'Generate brief',         actionFn: 'brief',   done: false  },
-        { id: 's4', label: 'Device Refresh EOL — Build presentation deck',            desc: 'Slide deck summarising signals, alignment gaps, and recommendations to share with Tom.',       action: 'Build deck',             actionFn: 'deck',    done: false  },
+        { id: 's4', label: 'Device Refresh EOL — Generate review document',           desc: 'Generate a Health Report, QBR, or Technology Roadmap to present to Tom.',                    action: 'Generate report',        actionFn: 'report',  done: false  },
         { id: 's5', label: 'Device Refresh EOL — Create opportunity in Salesbuildr', desc: 'Convert the review outcome into a tracked opportunity and link to a proposal when ready.',    action: 'Create opportunity',     actionFn: 'opp',     done: false  }
       ]
     },
@@ -366,7 +366,7 @@ const CUSTOMERS = {
         { id: 'r1', label: 'Server Refresh — Escalate backup disk failure to Marcus', desc: 'SRV-RIVER-03 SMART errors are urgent — client needs to know immediately.',               action: 'Draft urgent email',     actionFn: 'email',   done: true,  autoLog: 'Email sent · Jun 8'     },
         { id: 'r2', label: 'Server Refresh — Follow up on proposal',   desc: 'No response in 8 days. A brief check-in call may be needed to keep momentum.',          action: 'Draft follow-up',        actionFn: 'email',   done: false, waiting: 'Awaiting proposal decision' },
         { id: 'r3', label: 'Generate conversation brief',            desc: 'AI-written brief covering server warranty, backup risk, and DR options.',                 action: 'Generate brief',         actionFn: 'brief',   done: false  },
-        { id: 'r4', label: 'Server Refresh — Schedule review meeting',         desc: 'Discuss server refresh vs cloud migration and agree on a path forward.',                 action: 'Generate agenda',        actionFn: 'agenda',  done: false  },
+        { id: 'r4', label: 'Server Refresh — Generate review document',        desc: 'Generate a Health Report or QBR to present options to Marcus.',                          action: 'Generate report',        actionFn: 'report',  done: false  },
         { id: 'r5', label: 'Server Refresh — Create opportunity in Salesbuildr', desc: 'Server refresh or cloud migration — whichever direction Marcus chooses.',               action: 'Create opportunity',     actionFn: 'opp',     done: false  }
       ]
     },
@@ -472,7 +472,7 @@ const CUSTOMERS = {
       steps: [
         { id: 'p1', label: 'Compliance Audit — Confirm scope with Rachel',       desc: 'Scope is agreed — confirm the four workstreams are ready and nothing has changed.',       action: 'View notes',             actionFn: 'notes',   done: true,  autoLog: 'Scope confirmed · May 28' },
         { id: 'p2', label: 'Compliance Audit — Generate conversation brief', desc: 'AI brief for the compliance prep call — what to cover and how to close.',               action: 'Generate brief',         actionFn: 'brief',   done: false  },
-        { id: 'p3', label: 'Compliance Audit — Prepare documentation checklist', desc: 'Confirm all four workstream documents are ready before the audit date.',               action: 'Open audit detail',      actionFn: 'audit',   done: false  },
+        { id: 'p3', label: 'Compliance Audit — Generate review document',       desc: 'Generate a Health Report or Technology Roadmap to share with Rachel before the audit.', action: 'Generate report',        actionFn: 'report',  done: false  },
         { id: 'p4', label: 'Compliance Audit — Propose dark web monitoring expansion', desc: 'Rachel expressed interest. Expand coverage to personal emails — $480/yr addition.',     action: 'Draft proposal email',   actionFn: 'email',   done: false  },
         { id: 'p5', label: 'Compliance Audit — Create opportunity in Salesbuildr', desc: 'Compliance audit engagement ($4,000) plus potential dark web expansion.',              action: 'Create opportunity',     actionFn: 'opp',     done: false  }
       ]
@@ -625,6 +625,17 @@ function handleWorkflowAction(fn, stepId, c) {
 
   if (fn === 'email')  { generateAlignmentEmail(c); return; }
   if (fn === 'brief')  { generateAIBrief(); return; }
+  if (fn === 'report') {
+    const panel  = document.getElementById('doc-panel');
+    const layout = document.querySelector('.page-layout');
+    if (panel) {
+      panel.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+      if (layout) layout.classList.add('doc-open');
+      updateDocPanel(customerSelect.value);
+    }
+    return;
+  }
   if (fn === 'exec' || fn === 'notes')   { generateExecSummary(); return; }
   if (fn === 'audit')  { openModal('audit'); return; }
   if (fn === 'agenda') {
@@ -3345,6 +3356,21 @@ function initModeToggle() {
   if (btnPipeline) btnPipeline.addEventListener('click', () => setBriefingMode('pipeline'));
 
   // New opportunity buttons — open Salesbuildr
+  // Wire toolbar Generate report button
+  const toolbarReportBtn = document.getElementById('generate-report-toolbar-btn');
+  if (toolbarReportBtn) {
+    toolbarReportBtn.addEventListener('click', () => {
+      const panel  = document.getElementById('doc-panel');
+      const layout = document.querySelector('.page-layout');
+      if (panel) {
+        panel.classList.add('open');
+        panel.setAttribute('aria-hidden', 'false');
+        if (layout) layout.classList.add('doc-open');
+        updateDocPanel(customerSelect.value);
+      }
+    });
+  }
+
   ['new-opp-btn','new-opp-btn-pipeline'].forEach(id => {
     const btn = document.getElementById(id);
     if (btn) btn.addEventListener('click', () => {
