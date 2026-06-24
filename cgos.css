@@ -1351,3 +1351,34 @@ body {
   font-size: 10px; color: var(--text-3); margin-left: 4px;
   text-transform: none; letter-spacing: 0; font-weight: 400;
 }
+
+/* ── Generate report toolbar button ── */
+.briefing-mode-right {
+  display: flex; align-items: center; gap: 8px;
+}
+.generate-report-btn {
+  display: flex; align-items: center; gap: 7px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; letter-spacing: 0.04em;
+  padding: 7px 16px;
+  background: var(--accent); color: #fff;
+  border: 1px solid var(--accent);
+  border-radius: 6px; cursor: pointer;
+  transition: opacity 0.15s;
+}
+.generate-report-btn:hover { opacity: 0.88; }
+.generate-report-btn svg { stroke: #fff; flex-shrink: 0; }
+
+/* ── Right-edge tab — larger ── */
+.doc-tab-trigger {
+  padding: 18px 10px !important;
+  font-size: 11px !important;
+  letter-spacing: 0.07em !important;
+  background: var(--accent) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 10px 0 0 10px !important;
+  box-shadow: -3px 0 12px rgba(46,116,220,0.25) !important;
+}
+.doc-tab-trigger svg { stroke: #fff !important; }
+.doc-tab-trigger:hover { opacity: 0.88 !important; background: var(--accent) !important; }
