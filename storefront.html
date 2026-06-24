@@ -208,6 +208,8 @@
   <!-- ═══ CART DRAWER ═══════════════════════════════════════════════ -->
   <div class="drawer-overlay" id="cartOverlay"></div>
   <aside class="cart-drawer" id="cartDrawer">
+
+    <!-- Header -->
     <div class="drawer-header">
       <h3 class="drawer-title">Your basket</h3>
       <div class="drawer-basket-name">
@@ -218,39 +220,86 @@
       </button>
     </div>
 
-    <div class="drawer-items" id="cartItems">
-      <div class="cart-empty" id="cartEmpty">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
-        <p>Your basket is empty</p>
-        <button class="btn-secondary" id="cartEmptyShop">Continue shopping</button>
-      </div>
-    </div>
+    <!-- Scrollable body: items + addresses -->
+    <div class="drawer-scroll" id="drawerScroll">
 
+      <!-- Cart items -->
+      <div class="drawer-items" id="cartItems">
+        <div class="cart-empty" id="cartEmpty">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+          <p>Your basket is empty</p>
+          <button class="btn-secondary" id="cartEmptyShop">Continue shopping</button>
+        </div>
+      </div>
+
+      <!-- Address + options — hidden until cart has items -->
+      <div class="drawer-address-section" id="drawerAddressSection" style="display:none;">
+
+        <!-- ── BILLING ADDRESS ──────────────────────────────────── -->
+        <div class="addr-block">
+          <div class="addr-block-header">
+            <div class="addr-block-title">Billing address</div>
+            <button class="addr-edit-btn" id="billingEditBtn">Edit</button>
+          </div>
+          <div class="addr-display" id="billingDisplay">
+            <div class="addr-line">Acme Corp</div>
+            <div class="addr-line">142 West 36th Street, Suite 800</div>
+            <div class="addr-line">New York, NY 10018</div>
+            <div class="addr-line">United States</div>
+          </div>
+          <div class="addr-form" id="billingForm" style="display:none;">
+            <input type="text" class="addr-input" id="billCompany" placeholder="Company name" value="Acme Corp" />
+            <input type="text" class="addr-input" id="billStreet" placeholder="Street address" value="142 West 36th Street, Suite 800" />
+            <div class="addr-row-2">
+              <input type="text" class="addr-input" id="billCity" placeholder="City" value="New York" />
+              <input type="text" class="addr-input addr-state" id="billState" placeholder="State" value="NY" maxlength="2" />
+              <input type="text" class="addr-input addr-zip" id="billZip" placeholder="ZIP" value="10018" maxlength="10" />
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SHIP-TO (per item) ──────────────────────────────── -->
+        <div class="addr-block">
+          <div class="addr-block-header">
+            <div class="addr-block-title">Ship to</div>
+            <button class="addr-edit-btn" id="applyAllShipBtn">Apply to all</button>
+          </div>
+          <div class="shipto-hint">Set a destination per item — useful when some items go to the MSP for staging and others ship direct.</div>
+          <div id="shipToItemList"></div>
+        </div>
+
+        <!-- ── ORDER OPTIONS ───────────────────────────────────── -->
+        <div class="addr-block">
+          <div class="addr-block-title" style="margin-bottom:10px;">Order options</div>
+          <div class="po-row">
+            <label class="po-label">PO Number <span class="po-opt">(optional)</span></label>
+            <input type="text" id="poNumber" class="po-input" placeholder="e.g. PO-2025-0042" />
+          </div>
+          <div class="shipping-row" style="margin-top:8px;">
+            <label class="shipping-label">Shipping speed</label>
+            <select class="shipping-select" id="shippingSelect">
+              <option value="standard">Standard (2–5 days) — $12.00</option>
+              <option value="express">Express (1–2 days) — $28.00</option>
+              <option value="overnight">Overnight — $55.00</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /drawer-scroll -->
+
+    <!-- Sticky footer: totals + actions -->
     <div class="drawer-footer" id="cartFooter" style="display:none;">
-      <div class="po-row">
-        <label class="po-label">PO Number <span class="po-opt">(optional)</span></label>
-        <input type="text" id="poNumber" class="po-input" placeholder="e.g. PO-2024-0042" />
-      </div>
-
-      <div class="shipping-row">
-        <label class="shipping-label">Shipping</label>
-        <select class="shipping-select" id="shippingSelect">
-          <option value="standard">Standard (2–5 days) — $12.00</option>
-          <option value="express">Express (1–2 days) — $28.00</option>
-          <option value="overnight">Overnight — $55.00</option>
-        </select>
-      </div>
-
       <div class="cart-totals">
         <div class="total-row"><span>Subtotal</span><span id="cartSubtotal">$0.00</span></div>
         <div class="total-row"><span>Shipping</span><span id="cartShipping">$12.00</span></div>
         <div class="total-row"><span>Tax (8.5%)</span><span id="cartTax">$0.00</span></div>
         <div class="total-row total-final"><span>Total</span><span id="cartTotal">$0.00</span></div>
       </div>
-
       <button class="btn-accent checkout-btn" id="checkoutBtn">Submit order to Salesbuildr</button>
       <button class="btn-ghost save-basket-btn" id="saveBasketBtn">Save basket for later</button>
     </div>
+
   </aside>
 
   <!-- ═══ AI ASSISTANT PANEL ════════════════════════════════════════ -->
