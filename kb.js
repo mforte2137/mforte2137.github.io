@@ -303,15 +303,31 @@ function renderKB(issues = knowledgeBase) {
 
 // ── Update Stats ──────────────────────────────
 function updateStats() {
-    document.getElementById('totalIssues').textContent = knowledgeBase.length;
+    // Always counts from the full knowledgeBase — never from filtered view
+    const total      = knowledgeBase.length;
+    const categories = new Set(knowledgeBase.map(i => i.category).filter(Boolean)).size;
 
-    const categories = new Set(knowledgeBase.map(i => i.category)).size;
-    document.getElementById('totalCategories').textContent = categories || 0;
-
-    const weekAgo = new Date();
+    const weekAgo    = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
     const recentCount = knowledgeBase.filter(i => new Date(i.createdAt) > weekAgo).length;
-    document.getElementById('recentlyAdded').textContent = recentCount;
+
+    animateStat('totalIssues',      total);
+    animateStat('totalCategories',  categories);
+    animateStat('recentlyAdded',    recentCount);
+}
+
+function animateStat(id, newValue) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const oldValue = parseInt(el.textContent, 10) || 0;
+    if (oldValue === newValue) return;
+    // Brief flash to signal the value changed
+    el.style.transition = 'opacity 0.15s';
+    el.style.opacity = '0';
+    setTimeout(() => {
+        el.textContent = newValue;
+        el.style.opacity = '1';
+    }, 150);
 }
 
 // ── Export / Import ───────────────────────────
