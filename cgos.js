@@ -3873,6 +3873,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMicroFeedback();
   initDocPanel();
   initWelcomeBanner();
+  initPortfolioIntel();
   // Feedback closed by default — user opens when ready
   switchView('portfolio');
 });
