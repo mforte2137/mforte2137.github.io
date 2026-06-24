@@ -480,7 +480,8 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 .badge-popular { background: var(--good-bg); color: var(--good); }
 
 .card-img-wrap {
-  background: var(--bg-row);
+  background: #fff;
+  border-bottom: 1px solid var(--border);
   height: 180px;
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
@@ -635,7 +636,8 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 
 .cart-item-img {
   width: 54px; height: 54px;
-  background: var(--bg-row);
+  background: #fff;
+  border: 1px solid var(--border);
   flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
@@ -1181,7 +1183,8 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 }
 
 .pm-img-col {
-  background: var(--bg-row);
+  background: #fff;
+  border-right: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
   padding: 32px; min-height: 320px;
 }
@@ -1705,7 +1708,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 .order-line:last-child { border-bottom: none; }
 .ol-thumb {
   width: 40px; height: 32px; flex-shrink: 0;
-  background: var(--bg-row); border: 1px solid var(--border);
+  background: #fff; border: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
