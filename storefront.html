@@ -30,8 +30,17 @@
         Quotes
         <span class="tab-badge" id="quotesBadge">2</span>
       </button>
+      <button class="tab-btn" data-tab="orders">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        Orders
+      </button>
     </nav>
     <div class="header-right">
+      <button class="btn-ghost header-ai-btn" id="savedBasketsBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+        Saved
+        <span class="saved-count-badge" id="savedCountBadge" style="display:none;">0</span>
+      </button>
       <button class="btn-ghost header-ai-btn" id="aiToggleBtn">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
         AI Assistant
@@ -155,6 +164,13 @@
         <div class="product-area">
           <div class="product-toolbar">
             <div class="toolbar-left">
+              <div class="product-search-wrap">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="product-search-input" id="productSearch" placeholder="Search products…" />
+                <button class="product-search-clear" id="productSearchClear" style="display:none;">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
               <span class="result-count" id="resultCount">24 products</span>
               <div class="active-filters" id="activeFilters"></div>
             </div>
@@ -203,7 +219,36 @@
       </div>
     </section>
 
+    <!-- ── ORDERS TAB ─────────────────────────────────────────── -->
+    <section class="tab-panel" id="tab-orders">
+      <div class="quotes-page">
+        <div class="quotes-header">
+          <h2 class="quotes-title">Order history</h2>
+          <p class="quotes-sub">All fulfilled orders placed by Acme Corp — click any order to see details or reorder.</p>
+        </div>
+        <div class="orders-list" id="ordersList"></div>
+      </div>
+    </section>
+
   </main>
+
+  <!-- ═══ SAVED BASKETS DRAWER ══════════════════════════════════════ -->
+  <div class="drawer-overlay" id="savedOverlay"></div>
+  <aside class="cart-drawer" id="savedDrawer">
+    <div class="drawer-header">
+      <h3 class="drawer-title">Saved baskets</h3>
+      <button class="drawer-close" id="savedClose">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="drawer-items" id="savedBasketsList" style="padding:16px 20px;">
+      <div class="cart-empty" id="savedEmpty">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+        <p>No saved baskets yet</p>
+        <p style="font-size:12px;color:var(--text-3);font-family:'Inter',sans-serif;">Name your basket and click "Save basket for later" at checkout.</p>
+      </div>
+    </div>
+  </aside>
 
   <!-- ═══ CART DRAWER ═══════════════════════════════════════════════ -->
   <div class="drawer-overlay" id="cartOverlay"></div>
