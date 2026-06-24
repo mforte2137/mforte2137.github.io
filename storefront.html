@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acme Corp — Technology Store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="storefront.css" />
+</head>
+<body>
+
+  <!-- ═══ TOP NAV ═══════════════════════════════════════════════════ -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-mark">SB</div>
+      <div class="header-brand">
+        <span class="header-company">Acme Corp</span>
+        <span class="header-sub">Technology Store</span>
+      </div>
+    </div>
+    <nav class="header-tabs">
+      <button class="tab-btn active" data-tab="shop">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        Shop
+      </button>
+      <button class="tab-btn" data-tab="quotes">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Quotes
+        <span class="tab-badge" id="quotesBadge">2</span>
+      </button>
+    </nav>
+    <div class="header-right">
+      <button class="btn-ghost header-ai-btn" id="aiToggleBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        AI Assistant
+      </button>
+      <button class="cart-btn" id="cartBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+        <span class="cart-count" id="cartCount">0</span>
+      </button>
+      <div class="header-user">
+        <div class="user-avatar">JD</div>
+        <span class="user-name">Jane Doe</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ MAIN LAYOUT ════════════════════════════════════════════════ -->
+  <main class="main-layout">
+
+    <!-- ── SHOP TAB ─────────────────────────────────────────────── -->
+    <section class="tab-panel active" id="tab-shop">
+
+      <!-- Hero Banner -->
+      <div class="shop-hero">
+        <div class="hero-content">
+          <div class="hero-kicker">Curated for Acme Corp</div>
+          <h1 class="hero-title">Your company technology store</h1>
+          <p class="hero-desc">IT-approved devices, accessories, and bundles — configured for your environment and shipped direct to you or the office.</p>
+          <div class="hero-actions">
+            <button class="btn-primary" id="heroAiBtn">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+              Ask AI to help me choose
+            </button>
+            <button class="btn-secondary" id="heroBundlesBtn">View bundles</button>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <span class="stat-num">24</span>
+            <span class="stat-label">Products available</span>
+          </div>
+          <div class="hero-stat">
+            <span class="stat-num">3</span>
+            <span class="stat-label">Bundles</span>
+          </div>
+          <div class="hero-stat">
+            <span class="stat-num">2–5</span>
+            <span class="stat-label">Days shipping</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shop Body: Filter Rail + Product Grid -->
+      <div class="shop-body">
+
+        <!-- Filter Rail -->
+        <aside class="filter-rail">
+          <div class="filter-section">
+            <div class="filter-title">Category</div>
+            <div class="filter-options" id="filterCategory">
+              <label class="filter-opt active" data-filter="category" data-value="all">
+                <span class="filter-check"></span>All products
+              </label>
+              <label class="filter-opt" data-filter="category" data-value="laptop">
+                <span class="filter-check"></span>Laptops
+              </label>
+              <label class="filter-opt" data-filter="category" data-value="monitor">
+                <span class="filter-check"></span>Monitors
+              </label>
+              <label class="filter-opt" data-filter="category" data-value="dock">
+                <span class="filter-check"></span>Docking stations
+              </label>
+              <label class="filter-opt" data-filter="category" data-value="accessory">
+                <span class="filter-check"></span>Accessories
+              </label>
+              <label class="filter-opt" data-filter="category" data-value="bundle">
+                <span class="filter-check"></span>Bundles
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-title">Price range</div>
+            <div class="price-inputs">
+              <input type="number" id="priceMin" placeholder="Min" class="price-input" />
+              <span class="price-sep">—</span>
+              <input type="number" id="priceMax" placeholder="Max" class="price-input" />
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-title">Processor</div>
+            <div class="filter-options" id="filterCpu">
+              <label class="filter-opt active" data-filter="cpu" data-value="all"><span class="filter-check"></span>All</label>
+              <label class="filter-opt" data-filter="cpu" data-value="intel"><span class="filter-check"></span>Intel Core</label>
+              <label class="filter-opt" data-filter="cpu" data-value="amd"><span class="filter-check"></span>AMD Ryzen</label>
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-title">RAM</div>
+            <div class="filter-options" id="filterRam">
+              <label class="filter-opt active" data-filter="ram" data-value="all"><span class="filter-check"></span>All</label>
+              <label class="filter-opt" data-filter="ram" data-value="8"><span class="filter-check"></span>8 GB</label>
+              <label class="filter-opt" data-filter="ram" data-value="16"><span class="filter-check"></span>16 GB</label>
+              <label class="filter-opt" data-filter="ram" data-value="32"><span class="filter-check"></span>32 GB</label>
+            </div>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-title">Compare</div>
+            <div class="compare-summary" id="compareSummary">
+              <span class="compare-hint">Select up to 3 products to compare</span>
+            </div>
+            <button class="btn-accent compare-btn" id="compareBtn" style="display:none;width:100%;">Compare selected</button>
+          </div>
+
+          <button class="btn-ghost filter-reset" id="filterReset">Reset all filters</button>
+        </aside>
+
+        <!-- Product Grid -->
+        <div class="product-area">
+          <div class="product-toolbar">
+            <div class="toolbar-left">
+              <span class="result-count" id="resultCount">24 products</span>
+              <div class="active-filters" id="activeFilters"></div>
+            </div>
+            <div class="toolbar-right">
+              <select class="sort-select" id="sortSelect">
+                <option value="featured">Featured</option>
+                <option value="price-asc">Price: low to high</option>
+                <option value="price-desc">Price: high to low</option>
+                <option value="name">Name A–Z</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- AI result banner (hidden by default) -->
+          <div class="ai-result-banner" id="aiResultBanner" style="display:none;">
+            <div class="ai-banner-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+            </div>
+            <div class="ai-banner-text">
+              <strong id="aiResultTitle">AI recommendations</strong>
+              <span id="aiResultSub"></span>
+            </div>
+            <button class="btn-ghost ai-banner-clear" id="aiBannerClear">Show all products</button>
+          </div>
+
+          <div class="product-grid" id="productGrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── QUOTES TAB ────────────────────────────────────────────── -->
+    <section class="tab-panel" id="tab-quotes">
+      <div class="quotes-page">
+        <div class="quotes-header">
+          <h2 class="quotes-title">Quote history</h2>
+          <p class="quotes-sub">All quotes raised for Acme Corp — pending approvals, approved, and declined.</p>
+        </div>
+
+        <div class="quotes-tabs">
+          <button class="qtab-btn active" data-qtab="pending">Pending approval <span class="qtab-badge warn">2</span></button>
+          <button class="qtab-btn" data-qtab="approved">Approved <span class="qtab-badge good">5</span></button>
+          <button class="qtab-btn" data-qtab="declined">Declined <span class="qtab-badge danger">1</span></button>
+        </div>
+
+        <div class="quotes-list" id="quotesList"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══ CART DRAWER ═══════════════════════════════════════════════ -->
+  <div class="drawer-overlay" id="cartOverlay"></div>
+  <aside class="cart-drawer" id="cartDrawer">
+    <div class="drawer-header">
+      <h3 class="drawer-title">Your basket</h3>
+      <div class="drawer-basket-name">
+        <input type="text" id="basketName" class="basket-name-input" value="My order" placeholder="Name this basket" />
+      </div>
+      <button class="drawer-close" id="cartClose">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-items" id="cartItems">
+      <div class="cart-empty" id="cartEmpty">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+        <p>Your basket is empty</p>
+        <button class="btn-secondary" id="cartEmptyShop">Continue shopping</button>
+      </div>
+    </div>
+
+    <div class="drawer-footer" id="cartFooter" style="display:none;">
+      <div class="po-row">
+        <label class="po-label">PO Number <span class="po-opt">(optional)</span></label>
+        <input type="text" id="poNumber" class="po-input" placeholder="e.g. PO-2024-0042" />
+      </div>
+
+      <div class="shipping-row">
+        <label class="shipping-label">Shipping</label>
+        <select class="shipping-select" id="shippingSelect">
+          <option value="standard">Standard (2–5 days) — $12.00</option>
+          <option value="express">Express (1–2 days) — $28.00</option>
+          <option value="overnight">Overnight — $55.00</option>
+        </select>
+      </div>
+
+      <div class="cart-totals">
+        <div class="total-row"><span>Subtotal</span><span id="cartSubtotal">$0.00</span></div>
+        <div class="total-row"><span>Shipping</span><span id="cartShipping">$12.00</span></div>
+        <div class="total-row"><span>Tax (8.5%)</span><span id="cartTax">$0.00</span></div>
+        <div class="total-row total-final"><span>Total</span><span id="cartTotal">$0.00</span></div>
+      </div>
+
+      <button class="btn-accent checkout-btn" id="checkoutBtn">Submit order to Salesbuildr</button>
+      <button class="btn-ghost save-basket-btn" id="saveBasketBtn">Save basket for later</button>
+    </div>
+  </aside>
+
+  <!-- ═══ AI ASSISTANT PANEL ════════════════════════════════════════ -->
+  <div class="drawer-overlay" id="aiOverlay"></div>
+  <aside class="ai-panel" id="aiPanel">
+    <div class="ai-panel-accent-bar"></div>
+    <div class="ai-panel-header">
+      <div class="ai-panel-title-row">
+        <div class="ai-icon-mark">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        </div>
+        <h3 class="ai-panel-title">AI Shopping Assistant</h3>
+      </div>
+      <button class="drawer-close" id="aiClose">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="ai-chat" id="aiChat">
+      <div class="ai-message ai-msg-system">
+        <div class="ai-msg-content">Hi Jane — tell me what you need and I'll find the right products from your company store. You can describe a role, a use case, or a budget.</div>
+      </div>
+    </div>
+
+    <div class="ai-quick-prompts" id="aiQuickPrompts">
+      <div class="section-label">Quick prompts</div>
+      <button class="ai-quick-btn" data-prompt="I need a laptop for a new remote employee, budget around $1,200">New remote employee under $1,200</button>
+      <button class="ai-quick-btn" data-prompt="What's the best laptop for a software developer who needs lots of RAM and a fast processor?">Developer setup</button>
+      <button class="ai-quick-btn" data-prompt="I need to equip a home office with everything — laptop, monitor, dock, and bag. What bundle makes sense?">Full home office kit</button>
+      <button class="ai-quick-btn" data-prompt="I need the lightest laptop we have for a sales rep who travels a lot">Lightweight for travel</button>
+    </div>
+
+    <div class="ai-input-area">
+      <textarea class="ai-textarea" id="aiInput" placeholder="Describe what you need…" rows="3"></textarea>
+      <button class="btn-accent ai-send-btn" id="aiSendBtn">Ask</button>
+    </div>
+  </aside>
+
+  <!-- ═══ PRODUCT DETAIL MODAL ══════════════════════════════════════ -->
+  <div class="modal-backdrop" id="productModalBackdrop" style="display:none;">
+    <div class="modal product-modal" id="productModal">
+      <button class="modal-close" id="productModalClose">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="modal-body" id="productModalBody"></div>
+    </div>
+  </div>
+
+  <!-- ═══ COMPARE MODAL ═════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="compareModalBackdrop" style="display:none;">
+    <div class="modal compare-modal" id="compareModal">
+      <div class="modal-header">
+        <h3 class="modal-title">Product comparison</h3>
+        <button class="modal-close" id="compareModalClose">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="compare-table-wrap" id="compareTableWrap"></div>
+    </div>
+  </div>
+
+  <!-- ═══ ORDER CONFIRM MODAL ═══════════════════════════════════════ -->
+  <div class="modal-backdrop" id="orderModalBackdrop" style="display:none;">
+    <div class="modal order-modal" id="orderModal">
+      <div class="order-success-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h3 class="modal-title">Order submitted</h3>
+      <p class="order-modal-sub">Your order has been sent to Salesbuildr as an approved quote and is ready to process. You'll receive a confirmation email shortly.</p>
+      <div class="order-ref">Reference: <strong id="orderRef"></strong></div>
+      <button class="btn-primary" id="orderModalClose">Done</button>
+    </div>
+  </div>
+
+  <!-- ═══ SAVED BASKET TOAST ════════════════════════════════════════ -->
+  <div class="toast" id="toast"></div>
+
+  <script src="storefront.js"></script>
+</body>
+</html>
