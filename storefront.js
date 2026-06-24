@@ -1940,8 +1940,18 @@ Return ONLY the JSON object, nothing else.`;
       aiResultBanner.style.display = 'flex';
       renderProductGrid();
 
-      // Close panel after a moment so customer can see results
-      setTimeout(() => closeAiPanel(), 1000);
+      // Show a "View results" action in the chat — don't auto-close
+      const resultMsg = document.createElement('div');
+      resultMsg.className = 'ai-message';
+      resultMsg.innerHTML = `
+        <div class="ai-result-action">
+          <span class="ai-result-count">${parsed.recommendedIds.length} product${parsed.recommendedIds.length !== 1 ? 's' : ''} found</span>
+          <button class="ai-view-results-btn" id="aiViewResultsBtn">View results →</button>
+        </div>
+      `;
+      resultMsg.querySelector('#aiViewResultsBtn').addEventListener('click', closeAiPanel);
+      aiChat.appendChild(resultMsg);
+      aiChat.scrollTop = aiChat.scrollHeight;
     }
 
   } catch (err) {
