@@ -423,107 +423,131 @@ document.querySelectorAll('.cfg-notif-row').forEach(row => {
 // PRODUCTS SECTION
 // ══════════════════════════════════════════════════════════════════
 
-// ── SIMULATED SALESBUILDR CATALOG ────────────────────────────────
-// Reflects the real product range — more items than the demo store
-// to show the MSP has a fuller catalog to pick from
 const SB_CATALOG = [
-  // Laptops
-  { id:'lat-3450',    cat:'laptop',    name:'Dell Latitude 3450',         sku:'LAT-3450-8-256',   price:649,   stock:'in'  },
-  { id:'lat-3550',    cat:'laptop',    name:'Dell Latitude 3550',         sku:'LAT-3550-8-256',   price:699,   stock:'in'  },
-  { id:'lat-5350',    cat:'laptop',    name:'Dell Latitude 5350',         sku:'LAT-5350-8-256',   price:879,   stock:'in'  },
-  { id:'lat-5350-16', cat:'laptop',    name:'Dell Latitude 5350 (16 GB)', sku:'LAT-5350-16-512',  price:999,   stock:'in'  },
-  { id:'lat-5450',    cat:'laptop',    name:'Dell Latitude 5450',         sku:'LAT-5450-16-512',  price:969,   stock:'in'  },
-  { id:'lat-5550',    cat:'laptop',    name:'Dell Latitude 5550',         sku:'LAT-5550-16-512',  price:1049,  stock:'in'  },
-  { id:'lat-5550a',   cat:'laptop',    name:'Dell Latitude 5550 (AMD)',   sku:'LAT-5550A-16-512', price:1129,  stock:'low' },
-  { id:'lat-7350',    cat:'laptop',    name:'Dell Latitude 7350',         sku:'LAT-7350-16-512',  price:1349,  stock:'in'  },
-  { id:'lat-7450',    cat:'laptop',    name:'Dell Latitude 7450',         sku:'LAT-7450-32-1TB',  price:1649,  stock:'in'  },
-  { id:'lat-7450u',   cat:'laptop',    name:'Dell Latitude 7450 Ultra',   sku:'LAT-7450U-32-1TB', price:1849,  stock:'low' },
-  { id:'lat-9450',    cat:'laptop',    name:'Dell Latitude 9450 2-in-1',  sku:'LAT-9450-32-1TB',  price:2149,  stock:'in'  },
-  { id:'lat-9550',    cat:'laptop',    name:'Dell Latitude 9550',         sku:'LAT-9550-32-1TB',  price:2349,  stock:'out' },
-  { id:'prec-3591',   cat:'laptop',    name:'Dell Precision 3591',        sku:'PRE-3591-32-1TB',  price:2799,  stock:'in'  },
-  { id:'prec-5690',   cat:'laptop',    name:'Dell Precision 5690',        sku:'PRE-5690-64-2TB',  price:3299,  stock:'low' },
-  { id:'lat-5350c',   cat:'laptop',    name:'Dell Latitude 5350 Chromebook', sku:'LAT-5350C-8-128', price:549, stock:'in'  },
-  { id:'lat-3340',    cat:'laptop',    name:'Dell Latitude 3340',         sku:'LAT-3340-8-256',   price:599,   stock:'in'  },
-  { id:'lat-5440',    cat:'laptop',    name:'Dell Latitude 5440',         sku:'LAT-5440-16-512',  price:929,   stock:'in'  },
-  { id:'lat-5540',    cat:'laptop',    name:'Dell Latitude 5540',         sku:'LAT-5540-16-512',  price:989,   stock:'in'  },
+  // Laptops — distiQty simulates live distributor stock
+  { id:'lat-3450',    cat:'laptop',    name:'Dell Latitude 3450',              sku:'LAT-3450-8-256',   price:649,   stock:'in',  distiQty:24 },
+  { id:'lat-3550',    cat:'laptop',    name:'Dell Latitude 3550',              sku:'LAT-3550-8-256',   price:699,   stock:'in',  distiQty:31 },
+  { id:'lat-5350',    cat:'laptop',    name:'Dell Latitude 5350',              sku:'LAT-5350-8-256',   price:879,   stock:'in',  distiQty:17 },
+  { id:'lat-5350-16', cat:'laptop',    name:'Dell Latitude 5350 (16 GB)',      sku:'LAT-5350-16-512',  price:999,   stock:'in',  distiQty:9  },
+  { id:'lat-5450',    cat:'laptop',    name:'Dell Latitude 5450',              sku:'LAT-5450-16-512',  price:969,   stock:'in',  distiQty:14 },
+  { id:'lat-5550',    cat:'laptop',    name:'Dell Latitude 5550',              sku:'LAT-5550-16-512',  price:1049,  stock:'in',  distiQty:22 },
+  { id:'lat-5550a',   cat:'laptop',    name:'Dell Latitude 5550 (AMD)',        sku:'LAT-5550A-16-512', price:1129,  stock:'low', distiQty:2  },
+  { id:'lat-7350',    cat:'laptop',    name:'Dell Latitude 7350',              sku:'LAT-7350-16-512',  price:1349,  stock:'in',  distiQty:8  },
+  { id:'lat-7450',    cat:'laptop',    name:'Dell Latitude 7450',              sku:'LAT-7450-32-1TB',  price:1649,  stock:'in',  distiQty:11 },
+  { id:'lat-7450u',   cat:'laptop',    name:'Dell Latitude 7450 Ultra',        sku:'LAT-7450U-32-1TB', price:1849,  stock:'low', distiQty:2  },
+  { id:'lat-9450',    cat:'laptop',    name:'Dell Latitude 9450 2-in-1',       sku:'LAT-9450-32-1TB',  price:2149,  stock:'in',  distiQty:6  },
+  { id:'lat-9550',    cat:'laptop',    name:'Dell Latitude 9550',              sku:'LAT-9550-32-1TB',  price:2349,  stock:'out', distiQty:0  },
+  { id:'prec-3591',   cat:'laptop',    name:'Dell Precision 3591',             sku:'PRE-3591-32-1TB',  price:2799,  stock:'in',  distiQty:4  },
+  { id:'prec-5690',   cat:'laptop',    name:'Dell Precision 5690',             sku:'PRE-5690-64-2TB',  price:3299,  stock:'low', distiQty:1  },
+  { id:'lat-5350c',   cat:'laptop',    name:'Dell Latitude 5350 Chromebook',   sku:'LAT-5350C-8-128',  price:549,   stock:'in',  distiQty:19 },
+  { id:'lat-3340',    cat:'laptop',    name:'Dell Latitude 3340',              sku:'LAT-3340-8-256',   price:599,   stock:'in',  distiQty:27 },
+  { id:'lat-5440',    cat:'laptop',    name:'Dell Latitude 5440',              sku:'LAT-5440-16-512',  price:929,   stock:'in',  distiQty:13 },
+  { id:'lat-5540',    cat:'laptop',    name:'Dell Latitude 5540',              sku:'LAT-5540-16-512',  price:989,   stock:'in',  distiQty:10 },
   // Monitors
-  { id:'mon-p2225h',  cat:'monitor',   name:'Dell P2225H 22" Monitor',    sku:'MON-P2225H',       price:189,   stock:'in'  },
-  { id:'mon-p2425h',  cat:'monitor',   name:'Dell P2425H 24" Monitor',    sku:'MON-P2425H',       price:259,   stock:'in'  },
-  { id:'mon-p2725h',  cat:'monitor',   name:'Dell P2725H 27" Monitor',    sku:'MON-P2725H',       price:319,   stock:'in'  },
-  { id:'mon-p3225qe', cat:'monitor',   name:'Dell P3225QE 32" 4K',        sku:'MON-P3225QE',      price:499,   stock:'in'  },
-  { id:'mon-u2724d',  cat:'monitor',   name:'Dell UltraSharp U2724D',     sku:'MON-U2724D',       price:549,   stock:'in'  },
-  { id:'mon-u3224kb', cat:'monitor',   name:'Dell UltraSharp U3224KB 32"',sku:'MON-U3224KB',      price:899,   stock:'low' },
-  { id:'mon-u4924dw', cat:'monitor',   name:'Dell UltraSharp U4924DW 49"',sku:'MON-U4924DW',      price:1299,  stock:'in'  },
+  { id:'mon-p2225h',  cat:'monitor',   name:'Dell P2225H 22" Monitor',         sku:'MON-P2225H',       price:189,   stock:'in',  distiQty:42 },
+  { id:'mon-p2425h',  cat:'monitor',   name:'Dell P2425H 24" Monitor',         sku:'MON-P2425H',       price:259,   stock:'in',  distiQty:38 },
+  { id:'mon-p2725h',  cat:'monitor',   name:'Dell P2725H 27" Monitor',         sku:'MON-P2725H',       price:319,   stock:'in',  distiQty:29 },
+  { id:'mon-p3225qe', cat:'monitor',   name:'Dell P3225QE 32" 4K',             sku:'MON-P3225QE',      price:499,   stock:'in',  distiQty:11 },
+  { id:'mon-u2724d',  cat:'monitor',   name:'Dell UltraSharp U2724D',          sku:'MON-U2724D',       price:549,   stock:'in',  distiQty:16 },
+  { id:'mon-u3224kb', cat:'monitor',   name:'Dell UltraSharp U3224KB 32"',     sku:'MON-U3224KB',      price:899,   stock:'low', distiQty:2  },
+  { id:'mon-u4924dw', cat:'monitor',   name:'Dell UltraSharp U4924DW 49"',     sku:'MON-U4924DW',      price:1299,  stock:'in',  distiQty:5  },
   // Docks
-  { id:'dock-wd19s',   cat:'dock',     name:'Dell Dock WD19S',            sku:'DOCK-WD19S',       price:199,   stock:'in'  },
-  { id:'dock-wd19tbs', cat:'dock',     name:'Dell Thunderbolt Dock WD19TBS', sku:'DOCK-WD19TBS',  price:289,   stock:'in'  },
-  { id:'dock-wd22tb4', cat:'dock',     name:'Dell Thunderbolt Dock WD22TB4', sku:'DOCK-WD22TB4',  price:349,   stock:'in'  },
-  { id:'dock-wd22dc',  cat:'dock',     name:'Dell Dual Charge Dock HD22Q', sku:'DOCK-HD22Q',      price:249,   stock:'in'  },
-  { id:'dock-da310',   cat:'dock',     name:'Dell DA310 USB-C Mobile Adapter', sku:'DOCK-DA310',  price:69,    stock:'in'  },
+  { id:'dock-wd19s',   cat:'dock',     name:'Dell Dock WD19S',                 sku:'DOCK-WD19S',       price:199,   stock:'in',  distiQty:33 },
+  { id:'dock-wd19tbs', cat:'dock',     name:'Dell Thunderbolt Dock WD19TBS',   sku:'DOCK-WD19TBS',     price:289,   stock:'in',  distiQty:21 },
+  { id:'dock-wd22tb4', cat:'dock',     name:'Dell Thunderbolt Dock WD22TB4',   sku:'DOCK-WD22TB4',     price:349,   stock:'in',  distiQty:15 },
+  { id:'dock-wd22dc',  cat:'dock',     name:'Dell Dual Charge Dock HD22Q',     sku:'DOCK-HD22Q',       price:249,   stock:'in',  distiQty:8  },
+  { id:'dock-da310',   cat:'dock',     name:'Dell DA310 USB-C Mobile Adapter', sku:'DOCK-DA310',       price:69,    stock:'in',  distiQty:54 },
   // Accessories
-  { id:'bag-premier',  cat:'accessory',name:'Dell Premier Backpack 15',   sku:'BAG-PE1520P',      price:89,    stock:'in'  },
-  { id:'bag-sleeve',   cat:'accessory',name:'Dell Pro Sleeve 14',         sku:'BAG-PO1420VS',     price:39,    stock:'in'  },
-  { id:'bag-roller',   cat:'accessory',name:'Dell Pro Roller 15',         sku:'BAG-ROLLER-15',    price:129,   stock:'in'  },
-  { id:'mouse-ms3320', cat:'accessory',name:'Dell Wireless Mouse MS3320W',sku:'MOU-MS3320W',      price:29,    stock:'in'  },
-  { id:'mouse-ms5120', cat:'accessory',name:'Dell Premier Mouse MS5120W', sku:'MOU-MS5120W',      price:59,    stock:'in'  },
-  { id:'kb-km5221w',  cat:'accessory', name:'Dell Premier KM5221W Combo', sku:'KB-KM5221W',       price:69,    stock:'in'  },
-  { id:'kb-km7321w',  cat:'accessory', name:'Dell Premier KM7321W Combo', sku:'KB-KM7321W',       price:99,    stock:'in'  },
-  { id:'headset-wh',  cat:'accessory', name:'Dell Pro Wireless Headset WH5024', sku:'HEAD-WH5024',price:119,   stock:'in'  },
-  { id:'webcam-722',  cat:'accessory', name:'Dell UltraSharp Webcam WB7022', sku:'CAM-WB7022',    price:149,   stock:'low' },
-  { id:'pwr-130w',    cat:'accessory', name:'Dell 130W USB-C Charger',    sku:'PWR-130W-USBC',    price:69,    stock:'in'  },
-  { id:'hub-ua',      cat:'accessory', name:'Dell USB-C Hub 7-in-1',      sku:'HUB-UA7C',         price:49,    stock:'in'  },
+  { id:'bag-premier',  cat:'accessory',name:'Dell Premier Backpack 15',        sku:'BAG-PE1520P',      price:89,    stock:'in',  distiQty:67 },
+  { id:'bag-sleeve',   cat:'accessory',name:'Dell Pro Sleeve 14',              sku:'BAG-PO1420VS',     price:39,    stock:'in',  distiQty:45 },
+  { id:'bag-roller',   cat:'accessory',name:'Dell Pro Roller 15',              sku:'BAG-ROLLER-15',    price:129,   stock:'in',  distiQty:12 },
+  { id:'mouse-ms3320', cat:'accessory',name:'Dell Wireless Mouse MS3320W',     sku:'MOU-MS3320W',      price:29,    stock:'in',  distiQty:88 },
+  { id:'mouse-ms5120', cat:'accessory',name:'Dell Premier Mouse MS5120W',      sku:'MOU-MS5120W',      price:59,    stock:'in',  distiQty:41 },
+  { id:'kb-km5221w',   cat:'accessory',name:'Dell Premier KM5221W Combo',      sku:'KB-KM5221W',       price:69,    stock:'in',  distiQty:36 },
+  { id:'kb-km7321w',   cat:'accessory',name:'Dell Premier KM7321W Combo',      sku:'KB-KM7321W',       price:99,    stock:'in',  distiQty:28 },
+  { id:'headset-wh',   cat:'accessory',name:'Dell Pro Wireless Headset WH5024',sku:'HEAD-WH5024',      price:119,   stock:'in',  distiQty:19 },
+  { id:'webcam-722',   cat:'accessory',name:'Dell UltraSharp Webcam WB7022',   sku:'CAM-WB7022',       price:149,   stock:'low', distiQty:2  },
+  { id:'pwr-130w',     cat:'accessory',name:'Dell 130W USB-C Charger',         sku:'PWR-130W-USBC',    price:69,    stock:'in',  distiQty:73 },
+  { id:'hub-ua',       cat:'accessory',name:'Dell USB-C Hub 7-in-1',           sku:'HUB-UA7C',         price:49,    stock:'in',  distiQty:61 },
   // Bundles
-  { id:'bundle-starter', cat:'bundle', name:'New Starter Bundle',         sku:'BUN-STARTER',      price:1199,  stock:'in'  },
-  { id:'bundle-remote',  cat:'bundle', name:'Remote Worker Bundle',       sku:'BUN-REMOTE',       price:1699,  stock:'in'  },
-  { id:'bundle-exec',    cat:'bundle', name:'Executive Bundle',           sku:'BUN-EXEC',         price:2549,  stock:'in'  },
-  { id:'bundle-dev',     cat:'bundle', name:'Developer Bundle',           sku:'BUN-DEV',          price:3199,  stock:'low' },
+  { id:'bundle-starter',cat:'bundle',  name:'New Starter Bundle',              sku:'BUN-STARTER',      price:1199,  stock:'in',  distiQty:99 },
+  { id:'bundle-remote', cat:'bundle',  name:'Remote Worker Bundle',            sku:'BUN-REMOTE',       price:1699,  stock:'in',  distiQty:99 },
+  { id:'bundle-exec',   cat:'bundle',  name:'Executive Bundle',                sku:'BUN-EXEC',         price:2549,  stock:'in',  distiQty:99 },
+  { id:'bundle-dev',    cat:'bundle',  name:'Developer Bundle',                sku:'BUN-DEV',          price:3199,  stock:'low', distiQty:99 },
   // Services
-  { id:'svc-m365bp',  cat:'service',   name:'Microsoft 365 Business Premium (annual)', sku:'SVC-M365BP', price:22, stock:'in' },
+  { id:'svc-m365bp',   cat:'service',  name:'Microsoft 365 Business Premium',  sku:'SVC-M365BP',       price:22,    stock:'in',  distiQty:99 },
 ];
 
-// IDs already in the store (matches the demo storefront)
 const INITIAL_STORE_IDS = new Set([
   'lat-3550','lat-5350','lat-5350-16','lat-5450','lat-5550','lat-5550a',
   'lat-7450','lat-9450','mon-p2425h','mon-p2725h','mon-u2724d',
   'dock-wd19tbs','dock-wd22tb4','bag-premier','bag-sleeve',
   'mouse-ms5120','kb-km7321w','bundle-starter','bundle-remote','bundle-exec',
-  'svc-m365bp'
+  'svc-m365bp',
 ]);
-
-// ── STATE ─────────────────────────────────────────────────────────
-let storeIds     = new Set(INITIAL_STORE_IDS);
-let selectedIds  = new Set();   // checked in catalog panel
-let activeCat    = 'all';
-let searchQuery  = '';
 
 const CAT_LABELS = {
   all:'All', laptop:'Laptops', monitor:'Monitors',
   dock:'Docks', accessory:'Accessories', bundle:'Bundles', service:'Services'
 };
 
+// ── STATE ─────────────────────────────────────────────────────────
+let storeIds     = new Set(INITIAL_STORE_IDS);
+let selectedIds  = new Set();
+let activeCat    = 'all';
+let searchQuery  = '';
+let filterInStock   = false;
+let filterDistiOk   = false;
+let distiMinQty     = 3;
+let densityMode     = 'compact';  // 'compact' | 'comfy'
+
 // ── HELPERS ───────────────────────────────────────────────────────
 function fmtPrice(n) { return '$' + n.toLocaleString('en-US'); }
 
+function isDistiLow(p) { return p.distiQty < distiMinQty; }
+
 function catalogVisible() {
   return SB_CATALOG.filter(p => {
-    const catMatch = activeCat === 'all' || p.cat === activeCat;
-    const qMatch   = !searchQuery || p.name.toLowerCase().includes(searchQuery) || p.sku.toLowerCase().includes(searchQuery);
-    return catMatch && qMatch;
+    if (activeCat !== 'all' && p.cat !== activeCat) return false;
+    if (searchQuery && !p.name.toLowerCase().includes(searchQuery) && !p.sku.toLowerCase().includes(searchQuery)) return false;
+    if (filterInStock && p.stock !== 'in') return false;
+    if (filterDistiOk && isDistiLow(p)) return false;
+    return true;
   });
 }
 
 function updateSummary() {
-  document.getElementById('prodCatalogCount').textContent = SB_CATALOG.length + ' products in catalog';
-  document.getElementById('prodStoreCount').textContent   = storeIds.size + ' in this store';
-  document.getElementById('storeFooterLabel').textContent = storeIds.size + ' products visible to customers';
-  // Update nav badge
+  const hiddenCount = [...storeIds].filter(id => {
+    const p = SB_CATALOG.find(x => x.id === id);
+    return p && isDistiLow(p);
+  }).length;
+
+  document.getElementById('prodCatalogCount').textContent = SB_CATALOG.length + ' in catalog';
+  document.getElementById('prodStoreCount').textContent   = storeIds.size + ' in store' + (hiddenCount > 0 ? ` (${hiddenCount} hidden)` : '');
+  document.getElementById('storeFooterLabel').textContent = storeIds.size + ' products' + (hiddenCount > 0 ? ` · ${hiddenCount} auto-hidden (low disti stock)` : '');
+
   const badge = document.querySelector('[data-section="products"] .cfg-nav-badge');
   if (badge) badge.textContent = storeIds.size;
-  // Update cat footer
+
+  // Update tab counts
+  const cats = ['all','laptop','monitor','dock','accessory','bundle','service'];
+  cats.forEach(cat => {
+    const el = document.getElementById('tabCount-' + cat);
+    if (!el) return;
+    const count = cat === 'all' ? SB_CATALOG.length : SB_CATALOG.filter(p => p.cat === cat).length;
+    el.textContent = count;
+  });
+
+  // Cat footer
   const visible = catalogVisible();
-  const catLabel = activeCat === 'all' ? 'products' : CAT_LABELS[activeCat]?.toLowerCase() || 'products';
-  const catCount = activeCat === 'all' ? SB_CATALOG.length : SB_CATALOG.filter(p => p.cat === activeCat).length;
-  document.getElementById('catFooterLabel').textContent = catCount + ' ' + catLabel + ' in catalog';
+  const catName = activeCat === 'all' ? 'products' : CAT_LABELS[activeCat]?.toLowerCase();
+  const catTotal = activeCat === 'all' ? SB_CATALOG.length : SB_CATALOG.filter(p => p.cat === activeCat).length;
+  const catEl = document.getElementById('catFooterLabel');
+  if (catEl) catEl.textContent = catTotal + ' ' + catName + ' in catalog · ' + visible.length + ' shown';
+
+  // Update disti meta
+  const metaEl = document.getElementById('distiMeta');
+  if (metaEl) metaEl.textContent = 'Min qty: ' + distiMinQty + ' · Auto-hide when breached';
 }
 
 function updateBulkBar() {
@@ -542,9 +566,10 @@ function renderCatalog() {
   const list = document.getElementById('catalogList');
   if (!list) return;
   const visible = catalogVisible();
+  list.className = 'prod-list' + (densityMode === 'comfy' ? ' comfy' : '');
 
   if (visible.length === 0) {
-    list.innerHTML = '<div class="prod-empty"><p>No products match your search.</p></div>';
+    list.innerHTML = '<div class="prod-empty"><p>No products match your filters.</p></div>';
     return;
   }
 
@@ -552,49 +577,45 @@ function renderCatalog() {
   visible.forEach(p => {
     const inStore  = storeIds.has(p.id);
     const selected = selectedIds.has(p.id);
-    const row = document.createElement('div');
-    row.className = 'prod-row' + (inStore ? ' in-store' : '') + (selected ? ' selected' : '');
-    row.dataset.id = p.id;
+    const low      = isDistiLow(p);
+    const stockClass = {in:'stock-in',low:'stock-low',out:'stock-out'}[p.stock] || 'stock-in';
+    const stockLabel = {in:'In stock',low:'Low',out:'Out'}[p.stock] || '';
+    const catAbbr = CAT_LABELS[p.cat]?.slice(0,3).toUpperCase() || 'PRD';
 
-    const stockClass = { in:'stock-in', low:'stock-low', out:'stock-out' }[p.stock] || 'stock-in';
-    const stockLabel = { in:'In stock', low:'Low stock', out:'Out of stock' }[p.stock] || 'In stock';
+    const row = document.createElement('div');
+    row.className = 'prod-row'
+      + (inStore  ? ' in-store'  : '')
+      + (selected ? ' selected'  : '')
+      + (low      ? ' disti-low' : '');
+    row.dataset.id = p.id;
 
     row.innerHTML = `
       <div class="prod-row-check">${selected ? '✓' : ''}</div>
       <div class="prod-row-thumb">
-        <span class="prod-row-thumb-placeholder">${CAT_LABELS[p.cat]?.slice(0,3).toUpperCase() || 'PRD'}</span>
+        <span class="prod-row-thumb-placeholder">${catAbbr}</span>
       </div>
       <div class="prod-row-info">
         <div class="prod-row-name">${p.name}</div>
         <div class="prod-row-sku">${p.sku}</div>
       </div>
       <div class="prod-row-right">
+        ${low ? `<div class="prod-disti-warn" title="Disti qty: ${p.distiQty}">Disti: ${p.distiQty}</div>` : ''}
         <div class="prod-row-price">${fmtPrice(p.price)}</div>
         <div class="prod-row-stock ${stockClass}">${stockLabel}</div>
         ${inStore
-          ? '<div class="prod-row-stock" style="background:var(--good-bg);color:var(--good);width:52px;text-align:center;">Added</div>'
-          : '<button class="prod-row-add" title="Add to store">+</button>'
-        }
+          ? '<div class="prod-row-stock" style="background:var(--good-bg);color:var(--good);min-width:44px;">Added</div>'
+          : '<button class="prod-row-add" title="Add to store">+</button>'}
       </div>
     `;
 
     if (!inStore) {
-      // Click row = select/deselect
       row.addEventListener('click', e => {
         if (e.target.closest('.prod-row-add')) return;
         selectedIds.has(p.id) ? selectedIds.delete(p.id) : selectedIds.add(p.id);
-        renderCatalog();
-        updateBulkBar();
+        renderCatalog(); updateBulkBar();
       });
-
-      // + button = instant add single
       const addBtn = row.querySelector('.prod-row-add');
-      if (addBtn) {
-        addBtn.addEventListener('click', e => {
-          e.stopPropagation();
-          addToStore([p.id]);
-        });
-      }
+      if (addBtn) addBtn.addEventListener('click', e => { e.stopPropagation(); addToStore([p.id]); });
     }
 
     list.appendChild(row);
@@ -605,70 +626,59 @@ function renderCatalog() {
 function renderStore() {
   const list = document.getElementById('storeList');
   if (!list) return;
+  list.className = 'prod-list' + (densityMode === 'comfy' ? ' comfy' : '');
 
   if (storeIds.size === 0) {
-    list.innerHTML = `
-      <div class="prod-empty">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-        <p>No products in this store yet.<br>Add products from the catalog on the left.</p>
-      </div>`;
+    list.innerHTML = `<div class="prod-empty">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+      <p>No products added yet.<br>Select from the catalog on the left.</p>
+    </div>`;
     return;
   }
 
-  // Group by category
   const order = ['laptop','monitor','dock','accessory','bundle','service'];
   const groups = {};
   order.forEach(cat => { groups[cat] = []; });
-
-  SB_CATALOG.forEach(p => {
-    if (storeIds.has(p.id)) {
-      if (!groups[p.cat]) groups[p.cat] = [];
-      groups[p.cat].push(p);
-    }
-  });
+  SB_CATALOG.forEach(p => { if (storeIds.has(p.id)) groups[p.cat]?.push(p); });
 
   list.innerHTML = '';
   order.forEach(cat => {
     const items = groups[cat];
-    if (!items || items.length === 0) return;
+    if (!items?.length) return;
 
-    const groupHeader = document.createElement('div');
-    groupHeader.className = 'store-group-header';
-    groupHeader.innerHTML = `
+    const gh = document.createElement('div');
+    gh.className = 'store-group-header';
+    gh.innerHTML = `
       <span class="store-group-label">${CAT_LABELS[cat]} (${items.length})</span>
-      <button class="store-group-remove" data-cat="${cat}">Remove all ${CAT_LABELS[cat]?.toLowerCase()}</button>
+      <button class="store-group-remove" data-cat="${cat}">Remove all</button>
     `;
-    groupHeader.querySelector('.store-group-remove').addEventListener('click', () => {
+    gh.querySelector('.store-group-remove').addEventListener('click', () => {
       items.forEach(p => storeIds.delete(p.id));
       renderAll();
-      showToast('All ' + CAT_LABELS[cat]?.toLowerCase() + ' removed from store');
+      showToast('All ' + CAT_LABELS[cat]?.toLowerCase() + ' removed');
     });
-    list.appendChild(groupHeader);
+    list.appendChild(gh);
 
     items.forEach(p => {
+      const low = isDistiLow(p);
+      const stockClass = {in:'stock-in',low:'stock-low',out:'stock-out'}[p.stock] || 'stock-in';
       const row = document.createElement('div');
-      row.className = 'prod-row';
-      row.dataset.id = p.id;
-      const stockClass = { in:'stock-in', low:'stock-low', out:'stock-out' }[p.stock] || 'stock-in';
-      const stockLabel = { in:'In stock', low:'Low', out:'Out' }[p.stock] || '';
+      row.className = 'prod-row' + (low ? ' disti-low' : '');
       row.innerHTML = `
-        <div class="prod-row-thumb">
-          <span class="prod-row-thumb-placeholder">${CAT_LABELS[p.cat]?.slice(0,3).toUpperCase()}</span>
-        </div>
+        <div class="prod-row-thumb"><span class="prod-row-thumb-placeholder">${CAT_LABELS[p.cat]?.slice(0,3).toUpperCase()}</span></div>
         <div class="prod-row-info">
           <div class="prod-row-name">${p.name}</div>
           <div class="prod-row-sku">${p.sku}</div>
         </div>
         <div class="prod-row-right">
+          ${low ? `<div class="prod-disti-warn">Disti: ${p.distiQty} — hidden</div>` : ''}
           <div class="prod-row-price">${fmtPrice(p.price)}</div>
-          <div class="prod-row-stock ${stockClass}">${stockLabel}</div>
-          <button class="prod-row-remove" title="Remove from store">×</button>
+          <div class="prod-row-stock ${stockClass}">${({in:'In',low:'Low',out:'Out'})[p.stock]}</div>
+          <button class="prod-row-remove" title="Remove">×</button>
         </div>
       `;
       row.querySelector('.prod-row-remove').addEventListener('click', () => {
-        storeIds.delete(p.id);
-        renderAll();
-        showToast(p.name + ' removed from store');
+        storeIds.delete(p.id); renderAll(); showToast(p.name + ' removed');
       });
       list.appendChild(row);
     });
@@ -676,21 +686,16 @@ function renderStore() {
 }
 
 function renderAll() {
-  renderCatalog();
-  renderStore();
-  updateSummary();
-  updateBulkBar();
+  renderCatalog(); renderStore(); updateSummary(); updateBulkBar();
 }
 
 // ── ADD / REMOVE ──────────────────────────────────────────────────
 function addToStore(ids) {
   let added = 0;
-  ids.forEach(id => {
-    if (!storeIds.has(id)) { storeIds.add(id); added++; }
-  });
+  ids.forEach(id => { if (!storeIds.has(id)) { storeIds.add(id); added++; } });
   selectedIds.clear();
   renderAll();
-  if (added > 0) showToast(added + ' product' + (added > 1 ? 's' : '') + ' added to store');
+  if (added > 0) showToast(added + ' product' + (added !== 1 ? 's' : '') + ' added to store');
 }
 
 // ── CATEGORY TABS ─────────────────────────────────────────────────
@@ -700,58 +705,84 @@ document.querySelectorAll('.prod-cat-tab').forEach(tab => {
     tab.classList.add('active');
     activeCat = tab.dataset.cat;
     selectedIds.clear();
-    renderCatalog();
-    updateSummary();
-    updateBulkBar();
+    renderCatalog(); updateSummary(); updateBulkBar();
   });
 });
 
 // ── SEARCH ────────────────────────────────────────────────────────
 document.getElementById('prodSearch')?.addEventListener('input', e => {
   searchQuery = e.target.value.trim().toLowerCase();
-  selectedIds.clear();
-  renderCatalog();
-  updateBulkBar();
+  selectedIds.clear(); renderCatalog(); updateBulkBar();
 });
 
-// ── BULK ADD SELECTED ─────────────────────────────────────────────
-document.getElementById('prodAddSelected')?.addEventListener('click', () => {
-  addToStore([...selectedIds]);
+// ── FILTER CHIPS ──────────────────────────────────────────────────
+document.getElementById('filterInStock')?.addEventListener('change', e => {
+  filterInStock = e.target.checked;
+  document.getElementById('chipInStock')?.classList.toggle('active', filterInStock);
+  selectedIds.clear(); renderCatalog(); updateSummary(); updateBulkBar();
+});
+document.getElementById('filterDistiOk')?.addEventListener('change', e => {
+  filterDistiOk = e.target.checked;
+  document.getElementById('chipDistiOk')?.classList.toggle('active', filterDistiOk);
+  selectedIds.clear(); renderCatalog(); updateSummary(); updateBulkBar();
 });
 
+// ── DENSITY TOGGLE ────────────────────────────────────────────────
+document.getElementById('densityCompact')?.addEventListener('click', () => {
+  densityMode = 'compact';
+  document.getElementById('densityCompact').classList.add('active');
+  document.getElementById('densityComfy').classList.remove('active');
+  renderCatalog(); renderStore();
+});
+document.getElementById('densityComfy')?.addEventListener('click', () => {
+  densityMode = 'comfy';
+  document.getElementById('densityComfy').classList.add('active');
+  document.getElementById('densityCompact').classList.remove('active');
+  renderCatalog(); renderStore();
+});
+
+// ── BULK ACTIONS ──────────────────────────────────────────────────
+document.getElementById('prodAddSelected')?.addEventListener('click', () => addToStore([...selectedIds]));
 document.getElementById('prodClearSel')?.addEventListener('click', () => {
-  selectedIds.clear();
-  renderCatalog();
-  updateBulkBar();
+  selectedIds.clear(); renderCatalog(); updateBulkBar();
 });
-
-// ── ADD ALL VISIBLE ───────────────────────────────────────────────
 document.getElementById('addAllVisible')?.addEventListener('click', () => {
-  const ids = catalogVisible().filter(p => !storeIds.has(p.id)).map(p => p.id);
-  addToStore(ids);
+  addToStore(catalogVisible().filter(p => !storeIds.has(p.id)).map(p => p.id));
 });
-
-// ── ADD ALL IN CATEGORY ───────────────────────────────────────────
 document.getElementById('addAllCat')?.addEventListener('click', () => {
-  const cat = activeCat;
   const ids = SB_CATALOG
-    .filter(p => (cat === 'all' || p.cat === cat) && !storeIds.has(p.id))
+    .filter(p => (activeCat === 'all' || p.cat === activeCat) && !storeIds.has(p.id))
     .map(p => p.id);
   addToStore(ids);
 });
-
-// ── REMOVE ALL FROM STORE ─────────────────────────────────────────
 document.getElementById('removeAllStore')?.addEventListener('click', () => {
   if (!confirm('Remove all products from this store?')) return;
-  storeIds.clear();
-  renderAll();
-  showToast('All products removed from store');
+  storeIds.clear(); renderAll(); showToast('All products removed');
+});
+
+// ── DISTI SETTINGS ────────────────────────────────────────────────
+document.getElementById('distiBarToggle')?.addEventListener('click', () => {
+  const bar  = document.getElementById('distiBar');
+  const body = document.getElementById('distiBody');
+  const open = bar.classList.toggle('open');
+  body.style.display = open ? 'block' : 'none';
+});
+
+document.getElementById('distiMinQty')?.addEventListener('input', e => {
+  const val = parseInt(e.target.value, 10);
+  if (val >= 0) { distiMinQty = val; renderAll(); }
+});
+
+document.querySelectorAll('.prod-disti-radio').forEach(radio => {
+  radio.addEventListener('click', () => {
+    document.querySelectorAll('.prod-disti-radio').forEach(r => r.classList.remove('active'));
+    radio.classList.add('active');
+    showToast('Distributor rule updated');
+  });
 });
 
 // ── INIT PRODUCTS ─────────────────────────────────────────────────
-function initProducts() {
-  renderAll();
-}
+function initProducts() { renderAll(); }
 
 
 // ── INIT ──────────────────────────────────────────────────────────
