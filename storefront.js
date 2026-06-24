@@ -53,6 +53,12 @@ const orderModalBackdrop    = document.getElementById('orderModalBackdrop');
 const orderRef              = document.getElementById('orderRef');
 const orderModalClose       = document.getElementById('orderModalClose');
 const toast                 = document.getElementById('toast');
+const drawerAddressSection  = document.getElementById('drawerAddressSection');
+const shipToItemList        = document.getElementById('shipToItemList');
+const billingEditBtn        = document.getElementById('billingEditBtn');
+const billingDisplay        = document.getElementById('billingDisplay');
+const billingForm           = document.getElementById('billingForm');
+const applyAllShipBtn       = document.getElementById('applyAllShipBtn');
 
 // ── STATE ─────────────────────────────────────────────────────────
 let cart          = [];
@@ -65,8 +71,21 @@ let aiFilteredIds = null;   // null = show all, array = AI filtered
 let currentQuoteTab = 'pending';
 let aiConversation  = [];   // conversation history for multi-turn
 
+// Ship-to destinations per cart item: { [cartItemId]: 'msp'|'branch-X'|'custom' }
+let shipDestinations = {};
+// Custom address per cart item
+let customAddresses  = {};
+
 const SHIPPING_COSTS = { standard: 12, express: 28, overnight: 55 };
 const TAX_RATE = 0.085;
+
+// ── BRANCH OFFICES ────────────────────────────────────────────────
+const BRANCH_OFFICES = [
+  { id: 'branch-hq',     label: 'HQ — New York, NY',       addr: '142 West 36th Street, New York, NY 10018' },
+  { id: 'branch-chi',    label: 'Chicago Office',           addr: '330 N Wabash Ave, Chicago, IL 60611' },
+  { id: 'branch-la',     label: 'Los Angeles Office',       addr: '2000 Avenue of the Stars, Los Angeles, CA 90067' },
+  { id: 'branch-austin', label: 'Austin Office',            addr: '500 W 2nd Street, Austin, TX 78701' },
+];
 
 // ── PRODUCT DATA ──────────────────────────────────────────────────
 // Real Dell Latitude product line — seeded data with authentic specs
@@ -879,7 +898,7 @@ cartOverlay.addEventListener('click', closeCart);
 cartEmptyShop.addEventListener('click', closeCart);
 
 function renderCart() {
-  // Update count badge
+  // Count badge
   const total = cart.reduce((s, i) => s + i.qty, 0);
   cartCount.textContent = total;
   cartCount.classList.toggle('hidden', total === 0);
@@ -888,6 +907,7 @@ function renderCart() {
   if (cart.length === 0) {
     cartEmpty.style.display = 'flex';
     cartFooter.style.display = 'none';
+    drawerAddressSection.style.display = 'none';
     cartItems.innerHTML = '';
     cartItems.appendChild(cartEmpty);
     return;
@@ -895,11 +915,15 @@ function renderCart() {
 
   cartEmpty.style.display = 'none';
   cartFooter.style.display = 'flex';
+  drawerAddressSection.style.display = 'block';
 
-  const existing = cartItems.querySelectorAll('.cart-item');
-  existing.forEach(el => el.remove());
+  // Remove old cart-item rows
+  cartItems.querySelectorAll('.cart-item').forEach(el => el.remove());
 
   cart.forEach(item => {
+    // Ensure a default destination exists
+    if (!shipDestinations[item.id]) shipDestinations[item.id] = 'msp';
+
     const el = document.createElement('div');
     el.className = 'cart-item';
     el.innerHTML = `
@@ -923,21 +947,162 @@ function renderCart() {
         const ci = cart.find(i => i.id === btn.dataset.id);
         if (!ci) return;
         ci.qty += +btn.dataset.dir;
-        if (ci.qty <= 0) cart = cart.filter(i => i.id !== btn.dataset.id);
+        if (ci.qty <= 0) {
+          delete shipDestinations[ci.id];
+          delete customAddresses[ci.id];
+          cart = cart.filter(i => i.id !== btn.dataset.id);
+        }
         renderCart();
       });
     });
 
     el.querySelector('.cart-item-remove').addEventListener('click', e => {
-      cart = cart.filter(i => i.id !== e.target.dataset.id);
+      const id = e.target.dataset.id;
+      delete shipDestinations[id];
+      delete customAddresses[id];
+      cart = cart.filter(i => i.id !== id);
       renderCart();
     });
 
     cartItems.insertBefore(el, cartEmpty);
   });
 
+  renderShipToList();
   updateCartTotals();
 }
+
+// ── SHIP-TO PER ITEM ─────────────────────────────────────────────
+function shipDestLabel(dest) {
+  if (dest === 'msp') return 'Ship to MSP (staging)';
+  if (dest === 'custom') return 'Custom address';
+  const branch = BRANCH_OFFICES.find(b => b.id === dest);
+  return branch ? branch.label : dest;
+}
+
+function renderShipToList() {
+  shipToItemList.innerHTML = '';
+  cart.forEach(item => {
+    const dest = shipDestinations[item.id] || 'msp';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'shipto-item';
+
+    // Build select options
+    const mspOpt    = `<option value="msp" ${dest === 'msp' ? 'selected' : ''}>Ship to MSP (staging & imaging)</option>`;
+    const branchOpts = BRANCH_OFFICES.map(b =>
+      `<option value="${b.id}" ${dest === b.id ? 'selected' : ''}>${b.label}</option>`
+    ).join('');
+    const customOpt = `<option value="custom" ${dest === 'custom' ? 'selected' : ''}>Custom address…</option>`;
+
+    const customAddr = customAddresses[item.id] || {};
+    const customFormHtml = dest === 'custom' ? `
+      <div class="shipto-custom-form" data-id="${item.id}">
+        <input type="text"  class="addr-input" placeholder="Recipient name" value="${customAddr.name   || ''}" data-field="name">
+        <input type="text"  class="addr-input" placeholder="Street address"  value="${customAddr.street || ''}" data-field="street">
+        <div class="shipto-form-row">
+          <input type="text"  class="addr-input" placeholder="City"  value="${customAddr.city  || ''}" data-field="city" style="flex:1">
+          <input type="text"  class="addr-input addr-state" placeholder="ST" value="${customAddr.state || ''}" data-field="state" maxlength="2">
+          <input type="text"  class="addr-input addr-zip"   placeholder="ZIP" value="${customAddr.zip   || ''}" data-field="zip" maxlength="10">
+        </div>
+      </div>
+    ` : '';
+
+    wrapper.innerHTML = `
+      <div class="shipto-item-name">${item.name}</div>
+      <select class="shipto-select" data-id="${item.id}">
+        <optgroup label="MSP">${mspOpt}</optgroup>
+        <optgroup label="Branch offices">${branchOpts}</optgroup>
+        <optgroup label="Other">${customOpt}</optgroup>
+      </select>
+      ${customFormHtml}
+    `;
+
+    // Select change handler
+    wrapper.querySelector('.shipto-select').addEventListener('change', e => {
+      shipDestinations[item.id] = e.target.value;
+      renderShipToList();
+    });
+
+    // Custom address field listeners
+    if (dest === 'custom') {
+      wrapper.querySelectorAll('.shipto-custom-form input').forEach(input => {
+        input.addEventListener('input', e => {
+          if (!customAddresses[item.id]) customAddresses[item.id] = {};
+          customAddresses[item.id][e.target.dataset.field] = e.target.value;
+        });
+      });
+    }
+
+    shipToItemList.appendChild(wrapper);
+  });
+}
+
+// Apply-all ship destination — inline picker
+applyAllShipBtn.addEventListener('click', () => {
+  if (cart.length === 0) return;
+
+  const existing = document.getElementById('applyAllPicker');
+  if (existing) { existing.remove(); return; }
+
+  const picker = document.createElement('div');
+  picker.id = 'applyAllPicker';
+  picker.style.cssText = 'position:absolute;z-index:600;background:var(--bg-panel);border:1px solid var(--border-2);min-width:230px;right:0;top:100%;margin-top:4px;';
+
+  const opts = [
+    { val: 'msp', label: 'Ship to MSP (staging & imaging)' },
+    ...BRANCH_OFFICES.map(b => ({ val: b.id, label: b.label })),
+  ];
+
+  picker.innerHTML = '<div style="padding:8px 12px;font-family:\'JetBrains Mono\',monospace;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);border-bottom:1px solid var(--border);">Apply to all items</div>' +
+    opts.map(o => '<div class="apply-all-opt" data-val="' + o.val + '" style="padding:9px 12px;font-size:13px;font-family:\'Inter\',sans-serif;color:var(--text-2);cursor:pointer;">' + o.label + '</div>').join('');
+
+  const addrBlock = applyAllShipBtn.closest('.addr-block');
+  addrBlock.style.position = 'relative';
+  addrBlock.appendChild(picker);
+
+  picker.querySelectorAll('.apply-all-opt').forEach(opt => {
+    opt.addEventListener('mouseover', () => { opt.style.background = 'var(--bg-row)'; });
+    opt.addEventListener('mouseout',  () => { opt.style.background = ''; });
+    opt.addEventListener('click', () => {
+      cart.forEach(item => { shipDestinations[item.id] = opt.dataset.val; });
+      renderShipToList();
+      picker.remove();
+      showToast('Destination applied to all items');
+    });
+  });
+
+  setTimeout(() => {
+    document.addEventListener('click', function handler(e) {
+      if (!picker.contains(e.target) && e.target !== applyAllShipBtn) {
+        picker.remove();
+        document.removeEventListener('click', handler);
+      }
+    });
+  }, 10);
+});
+
+// ── BILLING ADDRESS EDIT ──────────────────────────────────────────
+billingEditBtn.addEventListener('click', () => {
+  const editing = billingForm.style.display !== 'none';
+  if (editing) {
+    // Save — rebuild display from inputs
+    const company = document.getElementById('billCompany').value.trim();
+    const street  = document.getElementById('billStreet').value.trim();
+    const city    = document.getElementById('billCity').value.trim();
+    const state   = document.getElementById('billState').value.trim().toUpperCase();
+    const zip     = document.getElementById('billZip').value.trim();
+    billingDisplay.innerHTML = [company, street, `${city}, ${state} ${zip}`, 'United States']
+      .filter(Boolean)
+      .map(l => `<div class="addr-line">${l}</div>`)
+      .join('');
+    billingForm.style.display = 'none';
+    billingDisplay.style.display = 'block';
+    billingEditBtn.textContent = 'Edit';
+  } else {
+    billingForm.style.display = 'flex';
+    billingDisplay.style.display = 'none';
+    billingEditBtn.textContent = 'Save';
+  }
+});
 
 function updateCartTotals() {
   const shipping = SHIPPING_COSTS[shippingSelect.value] || 12;
@@ -959,6 +1124,8 @@ checkoutBtn.addEventListener('click', () => {
   closeCart();
   orderModalBackdrop.style.display = 'flex';
   cart = [];
+  shipDestinations = {};
+  customAddresses  = {};
   renderCart();
 });
 
