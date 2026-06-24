@@ -1784,6 +1784,80 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 }
 .saved-delete-btn:hover { opacity: 1; background: var(--danger-bg); }
 
+
+/* ── ORDER STATUS BADGES ────────────────────────────────────────── */
+.badge-info     { background: var(--info-bg);  color: var(--info);  font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; padding:2px 8px; }
+.badge-warn     { background: var(--warn-bg);  color: var(--warn);  font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; padding:2px 8px; }
+.badge-approved { background: var(--good-bg);  color: var(--good);  font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; padding:2px 8px; }
+
+/* ── ORDER PROGRESS BAR ─────────────────────────────────────────── */
+.order-progress {
+  display: flex; align-items: center;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.order-step {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  flex-shrink: 0;
+}
+.order-step-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 2px solid var(--border-2);
+  background: var(--bg-panel);
+  transition: background 0.2s, border-color 0.2s;
+}
+.order-step.done .order-step-dot  { background: var(--good);   border-color: var(--good); }
+.order-step.current .order-step-dot { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); }
+.order-step-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-3); white-space: nowrap;
+}
+.order-step.done .order-step-label    { color: var(--good); }
+.order-step.current .order-step-label { color: var(--accent); font-weight: 700; }
+.order-step-line {
+  flex: 1; height: 2px; background: var(--border-2); margin: 0 4px;
+  margin-bottom: 14px;
+}
+
+/* ── ORDER DETAIL ROWS ──────────────────────────────────────────── */
+.order-details {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.order-detail-row {
+  display: flex; align-items: baseline; gap: 10px; font-size: 12px;
+}
+.order-detail-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-3); width: 56px; flex-shrink: 0;
+}
+.order-detail-val { color: var(--text-2); font-family: 'Inter', sans-serif; }
+.order-tracking-link {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600;
+  color: var(--accent); text-decoration: none;
+}
+.order-tracking-link:hover { text-decoration: underline; }
+
+/* ── ORDER NOTE ─────────────────────────────────────────────────── */
+.order-note {
+  margin: 0 18px 0;
+  padding: 8px 10px;
+  background: var(--info-bg); color: var(--info);
+  font-size: 12px; font-family: 'Inter', sans-serif;
+  border-left: 3px solid var(--info);
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── ORDER FOOTER UPDATES ───────────────────────────────────────── */
+.order-reorder-btn { flex-shrink: 0; }
+.order-dispatch-note {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: var(--text-3); font-style: italic;
+}
+
 /* ── RESPONSIVE ─────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .shop-hero { flex-direction: column; align-items: flex-start; gap: 24px; }
