@@ -37,6 +37,7 @@ const aiClose           = document.getElementById('aiClose');
 const aiChat            = document.getElementById('aiChat');
 const aiInput           = document.getElementById('aiInput');
 const aiSendBtn         = document.getElementById('aiSendBtn');
+const aiStartOverBtn    = document.getElementById('aiStartOverBtn');
 const aiQuickPrompts    = document.getElementById('aiQuickPrompts');
 const aiResultBanner    = document.getElementById('aiResultBanner');
 const aiResultTitle     = document.getElementById('aiResultTitle');
@@ -1828,6 +1829,27 @@ document.querySelectorAll('.ai-quick-btn').forEach(btn => {
 });
 
 aiSendBtn.addEventListener('click', sendAiMessage);
+
+aiStartOverBtn?.addEventListener('click', () => {
+  // Clear conversation history and filters
+  aiConversation = [];
+  aiFilteredIds  = null;
+  aiResultBanner.style.display = 'none';
+  renderProductGrid();
+
+  // Clear chat messages, keep just the greeting
+  aiChat.innerHTML = `
+    <div class="ai-message ai-msg-system">
+      <div class="ai-msg-content">Hi Jane — tell me what you need and I'll find the right products from your company store. You can describe a role, a use case, or a budget.</div>
+    </div>
+  `;
+
+  // Show quick prompts again, hide start over
+  aiQuickPrompts.style.display = 'flex';
+  aiStartOverBtn.style.display = 'none';
+  aiInput.value = '';
+  aiInput.focus();
+});
 aiInput.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAiMessage(); }
 });
@@ -1875,12 +1897,23 @@ async function sendAiMessage() {
     battery: p.battery
   }));
 
+  const currentlyShowing = aiFilteredIds && aiFilteredIds.length > 0
+    ? `\n\nProducts currently shown to the customer: ${JSON.stringify(aiFilteredIds)}. If the user asks to ADD something (e.g. "add a dock", "include a bag"), keep ALL currently shown product IDs and append the new ones. Only replace the full list if the user is clearly starting a new request.`
+    : '';
+
   const systemPrompt = `You are a helpful IT procurement assistant for Acme Corp's internal technology store. Your job is to help employees find the right technology products from their company's approved catalog.
 
 The product catalog is:
 ${JSON.stringify(catalog, null, 2)}
 
-When a user describes what they need, recommend specific products from the catalog by their exact ID. 
+When a user describes what they need, recommend specific products from the catalog by their exact ID.
+
+IMPORTANT RULES:
+- If the user says "add", "include", "also", "and a", or similar additive language, KEEP the currently shown products and ADD the new ones to recommendedIds.
+- Only start fresh if the user is clearly asking for something completely different.
+- Recommend up to 6 products total when adding to existing results.
+- Never drop a previously recommended product unless the user explicitly asks to remove it.${currentlyShowing}
+
 Respond in JSON with this exact format:
 {
   "message": "Your helpful response in plain text (no markdown)",
@@ -1889,7 +1922,7 @@ Respond in JSON with this exact format:
   "filterSub": "Short explanation, e.g. 'Based on your budget and requirements'"
 }
 
-Keep message conversational and under 80 words. Always recommend at least 1 product. Recommend up to 4 products max.
+Keep message conversational and under 80 words. Always recommend at least 1 product.
 Return ONLY the JSON object, nothing else.`;
 
   // Maintain conversation history
@@ -1950,6 +1983,8 @@ Return ONLY the JSON object, nothing else.`;
         </div>
       `;
       resultMsg.querySelector('#aiViewResultsBtn').addEventListener('click', closeAiPanel);
+      // Show the start over button now that we have results
+      if (aiStartOverBtn) aiStartOverBtn.style.display = 'inline-flex';
       aiChat.appendChild(resultMsg);
       aiChat.scrollTop = aiChat.scrollHeight;
     }
