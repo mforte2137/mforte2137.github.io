@@ -1422,6 +1422,207 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 }
 .snackbar-btn-cart:hover { opacity: 0.88; }
 
+
+/* ══════════════════════════════════════════════════════════════════
+   CHECKOUT OPTIONS + GLOBAL PAYMENTS MODAL
+══════════════════════════════════════════════════════════════════ */
+
+/* ── CHECKOUT OPTIONS IN CART FOOTER ───────────────────────────── */
+.checkout-options { display: flex; flex-direction: column; gap: 8px; }
+
+.checkout-opts-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-3);
+}
+
+.checkout-opts-row { display: flex; gap: 8px; }
+
+.checkout-opt-btn {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4px;
+  padding: 12px 10px;
+  border-radius: 0; cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; font-weight: 700;
+  transition: opacity 0.15s, transform 0.1s;
+  border: none;
+}
+.checkout-opt-btn:active { transform: scale(0.98); }
+
+.checkout-opt-pay {
+  background: var(--accent); color: #fff;
+}
+.checkout-opt-pay:hover { opacity: 0.88; }
+
+.checkout-opt-invoice {
+  background: var(--text); color: var(--bg);
+}
+.checkout-opt-invoice:hover { opacity: 0.82; }
+
+.checkout-opt-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px; font-weight: 400;
+  opacity: 0.75; letter-spacing: 0;
+}
+
+/* ── GLOBAL PAYMENTS MODAL ──────────────────────────────────────── */
+.pay-modal {
+  width: 460px; max-width: 95vw;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.pay-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+.pay-modal-brand {
+  display: flex; align-items: center; gap: 14px;
+}
+
+.pay-secure-badge {
+  display: flex; align-items: center; gap: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--good);
+  background: var(--good-bg);
+  padding: 3px 7px;
+  border: 1px solid var(--good);
+}
+
+/* Order total strip */
+.pay-summary-strip {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 22px;
+  background: var(--bg-row);
+  border-bottom: 1px solid var(--border);
+}
+
+.pay-summary-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-3);
+}
+
+.pay-summary-amount {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 20px; font-weight: 700;
+  color: var(--text); letter-spacing: -0.02em;
+}
+
+/* Card form */
+.pay-form { padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+
+.pay-field-group { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+
+.pay-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-2);
+}
+
+.pay-input {
+  font-family: 'Inter', sans-serif; font-size: 14px;
+  padding: 9px 12px; border: 1px solid var(--border-2);
+  background: var(--bg); color: var(--text);
+  border-radius: 0; width: 100%;
+  letter-spacing: 0.02em;
+}
+.pay-input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+.pay-input.error { border-color: var(--danger); background: var(--danger-bg); }
+
+.pay-card-wrap { position: relative; }
+.pay-card-type {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.pay-card-type.visa  { color: #1a1f71; }
+.pay-card-type.mc    { color: #eb001b; }
+.pay-card-type.amex  { color: #007bc1; }
+
+.pay-row { display: flex; gap: 10px; }
+
+.pay-cvv-wrap { position: relative; }
+.pay-cvv-icon {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--text-3); pointer-events: none;
+}
+
+.pay-card-num { font-family: 'JetBrains Mono', monospace; font-size: 15px; letter-spacing: 0.1em; }
+
+.pay-error {
+  background: var(--danger-bg); color: var(--danger);
+  border: 1px solid var(--danger);
+  font-family: 'Inter', sans-serif; font-size: 12px;
+  padding: 8px 12px;
+}
+
+.pay-submit-btn {
+  width: 100%; padding: 13px;
+  background: #E31837; color: #fff; border: none;
+  font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700;
+  cursor: pointer; border-radius: 0;
+  transition: opacity 0.15s;
+}
+.pay-submit-btn:hover { opacity: 0.88; }
+.pay-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Processing state */
+.pay-processing {
+  padding: 48px 22px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px;
+  background: var(--bg-panel);
+}
+
+.pay-spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border-2);
+  border-top-color: #E31837;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.pay-processing-text {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 16px; font-weight: 700; color: var(--text);
+}
+.pay-processing-sub {
+  font-family: 'Inter', sans-serif; font-size: 12px; color: var(--text-3);
+}
+
+/* Modal footer */
+.pay-modal-footer {
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; gap: 6px;
+  padding: 12px 22px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-row);
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  color: var(--text-3); text-align: center;
+}
+
+.pay-card-logos { display: flex; gap: 5px; margin-left: 6px; }
+.pay-card-logo {
+  font-family: 'JetBrains Mono', monospace; font-size: 8px; font-weight: 700;
+  padding: 2px 5px; border-radius: 2px;
+  border: 1px solid var(--border-2);
+}
+.pay-card-logo.visa  { color: #1a1f71; border-color: #1a1f71; }
+.pay-card-logo.mc    { color: #eb001b; border-color: #eb001b; }
+.pay-card-logo.amex  { color: #007bc1; border-color: #007bc1; }
+
 /* ── RESPONSIVE ─────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .shop-hero { flex-direction: column; align-items: flex-start; gap: 24px; }
