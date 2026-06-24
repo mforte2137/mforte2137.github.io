@@ -59,6 +59,7 @@ const billingEditBtn        = document.getElementById('billingEditBtn');
 const billingDisplay        = document.getElementById('billingDisplay');
 const billingForm           = document.getElementById('billingForm');
 const applyAllShipBtn       = document.getElementById('applyAllShipBtn');
+const endUserItemList       = document.getElementById('endUserItemList');
 
 // ── STATE ─────────────────────────────────────────────────────────
 let cart          = [];
@@ -75,6 +76,8 @@ let aiConversation  = [];   // conversation history for multi-turn
 let shipDestinations = {};
 // Custom address per cart item
 let customAddresses  = {};
+// End-user info per cart item: { [id]: { name, email, notes } }
+let endUserData = {};
 
 const SHIPPING_COSTS = { standard: 12, express: 28, overnight: 55 };
 const TAX_RATE = 0.085;
@@ -897,6 +900,13 @@ cartClose.addEventListener('click', closeCart);
 cartOverlay.addEventListener('click', closeCart);
 cartEmptyShop.addEventListener('click', closeCart);
 
+
+// Products that REQUIRE end-user assignment (need M365/Intune provisioning)
+const REQUIRES_USER = ['laptop', 'bundle'];
+function itemRequiresUser(item) {
+  return REQUIRES_USER.includes(item.category);
+}
+
 function renderCart() {
   // Count badge
   const total = cart.reduce((s, i) => s + i.qty, 0);
@@ -968,6 +978,7 @@ function renderCart() {
   });
 
   renderShipToList();
+  renderEndUserList();
   updateCartTotals();
 }
 
@@ -1080,28 +1091,101 @@ applyAllShipBtn.addEventListener('click', () => {
   }, 10);
 });
 
+
+// ── END USER ASSIGNMENT ───────────────────────────────────────────
+function renderEndUserList() {
+  if (!endUserItemList) return;
+  endUserItemList.innerHTML = '';
+
+  // Only show items that could need a user (laptops + bundles = required; others = optional)
+  // Show ALL items but mark required ones clearly
+  const hasAny = cart.length > 0;
+  if (!hasAny) return;
+
+  cart.forEach(item => {
+    const required = itemRequiresUser(item);
+    const eu = endUserData[item.id] || {};
+    const hasData = eu.name || eu.email;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'eusr-item';
+    wrapper.dataset.id = item.id;
+
+    // For optional items, start collapsed if no data
+    const showFields = required || hasData || item._euExpanded;
+
+    wrapper.innerHTML = `
+      <div class="eusr-item-header">
+        <div class="eusr-item-name">${item.name}</div>
+        ${required
+          ? '<span class="eusr-required-badge">Required</span>'
+          : '<span class="eusr-optional-badge">Optional</span>'}
+      </div>
+      ${showFields ? `
+        <div class="eusr-fields">
+          <div class="eusr-row">
+            <input type="text" class="eusr-input" data-field="name" data-id="${item.id}"
+              placeholder="Full name" value="${eu.name || ''}" />
+            <input type="email" class="eusr-input" data-field="email" data-id="${item.id}"
+              placeholder="Work email" value="${eu.email || ''}" />
+          </div>
+          <textarea class="eusr-input eusr-notes" data-field="notes" data-id="${item.id}"
+            placeholder="Notes for MSP — e.g. start date, admin rights, preferred language">${eu.notes || ''}</textarea>
+        </div>
+        ${!required ? '<button class="eusr-toggle-link" data-id="' + item.id + '" data-action="hide">Hide ↑</button>' : ''}
+      ` : `
+        <button class="eusr-toggle-link" data-id="${item.id}" data-action="show">+ Assign a user</button>
+      `}
+      ${hasData ? '<div class="eusr-assigned-tag">✓ ' + (eu.name || eu.email) + '</div>' : ''}
+    `;
+
+    // Input listeners
+    wrapper.querySelectorAll('.eusr-input').forEach(input => {
+      input.addEventListener('input', e => {
+        if (!endUserData[item.id]) endUserData[item.id] = {};
+        endUserData[item.id][e.target.dataset.field] = e.target.value;
+      });
+    });
+
+    // Toggle show/hide for optional items
+    const toggleBtn = wrapper.querySelector('.eusr-toggle-link');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        item._euExpanded = toggleBtn.dataset.action === 'show';
+        renderEndUserList();
+      });
+    }
+
+    endUserItemList.appendChild(wrapper);
+  });
+
+  // Auto-open end-user block if any items require a user
+  const hasRequired = cart.some(i => itemRequiresUser(i));
+  if (hasRequired) {
+    const block = document.getElementById('endUserBlock');
+    if (block && !block.classList.contains('open')) block.classList.add('open');
+  }
+}
+
 // ── BILLING ADDRESS EDIT ──────────────────────────────────────────
 billingEditBtn.addEventListener('click', () => {
-  const editing = billingForm.style.display !== 'none';
-  if (editing) {
-    // Save — rebuild display from inputs
-    const company = document.getElementById('billCompany').value.trim();
-    const street  = document.getElementById('billStreet').value.trim();
-    const city    = document.getElementById('billCity').value.trim();
-    const state   = document.getElementById('billState').value.trim().toUpperCase();
-    const zip     = document.getElementById('billZip').value.trim();
-    billingDisplay.innerHTML = [company, street, `${city}, ${state} ${zip}`, 'United States']
-      .filter(Boolean)
-      .map(l => `<div class="addr-line">${l}</div>`)
-      .join('');
-    billingForm.style.display = 'none';
-    billingDisplay.style.display = 'block';
-    billingEditBtn.textContent = 'Edit';
-  } else {
-    billingForm.style.display = 'flex';
-    billingDisplay.style.display = 'none';
-    billingEditBtn.textContent = 'Save';
-  }
+  billingForm.style.display = 'flex';
+  billingDisplay.style.display = 'none';
+});
+
+document.getElementById('billingSaveBtn').addEventListener('click', () => {
+  const company = document.getElementById('billCompany').value.trim();
+  const street  = document.getElementById('billStreet').value.trim();
+  const city    = document.getElementById('billCity').value.trim();
+  const state   = document.getElementById('billState').value.trim().toUpperCase();
+  const zip     = document.getElementById('billZip').value.trim();
+  billingDisplay.innerHTML = [company, street, `${city}, ${state} ${zip}`, 'United States']
+    .filter(Boolean)
+    .map(l => `<div class="addr-line">${l}</div>`)
+    .join('');
+  billingForm.style.display = 'none';
+  billingDisplay.style.display = 'block';
+  showToast('Billing address saved');
 });
 
 function updateCartTotals() {
@@ -1126,6 +1210,7 @@ checkoutBtn.addEventListener('click', () => {
   cart = [];
   shipDestinations = {};
   customAddresses  = {};
+  endUserData = {};
   renderCart();
 });
 
@@ -1357,6 +1442,16 @@ Return ONLY the JSON object, nothing else.`;
 
   aiSendBtn.disabled = false;
 }
+
+
+// ── ACCORDION TOGGLES ─────────────────────────────────────────────
+document.addEventListener('click', e => {
+  const header = e.target.closest('[data-toggle]');
+  if (!header) return;
+  const blockId = header.dataset.toggle;
+  const block = document.getElementById(blockId);
+  if (block) block.classList.toggle('open');
+});
 
 // ── INIT ──────────────────────────────────────────────────────────
 function init() {
