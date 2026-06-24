@@ -426,7 +426,13 @@
 
     <div class="ai-input-area">
       <textarea class="ai-textarea" id="aiInput" placeholder="Describe what you need…" rows="3"></textarea>
-      <button class="btn-accent ai-send-btn" id="aiSendBtn">Ask</button>
+      <div class="ai-input-actions">
+        <button class="btn-ghost ai-startover-btn" id="aiStartOverBtn" style="display:none;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+          Start over
+        </button>
+        <button class="btn-accent ai-send-btn" id="aiSendBtn">Ask</button>
+      </div>
     </div>
   </aside>
 
