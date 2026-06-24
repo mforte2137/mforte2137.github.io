@@ -56,16 +56,18 @@ function clearForm() {
 // ── Notifications ─────────────────────────────
 function showSuccess(message) {
     const el = document.getElementById('successMessage');
+    if (!el) { console.warn('showSuccess: element not found', message); return; }
     el.textContent = message;
     el.style.display = 'block';
-    setTimeout(() => el.style.display = 'none', 5000);
+    setTimeout(() => { if (el) el.style.display = 'none'; }, 5000);
 }
 
 function showError(message) {
     const el = document.getElementById('errorMessage');
+    if (!el) { console.warn('showError: element not found', message); return; }
     el.textContent = message;
     el.style.display = 'block';
-    setTimeout(() => el.style.display = 'none', 8000);
+    setTimeout(() => { if (el) el.style.display = 'none'; }, 8000);
 }
 
 // ── File Upload ───────────────────────────────
@@ -268,9 +270,9 @@ function renderKB(issues = knowledgeBase) {
     container.innerHTML = issues.map(issue => {
         const references = [];
         if (issue.references?.jira)       references.push(`<a href="${issue.references.jira}" class="reference-link" target="_blank">🎫 Jira Ticket</a>`);
-        if (issue.references?.intercom)   references.push(`<a href="https://app.intercom.com/a/conversations/${issue.references.intercom}" class="reference-link" target="_blank">💬 Chat ${issue.references.intercom}</a>`);
+        if (issue.references?.intercom)   references.push(`<a href="${issue.references.intercom}" class="reference-link" target="_blank">💬 Featurebase Chat</a>`);
         if (issue.references?.loom)       references.push(`<a href="${issue.references.loom}" class="reference-link" target="_blank">🎥 Loom Video</a>`);
-        if (issue.references?.additional) references.push(`<span class="reference-link">🔗 ${issue.references.additional}</span>`);
+        if (issue.references?.additional) references.push(`<a href="${issue.references.additional}" class="reference-link" target="_blank">💬 Slack</a>`);
 
         const images = issue.images ? issue.images.map(img =>
             `<img src="${img.data}" alt="${img.name}" style="max-width:200px;margin:10px 10px 0 0;border-radius:8px;cursor:pointer;" onclick="window.open('${img.data}','_blank')">`
@@ -319,15 +321,7 @@ function updateStats() {
 function animateStat(id, newValue) {
     const el = document.getElementById(id);
     if (!el) return;
-    const oldValue = parseInt(el.textContent, 10) || 0;
-    if (oldValue === newValue) return;
-    // Brief flash to signal the value changed
-    el.style.transition = 'opacity 0.15s';
-    el.style.opacity = '0';
-    setTimeout(() => {
-        el.textContent = newValue;
-        el.style.opacity = '1';
-    }, 150);
+    el.textContent = newValue;
 }
 
 // ── Export / Import ───────────────────────────
