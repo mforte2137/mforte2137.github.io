@@ -486,9 +486,14 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   overflow: hidden;
 }
 .card-img-wrap img {
-  max-width: 85%; max-height: 85%;
-  object-fit: contain;
+  width: 100%; height: 100%;
+  object-fit: cover;
   display: block;
+}
+
+/* Product detail modal keeps contain so full product is visible */
+.pm-img-col img {
+  object-fit: contain !important;
 }
 .card-img-placeholder {
   color: var(--text-3);
