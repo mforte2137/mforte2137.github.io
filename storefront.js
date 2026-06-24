@@ -52,6 +52,20 @@ const compareModalClose     = document.getElementById('compareModalClose');
 const orderModalBackdrop    = document.getElementById('orderModalBackdrop');
 const orderRef              = document.getElementById('orderRef');
 const orderModalClose       = document.getElementById('orderModalClose');
+const payModalBackdrop      = document.getElementById('payModalBackdrop');
+const payModalClose         = document.getElementById('payModalClose');
+const payModalTotal         = document.getElementById('payModalTotal');
+const payForm               = document.getElementById('payForm');
+const payProcessing         = document.getElementById('payProcessing');
+const payCardNum            = document.getElementById('payCardNum');
+const payExpiry             = document.getElementById('payExpiry');
+const payCvv                = document.getElementById('payCvv');
+const payName               = document.getElementById('payName');
+const payZip                = document.getElementById('payZip');
+const payCardType           = document.getElementById('payCardType');
+const payError              = document.getElementById('payError');
+const paySubmitBtn          = document.getElementById('paySubmitBtn');
+const payBtnAmount          = document.getElementById('payBtnAmount');
 const toast                 = document.getElementById('toast');
 const cartSnackbar          = document.getElementById('cartSnackbar');
 const snackbarName          = document.getElementById('snackbarName');
@@ -1222,9 +1236,8 @@ function updateCartTotals() {
 
 shippingSelect.addEventListener('change', updateCartTotals);
 
-// Checkout
-checkoutBtn.addEventListener('click', () => {
-  if (cart.length === 0) return;
+// ── CHECKOUT PATHS ───────────────────────────────────────────────
+function completeOrder() {
   orderRef.textContent = genOrderRef();
   closeCart();
   orderModalBackdrop.style.display = 'flex';
@@ -1233,6 +1246,18 @@ checkoutBtn.addEventListener('click', () => {
   customAddresses  = {};
   endUserData = {};
   renderCart();
+}
+
+// Invoice path — straight to Salesbuildr
+document.getElementById('checkoutInvoiceBtn').addEventListener('click', () => {
+  if (cart.length === 0) return;
+  completeOrder();
+});
+
+// Pay now path — open Global Payments modal
+document.getElementById('checkoutPayBtn').addEventListener('click', () => {
+  if (cart.length === 0) return;
+  openPayModal();
 });
 
 // Save basket
@@ -1244,6 +1269,114 @@ saveBasketBtn.addEventListener('click', () => {
 // Order modal close
 orderModalClose.addEventListener('click', () => { orderModalBackdrop.style.display = 'none'; });
 orderModalBackdrop.addEventListener('click', e => { if (e.target === orderModalBackdrop) orderModalBackdrop.style.display = 'none'; });
+
+// ── GLOBAL PAYMENTS MODAL ─────────────────────────────────────────
+function openPayModal() {
+  // Set amount
+  const shipping = SHIPPING_COSTS[shippingSelect.value] || 12;
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const total = subtotal + (subtotal * TAX_RATE) + shipping;
+  payModalTotal.textContent = fmt(total);
+  payBtnAmount.textContent  = fmt(total);
+
+  // Reset form state
+  payForm.style.display      = 'flex';
+  payProcessing.style.display = 'none';
+  payError.style.display     = 'none';
+  payCardNum.value = payExpiry.value = payCvv.value = payZip.value = payName.value = '';
+  payCardType.textContent = '';
+  payCardType.className = 'pay-card-type';
+  [payCardNum, payExpiry, payCvv, payZip, payName].forEach(el => el.classList.remove('error'));
+  paySubmitBtn.disabled = false;
+  paySubmitBtn.querySelector('#paySubmitLabel').style.display = '';
+
+  payModalBackdrop.style.display = 'flex';
+}
+
+function closePayModal() {
+  payModalBackdrop.style.display = 'none';
+}
+
+payModalClose.addEventListener('click', closePayModal);
+payModalBackdrop.addEventListener('click', e => { if (e.target === payModalBackdrop) closePayModal(); });
+
+// ── CARD NUMBER FORMATTING + TYPE DETECTION ───────────────────────
+payCardNum.addEventListener('input', e => {
+  let val = e.target.value.replace(/\D/g, '').slice(0, 16);
+  // Format with spaces every 4 digits
+  val = val.replace(/(\d{4})(?=\d)/g, '$1 ');
+  e.target.value = val;
+  detectCardType(val.replace(/\s/g, ''));
+});
+
+function detectCardType(num) {
+  payCardType.className = 'pay-card-type';
+  if (/^4/.test(num))          { payCardType.textContent = 'VISA';  payCardType.classList.add('visa'); }
+  else if (/^5[1-5]/.test(num)) { payCardType.textContent = 'MC';    payCardType.classList.add('mc'); }
+  else if (/^3[47]/.test(num))  { payCardType.textContent = 'AMEX';  payCardType.classList.add('amex'); }
+  else                           { payCardType.textContent = ''; }
+}
+
+// Expiry formatting
+payExpiry.addEventListener('input', e => {
+  let val = e.target.value.replace(/\D/g, '').slice(0, 4);
+  if (val.length >= 3) val = val.slice(0,2) + ' / ' + val.slice(2);
+  e.target.value = val;
+});
+
+// CVV — numbers only
+payCvv.addEventListener('input', e => {
+  e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+});
+
+// ZIP — numbers only
+payZip.addEventListener('input', e => {
+  e.target.value = e.target.value.replace(/\D/g, '').slice(0, 5);
+});
+
+// ── PAYMENT SUBMISSION ────────────────────────────────────────────
+paySubmitBtn.addEventListener('click', () => {
+  payError.style.display = 'none';
+  let valid = true;
+
+  // Basic validation
+  const name  = payName.value.trim();
+  const num   = payCardNum.value.replace(/\s/g, '');
+  const exp   = payExpiry.value.trim();
+  const cvv   = payCvv.value.trim();
+  const zip   = payZip.value.trim();
+
+  if (!name)         { payName.classList.add('error');    valid = false; }
+  else               { payName.classList.remove('error'); }
+
+  if (num.length < 13) { payCardNum.classList.add('error');  valid = false; }
+  else                  { payCardNum.classList.remove('error'); }
+
+  if (!/^\d{2} \/ \d{2}$/.test(exp)) { payExpiry.classList.add('error');  valid = false; }
+  else                               { payExpiry.classList.remove('error'); }
+
+  if (cvv.length < 3) { payCvv.classList.add('error');  valid = false; }
+  else                { payCvv.classList.remove('error'); }
+
+  if (zip.length < 4) { payZip.classList.add('error');  valid = false; }
+  else                { payZip.classList.remove('error'); }
+
+  if (!valid) {
+    payError.textContent = 'Please check the highlighted fields and try again.';
+    payError.style.display = 'block';
+    return;
+  }
+
+  // Show processing
+  payForm.style.display       = 'none';
+  payProcessing.style.display = 'flex';
+
+  // Simulate processing delay then succeed
+  setTimeout(() => {
+    closePayModal();
+    completeOrder();
+  }, 2800);
+});
 
 // ── QUOTES ────────────────────────────────────────────────────────
 function renderQuotes() {
