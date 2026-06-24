@@ -1341,6 +1341,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 #orderModalClose { width: 100%; justify-content: center; }
 
 /* ── TOAST ──────────────────────────────────────────────────────── */
+/* ── SIMPLE TOAST (confirmations, errors) ───────────────────────── */
 .toast {
   position: fixed; bottom: 24px; right: 24px; z-index: 600;
   background: var(--text); color: var(--bg);
@@ -1350,7 +1351,73 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   transition: opacity 0.2s, transform 0.2s;
   pointer-events: none;
 }
-.toast.show { opacity: 1; transform: translateY(0); }
+.toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+/* ── CART SNACKBAR (add to cart confirmation) ───────────────────── */
+.cart-snackbar {
+  position: fixed; bottom: 24px; right: 24px; z-index: 600;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-2);
+  border-left: 3px solid var(--accent);
+  width: 320px;
+  display: flex; flex-direction: column; gap: 0;
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.22s, transform 0.22s;
+  pointer-events: none;
+}
+.cart-snackbar.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+.snackbar-top {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px;
+}
+
+.snackbar-icon {
+  width: 28px; height: 28px; flex-shrink: 0;
+  background: var(--good-bg);
+  border: 1px solid var(--good);
+  color: var(--good);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.snackbar-text { flex: 1; min-width: 0; }
+.snackbar-added {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--good); margin-bottom: 2px;
+}
+.snackbar-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.snackbar-dismiss {
+  color: var(--text-3); background: none; border: none;
+  cursor: pointer; padding: 4px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.snackbar-dismiss:hover { color: var(--text); }
+
+.snackbar-actions {
+  display: flex; border-top: 1px solid var(--border);
+}
+.snackbar-btn {
+  flex: 1; padding: 9px 12px; cursor: pointer;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  font-weight: 600; border: none; transition: background 0.12s;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.snackbar-btn-shop {
+  background: var(--bg); color: var(--text-2);
+  border-right: 1px solid var(--border);
+}
+.snackbar-btn-shop:hover { background: var(--bg-row); color: var(--text); }
+.snackbar-btn-cart {
+  background: var(--accent); color: #fff;
+}
+.snackbar-btn-cart:hover { opacity: 0.88; }
 
 /* ── RESPONSIVE ─────────────────────────────────────────────────── */
 @media (max-width: 900px) {
