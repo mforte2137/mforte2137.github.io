@@ -1883,6 +1883,19 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 }
 .ai-view-results-btn:hover { opacity: 0.88; }
 
+
+/* ── AI INPUT ACTIONS ROW ───────────────────────────────────────── */
+.ai-input-actions {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
+}
+.ai-startover-btn {
+  font-size: 11px; padding: 6px 10px;
+  color: var(--text-3); gap: 5px;
+  border: 1px solid var(--border-2);
+}
+.ai-startover-btn:hover { color: var(--danger); border-color: var(--danger); background: var(--danger-bg); }
+
 /* ── RESPONSIVE ─────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .shop-hero { flex-direction: column; align-items: flex-start; gap: 24px; }
