@@ -117,30 +117,39 @@ let productSearchQuery = '';
 // ── ORDER HISTORY DATA ────────────────────────────────────────────
 const ORDER_HISTORY = [
   {
-    ref: 'ORD-2025-0089', date: 'Delivered 3 Jun 2025', total: '$2,549.00',
-    shipped: 'Acme Corp HQ, 142 West 36th Street, New York, NY 10018',
-    items: [
-      { qty: 1, name: 'Executive Bundle', price: '$2,549.00', img: 'https://mforte2137.github.io/images/store/bundle-exec.png' },
-    ]
-  },
-  {
-    ref: 'ORD-2025-0074', date: 'Delivered 19 May 2025', total: '$5,452.00',
+    ref: 'ORD-2025-0112', status: 'processing',
+    date: 'Ordered 20 Jun 2025', total: '$3,248.00',
     shipped: 'MSP staging → Acme Corp HQ',
+    po: 'PO-2025-0091',
+    tracking: null,
+    eta: 'Expected 26–28 Jun 2025',
+    note: 'Imaging and Intune enrolment in progress at MSP.',
     items: [
-      { qty: 4, name: 'Dell Latitude 5450', price: '$969.00 each', img: 'https://mforte2137.github.io/images/store/laptop-lat-5450.png' },
-      { qty: 4, name: 'Dell Premier Backpack 15', price: '$89.00 each', img: 'https://mforte2137.github.io/images/store/bag-premier.png' },
+      { qty: 2, name: 'Dell Latitude 5550', price: '$1,049.00 each', img: 'https://mforte2137.github.io/images/store/laptop-lat-5550.png' },
+      { qty: 2, name: 'Dell Thunderbolt Dock WD19TBS', price: '$289.00 each', img: 'https://mforte2137.github.io/images/store/dock-wd19tbs.png' },
+      { qty: 2, name: 'Dell Premier Backpack 15', price: '$89.00 each', img: 'https://mforte2137.github.io/images/store/bag-premier.png' },
     ]
   },
   {
-    ref: 'ORD-2025-0061', date: 'Delivered 8 May 2025', total: '$1,699.00',
-    shipped: 'Sarah Chen, 45 Pine Street, Brooklyn, NY 11201',
+    ref: 'ORD-2025-0108', status: 'ready',
+    date: 'Ordered 17 Jun 2025', total: '$1,699.00',
+    shipped: 'James Taylor, 88 Franklin Street, New York, NY 10013',
+    po: 'PO-2025-0088',
+    tracking: 'UPS: 1Z999AA10123456784',
+    eta: 'Out for delivery 24 Jun 2025',
+    note: 'Dispatched from MSP. Direct delivery to employee home address.',
     items: [
       { qty: 1, name: 'Remote Worker Bundle', price: '$1,699.00', img: 'https://mforte2137.github.io/images/store/bundle-remote.png' },
     ]
   },
   {
-    ref: 'ORD-2025-0049', date: 'Delivered 22 Apr 2025', total: '$638.00',
+    ref: 'ORD-2025-0101', status: 'ready',
+    date: 'Ordered 12 Jun 2025', total: '$638.00',
     shipped: 'Chicago Office, 330 N Wabash Ave, Chicago, IL 60611',
+    po: null,
+    tracking: 'FedEx: 7489 2362 8741',
+    eta: 'Expected 25 Jun 2025',
+    note: null,
     items: [
       { qty: 1, name: 'Dell P2725H 27" Monitor', price: '$319.00', img: 'https://mforte2137.github.io/images/store/monitor-p2725h.png' },
       { qty: 1, name: 'Dell Thunderbolt Dock WD19TBS', price: '$289.00', img: 'https://mforte2137.github.io/images/store/dock-wd19tbs.png' },
@@ -148,15 +157,76 @@ const ORDER_HISTORY = [
     ]
   },
   {
-    ref: 'ORD-2025-0033', date: 'Delivered 5 Apr 2025', total: '$1,049.00',
+    ref: 'ORD-2025-0089', status: 'fulfilled',
+    date: 'Delivered 3 Jun 2025', total: '$2,549.00',
+    shipped: 'Acme Corp HQ, 142 West 36th Street, New York, NY 10018',
+    po: 'PO-2025-0079',
+    tracking: 'UPS: 1Z999AA10187654321',
+    eta: null,
+    note: null,
+    items: [
+      { qty: 1, name: 'Executive Bundle', price: '$2,549.00', img: 'https://mforte2137.github.io/images/store/bundle-exec.png' },
+    ]
+  },
+  {
+    ref: 'ORD-2025-0074', status: 'fulfilled',
+    date: 'Delivered 19 May 2025', total: '$5,452.00',
+    shipped: 'MSP staging → Acme Corp HQ',
+    po: 'PO-2025-0068',
+    tracking: 'FedEx: 6194 8201 3374',
+    eta: null,
+    note: null,
+    items: [
+      { qty: 4, name: 'Dell Latitude 5450', price: '$969.00 each', img: 'https://mforte2137.github.io/images/store/laptop-lat-5450.png' },
+      { qty: 4, name: 'Dell Premier Backpack 15', price: '$89.00 each', img: 'https://mforte2137.github.io/images/store/bag-premier.png' },
+    ]
+  },
+  {
+    ref: 'ORD-2025-0061', status: 'fulfilled',
+    date: 'Delivered 8 May 2025', total: '$1,699.00',
+    shipped: 'Sarah Chen, 45 Pine Street, Brooklyn, NY 11201',
+    po: 'PO-2025-0055',
+    tracking: 'UPS: 1Z999AA10156781234',
+    eta: null,
+    note: null,
+    items: [
+      { qty: 1, name: 'Remote Worker Bundle', price: '$1,699.00', img: 'https://mforte2137.github.io/images/store/bundle-remote.png' },
+    ]
+  },
+  {
+    ref: 'ORD-2025-0049', status: 'fulfilled',
+    date: 'Delivered 22 Apr 2025', total: '$638.00',
+    shipped: 'Chicago Office, 330 N Wabash Ave, Chicago, IL 60611',
+    po: null,
+    tracking: 'FedEx: 7489 1122 3344',
+    eta: null,
+    note: null,
+    items: [
+      { qty: 1, name: 'Dell P2725H 27" Monitor', price: '$319.00', img: 'https://mforte2137.github.io/images/store/monitor-p2725h.png' },
+      { qty: 1, name: 'Dell Thunderbolt Dock WD19TBS', price: '$289.00', img: 'https://mforte2137.github.io/images/store/dock-wd19tbs.png' },
+      { qty: 1, name: 'Dell Premier Mouse MS5120W', price: '$59.00', img: 'https://mforte2137.github.io/images/store/mouse-ms5120w.png' },
+    ]
+  },
+  {
+    ref: 'ORD-2025-0033', status: 'fulfilled',
+    date: 'Delivered 5 Apr 2025', total: '$1,049.00',
     shipped: 'MSP staging → Marcus Reid, Austin Office',
+    po: 'PO-2025-0031',
+    tracking: 'UPS: 1Z999AA10144332211',
+    eta: null,
+    note: null,
     items: [
       { qty: 1, name: 'Dell Latitude 5550', price: '$1,049.00', img: 'https://mforte2137.github.io/images/store/laptop-lat-5550.png' },
     ]
   },
   {
-    ref: 'ORD-2025-0018', date: 'Delivered 14 Mar 2025', total: '$3,398.00',
+    ref: 'ORD-2025-0018', status: 'fulfilled',
+    date: 'Delivered 14 Mar 2025', total: '$3,398.00',
     shipped: 'MSP staging → Los Angeles Office',
+    po: 'PO-2025-0016',
+    tracking: 'FedEx: 6194 7700 9921',
+    eta: null,
+    note: null,
     items: [
       { qty: 2, name: 'Dell Latitude 7450', price: '$1,649.00 each', img: 'https://mforte2137.github.io/images/store/laptop-lat-7450.png' },
       { qty: 2, name: 'Dell Thunderbolt Dock WD22TB4', price: '$349.00 each', img: 'https://mforte2137.github.io/images/store/dock-wd22tb4.png' },
@@ -1442,6 +1512,12 @@ function renderSavedBaskets() {
 }
 
 // ── ORDER HISTORY ─────────────────────────────────────────────────
+const ORDER_STATUS = {
+  processing: { label: 'Processing',     cls: 'badge-info',      icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>' },
+  ready:      { label: 'Ready to ship',  cls: 'badge-warn',      icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>' },
+  fulfilled:  { label: 'Fulfilled',      cls: 'badge-approved',  icon: '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' },
+};
+
 function renderOrders() {
   if (!ordersList) return;
   ordersList.innerHTML = '';
@@ -1449,56 +1525,94 @@ function renderOrders() {
   ORDER_HISTORY.forEach(order => {
     const card = document.createElement('div');
     card.className = 'order-card';
+    const st = ORDER_STATUS[order.status] || ORDER_STATUS.fulfilled;
 
-    const linesHtml = order.items.map(item => `
-      <div class="order-line">
-        <div class="ol-thumb">
-          <img src="\${item.img || ''}" alt="\${item.name}" onerror="this.style.display='none'">
-        </div>
-        <div class="ol-qty">\${item.qty}×</div>
-        <div class="ol-name">\${item.name}</div>
-        <div class="ol-price">\${item.price}</div>
-      </div>
-    `).join('');
+    const linesHtml = order.items.map(item => {
+      const imgTag = item.img ? '<img src="' + item.img + '" alt="' + item.name + '" style="max-width:100%;max-height:100%;object-fit:contain;">' : '';
+      return '<div class="order-line">' +
+        '<div class="ol-thumb">' + imgTag + '</div>' +
+        '<div class="ol-qty">' + item.qty + '×</div>' +
+        '<div class="ol-name">' + item.name + '</div>' +
+        '<div class="ol-price">' + item.price + '</div>' +
+        '</div>';
+    }).join('');
 
-    card.innerHTML = `
-      <div class="order-card-header">
-        <div class="order-meta">
-          <div class="order-ref">\${order.ref}</div>
-          <div class="order-date">\${order.date}</div>
-        </div>
-        <div class="order-right">
-          <div class="order-total">\${order.total}</div>
-          <span class="badge badge-fulfilled">Fulfilled</span>
-          <svg class="order-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-      </div>
-      <div class="order-card-body">
-        <div class="order-lines">\${linesHtml}</div>
-        <div class="order-footer">
-          <div class="order-ship-info">Shipped to: <strong>\${order.shipped}</strong></div>
-          <button class="btn-accent" style="font-size:11px;padding:6px 14px;" data-reorder-ref="\${order.ref}">Reorder</button>
-        </div>
-      </div>
-    `;
+    // Status-specific detail rows
+    const trackingHtml = order.tracking
+      ? '<div class="order-detail-row"><span class="order-detail-label">Tracking</span><a class="order-tracking-link" href="#" onclick="return false;">' + order.tracking + '</a></div>'
+      : '';
+    const etaHtml = order.eta
+      ? '<div class="order-detail-row"><span class="order-detail-label">ETA</span><span class="order-detail-val">' + order.eta + '</span></div>'
+      : '';
+    const poHtml = order.po
+      ? '<div class="order-detail-row"><span class="order-detail-label">PO</span><span class="order-detail-val">' + order.po + '</span></div>'
+      : '';
+    const noteHtml = order.note
+      ? '<div class="order-note">' + order.note + '</div>'
+      : '';
+
+    // Progress bar steps
+    const steps = ['Order placed', 'Processing', 'Ready to ship', 'Delivered'];
+    const stepIdx = { processing: 1, ready: 2, fulfilled: 3 }[order.status] ?? 3;
+    const progressHtml = '<div class="order-progress">' +
+      steps.map((s, i) => {
+        const done    = i < stepIdx;
+        const current = i === stepIdx;
+        return '<div class="order-step' + (done ? ' done' : '') + (current ? ' current' : '') + '">' +
+          '<div class="order-step-dot"></div>' +
+          '<div class="order-step-label">' + s + '</div>' +
+          '</div>';
+      }).join('<div class="order-step-line' + '"></div>') +
+      '</div>';
+
+    // Reorder only for fulfilled orders
+    const actionHtml = order.status === 'fulfilled'
+      ? '<button class="btn-secondary order-reorder-btn" style="font-size:11px;padding:6px 14px;" data-reorder-ref="' + order.ref + '">Reorder</button>'
+      : order.status === 'ready'
+        ? '<span class="order-dispatch-note">Contact your MSP to arrange delivery</span>'
+        : '<span class="order-dispatch-note">Your MSP is preparing this order</span>';
+
+    card.innerHTML =
+      '<div class="order-card-header">' +
+        '<div class="order-meta">' +
+          '<div class="order-ref">' + order.ref + '</div>' +
+          '<div class="order-date">' + order.date + '</div>' +
+        '</div>' +
+        '<div class="order-right">' +
+          '<div class="order-total">' + order.total + '</div>' +
+          '<span class="badge ' + st.cls + '" style="display:inline-flex;align-items:center;gap:4px;">' + st.icon + st.label + '</span>' +
+          '<svg class="order-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>' +
+        '</div>' +
+      '</div>' +
+      '<div class="order-card-body">' +
+        progressHtml +
+        '<div class="order-details">' +
+          poHtml + trackingHtml + etaHtml +
+          '<div class="order-detail-row"><span class="order-detail-label">Ship to</span><span class="order-detail-val">' + order.shipped + '</span></div>' +
+        '</div>' +
+        noteHtml +
+        '<div class="order-lines">' + linesHtml + '</div>' +
+        '<div class="order-footer">' +
+          actionHtml +
+        '</div>' +
+      '</div>';
 
     card.querySelector('.order-card-header').addEventListener('click', () => {
       card.classList.toggle('open');
     });
 
-    card.querySelector('[data-reorder-ref]').addEventListener('click', e => {
-      e.stopPropagation();
-      // Add all items from this order to cart
-      order.items.forEach(item => {
-        const product = PRODUCTS.find(p => p.name === item.name);
-        if (product) {
-          for (let i = 0; i < item.qty; i++) addToCart(product.id);
-        }
+    const reorderBtn = card.querySelector('[data-reorder-ref]');
+    if (reorderBtn) {
+      reorderBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        order.items.forEach(item => {
+          const product = PRODUCTS.find(p => p.name === item.name);
+          if (product) for (let i = 0; i < item.qty; i++) addToCart(product.id);
+        });
+        document.querySelector('[data-tab="shop"]').click();
+        showCartSnackbar('Items from ' + order.ref + ' added');
       });
-      // Switch to shop tab
-      document.querySelector('[data-tab="shop"]').click();
-      showCartSnackbar('Items from ' + order.ref + ' added');
-    });
+    }
 
     ordersList.appendChild(card);
   });
