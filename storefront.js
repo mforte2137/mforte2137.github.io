@@ -1,0 +1,1200 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SALESBUILDR STOREFRONT — storefront.js
+   Simulated storefront — no real payment/API integration
+   AI assistant powered by Anthropic API (claude-sonnet-4-6)
+═══════════════════════════════════════════════════════════════════ */
+
+// ── DOM REFS ─────────────────────────────────────────────────────
+const productGrid       = document.getElementById('productGrid');
+const cartBtn           = document.getElementById('cartBtn');
+const cartCount         = document.getElementById('cartCount');
+const cartDrawer        = document.getElementById('cartDrawer');
+const cartOverlay       = document.getElementById('cartOverlay');
+const cartClose         = document.getElementById('cartClose');
+const cartItems         = document.getElementById('cartItems');
+const cartEmpty         = document.getElementById('cartEmpty');
+const cartFooter        = document.getElementById('cartFooter');
+const cartSubtotal      = document.getElementById('cartSubtotal');
+const cartShipping      = document.getElementById('cartShipping');
+const cartTax           = document.getElementById('cartTax');
+const cartTotal         = document.getElementById('cartTotal');
+const shippingSelect    = document.getElementById('shippingSelect');
+const checkoutBtn       = document.getElementById('checkoutBtn');
+const saveBasketBtn     = document.getElementById('saveBasketBtn');
+const cartEmptyShop     = document.getElementById('cartEmptyShop');
+const resultCount       = document.getElementById('resultCount');
+const activeFiltersEl   = document.getElementById('activeFilters');
+const sortSelect        = document.getElementById('sortSelect');
+const filterReset       = document.getElementById('filterReset');
+const compareBtn        = document.getElementById('compareBtn');
+const compareSummary    = document.getElementById('compareSummary');
+const aiToggleBtn       = document.getElementById('aiToggleBtn');
+const heroAiBtn         = document.getElementById('heroAiBtn');
+const heroBundlesBtn    = document.getElementById('heroBundlesBtn');
+const aiPanel           = document.getElementById('aiPanel');
+const aiOverlay         = document.getElementById('aiOverlay');
+const aiClose           = document.getElementById('aiClose');
+const aiChat            = document.getElementById('aiChat');
+const aiInput           = document.getElementById('aiInput');
+const aiSendBtn         = document.getElementById('aiSendBtn');
+const aiQuickPrompts    = document.getElementById('aiQuickPrompts');
+const aiResultBanner    = document.getElementById('aiResultBanner');
+const aiResultTitle     = document.getElementById('aiResultTitle');
+const aiResultSub       = document.getElementById('aiResultSub');
+const aiBannerClear     = document.getElementById('aiBannerClear');
+const quotesList        = document.getElementById('quotesList');
+const productModalBackdrop  = document.getElementById('productModalBackdrop');
+const productModalBody      = document.getElementById('productModalBody');
+const productModalClose     = document.getElementById('productModalClose');
+const compareModalBackdrop  = document.getElementById('compareModalBackdrop');
+const compareTableWrap      = document.getElementById('compareTableWrap');
+const compareModalClose     = document.getElementById('compareModalClose');
+const orderModalBackdrop    = document.getElementById('orderModalBackdrop');
+const orderRef              = document.getElementById('orderRef');
+const orderModalClose       = document.getElementById('orderModalClose');
+const toast                 = document.getElementById('toast');
+
+// ── STATE ─────────────────────────────────────────────────────────
+let cart          = [];
+let compareList   = [];
+let activeFilters = { category: 'all', cpu: 'all', ram: 'all' };
+let sortBy        = 'featured';
+let priceMin      = null;
+let priceMax      = null;
+let aiFilteredIds = null;   // null = show all, array = AI filtered
+let currentQuoteTab = 'pending';
+let aiConversation  = [];   // conversation history for multi-turn
+
+const SHIPPING_COSTS = { standard: 12, express: 28, overnight: 55 };
+const TAX_RATE = 0.085;
+
+// ── PRODUCT DATA ──────────────────────────────────────────────────
+// Real Dell Latitude product line — seeded data with authentic specs
+// Images from Dell's public CDN / press image URLs
+const PRODUCTS = [
+  // ─── LAPTOPS ───────────────────────────────────────────────────
+  {
+    id: 'lat-5550',
+    category: 'laptop', brand: 'Dell Latitude', featured: true, badge: 'popular',
+    name: 'Latitude 5550',
+    shortDesc: '15.6" business laptop with Intel Core Ultra 5, ideal for everyday office and remote work.',
+    desc: 'The Latitude 5550 delivers solid performance for the modern hybrid worker. Intel Core Ultra 5 processor, a sharp 15.6" FHD display, and all-day battery life make it a dependable choice for office and remote environments.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/dell-client-products/notebooks/latitude-notebooks/latitude-15-5550/media-gallery/black/notebook-latitude-15-5550-black-gallery-5.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 1049,
+    cpu: 'intel', ram: '16', storage: '512GB SSD', display: '15.6" FHD',
+    weight: '1.78 kg', battery: 'Up to 13 hrs',
+    specs: [
+      { label: 'CPU', val: 'Intel Core Ultra 5 125U' },
+      { label: 'RAM', val: '16 GB DDR5' },
+      { label: 'Storage', val: '512 GB NVMe SSD' },
+      { label: 'Display', val: '15.6" FHD IPS' },
+      { label: 'Battery', val: 'Up to 13 hrs' },
+      { label: 'Weight', val: '1.78 kg' },
+    ]
+  },
+  {
+    id: 'lat-7450',
+    category: 'laptop', brand: 'Dell Latitude', featured: true, badge: 'new',
+    name: 'Latitude 7450',
+    shortDesc: '14" ultralight with Intel Core Ultra 7, for power users and frequent travellers.',
+    desc: 'The premium Latitude 7450 is built for professionals who demand performance and portability. Military-grade durability, Intel Core Ultra 7, and a stunning 14" 2.5K display.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/dell-client-products/notebooks/latitude-notebooks/latitude-14-7450/media-gallery/black/notebook-latitude-14-7450-black-gallery-1.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 1649,
+    cpu: 'intel', ram: '32', storage: '1TB SSD', display: '14" 2.5K',
+    weight: '1.33 kg', battery: 'Up to 14 hrs',
+    specs: [
+      { label: 'CPU', val: 'Intel Core Ultra 7 165U' },
+      { label: 'RAM', val: '32 GB DDR5' },
+      { label: 'Storage', val: '1 TB NVMe SSD' },
+      { label: 'Display', val: '14" 2.5K QHD+ IPS' },
+      { label: 'Battery', val: 'Up to 14 hrs' },
+      { label: 'Weight', val: '1.33 kg' },
+    ]
+  },
+  {
+    id: 'lat-5450',
+    category: 'laptop', brand: 'Dell Latitude', featured: false, badge: null,
+    name: 'Latitude 5450',
+    shortDesc: '14" mid-range workhorse with Intel Core Ultra 5 and a comfortable full-day battery.',
+    desc: 'A well-rounded 14" business laptop that balances performance, portability, and price. Perfect for knowledge workers who need a reliable daily driver.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/dell-client-products/notebooks/latitude-notebooks/latitude-14-5450/media-gallery/black/notebook-latitude-14-5450-black-gallery-1.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 969,
+    cpu: 'intel', ram: '16', storage: '512GB SSD', display: '14" FHD',
+    weight: '1.45 kg', battery: 'Up to 12 hrs',
+    specs: [
+      { label: 'CPU', val: 'Intel Core Ultra 5 125U' },
+      { label: 'RAM', val: '16 GB DDR5' },
+      { label: 'Storage', val: '512 GB NVMe SSD' },
+      { label: 'Display', val: '14" FHD IPS' },
+      { label: 'Battery', val: 'Up to 12 hrs' },
+      { label: 'Weight', val: '1.45 kg' },
+    ]
+  },
+  {
+    id: 'lat-5350',
+    category: 'laptop', brand: 'Dell Latitude', featured: false, badge: null,
+    name: 'Latitude 5350',
+    shortDesc: '13.3" compact business laptop for on-the-go employees, under $1,000.',
+    desc: 'The compact Latitude 5350 is designed for employees who prioritise mobility. Lightweight chassis, solid battery life, and a great price point for budget-conscious deployments.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/dell-client-products/notebooks/latitude-notebooks/latitude-13-5350/media-gallery/black/notebook-latitude-13-5350-black-gallery-1.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 879,
+    cpu: 'intel', ram: '8', storage: '256GB SSD', display: '13.3" FHD',
+    weight: '1.25 kg', battery: 'Up to 11 hrs',
+    specs: [
+      { label: 'CPU', val: 'Intel Core i5-1345U' },
+      { label: 'RAM', val: '8 GB DDR4' },
+      { label: 'Storage', val: '256 GB NVMe SSD' },
+      { label: 'Display', val: '13.3" FHD IPS' },
+      { label: 'Battery', val: 'Up to 11 hrs' },
+      { label: 'Weight', val: '1.25 kg' },
+    ]
+  },
+  {
+    id: 'lat-5350-16',
+    category: 'laptop', brand: 'Dell Latitude', featured: false, badge: null,
+    name: 'Latitude 5350 (16 GB)',
+    shortDesc: '13.3" compact business laptop with 16 GB RAM — best value ultraportable.',
+    desc: 'The Latitude 5350 with a 16 GB RAM upgrade offers excellent value for employees who want speed and portability without a premium price tag.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/dell-client-products/notebooks/latitude-notebooks/latitude-13-5350/media-gallery/black/notebook-latitude-13-5350-black-gallery-1.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 999,
+    cpu: 'intel', ram: '16', storage: '512GB SSD', display: '13.3" FHD',
+    weight: '1.25 kg', battery: 'Up to 11 hrs',
+    specs: [
+      { label: 'CPU', val: 'Intel Core i5-1345U' },
+      { label: 'RAM', val: '16 GB DDR4' },
+      { label: 'Storage', val: '512 GB NVMe SSD' },
+      { label: 'Display', val: '13.3" FHD IPS' },
+      { label: 'Battery', val: 'Up to 11 hrs' },
+      { label: 'Weight', val: '1.25 kg' },
+    ]
+  },
+  {
+    id: 'lat-5550-amd',
+    category: 'laptop', brand: 'Dell Latitude', featured: false, badge: null,
+    name: 'Latitude 5550 (AMD)',
+    shortDesc: '15.6" AMD Ryzen 7 laptop — powerful multitasking at a great price.',
+    desc: 'The AMD-powered Latitude 5550 brings excellent multi-threaded performance for users running complex applications, VMs, or heavy multitasking workflows.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/dell-client-products/notebooks/latitude-notebooks/latitude-15-5550/media-gallery/black/notebook-latitude-15-5550-black-gallery-5.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 1129,
+    cpu: 'amd', ram: '16', storage: '512GB SSD', display: '15.6" FHD',
+    weight: '1.80 kg', battery: 'Up to 12 hrs',
+    specs: [
+      { label: 'CPU', val: 'AMD Ryzen 7 7745U' },
+      { label: 'RAM', val: '16 GB DDR5' },
+      { label: 'Storage', val: '512 GB NVMe SSD' },
+      { label: 'Display', val: '15.6" FHD IPS' },
+      { label: 'Battery', val: 'Up to 12 hrs' },
+      { label: 'Weight', val: '1.80 kg' },
+    ]
+  },
+  {
+    id: 'lat-9450',
+    category: 'laptop', brand: 'Dell Latitude', featured: false, badge: 'new',
+    name: 'Latitude 9450 2-in-1',
+    shortDesc: '14" flagship 2-in-1 convertible — the best Latitude money can buy.',
+    desc: 'The Latitude 9450 2-in-1 is Dell\'s flagship business laptop. Stunning OLED display, Intel Core Ultra 7, thin-and-light chassis, and enterprise-grade security features.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/dell-client-products/notebooks/latitude-notebooks/latitude-9450-2in1/media-gallery/black/notebook-latitude-9450-2in1-nt-black-gallery-1.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 2149,
+    cpu: 'intel', ram: '32', storage: '1TB SSD', display: '14" OLED Touch',
+    weight: '1.28 kg', battery: 'Up to 16 hrs',
+    specs: [
+      { label: 'CPU', val: 'Intel Core Ultra 7 165U' },
+      { label: 'RAM', val: '32 GB DDR5' },
+      { label: 'Storage', val: '1 TB NVMe SSD' },
+      { label: 'Display', val: '14" OLED Touch 2.8K' },
+      { label: 'Battery', val: 'Up to 16 hrs' },
+      { label: 'Weight', val: '1.28 kg' },
+    ]
+  },
+  {
+    id: 'lat-3550',
+    category: 'laptop', brand: 'Dell Latitude', featured: false, badge: null,
+    name: 'Latitude 3550',
+    shortDesc: 'Entry-level 15.6" business laptop — dependable and budget-friendly.',
+    desc: 'The Latitude 3550 is the go-to for cost-conscious deployments that still need business reliability. Perfect for reception desks, light office work, and first-time setups.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/dell-client-products/notebooks/latitude-notebooks/latitude-15-3550/media-gallery/black/notebook-latitude-15-3550-black-gallery-1.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 699,
+    cpu: 'intel', ram: '8', storage: '256GB SSD', display: '15.6" FHD',
+    weight: '1.79 kg', battery: 'Up to 8 hrs',
+    specs: [
+      { label: 'CPU', val: 'Intel Core i3-1315U' },
+      { label: 'RAM', val: '8 GB DDR4' },
+      { label: 'Storage', val: '256 GB NVMe SSD' },
+      { label: 'Display', val: '15.6" FHD' },
+      { label: 'Battery', val: 'Up to 8 hrs' },
+      { label: 'Weight', val: '1.79 kg' },
+    ]
+  },
+
+  // ─── MONITORS ──────────────────────────────────────────────────
+  {
+    id: 'mon-p2425h',
+    category: 'monitor', brand: 'Dell', featured: true, badge: 'popular',
+    name: 'Dell P2425H Monitor',
+    shortDesc: '24" FHD IPS — the standard business monitor, USB-C included.',
+    desc: 'The P2425H is the workhorse of business monitors. 24" FHD IPS panel, USB-C with power delivery, ergonomic stand, and excellent colour accuracy for all-day use.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/peripherals/output-devices/dell/monitors/p2425h/media-gallery/monitor-p2425h-gallery-1.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 259,
+    cpu: null, ram: null, storage: null,
+    display: '24" FHD IPS', weight: null, battery: null,
+    specs: [
+      { label: 'Size', val: '24" FHD (1920×1080)' },
+      { label: 'Panel', val: 'IPS, 100Hz' },
+      { label: 'Connectivity', val: 'USB-C 65W, HDMI, DP' },
+      { label: 'Refresh', val: '100 Hz' },
+      { label: 'Brightness', val: '300 nits' },
+      { label: 'Stand', val: 'Height, tilt, pivot' },
+    ]
+  },
+  {
+    id: 'mon-p2725h',
+    category: 'monitor', brand: 'Dell', featured: false, badge: null,
+    name: 'Dell P2725H Monitor',
+    shortDesc: '27" FHD IPS — extra screen real estate for power users.',
+    desc: 'More screen, same great quality. The P2725H brings 27" of FHD IPS display with USB-C connectivity, perfect for multitaskers who need room to spread out.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/peripherals/output-devices/dell/monitors/p2725h/media-gallery/monitor-p2725h-gallery-1.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 319,
+    cpu: null, ram: null, storage: null,
+    display: '27" FHD IPS', weight: null, battery: null,
+    specs: [
+      { label: 'Size', val: '27" FHD (1920×1080)' },
+      { label: 'Panel', val: 'IPS, 100Hz' },
+      { label: 'Connectivity', val: 'USB-C 65W, HDMI, DP' },
+      { label: 'Refresh', val: '100 Hz' },
+      { label: 'Brightness', val: '300 nits' },
+      { label: 'Stand', val: 'Height, tilt, pivot' },
+    ]
+  },
+  {
+    id: 'mon-u2724d',
+    category: 'monitor', brand: 'Dell UltraSharp', featured: false, badge: 'new',
+    name: 'Dell UltraSharp U2724D',
+    shortDesc: '27" QHD IPS Black — premium display for designers and power users.',
+    desc: 'The UltraSharp U2724D features Dell\'s IPS Black technology for exceptional contrast, 27" QHD resolution, and Thunderbolt 4 connectivity. The best monitor in its class.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/peripherals/output-devices/dell/monitors/u2724d/media-gallery/monitor-u2724d-gallery-1.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 549,
+    cpu: null, ram: null, storage: null,
+    display: '27" QHD IPS Black', weight: null, battery: null,
+    specs: [
+      { label: 'Size', val: '27" QHD (2560×1440)' },
+      { label: 'Panel', val: 'IPS Black' },
+      { label: 'Connectivity', val: 'Thunderbolt 4, USB-C, DP' },
+      { label: 'Refresh', val: '60 Hz' },
+      { label: 'Brightness', val: '400 nits' },
+      { label: 'Stand', val: 'Height, tilt, pivot, rotate' },
+    ]
+  },
+
+  // ─── DOCKING STATIONS ──────────────────────────────────────────
+  {
+    id: 'dock-wd22tb4',
+    category: 'dock', brand: 'Dell', featured: true, badge: 'popular',
+    name: 'Dell Thunderbolt Dock WD22TB4',
+    shortDesc: 'Thunderbolt 4 dock — single cable connects laptop to everything on your desk.',
+    desc: 'Connect a Dell Latitude to up to three 4K monitors, gigabit ethernet, and multiple USB devices with a single Thunderbolt 4 cable. The gold standard for desk setups.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/peripherals/input-devices/dell/docks/wd22tb4/media-gallery/dock-wd22tb4-gallery-1.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 349,
+    cpu: null, ram: null, storage: null, display: null, weight: null, battery: null,
+    specs: [
+      { label: 'Interface', val: 'Thunderbolt 4 (single cable)' },
+      { label: 'Power', val: '130W laptop charging' },
+      { label: 'Displays', val: 'Up to 3 × 4K' },
+      { label: 'USB', val: '4× USB-A, 2× USB-C' },
+      { label: 'Network', val: 'Gigabit Ethernet' },
+      { label: 'Audio', val: 'Combo jack' },
+    ]
+  },
+  {
+    id: 'dock-wd19tbs',
+    category: 'dock', brand: 'Dell', featured: false, badge: null,
+    name: 'Dell Thunderbolt Dock WD19TBS',
+    shortDesc: 'Slim Thunderbolt 3 dock — clean desk setup with 180W power delivery.',
+    desc: 'The WD19TBS is a compact, stylish dock that fits neatly on any desk. Thunderbolt 3 single-cable connection with 180W power delivery and support for dual 4K displays.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/peripherals/input-devices/dell/docks/wd19tbs/media-gallery/dock-wd19tbs-gallery-1.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 289,
+    cpu: null, ram: null, storage: null, display: null, weight: null, battery: null,
+    specs: [
+      { label: 'Interface', val: 'Thunderbolt 3 (single cable)' },
+      { label: 'Power', val: '180W laptop charging' },
+      { label: 'Displays', val: 'Up to 2 × 4K' },
+      { label: 'USB', val: '3× USB-A, 2× USB-C' },
+      { label: 'Network', val: 'Gigabit Ethernet' },
+      { label: 'Audio', val: 'Combo jack' },
+    ]
+  },
+
+  // ─── ACCESSORIES ───────────────────────────────────────────────
+  {
+    id: 'bag-premier',
+    category: 'accessory', brand: 'Dell', featured: false, badge: null,
+    name: 'Dell Premier Backpack 15',
+    shortDesc: 'Premium 15" laptop backpack with organisation and padded protection.',
+    desc: 'A professional backpack designed for the Latitude series. Dedicated laptop and tablet compartments, cable passthrough, and durable PU leather finish.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/peripherals/dell-accessories/bags/premier-backpack-15-pe1520p/media-gallery/bag-pe1520p-gallery-1.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 89,
+    cpu: null, ram: null, storage: null, display: null, weight: null, battery: null,
+    specs: [
+      { label: 'Fits', val: 'Up to 15" laptops' },
+      { label: 'Material', val: 'PU leather, recycled poly' },
+      { label: 'Compartments', val: 'Laptop, tablet, accessories' },
+      { label: 'Weight', val: '0.7 kg' },
+    ]
+  },
+  {
+    id: 'bag-pro-sleeve',
+    category: 'accessory', brand: 'Dell', featured: false, badge: null,
+    name: 'Dell Pro Sleeve 14',
+    shortDesc: 'Slim protective sleeve for the Latitude 5450 and 7450.',
+    desc: 'A minimalist sleeve that slips easily into any bag. Memory foam interior protection, subtle Dell branding, and a durable exterior.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/peripherals/dell-accessories/bags/pro-sleeve-14-po1420vs/media-gallery/bag-po1420vs-gallery-1.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 39,
+    cpu: null, ram: null, storage: null, display: null, weight: null, battery: null,
+    specs: [
+      { label: 'Fits', val: '13"–14.1" laptops' },
+      { label: 'Material', val: 'Neoprene, memory foam' },
+      { label: 'Pockets', val: 'External accessory pocket' },
+    ]
+  },
+  {
+    id: 'mouse-ms5120w',
+    category: 'accessory', brand: 'Dell', featured: false, badge: null,
+    name: 'Dell Premier Wireless Mouse MS5120W',
+    shortDesc: 'Silent, ergonomic wireless mouse — pairs with up to 3 devices.',
+    desc: 'The MS5120W is a premium wireless mouse designed for business users. Silent clicks, customisable side buttons, and multi-device pairing via Bluetooth or USB receiver.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/peripherals/input-devices/dell/mice/ms5120w/media-gallery/mouse-ms5120w-gallery-1.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 59,
+    cpu: null, ram: null, storage: null, display: null, weight: null, battery: null,
+    specs: [
+      { label: 'Connectivity', val: 'Bluetooth 5.0, USB' },
+      { label: 'DPI', val: '1000 / 1600 / 4000' },
+      { label: 'Battery', val: 'Up to 36 months (AA)' },
+      { label: 'OS', val: 'Windows, macOS, Chrome, Linux' },
+    ]
+  },
+  {
+    id: 'kb-km7321w',
+    category: 'accessory', brand: 'Dell', featured: false, badge: null,
+    name: 'Dell Premier Wireless Keyboard & Mouse KM7321W',
+    shortDesc: 'Wireless keyboard and mouse combo — productive and tidy desk setup.',
+    desc: 'Full-sized wireless keyboard paired with the Premier wireless mouse. Both connect to a single USB nanoreceiver or Bluetooth, with a rechargeable keyboard and 36-month mouse battery.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/peripherals/input-devices/dell/keyboard-mouse-combos/km7321w/media-gallery/keyboard-km7321w-gallery-1.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 99,
+    cpu: null, ram: null, storage: null, display: null, weight: null, battery: null,
+    specs: [
+      { label: 'Connectivity', val: 'Bluetooth 5.0, USB Nano' },
+      { label: 'Keyboard', val: 'Full-size, rechargeable' },
+      { label: 'Mouse', val: '4000 DPI, 3 device pairing' },
+      { label: 'Battery', val: 'Mouse: 36 months' },
+    ]
+  },
+
+  // ─── BUNDLES ───────────────────────────────────────────────────
+  {
+    id: 'bundle-remote',
+    category: 'bundle', brand: 'Acme Corp', featured: true, badge: 'bundle',
+    name: 'Remote Worker Bundle',
+    shortDesc: 'Everything a remote employee needs — laptop, monitor, dock, and peripherals.',
+    desc: 'The complete remote worker setup, curated by your IT team. Includes a Dell Latitude 5450, 24" monitor, Thunderbolt dock, wireless keyboard & mouse, and a Dell Premier backpack. Ready to deploy, day one.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/dell-client-products/notebooks/latitude-notebooks/latitude-14-5450/media-gallery/black/notebook-latitude-14-5450-black-gallery-1.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 1699,
+    cpu: null, ram: null, storage: null, display: null, weight: null, battery: null,
+    specs: [
+      { label: 'Laptop', val: 'Latitude 5450 (16GB, 512GB)' },
+      { label: 'Monitor', val: 'Dell P2425H 24" FHD' },
+      { label: 'Dock', val: 'Dell WD19TBS Thunderbolt' },
+      { label: 'Peripherals', val: 'KM7321W Keyboard & Mouse' },
+      { label: 'Bag', val: 'Dell Premier Backpack 15' },
+      { label: 'Saving', val: '$176 vs. individual items' },
+    ]
+  },
+  {
+    id: 'bundle-exec',
+    category: 'bundle', brand: 'Acme Corp', featured: true, badge: 'bundle',
+    name: 'Executive Bundle',
+    shortDesc: 'Premium setup for senior staff — the best Latitude with UltraSharp display.',
+    desc: 'Reserved for senior employees and executives who need the best. Dell Latitude 7450 paired with the UltraSharp 27" QHD monitor, premium Thunderbolt 4 dock, and MS5120W mouse. Everything needed to perform at the highest level.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/dell-client-products/notebooks/latitude-notebooks/latitude-14-7450/media-gallery/black/notebook-latitude-14-7450-black-gallery-1.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 2549,
+    cpu: null, ram: null, storage: null, display: null, weight: null, battery: null,
+    specs: [
+      { label: 'Laptop', val: 'Latitude 7450 (32GB, 1TB)' },
+      { label: 'Monitor', val: 'Dell UltraSharp U2724D 27"' },
+      { label: 'Dock', val: 'Dell WD22TB4 Thunderbolt 4' },
+      { label: 'Mouse', val: 'Dell Premier MS5120W' },
+      { label: 'Bag', val: 'Dell Pro Sleeve 14' },
+      { label: 'Saving', val: '$296 vs. individual items' },
+    ]
+  },
+  {
+    id: 'bundle-starter',
+    category: 'bundle', brand: 'Acme Corp', featured: false, badge: 'bundle',
+    name: 'New Starter Bundle',
+    shortDesc: 'Cost-effective onboarding bundle — good specs, great price.',
+    desc: 'The ideal package for new starters who need everything to hit the ground running without blowing the budget. Latitude 5350, 24" monitor, USB-C hub, and a wireless mouse.',
+    img: 'https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/dell-client-products/notebooks/latitude-notebooks/latitude-13-5350/media-gallery/black/notebook-latitude-13-5350-black-gallery-1.psd?fmt=png-alpha&wid=400&hei=300',
+    price: 1199,
+    cpu: null, ram: null, storage: null, display: null, weight: null, battery: null,
+    specs: [
+      { label: 'Laptop', val: 'Latitude 5350 (16GB, 512GB)' },
+      { label: 'Monitor', val: 'Dell P2425H 24" FHD' },
+      { label: 'Dock', val: 'Dell WD19TBS Thunderbolt' },
+      { label: 'Mouse', val: 'Dell Premier MS5120W' },
+      { label: 'Saving', val: '$87 vs. individual items' },
+    ]
+  }
+];
+
+// ── QUOTE DATA ────────────────────────────────────────────────────
+const QUOTES = {
+  pending: [
+    {
+      ref: 'QUO-2024-0312', date: '12 Jun 2025', total: '$3,398.00',
+      items: [
+        { qty: 2, name: 'Dell Latitude 7450', price: '$1,649.00 each' },
+        { qty: 2, name: 'Dell WD22TB4 Dock', price: '$349.00 each' },
+      ],
+      note: 'Raised by IT for the new Product team hires. Awaiting approval from Finance.'
+    },
+    {
+      ref: 'QUO-2024-0309', date: '8 Jun 2025', total: '$1,699.00',
+      items: [
+        { qty: 1, name: 'Remote Worker Bundle', price: '$1,699.00' },
+      ],
+      note: 'Setup for Sarah Chen — starting 1 July. Please approve by 20 June.'
+    }
+  ],
+  approved: [
+    {
+      ref: 'QUO-2024-0301', date: '28 May 2025', total: '$2,549.00',
+      items: [
+        { qty: 1, name: 'Executive Bundle', price: '$2,549.00' },
+      ],
+      note: 'Approved by Marcus Reid. Shipped 30 May — delivered 2 June.'
+    },
+    {
+      ref: 'QUO-2024-0289', date: '14 May 2025', total: '$5,096.00',
+      items: [
+        { qty: 4, name: 'New Starter Bundle', price: '$1,199.00 each' },
+        { qty: 4, name: 'Dell Premier Backpack 15', price: '$89.00 each' },
+      ],
+      note: 'Q2 onboarding batch — 4 new hires in customer success.'
+    },
+    {
+      ref: 'QUO-2024-0274', date: '2 May 2025', total: '$969.00',
+      items: [
+        { qty: 1, name: 'Dell Latitude 5450', price: '$969.00' },
+      ],
+      note: 'Replacement laptop for James Taylor (Lat. 3540 failed).'
+    },
+    {
+      ref: 'QUO-2024-0260', date: '18 Apr 2025', total: '$608.00',
+      items: [
+        { qty: 1, name: 'Dell P2725H Monitor', price: '$319.00' },
+        { qty: 1, name: 'Dell WD19TBS Dock', price: '$289.00' },
+      ],
+      note: 'Home office upgrade for Alex Kim. Approved by line manager.'
+    },
+    {
+      ref: 'QUO-2024-0248', date: '3 Apr 2025', total: '$1,049.00',
+      items: [
+        { qty: 1, name: 'Dell Latitude 5550', price: '$1,049.00' },
+      ],
+      note: 'Onboarding — engineering team.'
+    }
+  ],
+  declined: [
+    {
+      ref: 'QUO-2024-0298', date: '24 May 2025', total: '$4,298.00',
+      items: [
+        { qty: 2, name: 'Dell Latitude 9450 2-in-1', price: '$2,149.00 each' },
+      ],
+      note: 'Declined by Finance — budget not available this quarter. Please re-submit in Q3 with manager sign-off.'
+    }
+  ]
+};
+
+// ── HELPERS ───────────────────────────────────────────────────────
+function fmt(n) { return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2600);
+}
+
+function genOrderRef() {
+  return 'ORD-' + Date.now().toString(36).toUpperCase().slice(-6);
+}
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'quotes') renderQuotes();
+  });
+});
+
+// ── FILTER LOGIC ──────────────────────────────────────────────────
+function getFilteredProducts() {
+  let list = [...PRODUCTS];
+
+  // AI override
+  if (aiFilteredIds !== null) {
+    const idSet = new Set(aiFilteredIds);
+    list = list.filter(p => idSet.has(p.id));
+  } else {
+    // Category
+    if (activeFilters.category !== 'all') {
+      list = list.filter(p => p.category === activeFilters.category);
+    }
+    // CPU
+    if (activeFilters.cpu !== 'all') {
+      list = list.filter(p => p.cpu === activeFilters.cpu || !p.cpu);
+    }
+    // RAM
+    if (activeFilters.ram !== 'all') {
+      list = list.filter(p => p.ram === activeFilters.ram || !p.ram);
+    }
+    // Price
+    if (priceMin !== null) list = list.filter(p => p.price >= priceMin);
+    if (priceMax !== null) list = list.filter(p => p.price <= priceMax);
+  }
+
+  // Sort
+  if (sortBy === 'price-asc')  list.sort((a, b) => a.price - b.price);
+  if (sortBy === 'price-desc') list.sort((a, b) => b.price - a.price);
+  if (sortBy === 'name')       list.sort((a, b) => a.name.localeCompare(b.name));
+  if (sortBy === 'featured')   list.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+
+  return list;
+}
+
+function renderProductGrid() {
+  const list = getFilteredProducts();
+  resultCount.textContent = list.length + ' product' + (list.length !== 1 ? 's' : '');
+
+  productGrid.innerHTML = '';
+  if (list.length === 0) {
+    productGrid.innerHTML = '<div style="grid-column:1/-1;padding:48px;text-align:center;color:var(--text-3);font-family:\'JetBrains Mono\',monospace;font-size:13px;">No products match your filters.</div>';
+    return;
+  }
+
+  list.forEach(p => {
+    const inCompare = compareList.includes(p.id);
+    const card = document.createElement('div');
+    card.className = 'product-card' + (inCompare ? ' compare-selected' : '');
+    card.dataset.id = p.id;
+
+    const imgHtml = p.img
+      ? `<img src="${p.img}" alt="${p.name}" onerror="this.parentNode.innerHTML='<span class=card-img-placeholder>${p.brand}</span>'">`
+      : `<span class="card-img-placeholder">${p.brand}</span>`;
+
+    const badgeHtml = p.badge ? `<div class="card-badge badge-${p.badge}">${p.badge}</div>` : '';
+
+    const specsHtml = p.specs.slice(0, 4).map(s =>
+      `<div class="card-spec"><span class="spec-label">${s.label}</span><span class="spec-val">${s.val}</span></div>`
+    ).join('');
+
+    card.innerHTML = `
+      <div class="card-compare-toggle" title="Add to compare">✓</div>
+      ${badgeHtml}
+      <div class="card-img-wrap">${imgHtml}</div>
+      <div class="card-body">
+        <div class="card-brand">${p.brand}</div>
+        <div class="card-name">${p.name}</div>
+        <div class="card-specs">${specsHtml}</div>
+        <div class="card-footer">
+          <div class="card-price">${fmt(p.price)}</div>
+          <div class="card-actions">
+            <button class="card-detail-btn" data-id="${p.id}">Details</button>
+            <button class="card-add-btn" data-id="${p.id}">Add</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    card.querySelector('.card-compare-toggle').addEventListener('click', e => {
+      e.stopPropagation();
+      toggleCompare(p.id);
+    });
+    card.querySelector('.card-add-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      addToCart(p.id);
+    });
+    card.querySelector('.card-detail-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      openProductModal(p.id);
+    });
+    card.addEventListener('click', () => openProductModal(p.id));
+
+    productGrid.appendChild(card);
+  });
+}
+
+function renderActiveFilters() {
+  activeFiltersEl.innerHTML = '';
+  if (aiFilteredIds !== null) return;
+  Object.entries(activeFilters).forEach(([key, val]) => {
+    if (val === 'all') return;
+    const chip = document.createElement('div');
+    chip.className = 'active-filter-chip';
+    chip.textContent = val + ' ×';
+    chip.addEventListener('click', () => {
+      activeFilters[key] = 'all';
+      document.querySelectorAll(`[data-filter="${key}"]`).forEach(el => {
+        el.classList.toggle('active', el.dataset.value === 'all');
+      });
+      renderActiveFilters();
+      renderProductGrid();
+    });
+    activeFiltersEl.appendChild(chip);
+  });
+}
+
+// Filter option clicks
+document.querySelectorAll('.filter-opt').forEach(opt => {
+  opt.addEventListener('click', () => {
+    const filterGroup = opt.dataset.filter;
+    const val = opt.dataset.value;
+    activeFilters[filterGroup] = val;
+    document.querySelectorAll(`[data-filter="${filterGroup}"]`).forEach(el => {
+      el.classList.toggle('active', el.dataset.value === val);
+    });
+    aiFilteredIds = null;
+    aiResultBanner.style.display = 'none';
+    renderActiveFilters();
+    renderProductGrid();
+  });
+});
+
+// Price filter
+[document.getElementById('priceMin'), document.getElementById('priceMax')].forEach(input => {
+  input.addEventListener('input', () => {
+    priceMin = document.getElementById('priceMin').value ? +document.getElementById('priceMin').value : null;
+    priceMax = document.getElementById('priceMax').value ? +document.getElementById('priceMax').value : null;
+    renderProductGrid();
+  });
+});
+
+// Sort
+sortSelect.addEventListener('change', () => { sortBy = sortSelect.value; renderProductGrid(); });
+
+// Reset filters
+filterReset.addEventListener('click', () => {
+  activeFilters = { category: 'all', cpu: 'all', ram: 'all' };
+  priceMin = null; priceMax = null;
+  aiFilteredIds = null;
+  document.getElementById('priceMin').value = '';
+  document.getElementById('priceMax').value = '';
+  document.querySelectorAll('.filter-opt').forEach(el => {
+    el.classList.toggle('active', el.dataset.value === 'all');
+  });
+  aiResultBanner.style.display = 'none';
+  renderActiveFilters();
+  renderProductGrid();
+});
+
+// Hero bundles button
+heroBundlesBtn.addEventListener('click', () => {
+  activeFilters.category = 'bundle';
+  document.querySelectorAll('[data-filter="category"]').forEach(el => {
+    el.classList.toggle('active', el.dataset.value === 'bundle');
+  });
+  renderProductGrid();
+});
+
+// AI banner clear
+aiBannerClear.addEventListener('click', () => {
+  aiFilteredIds = null;
+  aiResultBanner.style.display = 'none';
+  renderProductGrid();
+});
+
+// ── COMPARE ───────────────────────────────────────────────────────
+function toggleCompare(id) {
+  if (compareList.includes(id)) {
+    compareList = compareList.filter(i => i !== id);
+  } else {
+    if (compareList.length >= 3) { showToast('You can compare up to 3 products'); return; }
+    compareList.push(id);
+  }
+  updateCompareSummary();
+  renderProductGrid();
+}
+
+function updateCompareSummary() {
+  if (compareList.length === 0) {
+    compareSummary.innerHTML = '<span class="compare-hint">Select up to 3 products to compare</span>';
+    compareBtn.style.display = 'none';
+    return;
+  }
+  const items = compareList.map(id => {
+    const p = PRODUCTS.find(x => x.id === id);
+    return `<div class="compare-item">${p.name} <span class="compare-remove" data-id="${id}">×</span></div>`;
+  }).join('');
+  compareSummary.innerHTML = `<div class="compare-selected-list">${items}</div>`;
+  compareBtn.style.display = 'block';
+  compareSummary.querySelectorAll('.compare-remove').forEach(el => {
+    el.addEventListener('click', () => toggleCompare(el.dataset.id));
+  });
+}
+
+compareBtn.addEventListener('click', openCompareModal);
+
+function openCompareModal() {
+  const products = compareList.map(id => PRODUCTS.find(p => p.id === id));
+  const allSpecKeys = ['CPU', 'RAM', 'Storage', 'Display', 'Battery', 'Weight'];
+
+  const headers = ['<th>Specification</th>', ...products.map(p =>
+    `<th>
+      <div class="compare-img-cell">
+        <img src="${p.img || ''}" alt="${p.name}" onerror="this.style.display='none'">
+        <div class="compare-product-name">${p.name}</div>
+        <div class="compare-product-price">${fmt(p.price)}</div>
+        <button class="compare-add-btn" data-id="${p.id}">Add to basket</button>
+      </div>
+    </th>`
+  )].join('');
+
+  const rows = allSpecKeys.map(key => {
+    const vals = products.map(p => {
+      const s = p.specs.find(x => x.label === key);
+      return s ? s.val : '—';
+    });
+    return `<tr>
+      <td class="row-label">${key}</td>
+      ${vals.map(v => `<td>${v}</td>`).join('')}
+    </tr>`;
+  }).join('');
+
+  // Price row
+  const priceRow = `<tr>
+    <td class="row-label">Price</td>
+    ${products.map(p => `<td><strong>${fmt(p.price)}</strong></td>`).join('')}
+  </tr>`;
+
+  compareTableWrap.innerHTML = `
+    <table class="compare-table">
+      <thead><tr>${headers}</tr></thead>
+      <tbody>${rows}${priceRow}</tbody>
+    </table>
+  `;
+
+  compareTableWrap.querySelectorAll('.compare-add-btn').forEach(btn => {
+    btn.addEventListener('click', () => { addToCart(btn.dataset.id); closeCompareModal(); });
+  });
+
+  compareModalBackdrop.style.display = 'flex';
+}
+
+function closeCompareModal() { compareModalBackdrop.style.display = 'none'; }
+compareModalClose.addEventListener('click', closeCompareModal);
+compareModalBackdrop.addEventListener('click', e => { if (e.target === compareModalBackdrop) closeCompareModal(); });
+
+// ── PRODUCT DETAIL MODAL ──────────────────────────────────────────
+function openProductModal(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p) return;
+
+  let qty = 1;
+
+  const specsHtml = p.specs.map(s =>
+    `<div class="pm-spec-row">
+      <div class="pm-spec-key">${s.label}</div>
+      <div class="pm-spec-val">${s.val}</div>
+    </div>`
+  ).join('');
+
+  productModalBody.innerHTML = `
+    <div class="pm-layout">
+      <div class="pm-img-col">
+        <img src="${p.img || ''}" alt="${p.name}" onerror="this.style.display='none'">
+      </div>
+      <div class="pm-info-col">
+        <div class="pm-brand">${p.brand}</div>
+        <h2 class="pm-name">${p.name}</h2>
+        <p class="pm-desc">${p.desc}</p>
+        <div class="pm-spec-table">${specsHtml}</div>
+        <div class="pm-footer">
+          <div class="pm-price">${fmt(p.price)}</div>
+          <div class="pm-actions">
+            <div class="pm-qty">
+              <button class="pm-qty-btn" id="pmQtyDown">−</button>
+              <div class="pm-qty-val" id="pmQtyVal">1</div>
+              <button class="pm-qty-btn" id="pmQtyUp">+</button>
+            </div>
+            <button class="btn-accent pm-add-btn" id="pmAddBtn">Add to basket</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  productModalBody.querySelector('#pmQtyDown').addEventListener('click', () => {
+    if (qty > 1) { qty--; productModalBody.querySelector('#pmQtyVal').textContent = qty; }
+  });
+  productModalBody.querySelector('#pmQtyUp').addEventListener('click', () => {
+    qty++; productModalBody.querySelector('#pmQtyVal').textContent = qty;
+  });
+  productModalBody.querySelector('#pmAddBtn').addEventListener('click', () => {
+    for (let i = 0; i < qty; i++) addToCart(p.id);
+    closeProductModal();
+  });
+
+  productModalBackdrop.style.display = 'flex';
+}
+
+function closeProductModal() { productModalBackdrop.style.display = 'none'; }
+productModalClose.addEventListener('click', closeProductModal);
+productModalBackdrop.addEventListener('click', e => { if (e.target === productModalBackdrop) closeProductModal(); });
+
+// ── CART ──────────────────────────────────────────────────────────
+function addToCart(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p) return;
+  const existing = cart.find(i => i.id === id);
+  if (existing) { existing.qty++; }
+  else { cart.push({ ...p, qty: 1 }); }
+  renderCart();
+  openCart();
+  showToast(p.name + ' added to basket');
+}
+
+function openCart() {
+  cartDrawer.classList.add('open');
+  cartOverlay.classList.add('open');
+}
+
+function closeCart() {
+  cartDrawer.classList.remove('open');
+  cartOverlay.classList.remove('open');
+}
+
+cartBtn.addEventListener('click', openCart);
+cartClose.addEventListener('click', closeCart);
+cartOverlay.addEventListener('click', closeCart);
+cartEmptyShop.addEventListener('click', closeCart);
+
+function renderCart() {
+  // Update count badge
+  const total = cart.reduce((s, i) => s + i.qty, 0);
+  cartCount.textContent = total;
+  cartCount.classList.toggle('hidden', total === 0);
+
+  // Empty state
+  if (cart.length === 0) {
+    cartEmpty.style.display = 'flex';
+    cartFooter.style.display = 'none';
+    cartItems.innerHTML = '';
+    cartItems.appendChild(cartEmpty);
+    return;
+  }
+
+  cartEmpty.style.display = 'none';
+  cartFooter.style.display = 'flex';
+
+  const existing = cartItems.querySelectorAll('.cart-item');
+  existing.forEach(el => el.remove());
+
+  cart.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'cart-item';
+    el.innerHTML = `
+      <div class="cart-item-img">
+        <img src="${item.img || ''}" alt="${item.name}" onerror="this.style.display='none'">
+      </div>
+      <div class="cart-item-info">
+        <div class="cart-item-name">${item.name}</div>
+        <div class="cart-item-price">${fmt(item.price)} each</div>
+        <div class="cart-item-qty">
+          <button class="qty-btn" data-id="${item.id}" data-dir="-1">−</button>
+          <div class="qty-val">${item.qty}</div>
+          <button class="qty-btn" data-id="${item.id}" data-dir="1">+</button>
+          <button class="cart-item-remove" data-id="${item.id}">Remove</button>
+        </div>
+      </div>
+    `;
+
+    el.querySelectorAll('.qty-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const ci = cart.find(i => i.id === btn.dataset.id);
+        if (!ci) return;
+        ci.qty += +btn.dataset.dir;
+        if (ci.qty <= 0) cart = cart.filter(i => i.id !== btn.dataset.id);
+        renderCart();
+      });
+    });
+
+    el.querySelector('.cart-item-remove').addEventListener('click', e => {
+      cart = cart.filter(i => i.id !== e.target.dataset.id);
+      renderCart();
+    });
+
+    cartItems.insertBefore(el, cartEmpty);
+  });
+
+  updateCartTotals();
+}
+
+function updateCartTotals() {
+  const shipping = SHIPPING_COSTS[shippingSelect.value] || 12;
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const tax = subtotal * TAX_RATE;
+  const total = subtotal + tax + shipping;
+  cartSubtotal.textContent = fmt(subtotal);
+  cartShipping.textContent = fmt(shipping);
+  cartTax.textContent = fmt(tax);
+  cartTotal.textContent = fmt(total);
+}
+
+shippingSelect.addEventListener('change', updateCartTotals);
+
+// Checkout
+checkoutBtn.addEventListener('click', () => {
+  if (cart.length === 0) return;
+  orderRef.textContent = genOrderRef();
+  closeCart();
+  orderModalBackdrop.style.display = 'flex';
+  cart = [];
+  renderCart();
+});
+
+// Save basket
+saveBasketBtn.addEventListener('click', () => {
+  const name = document.getElementById('basketName').value.trim() || 'My order';
+  showToast('"' + name + '" saved for later');
+});
+
+// Order modal close
+orderModalClose.addEventListener('click', () => { orderModalBackdrop.style.display = 'none'; });
+orderModalBackdrop.addEventListener('click', e => { if (e.target === orderModalBackdrop) orderModalBackdrop.style.display = 'none'; });
+
+// ── QUOTES ────────────────────────────────────────────────────────
+function renderQuotes() {
+  quotesList.innerHTML = '';
+  const list = QUOTES[currentQuoteTab] || [];
+
+  if (list.length === 0) {
+    quotesList.innerHTML = '<div style="padding:32px;color:var(--text-3);font-family:\'JetBrains Mono\',monospace;font-size:13px;">No quotes in this category.</div>';
+    return;
+  }
+
+  list.forEach(q => {
+    const card = document.createElement('div');
+    card.className = 'quote-card';
+
+    const badgeClass = { pending: 'badge-pending', approved: 'badge-approved', declined: 'badge-declined' }[currentQuoteTab];
+    const badgeText  = { pending: 'Pending', approved: 'Approved', declined: 'Declined' }[currentQuoteTab];
+
+    const linesHtml = q.items.map(i =>
+      `<div class="quote-line">
+        <div class="ql-qty">${i.qty}×</div>
+        <div class="ql-name">${i.name}</div>
+        <div class="ql-price">${i.price}</div>
+      </div>`
+    ).join('');
+
+    const actionsHtml = currentQuoteTab === 'pending' ? `
+      <button class="btn-accent" onclick="showToast('Quote approved — sent to Salesbuildr')">Approve</button>
+      <button class="btn-secondary" onclick="showToast('Quote declined')">Decline</button>
+    ` : currentQuoteTab === 'approved' ? `
+      <button class="btn-secondary" onclick="showToast('Reorder added to basket')">Reorder</button>
+    ` : `
+      <button class="btn-secondary" onclick="showToast('Quote resubmitted for approval')">Resubmit</button>
+    `;
+
+    card.innerHTML = `
+      <div class="quote-card-header">
+        <div class="quote-meta">
+          <div class="quote-ref">${q.ref}</div>
+          <div class="quote-date">${q.date}</div>
+        </div>
+        <div class="quote-right">
+          <div class="quote-total">${q.total}</div>
+          <span class="badge ${badgeClass}">${badgeText}</span>
+          <svg class="quote-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="quote-card-body">
+        <div class="quote-lines">${linesHtml}</div>
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:12px;font-family:'Inter',sans-serif;">${q.note}</div>
+        <div class="quote-actions">${actionsHtml}</div>
+      </div>
+    `;
+
+    card.querySelector('.quote-card-header').addEventListener('click', () => {
+      card.classList.toggle('open');
+    });
+
+    quotesList.appendChild(card);
+  });
+}
+
+// Quotes sub-tabs
+document.querySelectorAll('.qtab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.qtab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentQuoteTab = btn.dataset.qtab;
+    renderQuotes();
+  });
+});
+
+// ── AI ASSISTANT ──────────────────────────────────────────────────
+function openAiPanel() {
+  aiPanel.classList.add('open');
+  aiOverlay.classList.add('open');
+  aiInput.focus();
+}
+
+function closeAiPanel() {
+  aiPanel.classList.remove('open');
+  aiOverlay.classList.remove('open');
+}
+
+aiToggleBtn.addEventListener('click', openAiPanel);
+heroAiBtn.addEventListener('click', openAiPanel);
+aiClose.addEventListener('click', closeAiPanel);
+aiOverlay.addEventListener('click', closeAiPanel);
+
+// Quick prompts
+document.querySelectorAll('.ai-quick-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    aiInput.value = btn.dataset.prompt;
+    aiQuickPrompts.style.display = 'none';
+    sendAiMessage();
+  });
+});
+
+aiSendBtn.addEventListener('click', sendAiMessage);
+aiInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAiMessage(); }
+});
+
+function appendAiMessage(role, content) {
+  const div = document.createElement('div');
+  div.className = 'ai-message ai-msg-' + role;
+  div.innerHTML = `<div class="ai-msg-content">${content}</div>`;
+  aiChat.appendChild(div);
+  aiChat.scrollTop = aiChat.scrollHeight;
+  return div;
+}
+
+function appendTyping() {
+  const div = document.createElement('div');
+  div.className = 'ai-message ai-msg-typing';
+  div.innerHTML = `<div class="ai-msg-content"><div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+  aiChat.appendChild(div);
+  aiChat.scrollTop = aiChat.scrollHeight;
+  return div;
+}
+
+async function sendAiMessage() {
+  const msg = aiInput.value.trim();
+  if (!msg) return;
+
+  aiInput.value = '';
+  aiSendBtn.disabled = true;
+  aiQuickPrompts.style.display = 'none';
+
+  appendAiMessage('user', msg);
+  const typingEl = appendTyping();
+
+  // Build product catalog summary for Claude
+  const catalog = PRODUCTS.map(p => ({
+    id: p.id,
+    name: p.name,
+    category: p.category,
+    price: p.price,
+    shortDesc: p.shortDesc,
+    cpu: p.cpu,
+    ram: p.ram,
+    weight: p.weight,
+    display: p.display,
+    battery: p.battery
+  }));
+
+  const systemPrompt = `You are a helpful IT procurement assistant for Acme Corp's internal technology store. Your job is to help employees find the right technology products from their company's approved catalog.
+
+The product catalog is:
+${JSON.stringify(catalog, null, 2)}
+
+When a user describes what they need, recommend specific products from the catalog by their exact ID. 
+Respond in JSON with this exact format:
+{
+  "message": "Your helpful response in plain text (no markdown)",
+  "recommendedIds": ["product-id-1", "product-id-2"],
+  "filterTitle": "Short title for what you found, e.g. 'Best for remote workers'",
+  "filterSub": "Short explanation, e.g. 'Based on your budget and requirements'"
+}
+
+Keep message conversational and under 80 words. Always recommend at least 1 product. Recommend up to 4 products max.
+Return ONLY the JSON object, nothing else.`;
+
+  // Maintain conversation history
+  aiConversation.push({ role: 'user', content: msg });
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: aiConversation
+      })
+    });
+
+    const data = await response.json();
+    typingEl.remove();
+
+    let parsed;
+    try {
+      const raw = data.content[0].text.replace(/```json|```/g, '').trim();
+      parsed = JSON.parse(raw);
+    } catch {
+      parsed = {
+        message: data.content[0].text,
+        recommendedIds: [],
+        filterTitle: 'AI recommendations',
+        filterSub: ''
+      };
+    }
+
+    // Add assistant reply to history
+    aiConversation.push({ role: 'assistant', content: data.content[0].text });
+
+    appendAiMessage('assistant', parsed.message);
+
+    // Apply product filter if IDs returned
+    if (parsed.recommendedIds && parsed.recommendedIds.length > 0) {
+      aiFilteredIds = parsed.recommendedIds;
+      aiResultTitle.textContent = parsed.filterTitle || 'AI recommendations';
+      aiResultSub.textContent = parsed.filterSub || '';
+      aiResultBanner.style.display = 'flex';
+      renderProductGrid();
+
+      // Optionally close panel to see results
+      setTimeout(() => closeAiPanel(), 1000);
+    }
+
+  } catch (err) {
+    typingEl.remove();
+    appendAiMessage('assistant', 'Sorry, I couldn\'t connect to the AI service right now. Please try again in a moment.');
+    console.error('AI error:', err);
+  }
+
+  aiSendBtn.disabled = false;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+function init() {
+  renderProductGrid();
+  renderCart();
+}
+
+init();
