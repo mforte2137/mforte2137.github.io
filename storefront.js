@@ -52,6 +52,16 @@ const compareModalClose     = document.getElementById('compareModalClose');
 const orderModalBackdrop    = document.getElementById('orderModalBackdrop');
 const orderRef              = document.getElementById('orderRef');
 const orderModalClose       = document.getElementById('orderModalClose');
+const savedBasketsBtn       = document.getElementById('savedBasketsBtn');
+const savedDrawer           = document.getElementById('savedDrawer');
+const savedOverlay          = document.getElementById('savedOverlay');
+const savedClose            = document.getElementById('savedClose');
+const savedBasketsList      = document.getElementById('savedBasketsList');
+const savedEmpty            = document.getElementById('savedEmpty');
+const savedCountBadge       = document.getElementById('savedCountBadge');
+const ordersList            = document.getElementById('ordersList');
+const productSearchInput    = document.getElementById('productSearch');
+const productSearchClear    = document.getElementById('productSearchClear');
 const payModalBackdrop      = document.getElementById('payModalBackdrop');
 const payModalClose         = document.getElementById('payModalClose');
 const payModalTotal         = document.getElementById('payModalTotal');
@@ -99,6 +109,60 @@ let customAddresses  = {};
 let endUserData = {};
 
 const SHIPPING_COSTS = { standard: 12, express: 28, overnight: 55 };
+
+// Saved baskets: array of { id, name, items, total, date }
+let savedBaskets = [];
+let productSearchQuery = '';
+
+// ── ORDER HISTORY DATA ────────────────────────────────────────────
+const ORDER_HISTORY = [
+  {
+    ref: 'ORD-2025-0089', date: 'Delivered 3 Jun 2025', total: '$2,549.00',
+    shipped: 'Acme Corp HQ, 142 West 36th Street, New York, NY 10018',
+    items: [
+      { qty: 1, name: 'Executive Bundle', price: '$2,549.00', img: 'https://mforte2137.github.io/images/store/bundle-exec.png' },
+    ]
+  },
+  {
+    ref: 'ORD-2025-0074', date: 'Delivered 19 May 2025', total: '$5,452.00',
+    shipped: 'MSP staging → Acme Corp HQ',
+    items: [
+      { qty: 4, name: 'Dell Latitude 5450', price: '$969.00 each', img: 'https://mforte2137.github.io/images/store/laptop-lat-5450.png' },
+      { qty: 4, name: 'Dell Premier Backpack 15', price: '$89.00 each', img: 'https://mforte2137.github.io/images/store/bag-premier.png' },
+    ]
+  },
+  {
+    ref: 'ORD-2025-0061', date: 'Delivered 8 May 2025', total: '$1,699.00',
+    shipped: 'Sarah Chen, 45 Pine Street, Brooklyn, NY 11201',
+    items: [
+      { qty: 1, name: 'Remote Worker Bundle', price: '$1,699.00', img: 'https://mforte2137.github.io/images/store/bundle-remote.png' },
+    ]
+  },
+  {
+    ref: 'ORD-2025-0049', date: 'Delivered 22 Apr 2025', total: '$638.00',
+    shipped: 'Chicago Office, 330 N Wabash Ave, Chicago, IL 60611',
+    items: [
+      { qty: 1, name: 'Dell P2725H 27" Monitor', price: '$319.00', img: 'https://mforte2137.github.io/images/store/monitor-p2725h.png' },
+      { qty: 1, name: 'Dell Thunderbolt Dock WD19TBS', price: '$289.00', img: 'https://mforte2137.github.io/images/store/dock-wd19tbs.png' },
+      { qty: 1, name: 'Dell Premier Mouse MS5120W', price: '$59.00', img: 'https://mforte2137.github.io/images/store/mouse-ms5120w.png' },
+    ]
+  },
+  {
+    ref: 'ORD-2025-0033', date: 'Delivered 5 Apr 2025', total: '$1,049.00',
+    shipped: 'MSP staging → Marcus Reid, Austin Office',
+    items: [
+      { qty: 1, name: 'Dell Latitude 5550', price: '$1,049.00', img: 'https://mforte2137.github.io/images/store/laptop-lat-5550.png' },
+    ]
+  },
+  {
+    ref: 'ORD-2025-0018', date: 'Delivered 14 Mar 2025', total: '$3,398.00',
+    shipped: 'MSP staging → Los Angeles Office',
+    items: [
+      { qty: 2, name: 'Dell Latitude 7450', price: '$1,649.00 each', img: 'https://mforte2137.github.io/images/store/laptop-lat-7450.png' },
+      { qty: 2, name: 'Dell Thunderbolt Dock WD22TB4', price: '$349.00 each', img: 'https://mforte2137.github.io/images/store/dock-wd22tb4.png' },
+    ]
+  },
+];
 const TAX_RATE = 0.085;
 
 // ── BRANCH OFFICES ────────────────────────────────────────────────
@@ -592,6 +656,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'quotes') renderQuotes();
+    if (btn.dataset.tab === 'orders') renderOrders();
   });
 });
 
@@ -604,6 +669,14 @@ function getFilteredProducts() {
     const idSet = new Set(aiFilteredIds);
     list = list.filter(p => idSet.has(p.id));
   } else {
+    // Search query
+    if (productSearchQuery) {
+      list = list.filter(p =>
+        p.name.toLowerCase().includes(productSearchQuery) ||
+        p.brand.toLowerCase().includes(productSearchQuery) ||
+        (p.specs && p.specs.some(s => s.val.toLowerCase().includes(productSearchQuery)))
+      );
+    }
     // Category
     if (activeFilters.category !== 'all') {
       list = list.filter(p => p.category === activeFilters.category);
@@ -741,6 +814,23 @@ document.querySelectorAll('.filter-opt').forEach(opt => {
 sortSelect.addEventListener('change', () => { sortBy = sortSelect.value; renderProductGrid(); });
 
 // Reset filters
+// ── PRODUCT SEARCH ────────────────────────────────────────────────
+productSearchInput?.addEventListener('input', e => {
+  productSearchQuery = e.target.value.trim().toLowerCase();
+  productSearchClear.style.display = productSearchQuery ? 'flex' : 'none';
+  aiFilteredIds = null;
+  aiResultBanner.style.display = 'none';
+  renderProductGrid();
+});
+
+productSearchClear?.addEventListener('click', () => {
+  productSearchInput.value = '';
+  productSearchQuery = '';
+  productSearchClear.style.display = 'none';
+  productSearchInput.focus();
+  renderProductGrid();
+});
+
 filterReset.addEventListener('click', () => {
   activeFilters = { category: 'all', cpu: 'all', ram: 'all' };
   priceMin = null; priceMax = null;
@@ -1262,9 +1352,157 @@ document.getElementById('checkoutPayBtn').addEventListener('click', () => {
 
 // Save basket
 saveBasketBtn.addEventListener('click', () => {
+  if (cart.length === 0) return;
   const name = document.getElementById('basketName').value.trim() || 'My order';
-  showToast('"' + name + '" saved for later');
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const shipping = SHIPPING_COSTS[shippingSelect.value] || 12;
+  const total = subtotal + (subtotal * TAX_RATE) + shipping;
+  const basket = {
+    id: Date.now().toString(36),
+    name,
+    date: new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }),
+    items: cart.map(i => ({ ...i })),
+    total: fmt(total),
+    preview: cart.slice(0, 3).map(i => i.name).join(', ') + (cart.length > 3 ? ` +${cart.length - 3} more` : ''),
+  };
+  savedBaskets.unshift(basket);
+  updateSavedBadge();
+  showToast('"' + name + '" saved');
 });
+
+// ── SAVED BASKETS ─────────────────────────────────────────────────
+function updateSavedBadge() {
+  if (savedBaskets.length > 0) {
+    savedCountBadge.textContent = savedBaskets.length;
+    savedCountBadge.style.display = 'inline-flex';
+  } else {
+    savedCountBadge.style.display = 'none';
+  }
+}
+
+function openSavedDrawer() {
+  renderSavedBaskets();
+  savedDrawer.classList.add('open');
+  savedOverlay.classList.add('open');
+}
+function closeSavedDrawer() {
+  savedDrawer.classList.remove('open');
+  savedOverlay.classList.remove('open');
+}
+
+savedBasketsBtn?.addEventListener('click', openSavedDrawer);
+savedClose?.addEventListener('click', closeSavedDrawer);
+savedOverlay?.addEventListener('click', closeSavedDrawer);
+
+function renderSavedBaskets() {
+  savedBasketsList.querySelectorAll('.saved-basket-card').forEach(el => el.remove());
+
+  if (savedBaskets.length === 0) {
+    savedEmpty.style.display = 'flex';
+    return;
+  }
+  savedEmpty.style.display = 'none';
+
+  savedBaskets.forEach(basket => {
+    const card = document.createElement('div');
+    card.className = 'saved-basket-card';
+    card.innerHTML = `
+      <div class="saved-basket-header">
+        <div>
+          <div class="saved-basket-name">\${basket.name}</div>
+          <div class="saved-basket-meta">Saved \${basket.date} · \${basket.items.length} item\${basket.items.length !== 1 ? 's' : ''}</div>
+        </div>
+      </div>
+      <div class="saved-basket-body">
+        <div class="saved-basket-preview">\${basket.preview}</div>
+        <div class="saved-basket-total">\${basket.total}</div>
+        <div class="saved-basket-actions">
+          <button class="saved-restore-btn" data-id="\${basket.id}">Restore to basket</button>
+          <button class="saved-delete-btn" data-id="\${basket.id}">Delete</button>
+        </div>
+      </div>
+    `;
+
+    card.querySelector('.saved-restore-btn').addEventListener('click', () => {
+      cart = basket.items.map(i => ({ ...i }));
+      renderCart();
+      closeSavedDrawer();
+      openCart();
+      showToast('"' + basket.name + '" restored to basket');
+    });
+
+    card.querySelector('.saved-delete-btn').addEventListener('click', () => {
+      savedBaskets = savedBaskets.filter(b => b.id !== basket.id);
+      updateSavedBadge();
+      renderSavedBaskets();
+    });
+
+    savedBasketsList.insertBefore(card, savedEmpty);
+  });
+}
+
+// ── ORDER HISTORY ─────────────────────────────────────────────────
+function renderOrders() {
+  if (!ordersList) return;
+  ordersList.innerHTML = '';
+
+  ORDER_HISTORY.forEach(order => {
+    const card = document.createElement('div');
+    card.className = 'order-card';
+
+    const linesHtml = order.items.map(item => `
+      <div class="order-line">
+        <div class="ol-thumb">
+          <img src="\${item.img || ''}" alt="\${item.name}" onerror="this.style.display='none'">
+        </div>
+        <div class="ol-qty">\${item.qty}×</div>
+        <div class="ol-name">\${item.name}</div>
+        <div class="ol-price">\${item.price}</div>
+      </div>
+    `).join('');
+
+    card.innerHTML = `
+      <div class="order-card-header">
+        <div class="order-meta">
+          <div class="order-ref">\${order.ref}</div>
+          <div class="order-date">\${order.date}</div>
+        </div>
+        <div class="order-right">
+          <div class="order-total">\${order.total}</div>
+          <span class="badge badge-fulfilled">Fulfilled</span>
+          <svg class="order-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="order-card-body">
+        <div class="order-lines">\${linesHtml}</div>
+        <div class="order-footer">
+          <div class="order-ship-info">Shipped to: <strong>\${order.shipped}</strong></div>
+          <button class="btn-accent" style="font-size:11px;padding:6px 14px;" data-reorder-ref="\${order.ref}">Reorder</button>
+        </div>
+      </div>
+    `;
+
+    card.querySelector('.order-card-header').addEventListener('click', () => {
+      card.classList.toggle('open');
+    });
+
+    card.querySelector('[data-reorder-ref]').addEventListener('click', e => {
+      e.stopPropagation();
+      // Add all items from this order to cart
+      order.items.forEach(item => {
+        const product = PRODUCTS.find(p => p.name === item.name);
+        if (product) {
+          for (let i = 0; i < item.qty; i++) addToCart(product.id);
+        }
+      });
+      // Switch to shop tab
+      document.querySelector('[data-tab="shop"]').click();
+      showCartSnackbar('Items from ' + order.ref + ' added');
+    });
+
+    ordersList.appendChild(card);
+  });
+}
 
 // Order modal close
 orderModalClose.addEventListener('click', () => { orderModalBackdrop.style.display = 'none'; });
