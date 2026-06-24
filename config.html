@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Store Configurator — Salesbuildr</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="config.css" />
+</head>
+<body>
+
+  <!-- ═══ TOP BAR ══════════════════════════════════════════════════ -->
+  <header class="cfg-topbar">
+    <div class="cfg-topbar-left">
+      <div class="cfg-logo-mark">SB</div>
+      <div class="cfg-topbar-titles">
+        <span class="cfg-topbar-app">Salesbuildr</span>
+        <span class="cfg-topbar-sep">/</span>
+        <span class="cfg-topbar-page">Store Configurator</span>
+      </div>
+    </div>
+    <div class="cfg-topbar-center">
+      <div class="cfg-store-badge">
+        <div class="cfg-store-dot"></div>
+        <span>Acme Corp Store</span>
+      </div>
+    </div>
+    <div class="cfg-topbar-right">
+      <button class="cfg-btn-secondary" id="previewBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Preview store
+      </button>
+      <button class="cfg-btn-primary" id="saveBtn">Save changes</button>
+    </div>
+  </header>
+
+  <!-- ═══ SHELL ═════════════════════════════════════════════════════ -->
+  <div class="cfg-shell">
+
+    <!-- ── LEFT NAV ────────────────────────────────────────────────── -->
+    <nav class="cfg-nav">
+      <div class="cfg-nav-section-label">Store setup</div>
+      <a class="cfg-nav-item active" data-section="store">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Store identity
+      </a>
+      <a class="cfg-nav-item" data-section="theme">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 010 20"/><path d="M12 2C6.48 2 2 6.48 2 12"/></svg>
+        Theme & branding
+      </a>
+      <a class="cfg-nav-item" data-section="banner">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M8 2v4M16 2v4"/></svg>
+        Banner & hero
+      </a>
+      <a class="cfg-nav-item" data-section="layout">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Layout
+      </a>
+
+      <div class="cfg-nav-section-label" style="margin-top:16px;">Customers</div>
+      <a class="cfg-nav-item" data-section="customers">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Customers
+      </a>
+      <a class="cfg-nav-item" data-section="permissions">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        Permissions
+      </a>
+
+      <div class="cfg-nav-section-label" style="margin-top:16px;">Checkout</div>
+      <a class="cfg-nav-item" data-section="cart">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+        Cart & checkout
+      </a>
+      <a class="cfg-nav-item" data-section="payment">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Payment
+      </a>
+
+      <div class="cfg-nav-section-label" style="margin-top:16px;">Intelligence</div>
+      <a class="cfg-nav-item" data-section="ai">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        AI assistant
+      </a>
+      <a class="cfg-nav-item" data-section="notifications">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+        Notifications
+      </a>
+    </nav>
+
+    <!-- ── MAIN CONTENT ─────────────────────────────────────────────── -->
+    <main class="cfg-main" id="cfgMain">
+
+      <!-- ══ STORE IDENTITY ══════════════════════════════════════════ -->
+      <section class="cfg-section active" id="section-store">
+        <div class="cfg-section-header">
+          <h2 class="cfg-section-title">Store identity</h2>
+          <p class="cfg-section-desc">Basic information about this store — name, logo, and public URL.</p>
+        </div>
+
+        <div class="cfg-card">
+          <div class="cfg-field">
+            <label class="cfg-label">Store name</label>
+            <div class="cfg-hint">Shown in the browser tab and store header</div>
+            <input type="text" class="cfg-input" id="storeName" value="Acme Corp Technology Store" />
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-label">Store URL slug</label>
+            <div class="cfg-hint">Your customers access the store at this address</div>
+            <div class="cfg-input-prefix-wrap">
+              <span class="cfg-input-prefix">store.salesbuildr.com/</span>
+              <input type="text" class="cfg-input cfg-input-slug" id="storeSlug" value="acme-corp" />
+            </div>
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-label">Store logo</label>
+            <div class="cfg-hint">Displayed in the store header. Recommended: SVG or PNG with transparent background, min 200px wide.</div>
+            <div class="cfg-logo-upload" id="logoUpload">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span>Click to upload logo</span>
+              <span class="cfg-upload-sub">SVG, PNG — max 2 MB</span>
+            </div>
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-label">Support email</label>
+            <div class="cfg-hint">Shown in order confirmations and the store footer</div>
+            <input type="email" class="cfg-input" value="it-support@acmecorp.com" />
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-label">Store status</label>
+            <div class="cfg-toggle-row">
+              <label class="cfg-toggle">
+                <input type="checkbox" id="storeActive" checked />
+                <span class="cfg-toggle-track"></span>
+              </label>
+              <span class="cfg-toggle-label" id="storeActiveLabel">Store is live — customers can access it</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ THEME ═══════════════════════════════════════════════════ -->
+      <section class="cfg-section" id="section-theme">
+        <div class="cfg-section-header">
+          <h2 class="cfg-section-title">Theme & branding</h2>
+          <p class="cfg-section-desc">Control the visual style of your customer store.</p>
+        </div>
+
+        <div class="cfg-card">
+          <div class="cfg-field">
+            <label class="cfg-label">Colour scheme</label>
+            <div class="cfg-hint">Choose a preset or customise below</div>
+            <div class="cfg-theme-presets" id="themePresets">
+              <div class="cfg-theme-preset active" data-theme="default" title="Salesbuildr (default)">
+                <div class="cfg-preset-swatch" style="background:#2E74DC;"></div>
+                <div class="cfg-preset-swatch" style="background:#0B0E14;"></div>
+                <div class="cfg-preset-swatch" style="background:#FAFAF7;"></div>
+                <span>Default</span>
+              </div>
+              <div class="cfg-theme-preset" data-theme="slate" title="Slate">
+                <div class="cfg-preset-swatch" style="background:#475569;"></div>
+                <div class="cfg-preset-swatch" style="background:#1e293b;"></div>
+                <div class="cfg-preset-swatch" style="background:#f8fafc;"></div>
+                <span>Slate</span>
+              </div>
+              <div class="cfg-theme-preset" data-theme="forest" title="Forest">
+                <div class="cfg-preset-swatch" style="background:#16a34a;"></div>
+                <div class="cfg-preset-swatch" style="background:#14532d;"></div>
+                <div class="cfg-preset-swatch" style="background:#f0fdf4;"></div>
+                <span>Forest</span>
+              </div>
+              <div class="cfg-theme-preset" data-theme="ember" title="Ember">
+                <div class="cfg-preset-swatch" style="background:#dc2626;"></div>
+                <div class="cfg-preset-swatch" style="background:#1c1917;"></div>
+                <div class="cfg-preset-swatch" style="background:#fafaf9;"></div>
+                <span>Ember</span>
+              </div>
+              <div class="cfg-theme-preset" data-theme="violet" title="Violet">
+                <div class="cfg-preset-swatch" style="background:#7c3aed;"></div>
+                <div class="cfg-preset-swatch" style="background:#2e1065;"></div>
+                <div class="cfg-preset-swatch" style="background:#faf5ff;"></div>
+                <span>Violet</span>
+              </div>
+              <div class="cfg-theme-preset" data-theme="custom" title="Custom">
+                <div class="cfg-preset-swatch cfg-preset-custom">+</div>
+                <span>Custom</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="cfg-field" id="customColorsField" style="display:none;">
+            <label class="cfg-label">Custom colours</label>
+            <div class="cfg-color-row">
+              <div class="cfg-color-pick">
+                <label class="cfg-color-label">Accent</label>
+                <div class="cfg-color-input-wrap">
+                  <input type="color" class="cfg-color-swatch" id="colorAccent" value="#2E74DC" />
+                  <input type="text" class="cfg-color-hex" id="colorAccentHex" value="#2E74DC" maxlength="7" />
+                </div>
+              </div>
+              <div class="cfg-color-pick">
+                <label class="cfg-color-label">Text</label>
+                <div class="cfg-color-input-wrap">
+                  <input type="color" class="cfg-color-swatch" id="colorText" value="#0B0E14" />
+                  <input type="text" class="cfg-color-hex" id="colorTextHex" value="#0B0E14" maxlength="7" />
+                </div>
+              </div>
+              <div class="cfg-color-pick">
+                <label class="cfg-color-label">Background</label>
+                <div class="cfg-color-input-wrap">
+                  <input type="color" class="cfg-color-swatch" id="colorBg" value="#FAFAF7" />
+                  <input type="text" class="cfg-color-hex" id="colorBgHex" value="#FAFAF7" maxlength="7" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Display font</label>
+            <div class="cfg-hint">Used for headings and the store name</div>
+            <select class="cfg-select" id="fontDisplay">
+              <option value="Space Grotesk" selected>Space Grotesk (default)</option>
+              <option value="Inter">Inter</option>
+              <option value="DM Sans">DM Sans</option>
+              <option value="Syne">Syne</option>
+              <option value="Outfit">Outfit</option>
+            </select>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Button style</label>
+            <div class="cfg-radio-row">
+              <label class="cfg-radio-opt active" data-group="btnstyle" data-value="sharp">
+                <div class="cfg-radio-preview" style="border-radius:0;">Sharp</div>
+              </label>
+              <label class="cfg-radio-opt" data-group="btnstyle" data-value="soft">
+                <div class="cfg-radio-preview" style="border-radius:6px;">Soft</div>
+              </label>
+              <label class="cfg-radio-opt" data-group="btnstyle" data-value="pill">
+                <div class="cfg-radio-preview" style="border-radius:999px;">Pill</div>
+              </label>
+            </div>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Dark mode</label>
+            <div class="cfg-toggle-row">
+              <label class="cfg-toggle">
+                <input type="checkbox" id="darkMode" />
+                <span class="cfg-toggle-track"></span>
+              </label>
+              <span class="cfg-toggle-label">Allow customers to switch to dark mode</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ BANNER ══════════════════════════════════════════════════ -->
+      <section class="cfg-section" id="section-banner">
+        <div class="cfg-section-header">
+          <h2 class="cfg-section-title">Banner & hero</h2>
+          <p class="cfg-section-desc">The first thing customers see when they open the store. Changes update the preview in real time.</p>
+        </div>
+
+        <div class="cfg-card">
+          <div class="cfg-field">
+            <label class="cfg-label">Kicker label</label>
+            <div class="cfg-hint">Small uppercase text above the headline</div>
+            <input type="text" class="cfg-input preview-trigger" id="bannerKicker" value="Curated for Acme Corp" />
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-label">Headline</label>
+            <input type="text" class="cfg-input preview-trigger" id="bannerHeadline" value="Your company technology store" />
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-label">Sub-text</label>
+            <textarea class="cfg-textarea preview-trigger" id="bannerSub" rows="2">IT-approved devices, accessories, and bundles — configured for your environment and shipped direct to you or the office.</textarea>
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-label">Primary CTA label</label>
+            <input type="text" class="cfg-input preview-trigger" id="bannerCta" value="Ask AI to help me choose" />
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-label">Secondary CTA label</label>
+            <input type="text" class="cfg-input preview-trigger" id="bannerCta2" value="View bundles" />
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-label">Banner style</label>
+            <div class="cfg-radio-row">
+              <label class="cfg-radio-opt active" data-group="bannerstyle" data-value="clean">
+                <div class="cfg-radio-preview-banner clean-banner">Clean</div>
+              </label>
+              <label class="cfg-radio-opt" data-group="bannerstyle" data-value="accent">
+                <div class="cfg-radio-preview-banner accent-banner">Accent</div>
+              </label>
+              <label class="cfg-radio-opt" data-group="bannerstyle" data-value="dark">
+                <div class="cfg-radio-preview-banner dark-banner">Dark</div>
+              </label>
+            </div>
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-label">Show store stats</label>
+            <div class="cfg-hint">Display product count, bundle count, and shipping time in the banner</div>
+            <div class="cfg-toggle-row">
+              <label class="cfg-toggle">
+                <input type="checkbox" id="showStats" checked />
+                <span class="cfg-toggle-track"></span>
+              </label>
+              <span class="cfg-toggle-label">Show stats bar</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ LAYOUT ══════════════════════════════════════════════════ -->
+      <section class="cfg-section" id="section-layout">
+        <div class="cfg-section-header">
+          <h2 class="cfg-section-title">Layout</h2>
+          <p class="cfg-section-desc">Control how products are displayed in the store.</p>
+        </div>
+
+        <div class="cfg-card">
+          <div class="cfg-field">
+            <label class="cfg-label">Default product view</label>
+            <div class="cfg-radio-row">
+              <label class="cfg-radio-opt active" data-group="viewmode" data-value="grid">
+                <div class="cfg-view-preview">
+                  <div class="cfg-view-grid">
+                    <div></div><div></div><div></div><div></div>
+                  </div>
+                  Grid
+                </div>
+              </label>
+              <label class="cfg-radio-opt" data-group="viewmode" data-value="list">
+                <div class="cfg-view-preview">
+                  <div class="cfg-view-list">
+                    <div></div><div></div><div></div>
+                  </div>
+                  List
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Products per page</label>
+            <select class="cfg-select" style="width:140px;">
+              <option>12</option>
+              <option selected>24</option>
+              <option>36</option>
+              <option>48</option>
+            </select>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Show filter rail</label>
+            <div class="cfg-toggle-row">
+              <label class="cfg-toggle"><input type="checkbox" checked /><span class="cfg-toggle-track"></span></label>
+              <span class="cfg-toggle-label">Show category and spec filters on the left</span>
+            </div>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Show product comparison</label>
+            <div class="cfg-toggle-row">
+              <label class="cfg-toggle"><input type="checkbox" checked /><span class="cfg-toggle-track"></span></label>
+              <span class="cfg-toggle-label">Allow customers to compare up to 3 products side-by-side</span>
+            </div>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Featured products <span class="cfg-label-sub">drag to reorder</span></label>
+            <div class="cfg-hint">These appear first in the store grid regardless of filters</div>
+            <div class="cfg-drag-list" id="featuredList">
+              <div class="cfg-drag-item" draggable="true">
+                <svg class="cfg-drag-handle" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
+                <span>Dell Latitude 5550</span>
+                <span class="cfg-drag-badge">Laptop</span>
+              </div>
+              <div class="cfg-drag-item" draggable="true">
+                <svg class="cfg-drag-handle" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
+                <span>Dell Latitude 7450</span>
+                <span class="cfg-drag-badge">Laptop</span>
+              </div>
+              <div class="cfg-drag-item" draggable="true">
+                <svg class="cfg-drag-handle" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
+                <span>Remote Worker Bundle</span>
+                <span class="cfg-drag-badge">Bundle</span>
+              </div>
+              <div class="cfg-drag-item" draggable="true">
+                <svg class="cfg-drag-handle" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
+                <span>Dell P2425H Monitor</span>
+                <span class="cfg-drag-badge">Monitor</span>
+              </div>
+              <div class="cfg-drag-item" draggable="true">
+                <svg class="cfg-drag-handle" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
+                <span>Executive Bundle</span>
+                <span class="cfg-drag-badge">Bundle</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ CUSTOMERS ═══════════════════════════════════════════════ -->
+      <section class="cfg-section" id="section-customers">
+        <div class="cfg-section-header">
+          <h2 class="cfg-section-title">Customers</h2>
+          <p class="cfg-section-desc">Add companies from your Salesbuildr account and control what each company can see and do in the store.</p>
+        </div>
+
+        <div class="cfg-card">
+          <div class="cfg-field">
+            <label class="cfg-label">Add a company from Salesbuildr</label>
+            <div class="cfg-hint">Search your Salesbuildr company list to grant store access</div>
+            <div class="cfg-search-wrap">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" class="cfg-search-input" id="companySearch" placeholder="Search companies…" />
+            </div>
+            <div class="cfg-search-results" id="companyResults" style="display:none;"></div>
+          </div>
+        </div>
+
+        <div class="cfg-card" style="margin-top:16px;">
+          <div class="cfg-card-header">
+            <div class="cfg-card-title">Companies with store access</div>
+            <span class="cfg-count-badge">3 companies</span>
+          </div>
+
+          <div class="cfg-customer-list">
+            <div class="cfg-customer-row">
+              <div class="cfg-customer-avatar">AC</div>
+              <div class="cfg-customer-info">
+                <div class="cfg-customer-name">Acme Corp</div>
+                <div class="cfg-customer-meta">14 contacts · Last order 12 Jun 2025</div>
+              </div>
+              <div class="cfg-customer-actions">
+                <select class="cfg-select-sm">
+                  <option>All products</option>
+                  <option>Curated list</option>
+                </select>
+                <button class="cfg-btn-ghost-sm">Configure</button>
+                <button class="cfg-btn-danger-sm">Remove</button>
+              </div>
+            </div>
+
+            <div class="cfg-customer-row">
+              <div class="cfg-customer-avatar" style="background:var(--good-bg);color:var(--good);">BX</div>
+              <div class="cfg-customer-info">
+                <div class="cfg-customer-name">Bravo Xray Ltd</div>
+                <div class="cfg-customer-meta">6 contacts · Last order 3 May 2025</div>
+              </div>
+              <div class="cfg-customer-actions">
+                <select class="cfg-select-sm">
+                  <option>All products</option>
+                  <option selected>Curated list</option>
+                </select>
+                <button class="cfg-btn-ghost-sm">Configure</button>
+                <button class="cfg-btn-danger-sm">Remove</button>
+              </div>
+            </div>
+
+            <div class="cfg-customer-row">
+              <div class="cfg-customer-avatar" style="background:var(--warn-bg);color:var(--warn);">NG</div>
+              <div class="cfg-customer-info">
+                <div class="cfg-customer-name">Northern Grid Energy</div>
+                <div class="cfg-customer-meta">22 contacts · Last order 28 Apr 2025</div>
+              </div>
+              <div class="cfg-customer-actions">
+                <select class="cfg-select-sm">
+                  <option selected>All products</option>
+                  <option>Curated list</option>
+                </select>
+                <button class="cfg-btn-ghost-sm">Configure</button>
+                <button class="cfg-btn-danger-sm">Remove</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ PERMISSIONS ═════════════════════════════════════════════ -->
+      <section class="cfg-section" id="section-permissions">
+        <div class="cfg-section-header">
+          <h2 class="cfg-section-title">Permissions</h2>
+          <p class="cfg-section-desc">Control what customers can do in the store and who needs to approve purchases.</p>
+        </div>
+
+        <div class="cfg-card">
+          <div class="cfg-field">
+            <label class="cfg-label">Quote approval</label>
+            <div class="cfg-radio-col">
+              <label class="cfg-radio-line active" data-group="approval" data-value="auto"><span class="cfg-radio-dot"></span>Auto-approve all orders — no approval step</label>
+              <label class="cfg-radio-line" data-group="approval" data-value="manager"><span class="cfg-radio-dot"></span>Manager must approve before order is processed</label>
+              <label class="cfg-radio-line" data-group="approval" data-value="threshold"><span class="cfg-radio-dot"></span>Auto-approve below threshold, require approval above</label>
+            </div>
+          </div>
+
+          <div class="cfg-field" id="thresholdField" style="display:none;">
+            <label class="cfg-label">Approval threshold</label>
+            <div class="cfg-input-prefix-wrap">
+              <span class="cfg-input-prefix">$</span>
+              <input type="number" class="cfg-input cfg-input-slug" value="500" />
+            </div>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Spending limit per order</label>
+            <div class="cfg-hint">Set a maximum order value. Leave blank for no limit.</div>
+            <div class="cfg-input-prefix-wrap">
+              <span class="cfg-input-prefix">$</span>
+              <input type="number" class="cfg-input cfg-input-slug" placeholder="No limit" />
+            </div>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Require PO number</label>
+            <div class="cfg-toggle-row">
+              <label class="cfg-toggle"><input type="checkbox" id="requirePo" /><span class="cfg-toggle-track"></span></label>
+              <span class="cfg-toggle-label">Customers must enter a PO number before checkout</span>
+            </div>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Allow custom shipping addresses</label>
+            <div class="cfg-toggle-row">
+              <label class="cfg-toggle"><input type="checkbox" checked /><span class="cfg-toggle-track"></span></label>
+              <span class="cfg-toggle-label">Customers can enter a one-off ship-to address</span>
+            </div>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Allow basket saving</label>
+            <div class="cfg-toggle-row">
+              <label class="cfg-toggle"><input type="checkbox" checked /><span class="cfg-toggle-track"></span></label>
+              <span class="cfg-toggle-label">Customers can save baskets for later</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ CART & CHECKOUT ═════════════════════════════════════════ -->
+      <section class="cfg-section" id="section-cart">
+        <div class="cfg-section-header">
+          <h2 class="cfg-section-title">Cart & checkout</h2>
+          <p class="cfg-section-desc">Configure what appears at checkout and how orders flow into Salesbuildr.</p>
+        </div>
+
+        <div class="cfg-card">
+          <div class="cfg-field">
+            <label class="cfg-label">Checkout flow</label>
+            <div class="cfg-radio-col">
+              <label class="cfg-radio-line active" data-group="checkoutflow" data-value="drawer"><span class="cfg-radio-dot"></span>Drawer checkout — basket slides in from the right (current)</label>
+              <label class="cfg-radio-line" data-group="checkoutflow" data-value="page"><span class="cfg-radio-dot"></span>Full page checkout — dedicated checkout page</label>
+            </div>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Shipping destinations</label>
+            <div class="cfg-toggle-row" style="margin-bottom:8px;">
+              <label class="cfg-toggle"><input type="checkbox" checked /><span class="cfg-toggle-track"></span></label>
+              <span class="cfg-toggle-label">Show "Ship to MSP" option</span>
+            </div>
+            <div class="cfg-toggle-row" style="margin-bottom:8px;">
+              <label class="cfg-toggle"><input type="checkbox" checked /><span class="cfg-toggle-track"></span></label>
+              <span class="cfg-toggle-label">Show branch office dropdown</span>
+            </div>
+            <div class="cfg-toggle-row">
+              <label class="cfg-toggle"><input type="checkbox" checked /><span class="cfg-toggle-track"></span></label>
+              <span class="cfg-toggle-label">Allow custom shipping address</span>
+            </div>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Branch offices <span class="cfg-label-sub">shown in ship-to dropdown</span></label>
+            <div class="cfg-branch-list" id="branchList">
+              <div class="cfg-branch-row">
+                <input class="cfg-input cfg-branch-input" value="HQ — New York, NY" />
+                <input class="cfg-input cfg-branch-input" value="142 West 36th Street, New York, NY 10018" />
+                <button class="cfg-branch-remove">×</button>
+              </div>
+              <div class="cfg-branch-row">
+                <input class="cfg-input cfg-branch-input" value="Chicago Office" />
+                <input class="cfg-input cfg-branch-input" value="330 N Wabash Ave, Chicago, IL 60611" />
+                <button class="cfg-branch-remove">×</button>
+              </div>
+              <div class="cfg-branch-row">
+                <input class="cfg-input cfg-branch-input" value="Los Angeles Office" />
+                <input class="cfg-input cfg-branch-input" value="2000 Avenue of the Stars, Los Angeles, CA 90067" />
+                <button class="cfg-branch-remove">×</button>
+              </div>
+            </div>
+            <button class="cfg-btn-ghost-sm" id="addBranchBtn" style="margin-top:8px;">+ Add office</button>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">End user assignment</label>
+            <div class="cfg-toggle-row" style="margin-bottom:8px;">
+              <label class="cfg-toggle"><input type="checkbox" checked /><span class="cfg-toggle-track"></span></label>
+              <span class="cfg-toggle-label">Required on laptops and bundles</span>
+            </div>
+            <div class="cfg-toggle-row">
+              <label class="cfg-toggle"><input type="checkbox" checked /><span class="cfg-toggle-track"></span></label>
+              <span class="cfg-toggle-label">Optional on all other items</span>
+            </div>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Order destination in Salesbuildr</label>
+            <div class="cfg-radio-col">
+              <label class="cfg-radio-line active" data-group="sbdest" data-value="approved"><span class="cfg-radio-dot"></span>Approved quote — ready to process immediately</label>
+              <label class="cfg-radio-line" data-group="sbdest" data-value="pending"><span class="cfg-radio-dot"></span>Pending quote — requires MSP to approve</label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ PAYMENT ═════════════════════════════════════════════════ -->
+      <section class="cfg-section" id="section-payment">
+        <div class="cfg-section-header">
+          <h2 class="cfg-section-title">Payment</h2>
+          <p class="cfg-section-desc">Configure how customers pay at checkout.</p>
+        </div>
+
+        <div class="cfg-card">
+          <div class="cfg-field">
+            <label class="cfg-label">Payment methods available at checkout</label>
+            <div class="cfg-toggle-row" style="margin-bottom:10px;">
+              <label class="cfg-toggle"><input type="checkbox" checked id="enableInvoice" /><span class="cfg-toggle-track"></span></label>
+              <span class="cfg-toggle-label">Invoice / bill to account (submit as Salesbuildr quote)</span>
+            </div>
+            <div class="cfg-toggle-row">
+              <label class="cfg-toggle"><input type="checkbox" checked id="enableCard" /><span class="cfg-toggle-track"></span></label>
+              <span class="cfg-toggle-label">Credit / debit card via Global Payments</span>
+            </div>
+          </div>
+
+          <div class="cfg-field" id="gpConfigField">
+            <label class="cfg-label">Global Payments configuration</label>
+            <div class="cfg-gp-header">
+              <svg width="16" height="16" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#E31837"/><circle cx="12" cy="12" r="5" fill="#fff"/></svg>
+              Global Payments
+              <span class="cfg-status-badge connected">Connected</span>
+            </div>
+            <div class="cfg-field-row" style="margin-top:10px;">
+              <div class="cfg-field" style="flex:1;">
+                <label class="cfg-label">API key</label>
+                <input type="password" class="cfg-input" value="gp_live_xk9m2p4r7t1q8w3n" />
+              </div>
+              <div class="cfg-field" style="flex:1;">
+                <label class="cfg-label">Merchant ID</label>
+                <input type="text" class="cfg-input" value="MID-ACM-00142" />
+              </div>
+            </div>
+            <div class="cfg-field" style="margin-top:10px;">
+              <label class="cfg-label">Accepted cards</label>
+              <div class="cfg-checkbox-row">
+                <label class="cfg-checkbox"><input type="checkbox" checked /> <span>Visa</span></label>
+                <label class="cfg-checkbox"><input type="checkbox" checked /> <span>Mastercard</span></label>
+                <label class="cfg-checkbox"><input type="checkbox" checked /> <span>Amex</span></label>
+                <label class="cfg-checkbox"><input type="checkbox" /> <span>Discover</span></label>
+              </div>
+            </div>
+            <div class="cfg-field" style="margin-top:10px;">
+              <label class="cfg-label">Settlement currency</label>
+              <select class="cfg-select" style="width:160px;">
+                <option selected>USD — US Dollar</option>
+                <option>GBP — British Pound</option>
+                <option>EUR — Euro</option>
+                <option>CAD — Canadian Dollar</option>
+                <option>AUD — Australian Dollar</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Tax calculation</label>
+            <div class="cfg-radio-col">
+              <label class="cfg-radio-line active" data-group="tax" data-value="auto"><span class="cfg-radio-dot"></span>Automatic — calculate based on ship-to state (US only)</label>
+              <label class="cfg-radio-line" data-group="tax" data-value="fixed"><span class="cfg-radio-dot"></span>Fixed rate</label>
+              <label class="cfg-radio-line" data-group="tax" data-value="none"><span class="cfg-radio-dot"></span>No tax shown at checkout</label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ AI ASSISTANT ════════════════════════════════════════════ -->
+      <section class="cfg-section" id="section-ai">
+        <div class="cfg-section-header">
+          <h2 class="cfg-section-title">AI assistant</h2>
+          <p class="cfg-section-desc">Configure the Claude-powered shopping assistant that helps customers find the right products.</p>
+        </div>
+
+        <div class="cfg-card">
+          <div class="cfg-field">
+            <label class="cfg-label">AI assistant</label>
+            <div class="cfg-toggle-row">
+              <label class="cfg-toggle"><input type="checkbox" checked id="aiEnabled" /><span class="cfg-toggle-track"></span></label>
+              <span class="cfg-toggle-label">Show AI shopping assistant in the store</span>
+            </div>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Model</label>
+            <select class="cfg-select" style="width:260px;">
+              <option selected>claude-sonnet-4-6 (recommended)</option>
+              <option>claude-haiku-4-5 (faster, lower cost)</option>
+            </select>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Opening message</label>
+            <div class="cfg-hint">What the assistant says when the panel first opens</div>
+            <textarea class="cfg-textarea" rows="2">Hi — tell me what you need and I'll find the right products from your company store. You can describe a role, a use case, or a budget.</textarea>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Quick prompt buttons <span class="cfg-label-sub">shown at the top of the AI panel</span></label>
+            <div class="cfg-prompt-list" id="promptList">
+              <div class="cfg-prompt-row">
+                <input class="cfg-input" value="New remote employee under $1,200" />
+                <button class="cfg-branch-remove">×</button>
+              </div>
+              <div class="cfg-prompt-row">
+                <input class="cfg-input" value="Developer setup" />
+                <button class="cfg-branch-remove">×</button>
+              </div>
+              <div class="cfg-prompt-row">
+                <input class="cfg-input" value="Full home office kit" />
+                <button class="cfg-branch-remove">×</button>
+              </div>
+              <div class="cfg-prompt-row">
+                <input class="cfg-input" value="Lightweight for travel" />
+                <button class="cfg-branch-remove">×</button>
+              </div>
+            </div>
+            <button class="cfg-btn-ghost-sm" id="addPromptBtn" style="margin-top:8px;">+ Add prompt</button>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">AI product context</label>
+            <div class="cfg-hint">Additional instructions sent to the AI — use this to guide recommendations based on your company's preferences</div>
+            <textarea class="cfg-textarea" rows="3">Prioritise Dell Latitude laptops. Always recommend bundles for new starters. If the customer mentions budget under $900, suggest the Latitude 3550 or New Starter Bundle.</textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ NOTIFICATIONS ═══════════════════════════════════════════ -->
+      <section class="cfg-section" id="section-notifications">
+        <div class="cfg-section-header">
+          <h2 class="cfg-section-title">Notifications</h2>
+          <p class="cfg-section-desc">Control which email notifications are sent and to whom.</p>
+        </div>
+
+        <div class="cfg-card">
+          <div class="cfg-field">
+            <label class="cfg-label">Notify MSP when</label>
+            <div class="cfg-notif-list">
+              <div class="cfg-notif-row">
+                <div class="cfg-toggle-row" style="flex:1;">
+                  <label class="cfg-toggle"><input type="checkbox" checked /><span class="cfg-toggle-track"></span></label>
+                  <span class="cfg-toggle-label">A new order is submitted</span>
+                </div>
+                <input type="email" class="cfg-input cfg-notif-email" value="orders@mymspdomain.com" placeholder="Email address" />
+              </div>
+              <div class="cfg-notif-row">
+                <div class="cfg-toggle-row" style="flex:1;">
+                  <label class="cfg-toggle"><input type="checkbox" checked /><span class="cfg-toggle-track"></span></label>
+                  <span class="cfg-toggle-label">A quote is waiting for customer approval</span>
+                </div>
+                <input type="email" class="cfg-input cfg-notif-email" value="orders@mymspdomain.com" placeholder="Email address" />
+              </div>
+              <div class="cfg-notif-row">
+                <div class="cfg-toggle-row" style="flex:1;">
+                  <label class="cfg-toggle"><input type="checkbox" /><span class="cfg-toggle-track"></span></label>
+                  <span class="cfg-toggle-label">A customer saves a basket</span>
+                </div>
+                <input type="email" class="cfg-input cfg-notif-email" placeholder="Email address" disabled />
+              </div>
+            </div>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Notify customer when</label>
+            <div class="cfg-notif-list">
+              <div class="cfg-notif-row">
+                <div class="cfg-toggle-row" style="flex:1;">
+                  <label class="cfg-toggle"><input type="checkbox" checked /><span class="cfg-toggle-track"></span></label>
+                  <span class="cfg-toggle-label">Their order is confirmed</span>
+                </div>
+              </div>
+              <div class="cfg-notif-row">
+                <div class="cfg-toggle-row" style="flex:1;">
+                  <label class="cfg-toggle"><input type="checkbox" checked /><span class="cfg-toggle-track"></span></label>
+                  <span class="cfg-toggle-label">Their quote is approved</span>
+                </div>
+              </div>
+              <div class="cfg-notif-row">
+                <div class="cfg-toggle-row" style="flex:1;">
+                  <label class="cfg-toggle"><input type="checkbox" checked /><span class="cfg-toggle-track"></span></label>
+                  <span class="cfg-toggle-label">Their quote is declined (with reason)</span>
+                </div>
+              </div>
+              <div class="cfg-notif-row">
+                <div class="cfg-toggle-row" style="flex:1;">
+                  <label class="cfg-toggle"><input type="checkbox" /><span class="cfg-toggle-track"></span></label>
+                  <span class="cfg-toggle-label">Order is shipped (tracking number included)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cfg-field">
+            <label class="cfg-label">Email sender name</label>
+            <input type="text" class="cfg-input" value="Acme Corp IT Store" style="max-width:260px;" />
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ── LIVE PREVIEW PANEL ──────────────────────────────────────── -->
+    <aside class="cfg-preview-panel" id="previewPanel">
+      <div class="cfg-preview-header">
+        <div class="cfg-preview-title">Live preview</div>
+        <div class="cfg-preview-tabs">
+          <button class="cfg-preview-tab active" data-ptab="desktop">Desktop</button>
+          <button class="cfg-preview-tab" data-ptab="mobile">Mobile</button>
+        </div>
+      </div>
+      <div class="cfg-preview-frame-wrap" id="previewFrameWrap">
+        <div class="cfg-preview-frame" id="previewFrame">
+
+          <!-- Mini storefront header -->
+          <div class="pv-header" id="pvHeader">
+            <div class="pv-logo">SB</div>
+            <div class="pv-store-name" id="pvStoreName">Acme Corp Technology Store</div>
+            <div class="pv-nav">
+              <span class="pv-nav-item active">Shop</span>
+              <span class="pv-nav-item">Quotes</span>
+            </div>
+          </div>
+
+          <!-- Mini banner -->
+          <div class="pv-banner" id="pvBanner">
+            <div class="pv-kicker" id="pvKicker">Curated for Acme Corp</div>
+            <div class="pv-headline" id="pvHeadline">Your company technology store</div>
+            <div class="pv-sub" id="pvSub">IT-approved devices, accessories, and bundles — configured for your environment.</div>
+            <div class="pv-ctas">
+              <div class="pv-btn pv-btn-primary" id="pvCta">Ask AI to help me choose</div>
+              <div class="pv-btn pv-btn-secondary" id="pvCta2">View bundles</div>
+            </div>
+            <div class="pv-stats" id="pvStats">
+              <div class="pv-stat"><span class="pv-stat-num">24</span><span class="pv-stat-label">Products</span></div>
+              <div class="pv-stat"><span class="pv-stat-num">3</span><span class="pv-stat-label">Bundles</span></div>
+              <div class="pv-stat"><span class="pv-stat-num">2–5</span><span class="pv-stat-label">Day shipping</span></div>
+            </div>
+          </div>
+
+          <!-- Mini product grid -->
+          <div class="pv-grid-wrap">
+            <div class="pv-filter-rail">
+              <div class="pv-filter-title">Category</div>
+              <div class="pv-filter-item active">All products</div>
+              <div class="pv-filter-item">Laptops</div>
+              <div class="pv-filter-item">Monitors</div>
+              <div class="pv-filter-item">Docks</div>
+              <div class="pv-filter-title" style="margin-top:8px;">Price</div>
+              <div class="pv-filter-item">Under $500</div>
+              <div class="pv-filter-item">$500–$1,500</div>
+            </div>
+            <div class="pv-grid" id="pvGrid">
+              <div class="pv-card">
+                <div class="pv-card-img"></div>
+                <div class="pv-card-name">Latitude 5550</div>
+                <div class="pv-card-price">$1,049</div>
+                <div class="pv-card-btn">Add</div>
+              </div>
+              <div class="pv-card">
+                <div class="pv-card-img"></div>
+                <div class="pv-card-name">Latitude 7450</div>
+                <div class="pv-card-price">$1,649</div>
+                <div class="pv-card-btn">Add</div>
+              </div>
+              <div class="pv-card">
+                <div class="pv-card-img"></div>
+                <div class="pv-card-name">Remote Bundle</div>
+                <div class="pv-card-price">$1,699</div>
+                <div class="pv-card-btn">Add</div>
+              </div>
+              <div class="pv-card">
+                <div class="pv-card-img"></div>
+                <div class="pv-card-name">P2425H Monitor</div>
+                <div class="pv-card-price">$259</div>
+                <div class="pv-card-btn">Add</div>
+              </div>
+            </div>
+          </div>
+          <!-- Preview watermark -->
+          <div class="pv-watermark">Preview only — not live</div>
+        </div>
+      </div>
+    </aside>
+
+  </div><!-- /cfg-shell -->
+
+  <!-- Save toast -->
+  <div class="cfg-toast" id="cfgToast"></div>
+
+  <script src="config.js"></script>
+</body>
+</html>
