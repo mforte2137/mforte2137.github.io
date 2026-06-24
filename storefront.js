@@ -53,6 +53,11 @@ const orderModalBackdrop    = document.getElementById('orderModalBackdrop');
 const orderRef              = document.getElementById('orderRef');
 const orderModalClose       = document.getElementById('orderModalClose');
 const toast                 = document.getElementById('toast');
+const cartSnackbar          = document.getElementById('cartSnackbar');
+const snackbarName          = document.getElementById('snackbarName');
+const snackbarDismiss       = document.getElementById('snackbarDismiss');
+const snackbarShop          = document.getElementById('snackbarShop');
+const snackbarCart          = document.getElementById('snackbarCart');
 const drawerAddressSection  = document.getElementById('drawerAddressSection');
 const shipToItemList        = document.getElementById('shipToItemList');
 const billingEditBtn        = document.getElementById('billingEditBtn');
@@ -544,6 +549,23 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove('show'), 2600);
 }
 
+let snackbarTimer = null;
+function showCartSnackbar(productName) {
+  snackbarName.textContent = productName;
+  cartSnackbar.classList.add('show');
+  clearTimeout(snackbarTimer);
+  snackbarTimer = setTimeout(hideCartSnackbar, 5000);
+}
+function hideCartSnackbar() {
+  cartSnackbar.classList.remove('show');
+  clearTimeout(snackbarTimer);
+}
+
+// Snackbar button handlers
+snackbarDismiss.addEventListener('click', hideCartSnackbar);
+snackbarShop.addEventListener('click', hideCartSnackbar);
+snackbarCart.addEventListener('click', () => { hideCartSnackbar(); openCart(); });
+
 function genOrderRef() {
   return 'ORD-' + Date.now().toString(36).toUpperCase().slice(-6);
 }
@@ -881,8 +903,7 @@ function addToCart(id) {
   if (existing) { existing.qty++; }
   else { cart.push({ ...p, qty: 1 }); }
   renderCart();
-  openCart();
-  showToast(p.name + ' added to basket');
+  showCartSnackbar(p.name);
 }
 
 function openCart() {
