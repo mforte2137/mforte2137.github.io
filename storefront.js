@@ -1896,19 +1896,23 @@ Return ONLY the JSON object, nothing else.`;
   aiConversation.push({ role: 'user', content: msg });
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('/api/ai-shop', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        system: systemPrompt,
+        systemPrompt: systemPrompt,
         messages: aiConversation
       })
     });
 
     const data = await response.json();
     typingEl.remove();
+
+    if (!data.ok) {
+      appendAiMessage('assistant', 'Sorry, I couldn\'t connect to the AI service right now. Please try again in a moment.');
+      aiSendBtn.disabled = false;
+      return;
+    }
 
     let parsed;
     try {
@@ -1936,7 +1940,7 @@ Return ONLY the JSON object, nothing else.`;
       aiResultBanner.style.display = 'flex';
       renderProductGrid();
 
-      // Optionally close panel to see results
+      // Close panel after a moment so customer can see results
       setTimeout(() => closeAiPanel(), 1000);
     }
 
