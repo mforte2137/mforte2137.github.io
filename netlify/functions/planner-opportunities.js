@@ -3,6 +3,8 @@
 // Path: /api/planner-opportunities
 //
 // Loads opportunities for a selected company.
+// Tries company.id filter first, falls back to companyId filter,
+// then falls back to fetching all and filtering client-side.
 // POST { tenantUrl, apiKey, companyId }
 // Returns: { ok, opportunities: [{ id, name, status }] }
 // =========================================================
@@ -59,24 +61,35 @@ exports.handler = async (event) => {
   const base    = tenantUrl.trim().replace(/\/+$/, '');
   const headers = { 'Content-Type': 'application/json', 'api-key': apiKey };
 
-  try {
-    // Filter opportunities by company ID
-    const url = `${base}/public-api/opportunity?filters=company.id:${encodeURIComponent(companyId)}&size=50&sort=-updatedAt`;
+  async function tryFetch(filterStr) {
+    const url = `${base}/public-api/opportunity?filters=${encodeURIComponent(filterStr)}&size=100&sort=-updatedAt`;
     const res = await fetch(url, { method: 'GET', headers });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return Array.isArray(data) ? data : (data.results || []);
+  }
 
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      return {
-        statusCode: res.status,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ ok: false, error: `Salesbuildr returned ${res.status}: ${errText.slice(0, 200)}` })
-      };
+  try {
+    // Try multiple filter key variations — the correct key isn't documented
+    let results = null;
+
+    for (const filter of [`company.id:${companyId}`, `companyId:${companyId}`]) {
+      const r = await tryFetch(filter);
+      if (r && r.length > 0) { results = r; break; }
     }
 
-    const data    = await res.json();
-    const results = Array.isArray(data) ? data : (data.results || []);
+    // Fallback: fetch recent opportunities and filter client-side by companyId
+    if (!results || results.length === 0) {
+      const url = `${base}/public-api/opportunity?size=200&sort=-updatedAt`;
+      const res = await fetch(url, { method: 'GET', headers });
+      if (res.ok) {
+        const data = await res.json();
+        const all  = Array.isArray(data) ? data : (data.results || []);
+        results = all.filter(o => o.companyId === companyId || o.company?.id === companyId);
+      }
+    }
 
-    const opportunities = results.map(o => ({
+    const opportunities = (results || []).map(o => ({
       id:     o.id,
       name:   o.name,
       status: o.pipelineStageDisplayValue || o.statusId || ''
