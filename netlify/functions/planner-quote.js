@@ -76,7 +76,7 @@ exports.handler = async (event) => {
   const base    = tenantUrl.trim().replace(/\/+$/, '');
   const headers = { 'Content-Type': 'application/json', 'api-key': apiKey };
 
-  // Build the CreateQuoteDto payload
+  // Build the CreateQuoteDto payload — only fields the spec defines
   const quotePayload = {
     opportunityId: opportunityId.trim(),
     title:         title.trim(),
@@ -87,11 +87,11 @@ exports.handler = async (event) => {
     quotePayload.templateId = templateId.trim();
   }
 
-  if (note && note.trim()) {
-    quotePayload.note = note.trim();
-  }
+  // Note: 'note' is not in the CreateQuoteDto spec — omitted to avoid 400
 
   try {
+    console.log(`[planner-quote] sending payload: ${JSON.stringify(quotePayload)}`);
+
     const url = `${base}/public-api/quote`;
     const res = await fetch(url, {
       method:  'POST',
