@@ -269,6 +269,10 @@ function initCredentials() {
       if (catalog && catalog.length > 0) {
         catalogLoaded = true;
         setConnectStatus('ok', `Connected — ${catalog.length} labor SKUs loaded`);
+        // Re-render so SKU dropdowns are populated immediately on page load
+        // (rows may already be loaded from localStorage before initCredentials runs)
+        render();
+        updateSummary();
         return;
       }
     }
@@ -714,7 +718,10 @@ function buildSkuSelect(row, idx) {
 
   trigger.addEventListener('click', e => {
     e.stopPropagation();
-    document.querySelectorAll('.sku-dropdown').forEach(d => { if (d !== dropdown) d.hidden = true; });
+    // Close every other open dropdown across the whole document
+    document.querySelectorAll('.sku-dropdown').forEach(d => {
+      if (d !== dropdown) d.hidden = true;
+    });
     dropdown.hidden = !dropdown.hidden;
     if (!dropdown.hidden) { searchIn.value = ''; renderSkuOptions(); searchIn.focus(); }
   });
@@ -729,6 +736,8 @@ document.addEventListener('click', () => {
 
 // ── Render task grid ──────────────────────────────────────
 function render() {
+  // Close any open dropdowns before wiping the DOM
+  document.querySelectorAll('.sku-dropdown').forEach(d => d.hidden = true);
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
   const hpd = document.getElementById('hoursPerDay').value;
@@ -1098,17 +1107,18 @@ document.getElementById('createQuoteBtn').addEventListener('click', async () => 
       body: JSON.stringify({ tenantUrl, apiKey, opportunityId, title, templateId, products, note })
     });
     const data = await res.json();
-    if (!data.ok) throw new Error(data.error || 'Quote creation failed');
+    if (!data.ok) {
+      const errMsg = typeof data.error === 'string' ? data.error : JSON.stringify(data.error || 'Quote creation failed');
+      throw new Error(errMsg);
+    }
 
     const quoteUrl = data.quoteUrl || `${tenantUrl}/quotes/${data.quoteId}`;
     result.innerHTML = `✓ Quote created — <a href="${quoteUrl}" target="_blank" rel="noopener" style="color:var(--good);text-decoration:underline;">Open in Salesbuildr →</a>`;
     result.className = 'sb-result ok'; result.hidden = false;
-    btn.textContent = '✓ Created';
+    btn.innerHTML = '<i class="ti ti-file-invoice"></i> ✓ Created';
   } catch (e) {
-    result.textContent = `✕ ${e.message}`; result.className = 'sb-result error'; result.hidden = false;
-    btn.disabled = false;
-    const inner = document.getElementById('createQuoteBtn');
-    if (inner) inner.textContent = 'Create quote';
+    const errMsg = typeof e.message === 'string' ? e.message : JSON.stringify(e);
+    result.textContent = `✕ ${errMsg}`; result.className = 'sb-result error'; result.hidden = false;
     btn.innerHTML = '<i class="ti ti-file-invoice"></i> Create quote';
     btn.disabled = false;
   }
