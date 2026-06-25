@@ -343,7 +343,8 @@ td textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; borde
 .del-row-btn:hover { opacity: 1; color: var(--danger); }
 
 /* ── SKU searchable dropdown ── */
-.sku-select   { position: relative; }
+.sku-select   { position: relative; width: 100%; }
+.col-role     { position: relative; }
 .sku-trigger  {
   width: 100%; text-align: left; font-family: var(--sans); font-size: 12px; cursor: pointer;
   padding: 5px 8px; border-radius: 0; border: 1px solid var(--border);
@@ -355,12 +356,13 @@ td textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; borde
 .sku-trigger.placeholder { color: var(--text-3); }
 .sku-trigger.has-sku  { color: var(--text); border-color: var(--accent-border); }
 .sku-dropdown {
-  position: absolute; top: calc(100% + 3px); left: 0; z-index: 200;
+  position: absolute; top: calc(100% + 3px); left: 0; z-index: 500;
   background: var(--bg-panel); border: 1px solid var(--border-2); border-radius: 4px;
   padding: 5px; min-width: 240px; max-width: 320px;
-  box-shadow: 0 8px 24px rgba(11,14,20,.12);
+  box-shadow: 0 8px 24px rgba(11,14,20,.18);
   max-height: 240px; display: flex; flex-direction: column;
 }
+.sku-dropdown[hidden] { display: none !important; }
 .sku-search {
   font-family: var(--sans); font-size: 11px; padding: 5px 8px;
   border-radius: 0; border: 1px solid var(--border-2);
