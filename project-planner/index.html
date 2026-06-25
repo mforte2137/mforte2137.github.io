@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Project Scope Builder</title>
+  <title>Project Planner</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="project-scope.css">
+  <link rel="stylesheet" href="project-planner.css">
 </head>
 <body>
 
@@ -22,11 +22,28 @@
     <div class="lp-header">
       <div class="lp-header-row">
         <div>
-          <div class="lp-logo">Project Scope Builder</div>
+          <div class="lp-logo">Project Planner</div>
           <div class="lp-sub">MSP Tools Hub</div>
         </div>
-        <a href="scope-builder-guide.html" target="_blank" class="lp-help-btn" title="Open user guide">?</a>
       </div>
+    </div>
+
+    <!-- Salesbuildr Credentials -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Salesbuildr</div>
+      <div class="lp-field">
+        <div class="lp-field-label">Tenant URL</div>
+        <input type="text" id="sbTenantUrl" class="lp-input" placeholder="https://yourcompany.salesbuildr.com" autocomplete="off">
+      </div>
+      <div class="lp-field">
+        <div class="lp-field-label">API Key</div>
+        <input type="password" id="sbApiKey" class="lp-input" placeholder="Your API key" autocomplete="new-password">
+      </div>
+      <div class="sb-cred-row">
+        <label class="sb-remember"><input type="checkbox" id="sbRemember"> Remember</label>
+        <button class="lp-action-btn lp-action-primary" id="connectBtn" style="flex:1;"><i class="ti ti-plug"></i> Connect</button>
+      </div>
+      <div id="connectStatus" class="connect-status connect-status-idle">Not connected — catalog not loaded</div>
     </div>
 
     <!-- Presets -->
@@ -98,29 +115,10 @@
       <button class="lp-action-btn lp-action-primary" id="saveTemplateBtn"><i class="ti ti-device-floppy"></i> Save as template</button>
     </div>
 
-    <!-- Show in output toggles -->
-    <div class="lp-section">
-      <div class="lp-sec-label">Show in customer output</div>
-      <div class="lp-toggles">
-        <div class="lp-toggle-row">
-          <span>Role</span>
-          <label class="lp-switch"><input type="checkbox" id="showRole" checked><span class="lp-track"></span></label>
-        </div>
-        <div class="lp-toggle-row">
-          <span>Hours</span>
-          <label class="lp-switch"><input type="checkbox" id="showHours"><span class="lp-track"></span></label>
-        </div>
-        <div class="lp-toggle-row">
-          <span>Notes</span>
-          <label class="lp-switch"><input type="checkbox" id="showNotes" checked><span class="lp-track"></span></label>
-        </div>
-      </div>
-    </div>
-
     <!-- Brand Color -->
     <div class="lp-section">
       <div class="lp-sec-label">Brand color</div>
-      <div class="lp-field-label" style="margin-bottom:6px;">Applied to every widget you generate</div>
+      <div class="lp-field-label" style="margin-bottom:6px;">Applied to generated widget</div>
       <div class="brand-swatches" id="brandSwatches">
         <div class="brand-swatch active" data-color="#2563eb" style="background:#2563eb;" title="Blue"></div>
         <div class="brand-swatch" data-color="#059669" style="background:#059669;" title="Green"></div>
@@ -138,35 +136,66 @@
       </div>
     </div>
 
-    <!-- Export & Publish -->
+    <!-- Generate Summary Widget -->
     <div class="lp-section">
-      <div class="lp-sec-label">Export &amp; publish</div>
+      <div class="lp-sec-label">Generate summary widget</div>
       <div class="lp-actions">
-        <button class="lp-action-btn lp-action-good" id="generateBtn"><i class="ti ti-sparkles"></i> Generate scope widget</button>
+        <button class="lp-action-btn lp-action-good" id="generateBtn"><i class="ti ti-sparkles"></i> Generate widget</button>
         <button class="lp-action-btn" id="copyBtn" disabled><i class="ti ti-copy"></i> Copy HTML</button>
-        <button class="lp-action-btn" id="exportBtn"><i class="ti ti-download"></i> Export JSON</button>
-        <label class="lp-action-btn" for="importInput" style="cursor:pointer;"><i class="ti ti-upload"></i> Import JSON</label>
-        <input type="file" id="importInput" accept=".json" style="display:none">
-        <!-- Salesbuildr inline -->
-        <button class="lp-action-btn lp-action-primary" id="sbToggle"><i class="ti ti-send"></i> Save to Salesbuildr <span id="sbArrow" class="sb-arrow-icon">▼</span></button>
-        <div id="sbBody" class="sb-inline" hidden>
-          <div class="sb-fields">
-            <div class="sb-field">
-              <label class="sb-label">Tenant URL <span class="sb-where">e.g. https://acme.salesbuildr.com</span></label>
-              <input type="text" id="sbTenantUrl" class="sb-input" placeholder="https://yourcompany.salesbuildr.com" autocomplete="off">
-            </div>
-            <div class="sb-field">
-              <label class="sb-label">API Key <span class="sb-where">Admin → Integrations → API Key</span></label>
-              <input type="password" id="sbApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
-            </div>
+        <!-- Push to widget library -->
+        <button class="lp-action-btn lp-action-primary" id="sbWidgetToggle"><i class="ti ti-send"></i> Push to widget library <span id="sbWidgetArrow" class="sb-arrow-icon">▼</span></button>
+        <div id="sbWidgetBody" class="sb-inline" hidden>
+          <div class="sb-field">
+            <label class="sb-label">Widget label <span class="sb-where">prefix in Salesbuildr</span></label>
+            <input type="text" id="sbWidgetPrefix" class="sb-prefix" maxlength="40" placeholder="e.g. Acme Corp">
           </div>
           <div class="sb-row">
-            <label class="sb-remember"><input type="checkbox" id="sbRemember"> Remember credentials</label>
-            <input type="text" id="sbPrefix" class="sb-prefix" maxlength="40" placeholder="Label e.g. Acme Corp">
-            <button type="button" id="sbPushBtn" class="lp-action-btn lp-action-good" disabled>Push →</button>
+            <button type="button" id="sbWidgetPushBtn" class="lp-action-btn lp-action-good" style="flex:1;">Push →</button>
           </div>
-          <div id="sbResult" class="sb-result" hidden></div>
+          <div id="sbWidgetResult" class="sb-result" hidden></div>
         </div>
+      </div>
+    </div>
+
+    <!-- Create Quote -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Create quote in Salesbuildr</div>
+      <div class="lp-actions">
+
+        <!-- Company search -->
+        <div class="lp-field">
+          <div class="lp-field-label">Company</div>
+          <div class="company-search-wrap">
+            <input type="text" id="companySearch" class="lp-input" placeholder="Search companies…" autocomplete="off">
+            <div id="companyDropdown" class="company-dropdown" hidden></div>
+          </div>
+          <div id="selectedCompanyDisplay" class="selected-entity" hidden></div>
+        </div>
+
+        <!-- Opportunity dropdown -->
+        <div class="lp-field" id="opportunityField" style="display:none;">
+          <div class="lp-field-label">Opportunity</div>
+          <select id="opportunitySelect" class="lp-select">
+            <option value="">— Loading opportunities… —</option>
+          </select>
+        </div>
+
+        <!-- Quote template dropdown -->
+        <div class="lp-field" id="quoteTemplateField" style="display:none;">
+          <div class="lp-field-label">Quote template <span class="lp-opt">(optional)</span></div>
+          <select id="quoteTemplateSelect" class="lp-select">
+            <option value="">— None —</option>
+          </select>
+        </div>
+
+        <!-- Quote title -->
+        <div class="lp-field" id="quoteTitleField" style="display:none;">
+          <div class="lp-field-label">Quote title</div>
+          <input type="text" id="quoteTitle" class="lp-input" placeholder="Project quote">
+        </div>
+
+        <button class="lp-action-btn lp-action-good" id="createQuoteBtn" style="display:none;"><i class="ti ti-file-invoice"></i> Create quote</button>
+        <div id="quoteResult" class="sb-result" hidden></div>
       </div>
     </div>
 
@@ -179,8 +208,8 @@
 
     <div class="center-header">
       <div>
-        <div class="center-title" id="centerTitle">Project Scope Builder</div>
-        <div class="center-sub" id="centerSub">Start by loading a preset or entering your project details</div>
+        <div class="center-title" id="centerTitle">Project Planner</div>
+        <div class="center-sub" id="centerSub">Connect to Salesbuildr to load your labor catalog, or start adding tasks</div>
       </div>
     </div>
 
@@ -192,14 +221,14 @@
 
     <!-- Task grid -->
     <div class="center-section center-section-grow">
-      <div class="center-sec-label">Scope of Work <span class="center-sec-hint">Rows with 0 hours are excluded from output</span></div>
+      <div class="center-sec-label">Scope of Work <span class="center-sec-hint">Rows with 0 hours are excluded from output and quote</span></div>
       <div class="grid-wrap">
         <table class="task-table">
           <thead>
             <tr>
               <th class="col-drag"></th>
               <th class="col-task">Task</th>
-              <th class="col-role">Role</th>
+              <th class="col-role">Role / SKU</th>
               <th class="col-hours">Hours</th>
               <th class="col-dur">Duration</th>
               <th class="col-notes">Notes</th>
@@ -214,6 +243,7 @@
         <div class="gf-pills">
           <div class="gf-pill"><span>Total</span><strong id="totalHours">0</strong><span>hrs</span></div>
           <div class="gf-pill"><span>Duration</span><strong id="totalDuration">—</strong></div>
+          <div class="gf-pill"><span>Est. value</span><strong id="totalValue">—</strong></div>
           <div class="gf-pill"><span>In scope</span><strong id="includedCount">0</strong></div>
         </div>
       </div>
@@ -257,7 +287,7 @@
           <div class="ai-dot"></div>
           <div class="ai-title">AI Assistant</div>
         </div>
-        <div class="ai-sub">Generate or review your scope</div>
+        <div class="ai-sub">Generate or review your project plan</div>
       </div>
     </div>
 
@@ -265,7 +295,7 @@
     <div class="ai-messages" id="aiMessages">
       <div class="ai-msg ai-msg-assistant">
         <div class="ai-msg-label">Assistant</div>
-        Hi — describe a project and I'll build a full scope with tasks, roles, and hours. Once applied, use Review to validate it or Adjust to fit your team's constraints.
+        Hi — describe a project and I'll build a full scope with tasks, SKU suggestions, roles, and hours. Connect to Salesbuildr first so I can suggest specific SKUs from your catalog.
         <div class="ai-chips">
           <div class="ai-chip" data-action="generate">✨ Generate scope from description</div>
           <div class="ai-chip" data-action="review">🔍 Review &amp; validate my scope</div>
@@ -286,6 +316,6 @@
 
 <div class="toast" id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
-<script src="project-scope.js"></script>
+<script src="project-planner.js"></script>
 </body>
 </html>
