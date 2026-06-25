@@ -1,14 +1,17 @@
 // ─────────────────────────────────────────────
-//  Salesbuildr Support KB  –  kb.js
+//  Support KB  –  kb.js
 // ─────────────────────────────────────────────
 
 // ── Global State ──────────────────────────────
-let knowledgeBase = [];
-let editingId = null;
+let knowledgeBase  = [];
+let editingId      = null;
+let activeStatusFilter = '';
+let activePanelId  = null;  // ID of issue currently open in slide panel
 
 // ── Init ──────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function () {
     loadLocalData();
+    migrateData();
     setupFileUpload();
     updateStats();
     renderKB();
@@ -17,22 +20,79 @@ document.addEventListener('DOMContentLoaded', function () {
 // ── Local Storage ─────────────────────────────
 function loadLocalData() {
     const stored = localStorage.getItem('knowledgeBase');
-    if (stored) {
-        knowledgeBase = JSON.parse(stored);
-    }
+    if (stored) knowledgeBase = JSON.parse(stored);
 }
 
 function saveLocalData() {
     localStorage.setItem('knowledgeBase', JSON.stringify(knowledgeBase));
 }
 
-// ── UI – Add / Edit Form ──────────────────────
+// ── Migrate existing data — assign status if missing ──
+function migrateData() {
+    let changed = false;
+    knowledgeBase = knowledgeBase.map(issue => {
+        if (!issue.status) {
+            issue.status = issue.solution ? 'solved' : 'pending';
+            changed = true;
+        }
+        return issue;
+    });
+    if (changed) saveLocalData();
+}
+
+// ── Notifications ─────────────────────────────
+function showSuccess(msg) {
+    const el = document.getElementById('successMessage');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => { if (el) el.style.display = 'none'; }, 4000);
+}
+function showError(msg) {
+    const el = document.getElementById('errorMessage');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => { if (el) el.style.display = 'none'; }, 6000);
+}
+
+// ── File Upload ───────────────────────────────
+function setupFileUpload() {
+    const fileUpload = document.getElementById('fileUpload');
+    const fileInput  = document.getElementById('screenshotFile');
+    if (!fileUpload || !fileInput) return;
+
+    fileUpload.onclick = () => fileInput.click();
+    fileUpload.addEventListener('dragover', (e) => { e.preventDefault(); fileUpload.classList.add('dragover'); });
+    fileUpload.addEventListener('dragleave', () => fileUpload.classList.remove('dragover'));
+    fileUpload.addEventListener('drop', (e) => { e.preventDefault(); fileUpload.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+    fileInput.onchange = (e) => handleFiles(e.target.files);
+}
+
+function handleFiles(files) {
+    const container = document.getElementById('uploadedFiles');
+    Array.from(files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const div = document.createElement('div');
+                div.style.marginTop = '10px';
+                div.innerHTML = `<img src="${e.target.result}" style="max-width:200px;max-height:200px;border-radius:4px;margin-right:10px;"><span>${file.name}</span><button onclick="this.parentElement.remove()" style="margin-left:8px;padding:3px 8px;background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);cursor:pointer;font-size:11px;">Remove</button>`;
+                container.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+// ── Add / Edit Form ───────────────────────────
 function showAddForm() {
-    document.getElementById('addForm').style.display = 'block';
-    document.getElementById('issueTitle').focus();
     editingId = null;
     clearForm();
-    clearAskPanel();
+    document.getElementById('formTitle').textContent = 'Add New Issue';
+    document.getElementById('addForm').style.display = 'block';
+    document.getElementById('issueTitle').focus();
+    document.getElementById('addForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function hideAddForm() {
@@ -42,78 +102,13 @@ function hideAddForm() {
 }
 
 function clearForm() {
-    document.getElementById('issueTitle').value = '';
-    document.getElementById('issueCategory').value = '';
-    document.getElementById('issueDescription').value = '';
-    document.getElementById('issueSolution').value = '';
-    document.getElementById('jiraLink').value = '';
-    document.getElementById('intercomId').value = '';
-    document.getElementById('loomUrl').value = '';
-    document.getElementById('additionalRef').value = '';
-    document.getElementById('uploadedFiles').innerHTML = '';
-}
-
-// ── Notifications ─────────────────────────────
-function showSuccess(message) {
-    const el = document.getElementById('successMessage');
-    if (!el) { console.warn('showSuccess: element not found', message); return; }
-    el.textContent = message;
-    el.style.display = 'block';
-    setTimeout(() => { if (el) el.style.display = 'none'; }, 5000);
-}
-
-function showError(message) {
-    const el = document.getElementById('errorMessage');
-    if (!el) { console.warn('showError: element not found', message); return; }
-    el.textContent = message;
-    el.style.display = 'block';
-    setTimeout(() => { if (el) el.style.display = 'none'; }, 8000);
-}
-
-// ── File Upload ───────────────────────────────
-function setupFileUpload() {
-    const fileUpload = document.getElementById('fileUpload');
-    const fileInput  = document.getElementById('screenshotFile');
-
-    fileUpload.onclick = () => fileInput.click();
-
-    fileUpload.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        fileUpload.classList.add('dragover');
+    ['issueTitle','issueCategory','issueDescription','issueSolution',
+     'jiraLink','intercomId','loomUrl','additionalRef'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
     });
-
-    fileUpload.addEventListener('dragleave', () => {
-        fileUpload.classList.remove('dragover');
-    });
-
-    fileUpload.addEventListener('drop', (e) => {
-        e.preventDefault();
-        fileUpload.classList.remove('dragover');
-        handleFiles(e.dataTransfer.files);
-    });
-
-    fileInput.onchange = (e) => handleFiles(e.target.files);
-}
-
-function handleFiles(files) {
-    const container = document.getElementById('uploadedFiles');
-
-    Array.from(files).forEach(file => {
-        if (file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const div = document.createElement('div');
-                div.style.marginTop = '10px';
-                div.innerHTML = `
-                    <img src="${e.target.result}" style="max-width:200px;max-height:200px;border-radius:8px;margin-right:10px;">
-                    <span>${file.name}</span>
-                    <button onclick="this.parentElement.remove()" style="margin-left:10px;padding:4px 8px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer;">Remove</button>
-                `;
-                container.appendChild(div);
-            };
-            reader.readAsDataURL(file);
-        }
-    });
+    const uf = document.getElementById('uploadedFiles');
+    if (uf) uf.innerHTML = '';
 }
 
 // ── Save Issue ────────────────────────────────
@@ -128,40 +123,39 @@ async function saveIssue() {
     const additionalRef = document.getElementById('additionalRef').value.trim();
 
     if (!title || !category) {
-        showError('Please fill in Title and Category (Solution can be added later).');
+        showError('Please fill in Title and Category.');
         return;
     }
 
-    const saveButton  = document.getElementById('saveButtonText');
-    const saveLoading = document.getElementById('saveLoading');
-    saveButton.style.display  = 'none';
-    saveLoading.style.display = 'inline-block';
+    const saveBtn  = document.getElementById('saveButtonText');
+    const saveSpin = document.getElementById('saveLoading');
+    saveBtn.style.display  = 'none';
+    saveSpin.style.display = 'inline-block';
 
     try {
-        // Collect uploaded images
         const images = [];
-        const imgElements = document.getElementById('uploadedFiles').querySelectorAll('img');
-        imgElements.forEach(img => {
-            images.push({ name: img.nextElementSibling.textContent, data: img.src });
+        document.getElementById('uploadedFiles').querySelectorAll('img').forEach(img => {
+            images.push({ name: img.nextElementSibling?.textContent || '', data: img.src });
         });
 
+        const existing = editingId ? knowledgeBase.find(i => i.id === editingId) : null;
+
+        // Determine status
+        let status = existing?.status || 'pending';
+        if (solution && status === 'pending') status = 'solved';
+
         const issue = {
-            id: editingId || Date.now().toString(),
-            title,
-            category,
-            description,
-            solution,
-            references: { jira: jiraLink, intercom: intercomId, loom: loomUrl, additional: additionalRef },
+            id:          editingId || Date.now().toString(),
+            title, category, description, solution, status,
+            references:  { jira: jiraLink, intercom: intercomId, loom: loomUrl, additional: additionalRef },
             images,
-            createdAt: editingId
-                ? (knowledgeBase.find(i => i.id === editingId)?.createdAt || new Date().toISOString())
-                : new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            createdAt:   existing?.createdAt || new Date().toISOString(),
+            updatedAt:   new Date().toISOString()
         };
 
         if (editingId) {
-            const index = knowledgeBase.findIndex(i => i.id === editingId);
-            knowledgeBase[index] = issue;
+            const idx = knowledgeBase.findIndex(i => i.id === editingId);
+            knowledgeBase[idx] = issue;
         } else {
             knowledgeBase.unshift(issue);
         }
@@ -172,25 +166,27 @@ async function saveIssue() {
         updateStats();
         renderKB();
 
-    } catch (error) {
-        console.error('Save error:', error);
-        showError('Failed to save issue. Please try again.');
+    } catch (err) {
+        console.error('Save error:', err);
+        showError('Failed to save issue.');
     }
 
-    saveButton.style.display  = 'inline';
-    saveLoading.style.display = 'none';
+    saveBtn.style.display  = 'inline';
+    saveSpin.style.display = 'none';
 }
 
-// ── Edit Issue ────────────────────────────────
+// ── Edit Issue (from card) ────────────────────
 function editIssue(id) {
+    closePanel();
     const issue = knowledgeBase.find(i => i.id === id);
     if (!issue) return;
 
     editingId = id;
+    document.getElementById('formTitle').textContent = 'Edit Issue';
     document.getElementById('issueTitle').value       = issue.title;
     document.getElementById('issueCategory').value    = issue.category;
-    document.getElementById('issueDescription').value = issue.description;
-    document.getElementById('issueSolution').value    = issue.solution;
+    document.getElementById('issueDescription').value = issue.description || '';
+    document.getElementById('issueSolution').value    = issue.solution || '';
     document.getElementById('jiraLink').value         = issue.references?.jira || '';
     document.getElementById('intercomId').value       = issue.references?.intercom || '';
     document.getElementById('loomUrl').value          = issue.references?.loom || '';
@@ -198,59 +194,58 @@ function editIssue(id) {
 
     const container = document.getElementById('uploadedFiles');
     container.innerHTML = '';
-    if (issue.images) {
-        issue.images.forEach(img => {
-            const div = document.createElement('div');
-            div.style.marginTop = '10px';
-            div.innerHTML = `
-                <img src="${img.data}" style="max-width:200px;max-height:200px;border-radius:8px;margin-right:10px;">
-                <span>${img.name}</span>
-                <button onclick="this.parentElement.remove()" style="margin-left:10px;padding:4px 8px;background:#ef4444;color:white;border:none;border-radius:4px;cursor:pointer;">Remove</button>
-            `;
-            container.appendChild(div);
-        });
-    }
+    (issue.images || []).forEach(img => {
+        const div = document.createElement('div');
+        div.style.marginTop = '10px';
+        div.innerHTML = `<img src="${img.data}" style="max-width:200px;max-height:200px;border-radius:4px;margin-right:10px;"><span>${img.name}</span><button onclick="this.parentElement.remove()" style="margin-left:8px;padding:3px 8px;background:var(--danger-bg);color:var(--danger);border:1px solid var(--danger);cursor:pointer;font-size:11px;">Remove</button>`;
+        container.appendChild(div);
+    });
 
     document.getElementById('addForm').style.display = 'block';
+    document.getElementById('addForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
     document.getElementById('issueTitle').focus();
 }
 
 // ── Delete Issue ──────────────────────────────
 function deleteIssue(id) {
-    if (!confirm('Are you sure you want to delete this issue?')) return;
+    if (!confirm('Delete this issue?')) return;
+    closePanel();
     knowledgeBase = knowledgeBase.filter(i => i.id !== id);
     saveLocalData();
-    showSuccess('Issue deleted!');
+    showSuccess('Issue deleted.');
     updateStats();
     renderKB();
 }
 
 // ── Search & Filter ───────────────────────────
-function searchKB() {
-    const query    = document.getElementById('searchInput').value.toLowerCase();
-    const category = document.getElementById('categoryFilter').value;
+function searchKB() { applyFilters(); }
+function filterKB()  { applyFilters(); }
+
+function setStatusFilter(btn, status) {
+    activeStatusFilter = status;
+    document.querySelectorAll('.status-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    applyFilters();
+}
+
+function applyFilters() {
+    const query    = (document.getElementById('searchInput')?.value || '').toLowerCase();
+    const category = document.getElementById('categoryFilter')?.value || '';
 
     const filtered = knowledgeBase.filter(issue => {
-        const matchesSearch = query === '' ||
+        const matchSearch = query === '' ||
             issue.title.toLowerCase().includes(query) ||
-            (issue.description && issue.description.toLowerCase().includes(query)) ||
-            (issue.solution    && issue.solution.toLowerCase().includes(query)) ||
-            Object.values(issue.references || {}).some(ref => ref && ref.toLowerCase().includes(query)) ||
-            query.split(' ').every(word =>
-                issue.title.toLowerCase().includes(word) ||
-                (issue.description && issue.description.toLowerCase().includes(word)) ||
-                (issue.solution    && issue.solution.toLowerCase().includes(word))
-            );
+            (issue.description?.toLowerCase().includes(query)) ||
+            (issue.solution?.toLowerCase().includes(query)) ||
+            Object.values(issue.references || {}).some(r => r?.toLowerCase().includes(query));
 
-        const matchesCategory = category === '' || issue.category === category;
-        return matchesSearch && matchesCategory;
+        const matchCat    = category === '' || issue.category === category;
+        const matchStatus = activeStatusFilter === '' || issue.status === activeStatusFilter;
+
+        return matchSearch && matchCat && matchStatus;
     });
 
     renderKB(filtered);
-}
-
-function filterByCategory() {
-    searchKB();
 }
 
 // ── Render KB List ────────────────────────────
@@ -258,80 +253,80 @@ function renderKB(issues = knowledgeBase) {
     const container = document.getElementById('kbContent');
 
     if (issues.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <h3>${knowledgeBase.length === 0 ? 'No issues yet' : 'No matching issues found'}</h3>
-                <p>${knowledgeBase.length === 0 ? 'Add your first support issue and solution to get started!' : 'Try adjusting your search or filter criteria.'}</p>
-            </div>
-        `;
+        container.innerHTML = `<div class="empty-state"><h3>${knowledgeBase.length === 0 ? 'No issues yet' : 'No matching issues'}</h3><p>${knowledgeBase.length === 0 ? 'Click "+ Add Issue" to get started.' : 'Try adjusting your search or filters.'}</p></div>`;
         return;
     }
 
     container.innerHTML = issues.map(issue => {
-        const references = [];
-        if (issue.references?.jira)       references.push(`<a href="${issue.references.jira}" class="reference-link" target="_blank">🎫 Jira Ticket</a>`);
-        if (issue.references?.intercom)   references.push(`<a href="${issue.references.intercom}" class="reference-link" target="_blank">💬 Featurebase Chat</a>`);
-        if (issue.references?.loom)       references.push(`<a href="${issue.references.loom}" class="reference-link" target="_blank">🎥 Loom Video</a>`);
-        if (issue.references?.additional) references.push(`<a href="${issue.references.additional}" class="reference-link" target="_blank">💬 Slack</a>`);
+        const status = issue.status || 'pending';
 
-        const images = issue.images ? issue.images.map(img =>
-            `<img src="${img.data}" alt="${img.name}" style="max-width:200px;margin:10px 10px 0 0;border-radius:8px;cursor:pointer;" onclick="window.open('${img.data}','_blank')">`
-        ).join('') : '';
+        const statusLabel = { pending: '⏳ Pending', solved: '✓ Solved', published: '📄 Published' }[status] || status;
+
+        const refs = [];
+        if (issue.references?.jira)       refs.push(`<a href="${issue.references.jira}" class="reference-link" target="_blank">🎫 Jira</a>`);
+        if (issue.references?.intercom)   refs.push(`<a href="${issue.references.intercom}" class="reference-link" target="_blank">💬 Featurebase</a>`);
+        if (issue.references?.loom)       refs.push(`<a href="${issue.references.loom}" class="reference-link" target="_blank">🎥 Loom</a>`);
+        if (issue.references?.additional) refs.push(`<a href="${issue.references.additional}" class="reference-link" target="_blank">💬 Slack</a>`);
 
         const solutionHtml = issue.solution
-            ? `<div class="kb-solution"><strong>Solution:</strong><div>${issue.solution.replace(/\n/g, '<br>')}</div></div>`
-            : `<div class="pending-solution"><strong style="color:#92400e;">⏳ Solution Pending</strong><div style="color:#78350f;">This issue is recorded but doesn't have a solution yet.</div></div>`;
+            ? `<div class="kb-solution-preview"><strong>Solution</strong>${issue.solution.slice(0, 200)}${issue.solution.length > 200 ? '…' : ''}</div>`
+            : '';
+
+        const images = (issue.images || []).map(img =>
+            `<img src="${img.data}" alt="${img.name}" style="max-width:180px;margin:8px 8px 0 0;cursor:pointer;border:1px solid var(--border);" onclick="window.open('${img.data}','_blank')">`
+        ).join('');
+
+        const date = new Date(issue.updatedAt || issue.createdAt).toLocaleDateString();
 
         return `
-            <div class="kb-item">
-                <div class="kb-category">${issue.category}</div>
-                <div class="kb-title">${issue.title}</div>
-                ${issue.description ? `<div class="kb-description">${issue.description}</div>` : ''}
-                ${solutionHtml}
-                ${images ? `<div style="margin-top:15px;">${images}</div>` : ''}
-                ${references.length > 0 ? `<div class="kb-references">${references.join('')}</div>` : ''}
-                <div class="kb-actions">
-                    <button class="btn btn-secondary btn-small" onclick="editIssue('${issue.id}')">Edit</button>
-                    <button class="btn btn-danger btn-small" onclick="deleteIssue('${issue.id}')">Delete</button>
-                    <button class="btn btn-ai btn-small" onclick="checkSingleIssueGap('${issue.id}')">🤖 Check Gap</button>
-                    <span style="color:#64748b;font-size:0.8rem;margin-left:10px;">
-                        ${issue.updatedAt !== issue.createdAt ? 'Updated' : 'Created'}: ${new Date(issue.updatedAt || issue.createdAt).toLocaleDateString()}
-                    </span>
+        <div class="kb-item" data-status="${status}" data-id="${issue.id}">
+            <div class="kb-item-top">
+                <div class="kb-item-left">
+                    <div class="kb-title">${issue.title}</div>
+                    <div class="kb-meta">
+                        <span class="kb-category">${issue.category}</span>
+                        <span class="kb-status-badge ${status}">${statusLabel}</span>
+                    </div>
                 </div>
             </div>
-        `;
+            ${issue.description ? `<div class="kb-description">${issue.description}</div>` : ''}
+            ${solutionHtml}
+            ${images ? `<div style="margin-top:4px;">${images}</div>` : ''}
+            ${refs.length > 0 ? `<div class="kb-references">${refs.join('')}</div>` : ''}
+            <div class="kb-actions">
+                <button class="btn btn-accent btn-small" onclick="openPanel('${issue.id}')">Work on this →</button>
+                <button class="btn btn-secondary btn-small" onclick="editIssue('${issue.id}')">Edit</button>
+                <button class="btn btn-danger btn-small" onclick="deleteIssue('${issue.id}')">Delete</button>
+                <span class="kb-date">${date}</span>
+            </div>
+        </div>`;
     }).join('');
 }
 
 // ── Update Stats ──────────────────────────────
 function updateStats() {
-    // Always counts from the full knowledgeBase — never from filtered view
     const total      = knowledgeBase.length;
+    const pending    = knowledgeBase.filter(i => i.status === 'pending').length;
     const categories = new Set(knowledgeBase.map(i => i.category).filter(Boolean)).size;
-
     const weekAgo    = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
-    const recentCount = knowledgeBase.filter(i => new Date(i.createdAt) > weekAgo).length;
+    const recent = knowledgeBase.filter(i => new Date(i.createdAt) > weekAgo).length;
 
-    animateStat('totalIssues',      total);
-    animateStat('totalCategories',  categories);
-    animateStat('recentlyAdded',    recentCount);
-}
-
-function animateStat(id, newValue) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = newValue;
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('totalIssues', total);
+    set('pendingCount', pending);
+    set('totalCategories', categories);
+    set('recentlyAdded', recent);
 }
 
 // ── Export / Import ───────────────────────────
 function exportData() {
-    const data = { knowledgeBase, exportedAt: new Date().toISOString(), version: '1.0' };
+    const data = { knowledgeBase, exportedAt: new Date().toISOString(), version: '2.0' };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href     = url;
-    a.download = `salesbuildr-kb-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `support-kb-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
 }
@@ -339,323 +334,108 @@ function exportData() {
 function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = function (e) {
         try {
             const data = JSON.parse(e.target.result);
             if (data.knowledgeBase && Array.isArray(data.knowledgeBase)) {
                 knowledgeBase = data.knowledgeBase;
+                migrateData();
                 saveLocalData();
                 updateStats();
                 renderKB();
-                showSuccess(`Imported ${knowledgeBase.length} issues successfully!`);
+                showSuccess(`Imported ${knowledgeBase.length} issues.`);
             } else {
-                showError('Invalid file format. Please export from this app and try again.');
+                showError('Invalid file format.');
             }
-        } catch {
-            showError('Failed to parse imported file. Please check the file format.');
-        }
+        } catch { showError('Could not read file.'); }
     };
     reader.readAsText(file);
     event.target.value = '';
 }
 
 // ─────────────────────────────────────────────
-//  AI GAP ANALYSIS  (uses CLAUDE_API_KEY env
-//  var via Netlify Functions proxy)
+//  SLIDE-IN WORKFLOW PANEL
 // ─────────────────────────────────────────────
 
-const HELP_CENTER_URL = 'https://salesbuildr.featurebase.app/en/help';
-
-// Open panel and optionally set a heading
-function openAiPanel(title) {
-    const panel = document.getElementById('aiPanel');
-    panel.style.display = 'block';
-    if (title) document.getElementById('aiPanelTitle').textContent = title;
-    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function toggleAiPanel() {
-    const panel = document.getElementById('aiPanel');
-    const isHidden = panel.style.display === 'none' || panel.style.display === '';
-    if (isHidden) {
-        openAiPanel('🤖 AI Gap Analysis — Full KB');
-    } else {
-        panel.style.display = 'none';
-    }
-}
-
-// ── Shared helper: route "Check Gap" into the right Ask the KB panel ──
-function routeToAskPanel(title, description, solution) {
-    // Build a rich question from the issue fields
-    const questionParts = [title];
-    if (description) questionParts.push(description);
-    const question = questionParts.join(' — ');
-
-    // Pre-fill the Ask question field
-    const askInput = document.getElementById('askQuestion');
-    askInput.value = question;
-
-    // Pre-fill the dev context field with the known solution (if any)
-    const contextInput = document.getElementById('askDevContext');
-    if (solution) {
-        contextInput.value = solution;
-    } else {
-        contextInput.value = '';
-    }
-
-    // Scroll right panel into view and run the search
-    document.querySelector('.col-right').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-    // Short delay so scroll completes before results render
-    setTimeout(() => askKB(), 300);
-}
-
-// Called from the KB list "Check Gap" button
-function checkSingleIssueGap(id) {
+function openPanel(id) {
     const issue = knowledgeBase.find(i => i.id === id);
     if (!issue) return;
-    routeToAskPanel(issue.title, issue.description, issue.solution);
+    activePanelId = id;
+
+    const status = issue.status || 'pending';
+
+    // Set header
+    document.getElementById('wpIssueTitle').textContent = issue.title;
+    const meta = document.getElementById('wpIssueMeta');
+    meta.innerHTML = `<span class="kb-category">${issue.category}</span><span class="kb-status-badge ${status} " style="margin-left:6px;">${{ pending:'⏳ Pending', solved:'✓ Solved', published:'📄 Published' }[status]}</span>`;
+
+    // Reset panel state
+    wpResetSearch();
+    document.getElementById('wpSolutionInput').value = issue.solution || '';
+    document.getElementById('wpContextInput').value  = issue.solution || '';
+    document.getElementById('wpDraftArea').style.display   = 'none';
+    document.getElementById('wpDraftText').value = '';
+
+    // Show/hide steps based on status
+    document.getElementById('wpStep2').style.display = status === 'pending'  ? 'block' : 'none';
+    document.getElementById('wpStep3').style.display = (status === 'solved' || status === 'published') ? 'block' : 'none';
+    document.getElementById('wpStep4').style.display = status === 'published' ? 'block' : 'none';
+
+    // Open panel
+    document.getElementById('panelOverlay').classList.add('open');
+    document.getElementById('workflowPanel').classList.add('open');
 }
 
-// Called from the form "Check Gap" button (uses live form values)
-function checkFormIssueGap() {
-    const title       = document.getElementById('issueTitle').value.trim();
-    const description = document.getElementById('issueDescription').value.trim();
-    const solution    = document.getElementById('issueSolution').value.trim();
-
-    if (!title) {
-        showError('Please enter at least a title before checking the gap.');
-        return;
-    }
-
-    routeToAskPanel(title, description, solution);
+function closePanel() {
+    document.getElementById('panelOverlay').classList.remove('open');
+    document.getElementById('workflowPanel').classList.remove('open');
+    activePanelId = null;
 }
 
-// Core analysis — pass a single issue object, or nothing for full KB mode
-async function runGapAnalysis(singleIssue = null) {
-    if (!singleIssue && knowledgeBase.length === 0) {
-        showError('No issues in your KB yet. Add some issues first!');
-        return;
-    }
+// Close on Escape key
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 
-    const resultEl   = document.getElementById('aiResult');
-    const draftPanel = document.getElementById('aiArticleDraft');
-    draftPanel.style.display = 'none';
-    document.getElementById('draftControls').style.display = 'none';
-
-    resultEl.className     = 'ai-result loading-state';
-    resultEl.style.display = 'flex';
-    resultEl.innerHTML     = '<div class="loading"></div> Checking against the Salesbuildr help centre…';
-
-    let prompt;
-
-    if (singleIssue) {
-        // ── Single-issue mode ──
-        const issueDetail = [
-            `Title: ${singleIssue.title}`,
-            singleIssue.category    ? `Category: ${singleIssue.category}`       : '',
-            singleIssue.description ? `Description: ${singleIssue.description}` : '',
-            singleIssue.solution    ? `Current solution notes: ${singleIssue.solution}` : '(no solution recorded yet)'
-        ].filter(Boolean).join('\n');
-
-        prompt = `You are a support documentation expert for Salesbuildr, a B2B quoting and sales tool for MSPs.
-
-The public Salesbuildr Help Centre is at: ${HELP_CENTER_URL}
-
-I have the following support issue in our internal KB:
-
-${issueDetail}
-
-Please:
-1. Assess whether this issue is likely already covered by an existing help centre article (based on common SaaS documentation patterns for quoting/proposal tools).
-2. If it IS covered — describe what the article likely says and suggest I link to it.
-3. If it is NOT covered (a gap) — confirm it's a documentation opportunity and suggest what a help article for this issue should cover.
-4. Either way, suggest whether I should write or update a help article and give a one-paragraph article outline.
-
-Format your response with these headings:
-## 📖 Help Centre Coverage Assessment
-## 📝 Recommended Article Outline
-
-Be specific and actionable.`;
-
-    } else {
-        // ── Full KB mode ──
-        const kbSummary = knowledgeBase.map(i =>
-            `• [${i.category}] ${i.title}${i.solution ? ' (has solution)' : ' (NO SOLUTION YET)'}`
-        ).join('\n');
-
-        prompt = `You are a support documentation expert for Salesbuildr, a B2B quoting and sales tool.
-
-Here are the issues currently recorded in our internal Knowledge Base:
-
-${kbSummary}
-
-The public Salesbuildr Help Centre is at: ${HELP_CENTER_URL}
-
-Please analyse this KB and:
-1. Identify which issues likely already have coverage in the help centre.
-2. Identify GAPS – issues that probably don't have a help article and represent real documentation opportunities.
-3. Suggest the top 3 KB articles that should be written, with a one-line rationale for each.
-
-Format your response clearly with these headings:
-## ✅ Likely Already Documented
-## 🔴 Gaps Identified
-## 📝 Top 3 Recommended Articles to Write
-
-Keep it concise and actionable.`;
-    }
-
-    try {
-        const response = await fetch('/.netlify/functions/kb-claude', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: 'claude-sonnet-4-6',
-                max_tokens: 1000,
-                messages: [{ role: 'user', content: prompt }]
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.error) {
-            resultEl.className     = 'ai-result';
-            resultEl.style.display = 'block';
-            resultEl.textContent   = '⚠️ API Error: ' + (data.error.message || JSON.stringify(data.error));
-            return;
-        }
-
-        const text = data.content?.map(b => b.text || '').join('\n') || 'No response received.';
-        resultEl.className     = 'ai-result';
-        resultEl.style.display = 'block';
-        resultEl.innerHTML     = formatMarkdown(text);
-        resultEl.dataset.analysis = text;
-
-        document.getElementById('draftControls').style.display = 'block';
-
-    } catch (err) {
-        resultEl.className     = 'ai-result';
-        resultEl.style.display = 'block';
-        resultEl.textContent   = '⚠️ Failed to reach Claude API: ' + err.message;
-    }
+// ── Step 1: Search the Help Centre ────────────
+function wpResetSearch() {
+    const res = document.getElementById('wpSearchResult');
+    res.style.display = 'none';
+    res.innerHTML = '';
+    res.className = 'wp-search-result';
+    document.getElementById('wpArticles').innerHTML = '';
+    document.getElementById('wpSearchBtn').textContent = 'Search Help Centre';
+    document.getElementById('wpSearchBtn').disabled = false;
 }
 
-async function draftArticle() {
-    const resultEl   = document.getElementById('aiResult');
-    const draftPanel = document.getElementById('aiArticleDraft');
-    const draftText  = document.getElementById('draftArticleText');
+async function wpRunSearch() {
+    const issue = knowledgeBase.find(i => i.id === activePanelId);
+    if (!issue) return;
 
-    const context    = document.getElementById('articleContext').value.trim();
-    const analysis   = resultEl.dataset.analysis || '';
-
-    draftPanel.style.display = 'none';
-    draftText.value = 'Drafting article…';
-    draftPanel.style.display = 'block';
-
-    const prompt = `You are a technical writer for Salesbuildr, a B2B quoting and sales tool for MSPs.
-
-Based on the following gap analysis of our KB:
-${analysis}
-
-${context ? `Additional context provided: ${context}` : ''}
-
-Please draft a complete, well-structured help centre article for the most important gap identified. The article should:
-- Have a clear title
-- Include a brief intro paragraph
-- Use numbered steps where relevant
-- Include tips or notes where helpful
-- Be written for end-users (not developers)
-- Be approximately 300-500 words
-
-Return ONLY the article content, ready to publish.`;
-
-    try {
-        const response = await fetch('/.netlify/functions/kb-claude', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: 'claude-sonnet-4-6',
-                max_tokens: 1000,
-                messages: [{ role: 'user', content: prompt }]
-            })
-        });
-
-        const data = await response.json();
-        const text = data.content?.map(b => b.text || '').join('\n') || 'No content generated.';
-        draftText.value = text;
-
-    } catch (err) {
-        draftText.value = 'Error generating article: ' + err.message;
-    }
-}
-
-function copyDraft() {
-    const text = document.getElementById('draftArticleText').value;
-    navigator.clipboard.writeText(text).then(() => {
-        showSuccess('Article copied to clipboard!');
-    });
-}
-
-// ── Simple Markdown → HTML (headings + bullets) ──
-function formatMarkdown(text) {
-    return text
-        .replace(/^## (.+)$/gm, '<h3 style="color:var(--text);margin:16px 0 8px;font-size:0.95rem;font-family:\'Space Grotesk\',sans-serif;">$1</h3>')
-        .replace(/^• (.+)$/gm, '<div style="padding:2px 0 2px 12px;">• $1</div>')
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\n\n/g, '<br>');
-}
-
-// ─────────────────────────────────────────────
-//  ASK THE KB  –  Right panel
-//  Sends question to Claude which searches the
-//  Salesbuildr help centre and returns articles
-// ─────────────────────────────────────────────
-
-async function askKB() {
-    const question = document.getElementById('askQuestion').value.trim();
-    if (!question) return;
-
-    const resultEl   = document.getElementById('askResult');
-    const articlesEl = document.getElementById('askArticles');
-    const draftBtn   = document.getElementById('askDraftBtn');
-
+    const resultEl  = document.getElementById('wpSearchResult');
+    const articlesEl = document.getElementById('wpArticles');
     articlesEl.innerHTML = '';
-    draftBtn.style.display = 'none';
-    resultEl.style.display = 'block';
-    resultEl.className = 'ask-result loading-state';
-    resultEl.innerHTML = '<div class="loading"></div> Deep searching help centre — title, description & body…';
+
+    resultEl.style.display = 'flex';
+    resultEl.className = 'wp-search-result loading-state';
+    resultEl.innerHTML = '<div class="loading"></div> Searching help centre…';
+    document.getElementById('wpSearchBtn').disabled = true;
+    document.getElementById('wpSearchBtn').textContent = 'Searching…';
+
+    const query = [issue.title, issue.description].filter(Boolean).join(' — ');
 
     try {
-        // Use the existing featurebase.js function — sends query + instructions,
-        // gets back a standard Claude API response
         const response = await fetch('/.netlify/functions/kb-featurebase-deep', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query: question })
+            body: JSON.stringify({ query })
         });
 
         const data = await response.json();
+        if (data.error) { wpShowSearchError(data.error); return; }
 
-        if (data.error) {
-            resultEl.className = 'ask-result error-state';
-            resultEl.style.display = 'block';
-            resultEl.textContent = '⚠️ ' + data.error;
-            return;
-        }
-
-        // featurebase.js returns a standard Claude API response object
         const text = data.content?.map(b => b.text || '').join('\n') || '';
+        if (!text) { wpShowSearchError('No response received.'); return; }
 
-        if (!text) {
-            resultEl.className = 'ask-result error-state';
-            resultEl.style.display = 'block';
-            resultEl.textContent = '⚠️ No response received.';
-            return;
-        }
-
-        // Check for gap marker
         const hasGap = text.includes('THE GAP');
         let mainText = text;
         let gapText  = '';
@@ -666,90 +446,116 @@ async function askKB() {
             gapText  = parts[1]?.trim() || '';
         }
 
-        // Extract any URLs from the response to build clickable article links
+        // Extract Featurebase URLs
         const urlPattern = /https?:\/\/[^\s)\]>,"]+/g;
         const foundUrls  = [...new Set(text.match(urlPattern) || [])].filter(u => u.includes('featurebase'));
 
-        // Show the main answer text
-        resultEl.className = 'ask-result';
+        resultEl.className = hasGap ? 'wp-search-result gap-state' : 'wp-search-result';
         resultEl.style.display = 'block';
         resultEl.innerHTML = formatMarkdown(mainText);
 
-        // If URLs were found, render them as article links
         if (foundUrls.length > 0) {
-            articlesEl.innerHTML = '<div class="ask-article-label" style="margin-top:12px;">Related Articles</div>' +
-                foundUrls.map(url => {
-                    const safeUrl = url.replace(/'/g, '%27');
-                    // Extract a readable title from the URL slug
-                    const slug  = url.split('/').pop() || url;
-                    const title = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-                    return `
-                    <div class="ask-article-item">
-                        <a href="${url}" target="_blank" class="ask-article-link">${title}</a>
-                        <div style="display:flex;gap:8px;margin-top:6px;">
-                            <button class="btn btn-secondary btn-small" onclick="copyArticleLink('${safeUrl}')">📋 Copy Link</button>
-                            <a href="${url}" target="_blank" class="btn btn-secondary btn-small" style="text-decoration:none;">Open ↗</a>
-                        </div>
-                    </div>`;
-                }).join('');
+            articlesEl.innerHTML = foundUrls.map(url => {
+                const safeUrl = url.replace(/'/g, '%27');
+                const slug  = url.split('/').pop() || url;
+                const title = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                return `<div class="wp-article-item">
+                    <a href="${url}" target="_blank" class="wp-article-link">${title}</a>
+                    <div style="display:flex;gap:6px;margin-top:4px;">
+                        <button class="btn btn-secondary btn-small" onclick="copyLink('${safeUrl}')">📋 Copy</button>
+                        <a href="${url}" target="_blank" class="btn btn-secondary btn-small" style="text-decoration:none;">Open ↗</a>
+                    </div>
+                </div>`;
+            }).join('');
         }
 
-        // Show gap section if present
         if (hasGap && gapText) {
             const gapDiv = document.createElement('div');
-            gapDiv.className = 'ask-result';
-            gapDiv.style.marginTop = '10px';
-            gapDiv.style.borderColor = 'var(--warn)';
-            gapDiv.style.background = 'var(--warn-bg)';
-            gapDiv.innerHTML = `<span style="color:var(--warn);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;">⚠ Documentation Gap</span><p style="margin-top:8px;color:var(--warn);font-size:0.88rem;">${gapText}</p>`;
+            gapDiv.style.cssText = 'margin-top:10px;padding:10px;background:var(--warn-bg);border:1px solid #F59E0B;font-size:0.83rem;';
+            gapDiv.innerHTML = `<span style="font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--warn);">⚠ Documentation Gap</span><p style="margin-top:6px;color:var(--warn);">${gapText}</p>`;
             articlesEl.appendChild(gapDiv);
         }
 
-        // Always show draft button after a search
-        draftBtn.dataset.question = question;
-        draftBtn.dataset.gapText  = gapText;
-        draftBtn.textContent = hasGap ? '✍️ Draft missing article' : '✍️ Draft article for this topic';
-        draftBtn.style.display = 'block';
-        document.getElementById('askDevContext').value = '';
-        document.getElementById('askContextArea').style.display = 'block';
-
     } catch (err) {
-        resultEl.className = 'ask-result error-state';
-        resultEl.style.display = 'block';
-        resultEl.textContent = '⚠️ Error: ' + err.message;
+        wpShowSearchError(err.message);
     }
+
+    document.getElementById('wpSearchBtn').textContent = 'Search again';
+    document.getElementById('wpSearchBtn').disabled = false;
 }
 
-function copyArticleLink(url) {
-    navigator.clipboard.writeText(url).then(() => showSuccess('Link copied!'));
+function wpShowSearchError(msg) {
+    const resultEl = document.getElementById('wpSearchResult');
+    resultEl.className = 'wp-search-result';
+    resultEl.style.display = 'block';
+    resultEl.style.borderColor = 'var(--danger)';
+    resultEl.style.background = 'var(--danger-bg)';
+    resultEl.textContent = '⚠️ ' + msg;
+    document.getElementById('wpSearchBtn').textContent = 'Search again';
+    document.getElementById('wpSearchBtn').disabled = false;
 }
 
-async function draftMissingArticle() {
-    const btn      = document.getElementById('askDraftBtn');
-    const question = btn.dataset.question || '';
-    const draftEl  = document.getElementById('askDraftArea');
-    const textEl   = document.getElementById('askDraftText');
+// ── Step 2: Save Solution ─────────────────────
+function wpSaveSolution() {
+    const solution = document.getElementById('wpSolutionInput').value.trim();
+    if (!solution) { showError('Please enter a solution.'); return; }
 
-    draftEl.style.display = 'block';
-    textEl.value = 'Drafting article…';
-    draftEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const issue = knowledgeBase.find(i => i.id === activePanelId);
+    if (!issue) return;
 
-    const gapContext  = btn.dataset.gapText ? `\n\nGap identified: ${btn.dataset.gapText}` : '';
-    const devContext  = (document.getElementById('askDevContext')?.value || '').trim();
-    const devSection  = devContext ? `\n\nAdditional context from the support/dev team (use this to ensure accuracy — this takes priority over any assumptions):\n${devContext}` : '';
+    issue.solution  = solution;
+    issue.status    = 'solved';
+    issue.updatedAt = new Date().toISOString();
+
+    saveLocalData();
+    showSuccess('Solution saved!');
+    updateStats();
+    renderKB();
+
+    // Pre-fill context and show step 3
+    document.getElementById('wpContextInput').value = solution;
+    document.getElementById('wpStep2').style.display = 'none';
+    document.getElementById('wpStep3').style.display = 'block';
+
+    // Update header badge
+    const meta = document.getElementById('wpIssueMeta');
+    meta.innerHTML = `<span class="kb-category">${issue.category}</span><span class="kb-status-badge solved" style="margin-left:6px;">✓ Solved</span>`;
+}
+
+// ── Step 3: Draft Article ─────────────────────
+async function wpDraftArticle() {
+    const issue = knowledgeBase.find(i => i.id === activePanelId);
+    if (!issue) return;
+
+    const context    = document.getElementById('wpContextInput').value.trim();
+    const draftArea  = document.getElementById('wpDraftArea');
+    const draftText  = document.getElementById('wpDraftText');
+    const draftBtn   = document.getElementById('wpDraftBtn');
+
+    draftArea.style.display = 'block';
+    draftText.value = 'Drafting article…';
+    draftBtn.textContent = 'Drafting…';
+    draftBtn.disabled = true;
+    draftArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    const solution = issue.solution || '';
+    const devSection = context ? `\n\nContext from support/dev team (use this as the source of truth):\n${context}` : '';
 
     const prompt = `You are a technical writer for Salesbuildr, a B2B quoting and sales platform for MSPs.
 
-A support agent searched for help with: "${question}"${gapContext}${devSection}
+Issue: "${issue.title}"
+Category: ${issue.category}
+${issue.description ? `Description: ${issue.description}` : ''}
+${solution ? `Known solution: ${solution}` : ''}${devSection}
 
-Please draft a complete, well-structured help centre article that would answer this question. The article should:
+Please draft a complete, well-structured help centre article. The article should:
 - Have a clear title
 - Include a brief intro paragraph
 - Use numbered steps where relevant
 - Include tips or notes where helpful
 - Be written for end-users (not developers)
 - Be approximately 300–500 words
-${devContext ? '- Make sure to accurately reflect the context provided above — do not make assumptions that contradict it' : ''}
+${context ? '- Base the article on the context provided above — do not contradict it' : ''}
 
 Return ONLY the article content, ready to publish.`;
 
@@ -764,38 +570,59 @@ Return ONLY the article content, ready to publish.`;
             })
         });
         const data = await response.json();
-        textEl.value = data.content?.map(b => b.text || '').join('\n') || 'Error generating draft.';
+        draftText.value = data.content?.map(b => b.text || '').join('\n') || 'Error generating draft.';
     } catch (err) {
-        textEl.value = 'Error: ' + err.message;
+        draftText.value = 'Error: ' + err.message;
     }
+
+    draftBtn.textContent = 'Re-draft article';
+    draftBtn.disabled = false;
 }
 
-function copyAskDraft() {
-    const text = document.getElementById('askDraftText').value;
-    navigator.clipboard.writeText(text).then(() => showSuccess('Draft copied to clipboard!'));
+function wpCopyDraft() {
+    const text = document.getElementById('wpDraftText').value;
+    navigator.clipboard.writeText(text).then(() => showSuccess('Article copied to clipboard!'));
 }
 
-function clearAskPanel() {
-    document.getElementById('askQuestion').value    = '';
-    document.getElementById('askResult').style.display   = 'none';
-    document.getElementById('askResult').innerHTML       = '';
-    document.getElementById('askArticles').innerHTML     = '';
-    document.getElementById('askDraftBtn').style.display = 'none';
-    document.getElementById('askContextArea').style.display = 'none';
-    document.getElementById('askDevContext').value       = '';
-    document.getElementById('askDraftArea').style.display = 'none';
-    document.getElementById('askDraftText').value        = '';
+// ── Step 4: Mark Published ────────────────────
+function wpMarkPublished() {
+    const issue = knowledgeBase.find(i => i.id === activePanelId);
+    if (!issue) return;
+
+    issue.status    = 'published';
+    issue.updatedAt = new Date().toISOString();
+    saveLocalData();
+    showSuccess('Marked as published!');
+    updateStats();
+    renderKB();
+
+    document.getElementById('wpStep4').style.display = 'block';
+    const meta = document.getElementById('wpIssueMeta');
+    meta.innerHTML = `<span class="kb-category">${issue.category}</span><span class="kb-status-badge published" style="margin-left:6px;">📄 Published</span>`;
 }
 
-// Allow Enter key (without Shift) to submit the ask question
-document.addEventListener('DOMContentLoaded', function () {
-    const askInput = document.getElementById('askQuestion');
-    if (askInput) {
-        askInput.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                askKB();
-            }
-        });
-    }
-});
+function wpRedraftArticle() {
+    document.getElementById('wpStep3').style.display = 'block';
+    document.getElementById('wpDraftArea').style.display = 'none';
+    document.getElementById('wpDraftText').value = '';
+    document.getElementById('wpDraftBtn').textContent = 'Draft Article';
+}
+
+// ── Shared Helpers ────────────────────────────
+function copyLink(url) {
+    navigator.clipboard.writeText(url).then(() => showSuccess('Link copied!'));
+}
+
+function formatMarkdown(text) {
+    return text
+        .replace(/^### (.+)$/gm, '<h4 style="color:var(--text);margin:12px 0 4px;font-size:0.88rem;font-family:\'Space Grotesk\',sans-serif;">$1</h4>')
+        .replace(/^## (.+)$/gm,  '<h3 style="color:var(--text);margin:12px 0 4px;font-size:0.92rem;font-family:\'Space Grotesk\',sans-serif;">$1</h3>')
+        .replace(/^# (.+)$/gm,   '<h3 style="color:var(--text);margin:12px 0 6px;font-size:0.95rem;font-family:\'Space Grotesk\',sans-serif;">$1</h3>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g,    '<em>$1</em>')
+        .replace(/^[-•]\s+(.+)$/gm,'<div style="padding:2px 0 2px 12px;">• $1</div>')
+        .replace(/^\d+\.\s+(.+)$/gm,'<div style="padding:2px 0 2px 12px;">$1</div>')
+        .replace(/^---+$/gm,      '<hr style="border:none;border-top:1px solid var(--border-2);margin:8px 0;">')
+        .replace(/\n\n/g,         '<br><br>')
+        .replace(/\n/g,           '<br>');
+}
