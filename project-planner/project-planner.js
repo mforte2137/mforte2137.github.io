@@ -1,85 +1,220 @@
 /* =========================================================
-   Project Scope Builder — project-scope.js  (v2)
-   Phases 2 + 3 + 4: three-column layout, projects, AI
+   Project Planner — project-planner.js
+   Adapted from project-scope.js (v2)
+   All Phases: credentials, catalog, SKU dropdown, widget
+   generation, widget push, quote creation, AI assistant
    ========================================================= */
 
 // ── Constants ─────────────────────────────────────────────
-const LS_KEY       = 'sb_project_scope_v1';
-const LS_PROJECTS  = 'sb_projects_v1';
-const LS_BRAND_COLOR = 'sb_brand_color_v1';
-let brandColor = localStorage.getItem(LS_BRAND_COLOR) || '#2563eb';
+const LS_KEY         = 'pp_project_planner_v1';
+const LS_PROJECTS    = 'pp_projects_v1';
+const LS_TEMPLATES   = 'pp_scope_templates_v1';
+const LS_BRAND_COLOR = 'sb_brand_color_v1';  // shared across tools
+const LS_API_KEY     = 'sb_api_key';          // shared across tools
+const LS_TENANT_URL  = 'sb_tenant_url';       // shared across tools
+const SS_CATALOG     = 'pp_catalog_cache';    // sessionStorage
 
-function saveBrandColor(color) {
-  brandColor = color;
-  localStorage.setItem(LS_BRAND_COLOR, color);
-}
+const API_TEMPLATES   = '/api/scope-templates';
+const API_AI          = '/api/planner-ai';
+const API_CATALOG     = '/api/planner-catalog';
+const API_COMPANIES   = '/api/planner-companies';
+const API_OPPS        = '/api/planner-opportunities';
+const API_QT          = '/api/planner-templates';
+const API_QUOTE       = '/api/planner-quote';
 
-function initBrandColor() {
-  const stored = localStorage.getItem(LS_BRAND_COLOR);
-  if (stored) brandColor = stored;
-  // Mark the matching swatch as active, or custom if no match
-  const swatches = document.querySelectorAll('.brand-swatch:not(.brand-swatch-custom)');
-  let matched = false;
-  swatches.forEach(sw => {
-    const isActive = sw.dataset.color === brandColor;
-    sw.classList.toggle('active', isActive);
-    if (isActive) matched = true;
-  });
-  const customSwatch = document.getElementById('brandCustomSwatch');
-  if (!matched) {
-    customSwatch.classList.add('active');
-    customSwatch.style.background = brandColor;
-    document.getElementById('brandHexRow').style.display = 'flex';
-    document.getElementById('brandHexInput').value = brandColor;
-  } else {
-    customSwatch.classList.remove('active');
-  }
-}
-
-function setupBrandColorListeners() {
-  // Preset swatches
-  document.querySelectorAll('.brand-swatch:not(.brand-swatch-custom)').forEach(sw => {
-    sw.addEventListener('click', () => {
-      document.querySelectorAll('.brand-swatch').forEach(s => s.classList.remove('active'));
-      sw.classList.add('active');
-      saveBrandColor(sw.dataset.color);
-      document.getElementById('brandHexRow').style.display = 'none';
-      document.getElementById('brandCustomSwatch').style.background = 'conic-gradient(red,yellow,lime,aqua,blue,magenta,red)';
-      autoRefresh();
-    });
-  });
-  // Custom swatch — show hex input
-  document.getElementById('brandCustomSwatch').addEventListener('click', () => {
-    document.getElementById('brandHexRow').style.display = 'flex';
-    document.getElementById('brandHexInput').focus();
-  });
-  // Apply custom hex
-  document.getElementById('brandHexApply').addEventListener('click', applyCustomHex);
-  document.getElementById('brandHexInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') applyCustomHex();
-  });
-}
-
-function applyCustomHex() {
-  let val = document.getElementById('brandHexInput').value.trim();
-  if (!val.startsWith('#')) val = '#' + val;
-  if (!/^#[0-9a-fA-F]{6}$/.test(val)) { showToast('Enter a valid 6-digit hex e.g. #2563eb'); return; }
-  document.querySelectorAll('.brand-swatch').forEach(s => s.classList.remove('active'));
-  const customSwatch = document.getElementById('brandCustomSwatch');
-  customSwatch.classList.add('active');
-  customSwatch.style.background = val;
-  saveBrandColor(val);
-  autoRefresh();
-  showToast('Brand color updated');
-}
-
-const LS_TEMPLATES  = 'sb_scope_templates_v1';
-const LS_API_KEY   = 'sb_api_key';
-const LS_TENANT_URL = 'sb_tenant_url';
-const API_TEMPLATES = '/api/scope-templates';
-const API_AI        = '/api/scope-ai';
-const ROLES = ['PM', 'Senior Engineer', 'Engineer', 'Technician', 'Account Manager'];
 const PROJ_COLORS = ['#3b82f6','#f97316','#8b5cf6','#ec4899','#14b8a6','#f59e0b','#10b981','#6366f1'];
+
+let brandColor  = localStorage.getItem(LS_BRAND_COLOR) || '#2563eb';
+let catalog     = [];     // [{ id, name, price, unit }]
+let catalogLoaded = false;
+
+// ── Presets (same tasks as Scope Builder, role left blank for SKU mapping) ──
+const PRESETS = {
+  copilot: {
+    title: 'Microsoft Copilot Readiness & Deployment',
+    overview: 'This project prepares your Microsoft 365 environment for Copilot, deploys it to a pilot group, and drives adoption across your team. Before Copilot can be activated safely, your tenant data needs to be governed correctly — we handle the sensitivity labelling, SharePoint structure review, and security posture checks that most deployments skip.',
+    exclusions: 'Microsoft 365 Copilot licensing costs\nCustom Copilot Studio agent development (available as a separate engagement)\nThird-party AI tool integrations\nData migration or SharePoint redesign beyond the scope of Copilot readiness\nLegal or compliance review of AI acceptable-use policy',
+    tasks: [
+      { task:'Copilot Readiness Assessment', role:'', hours:'8', notes:'Licensing eligibility, tenant configuration, security score, MFA status' },
+      { task:'Data Governance Review — SharePoint & OneDrive', role:'', hours:'12', notes:'Oversharing audit, orphaned sites, broad permissions, stale content' },
+      { task:'Sensitivity Label Design & Implementation', role:'', hours:'12', notes:'Label taxonomy, auto-labelling policies, default labels per site/library' },
+      { task:'Information Barriers & Access Review', role:'', hours:'8', notes:'Confirm no unintended data exposure before Copilot surfaces content' },
+      { task:'Microsoft Purview Configuration', role:'', hours:'8', notes:'DLP policies, retention labels, audit logging baseline' },
+      { task:'Copilot Licensing Activation & Admin Centre Setup', role:'', hours:'4', notes:'License assignment, Copilot admin settings, web access policy' },
+      { task:'Pilot Group Selection & Onboarding', role:'', hours:'4', notes:'5–15 users across key roles, briefing, feedback process setup' },
+      { task:'Copilot in Teams — Configuration & Pilot', role:'', hours:'6', notes:'Meeting transcription, recap, call notes — test with pilot group' },
+      { task:'Copilot in Outlook — Configuration & Pilot', role:'', hours:'4', notes:'Email summary, draft assist, thread summary — pilot validation' },
+      { task:'Copilot in Word, Excel & PowerPoint — Pilot', role:'', hours:'4', notes:'Document generation, data analysis, presentation drafting' },
+      { task:'Prompt Engineering Training — Pilot Group', role:'', hours:'6', notes:'How to write effective prompts, practical use cases per role' },
+      { task:'Pilot Review & Feedback Analysis', role:'', hours:'4', notes:'Usage data review, feedback collation, blockers and wins documented' },
+      { task:'Broad Rollout & Department Training', role:'', hours:'12', notes:'Role-specific training sessions — how Copilot helps their actual job' },
+      { task:'Copilot Adoption & Usage Reporting Setup', role:'', hours:'4', notes:'Microsoft 365 Copilot dashboard, usage metrics, value reporting' },
+      { task:'AI Acceptable Use Policy — Template & Review', role:'', hours:'4', notes:'Draft policy for client review — what Copilot can and cannot be used for' },
+      { task:'Project Management', role:'', hours:'16', notes:'Scheduling, stakeholder communications, milestone tracking' }
+    ]
+  },
+  azure: {
+    title: 'Azure Cloud Migration',
+    overview: 'This project covers the full migration of your on-premises server infrastructure to Microsoft Azure, delivering improved reliability, scalability, and remote access — with minimal disruption to your team and day-to-day operations.',
+    exclusions: 'Application code changes or custom development\nThird-party vendor coordination beyond 2 hours per vendor\nEnd-user training (available as a separate engagement)\nHardware procurement and shipping costs\nMicrosoft licensing costs',
+    tasks: [
+      { task:'Project Kickoff & Planning', role:'', hours:'8', notes:'Scope confirmation, schedule, communication plan' },
+      { task:'Current Environment Assessment', role:'', hours:'12', notes:'Inventory servers, workloads, dependencies, network' },
+      { task:'Azure Network Design & VPN Architecture', role:'', hours:'8', notes:'Address space, subnets, gateway sizing' },
+      { task:'Create & Configure Azure Virtual Network & VPN Gateway', role:'', hours:'8', notes:'Includes site-to-site VPN to office(s)' },
+      { task:'Create & Configure Azure Server VMs', role:'', hours:'48', notes:'VM provisioning, OS config, patching' },
+      { task:'Security & Baseline Configuration', role:'', hours:'24', notes:'NSGs, firewall rules, access controls' },
+      { task:'Data Migration Planning & Validation', role:'', hours:'24', notes:'Migration approach and test validation' },
+      { task:'Migrate Data from On-Prem to Azure (standard servers)', role:'', hours:'48', notes:'File/data migration, integrity checks' },
+      { task:'Configure Workstations & Printers for New Network', role:'', hours:'24', notes:'DNS, drive mappings, printer updates' },
+      { task:'User Acceptance & Environment Validation', role:'', hours:'12', notes:'Confirmation Azure environment is fully working' },
+      { task:'Decommission On-Prem VMs', role:'', hours:'12', notes:'Graceful shutdown, data verification' },
+      { task:'Update Network & Process Documentation', role:'', hours:'8', notes:'Diagrams, runbooks, credentials handling' },
+      { task:'Project Management (ongoing)', role:'', hours:'48', notes:'Status updates, stakeholder coordination, reporting' }
+    ]
+  },
+  m365: {
+    title: 'Microsoft 365 Migration',
+    overview: 'This project covers the full migration from your current on-premises email and file infrastructure to Microsoft 365, including Exchange Online, SharePoint, Teams, and OneDrive — with a staged approach designed to minimize disruption during the transition.',
+    exclusions: 'Third-party application integrations not listed in scope\nCustom development or workflow automation\nEnd-user device setup beyond standard mail profile configuration\nMicrosoft 365 licensing costs\nData older than agreed retention period',
+    tasks: [
+      { task:'Project Kickoff & Tenant Assessment', role:'', hours:'8', notes:'Current environment review, license planning' },
+      { task:'DNS & Domain Configuration', role:'', hours:'4', notes:'MX, SPF, DKIM, DMARC records' },
+      { task:'Exchange Online Setup & Mail Flow', role:'', hours:'8', notes:'Connectors, hybrid config, mail routing' },
+      { task:'Mailbox Migration — Batch 1', role:'', hours:'16', notes:'Priority users, pilot group' },
+      { task:'Mailbox Migration — Remaining Users', role:'', hours:'24', notes:'Full organization migration, integrity checks' },
+      { task:'SharePoint Online Setup & Structure', role:'', hours:'12', notes:'Sites, libraries, permissions' },
+      { task:'File Data Migration to SharePoint / OneDrive', role:'', hours:'16', notes:'On-prem file shares to cloud storage' },
+      { task:'Microsoft Teams Setup & Policies', role:'', hours:'8', notes:'Teams, channels, meeting policies' },
+      { task:'Security & Compliance Configuration', role:'', hours:'12', notes:'MFA, Conditional Access, DLP policies' },
+      { task:'Cutover Planning & Execution', role:'', hours:'8', notes:'MX record cutover, final sync' },
+      { task:'User Onboarding & Orientation', role:'', hours:'12', notes:'Profile setup, Outlook config, basic guidance' },
+      { task:'Post-Migration Validation & Support', role:'', hours:'16', notes:'30-day hypercare, issue resolution' },
+      { task:'Documentation Update', role:'', hours:'4', notes:'Updated environment docs, admin guide' },
+      { task:'Project Management', role:'', hours:'24', notes:'Scheduling, status reporting, stakeholder comms' }
+    ]
+  },
+  network: {
+    title: 'Network Infrastructure Upgrade',
+    overview: 'This project delivers a full replacement and modernisation of your existing network infrastructure, including next-generation firewall, managed switching, structured cabling, and wireless access points — installed after hours to ensure zero disruption to your team.',
+    exclusions: 'Structured cabling beyond agreed scope\nISP or WAN circuit changes\nThird-party equipment not supplied through this engagement\nAV or physical security systems',
+    tasks: [
+      { task:'Site Survey & Current Environment Assessment', role:'', hours:'8', notes:'Cabling audit, device inventory, coverage mapping' },
+      { task:'Network Design & Architecture', role:'', hours:'8', notes:'IP addressing, VLANs, segmentation design' },
+      { task:'Procurement & Equipment Staging', role:'', hours:'4', notes:'Order management, pre-configuration' },
+      { task:'Firewall Installation & Configuration', role:'', hours:'12', notes:'Rules, NAT, VPN, remote access policies' },
+      { task:'Core Switch Deployment', role:'', hours:'8', notes:'Uplink config, VLAN tagging, redundancy' },
+      { task:'Access Switch Deployment', role:'', hours:'12', notes:'Port config, PoE, patch panel connections' },
+      { task:'Wireless Access Point Deployment', role:'', hours:'8', notes:'Controller config, SSID setup, coverage validation' },
+      { task:'VLAN & Network Segmentation', role:'', hours:'8', notes:'Traffic isolation, guest network, IoT separation' },
+      { task:'Network Testing & Validation', role:'', hours:'8', notes:'Throughput, failover, segmentation testing' },
+      { task:'Network Documentation & Diagrams', role:'', hours:'6', notes:'Topology diagrams, VLAN tables, port mapping' },
+      { task:'Project Management', role:'', hours:'16', notes:'Scheduling, vendor coordination, comms' }
+    ]
+  },
+  endpoint: {
+    title: 'Endpoint Refresh & Device Deployment',
+    overview: 'This project replaces aging workstations and laptops across your organization — ensuring all staff are on modern, supported hardware with minimal disruption to each user.',
+    exclusions: 'Hardware procurement costs (quoted separately)\nSoftware or operating system licensing costs\nPersonal files or non-business data',
+    tasks: [
+      { task:'Asset Audit & Device Inventory', role:'', hours:'4', notes:'Catalogue all existing devices, specs, age and OS version' },
+      { task:'New Device Specification & Procurement', role:'', hours:'4', notes:'Hardware selection, ordering, delivery tracking' },
+      { task:'Image & Build Preparation', role:'', hours:'8', notes:'Standard image creation, software stack, policies' },
+      { task:'Device Imaging & Pre-configuration', role:'', hours:'16', notes:'OS imaging, domain join, software deployment per device' },
+      { task:'Data Migration — User Files & Profile', role:'', hours:'24', notes:'Documents, desktop, browser favourites, Outlook PST' },
+      { task:'Intune / MDM Enrolment', role:'', hours:'8', notes:'Device enrolment, compliance policies, app deployment' },
+      { task:'User Handover & Orientation', role:'', hours:'8', notes:'New device walkthrough, key differences, helpdesk contact' },
+      { task:'Old Device Wipe & Disposal', role:'', hours:'8', notes:'Secure data wipe, WEEE disposal or trade-in coordination' },
+      { task:'Project Management', role:'', hours:'16', notes:'Scheduling, user communications, progress tracking' }
+    ]
+  },
+  server: {
+    title: 'Server Refresh & Hardware Deployment',
+    overview: 'This project replaces your existing server hardware with new equipment, migrating all roles, services, and data with minimal downtime.',
+    exclusions: 'Hardware procurement costs (quoted separately)\nSoftware or operating system licensing costs\nEnd-user device setup',
+    tasks: [
+      { task:'Current Environment Assessment', role:'', hours:'8', notes:'Server roles, services, data volumes, dependencies' },
+      { task:'Migration Planning & Risk Assessment', role:'', hours:'6', notes:'Cutover approach, rollback plan, schedule' },
+      { task:'New Server OS Installation & Patching', role:'', hours:'8', notes:'Base OS build, drivers, security baseline' },
+      { task:'Active Directory, DNS & DHCP Migration', role:'', hours:'12', notes:'Role migration, replication, cutover' },
+      { task:'Application Server Migration', role:'', hours:'16', notes:'Line-of-business apps, databases, dependencies' },
+      { task:'File Server Data Migration', role:'', hours:'16', notes:'Share migration, permissions, DFS replication' },
+      { task:'Backup Configuration on New Hardware', role:'', hours:'6', notes:'BDR agent, policies, initial backup run' },
+      { task:'User Acceptance Testing', role:'', hours:'6', notes:'Sign-off testing with key users' },
+      { task:'Old Server Decommission', role:'', hours:'6', notes:'Data wipe verification, hardware retirement' },
+      { task:'Project Management', role:'', hours:'16', notes:'Scheduling, stakeholder updates, sign-off' }
+    ]
+  },
+  voip: {
+    title: 'VoIP & Business Communications Upgrade',
+    overview: 'This project replaces your existing phone system with a modern cloud-based VoIP or UCaaS solution — delivering reliable business communications, mobile flexibility, and Microsoft Teams integration.',
+    exclusions: 'Ongoing SIP trunk or UCaaS subscription costs\nISP or internet circuit upgrades\nCustom auto-attendant scripting beyond agreed call flows',
+    tasks: [
+      { task:'Current System Audit & Requirements Gathering', role:'', hours:'6', notes:'Existing numbers, call flows, voicemail, hunt groups' },
+      { task:'Internet & Network Readiness Assessment', role:'', hours:'4', notes:'Bandwidth, QoS capability, VLAN design for voice traffic' },
+      { task:'Solution Design & Call Flow Planning', role:'', hours:'8', notes:'Auto-attendant, hunt groups, voicemail, hold music' },
+      { task:'Number Porting Coordination', role:'', hours:'6', notes:'LOA submission, carrier liaison, porting schedule' },
+      { task:'UCaaS / Teams Voice Tenant Configuration', role:'', hours:'8', notes:'Licensing, dial plan, emergency locations' },
+      { task:'VoIP Hardware Deployment', role:'', hours:'12', notes:'Desk phone provisioning, headsets, ATA adapters' },
+      { task:'Auto-Attendant & Call Flow Configuration', role:'', hours:'8', notes:'IVR menus, business hours, after-hours routing' },
+      { task:'Testing & Pre-Cutover Validation', role:'', hours:'6', notes:'Inbound/outbound calls, hunt groups, failover' },
+      { task:'Cutover Execution', role:'', hours:'4', notes:'Number activation, final routing switch, live monitoring' },
+      { task:'User Training & Handover', role:'', hours:'8', notes:'Handset use, Teams calling, voicemail walkthrough' },
+      { task:'Project Management', role:'', hours:'16', notes:'Scheduling, number porting liaison, stakeholder comms' }
+    ]
+  },
+  onboarding: {
+    title: 'New Client Onboarding',
+    overview: 'This project transitions your organization onto our managed services platform, establishing monitoring, security, backup, and support processes.',
+    exclusions: 'Hardware procurement or replacement\nSoftware licensing costs\nMajor remediation work identified during assessment',
+    tasks: [
+      { task:'Kickoff Meeting & Discovery', role:'', hours:'4', notes:'Goals, contacts, priorities, schedule' },
+      { task:'Environment Assessment & Asset Inventory', role:'', hours:'8', notes:'Servers, workstations, network devices, software' },
+      { task:'RMM Agent Deployment', role:'', hours:'8', notes:'Monitoring and management agent on all devices' },
+      { task:'Security Baseline Configuration', role:'', hours:'8', notes:'Password policies, admin accounts, baseline hardening' },
+      { task:'Endpoint Protection Deployment', role:'', hours:'6', notes:'AV/EDR deployment and policy configuration' },
+      { task:'Backup Solution Setup', role:'', hours:'8', notes:'BDR agent, policy config, initial backup run' },
+      { task:'Email Security Configuration', role:'', hours:'6', notes:'SPF, DKIM, DMARC, anti-spam, anti-phishing' },
+      { task:'MFA & Identity Setup', role:'', hours:'6', notes:'MFA enforcement, admin account review' },
+      { task:'Network & Environment Documentation', role:'', hours:'6', notes:'Topology, credentials vault, asset register' },
+      { task:'30-Day Review & Optimisation', role:'', hours:'4', notes:'Alert tuning, policy adjustments, initial report' }
+    ]
+  },
+  security: {
+    title: 'Cybersecurity & Compliance Assessment',
+    overview: 'This engagement delivers a comprehensive assessment of your organization\'s current cybersecurity posture and compliance position, identifying vulnerabilities, gaps, and risks.',
+    exclusions: 'Remediation implementation (available as a follow-on engagement)\nPhysical security assessment\nSocial engineering or phishing simulation exercises',
+    tasks: [
+      { task:'Scoping & Kickoff', role:'', hours:'4', notes:'Scope agreement, access requirements, schedule' },
+      { task:'External Attack Surface Scan', role:'', hours:'8', notes:'Internet-facing assets, open ports, exposed services' },
+      { task:'Internal Vulnerability Assessment', role:'', hours:'8', notes:'Network, server, and endpoint vulnerability scan' },
+      { task:'Active Directory Security Review', role:'', hours:'8', notes:'Privilege review, group policies, stale accounts' },
+      { task:'Email Security Assessment', role:'', hours:'6', notes:'SPF/DKIM/DMARC, filtering, phishing exposure' },
+      { task:'Firewall & Network Policy Review', role:'', hours:'6', notes:'Rule audit, segmentation, VPN config review' },
+      { task:'Risk Scoring & Findings Analysis', role:'', hours:'12', notes:'CVSS scoring, business impact mapping, prioritisation' },
+      { task:'Executive Report Preparation', role:'', hours:'8', notes:'Non-technical summary, risk heat map, key findings' },
+      { task:'Remediation Roadmap Development', role:'', hours:'8', notes:'Prioritised action plan with effort estimates' },
+      { task:'Findings Presentation', role:'', hours:'4', notes:'Walkthrough with key stakeholders, Q&A' }
+    ]
+  },
+  backup: {
+    title: 'Backup & Disaster Recovery Implementation',
+    overview: 'This project designs and deploys a comprehensive backup and disaster recovery solution covering your servers, endpoints, and cloud data — including documented recovery procedures and tested restore capability.',
+    exclusions: 'Off-site hardware colocation or data centre costs\nBackup software licensing costs\nApplication-level recovery for custom-built or bespoke systems',
+    tasks: [
+      { task:'Assessment & Solution Design', role:'', hours:'6', notes:'RPO/RTO requirements, data volume, retention policy' },
+      { task:'BDR Appliance Installation & Configuration', role:'', hours:'8', notes:'Physical or virtual appliance setup' },
+      { task:'Server Backup Policy Configuration', role:'', hours:'8', notes:'Schedules, retention, exclusions, verification' },
+      { task:'Workstation / Endpoint Backup Configuration', role:'', hours:'8', notes:'Agent deployment, policy, selective backup' },
+      { task:'Cloud Replication Setup', role:'', hours:'6', notes:'Off-site cloud backup target, encryption, throttling' },
+      { task:'Microsoft 365 Backup Configuration', role:'', hours:'4', notes:'Exchange, SharePoint, Teams, OneDrive' },
+      { task:'Initial Backup Run & Validation', role:'', hours:'4', notes:'Full backup completion, integrity verification' },
+      { task:'Bare Metal / VM Recovery Test', role:'', hours:'6', notes:'Full system recovery test, RTO validation' },
+      { task:'DR Plan Documentation', role:'', hours:'8', notes:'Step-by-step recovery runbook, contact list' },
+      { task:'Project Management', role:'', hours:'16', notes:'Scheduling, vendor coordination, reporting' }
+    ]
+  }
+};
 
 // ── Utilities ─────────────────────────────────────────────
 function esc(str) {
@@ -87,6 +222,7 @@ function esc(str) {
 }
 function num(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
 function roundDisp(n) { return Number.isInteger(n) ? String(n) : n.toFixed(1); }
+function fmt(n) { return '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
 
 function durationStr(hours, hpd) {
   const h = num(hours); const d = Math.max(1, num(hpd));
@@ -107,231 +243,158 @@ function totalDurationStr(totalHours, hpd) {
 function showToast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg; el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 1800);
+  setTimeout(() => el.classList.remove('show'), 2000);
 }
 
-// ── Presets ───────────────────────────────────────────────
-const PRESETS = {
-  copilot: {
-    title:     'Microsoft Copilot Readiness & Deployment',
-    overview:  'This project prepares your Microsoft 365 environment for Copilot, deploys it to a pilot group, and drives adoption across your team. Before Copilot can be activated safely, your tenant data needs to be governed correctly — we handle the sensitivity labelling, SharePoint structure review, and security posture checks that most deployments skip, and that organisations later regret. The result is a Copilot deployment your staff actually use, with your business data protected.',
-    exclusions:'Microsoft 365 Copilot licensing costs\nCustom Copilot Studio agent development (available as a separate engagement)\nThird-party AI tool integrations\nData migration or SharePoint redesign beyond the scope of Copilot readiness\nLegal or compliance review of AI acceptable-use policy',
-    tasks: [
-      { task:'Copilot Readiness Assessment', role:'Senior Engineer', hours:'8', notes:'Licensing eligibility, tenant configuration, security score, MFA status' },
-      { task:'Data Governance Review — SharePoint & OneDrive', role:'Senior Engineer', hours:'12', notes:'Oversharing audit, orphaned sites, broad permissions, stale content' },
-      { task:'Sensitivity Label Design & Implementation', role:'Senior Engineer', hours:'12', notes:'Label taxonomy, auto-labelling policies, default labels per site/library' },
-      { task:'Information Barriers & Access Review', role:'Senior Engineer', hours:'8', notes:'Confirm no unintended data exposure before Copilot surfaces content' },
-      { task:'Microsoft Purview Configuration', role:'Senior Engineer', hours:'8', notes:'DLP policies, retention labels, audit logging baseline' },
-      { task:'Copilot Licensing Activation & Admin Centre Setup', role:'Engineer', hours:'4', notes:'License assignment, Copilot admin settings, web access policy' },
-      { task:'Pilot Group Selection & Onboarding', role:'PM', hours:'4', notes:'5–15 users across key roles, briefing, feedback process setup' },
-      { task:'Copilot in Teams — Configuration & Pilot', role:'Engineer', hours:'6', notes:'Meeting transcription, recap, call notes — test with pilot group' },
-      { task:'Copilot in Outlook — Configuration & Pilot', role:'Engineer', hours:'4', notes:'Email summary, draft assist, thread summary — pilot validation' },
-      { task:'Copilot in Word, Excel & PowerPoint — Pilot', role:'Engineer', hours:'4', notes:'Document generation, data analysis, presentation drafting' },
-      { task:'Prompt Engineering Training — Pilot Group', role:'PM / Senior Engineer', hours:'6', notes:'How to write effective prompts, practical use cases per role' },
-      { task:'Pilot Review & Feedback Analysis', role:'PM', hours:'4', notes:'Usage data review, feedback collation, blockers and wins documented' },
-      { task:'Broad Rollout & Department Training', role:'PM / Engineer', hours:'12', notes:'Role-specific training sessions — how Copilot helps their actual job' },
-      { task:'Copilot Adoption & Usage Reporting Setup', role:'Engineer', hours:'4', notes:'Microsoft 365 Copilot dashboard, usage metrics, value reporting' },
-      { task:'AI Acceptable Use Policy — Template & Review', role:'PM', hours:'4', notes:'Draft policy for client review — what Copilot can and cannot be used for' },
-      { task:'Project Management', role:'PM', hours:'16', notes:'Scheduling, stakeholder communications, milestone tracking' }
-    ]
-  },
-  azure: {
-    title:     'Azure Cloud Migration',
-    overview:  'This project covers the full migration of your on-premises server infrastructure to Microsoft Azure, delivering improved reliability, scalability, and remote access — with minimal disruption to your team and day-to-day operations.',
-    exclusions:'Application code changes or custom development\nThird-party vendor coordination beyond 2 hours per vendor\nEnd-user training (available as a separate engagement)\nHardware procurement and shipping costs\nMicrosoft licensing costs',
-    tasks: [
-      { task:'Project Kickoff & Planning', role:'PM', hours:'8', notes:'Scope confirmation, schedule, communication plan' },
-      { task:'Azure Network Design & VPN Architecture', role:'Senior Engineer', hours:'8', notes:'Address space, subnets, gateway sizing' },
-      { task:'Create & Configure Azure Virtual Network & VPN Gateway', role:'Senior Engineer', hours:'8', notes:'Includes site-to-site VPN to office(s)' },
-      { task:'Create & Configure Azure Server VMs', role:'Engineer', hours:'48', notes:'VM provisioning, OS config, patching' },
-      { task:'Security & Baseline Configuration', role:'Senior Engineer', hours:'24', notes:'NSGs, firewall rules, access controls' },
-      { task:'Data Migration Planning & Validation', role:'Senior Engineer', hours:'24', notes:'Migration approach and test validation' },
-      { task:'Migrate Data from On-Prem to Azure (standard servers)', role:'Engineer', hours:'48', notes:'File/data migration, integrity checks' },
-      { task:'Migrate Data from On-Prem to Azure (vendor-supported, optional)', role:'Senior Engineer', hours:'36', notes:'Coordination and migration with vendor support' },
-      { task:'Configure Workstations & Printers for New Network', role:'Engineer', hours:'24', notes:'DNS, drive mappings, printer updates' },
-      { task:'Azure Virtual Desktop (AVD) Validation', role:'Senior Engineer', hours:'24', notes:'User access and performance validation (if applicable)' },
-      { task:'User Acceptance & Environment Validation', role:'PM / Engineer', hours:'12', notes:'Confirmation Azure environment is fully working' },
-      { task:'Decommission On-Prem VMs', role:'Engineer', hours:'12', notes:'Graceful shutdown, data verification' },
-      { task:'Decommission On-Prem Hosts', role:'Engineer', hours:'4', notes:'Host retirement and cleanup' },
-      { task:'Update Network & Process Documentation', role:'Engineer', hours:'8', notes:'Diagrams, runbooks, credentials handling' },
-      { task:'Project Management (ongoing)', role:'PM', hours:'48', notes:'Status updates, stakeholder coordination, reporting' }
-    ]
-  },
-  m365: {
-    title:     'Microsoft 365 Migration',
-    overview:  'This project covers the full migration from your current on-premises email and file infrastructure to Microsoft 365, including Exchange Online, SharePoint, Teams, and OneDrive — with a staged approach designed to minimize disruption during the transition.',
-    exclusions:'Third-party application integrations not listed in scope\nCustom development or workflow automation\nEnd-user device setup beyond standard mail profile configuration\nMicrosoft 365 licensing costs\nData older than agreed retention period',
-    tasks: [
-      { task:'Project Kickoff & Tenant Assessment', role:'PM / Senior Engineer', hours:'8', notes:'Current environment review, license planning' },
-      { task:'DNS & Domain Configuration', role:'Engineer', hours:'4', notes:'MX, SPF, DKIM, DMARC records' },
-      { task:'Exchange Online Setup & Mail Flow', role:'Senior Engineer', hours:'8', notes:'Connectors, hybrid config, mail routing' },
-      { task:'Mailbox Migration — Batch 1', role:'Engineer', hours:'16', notes:'Priority users, pilot group' },
-      { task:'Mailbox Migration — Remaining Users', role:'Engineer', hours:'24', notes:'Full organization migration, integrity checks' },
-      { task:'SharePoint Online Setup & Structure', role:'Senior Engineer', hours:'12', notes:'Sites, libraries, permissions' },
-      { task:'File Data Migration to SharePoint / OneDrive', role:'Engineer', hours:'16', notes:'On-prem file shares to cloud storage' },
-      { task:'Microsoft Teams Setup & Policies', role:'Engineer', hours:'8', notes:'Teams, channels, meeting policies' },
-      { task:'Security & Compliance Configuration', role:'Senior Engineer', hours:'12', notes:'MFA, Conditional Access, DLP policies' },
-      { task:'Cutover Planning & Execution', role:'Senior Engineer', hours:'8', notes:'MX record cutover, final sync' },
-      { task:'User Onboarding & Orientation', role:'PM / Engineer', hours:'12', notes:'Profile setup, Outlook config, basic guidance' },
-      { task:'Post-Migration Validation & Support', role:'Engineer', hours:'16', notes:'30-day hypercare, issue resolution' },
-      { task:'Documentation Update', role:'Engineer', hours:'4', notes:'Updated environment docs, admin guide' },
-      { task:'Project Management', role:'PM', hours:'24', notes:'Scheduling, status reporting, stakeholder comms' }
-    ]
-  },
-  network: {
-    title:     'Network Infrastructure Upgrade',
-    overview:  'This project delivers a full replacement and modernisation of your existing network infrastructure, including next-generation firewall, managed switching, structured cabling, and wireless access points — installed after hours to ensure zero disruption to your team.',
-    exclusions:'Structured cabling beyond agreed scope (additional runs quoted separately)\nISP or WAN circuit changes\nThird-party equipment not supplied through this engagement\nAV or physical security systems\nBuilding access or facilities coordination',
-    tasks: [
-      { task:'Site Survey & Current Environment Assessment', role:'Senior Engineer', hours:'8', notes:'Cabling audit, device inventory, coverage mapping' },
-      { task:'Network Design & Architecture', role:'Senior Engineer', hours:'8', notes:'IP addressing, VLANs, segmentation design' },
-      { task:'Procurement & Equipment Staging', role:'PM', hours:'4', notes:'Order management, pre-configuration' },
-      { task:'Firewall Installation & Configuration', role:'Senior Engineer', hours:'12', notes:'Rules, NAT, VPN, remote access policies' },
-      { task:'Core Switch Deployment', role:'Engineer', hours:'8', notes:'Uplink config, VLAN tagging, redundancy' },
-      { task:'Access Switch Deployment', role:'Engineer', hours:'12', notes:'Port config, PoE, patch panel connections' },
-      { task:'Structured Cabling Installation', role:'Engineer', hours:'24', notes:'Cat6A runs, faceplates, patch panel termination' },
-      { task:'Wireless Access Point Deployment', role:'Engineer', hours:'8', notes:'Controller config, SSID setup, coverage validation' },
-      { task:'VLAN & Network Segmentation', role:'Senior Engineer', hours:'8', notes:'Traffic isolation, guest network, IoT separation' },
-      { task:'WAN / Internet Failover Configuration', role:'Senior Engineer', hours:'6', notes:'Dual-WAN setup or failover routing' },
-      { task:'Site-to-Site VPN (if applicable)', role:'Senior Engineer', hours:'6', notes:'Branch connectivity or cloud VPN' },
-      { task:'Network Testing & Validation', role:'Senior Engineer', hours:'8', notes:'Throughput, failover, segmentation testing' },
-      { task:'Workstation & Printer Reconnection', role:'Engineer', hours:'8', notes:'DNS updates, drive mappings, printer config' },
-      { task:'Network Documentation & Diagrams', role:'Engineer', hours:'6', notes:'Topology diagrams, VLAN tables, port mapping' },
-      { task:'Project Management', role:'PM', hours:'16', notes:'Scheduling, vendor coordination, comms' }
-    ]
-  },
-  onboarding: {
-    title:     'New Client Onboarding',
-    overview:  'This project transitions your organization onto our managed services platform, establishing monitoring, security, backup, and support processes — giving your team a reliable, proactive IT partner from day one.',
-    exclusions:'Hardware procurement or replacement\nSoftware licensing costs\nMajor remediation work identified during assessment (quoted separately)\nEnd-user training beyond basic helpdesk introduction\nThird-party vendor account setup',
-    tasks: [
-      { task:'Kickoff Meeting & Discovery', role:'PM', hours:'4', notes:'Goals, contacts, priorities, schedule' },
-      { task:'Environment Assessment & Asset Inventory', role:'Senior Engineer', hours:'8', notes:'Servers, workstations, network devices, software' },
-      { task:'RMM Agent Deployment', role:'Engineer', hours:'8', notes:'Monitoring and management agent on all devices' },
-      { task:'Security Baseline Configuration', role:'Senior Engineer', hours:'8', notes:'Password policies, admin accounts, baseline hardening' },
-      { task:'Endpoint Protection Deployment', role:'Engineer', hours:'6', notes:'AV/EDR deployment and policy configuration' },
-      { task:'Backup Solution Setup', role:'Engineer', hours:'8', notes:'BDR agent, policy config, initial backup run' },
-      { task:'Email Security Configuration', role:'Senior Engineer', hours:'6', notes:'SPF, DKIM, DMARC, anti-spam, anti-phishing' },
-      { task:'MFA & Identity Setup', role:'Senior Engineer', hours:'6', notes:'MFA enforcement, admin account review' },
-      { task:'Patch Management Configuration', role:'Engineer', hours:'4', notes:'Patch schedule, approval workflows, reporting' },
-      { task:'Network & Environment Documentation', role:'Senior Engineer', hours:'6', notes:'Topology, credentials vault, asset register' },
-      { task:'Helpdesk Onboarding & Ticketing Setup', role:'PM', hours:'4', notes:'Ticket routing, escalation paths, contacts' },
-      { task:'Staff Introduction & Communication', role:'PM', hours:'2', notes:'Team intro email, helpdesk contact info' },
-      { task:'30-Day Review & Optimisation', role:'Senior Engineer', hours:'4', notes:'Alert tuning, policy adjustments, initial report' }
-    ]
-  },
-  security: {
-    title:     'Cybersecurity & Compliance Assessment',
-    overview:  'This engagement delivers a comprehensive assessment of your organization\'s current cybersecurity posture and compliance position, identifying vulnerabilities, gaps, and risks — with a prioritized remediation roadmap and executive-level findings report.',
-    exclusions:'Remediation implementation (available as a follow-on engagement)\nPhysical security assessment\nSocial engineering or phishing simulation exercises\nCompliance certification or audit submission\nThird-party system access not granted during the assessment window',
-    tasks: [
-      { task:'Scoping & Kickoff', role:'PM', hours:'4', notes:'Scope agreement, access requirements, schedule' },
-      { task:'External Attack Surface Scan', role:'Senior Engineer', hours:'8', notes:'Internet-facing assets, open ports, exposed services' },
-      { task:'Internal Vulnerability Assessment', role:'Senior Engineer', hours:'8', notes:'Network, server, and endpoint vulnerability scan' },
-      { task:'Active Directory Security Review', role:'Senior Engineer', hours:'8', notes:'Privilege review, group policies, stale accounts' },
-      { task:'Email Security Assessment', role:'Senior Engineer', hours:'6', notes:'SPF/DKIM/DMARC, filtering, phishing exposure' },
-      { task:'Firewall & Network Policy Review', role:'Senior Engineer', hours:'6', notes:'Rule audit, segmentation, VPN config review' },
-      { task:'Endpoint Security Review', role:'Engineer', hours:'8', notes:'AV/EDR coverage, patch status, USB/removable media' },
-      { task:'Backup & DR Review', role:'Engineer', hours:'4', notes:'Coverage, retention, last-tested date, recovery capability' },
-      { task:'Cloud Security Review (Microsoft 365 / Azure)', role:'Senior Engineer', hours:'8', notes:'Tenant config, MFA, Conditional Access, Shadow IT' },
-      { task:'Risk Scoring & Findings Analysis', role:'Senior Engineer', hours:'12', notes:'CVSS scoring, business impact mapping, prioritisation' },
-      { task:'Executive Report Preparation', role:'PM / Senior Engineer', hours:'8', notes:'Non-technical summary, risk heat map, key findings' },
-      { task:'Remediation Roadmap Development', role:'Senior Engineer', hours:'8', notes:'Prioritised action plan with effort estimates' },
-      { task:'Findings Presentation', role:'PM', hours:'4', notes:'Walkthrough with key stakeholders, Q&A' }
-    ]
-  },
-  backup: {
-    title:     'Backup & Disaster Recovery Implementation',
-    overview:  'This project designs and deploys a comprehensive backup and disaster recovery solution covering your servers, endpoints, and cloud data — including documented recovery procedures and tested restore capability to meet your business continuity and cyber insurance requirements.',
-    exclusions:'Off-site hardware colocation or data centre costs\nBackup software licensing costs\nThird-party cloud storage costs beyond agreed capacity\nRecovery exercises beyond those included in scope\nApplication-level recovery for custom-built or bespoke systems',
-    tasks: [
-      { task:'Assessment & Solution Design', role:'Senior Engineer', hours:'6', notes:'RPO/RTO requirements, data volume, retention policy' },
-      { task:'Solution Selection & Procurement', role:'PM', hours:'4', notes:'Vendor recommendation, licensing, hardware ordering' },
-      { task:'BDR Appliance Installation & Configuration', role:'Engineer', hours:'8', notes:'Physical or virtual appliance setup' },
-      { task:'Server Backup Policy Configuration', role:'Senior Engineer', hours:'8', notes:'Schedules, retention, exclusions, verification' },
-      { task:'Workstation / Endpoint Backup Configuration', role:'Engineer', hours:'8', notes:'Agent deployment, policy, selective backup' },
-      { task:'Cloud Replication Setup', role:'Senior Engineer', hours:'6', notes:'Off-site cloud backup target, encryption, throttling' },
-      { task:'Microsoft 365 Backup Configuration', role:'Engineer', hours:'4', notes:'Exchange, SharePoint, Teams, OneDrive' },
-      { task:'Initial Backup Run & Validation', role:'Senior Engineer', hours:'4', notes:'Full backup completion, integrity verification' },
-      { task:'File-Level Recovery Test', role:'Senior Engineer', hours:'4', notes:'Documented restore from backup with sign-off' },
-      { task:'Bare Metal / VM Recovery Test', role:'Senior Engineer', hours:'6', notes:'Full system recovery test, RTO validation' },
-      { task:'DR Plan Documentation', role:'PM / Senior Engineer', hours:'8', notes:'Step-by-step recovery runbook, contact list' },
-      { task:'Staff Handover & Training', role:'PM', hours:'4', notes:'Admin training, monitoring dashboard walkthrough' },
-      { task:'Project Management', role:'PM', hours:'16', notes:'Scheduling, vendor coordination, reporting' }
-    ]
-  },
-  endpoint: {
-    title:     'Endpoint Refresh & Device Deployment',
-    overview:  'This project replaces aging workstations and laptops across your organization — ensuring all staff are on modern, supported hardware ahead of the Windows 10 end-of-life deadline. Devices will be pre-configured, data migrated, and handed over with minimal disruption to each user.',
-    exclusions:'Hardware procurement costs (quoted separately)\nSoftware or operating system licensing costs\nData that cannot be located or accessed on the old device\nPersonal files or non-business data\nPrinter or peripheral setup beyond standard USB connection',
-    tasks: [
-      { task:'Asset Audit & Device Inventory', role:'Engineer', hours:'4', notes:'Catalogue all existing devices, specs, age and OS version' },
-      { task:'New Device Specification & Procurement', role:'PM', hours:'4', notes:'Hardware selection, ordering, delivery tracking' },
-      { task:'Image & Build Preparation', role:'Senior Engineer', hours:'8', notes:'Standard image creation, software stack, policies' },
-      { task:'Device Imaging & Pre-configuration', role:'Engineer', hours:'16', notes:'OS imaging, domain join, software deployment per device' },
-      { task:'Data Migration — User Files & Profile', role:'Engineer', hours:'24', notes:'Documents, desktop, browser favourites, Outlook PST' },
-      { task:'Application Configuration per User', role:'Engineer', hours:'16', notes:'Line-of-business apps, email profile, mapped drives, printers' },
-      { task:'BitLocker & Security Policy Enforcement', role:'Senior Engineer', hours:'4', notes:'Encryption, screen lock, endpoint protection agent' },
-      { task:'Intune / MDM Enrolment', role:'Senior Engineer', hours:'8', notes:'Device enrolment, compliance policies, app deployment' },
-      { task:'User Handover & Orientation', role:'Engineer', hours:'8', notes:'New device walkthrough, key differences, helpdesk contact' },
-      { task:'Old Device Wipe & Disposal', role:'Engineer', hours:'8', notes:'Secure data wipe, WEEE disposal or trade-in coordination' },
-      { task:'Windows 10 EOL Communication & Documentation', role:'PM', hours:'4', notes:'Timeline comms, asset register update, completion sign-off' },
-      { task:'Project Management', role:'PM', hours:'16', notes:'Scheduling, user communications, progress tracking' }
-    ]
-  },
-  voip: {
-    title:     'VoIP & Business Communications Upgrade',
-    overview:  'This project replaces your existing phone system with a modern cloud-based VoIP or UCaaS solution — delivering reliable business communications, mobile flexibility, and Microsoft Teams integration. Number porting, hardware installation, and user training are included to ensure a smooth cutover.',
-    exclusions:'Ongoing SIP trunk or UCaaS subscription costs\nISP or internet circuit upgrades (quoted separately if required)\nCabling or structured wiring beyond standard patch cable runs\nCustom auto-attendant scripting beyond agreed call flows\nThird-party application integrations not listed in scope',
-    tasks: [
-      { task:'Current System Audit & Requirements Gathering', role:'Senior Engineer', hours:'6', notes:'Existing numbers, call flows, voicemail, hunt groups, fax lines' },
-      { task:'Internet & Network Readiness Assessment', role:'Senior Engineer', hours:'4', notes:'Bandwidth, QoS capability, VLAN design for voice traffic' },
-      { task:'Solution Design & Call Flow Planning', role:'Senior Engineer', hours:'8', notes:'Auto-attendant, hunt groups, voicemail, hold music, hours' },
-      { task:'Number Porting Coordination', role:'PM', hours:'6', notes:'LOA submission, carrier liaison, porting schedule management' },
-      { task:'UCaaS / Teams Voice Tenant Configuration', role:'Senior Engineer', hours:'8', notes:'Licensing, dial plan, emergency locations, policy assignment' },
-      { task:'QoS & Network Configuration for Voice', role:'Senior Engineer', hours:'6', notes:'VLAN tagging, traffic prioritisation, firewall rules' },
-      { task:'VoIP Hardware Deployment', role:'Engineer', hours:'12', notes:'Desk phone provisioning, headsets, ATA adapters for fax/analogue' },
-      { task:'Auto-Attendant & Call Flow Configuration', role:'Senior Engineer', hours:'8', notes:'IVR menus, business hours, after-hours routing, voicemail-to-email' },
-      { task:'Microsoft Teams Voice Integration', role:'Senior Engineer', hours:'8', notes:'Direct Routing or Calling Plans, Teams app configuration' },
-      { task:'User Provisioning & Extension Assignment', role:'Engineer', hours:'8', notes:'DDI assignment, voicemail setup, softphone configuration' },
-      { task:'Testing & Pre-Cutover Validation', role:'Senior Engineer', hours:'6', notes:'Inbound/outbound calls, hunt groups, failover, emergency dialling' },
-      { task:'Cutover Execution', role:'Senior Engineer', hours:'4', notes:'Number activation, final routing switch, live monitoring' },
-      { task:'User Training & Handover', role:'PM / Engineer', hours:'8', notes:'Handset use, Teams calling, voicemail, call transfer walkthrough' },
-      { task:'Post-Cutover Support & Optimisation', role:'Engineer', hours:'8', notes:'48-72hr hypercare, issue resolution, call quality tuning' },
-      { task:'Project Management', role:'PM', hours:'16', notes:'Scheduling, number porting liaison, stakeholder communications' }
-    ]
-  },
-  server: {
-    title:     'Server Refresh & Hardware Deployment',
-    overview:  'This project replaces your existing server hardware with new equipment, migrating all roles, services, and data with minimal downtime — leaving your environment fully documented and supported on modern, warrantied infrastructure.',
-    exclusions:'Hardware procurement costs (quoted separately)\nSoftware or operating system licensing costs\nMicrosoft 365 or cloud migrations (available as a separate engagement)\nEnd-user device setup\nData older than agreed retention period',
-    tasks: [
-      { task:'Current Environment Assessment', role:'Senior Engineer', hours:'8', notes:'Server roles, services, data volumes, dependencies' },
-      { task:'Migration Planning & Risk Assessment', role:'PM / Senior Engineer', hours:'6', notes:'Cutover approach, rollback plan, schedule' },
-      { task:'Procurement & Hardware Staging', role:'PM', hours:'4', notes:'Order tracking, pre-config, rack preparation' },
-      { task:'New Server OS Installation & Patching', role:'Engineer', hours:'8', notes:'Base OS build, drivers, security baseline' },
-      { task:'Active Directory, DNS & DHCP Migration', role:'Senior Engineer', hours:'12', notes:'Role migration, replication, cutover' },
-      { task:'Application Server Migration', role:'Senior Engineer', hours:'16', notes:'Line-of-business apps, databases, dependencies' },
-      { task:'File Server Data Migration', role:'Engineer', hours:'16', notes:'Share migration, permissions, DFS replication' },
-      { task:'Backup Configuration on New Hardware', role:'Engineer', hours:'6', notes:'BDR agent, policies, initial backup run' },
-      { task:'Network Integration & Testing', role:'Senior Engineer', hours:'6', notes:'IP addressing, VLAN, connectivity validation' },
-      { task:'Workstation Reconfiguration', role:'Engineer', hours:'12', notes:'Drive mappings, printers, application shortcuts' },
-      { task:'User Acceptance Testing', role:'Senior Engineer', hours:'6', notes:'Sign-off testing with key users' },
-      { task:'Old Server Decommission', role:'Engineer', hours:'6', notes:'Data wipe verification, hardware retirement' },
-      { task:'Environment Documentation Update', role:'Engineer', hours:'4', notes:'Updated diagrams, asset register, admin guide' },
-      { task:'Project Management', role:'PM', hours:'16', notes:'Scheduling, stakeholder updates, sign-off' }
-    ]
+// ── Credentials & Catalog ─────────────────────────────────
+function getCredentials() {
+  return {
+    tenantUrl: document.getElementById('sbTenantUrl').value.trim(),
+    apiKey:    document.getElementById('sbApiKey').value.trim()
+  };
+}
+
+function initCredentials() {
+  const savedApi    = localStorage.getItem(LS_API_KEY);
+  const savedTenant = localStorage.getItem(LS_TENANT_URL);
+  if (savedApi)    document.getElementById('sbApiKey').value    = savedApi;
+  if (savedTenant) document.getElementById('sbTenantUrl').value = savedTenant;
+  if (savedApi && savedTenant) document.getElementById('sbRemember').checked = true;
+
+  // Try to restore catalog from sessionStorage
+  try {
+    const cached = sessionStorage.getItem(SS_CATALOG);
+    if (cached) {
+      catalog = JSON.parse(cached);
+      if (catalog && catalog.length > 0) {
+        catalogLoaded = true;
+        setConnectStatus('ok', `Connected — ${catalog.length} labor SKUs loaded`);
+        return;
+      }
+    }
+  } catch {}
+
+  if (savedApi && savedTenant) {
+    // Auto-connect on page load if credentials remembered
+    connectToSalesbuildr();
   }
-};
+}
+
+function setConnectStatus(type, message) {
+  const el = document.getElementById('connectStatus');
+  el.textContent = message;
+  el.className = `connect-status connect-status-${type}`;
+}
+
+async function connectToSalesbuildr() {
+  const { tenantUrl, apiKey } = getCredentials();
+  if (!tenantUrl || !apiKey) { showToast('Enter tenant URL and API key first'); return; }
+
+  setConnectStatus('loading', 'Connecting…');
+  document.getElementById('connectBtn').disabled = true;
+
+  if (document.getElementById('sbRemember').checked) {
+    localStorage.setItem(LS_API_KEY, apiKey);
+    localStorage.setItem(LS_TENANT_URL, tenantUrl);
+  }
+
+  try {
+    const res  = await fetch(API_CATALOG, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenantUrl, apiKey })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Connection failed');
+
+    catalog = data.skus || [];
+    catalogLoaded = true;
+    sessionStorage.setItem(SS_CATALOG, JSON.stringify(catalog));
+    setConnectStatus('ok', `Connected — ${catalog.length} labor SKU${catalog.length !== 1 ? 's' : ''} loaded`);
+    // Re-render the grid so SKU dropdowns populate
+    render();
+    updateSummary();
+    showToast(`Connected — ${catalog.length} SKUs loaded`);
+
+    // Also pre-load quote templates in the background
+    loadQuoteTemplates();
+
+  } catch (e) {
+    setConnectStatus('error', '✕ ' + (e.message || 'Connection failed'));
+    catalog = [];
+    catalogLoaded = false;
+    sessionStorage.removeItem(SS_CATALOG);
+  } finally {
+    document.getElementById('connectBtn').disabled = false;
+  }
+}
+
+// ── Brand color ───────────────────────────────────────────
+function saveBrandColor(color) {
+  brandColor = color;
+  localStorage.setItem(LS_BRAND_COLOR, color);
+}
+
+function initBrandColor() {
+  const stored = localStorage.getItem(LS_BRAND_COLOR);
+  if (stored) brandColor = stored;
+  const swatches = document.querySelectorAll('.brand-swatch:not(.brand-swatch-custom)');
+  let matched = false;
+  swatches.forEach(sw => {
+    const isActive = sw.dataset.color === brandColor;
+    sw.classList.toggle('active', isActive);
+    if (isActive) matched = true;
+  });
+  const customSwatch = document.getElementById('brandCustomSwatch');
+  if (!matched) {
+    customSwatch.classList.add('active');
+    customSwatch.style.background = brandColor;
+    document.getElementById('brandHexRow').style.display = 'flex';
+    document.getElementById('brandHexInput').value = brandColor;
+  } else {
+    customSwatch.classList.remove('active');
+  }
+}
+
+function setupBrandColorListeners() {
+  document.querySelectorAll('.brand-swatch:not(.brand-swatch-custom)').forEach(sw => {
+    sw.addEventListener('click', () => {
+      document.querySelectorAll('.brand-swatch').forEach(s => s.classList.remove('active'));
+      sw.classList.add('active');
+      saveBrandColor(sw.dataset.color);
+      document.getElementById('brandHexRow').style.display = 'none';
+      document.getElementById('brandCustomSwatch').style.background = 'conic-gradient(red,yellow,lime,aqua,blue,magenta,red)';
+      autoRefresh();
+    });
+  });
+  document.getElementById('brandCustomSwatch').addEventListener('click', () => {
+    document.getElementById('brandHexRow').style.display = 'flex';
+    document.getElementById('brandHexInput').focus();
+  });
+  document.getElementById('brandHexApply').addEventListener('click', applyCustomHex);
+  document.getElementById('brandHexInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') applyCustomHex();
+  });
+}
+
+function applyCustomHex() {
+  let val = document.getElementById('brandHexInput').value.trim();
+  if (!val.startsWith('#')) val = '#' + val;
+  if (!/^#[0-9a-fA-F]{6}$/.test(val)) { showToast('Enter a valid 6-digit hex e.g. #2563eb'); return; }
+  document.querySelectorAll('.brand-swatch').forEach(s => s.classList.remove('active'));
+  const customSwatch = document.getElementById('brandCustomSwatch');
+  customSwatch.classList.add('active');
+  customSwatch.style.background = val;
+  saveBrandColor(val);
+  autoRefresh();
+  showToast('Brand color updated');
+}
 
 // ── State ─────────────────────────────────────────────────
-let rows = [];
+let rows = [];           // [{ task, role, skuId, hours, notes }]
 let currentProjectId = null;
 
-function defaultRow() { return { task:'', role:'', hours:'', notes:'' }; }
-
-// ── Project ID generation ─────────────────────────────────
-function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function defaultRow() { return { task:'', role:'', skuId:'', hours:'', notes:'' }; }
+function genId()       { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
 // ── Passphrase / team mode ────────────────────────────────
 function getPassphrase() { return (document.getElementById('tmplPassphrase')?.value || '').trim(); }
@@ -347,12 +410,10 @@ function updatePassphraseUI() {
   const label = document.getElementById('tmplModeLabel');
   if (!badge) return;
   if (isTeamMode()) {
-    badge.textContent = '🔗 Team';
-    badge.className = 'lp-badge lp-badge-team';
+    badge.textContent = '🔗 Team'; badge.className = 'lp-badge lp-badge-team';
     if (label) label.textContent = '(team — shared)';
   } else {
-    badge.textContent = '💾 Local';
-    badge.className = 'lp-badge lp-badge-local';
+    badge.textContent = '💾 Local'; badge.className = 'lp-badge lp-badge-local';
     if (label) label.textContent = '(local)';
   }
 }
@@ -393,15 +454,15 @@ async function renderTemplateSelect(preserveSelection = true) {
 }
 
 function promptForPassphrase(action = 'use shared templates') {
-  const input = document.getElementById('tmplPassphrase');
+  const input  = document.getElementById('tmplPassphrase');
   const phrase = prompt(`No team passphrase set.\n\nEnter a passphrase to ${action} with your team, or leave blank for local storage.`);
   if (phrase === null) return false;
   if (phrase.trim().length > 0) { input.value = phrase.trim(); updatePassphraseUI(); return true; }
   return false;
 }
 
-// ── Projects (Phase 3) ────────────────────────────────────
-function getProjects() { try { return JSON.parse(localStorage.getItem(LS_PROJECTS)) || []; } catch { return []; } }
+// ── Projects ──────────────────────────────────────────────
+function getProjects()          { try { return JSON.parse(localStorage.getItem(LS_PROJECTS)) || []; } catch { return []; } }
 function saveProjects(projects) { localStorage.setItem(LS_PROJECTS, JSON.stringify(projects)); }
 
 function captureCurrentState() {
@@ -411,9 +472,6 @@ function captureCurrentState() {
     hoursPerDay:  document.getElementById('hoursPerDay').value,
     overview:     document.getElementById('overview').value,
     exclusions:   document.getElementById('exclusions').value,
-    showRole:     document.getElementById('showRole').checked,
-    showHours:    document.getElementById('showHours').checked,
-    showNotes:    document.getElementById('showNotes').checked,
     rows:         rows.map(r => ({ ...r }))
   };
 }
@@ -438,26 +496,24 @@ function renderProjects() {
   projects.forEach((p, i) => {
     const item = document.createElement('div');
     item.className = 'lp-proj-item' + (p.id === currentProjectId ? ' active' : '');
-    const color = PROJ_COLORS[i % PROJ_COLORS.length];
-    const isShared = !!p.shared;
+    const color  = PROJ_COLORS[i % PROJ_COLORS.length];
     const totalHrs = (p.rows || []).reduce((s, r) => s + num(r.hours), 0);
-    const ago = p.updatedAt ? relativeTime(p.updatedAt) : 'new';
+    const ago    = p.updatedAt ? relativeTime(p.updatedAt) : 'new';
     item.innerHTML = `
       <div class="lp-proj-dot" style="background:${color}"></div>
       <div class="lp-proj-info">
         <div class="lp-proj-name">${esc(p.projectTitle || 'Untitled project')}</div>
         <div class="lp-proj-meta">${esc(p.customerName || '')}${p.customerName ? ' · ' : ''}${totalHrs}h · ${ago}</div>
       </div>
-      <span class="lp-proj-badge ${isShared ? 'lp-proj-badge-shared' : 'lp-proj-badge-local'}">${isShared ? 'shared' : 'local'}</span>
+      <span class="lp-proj-badge lp-proj-badge-local">local</span>
       <span class="lp-proj-delete" title="Delete project" data-id="${esc(p.id)}"><i class="ti ti-x"></i></span>
     `;
-    item.addEventListener('click', (e) => {
+    item.addEventListener('click', e => {
       if (e.target.closest('.lp-proj-delete')) return;
       switchToProject(p.id);
     });
-    item.querySelector('.lp-proj-delete').addEventListener('click', (e) => {
-      e.stopPropagation();
-      deleteProject(p.id);
+    item.querySelector('.lp-proj-delete').addEventListener('click', e => {
+      e.stopPropagation(); deleteProject(p.id);
     });
     list.appendChild(item);
   });
@@ -475,13 +531,10 @@ function relativeTime(iso) {
 
 function switchToProject(id) {
   autoSaveCurrentProject();
-  const projects = getProjects();
-  const p = projects.find(proj => proj.id === id);
+  const p = getProjects().find(proj => proj.id === id);
   if (!p) return;
   currentProjectId = id;
-  applyState(p);
-  renderProjects();
-  updateCenterHeader();
+  applyState(p); renderProjects(); updateCenterHeader();
 }
 
 function deleteProject(id) {
@@ -493,7 +546,6 @@ function deleteProject(id) {
   if (currentProjectId === id) {
     currentProjectId = null;
     if (updated.length > 0) { switchToProject(updated[0].id); return; }
-    // Start fresh
     rows = [defaultRow()];
     document.getElementById('projectTitle').value = '';
     document.getElementById('customerName').value = '';
@@ -501,28 +553,23 @@ function deleteProject(id) {
     document.getElementById('exclusions').value = '';
     render(); updateSummary();
   }
-  renderProjects();
-  showToast('Project deleted');
+  renderProjects(); showToast('Project deleted');
 }
 
 function saveCurrentAsProject(title) {
   const projects = getProjects();
-  const state = captureCurrentState();
-  const isShared = isTeamMode();
+  const state    = captureCurrentState();
   if (currentProjectId) {
     const idx = projects.findIndex(p => p.id === currentProjectId);
     if (idx >= 0) {
-      projects[idx] = { ...projects[idx], ...state, updatedAt: new Date().toISOString(), shared: isShared };
-      saveProjects(projects);
-      renderProjects();
-      return;
+      projects[idx] = { ...projects[idx], ...state, updatedAt: new Date().toISOString() };
+      saveProjects(projects); renderProjects(); return;
     }
   }
-  const newProj = { id: genId(), ...state, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), shared: isShared };
+  const newProj = { id: genId(), ...state, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   projects.push(newProj);
   currentProjectId = newProj.id;
-  saveProjects(projects);
-  renderProjects();
+  saveProjects(projects); renderProjects();
 }
 
 function newProject() {
@@ -531,26 +578,26 @@ function newProject() {
   rows = [defaultRow()];
   document.getElementById('projectTitle').value = '';
   document.getElementById('customerName').value = '';
-  document.getElementById('hoursPerDay').value = '8';
-  document.getElementById('overview').value = '';
-  document.getElementById('exclusions').value = '';
+  document.getElementById('hoursPerDay').value  = '8';
+  document.getElementById('overview').value     = '';
+  document.getElementById('exclusions').value   = '';
   document.getElementById('presetSelect').value = '';
   document.getElementById('htmlOut').textContent = '';
-  document.getElementById('preview').innerHTML = '';
+  document.getElementById('preview').innerHTML  = '';
   document.getElementById('outputPanels').hidden = true;
-  document.getElementById('copyBtn').disabled = true;
+  document.getElementById('copyBtn').disabled   = true;
+  resetQuoteUI();
   render(); updateSummary(); renderProjects(); updateCenterHeader();
-  saveState();  // persist blank state so reload doesn't restore old data
-  showToast('New project started');
+  saveState(); showToast('New project started');
 }
 
 function updateCenterHeader() {
   const title    = document.getElementById('projectTitle').value.trim();
   const customer = document.getElementById('customerName').value.trim();
-  document.getElementById('centerTitle').textContent = title || 'Project Scope Builder';
-  let sub = title ? '' : 'Start by loading a preset or entering your project details';
-  if (title && customer) sub = customer + (isTeamMode() ? ' · 🔗 shared with team' : '');
-  else if (title) sub = isTeamMode() ? '🔗 Shared with team' : '💾 Local project';
+  document.getElementById('centerTitle').textContent = title || 'Project Planner';
+  let sub = title ? '' : 'Connect to Salesbuildr to load your labor catalog, or start adding tasks';
+  if (title && customer) sub = customer;
+  else if (title) sub = '💾 Local project';
   document.getElementById('centerSub').textContent = sub;
 }
 
@@ -573,10 +620,7 @@ function loadState() {
     document.getElementById('hoursPerDay').value  = s.hoursPerDay  ?? 8;
     document.getElementById('overview').value     = s.overview     ?? '';
     document.getElementById('exclusions').value   = s.exclusions   ?? '';
-    document.getElementById('showRole').checked   = s.showRole  !== false;
-    document.getElementById('showHours').checked  = s.showHours === true;
-    document.getElementById('showNotes').checked  = s.showNotes !== false;
-    rows = s.rows;
+    rows = s.rows.map(r => ({ task:'', role:'', skuId:'', hours:'', notes:'', ...r }));
     return true;
   } catch { return false; }
 }
@@ -587,21 +631,110 @@ function applyState(s) {
   document.getElementById('hoursPerDay').value  = s.hoursPerDay  ?? 8;
   document.getElementById('overview').value     = s.overview     ?? '';
   document.getElementById('exclusions').value   = s.exclusions   ?? '';
-  document.getElementById('showRole').checked   = s.showRole  !== false;
-  document.getElementById('showHours').checked  = s.showHours === true;
-  document.getElementById('showNotes').checked  = s.showNotes !== false;
-  rows = (s.rows || []).map(r => ({ ...r }));
+  rows = (s.rows || []).map(r => ({ task:'', role:'', skuId:'', hours:'', notes:'', ...r }));
   render(); updateSummary(); saveState(); updateCenterHeader();
 }
+
+// ── SKU helpers ───────────────────────────────────────────
+function getSkuById(id) { return catalog.find(s => s.id === id) || null; }
+function getSkuPrice(id) {
+  if (!id) return null;
+  const sku = getSkuById(id);
+  return sku ? sku.price : null;
+}
+
+// ── SKU searchable dropdown ───────────────────────────────
+function buildSkuSelect(row, idx) {
+  const wrap      = document.createElement('div'); wrap.className = 'sku-select';
+  const trigger   = document.createElement('button'); trigger.type = 'button';
+  const hasSku    = !!row.skuId;
+  const skuItem   = hasSku ? getSkuById(row.skuId) : null;
+  const labelText = hasSku && skuItem ? skuItem.name : (row.role || '');
+
+  trigger.className = 'sku-trigger' + (hasSku ? ' has-sku' : '') + (!labelText ? ' placeholder' : '');
+  trigger.textContent = labelText || (catalogLoaded ? 'Select SKU…' : row.role || 'Type role or connect for SKUs');
+
+  if (!catalogLoaded) {
+    // Fallback to free text
+    const input = document.createElement('input'); input.type = 'text';
+    input.value = row.role || ''; input.placeholder = 'Role (connect for SKUs)';
+    input.style.cssText = 'width:100%;font-size:12px;padding:5px 7px;border:1px solid var(--border);border-radius:0;background:transparent;color:var(--text);outline:none;';
+    input.addEventListener('input', e => {
+      rows[idx].role  = e.target.value;
+      rows[idx].skuId = '';
+      saveState(); autoRefresh(); updateSummary();
+    });
+    wrap.appendChild(input); return wrap;
+  }
+
+  const dropdown = document.createElement('div'); dropdown.className = 'sku-dropdown'; dropdown.hidden = true;
+  const searchIn = document.createElement('input'); searchIn.type = 'text'; searchIn.className = 'sku-search'; searchIn.placeholder = 'Search SKUs…';
+
+  const listEl = document.createElement('div'); listEl.className = 'sku-list';
+
+  function renderSkuOptions(filter = '') {
+    listEl.innerHTML = '';
+    const lc = filter.toLowerCase();
+    const items = catalog.filter(s => !lc || s.name.toLowerCase().includes(lc));
+    if (items.length === 0) {
+      listEl.innerHTML = `<div class="sku-option-empty">${filter ? 'No matches' : 'No SKUs loaded'}</div>`;
+      return;
+    }
+    items.forEach(s => {
+      const opt = document.createElement('div'); opt.className = 'sku-option' + (rows[idx].skuId === s.id ? ' active' : '');
+      opt.innerHTML = `<span class="sku-option-name">${esc(s.name)}</span><span class="sku-option-price">${s.price != null ? fmt(s.price) : ''}</span>`;
+      opt.addEventListener('mousedown', e => {
+        e.preventDefault();
+        rows[idx].skuId = s.id;
+        rows[idx].role  = s.name;
+        trigger.textContent = s.name;
+        trigger.className   = 'sku-trigger has-sku';
+        dropdown.hidden = true;
+        saveState(); autoRefresh(); updateSummary();
+      });
+      listEl.appendChild(opt);
+    });
+  }
+
+  const clearBtn = document.createElement('button'); clearBtn.className = 'sku-clear-btn'; clearBtn.textContent = '✕ Clear selection';
+  clearBtn.addEventListener('mousedown', e => {
+    e.preventDefault();
+    rows[idx].skuId = '';
+    rows[idx].role  = '';
+    trigger.textContent = catalogLoaded ? 'Select SKU…' : '';
+    trigger.className   = 'sku-trigger placeholder';
+    dropdown.hidden = true;
+    saveState(); autoRefresh(); updateSummary();
+  });
+
+  searchIn.addEventListener('input', () => renderSkuOptions(searchIn.value));
+  renderSkuOptions();
+  dropdown.appendChild(searchIn); dropdown.appendChild(listEl);
+  if (hasSku) dropdown.appendChild(clearBtn);
+
+  trigger.addEventListener('click', e => {
+    e.stopPropagation();
+    document.querySelectorAll('.sku-dropdown').forEach(d => { if (d !== dropdown) d.hidden = true; });
+    dropdown.hidden = !dropdown.hidden;
+    if (!dropdown.hidden) { searchIn.value = ''; renderSkuOptions(); searchIn.focus(); }
+  });
+
+  wrap.appendChild(trigger); wrap.appendChild(dropdown);
+  return wrap;
+}
+
+document.addEventListener('click', () => {
+  document.querySelectorAll('.sku-dropdown').forEach(d => d.hidden = true);
+});
 
 // ── Render task grid ──────────────────────────────────────
 function render() {
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
   const hpd = document.getElementById('hoursPerDay').value;
+
   rows.forEach((r, idx) => {
-    const tr = document.createElement('tr');
-    tr.dataset.idx = idx;
+    const tr = document.createElement('tr'); tr.dataset.idx = idx;
 
     const tdDrag = document.createElement('td'); tdDrag.className = 'col-drag';
     tdDrag.innerHTML = '<div class="drag-handle" title="Drag to reorder">⠿</div>';
@@ -612,7 +745,7 @@ function render() {
     tdTask.appendChild(inTask);
 
     const tdRole = document.createElement('td'); tdRole.className = 'col-role';
-    tdRole.appendChild(buildRoleSelect(r.role, idx));
+    tdRole.appendChild(buildSkuSelect(r, idx));
 
     const tdHours = document.createElement('td'); tdHours.className = 'col-hours';
     const inHours = document.createElement('input'); inHours.type = 'number'; inHours.min = '0'; inHours.step = '0.5'; inHours.value = r.hours || ''; inHours.placeholder = '0';
@@ -638,53 +771,6 @@ function render() {
   updateSummary(); initSortable();
 }
 
-// ── Role multi-select ─────────────────────────────────────
-function buildRoleSelect(currentRole, idx) {
-  const selected       = (currentRole || '').split(' / ').map(r => r.trim()).filter(Boolean);
-  const knownSelected  = selected.filter(r => ROLES.includes(r));
-  const customSelected = selected.filter(r => !ROLES.includes(r));
-  const wrap = document.createElement('div'); wrap.className = 'role-select';
-  const trigger = document.createElement('button'); trigger.type = 'button';
-  trigger.className = 'role-trigger' + (selected.length ? '' : ' placeholder');
-  trigger.textContent = selected.length ? selected.join(' / ') : 'Select roles…';
-  const dropdown = document.createElement('div'); dropdown.className = 'role-dropdown'; dropdown.hidden = true;
-  ROLES.forEach(role => {
-    const label = document.createElement('label'); label.className = 'role-option';
-    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = role; cb.checked = knownSelected.includes(role);
-    cb.addEventListener('change', () => updateRoleSelection(dropdown, trigger, idx));
-    label.appendChild(cb); label.appendChild(document.createTextNode(' ' + role)); dropdown.appendChild(label);
-  });
-  const divider = document.createElement('div'); divider.className = 'role-divider'; dropdown.appendChild(divider);
-  const customWrap = document.createElement('div'); customWrap.className = 'role-custom-wrap';
-  const customInput = document.createElement('input'); customInput.type = 'text'; customInput.className = 'role-custom'; customInput.placeholder = 'Other…'; customInput.value = customSelected.join(' / ');
-  customInput.addEventListener('input', () => updateRoleSelection(dropdown, trigger, idx));
-  customInput.addEventListener('click', e => e.stopPropagation());
-  customWrap.appendChild(customInput); dropdown.appendChild(customWrap);
-  trigger.addEventListener('click', e => {
-    e.stopPropagation();
-    document.querySelectorAll('.role-dropdown').forEach(d => { if (d !== dropdown) d.hidden = true; });
-    dropdown.hidden = !dropdown.hidden;
-  });
-  wrap.appendChild(trigger); wrap.appendChild(dropdown);
-  return wrap;
-}
-
-function updateRoleSelection(dropdown, trigger, idx) {
-  const parts = [];
-  dropdown.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => parts.push(cb.value));
-  const custom = dropdown.querySelector('.role-custom').value.trim();
-  if (custom) parts.push(custom);
-  const roleStr = parts.join(' / ');
-  rows[idx].role = roleStr;
-  trigger.textContent = roleStr || 'Select roles…';
-  trigger.classList.toggle('placeholder', !roleStr);
-  saveState(); autoRefresh();
-}
-
-document.addEventListener('click', () => {
-  document.querySelectorAll('.role-dropdown').forEach(d => d.hidden = true);
-});
-
 function initSortable() {
   if (typeof Sortable === 'undefined') return;
   const tbody = document.getElementById('tbody');
@@ -707,11 +793,35 @@ function updateSummary() {
     const dur = tr.querySelector('.col-dur');
     if (dur) dur.textContent = durationStr(rows[idx]?.hours, hpd);
   });
-  let total = 0, included = 0;
-  rows.forEach(r => { const h = num(r.hours); if (h > 0) { total += h; included++; } });
-  document.getElementById('totalHours').textContent    = roundDisp(total);
-  document.getElementById('totalDuration').textContent = totalDurationStr(total, hpd);
+
+  let totalHrs = 0, totalVal = 0, included = 0, valKnown = true;
+  rows.forEach(r => {
+    const h = num(r.hours);
+    if (h > 0) {
+      totalHrs += h;
+      included++;
+      const price = getSkuPrice(r.skuId);
+      if (price != null) { totalVal += h * price; }
+      else { valKnown = false; }
+    }
+  });
+
+  document.getElementById('totalHours').textContent    = roundDisp(totalHrs);
+  document.getElementById('totalDuration').textContent = totalDurationStr(totalHrs, hpd);
   document.getElementById('includedCount').textContent = included;
+
+  const valEl = document.getElementById('totalValue');
+  if (totalHrs === 0) { valEl.textContent = '—'; }
+  else if (valKnown && totalVal > 0) { valEl.textContent = fmt(totalVal); }
+  else if (totalVal > 0) { valEl.textContent = fmt(totalVal) + '+'; }
+  else { valEl.textContent = '—'; }
+
+  // Update the quote title placeholder
+  const titleEl = document.getElementById('projectTitle');
+  const quoteTitleEl = document.getElementById('quoteTitle');
+  if (quoteTitleEl && !quoteTitleEl.dataset.manuallyEdited) {
+    quoteTitleEl.value = titleEl.value || '';
+  }
 }
 
 // ── Widget HTML generation ────────────────────────────────
@@ -721,12 +831,7 @@ function generateWidget() {
   const overview   = (document.getElementById('overview').value     || '').trim();
   const exclusions = (document.getElementById('exclusions').value   || '').trim();
   const hpd        = document.getElementById('hoursPerDay').value;
-  const showRole   = document.getElementById('showRole').checked;
-  const showHours  = document.getElementById('showHours').checked;
-  const showNotes  = document.getElementById('showNotes').checked;
 
-  // Derive a subtle tint (8% opacity) of the brand color for alternating rows
-  // Works by converting hex to rgb and applying rgba
   function hexToRgb(hex) {
     const r = parseInt(hex.slice(1,3),16);
     const g = parseInt(hex.slice(3,5),16);
@@ -738,36 +843,47 @@ function generateWidget() {
   const totalTint = `rgba(${brandRgb},0.10)`;
 
   const included = rows
-    .map(r => ({ task:(r.task||'').trim(), role:(r.role||'').trim(), notes:(r.notes||'').trim(), hours:num(r.hours) }))
+    .map(r => ({
+      task:  (r.task  || '').trim(),
+      role:  (r.role  || '').trim(),
+      skuId: r.skuId || '',
+      notes: (r.notes || '').trim(),
+      hours: num(r.hours),
+      price: getSkuPrice(r.skuId)
+    }))
     .filter(r => r.hours > 0 && (r.task || r.role || r.notes));
-  const total    = included.reduce((s, r) => s + r.hours, 0);
-  const duration = totalDurationStr(total, hpd);
-  const colCount = 1 + (showRole?1:0) + (showHours?1:0) + (showNotes?1:0);
 
-  // ── Table header row ──
-  const thCols = [`<th style="text-align:left;padding:9px 12px;border:1px solid #e2e8f0;background:${brandColor};color:#ffffff;font-size:13px;font-weight:600;">Task</th>`];
-  if (showRole)  thCols.push(`<th style="text-align:left;padding:9px 12px;border:1px solid #e2e8f0;background:${brandColor};color:#ffffff;font-size:13px;font-weight:600;white-space:nowrap;">Role</th>`);
-  if (showHours) thCols.push(`<th style="text-align:left;padding:9px 12px;border:1px solid #e2e8f0;background:${brandColor};color:#ffffff;font-size:13px;font-weight:600;white-space:nowrap;">Hours</th>`);
-  if (showNotes) thCols.push(`<th style="text-align:left;padding:9px 12px;border:1px solid #e2e8f0;background:${brandColor};color:#ffffff;font-size:13px;font-weight:600;">Notes</th>`);
+  const totalHrs = included.reduce((s, r) => s + r.hours, 0);
+  const totalVal = included.reduce((s, r) => s + (r.price != null ? r.hours * r.price : 0), 0);
+  const hasVal   = included.some(r => r.price != null);
+  const duration = totalDurationStr(totalHrs, hpd);
+  const colCount = 4; // Task, Role, Hours, Notes
 
-  // ── Task rows — alternating tint ──
+  const thCols = [
+    `<th style="text-align:left;padding:9px 12px;border:1px solid #e2e8f0;background:${brandColor};color:#ffffff;font-size:13px;font-weight:600;">Task</th>`,
+    `<th style="text-align:left;padding:9px 12px;border:1px solid #e2e8f0;background:${brandColor};color:#ffffff;font-size:13px;font-weight:600;white-space:nowrap;">Role / SKU</th>`,
+    `<th style="text-align:right;padding:9px 12px;border:1px solid #e2e8f0;background:${brandColor};color:#ffffff;font-size:13px;font-weight:600;white-space:nowrap;">Hours</th>`,
+    `<th style="text-align:left;padding:9px 12px;border:1px solid #e2e8f0;background:${brandColor};color:#ffffff;font-size:13px;font-weight:600;">Notes</th>`
+  ];
+
   const tbRows = included.map((r, i) => {
     const bg = i % 2 === 1 ? `background:${rowTint};` : '';
-    const cells = [`<td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;${bg}"><strong>${esc(r.task)}</strong></td>`];
-    if (showRole)  cells.push(`<td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;white-space:nowrap;${bg}">${esc(r.role)}</td>`);
-    if (showHours) cells.push(`<td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;white-space:nowrap;${bg}">${esc(roundDisp(r.hours))}</td>`);
-    if (showNotes) cells.push(`<td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;${bg}">${esc(r.notes)}</td>`);
-    return `<tr>${cells.join('')}</tr>`;
+    const priceNote = r.price != null ? ` <span style="color:#94a3b8;font-size:11px;">(${fmt(r.price)}/hr)</span>` : '';
+    return `<tr>
+      <td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;${bg}"><strong>${esc(r.task)}</strong></td>
+      <td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;white-space:nowrap;${bg}">${esc(r.role)}${priceNote}</td>
+      <td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;text-align:right;white-space:nowrap;${bg}">${esc(roundDisp(r.hours))}</td>
+      <td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;${bg}">${esc(r.notes)}</td>
+    </tr>`;
   }).join('\n      ');
 
-  // ── Totals row — brand tint background ──
+  const valStr = hasVal && totalVal > 0 ? `&nbsp;&nbsp;·&nbsp;&nbsp;<strong style="color:${brandColor};">Est. Value:</strong> <strong>${fmt(totalVal)}</strong>` : '';
   const totalsRow = `<tr>
     <td colspan="${colCount}" style="padding:9px 12px;border:1px solid #e2e8f0;font-size:13px;background:${totalTint};">
-      <strong style="color:${brandColor};">Total Effort:</strong> <strong>${esc(roundDisp(total))} hours</strong>${duration !== '—' ? `&nbsp;&nbsp;·&nbsp;&nbsp;<strong style="color:${brandColor};">Estimated Duration:</strong> <strong>${esc(duration)}</strong>` : ''}
+      <strong style="color:${brandColor};">Total Effort:</strong> <strong>${esc(roundDisp(totalHrs))} hours</strong>${duration !== '—' ? `&nbsp;&nbsp;·&nbsp;&nbsp;<strong style="color:${brandColor};">Est. Duration:</strong> <strong>${esc(duration)}</strong>` : ''}${valStr}
     </td>
   </tr>`;
 
-  // ── Exclusions ──
   const exLines = exclusions.split('\n').map(l => l.trim()).filter(Boolean);
   const exclusionsHtml = exLines.length > 0 ? `
 <h3 style="margin:24px 0 8px;font-size:14px;font-weight:700;color:${brandColor};text-transform:uppercase;letter-spacing:.05em;">What's Not Included</h3>
@@ -775,7 +891,6 @@ function generateWidget() {
   ${exLines.map(l => `<li>${esc(l)}</li>`).join('\n  ')}
 </ul>` : '';
 
-  // ── Assemble ──
   return `<div style="font-family:Arial,Helvetica,sans-serif;max-width:100%;color:#0f172a;">
 ${title ? `  <h2 style="margin:0 0 4px;font-size:22px;font-weight:700;color:${brandColor};">${esc(title)}</h2>` : ''}
 ${customer ? `  <p style="margin:0 0 16px;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;font-weight:600;">${esc(customer)}</p>` : '<br>'}
@@ -793,15 +908,231 @@ ${overview ? `  <h3 style="margin:0 0 6px;font-size:13px;font-weight:700;color:$
 }
 
 function autoRefresh() {
-  // Only update output if panels are already visible — never auto-show them
   const panels = document.getElementById('outputPanels');
   if (!panels || panels.hidden) return;
   const html = generateWidget();
   document.getElementById('htmlOut').textContent = html;
-  document.getElementById('preview').innerHTML = html;
+  document.getElementById('preview').innerHTML   = html;
 }
 
-// ── AI Assistant (Phase 4) ────────────────────────────────
+// ── Widget push to Salesbuildr ────────────────────────────
+document.getElementById('sbWidgetToggle').addEventListener('click', () => {
+  const body  = document.getElementById('sbWidgetBody');
+  const arrow = document.getElementById('sbWidgetArrow');
+  body.hidden = !body.hidden;
+  arrow.classList.toggle('open', !body.hidden);
+});
+
+document.getElementById('sbWidgetPushBtn').addEventListener('click', async () => {
+  const html = document.getElementById('htmlOut').textContent.trim();
+  if (!html) { showToast('Generate the widget first'); document.getElementById('generateBtn').click(); return; }
+  const { tenantUrl, apiKey } = getCredentials();
+  if (!tenantUrl || !apiKey) { showToast('Connect to Salesbuildr first'); return; }
+
+  const btn    = document.getElementById('sbWidgetPushBtn');
+  const result = document.getElementById('sbWidgetResult');
+  const prefix = document.getElementById('sbWidgetPrefix').value.trim();
+  const title  = (document.getElementById('projectTitle').value || 'Project Plan').trim();
+
+  btn.disabled = true; btn.textContent = 'Pushing…'; result.hidden = true;
+
+  try {
+    const res  = await fetch('/api/push-widgets', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ widgets: [{ id: 'project-plan', title, html }], prefix, apiKey, tenantUrl })
+    });
+    const data = await res.json();
+    if (data.successCount > 0) {
+      result.textContent = `✓ Saved as "${prefix ? prefix + ' – ' : ''}${title}" in Salesbuildr.`;
+      result.className = 'sb-result ok'; result.hidden = false; btn.textContent = '✓ Saved';
+    } else { throw new Error((data.results?.[0]?.error) || data.error || 'Unknown error'); }
+  } catch (e) {
+    result.textContent = `✕ ${e.message}`; result.className = 'sb-result error'; result.hidden = false;
+    btn.disabled = false; btn.textContent = 'Push →';
+  }
+});
+
+// ── Quote creation ────────────────────────────────────────
+let selectedCompany = null;
+let quoteTemplatesLoaded = false;
+
+async function loadQuoteTemplates() {
+  if (quoteTemplatesLoaded) return;
+  const { tenantUrl, apiKey } = getCredentials();
+  if (!tenantUrl || !apiKey) return;
+  try {
+    const res  = await fetch(API_QT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tenantUrl, apiKey }) });
+    const data = await res.json();
+    if (!data.ok) return;
+    const sel = document.getElementById('quoteTemplateSelect');
+    sel.innerHTML = '<option value="">— None —</option>' +
+      (data.templates || []).map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
+    quoteTemplatesLoaded = true;
+  } catch {}
+}
+
+let companySearchTimeout = null;
+document.getElementById('companySearch').addEventListener('input', () => {
+  clearTimeout(companySearchTimeout);
+  companySearchTimeout = setTimeout(doCompanySearch, 350);
+});
+document.getElementById('companySearch').addEventListener('focus', () => {
+  if (document.getElementById('companySearch').value.length >= 2) doCompanySearch();
+});
+
+async function doCompanySearch() {
+  const q = document.getElementById('companySearch').value.trim();
+  if (q.length < 2) { document.getElementById('companyDropdown').hidden = true; return; }
+  const { tenantUrl, apiKey } = getCredentials();
+  if (!tenantUrl || !apiKey) { showToast('Connect to Salesbuildr first'); return; }
+
+  const drop = document.getElementById('companyDropdown');
+  drop.innerHTML = '<div class="company-option-empty">Searching…</div>';
+  drop.hidden = false;
+
+  try {
+    const res  = await fetch(API_COMPANIES, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tenantUrl, apiKey, query: q }) });
+    const data = await res.json();
+    drop.innerHTML = '';
+    if (!data.ok || !data.companies || data.companies.length === 0) {
+      drop.innerHTML = '<div class="company-option-empty">No companies found</div>';
+      return;
+    }
+    data.companies.forEach(c => {
+      const opt = document.createElement('div'); opt.className = 'company-option'; opt.textContent = c.name;
+      opt.addEventListener('click', () => selectCompany(c));
+      drop.appendChild(opt);
+    });
+  } catch {
+    drop.innerHTML = '<div class="company-option-empty">Search failed</div>';
+  }
+}
+
+function selectCompany(company) {
+  selectedCompany = company;
+  document.getElementById('companyDropdown').hidden = true;
+  document.getElementById('companySearch').value = '';
+
+  const disp = document.getElementById('selectedCompanyDisplay');
+  disp.hidden = false;
+  disp.innerHTML = `<span>${esc(company.name)}</span><button class="selected-entity-clear" title="Clear" id="clearCompanyBtn"><i class="ti ti-x"></i></button>`;
+  document.getElementById('clearCompanyBtn').addEventListener('click', () => {
+    selectedCompany = null; disp.hidden = true;
+    document.getElementById('opportunityField').style.display = 'none';
+    document.getElementById('quoteTemplateField').style.display = 'none';
+    document.getElementById('quoteTitleField').style.display = 'none';
+    document.getElementById('createQuoteBtn').style.display = 'none';
+    document.getElementById('quoteResult').hidden = true;
+  });
+
+  // Load opportunities
+  loadOpportunities(company.id);
+  // Load templates if not already
+  loadQuoteTemplates();
+}
+
+async function loadOpportunities(companyId) {
+  const { tenantUrl, apiKey } = getCredentials();
+  if (!tenantUrl || !apiKey) return;
+
+  const field = document.getElementById('opportunityField');
+  const sel   = document.getElementById('opportunitySelect');
+  field.style.display = 'flex';
+  sel.innerHTML = '<option value="">— Loading… —</option>';
+
+  try {
+    const res  = await fetch(API_OPPS, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tenantUrl, apiKey, companyId }) });
+    const data = await res.json();
+    if (!data.ok || !data.opportunities || data.opportunities.length === 0) {
+      sel.innerHTML = '<option value="">— No open opportunities —</option>';
+    } else {
+      sel.innerHTML = '<option value="">— Select opportunity —</option>' +
+        data.opportunities.map(o => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('');
+    }
+    document.getElementById('quoteTemplateField').style.display = 'flex';
+    document.getElementById('quoteTitleField').style.display    = 'flex';
+    document.getElementById('createQuoteBtn').style.display     = 'flex';
+    // Pre-fill quote title from project title
+    const qt = document.getElementById('quoteTitle');
+    if (!qt.dataset.manuallyEdited) qt.value = document.getElementById('projectTitle').value || '';
+  } catch {
+    sel.innerHTML = '<option value="">— Failed to load —</option>';
+  }
+}
+
+document.getElementById('quoteTitle').addEventListener('input', function() {
+  this.dataset.manuallyEdited = '1';
+});
+
+document.getElementById('createQuoteBtn').addEventListener('click', async () => {
+  const opportunityId = document.getElementById('opportunitySelect').value;
+  if (!opportunityId) { showToast('Select an opportunity'); return; }
+
+  const title      = document.getElementById('quoteTitle').value.trim() || (document.getElementById('projectTitle').value.trim() || 'Project Quote');
+  const templateId = document.getElementById('quoteTemplateSelect').value || undefined;
+  const { tenantUrl, apiKey } = getCredentials();
+
+  // Build products list — rows with hours > 0 and a skuId
+  const products = rows
+    .filter(r => num(r.hours) > 0 && r.skuId)
+    .map(r => ({ id: r.skuId, quantity: num(r.hours) }));
+
+  if (products.length === 0) {
+    showToast('No rows have both hours and a SKU assigned');
+    return;
+  }
+
+  // Build note field — task breakdown
+  const note = rows
+    .filter(r => num(r.hours) > 0)
+    .map(r => `Task: ${r.task || '(untitled)'} | Role: ${r.role || '—'} | Hours: ${r.hours}${r.notes ? ' | Notes: ' + r.notes : ''}`)
+    .join('\n');
+
+  const btn    = document.getElementById('createQuoteBtn');
+  const result = document.getElementById('quoteResult');
+  btn.disabled = true; btn.textContent = 'Creating…'; result.hidden = true;
+
+  try {
+    const res  = await fetch(API_QUOTE, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenantUrl, apiKey, opportunityId, title, templateId, products, note })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Quote creation failed');
+
+    const quoteUrl = data.quoteUrl || `${tenantUrl}/quotes/${data.quoteId}`;
+    result.innerHTML = `✓ Quote created — <a href="${quoteUrl}" target="_blank" rel="noopener" style="color:var(--good);text-decoration:underline;">Open in Salesbuildr →</a>`;
+    result.className = 'sb-result ok'; result.hidden = false;
+    btn.textContent = '✓ Created';
+  } catch (e) {
+    result.textContent = `✕ ${e.message}`; result.className = 'sb-result error'; result.hidden = false;
+    btn.disabled = false;
+    const inner = document.getElementById('createQuoteBtn');
+    if (inner) inner.textContent = 'Create quote';
+    btn.innerHTML = '<i class="ti ti-file-invoice"></i> Create quote';
+    btn.disabled = false;
+  }
+});
+
+function resetQuoteUI() {
+  selectedCompany = null;
+  document.getElementById('companySearch').value = '';
+  document.getElementById('selectedCompanyDisplay').hidden = true;
+  document.getElementById('opportunityField').style.display    = 'none';
+  document.getElementById('quoteTemplateField').style.display  = 'none';
+  document.getElementById('quoteTitleField').style.display     = 'none';
+  document.getElementById('createQuoteBtn').style.display      = 'none';
+  document.getElementById('quoteResult').hidden = true;
+}
+
+// Close company dropdown on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.company-search-wrap') && !e.target.closest('.company-dropdown')) {
+    document.getElementById('companyDropdown').hidden = true;
+  }
+});
+
+// ── AI Assistant ──────────────────────────────────────────
 let aiPendingMode = null;
 
 function addAiMessage(role, html, extraClass = '') {
@@ -829,15 +1160,12 @@ function addAiTyping() {
 }
 
 function removeAiTyping() {
-  const el = document.getElementById('aiTyping');
-  if (el) el.remove();
+  const el = document.getElementById('aiTyping'); if (el) el.remove();
 }
 
 async function sendAiMessage(userText, mode) {
   if (!userText.trim()) return;
-  const btn = document.getElementById('aiSendBtn');
-  btn.disabled = true;
-
+  const btn = document.getElementById('aiSendBtn'); btn.disabled = true;
   addAiMessage('user', esc(userText).replace(/\n/g, '<br>'));
   addAiTyping();
 
@@ -846,48 +1174,52 @@ async function sendAiMessage(userText, mode) {
     if (mode === 'review' || mode === 'adjust') {
       payload.currentScope = {
         ...captureCurrentState(),
-        tasks: rows.map(r => ({ task: r.task, role: r.role, hours: r.hours, notes: r.notes }))
+        tasks: rows.map(r => ({ task: r.task, role: r.role, skuId: r.skuId, hours: r.hours, notes: r.notes }))
       };
     }
+    if (mode === 'generate' && catalog.length > 0) {
+      payload.skus = catalog.map(s => ({ name: s.name, price: s.price }));
+    }
 
-    const res  = await fetch(API_AI, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    const res  = await fetch(API_AI, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     const data = await res.json();
     removeAiTyping();
-
     if (!res.ok) throw new Error(data.error || 'AI error');
 
     if (mode === 'generate' && data.tasks) {
-      // Build preview of tasks
       const taskPreview = data.tasks.slice(0, 5).map(t =>
-        `<div class="ai-task-item"><strong>${esc(t.task)}</strong> — ${esc(t.role)}, ${t.hours}h</div>`
-      ).join('') + (data.tasks.length > 5 ? `<div class="ai-task-item" style="color:var(--accent);font-style:italic;">+ ${data.tasks.length - 5} more tasks — click Apply to see all</div>` : '');
+        `<div class="ai-task-item"><strong>${esc(t.task)}</strong> — ${esc(t.role || '—')}, ${t.hours}h</div>`
+      ).join('') + (data.tasks.length > 5 ? `<div class="ai-task-item" style="color:var(--accent);font-style:italic;">+ ${data.tasks.length - 5} more — click Apply to see all</div>` : '');
 
       const msgDiv = document.createElement('div');
       msgDiv.className = 'ai-msg ai-msg-assistant';
       msgDiv.innerHTML = `<div class="ai-msg-label">Assistant</div>
-        ${esc(data.message || `Generated ${data.tasks.length} tasks for "${data.projectTitle}"`)}
+        ${esc(data.message || `Generated ${data.tasks.length} tasks`)}
         <div class="ai-task-list">${taskPreview}</div>
         <button class="ai-apply-btn" id="aiApplyGenBtn"><i class="ti ti-check"></i> Apply to scope</button>`;
       document.getElementById('aiMessages').appendChild(msgDiv);
       document.getElementById('aiMessages').scrollTop = 99999;
 
       document.getElementById('aiApplyGenBtn').addEventListener('click', () => {
+        // Match AI-suggested roles to catalog SKUs by name
+        const appliedTasks = (data.tasks || []).map(t => {
+          let skuId = '';
+          const matchedSku = catalog.find(s => s.name.toLowerCase() === (t.role || '').toLowerCase());
+          if (matchedSku) skuId = matchedSku.id;
+          return { task: t.task || '', role: t.role || '', skuId, hours: String(t.hours || ''), notes: t.notes || '' };
+        });
         applyState({
           projectTitle: data.projectTitle || document.getElementById('projectTitle').value,
           customerName: document.getElementById('customerName').value,
           hoursPerDay:  document.getElementById('hoursPerDay').value,
-          overview:     data.overview || document.getElementById('overview').value,
-          exclusions:   data.exclusions || document.getElementById('exclusions').value,
-          showRole: true, showHours: false, showNotes: true,
-          rows: data.tasks
+          overview:     data.overview     || document.getElementById('overview').value,
+          exclusions:   data.exclusions   || document.getElementById('exclusions').value,
+          rows:         appliedTasks
         });
         saveCurrentAsProject(data.projectTitle);
         renderProjects();
         showToast('Scope applied ✓');
-        addAiMessage('assistant', '✅ Scope applied to the editor. Review the tasks and make any adjustments.');
+        addAiMessage('assistant', '✅ Scope applied. Review tasks and assign any missing SKUs from the Role / SKU column.');
       });
 
     } else if ((mode === 'review' || mode === 'adjust') && data.feedback) {
@@ -903,7 +1235,7 @@ async function sendAiMessage(userText, mode) {
       const msgDiv = document.createElement('div');
       msgDiv.className = 'ai-msg ai-msg-assistant';
       msgDiv.innerHTML = `<div class="ai-msg-label">Assistant</div>
-        ${esc(data.summary || 'Here\'s my review of your scope:')}
+        ${esc(data.summary || 'Here\'s my review:')}
         <div style="margin-top:8px">${feedbackHtml}</div>
         ${suggestBtn}`;
       document.getElementById('aiMessages').appendChild(msgDiv);
@@ -911,7 +1243,13 @@ async function sendAiMessage(userText, mode) {
 
       if (data.suggestedTasks && data.suggestedTasks.length > 0) {
         document.getElementById('aiApplySugBtn')?.addEventListener('click', () => {
-          rows.push(...data.suggestedTasks.map(t => ({ task: t.task || '', role: t.role || '', hours: String(t.hours || ''), notes: t.notes || '' })));
+          const added = data.suggestedTasks.map(t => {
+            let skuId = '';
+            const matchedSku = catalog.find(s => s.name.toLowerCase() === (t.role || '').toLowerCase());
+            if (matchedSku) skuId = matchedSku.id;
+            return { task: t.task || '', role: t.role || '', skuId, hours: String(t.hours || ''), notes: t.notes || '' };
+          });
+          rows.push(...added);
           render(); updateSummary(); saveState();
           showToast(`Added ${data.suggestedTasks.length} tasks`);
           addAiMessage('assistant', `✅ Added ${data.suggestedTasks.length} task${data.suggestedTasks.length > 1 ? 's' : ''} to your scope.`);
@@ -919,7 +1257,6 @@ async function sendAiMessage(userText, mode) {
       }
 
     } else {
-      // Chat / plain text
       addAiMessage('assistant', esc(data.text || '').replace(/\n/g, '<br>'));
     }
 
@@ -957,9 +1294,10 @@ document.querySelectorAll('.ai-chip').forEach(chip => {
     if (action === 'generate') {
       aiPendingMode = 'generate';
       input.value = '';
-      input.placeholder = 'Describe the project (e.g. "M365 for a 15-person office, include Teams and SharePoint")';
+      input.placeholder = 'Describe the project…';
       input.focus();
-      addAiMessage('assistant', 'Describe the project in plain English and I\'ll generate a full scope — tasks, roles, hours, overview, and exclusions. Then use Review or Adjust to refine it for your team.');
+      addAiMessage('assistant', 'Describe the project in plain English and I\'ll generate a full scope — tasks, roles, hours, overview, and exclusions. ' +
+        (catalog.length > 0 ? `I'll suggest specific SKUs from your ${catalog.length} loaded labor SKUs.` : 'Connect to Salesbuildr to get SKU suggestions.'));
     } else if (action === 'review') {
       input.value = '';
       input.placeholder = 'Any specific concerns? Or just press send…';
@@ -979,18 +1317,17 @@ document.querySelectorAll('.ai-chip').forEach(chip => {
   document.getElementById(id).addEventListener('input', () => { saveState(); autoRefresh(); });
 });
 document.getElementById('hoursPerDay').addEventListener('input', () => { updateSummary(); saveState(); autoRefresh(); });
-['showRole','showHours','showNotes'].forEach(id => {
-  document.getElementById(id).addEventListener('change', () => { saveState(); autoRefresh(); });
-});
+
+// Connect button
+document.getElementById('connectBtn').addEventListener('click', connectToSalesbuildr);
 
 // Preset loader
 document.getElementById('loadPresetBtn').addEventListener('click', () => {
   const key = document.getElementById('presetSelect').value;
   if (!key) { showToast('Select a preset first'); return; }
-  const p = PRESETS[key];
-  if (!p) return;
+  const p = PRESETS[key]; if (!p) return;
   if (rows.length > 0 && !confirm(`Load "${p.title}" preset? This will replace your current tasks.`)) return;
-  rows = p.tasks.map(t => ({ ...t }));
+  rows = p.tasks.map(t => ({ ...t, skuId: '' }));
   document.getElementById('projectTitle').value = p.title;
   document.getElementById('overview').value     = p.overview;
   document.getElementById('exclusions').value   = p.exclusions;
@@ -1011,12 +1348,12 @@ document.getElementById('addRowBtn').addEventListener('click', () => { rows.push
 // Clear
 document.getElementById('clearBtn').addEventListener('click', () => {
   if (!confirm('Clear this project and start fresh?')) return;
-  currentProjectId = null;  // prevent autoSave writing stale data
+  currentProjectId = null;
   newProject();
-  localStorage.removeItem(LS_KEY);  // remove after newProject so saveState can't restore it
+  localStorage.removeItem(LS_KEY);
 });
 
-// Generate
+// Generate widget
 document.getElementById('generateBtn').addEventListener('click', () => {
   const html = generateWidget();
   document.getElementById('htmlOut').textContent = html;
@@ -1039,38 +1376,10 @@ document.getElementById('copyBtn').addEventListener('click', async () => {
     await navigator.clipboard.writeText(html);
     showToast('Copied to clipboard');
   } catch {
-    const ta = document.createElement('textarea');
-    ta.value = html; ta.style.cssText = 'position:fixed;left:-9999px;';
-    document.body.appendChild(ta); ta.select();
-    document.execCommand('copy'); document.body.removeChild(ta);
+    const ta = document.createElement('textarea'); ta.value = html; ta.style.cssText = 'position:fixed;left:-9999px;';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
     showToast('Copied (fallback)');
   }
-});
-
-// Export JSON
-document.getElementById('exportBtn').addEventListener('click', () => {
-  const state = captureCurrentState();
-  const slug  = (state.projectTitle || 'scope').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const json  = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), ...state }, null, 2);
-  const a     = document.createElement('a');
-  a.href      = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
-  a.download  = `${slug}.json`; a.click(); URL.revokeObjectURL(a.href);
-});
-
-// Import JSON
-document.getElementById('importInput').addEventListener('change', e => {
-  const file = e.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    try {
-      const data = JSON.parse(ev.target.result);
-      if (!Array.isArray(data.rows)) throw new Error('Not a valid scope file');
-      if (rows.length && !confirm(`Import "${data.projectTitle || file.name}"? Current scope will be replaced.`)) return;
-      applyState(data); showToast(`Imported: ${data.projectTitle || file.name}`);
-      saveCurrentAsProject(data.projectTitle); renderProjects();
-    } catch { alert('Could not read this file — make sure it is a valid scope JSON export.'); }
-  };
-  reader.readAsText(file); e.target.value = '';
 });
 
 // Passphrase
@@ -1082,7 +1391,7 @@ document.getElementById('tmplPassphrase').addEventListener('input', async () => 
 
 // Template buttons
 document.getElementById('saveTemplateBtn').addEventListener('click', async () => {
-  if (!isTeamMode()) { const goTeam = promptForPassphrase('save templates'); if (!goTeam) {} await renderTemplateSelect(); }
+  if (!isTeamMode()) { promptForPassphrase('save templates'); await renderTemplateSelect(); }
   const def  = document.getElementById('projectTitle').value.trim() || 'My Template';
   const name = prompt('Name this template:', def);
   if (!name?.trim()) return;
@@ -1132,67 +1441,10 @@ document.getElementById('deleteTemplateBtn').addEventListener('click', async () 
   } catch { showToast('⚠️ Delete failed — try again'); } finally { btn.disabled = false; }
 });
 
-// ── Salesbuildr ───────────────────────────────────────────
-const sbToggleBtn = document.getElementById('sbToggle');
-const sbArrow     = document.getElementById('sbArrow');
-const sbBody      = document.getElementById('sbBody');
-const sbApiKey    = document.getElementById('sbApiKey');
-const sbRemember  = document.getElementById('sbRemember');
-const sbPushBtn   = document.getElementById('sbPushBtn');
-const sbResult    = document.getElementById('sbResult');
-const sbPrefix    = document.getElementById('sbPrefix');
-
-function initSbCredentials() {
-  const savedApi    = localStorage.getItem(LS_API_KEY);
-  const savedTenant = localStorage.getItem(LS_TENANT_URL);
-  if (savedApi)    document.getElementById('sbApiKey').value    = savedApi;
-  if (savedTenant) document.getElementById('sbTenantUrl').value = savedTenant;
-  if (savedApi && savedTenant) document.getElementById('sbRemember').checked = true;
-  updateSbBtn();
-}
-function updateSbBtn() {
-  document.getElementById('sbPushBtn').disabled = !(
-    document.getElementById('sbApiKey').value.trim() &&
-    document.getElementById('sbTenantUrl').value.trim()
-  );
-}
-
-sbToggleBtn.addEventListener('click', () => {
-  const open = !sbBody.hidden; sbBody.hidden = open;
-  sbArrow.classList.toggle('open', !open);
-});
-document.getElementById('sbApiKey').addEventListener('input', updateSbBtn);
-document.getElementById('sbTenantUrl').addEventListener('input', updateSbBtn);
-
-sbPushBtn.addEventListener('click', async () => {
-  const html = document.getElementById('htmlOut').textContent.trim();
-  if (!html) { showToast('Generate the widget first'); document.getElementById('generateBtn').click(); return; }
-  const apiKey    = document.getElementById('sbApiKey').value.trim();
-  const tenantUrl = document.getElementById('sbTenantUrl').value.trim();
-  if (!apiKey || !tenantUrl) return;
-  if (sbRemember.checked) { localStorage.setItem(LS_API_KEY, apiKey); localStorage.setItem(LS_TENANT_URL, tenantUrl); }
-  else { localStorage.removeItem(LS_API_KEY); localStorage.removeItem(LS_TENANT_URL); }
-  sbPushBtn.disabled = true; sbPushBtn.textContent = 'Saving…'; sbResult.hidden = true;
-  const title  = (document.getElementById('projectTitle').value || 'Project Scope').trim();
-  const prefix = sbPrefix.value.trim();
-  try {
-    const res  = await fetch('/api/push-widgets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ widgets:[{ id:'project-scope', title, html }], prefix, apiKey, tenantUrl }) });
-    const data = await res.json();
-    if (data.successCount > 0) {
-      sbResult.textContent = `✓ Saved as "${prefix ? prefix + ' – ' : ''}${title}" in Salesbuildr.`;
-      sbResult.className = 'sb-result ok'; sbResult.hidden = false; sbPushBtn.textContent = '✓ Saved';
-    } else { throw new Error((data.results?.[0]?.error) || data.error || 'Unknown error'); }
-  } catch (e) {
-    sbResult.textContent = `✕ ${e.message}`; sbResult.className = 'sb-result error'; sbResult.hidden = false;
-    sbPushBtn.disabled = false; sbPushBtn.textContent = 'Push →';
-  }
-});
-
 // ── Init ──────────────────────────────────────────────────
 (async function init() {
   const urlPreset = new URLSearchParams(window.location.search).get('preset');
 
-  // Pre-check: if saved state has no title and no hours, wipe it before loading
   if (!urlPreset) {
     try {
       const raw = localStorage.getItem(LS_KEY);
@@ -1200,9 +1452,7 @@ sbPushBtn.addEventListener('click', async () => {
         const s = JSON.parse(raw);
         const hasTitle = (s.projectTitle || '').trim();
         const hasHours = (s.rows || []).some(r => num(r.hours) > 0);
-        if (!hasTitle && !hasHours) {
-          localStorage.removeItem(LS_KEY);
-        }
+        if (!hasTitle && !hasHours) localStorage.removeItem(LS_KEY);
       }
     } catch { localStorage.removeItem(LS_KEY); }
   }
@@ -1210,7 +1460,7 @@ sbPushBtn.addEventListener('click', async () => {
   const hasSaved = urlPreset ? false : loadState();
 
   if (urlPreset && PRESETS[urlPreset]) {
-    rows = PRESETS[urlPreset].tasks.map(t => ({ ...t }));
+    rows = PRESETS[urlPreset].tasks.map(t => ({ ...t, skuId: '' }));
     document.getElementById('projectTitle').value = PRESETS[urlPreset].title;
     document.getElementById('overview').value     = PRESETS[urlPreset].overview;
     document.getElementById('exclusions').value   = PRESETS[urlPreset].exclusions;
@@ -1218,7 +1468,6 @@ sbPushBtn.addEventListener('click', async () => {
     rows = [defaultRow()];
   }
 
-  // Always ensure at least one blank row
   if (!rows.length) rows = [defaultRow()];
 
   render();
@@ -1229,8 +1478,8 @@ sbPushBtn.addEventListener('click', async () => {
   setupBrandColorListeners();
   document.getElementById('outputPanels').hidden = true;
   document.getElementById('htmlOut').textContent = '';
-  document.getElementById('preview').innerHTML = '';
-  document.getElementById('copyBtn').disabled = true;
+  document.getElementById('preview').innerHTML   = '';
+  document.getElementById('copyBtn').disabled    = true;
   await renderTemplateSelect();
-  initSbCredentials();
+  initCredentials();
 })();
