@@ -987,6 +987,20 @@ document.getElementById('companySearch').addEventListener('focus', () => {
   if (document.getElementById('companySearch').value.length >= 2) doCompanySearch();
 });
 
+// Opportunity search — fires on every keystroke once a company is selected
+let oppSearchTimeout = null;
+document.getElementById('opportunitySearch').addEventListener('input', () => {
+  // Clear selected ID when user edits the field
+  document.getElementById('opportunitySearch').dataset.selectedId = '';
+  clearTimeout(oppSearchTimeout);
+  oppSearchTimeout = setTimeout(() => {
+    if (selectedCompany) loadOpportunities(selectedCompany.id, document.getElementById('opportunitySearch').value.trim());
+  }, 350);
+});
+document.getElementById('opportunitySearch').addEventListener('focus', () => {
+  if (selectedCompany) loadOpportunities(selectedCompany.id, document.getElementById('opportunitySearch').value.trim());
+});
+
 async function doCompanySearch() {
   const q = document.getElementById('companySearch').value.trim();
   if (q.length < 2) { document.getElementById('companyDropdown').hidden = true; return; }
@@ -1038,33 +1052,55 @@ function selectCompany(company) {
   loadQuoteTemplates();
 }
 
-async function loadOpportunities(companyId) {
+async function loadOpportunities(companyId, query) {
   const { tenantUrl, apiKey } = getCredentials();
   if (!tenantUrl || !apiKey) return;
 
-  const field = document.getElementById('opportunityField');
-  const sel   = document.getElementById('opportunitySelect');
+  const field   = document.getElementById('opportunityField');
+  const drop    = document.getElementById('opportunityDropdown');
   field.style.display = 'flex';
-  sel.innerHTML = '<option value="">— Loading… —</option>';
+  drop.innerHTML = '<div class="company-option-empty">Loading…</div>';
+  drop.hidden = false;
 
   try {
-    const res  = await fetch(API_OPPS, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tenantUrl, apiKey, companyId }) });
+    const res  = await fetch(API_OPPS, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tenantUrl, apiKey, companyId, query: query || '' })
+    });
     const data = await res.json();
+    drop.innerHTML = '';
+
     if (!data.ok || !data.opportunities || data.opportunities.length === 0) {
-      sel.innerHTML = '<option value="">— No open opportunities —</option>';
-    } else {
-      sel.innerHTML = '<option value="">— Select opportunity —</option>' +
-        data.opportunities.map(o => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('');
+      drop.innerHTML = '<div class="company-option-empty">No active opportunities found</div>';
+      return;
     }
-    document.getElementById('quoteTemplateField').style.display = 'flex';
-    document.getElementById('quoteTitleField').style.display    = 'flex';
-    document.getElementById('createQuoteBtn').style.display     = 'flex';
-    // Pre-fill quote title from project title
-    const qt = document.getElementById('quoteTitle');
-    if (!qt.dataset.manuallyEdited) qt.value = document.getElementById('projectTitle').value || '';
+
+    data.opportunities.forEach(o => {
+      const opt = document.createElement('div'); opt.className = 'company-option';
+      opt.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:8px;';
+      const nameSpan   = document.createElement('span'); nameSpan.textContent = o.name; nameSpan.style.flex = '1';
+      const statusSpan = document.createElement('span');
+      statusSpan.textContent = o.status || '';
+      statusSpan.style.cssText = 'font-family:var(--mono);font-size:10px;color:var(--text-3);white-space:nowrap;';
+      opt.appendChild(nameSpan); opt.appendChild(statusSpan);
+      opt.addEventListener('click', () => selectOpportunity(o));
+      drop.appendChild(opt);
+    });
   } catch {
-    sel.innerHTML = '<option value="">— Failed to load —</option>';
+    drop.innerHTML = '<div class="company-option-empty">Failed to load opportunities</div>';
   }
+}
+
+function selectOpportunity(opp) {
+  document.getElementById('opportunityDropdown').hidden = true;
+  document.getElementById('opportunitySearch').value   = opp.name;
+  document.getElementById('opportunitySearch').dataset.selectedId = opp.id;
+
+  document.getElementById('quoteTemplateField').style.display = 'flex';
+  document.getElementById('quoteTitleField').style.display    = 'flex';
+  document.getElementById('createQuoteBtn').style.display     = 'flex';
+  const qt = document.getElementById('quoteTitle');
+  if (!qt.dataset.manuallyEdited) qt.value = document.getElementById('projectTitle').value || '';
 }
 
 document.getElementById('quoteTitle').addEventListener('input', function() {
@@ -1072,7 +1108,7 @@ document.getElementById('quoteTitle').addEventListener('input', function() {
 });
 
 document.getElementById('createQuoteBtn').addEventListener('click', async () => {
-  const opportunityId = document.getElementById('opportunitySelect').value;
+  const opportunityId = document.getElementById('opportunitySearch').dataset.selectedId || '';
   if (!opportunityId) { showToast('Select an opportunity'); return; }
 
   const title      = document.getElementById('quoteTitle').value.trim() || (document.getElementById('projectTitle').value.trim() || 'Project Quote');
@@ -1126,6 +1162,9 @@ function resetQuoteUI() {
   selectedCompany = null;
   document.getElementById('companySearch').value = '';
   document.getElementById('selectedCompanyDisplay').hidden = true;
+  document.getElementById('opportunitySearch').value = '';
+  document.getElementById('opportunitySearch').dataset.selectedId = '';
+  document.getElementById('opportunityDropdown').hidden = true;
   document.getElementById('opportunityField').style.display    = 'none';
   document.getElementById('quoteTemplateField').style.display  = 'none';
   document.getElementById('quoteTitleField').style.display     = 'none';
@@ -1133,10 +1172,13 @@ function resetQuoteUI() {
   document.getElementById('quoteResult').hidden = true;
 }
 
-// Close company dropdown on outside click
+// Close dropdowns on outside click
 document.addEventListener('click', e => {
   if (!e.target.closest('.company-search-wrap') && !e.target.closest('.company-dropdown')) {
     document.getElementById('companyDropdown').hidden = true;
+  }
+  if (!e.target.closest('#opportunitySearch') && !e.target.closest('#opportunityDropdown')) {
+    document.getElementById('opportunityDropdown').hidden = true;
   }
 });
 
