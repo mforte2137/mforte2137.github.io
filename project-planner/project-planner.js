@@ -574,13 +574,21 @@ function deleteProject(id) {
   saveProjects(updated);
   if (currentProjectId === id) {
     currentProjectId = null;
+    localStorage.removeItem(LS_KEY);
     if (updated.length > 0) { switchToProject(updated[0].id); return; }
+    // No projects left — full clean slate
     rows = [defaultRow()];
     document.getElementById('projectTitle').value = '';
     document.getElementById('customerName').value = '';
-    document.getElementById('overview').value = '';
-    document.getElementById('exclusions').value = '';
-    render(); updateSummary();
+    document.getElementById('hoursPerDay').value  = '8';
+    document.getElementById('overview').value     = '';
+    document.getElementById('exclusions').value   = '';
+    document.getElementById('htmlOut').textContent = '';
+    document.getElementById('preview').innerHTML  = '';
+    document.getElementById('outputPanels').hidden = true;
+    document.getElementById('copyBtn').disabled   = true;
+    document.querySelectorAll('.preset-tile').forEach(t => t.classList.remove('active'));
+    render(); updateSummary(); updateCenterHeader();
   }
   renderProjects(); showToast('Project deleted');
 }
@@ -617,8 +625,6 @@ function newProject() {
   resetQuoteUI();
   render(); updateSummary(); renderProjects(); updateCenterHeader();
   saveState(); showToast('New project started');
-  // Expand presets when starting fresh
-  expandPresets();
   document.querySelectorAll('.preset-tile').forEach(t => t.classList.remove('active'));
 }
 
@@ -1380,9 +1386,8 @@ function loadPreset(key) {
   render(); saveState(); updateCenterHeader();
   showToast(`Loaded: ${p.title}`);
   saveCurrentAsProject(p.title); renderProjects();
-  // Mark active tile, collapse grid
+  // Mark active tile
   document.querySelectorAll('.preset-tile').forEach(t => t.classList.toggle('active', t.dataset.preset === key));
-  collapsePresets(`Loaded: ${p.title}`);
 }
 
 function collapsePresets(hint) {
@@ -1676,11 +1681,11 @@ document.getElementById('sbWidgetPushBtn').addEventListener('click', async () =>
     settingsChevron.classList.add('open');
   }
 
-  // Presets: collapse if a project with content was loaded
+  // Presets: always visible, just mark active tile if a project was loaded
   const hasContent = rows.some(r => r.task || num(r.hours) > 0);
   if (hasContent) {
     const title = document.getElementById('projectTitle').value.trim();
-    collapsePresets(title || 'Project loaded');
+    document.getElementById('presetHint').textContent = title || 'Project loaded';
   }
 
   // Color badge
