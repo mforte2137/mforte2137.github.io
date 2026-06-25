@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Scope Builder</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="project-scope.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ═══════════════════════════════════════════════════════
+       LEFT PANEL
+  ════════════════════════════════════════════════════════ -->
+  <aside class="left-panel" id="leftPanel">
+
+    <div class="lp-header">
+      <div class="lp-header-row">
+        <div>
+          <div class="lp-logo">Project Scope Builder</div>
+          <div class="lp-sub">MSP Tools Hub</div>
+        </div>
+        <a href="scope-builder-guide.html" target="_blank" class="lp-help-btn" title="Open user guide">?</a>
+      </div>
+    </div>
+
+    <!-- Presets -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Load a preset</div>
+      <div class="lp-row">
+        <select id="presetSelect" class="lp-select">
+          <option value="">— Select preset —</option>
+          <option value="azure">☁️ Azure Migration</option>
+          <option value="m365">📧 Microsoft 365 Migration</option>
+          <option value="network">🔌 Network Infrastructure Upgrade</option>
+          <option value="endpoint">💻 Endpoint Refresh</option>
+          <option value="server">🖥️ Server Refresh</option>
+          <option value="voip">📞 VoIP &amp; Communications</option>
+          <option value="onboarding">🤝 New Client Onboarding</option>
+          <option value="security">🛡️ Cybersecurity Assessment</option>
+          <option value="backup">💾 Backup &amp; DR Implementation</option>
+          <option value="copilot">🤖 Microsoft Copilot &amp; AI</option>
+        </select>
+        <button class="lp-icon-btn" id="loadPresetBtn" title="Load preset"><i class="ti ti-arrow-right"></i></button>
+        <button class="lp-clear-btn" id="clearBtn" title="Clear project and start fresh">Clear</button>
+      </div>
+    </div>
+
+    <!-- Current Projects -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Current projects</div>
+      <div class="lp-projects" id="projectList"></div>
+      <button class="lp-new-proj" id="newProjectBtn"><i class="ti ti-plus"></i> New project</button>
+    </div>
+
+    <!-- Project Settings -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Project</div>
+      <div class="lp-field">
+        <div class="lp-field-label">Title</div>
+        <input type="text" id="projectTitle" class="lp-input" placeholder="e.g. Azure Cloud Migration">
+      </div>
+      <div class="lp-field-row">
+        <div class="lp-field">
+          <div class="lp-field-label">Customer <span class="lp-opt">(optional)</span></div>
+          <input type="text" id="customerName" class="lp-input" placeholder="e.g. Acme Corp">
+        </div>
+        <div class="lp-field lp-field-sm">
+          <div class="lp-field-label">Hrs/day</div>
+          <input type="number" id="hoursPerDay" class="lp-input" min="1" step="1" value="8">
+        </div>
+      </div>
+    </div>
+
+    <!-- Team -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Team</div>
+      <div class="lp-field">
+        <div class="lp-field-label">Passphrase <span class="lp-opt">(enables shared templates)</span></div>
+        <div class="lp-passrow">
+          <input type="password" id="tmplPassphrase" class="lp-input" placeholder="Enter to share with team" autocomplete="off">
+          <span id="tmplPassphraseBadge" class="lp-badge lp-badge-local">💾 Local</span>
+        </div>
+      </div>
+      <div class="lp-field">
+        <div class="lp-field-label">Templates <span id="tmplModeLabel" class="lp-opt">(local)</span></div>
+        <div class="lp-row">
+          <select id="templateSelect" class="lp-select"><option value="">— No saved templates yet —</option></select>
+          <button class="lp-icon-btn" id="loadTemplateBtn" title="Load template"><i class="ti ti-arrow-right"></i></button>
+          <button class="lp-icon-btn lp-icon-btn-danger" id="deleteTemplateBtn" title="Delete template"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+      <button class="lp-action-btn lp-action-primary" id="saveTemplateBtn"><i class="ti ti-device-floppy"></i> Save as template</button>
+    </div>
+
+    <!-- Show in output toggles -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Show in customer output</div>
+      <div class="lp-toggles">
+        <div class="lp-toggle-row">
+          <span>Role</span>
+          <label class="lp-switch"><input type="checkbox" id="showRole" checked><span class="lp-track"></span></label>
+        </div>
+        <div class="lp-toggle-row">
+          <span>Hours</span>
+          <label class="lp-switch"><input type="checkbox" id="showHours"><span class="lp-track"></span></label>
+        </div>
+        <div class="lp-toggle-row">
+          <span>Notes</span>
+          <label class="lp-switch"><input type="checkbox" id="showNotes" checked><span class="lp-track"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Brand Color -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Brand color</div>
+      <div class="lp-field-label" style="margin-bottom:6px;">Applied to every widget you generate</div>
+      <div class="brand-swatches" id="brandSwatches">
+        <div class="brand-swatch active" data-color="#2563eb" style="background:#2563eb;" title="Blue"></div>
+        <div class="brand-swatch" data-color="#059669" style="background:#059669;" title="Green"></div>
+        <div class="brand-swatch" data-color="#7c3aed" style="background:#7c3aed;" title="Purple"></div>
+        <div class="brand-swatch" data-color="#dc2626" style="background:#dc2626;" title="Red"></div>
+        <div class="brand-swatch" data-color="#d97706" style="background:#d97706;" title="Amber"></div>
+        <div class="brand-swatch" data-color="#0891b2" style="background:#0891b2;" title="Teal"></div>
+        <div class="brand-swatch" data-color="#374151" style="background:#374151;" title="Slate"></div>
+        <div class="brand-swatch brand-swatch-custom" id="brandCustomSwatch" data-color="" title="Custom color" style="background: conic-gradient(red,yellow,lime,aqua,blue,magenta,red);"></div>
+      </div>
+      <div class="brand-hex-row" id="brandHexRow" style="display:none;">
+        <span style="font-size:11px;color:var(--muted);">Hex</span>
+        <input type="text" id="brandHexInput" class="lp-input" placeholder="#2563eb" maxlength="7" style="font-family:var(--mono);font-size:11px;">
+        <button class="lp-icon-btn" id="brandHexApply" title="Apply"><i class="ti ti-check"></i></button>
+      </div>
+    </div>
+
+    <!-- Export & Publish -->
+    <div class="lp-section">
+      <div class="lp-sec-label">Export &amp; publish</div>
+      <div class="lp-actions">
+        <button class="lp-action-btn lp-action-good" id="generateBtn"><i class="ti ti-sparkles"></i> Generate scope widget</button>
+        <button class="lp-action-btn" id="copyBtn" disabled><i class="ti ti-copy"></i> Copy HTML</button>
+        <button class="lp-action-btn" id="exportBtn"><i class="ti ti-download"></i> Export JSON</button>
+        <label class="lp-action-btn" for="importInput" style="cursor:pointer;"><i class="ti ti-upload"></i> Import JSON</label>
+        <input type="file" id="importInput" accept=".json" style="display:none">
+        <!-- Salesbuildr inline -->
+        <button class="lp-action-btn lp-action-primary" id="sbToggle"><i class="ti ti-send"></i> Save to Salesbuildr <span id="sbArrow" class="sb-arrow-icon">▼</span></button>
+        <div id="sbBody" class="sb-inline" hidden>
+          <div class="sb-fields">
+            <div class="sb-field">
+              <label class="sb-label">Tenant URL <span class="sb-where">e.g. https://acme.salesbuildr.com</span></label>
+              <input type="text" id="sbTenantUrl" class="sb-input" placeholder="https://yourcompany.salesbuildr.com" autocomplete="off">
+            </div>
+            <div class="sb-field">
+              <label class="sb-label">API Key <span class="sb-where">Admin → Integrations → API Key</span></label>
+              <input type="password" id="sbApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
+            </div>
+          </div>
+          <div class="sb-row">
+            <label class="sb-remember"><input type="checkbox" id="sbRemember"> Remember credentials</label>
+            <input type="text" id="sbPrefix" class="sb-prefix" maxlength="40" placeholder="Label e.g. Acme Corp">
+            <button type="button" id="sbPushBtn" class="lp-action-btn lp-action-good" disabled>Push →</button>
+          </div>
+          <div id="sbResult" class="sb-result" hidden></div>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ═══════════════════════════════════════════════════════
+       CENTER — MAIN WORKING AREA
+  ════════════════════════════════════════════════════════ -->
+  <main class="center-panel">
+
+    <div class="center-header">
+      <div>
+        <div class="center-title" id="centerTitle">Project Scope Builder</div>
+        <div class="center-sub" id="centerSub">Start by loading a preset or entering your project details</div>
+      </div>
+    </div>
+
+    <!-- Overview -->
+    <div class="center-section">
+      <div class="center-sec-label">Project Overview <span class="center-sec-hint">2–3 sentences, customer-facing</span></div>
+      <textarea id="overview" class="center-textarea" rows="3" placeholder="e.g. This project covers the migration of your on-premises server infrastructure to Microsoft Azure, delivering improved reliability, scalability, and remote access with minimal disruption to your team."></textarea>
+    </div>
+
+    <!-- Task grid -->
+    <div class="center-section center-section-grow">
+      <div class="center-sec-label">Scope of Work <span class="center-sec-hint">Rows with 0 hours are excluded from output</span></div>
+      <div class="grid-wrap">
+        <table class="task-table">
+          <thead>
+            <tr>
+              <th class="col-drag"></th>
+              <th class="col-task">Task</th>
+              <th class="col-role">Role</th>
+              <th class="col-hours">Hours</th>
+              <th class="col-dur">Duration</th>
+              <th class="col-notes">Notes</th>
+              <th class="col-del"></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="grid-footer">
+        <button class="gf-btn" id="addRowBtn"><i class="ti ti-plus"></i> Add row</button>
+        <div class="gf-pills">
+          <div class="gf-pill"><span>Total</span><strong id="totalHours">0</strong><span>hrs</span></div>
+          <div class="gf-pill"><span>Duration</span><strong id="totalDuration">—</strong></div>
+          <div class="gf-pill"><span>In scope</span><strong id="includedCount">0</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exclusions -->
+    <div class="center-section">
+      <div class="center-sec-label">What's Not Included <span class="center-sec-hint">— one per line, displayed as a bullet list in the generated widget</span></div>
+      <textarea id="exclusions" class="center-textarea" rows="3" placeholder=""></textarea>
+    </div>
+
+    <!-- Output panels — hidden until Generate clicked -->
+    <div class="output-panels" id="outputPanels" hidden>
+      <div class="output-panel">
+        <div class="output-panel-header">
+          <div>
+            <div class="output-panel-title">Generated HTML</div>
+            <div class="output-panel-hint">Paste into Salesbuildr via the <strong>&lt;&nbsp;&gt;</strong> Source Code button in TinyMCE</div>
+          </div>
+          <button class="op-close-btn" id="closeOutputBtn"><i class="ti ti-x"></i></button>
+        </div>
+        <pre id="htmlOut"></pre>
+      </div>
+      <div class="output-panel">
+        <div class="output-panel-title">Preview</div>
+        <div class="output-panel-hint">Approximate preview — Salesbuildr may apply its own typography</div>
+        <div class="preview-box" id="preview"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════
+       RIGHT PANEL — AI ASSISTANT
+  ════════════════════════════════════════════════════════ -->
+  <aside class="ai-panel" id="aiPanel">
+
+    <div class="ai-header">
+      <div>
+        <div class="ai-title-row">
+          <div class="ai-dot"></div>
+          <div class="ai-title">AI Assistant</div>
+        </div>
+        <div class="ai-sub">Generate or review your scope</div>
+      </div>
+    </div>
+
+    <div class="ai-body">
+    <div class="ai-messages" id="aiMessages">
+      <div class="ai-msg ai-msg-assistant">
+        <div class="ai-msg-label">Assistant</div>
+        Hi — describe a project and I'll build a full scope with tasks, roles, and hours. Once applied, use Review to validate it or Adjust to fit your team's constraints.
+        <div class="ai-chips">
+          <div class="ai-chip" data-action="generate">✨ Generate scope from description</div>
+          <div class="ai-chip" data-action="review">🔍 Review &amp; validate my scope</div>
+          <div class="ai-chip" data-action="adjust">⏱ Adjust for team / deadline</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-input-wrap">
+      <textarea class="ai-textarea" id="aiInput" placeholder="Describe a project or ask me to review…" rows="2"></textarea>
+      <button class="ai-send-btn" id="aiSendBtn" title="Send"><i class="ti ti-arrow-up"></i></button>
+    </div>
+    </div>
+
+  </aside>
+
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script src="project-scope.js"></script>
+</body>
+</html>
