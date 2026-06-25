@@ -3,11 +3,14 @@
 // Path: /api/planner-catalog
 //
 // Fetches labor SKUs from the MSP's Salesbuildr catalog.
-// Tries multiple filter key/value combinations since the
-// exact filter key varies — falls back gracefully.
+// Fetches page 1 to get the total, then fires all remaining
+// pages in parallel — fast even with large catalogs.
+// Filters client-side by productType === "Labor".
 // POST { tenantUrl, apiKey }
 // Returns: { ok, skus: [{ id, name, price, unit }] }
 // =========================================================
+
+const PAGE_SIZE = 200;
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -53,87 +56,70 @@ exports.handler = async (event) => {
   const base    = tenantUrl.trim().replace(/\/+$/, '');
   const headers = { 'Content-Type': 'application/json', 'api-key': apiKey };
 
-  // Helper: fetch products with a given filter string, return results array or null on error
-  async function fetchFiltered(filterStr) {
-    const url = `${base}/public-api/product?filters=${encodeURIComponent(filterStr)}&size=200&sort=%2Bname`;
-    const res = await fetch(url, { method: 'GET', headers });
-    if (!res.ok) return null;
-    const data = await res.json();
-    // API always returns paginated object: { results: [...], total, ... }
-    return Array.isArray(data) ? data : (data.results || []);
-  }
-
-  // Helper: fetch ALL products (no filter) as last resort
-  async function fetchAll() {
-    const url = `${base}/public-api/product?size=200&sort=%2Bname`;
-    const res = await fetch(url, { method: 'GET', headers });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return Array.isArray(data) ? data : (data.results || []);
+  function pageUrl(from) {
+    return `${base}/public-api/product?size=${PAGE_SIZE}&from=${from}&sort=%2Bname`;
   }
 
   try {
-    // Strategy: try filter variations in order, use first that returns results.
-    // The Salesbuildr UI shows "Labor (15)" so the value is definitely "Labor".
-    // The filter KEY is uncertain — try "type" first (matches UI sidebar key),
-    // then "productType" (field name in the DTO), then unfiltered fallback.
-    const attempts = [
-      'type:Labor',
-      'productType:Labor',
-      'type:Service',
-      'productType:Service',
-      'type:Services',
-      'productType:Services',
-    ];
+    // ── Page 1: get first batch + total count ──────────────
+    const res1 = await fetch(pageUrl(0), { method: 'GET', headers });
 
-    let results = null;
-    let usedFilter = '';
-
-    for (const filter of attempts) {
-      const r = await fetchFiltered(filter);
-      if (r && r.length > 0) {
-        results = r;
-        usedFilter = filter;
-        break;
-      }
-    }
-
-    // Last resort: fetch everything and filter client-side by productType field
-    if (!results || results.length === 0) {
-      const all = await fetchAll();
-      if (all && all.length > 0) {
-        // Try to pick Labor/Service types from the full list
-        const laborItems = all.filter(p =>
-          (p.productType || '').toLowerCase() === 'labor' ||
-          (p.productType || '').toLowerCase() === 'service' ||
-          (p.productType || '').toLowerCase() === 'services'
-        );
-        results = laborItems.length > 0 ? laborItems : all;
-        usedFilter = 'unfiltered';
-      }
-    }
-
-    if (!results) {
+    if (!res1.ok) {
+      const errText = await res1.text().catch(() => '');
       return {
-        statusCode: 502,
+        statusCode: res1.status,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ ok: false, error: 'Could not reach Salesbuildr. Check your tenant URL and API key.' })
+        body: JSON.stringify({ ok: false, error: `Salesbuildr returned ${res1.status} — check your tenant URL and API key. ${errText.slice(0, 200)}` })
       };
     }
 
-    const skus = results.map(p => ({
+    const data1   = await res1.json();
+    const page1   = Array.isArray(data1) ? data1 : (data1.results || []);
+    const total   = data1.total || page1.length;
+
+    // ── Remaining pages in parallel ────────────────────────
+    const remainingPages = [];
+    for (let from = PAGE_SIZE; from < total; from += PAGE_SIZE) {
+      remainingPages.push(from);
+    }
+
+    const restResults = await Promise.all(
+      remainingPages.map(async (from) => {
+        try {
+          const res  = await fetch(pageUrl(from), { method: 'GET', headers });
+          if (!res.ok) return [];
+          const data = await res.json();
+          return Array.isArray(data) ? data : (data.results || []);
+        } catch { return []; }
+      })
+    );
+
+    const allProducts = [page1, ...restResults].flat();
+
+    console.log(`[planner-catalog] total=${total} fetched=${allProducts.length} pages=${1 + remainingPages.length}`);
+
+    // ── Filter to Labor, fall back to Service ──────────────
+    const laborItems   = allProducts.filter(p => (p.productType || '').toLowerCase() === 'labor');
+    const serviceItems = allProducts.filter(p =>
+      (p.productType || '').toLowerCase() === 'service' ||
+      (p.productType || '').toLowerCase() === 'services'
+    );
+
+    const chosen = laborItems.length > 0 ? laborItems : serviceItems;
+
+    console.log(`[planner-catalog] labor=${laborItems.length} service=${serviceItems.length} returning=${chosen.length}`);
+
+    const skus = chosen.map(p => ({
       id:    p.id,
       name:  p.name,
       price: p.price != null ? Number(p.price) : null,
       unit:  p.unit  || null
     }));
 
-    console.log(`[planner-catalog] filter="${usedFilter}" found ${skus.length} SKUs`);
-
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ ok: true, skus, _filter: usedFilter })
+      body: JSON.stringify({ ok: true, skus })
     };
 
   } catch (err) {
