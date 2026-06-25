@@ -285,9 +285,24 @@ function initCredentials() {
 }
 
 function setConnectStatus(type, message) {
+  // Full status line inside settings body
   const el = document.getElementById('connectStatus');
   el.textContent = message;
   el.className = `connect-status connect-status-${type}`;
+
+  // Compact badge in the settings toggle bar
+  const badge = document.getElementById('connBadge');
+  const labelMap = { ok: '● Connected', error: '✕ Failed', loading: '… Connecting', idle: 'Not connected' };
+  badge.textContent = labelMap[type] || message;
+  badge.className   = `lp-status-badge lp-status-${type}`;
+
+  // Auto-collapse settings on successful connect
+  if (type === 'ok') {
+    const body    = document.getElementById('settingsBody');
+    const chevron = document.getElementById('settingsChevron');
+    body.hidden   = true;
+    chevron.classList.remove('open');
+  }
 }
 
 async function connectToSalesbuildr() {
@@ -336,6 +351,16 @@ async function connectToSalesbuildr() {
 function saveBrandColor(color) {
   brandColor = color;
   localStorage.setItem(LS_BRAND_COLOR, color);
+  updateColorBadge();
+}
+
+function updateColorBadge() {
+  const badge  = document.getElementById('colorBadge');
+  const dot    = document.getElementById('widgetColorDot');
+  const hexEl  = document.getElementById('widgetColorHex');
+  if (badge)  badge.style.background  = brandColor;
+  if (dot)    dot.style.background    = brandColor;
+  if (hexEl)  hexEl.textContent       = brandColor;
 }
 
 function initBrandColor() {
@@ -585,7 +610,6 @@ function newProject() {
   document.getElementById('hoursPerDay').value  = '8';
   document.getElementById('overview').value     = '';
   document.getElementById('exclusions').value   = '';
-  document.getElementById('presetSelect').value = '';
   document.getElementById('htmlOut').textContent = '';
   document.getElementById('preview').innerHTML  = '';
   document.getElementById('outputPanels').hidden = true;
@@ -593,6 +617,9 @@ function newProject() {
   resetQuoteUI();
   render(); updateSummary(); renderProjects(); updateCenterHeader();
   saveState(); showToast('New project started');
+  // Expand presets when starting fresh
+  expandPresets();
+  document.querySelectorAll('.preset-tile').forEach(t => t.classList.remove('active'));
 }
 
 function updateCenterHeader() {
@@ -1039,16 +1066,19 @@ function selectCompany(company) {
   disp.innerHTML = `<span>${esc(company.name)}</span><button class="selected-entity-clear" title="Clear" id="clearCompanyBtn"><i class="ti ti-x"></i></button>`;
   document.getElementById('clearCompanyBtn').addEventListener('click', () => {
     selectedCompany = null; disp.hidden = true;
-    document.getElementById('opportunityField').style.display = 'none';
-    document.getElementById('quoteTemplateField').style.display = 'none';
-    document.getElementById('quoteTitleField').style.display = 'none';
-    document.getElementById('createQuoteBtn').style.display = 'none';
+    document.getElementById('opportunitySearch').value = '';
+    document.getElementById('opportunitySearch').dataset.selectedId = '';
+    document.getElementById('opportunitySearch').disabled = true;
+    document.getElementById('opportunitySearch').placeholder = 'Select company first…';
+    document.getElementById('opportunityDropdown').hidden = true;
     document.getElementById('quoteResult').hidden = true;
   });
 
-  // Load opportunities
-  loadOpportunities(company.id);
-  // Load templates if not already
+  // Enable opportunity search and load immediately
+  const oppSearch = document.getElementById('opportunitySearch');
+  oppSearch.disabled = false;
+  oppSearch.placeholder = 'Search opportunities…';
+  loadOpportunities(company.id, '');
   loadQuoteTemplates();
 }
 
@@ -1056,9 +1086,7 @@ async function loadOpportunities(companyId, query) {
   const { tenantUrl, apiKey } = getCredentials();
   if (!tenantUrl || !apiKey) return;
 
-  const field   = document.getElementById('opportunityField');
-  const drop    = document.getElementById('opportunityDropdown');
-  field.style.display = 'flex';
+  const drop = document.getElementById('opportunityDropdown');
   drop.innerHTML = '<div class="company-option-empty">Loading…</div>';
   drop.hidden = false;
 
@@ -1095,12 +1123,6 @@ function selectOpportunity(opp) {
   document.getElementById('opportunityDropdown').hidden = true;
   document.getElementById('opportunitySearch').value   = opp.name;
   document.getElementById('opportunitySearch').dataset.selectedId = opp.id;
-
-  document.getElementById('quoteTemplateField').style.display = 'flex';
-  document.getElementById('quoteTitleField').style.display    = 'flex';
-  document.getElementById('createQuoteBtn').style.display     = 'flex';
-  const qt = document.getElementById('quoteTitle');
-  if (!qt.dataset.manuallyEdited) qt.value = document.getElementById('projectTitle').value || '';
 }
 
 document.getElementById('quoteTitle').addEventListener('input', function() {
@@ -1164,11 +1186,9 @@ function resetQuoteUI() {
   document.getElementById('selectedCompanyDisplay').hidden = true;
   document.getElementById('opportunitySearch').value = '';
   document.getElementById('opportunitySearch').dataset.selectedId = '';
+  document.getElementById('opportunitySearch').disabled = true;
+  document.getElementById('opportunitySearch').placeholder = 'Select company first…';
   document.getElementById('opportunityDropdown').hidden = true;
-  document.getElementById('opportunityField').style.display    = 'none';
-  document.getElementById('quoteTemplateField').style.display  = 'none';
-  document.getElementById('quoteTitleField').style.display     = 'none';
-  document.getElementById('createQuoteBtn').style.display      = 'none';
   document.getElementById('quoteResult').hidden = true;
 }
 
@@ -1364,19 +1384,27 @@ document.querySelectorAll('.ai-chip').forEach(chip => {
 
 // ── Event listeners ───────────────────────────────────────
 ['projectTitle','customerName','overview','exclusions'].forEach(id => {
-  document.getElementById(id).addEventListener('input', () => { saveState(); autoRefresh(); });
+  document.getElementById(id).addEventListener('input', () => { saveState(); autoRefresh(); updateCenterHeader(); });
 });
 document.getElementById('hoursPerDay').addEventListener('input', () => { updateSummary(); saveState(); autoRefresh(); });
 
 // Connect button
 document.getElementById('connectBtn').addEventListener('click', connectToSalesbuildr);
 
-// Preset loader
-document.getElementById('loadPresetBtn').addEventListener('click', () => {
-  const key = document.getElementById('presetSelect').value;
-  if (!key) { showToast('Select a preset first'); return; }
+// ── Settings zone toggle ──────────────────────────────────
+document.getElementById('settingsToggle').addEventListener('click', () => {
+  const body    = document.getElementById('settingsBody');
+  const chevron = document.getElementById('settingsChevron');
+  const isOpen  = !body.hidden;
+  body.hidden   = isOpen;
+  chevron.classList.toggle('open', !isOpen);
+});
+
+// ── Preset tiles ──────────────────────────────────────────
+function loadPreset(key) {
   const p = PRESETS[key]; if (!p) return;
-  if (rows.length > 0 && !confirm(`Load "${p.title}" preset? This will replace your current tasks.`)) return;
+  const hasContent = rows.some(r => r.task || num(r.hours) > 0);
+  if (hasContent && !confirm(`Load "${p.title}" preset? This will replace your current tasks.`)) return;
   rows = p.tasks.map(t => ({ ...t, skuId: '' }));
   document.getElementById('projectTitle').value = p.title;
   document.getElementById('overview').value     = p.overview;
@@ -1385,17 +1413,46 @@ document.getElementById('loadPresetBtn').addEventListener('click', () => {
   document.getElementById('preview').innerHTML   = '';
   document.getElementById('outputPanels').hidden = true;
   document.getElementById('copyBtn').disabled    = true;
-  render(); saveState(); showToast(`Loaded: ${p.title}`);
+  render(); saveState(); updateCenterHeader();
+  showToast(`Loaded: ${p.title}`);
   saveCurrentAsProject(p.title); renderProjects();
+  // Mark active tile, collapse grid
+  document.querySelectorAll('.preset-tile').forEach(t => t.classList.toggle('active', t.dataset.preset === key));
+  collapsePresets(`Loaded: ${p.title}`);
+}
+
+function collapsePresets(hint) {
+  const grid    = document.getElementById('presetGrid');
+  const chevron = document.getElementById('presetChevron');
+  const hintEl  = document.getElementById('presetHint');
+  grid.hidden = true;
+  chevron.classList.add('collapsed');
+  if (hint) hintEl.textContent = hint;
+}
+
+function expandPresets() {
+  const grid    = document.getElementById('presetGrid');
+  const chevron = document.getElementById('presetChevron');
+  grid.hidden = false;
+  chevron.classList.remove('collapsed');
+}
+
+document.querySelectorAll('.preset-tile').forEach(tile => {
+  tile.addEventListener('click', () => loadPreset(tile.dataset.preset));
 });
 
-// New project
+document.getElementById('presetToggle').addEventListener('click', () => {
+  const grid = document.getElementById('presetGrid');
+  if (grid.hidden) expandPresets(); else collapsePresets(null);
+});
+
+// ── New project ───────────────────────────────────────────
 document.getElementById('newProjectBtn').addEventListener('click', newProject);
 
-// Add row
+// ── Add row ───────────────────────────────────────────────
 document.getElementById('addRowBtn').addEventListener('click', () => { rows.push(defaultRow()); render(); saveState(); });
 
-// Clear
+// ── Clear ─────────────────────────────────────────────────
 document.getElementById('clearBtn').addEventListener('click', () => {
   if (!confirm('Clear this project and start fresh?')) return;
   currentProjectId = null;
@@ -1403,43 +1460,59 @@ document.getElementById('clearBtn').addEventListener('click', () => {
   localStorage.removeItem(LS_KEY);
 });
 
-// Generate widget
-document.getElementById('generateBtn').addEventListener('click', () => {
-  const html = generateWidget();
-  document.getElementById('htmlOut').textContent = html;
-  document.getElementById('preview').innerHTML   = html;
-  document.getElementById('outputPanels').hidden = false;
-  document.getElementById('copyBtn').disabled    = false;
-  showToast('Widget generated'); saveState();
+// ── Save toolbar ──────────────────────────────────────────
+// Team toggle
+document.getElementById('teamToggleBtn').addEventListener('click', () => {
+  const body = document.getElementById('teamBody');
+  const btn  = document.getElementById('teamToggleBtn');
+  body.hidden = !body.hidden;
+  btn.classList.toggle('active', !body.hidden);
+  if (!body.hidden) document.getElementById('tmplPassphrase').focus();
 });
 
-// Close output
-document.getElementById('closeOutputBtn').addEventListener('click', () => {
-  document.getElementById('outputPanels').hidden = true;
+// Load template toggle
+document.getElementById('loadTemplateBtn').addEventListener('click', async () => {
+  const body = document.getElementById('templateSelectBody');
+  const btn  = document.getElementById('loadTemplateBtn');
+  body.hidden = !body.hidden;
+  btn.classList.toggle('active', !body.hidden);
+  if (!body.hidden) await renderTemplateSelect();
 });
 
-// Copy
-document.getElementById('copyBtn').addEventListener('click', async () => {
-  const html = document.getElementById('htmlOut').textContent;
-  if (!html.trim()) return;
-  try {
-    await navigator.clipboard.writeText(html);
-    showToast('Copied to clipboard');
-  } catch {
-    const ta = document.createElement('textarea'); ta.value = html; ta.style.cssText = 'position:fixed;left:-9999px;';
-    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-    showToast('Copied (fallback)');
-  }
+// Export JSON
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const state = captureCurrentState();
+  const blob  = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a     = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (state.projectTitle || 'project-plan').replace(/[^a-z0-9]/gi, '-').toLowerCase() + '.json';
+  a.click(); URL.revokeObjectURL(a.href);
+  showToast('Exported');
+});
+
+// Import JSON
+document.getElementById('importInput').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const s = JSON.parse(ev.target.result);
+      if (!s || !Array.isArray(s.rows)) { showToast('⚠️ Invalid file'); return; }
+      applyState(s); saveCurrentAsProject(s.projectTitle); renderProjects();
+      showToast('Imported');
+    } catch { showToast('⚠️ Could not read file'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
 });
 
 // Passphrase
 document.getElementById('tmplPassphrase').addEventListener('input', async () => {
   updatePassphraseUI();
   await renderTemplateSelect();
-  updateCenterHeader();
 });
 
-// Template buttons
+// Save template
 document.getElementById('saveTemplateBtn').addEventListener('click', async () => {
   if (!isTeamMode()) { promptForPassphrase('save templates'); await renderTemplateSelect(); }
   const def  = document.getElementById('projectTitle').value.trim() || 'My Template';
@@ -1465,9 +1538,10 @@ document.getElementById('saveTemplateBtn').addEventListener('click', async () =>
   } catch { showToast('⚠️ Save failed — try again'); } finally { btn.disabled = false; }
 });
 
-document.getElementById('loadTemplateBtn').addEventListener('click', async () => {
+// Apply template
+document.getElementById('applyTemplateBtn').addEventListener('click', async () => {
   const name = document.getElementById('templateSelect').value; if (!name) return;
-  const btn  = document.getElementById('loadTemplateBtn'); btn.disabled = true;
+  const btn  = document.getElementById('applyTemplateBtn'); btn.disabled = true;
   try {
     let tmpl;
     if (isTeamMode()) { tmpl = await teamGetTemplate(hashPassphrase(getPassphrase()), name); }
@@ -1476,9 +1550,12 @@ document.getElementById('loadTemplateBtn').addEventListener('click', async () =>
     if (rows.length && !confirm(`Load "${name}"? Current scope will be replaced.`)) return;
     applyState(tmpl); showToast(`"${name}" loaded`);
     saveCurrentAsProject(tmpl.projectTitle); renderProjects();
+    document.getElementById('templateSelectBody').hidden = true;
+    document.getElementById('loadTemplateBtn').classList.remove('active');
   } catch { showToast('⚠️ Load failed — try again'); } finally { btn.disabled = false; }
 });
 
+// Delete template
 document.getElementById('deleteTemplateBtn').addEventListener('click', async () => {
   const name = document.getElementById('templateSelect').value; if (!name) return;
   const isTeam = isTeamMode();
@@ -1489,6 +1566,100 @@ document.getElementById('deleteTemplateBtn').addEventListener('click', async () 
     else { localSaveAll(localGetAll().filter(t => t.name !== name)); }
     await renderTemplateSelect(false); showToast(`"${name}" deleted`);
   } catch { showToast('⚠️ Delete failed — try again'); } finally { btn.disabled = false; }
+});
+
+// ── Publish toggles (mutually exclusive) ─────────────────
+function openPublishPanel(which) {
+  const panels  = { widget: 'widgetBody',  quote: 'quoteBody'  };
+  const toggles = { widget: 'widgetToggle', quote: 'quoteToggle' };
+  const chevrons = { widget: 'widgetChevron', quote: 'quoteChevron' };
+  Object.keys(panels).forEach(key => {
+    const isThis = key === which;
+    const body   = document.getElementById(panels[key]);
+    const toggle = document.getElementById(toggles[key]);
+    const chev   = document.getElementById(chevrons[key]);
+    body.hidden  = !isThis;
+    toggle.classList.toggle('active', isThis);
+    chev.classList.toggle('open', isThis);
+  });
+}
+
+function closeAllPublishPanels() {
+  ['widgetBody','quoteBody'].forEach(id => document.getElementById(id).hidden = true);
+  ['widgetToggle','quoteToggle'].forEach(id => document.getElementById(id).classList.remove('active'));
+  ['widgetChevron','quoteChevron'].forEach(id => document.getElementById(id).classList.remove('open'));
+}
+
+document.getElementById('widgetToggle').addEventListener('click', () => {
+  const isOpen = !document.getElementById('widgetBody').hidden;
+  if (isOpen) closeAllPublishPanels(); else openPublishPanel('widget');
+});
+
+document.getElementById('quoteToggle').addEventListener('click', () => {
+  const isOpen = !document.getElementById('quoteBody').hidden;
+  if (isOpen) closeAllPublishPanels(); else { openPublishPanel('quote'); updateQuoteTitleDefault(); }
+});
+
+function updateQuoteTitleDefault() {
+  const qt = document.getElementById('quoteTitle');
+  if (!qt.dataset.manuallyEdited) qt.value = document.getElementById('projectTitle').value || '';
+}
+
+// ── Generate widget ───────────────────────────────────────
+document.getElementById('generateBtn').addEventListener('click', () => {
+  const html = generateWidget();
+  document.getElementById('htmlOut').textContent = html;
+  document.getElementById('preview').innerHTML   = html;
+  document.getElementById('outputPanels').hidden = false;
+  document.getElementById('copyBtn').disabled    = false;
+  showToast('Widget generated'); saveState();
+});
+
+// Close output
+document.getElementById('closeOutputBtn').addEventListener('click', () => {
+  document.getElementById('outputPanels').hidden = true;
+});
+
+// Copy HTML
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const html = document.getElementById('htmlOut').textContent;
+  if (!html.trim()) return;
+  try {
+    await navigator.clipboard.writeText(html);
+    showToast('Copied to clipboard');
+  } catch {
+    const ta = document.createElement('textarea'); ta.value = html; ta.style.cssText = 'position:fixed;left:-9999px;';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('Copied (fallback)');
+  }
+});
+
+// Widget push
+document.getElementById('sbWidgetPushBtn').addEventListener('click', async () => {
+  const html = document.getElementById('htmlOut').textContent.trim();
+  if (!html) { showToast('Generate the widget first'); document.getElementById('generateBtn').click(); return; }
+  const { tenantUrl, apiKey } = getCredentials();
+  if (!tenantUrl || !apiKey) { showToast('Connect to Salesbuildr first'); return; }
+  const btn    = document.getElementById('sbWidgetPushBtn');
+  const result = document.getElementById('sbWidgetResult');
+  const prefix = document.getElementById('sbWidgetPrefix').value.trim();
+  const title  = (document.getElementById('projectTitle').value || 'Project Plan').trim();
+  btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader"></i> Pushing…'; result.hidden = true;
+  try {
+    const res  = await fetch('/api/push-widgets', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ widgets: [{ id: 'project-plan', title, html }], prefix, apiKey, tenantUrl })
+    });
+    const data = await res.json();
+    if (data.successCount > 0) {
+      result.textContent = `✓ Saved as "${prefix ? prefix + ' – ' : ''}${title}"`;
+      result.className = 'sb-result ok'; result.hidden = false;
+      btn.innerHTML = '<i class="ti ti-check"></i> Saved';
+    } else { throw new Error((data.results?.[0]?.error) || data.error || 'Unknown error'); }
+  } catch (e) {
+    result.textContent = `✕ ${e.message}`; result.className = 'sb-result error'; result.hidden = false;
+    btn.innerHTML = '<i class="ti ti-send"></i> Push to widget library'; btn.disabled = false;
+  }
 });
 
 // ── Init ──────────────────────────────────────────────────
@@ -1532,4 +1703,28 @@ document.getElementById('deleteTemplateBtn').addEventListener('click', async () 
   document.getElementById('copyBtn').disabled    = true;
   await renderTemplateSelect();
   initCredentials();
+
+  // Settings zone: open by default if not connected, closed if connected (initCredentials may have connected)
+  const settingsBody    = document.getElementById('settingsBody');
+  const settingsChevron = document.getElementById('settingsChevron');
+  if (!catalogLoaded) {
+    settingsBody.hidden = false;
+    settingsChevron.classList.add('open');
+  }
+
+  // Presets: collapse if a project with content was loaded
+  const hasContent = rows.some(r => r.task || num(r.hours) > 0);
+  if (hasContent) {
+    const title = document.getElementById('projectTitle').value.trim();
+    collapsePresets(title || 'Project loaded');
+  }
+
+  // Color badge
+  updateColorBadge();
+
+  // Quote title pre-fill
+  updateQuoteTitleDefault();
+
+  // Opportunity search: enable only after company selected (already disabled in HTML)
+
 })();
