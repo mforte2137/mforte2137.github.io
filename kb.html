@@ -3,30 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salesbuildr Support KB</title>
+    <title>Support KB</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="kb.css">
 </head>
 <body>
-    <div class="container">
 
-        <!-- ── Header ── -->
-        <div class="header">
-            <h1>🛠️ Salesbuildr Support KB</h1>
-            <p>Knowledge Base for Support Team Solutions</p>
+    <!-- ── Slide-in Workflow Panel ── -->
+    <div class="panel-overlay" id="panelOverlay" onclick="closePanel()"></div>
+    <div class="workflow-panel" id="workflowPanel">
+        <div class="wp-header">
+            <div>
+                <div class="wp-issue-title" id="wpIssueTitle"></div>
+                <div class="wp-issue-meta" id="wpIssueMeta"></div>
+            </div>
+            <button class="wp-close" onclick="closePanel()">✕</button>
         </div>
 
-        <!-- ── Notifications ── -->
+        <!-- Step 1: Check KB -->
+        <div class="wp-step" id="wpStep1">
+            <div class="wp-step-label">Step 1 — Check the Help Centre</div>
+            <div class="wp-step-desc">Search Salesbuildr's published articles to see if this is already documented.</div>
+            <button class="btn btn-accent" onclick="wpRunSearch()" id="wpSearchBtn">Search Help Centre</button>
+            <div class="wp-search-result" id="wpSearchResult" style="display:none;"></div>
+            <div id="wpArticles"></div>
+        </div>
+
+        <!-- Step 2: Add Solution -->
+        <div class="wp-step" id="wpStep2">
+            <div class="wp-step-label">Step 2 — Add Solution</div>
+            <div class="wp-step-desc">Once you have an answer from the dev team, paste it here and save.</div>
+            <textarea class="wp-solution-input" id="wpSolutionInput" placeholder="Paste the solution from Slack / dev team here…"></textarea>
+            <button class="btn btn-primary" onclick="wpSaveSolution()">Save Solution</button>
+        </div>
+
+        <!-- Step 3: Draft Article -->
+        <div class="wp-step" id="wpStep3">
+            <div class="wp-step-label">Step 3 — Draft Help Article</div>
+            <div class="wp-step-desc">Claude will write a help article based on the solution. Add any extra context before drafting.</div>
+            <div class="wp-context-label">Extra context (optional)</div>
+            <textarea class="wp-context-input" id="wpContextInput" placeholder="e.g. There is a toggle in Settings → Products to allow MPNs in name fields."></textarea>
+            <button class="btn btn-accent" onclick="wpDraftArticle()" id="wpDraftBtn">Draft Article</button>
+            <div class="wp-draft-area" id="wpDraftArea" style="display:none;">
+                <div class="wp-draft-label">Draft Article</div>
+                <textarea class="wp-draft-text" id="wpDraftText"></textarea>
+                <div style="display:flex;gap:8px;margin-top:10px;">
+                    <button class="btn btn-secondary btn-small" onclick="wpCopyDraft()">📋 Copy Article</button>
+                    <button class="btn btn-primary btn-small" onclick="wpMarkPublished()">✓ Mark as Published</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Published -->
+        <div class="wp-step wp-step-published" id="wpStep4" style="display:none;">
+            <div class="wp-step-label">✓ Published</div>
+            <div class="wp-step-desc">This issue has a help article in the Featurebase KB.</div>
+            <button class="btn btn-secondary btn-small" onclick="wpRedraftArticle()">Re-draft article</button>
+        </div>
+
+    </div>
+
+    <!-- ── Main App ── -->
+    <div class="container">
+
+        <!-- Header -->
+        <div class="header">
+            <h1>Support KB</h1>
+            <p>Knowledge Base for Salesbuildr</p>
+        </div>
+
+        <!-- Notifications -->
         <div class="success-message" id="successMessage"></div>
         <div class="error-message"   id="errorMessage"></div>
 
-        <!-- ── Stats ── -->
+        <!-- Stats -->
         <div class="stats">
             <div class="stat-card">
                 <div class="stat-number" id="totalIssues">0</div>
                 <div class="stat-label">Total Issues</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="pendingCount">0</div>
+                <div class="stat-label">Pending</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number" id="totalCategories">0</div>
@@ -38,7 +98,7 @@
             </div>
         </div>
 
-        <!-- ── Search & Filters ── -->
+        <!-- Controls -->
         <div class="controls">
             <div class="search-box">
                 <input type="text" id="searchInput"
@@ -46,7 +106,7 @@
                        onkeyup="searchKB()">
             </div>
             <div class="filter-controls">
-                <select class="category-filter" id="categoryFilter" onchange="filterByCategory()">
+                <select class="category-filter" id="categoryFilter" onchange="filterKB()">
                     <option value="">All Categories</option>
                     <option value="Quotes">Quotes</option>
                     <option value="Templates">Templates</option>
@@ -59,215 +119,112 @@
                     <option value="Branding">Branding</option>
                     <option value="Products">Products</option>
                 </select>
-                <button class="btn btn-primary"   onclick="showAddForm()">+ Add Issue</button>
+                <button class="btn btn-primary" onclick="showAddForm()">+ Add Issue</button>
                 <button class="btn btn-secondary" onclick="exportData()">Export</button>
                 <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">Import</button>
-                <button class="btn btn-ai"        onclick="toggleAiPanel()">🤖 AI Gap Analysis</button>
                 <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)">
             </div>
         </div>
 
-        <!-- ── AI Gap Analysis Panel ── -->
-        <div class="ai-panel" id="aiPanel">
-            <h2 id="aiPanelTitle">🤖 AI Gap Analysis — Full KB</h2>
-            <p class="ai-subtitle">
-                Compares your KB issues against the
-                <a href="https://salesbuildr.featurebase.app/en/help" target="_blank">Salesbuildr Help Centre</a>
-                to find documentation gaps — and can draft articles to fill them.
-            </p>
+        <!-- Status filter tabs -->
+        <div class="status-tabs">
+            <button class="status-tab active" data-status="" onclick="setStatusFilter(this, '')">All</button>
+            <button class="status-tab" data-status="pending" onclick="setStatusFilter(this, 'pending')">⏳ Pending</button>
+            <button class="status-tab" data-status="solved" onclick="setStatusFilter(this, 'solved')">✓ Solved</button>
+            <button class="status-tab" data-status="published" onclick="setStatusFilter(this, 'published')">📄 Published</button>
+        </div>
 
-            <div class="ai-actions">
-                <button class="btn btn-ai" onclick="runGapAnalysis()">Run Full KB Analysis</button>
-            </div>
+        <!-- Add / Edit Form -->
+        <div id="addForm" class="form-section" style="display:none;">
+            <h2 id="formTitle">Add New Issue</h2>
+            <div class="form-grid">
 
-            <div class="ai-result" id="aiResult" style="display:none;"></div>
-
-            <!-- Draft Article controls (shown after analysis) -->
-            <div id="draftControls" style="display:none;">
-                <div class="form-group" style="margin-bottom:12px;">
-                    <label>Optional: add context for the article draft</label>
-                    <textarea id="articleContext"
-                              placeholder="e.g. 'Focus on the Widgets gap. Our customers are MSPs using ConnectWise.'"
-                              style="min-height:70px;"></textarea>
+                <div class="form-group">
+                    <label>Issue Title *</label>
+                    <input type="text" id="issueTitle" placeholder="Brief description of the issue">
                 </div>
-                <button class="btn btn-primary" onclick="draftArticle()">✍️ Draft Article for Top Gap</button>
-            </div>
 
-            <div class="ai-article-draft" id="aiArticleDraft">
-                <h3>📄 Draft Article</h3>
-                <textarea id="draftArticleText"></textarea>
-                <div style="margin-top:12px;">
-                    <button class="btn btn-secondary btn-small" onclick="copyDraft()">📋 Copy to Clipboard</button>
+                <div class="form-group">
+                    <label>Category *</label>
+                    <select id="issueCategory">
+                        <option value="">Select Category</option>
+                        <option value="Quotes">Quotes</option>
+                        <option value="Templates">Templates</option>
+                        <option value="Widgets">Widgets</option>
+                        <option value="Opportunities">Opportunities</option>
+                        <option value="Contacts">Contacts</option>
+                        <option value="Companies">Companies</option>
+                        <option value="Integrations">Integrations</option>
+                        <option value="Email">Email</option>
+                        <option value="Branding">Branding</option>
+                        <option value="Products">Products</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Issue Description</label>
+                    <textarea id="issueDescription" placeholder="What is the customer reporting?"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Solution <span style="font-weight:400;color:var(--text-3);">(can be added later)</span></label>
+                    <textarea id="issueSolution" placeholder="Leave blank if waiting for dev response…"></textarea>
+                </div>
+
+                <div class="reference-section">
+                    <h3>References</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Jira Ticket Link</label>
+                            <input type="url" id="jiraLink" placeholder="https://yourcompany.atlassian.net/browse/TICKET-123">
+                        </div>
+                        <div class="form-group">
+                            <label>Featurebase Chat ID</label>
+                            <input type="text" id="intercomId" placeholder="https://salesbuildr.featurebase.app/dashboard/inbox/...">
+                        </div>
+                        <div class="form-group">
+                            <label>Loom Video URL</label>
+                            <input type="url" id="loomUrl" placeholder="https://www.loom.com/share/xxxxxxxx">
+                        </div>
+                        <div class="form-group">
+                            <label>Slack Chat Link</label>
+                            <input type="text" id="additionalRef" placeholder="https://salesbuildr.slack.com/archives/...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Screenshot</label>
+                    <div class="file-upload" id="fileUpload">
+                        <p>📷 Click or drag to upload screenshot</p>
+                        <input type="file" id="screenshotFile" style="display:none" accept="image/*" multiple>
+                    </div>
+                    <div id="uploadedFiles"></div>
+                </div>
+
+                <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;align-items:center;">
+                    <button class="btn btn-primary" onclick="saveIssue()">
+                        <span id="saveButtonText">Save Issue</span>
+                        <div class="loading" id="saveLoading" style="display:none;margin-left:8px;vertical-align:middle;"></div>
+                    </button>
+                    <button class="btn btn-secondary" onclick="hideAddForm()">Cancel</button>
                 </div>
             </div>
         </div>
 
-        <!-- ── Main Content: two-column ── -->
-        <div class="main-columns">
-
-            <!-- LEFT: KB list + form -->
-            <div class="col-left">
-
-                <!-- Add / Edit Form (hidden by default) -->
-                <div id="addForm" class="form-section" style="display:none;">
-                    <h2>Add New Issue &amp; Solution</h2>
-                    <div class="form-grid">
-
-                        <div class="form-group">
-                            <label>Issue Title *</label>
-                            <input type="text" id="issueTitle" placeholder="Brief description of the issue">
-                        </div>
-
-                        <div class="form-group">
-                            <label>Category *</label>
-                            <select id="issueCategory">
-                                <option value="">Select Category</option>
-                                <option value="Quotes">Quotes</option>
-                                <option value="Templates">Templates</option>
-                                <option value="Widgets">Widgets</option>
-                                <option value="Opportunities">Opportunities</option>
-                                <option value="Contacts">Contacts</option>
-                                <option value="Companies">Companies</option>
-                                <option value="Integrations">Integrations</option>
-                                <option value="Email">Email</option>
-                                <option value="Branding">Branding</option>
-                                <option value="Products">Products</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Issue Description</label>
-                            <textarea id="issueDescription" placeholder="Detailed description of the problem..."></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Solution</label>
-                            <textarea id="issueSolution" placeholder="Step-by-step solution (can be added later)..."></textarea>
-                        </div>
-
-                        <div class="reference-section">
-                            <h3>📎 References</h3>
-                            <div class="form-grid">
-                                <div class="form-group">
-                                    <label>Jira Ticket Link</label>
-                                    <input type="url" id="jiraLink"
-                                           placeholder="https://yourcompany.atlassian.net/browse/TICKET-123">
-                                </div>
-                                <div class="form-group">
-                                    <label>Featurebase Chat ID</label>
-                                    <input type="text" id="intercomId" placeholder="https://salesbuildr.featurebase.app/dashboard/inbox/...">
-                                </div>
-                                <div class="form-group">
-                                    <label>Loom Video URL</label>
-                                    <input type="url" id="loomUrl"
-                                           placeholder="https://www.loom.com/share/xxxxxxxx">
-                                </div>
-                                <div class="form-group">
-                                    <label>Slack Chat Link</label>
-                                    <input type="text" id="additionalRef"
-                                           placeholder="https://salesbuildr.slack.com/archives/...">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Screenshot Upload</label>
-                            <div class="file-upload" id="fileUpload">
-                                <p>📷 Click or drag to upload screenshot</p>
-                                <input type="file" id="screenshotFile" style="display:none"
-                                       accept="image/*" multiple>
-                            </div>
-                            <div id="uploadedFiles"></div>
-                        </div>
-
-                        <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;align-items:center;">
-                            <button class="btn btn-primary" onclick="saveIssue()">
-                                <span id="saveButtonText">Save Issue</span>
-                                <div class="loading" id="saveLoading" style="display:none;margin-left:10px;"></div>
-                            </button>
-                            <button class="btn btn-secondary" onclick="hideAddForm()">Cancel</button>
-                            <button class="btn btn-ai" onclick="checkFormIssueGap()">🤖 Check Gap</button>
-                        </div>
-                    </div>
+        <!-- KB List -->
+        <div class="knowledge-base">
+            <div class="kb-header">
+                <h2>Knowledge Base</h2>
+            </div>
+            <div id="kbContent">
+                <div class="empty-state">
+                    <h3>No issues yet</h3>
+                    <p>Add your first support issue to get started.</p>
                 </div>
+            </div>
+        </div>
 
-                <!-- KB List -->
-                <div class="knowledge-base">
-                    <div class="kb-header">
-                        <h2>Knowledge Base</h2>
-                    </div>
-                    <div id="kbContent">
-                        <div class="empty-state">
-                            <h3>No issues yet</h3>
-                            <p>Add your first support issue and solution to get started!</p>
-                        </div>
-                    </div>
-                </div>
-
-            </div><!-- /.col-left -->
-
-            <!-- RIGHT: Ask the KB panel -->
-            <div class="col-right">
-                <div class="ask-panel">
-
-                    <div class="ask-panel-header">
-                        <div>
-                            <h2 class="ask-panel-title">Ask the KB</h2>
-                            <p class="ask-panel-subtitle">Salesbuildr Knowledge Base</p>
-                        </div>
-                        <button class="ask-clear-btn" onclick="clearAskPanel()" title="Clear panel">✕ Clear</button>
-                    </div>
-
-                    <p class="ask-panel-desc">Get answers grounded in the Salesbuildr help centre, with a source link to share with the customer.</p>
-
-                    <div class="ask-actions-row">
-                        <div class="form-group" style="margin-bottom:10px;">
-                            <textarea id="askQuestion"
-                                      class="ask-textarea"
-                                      placeholder="e.g. How does the customer set up their email integration?"></textarea>
-                        </div>
-                        <button class="btn btn-accent ask-btn" onclick="askKB()">Ask</button>
-                    </div>
-
-                    <!-- Result / loading state -->
-                    <div class="ask-result" id="askResult" style="display:none;"></div>
-
-                    <!-- Article list -->
-                    <div id="askArticles" class="ask-articles"></div>
-
-                    <!-- Optional dev context + Draft button -->
-                    <div id="askContextArea" style="display:none;">
-                        <div class="ask-context-label">Add context before drafting (optional)</div>
-                        <textarea id="askDevContext"
-                                  class="ask-context-input"
-                                  placeholder="e.g. Dev confirmed: Salesbuildr strips MPNs from the Name field to prevent price shopping. There is a toggle in Settings → Products to allow MPNs in name fields."></textarea>
-                    </div>
-
-                    <button class="btn btn-secondary" id="askDraftBtn"
-                            style="display:none;"
-                            onclick="draftMissingArticle()">
-                        ✍️ Draft missing article
-                    </button>
-
-                    <!-- Draft output -->
-                    <div class="ask-draft-area" id="askDraftArea" style="display:none;">
-                        <div class="ask-draft-label">Draft Article</div>
-                        <textarea id="askDraftText" class="ask-draft-text"></textarea>
-                        <button class="btn btn-secondary btn-small" style="margin-top:8px;" onclick="copyAskDraft()">
-                            📋 Copy
-                        </button>
-                    </div>
-
-                    <div class="ask-footer">
-                        <a href="https://salesbuildr.featurebase.app/en/help" target="_blank" class="ask-footer-link">
-                            Open Help Centre ↗
-                        </a>
-                    </div>
-
-                </div>
-            </div><!-- /.col-right -->
-
-        </div><!-- /.main-columns -->
     </div><!-- /.container -->
 
     <script src="kb.js"></script>
