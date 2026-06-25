@@ -1,10 +1,10 @@
-
 // =========================================================
 // planner-catalog.js — Netlify function
 // Path: /api/planner-catalog
 //
 // Fetches labor SKUs from the MSP's Salesbuildr catalog.
-// Tries productType:Labor first; falls back to productType:Services.
+// Tries multiple filter key/value combinations since the
+// exact filter key varies — falls back gracefully.
 // POST { tenantUrl, apiKey }
 // Returns: { ok, skus: [{ id, name, price, unit }] }
 // =========================================================
@@ -53,22 +53,64 @@ exports.handler = async (event) => {
   const base    = tenantUrl.trim().replace(/\/+$/, '');
   const headers = { 'Content-Type': 'application/json', 'api-key': apiKey };
 
-  async function fetchByType(productType) {
-    const url = `${base}/public-api/product?filters=productType:${encodeURIComponent(productType)}&size=200&sort=+name`;
+  // Helper: fetch products with a given filter string, return results array or null on error
+  async function fetchFiltered(filterStr) {
+    const url = `${base}/public-api/product?filters=${encodeURIComponent(filterStr)}&size=200&sort=%2Bname`;
     const res = await fetch(url, { method: 'GET', headers });
     if (!res.ok) return null;
     const data = await res.json();
-    const results = Array.isArray(data) ? data : (data.results || []);
-    return results;
+    // API always returns paginated object: { results: [...], total, ... }
+    return Array.isArray(data) ? data : (data.results || []);
+  }
+
+  // Helper: fetch ALL products (no filter) as last resort
+  async function fetchAll() {
+    const url = `${base}/public-api/product?size=200&sort=%2Bname`;
+    const res = await fetch(url, { method: 'GET', headers });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return Array.isArray(data) ? data : (data.results || []);
   }
 
   try {
-    // Try Labor first
-    let results = await fetchByType('Labor');
+    // Strategy: try filter variations in order, use first that returns results.
+    // The Salesbuildr UI shows "Labor (15)" so the value is definitely "Labor".
+    // The filter KEY is uncertain — try "type" first (matches UI sidebar key),
+    // then "productType" (field name in the DTO), then unfiltered fallback.
+    const attempts = [
+      'type:Labor',
+      'productType:Labor',
+      'type:Service',
+      'productType:Service',
+      'type:Services',
+      'productType:Services',
+    ];
 
-    // Fall back to Services if Labor returns nothing
+    let results = null;
+    let usedFilter = '';
+
+    for (const filter of attempts) {
+      const r = await fetchFiltered(filter);
+      if (r && r.length > 0) {
+        results = r;
+        usedFilter = filter;
+        break;
+      }
+    }
+
+    // Last resort: fetch everything and filter client-side by productType field
     if (!results || results.length === 0) {
-      results = await fetchByType('Services');
+      const all = await fetchAll();
+      if (all && all.length > 0) {
+        // Try to pick Labor/Service types from the full list
+        const laborItems = all.filter(p =>
+          (p.productType || '').toLowerCase() === 'labor' ||
+          (p.productType || '').toLowerCase() === 'service' ||
+          (p.productType || '').toLowerCase() === 'services'
+        );
+        results = laborItems.length > 0 ? laborItems : all;
+        usedFilter = 'unfiltered';
+      }
     }
 
     if (!results) {
@@ -86,10 +128,12 @@ exports.handler = async (event) => {
       unit:  p.unit  || null
     }));
 
+    console.log(`[planner-catalog] filter="${usedFilter}" found ${skus.length} SKUs`);
+
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ ok: true, skus })
+      body: JSON.stringify({ ok: true, skus, _filter: usedFilter })
     };
 
   } catch (err) {
