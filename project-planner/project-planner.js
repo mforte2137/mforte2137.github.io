@@ -691,10 +691,8 @@ function buildSkuSelect(row, idx) {
         e.preventDefault();
         rows[idx].skuId = s.id;
         rows[idx].role  = s.name;
-        trigger.textContent = s.name;
-        trigger.className   = 'sku-trigger has-sku';
         dropdown.hidden = true;
-        saveState(); autoRefresh(); updateSummary();
+        saveState(); render(); updateSummary(); autoRefresh();
       });
       listEl.appendChild(opt);
     });
@@ -705,16 +703,16 @@ function buildSkuSelect(row, idx) {
     e.preventDefault();
     rows[idx].skuId = '';
     rows[idx].role  = '';
-    trigger.textContent = catalogLoaded ? 'Select SKU…' : '';
-    trigger.className   = 'sku-trigger placeholder';
     dropdown.hidden = true;
-    saveState(); autoRefresh(); updateSummary();
+    saveState(); render(); updateSummary(); autoRefresh();
   });
 
   searchIn.addEventListener('input', () => renderSkuOptions(searchIn.value));
   renderSkuOptions();
   dropdown.appendChild(searchIn); dropdown.appendChild(listEl);
-  if (hasSku) dropdown.appendChild(clearBtn);
+  // Always include clear button — hidden when no SKU assigned
+  clearBtn.style.display = hasSku ? 'block' : 'none';
+  dropdown.appendChild(clearBtn);
 
   trigger.addEventListener('click', e => {
     e.stopPropagation();
