@@ -949,42 +949,6 @@ function autoRefresh() {
   document.getElementById('preview').innerHTML   = html;
 }
 
-// ── Widget push to Salesbuildr ────────────────────────────
-document.getElementById('sbWidgetToggle').addEventListener('click', () => {
-  const body  = document.getElementById('sbWidgetBody');
-  const arrow = document.getElementById('sbWidgetArrow');
-  body.hidden = !body.hidden;
-  arrow.classList.toggle('open', !body.hidden);
-});
-
-document.getElementById('sbWidgetPushBtn').addEventListener('click', async () => {
-  const html = document.getElementById('htmlOut').textContent.trim();
-  if (!html) { showToast('Generate the widget first'); document.getElementById('generateBtn').click(); return; }
-  const { tenantUrl, apiKey } = getCredentials();
-  if (!tenantUrl || !apiKey) { showToast('Connect to Salesbuildr first'); return; }
-
-  const btn    = document.getElementById('sbWidgetPushBtn');
-  const result = document.getElementById('sbWidgetResult');
-  const prefix = document.getElementById('sbWidgetPrefix').value.trim();
-  const title  = (document.getElementById('projectTitle').value || 'Project Plan').trim();
-
-  btn.disabled = true; btn.textContent = 'Pushing…'; result.hidden = true;
-
-  try {
-    const res  = await fetch('/api/push-widgets', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ widgets: [{ id: 'project-plan', title, html }], prefix, apiKey, tenantUrl })
-    });
-    const data = await res.json();
-    if (data.successCount > 0) {
-      result.textContent = `✓ Saved as "${prefix ? prefix + ' – ' : ''}${title}" in Salesbuildr.`;
-      result.className = 'sb-result ok'; result.hidden = false; btn.textContent = '✓ Saved';
-    } else { throw new Error((data.results?.[0]?.error) || data.error || 'Unknown error'); }
-  } catch (e) {
-    result.textContent = `✕ ${e.message}`; result.className = 'sb-result error'; result.hidden = false;
-    btn.disabled = false; btn.textContent = 'Push →';
-  }
-});
 
 // ── Quote creation ────────────────────────────────────────
 let selectedCompany = null;
