@@ -172,12 +172,13 @@
           <div id="selectedCompanyDisplay" class="selected-entity" hidden></div>
         </div>
 
-        <!-- Opportunity dropdown -->
+        <!-- Opportunity search -->
         <div class="lp-field" id="opportunityField" style="display:none;">
-          <div class="lp-field-label">Opportunity</div>
-          <select id="opportunitySelect" class="lp-select">
-            <option value="">— Loading opportunities… —</option>
-          </select>
+          <div class="lp-field-label">Opportunity <span class="lp-opt">(active, newest first)</span></div>
+          <div class="company-search-wrap">
+            <input type="text" id="opportunitySearch" class="lp-input" placeholder="Search opportunities…" autocomplete="off">
+            <div id="opportunityDropdown" class="company-dropdown" hidden></div>
+          </div>
         </div>
 
         <!-- Quote template dropdown -->
