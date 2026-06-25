@@ -2,10 +2,9 @@
 // planner-opportunities.js — Netlify function
 // Path: /api/planner-opportunities
 //
-// Loads opportunities for a selected company.
-// Tries company.id filter first, falls back to companyId filter,
-// then falls back to fetching all and filtering client-side.
-// POST { tenantUrl, apiKey, companyId }
+// Searches opportunities for a selected company.
+// Filters to open/active only, sorted newest first.
+// POST { tenantUrl, apiKey, companyId, query? }
 // Returns: { ok, opportunities: [{ id, name, status }] }
 // =========================================================
 
@@ -40,7 +39,7 @@ exports.handler = async (event) => {
     };
   }
 
-  const { tenantUrl, apiKey, companyId } = body;
+  const { tenantUrl, apiKey, companyId, query } = body;
 
   if (!tenantUrl || !apiKey) {
     return {
@@ -61,8 +60,9 @@ exports.handler = async (event) => {
   const base    = tenantUrl.trim().replace(/\/+$/, '');
   const headers = { 'Content-Type': 'application/json', 'api-key': apiKey };
 
-  async function tryFetch(filterStr) {
-    const url = `${base}/public-api/opportunity?filters=${encodeURIComponent(filterStr)}&size=100&sort=-updatedAt`;
+  async function tryFetch(filterStr, queryStr) {
+    let url = `${base}/public-api/opportunity?filters=${encodeURIComponent(filterStr)}&size=100&sort=-updatedAt`;
+    if (queryStr) url += `&query=${encodeURIComponent(queryStr)}`;
     const res = await fetch(url, { method: 'GET', headers });
     if (!res.ok) return null;
     const data = await res.json();
@@ -70,30 +70,56 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Try multiple filter key variations — the correct key isn't documented
     let results = null;
 
-    for (const filter of [`company.id:${companyId}`, `companyId:${companyId}`]) {
-      const r = await tryFetch(filter);
+    // Try combinations of company filter + active status filter
+    const companyFilters = [
+      `company.id:${companyId},statusId:active`,
+      `companyId:${companyId},statusId:active`,
+      `company.id:${companyId},statusId:open`,
+      `companyId:${companyId},statusId:open`,
+      // Without status filter as fallback
+      `company.id:${companyId}`,
+      `companyId:${companyId}`,
+    ];
+
+    for (const filter of companyFilters) {
+      const r = await tryFetch(filter, query);
       if (r && r.length > 0) { results = r; break; }
     }
 
-    // Fallback: fetch recent opportunities and filter client-side by companyId
+    // Last resort: fetch all recent opps, filter client-side
     if (!results || results.length === 0) {
-      const url = `${base}/public-api/opportunity?size=200&sort=-updatedAt`;
+      let url = `${base}/public-api/opportunity?size=200&sort=-updatedAt`;
+      if (query) url += `&query=${encodeURIComponent(query)}`;
       const res = await fetch(url, { method: 'GET', headers });
       if (res.ok) {
         const data = await res.json();
         const all  = Array.isArray(data) ? data : (data.results || []);
-        results = all.filter(o => o.companyId === companyId || o.company?.id === companyId);
+        // Filter by company and prefer active/open status
+        const matched = all.filter(o =>
+          o.companyId === companyId || o.company?.id === companyId
+        );
+        // Sort: active first, then by updatedAt
+        matched.sort((a, b) => {
+          const aActive = (a.statusId || '').toLowerCase().includes('active') || (a.statusId || '').toLowerCase().includes('open');
+          const bActive = (b.statusId || '').toLowerCase().includes('active') || (b.statusId || '').toLowerCase().includes('open');
+          if (aActive && !bActive) return -1;
+          if (!aActive && bActive) return 1;
+          return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+        });
+        results = matched;
       }
     }
 
     const opportunities = (results || []).map(o => ({
       id:     o.id,
       name:   o.name,
-      status: o.pipelineStageDisplayValue || o.statusId || ''
+      status: o.pipelineStageDisplayValue || o.statusId || '',
+      updatedAt: o.updatedAt || ''
     }));
+
+    console.log(`[planner-opportunities] companyId=${companyId} query="${query||''}" found=${opportunities.length}`);
 
     return {
       statusCode: 200,
