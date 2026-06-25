@@ -1,4 +1,3 @@
-
 // =========================================================
 // planner-quote.js — Netlify function
 // Path: /api/planner-quote
@@ -95,21 +94,38 @@ exports.handler = async (event) => {
   try {
     const url = `${base}/public-api/quote`;
     const res = await fetch(url, {
-      method: 'POST',
+      method:  'POST',
       headers,
-      body: JSON.stringify(quotePayload)
+      body:    JSON.stringify(quotePayload)
     });
 
-    const data = await res.json().catch(() => ({}));
+    // Always try to get the response body for error detail
+    const rawText = await res.text().catch(() => '');
+    let data = {};
+    try { data = JSON.parse(rawText); } catch {}
 
     if (!res.ok) {
+      // Extract the most useful error message from Salesbuildr's response
+      // Their 400 responses can be: string, { message }, { error }, or an array
+      let errMsg = `Salesbuildr returned ${res.status}`;
+      if (typeof data === 'string' && data.length > 0) {
+        errMsg = data;
+      } else if (data.message && typeof data.message === 'string') {
+        errMsg = data.message;
+      } else if (data.error && typeof data.error === 'string') {
+        errMsg = data.error;
+      } else if (Array.isArray(data) && data[0]?.message) {
+        errMsg = data[0].message;
+      } else if (rawText.length > 0 && rawText.length < 300) {
+        errMsg = rawText;
+      }
+
+      console.log(`[planner-quote] ${res.status} payload=${JSON.stringify(quotePayload)} response=${rawText.slice(0, 500)}`);
+
       return {
         statusCode: res.status,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({
-          ok: false,
-          error: data.message || data.error || `Salesbuildr returned ${res.status}`
-        })
+        body: JSON.stringify({ ok: false, error: errMsg })
       };
     }
 
