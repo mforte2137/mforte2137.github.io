@@ -226,7 +226,7 @@ const CUSTOMERS = {
       },
       { id: 'wf2', title: 'Security Assessment',
         steps: [
-          { id: 'x1', label: 'Security Assessment — Draft outreach email to Tom',      desc: 'Frame the security review as a proactive service — not a reaction to a problem.',          action: 'Draft email',        actionFn: 'email',   done: false },
+          { id: 'x1', label: 'Security Assessment — Draft outreach email to Tom',      desc: 'Frame the security review as a proactive service — not a reaction to a problem.',          action: 'Draft email',        actionFn: 'email',   done: true,  autoLog: 'Email sent · Jun 16' },
           { id: 'x2', label: 'Security Assessment — Schedule assessment meeting',      desc: 'Lock in a date for the formal security review with Tom.',                                  action: 'Generate agenda',    actionFn: 'agenda',  done: false },
           { id: 'x3', label: 'Security Assessment — Generate conversation brief',      desc: 'AI brief covering the 14-month gap, risk exposure, and assessment scope.',                 action: 'Generate brief',     actionFn: 'brief',   done: false },
           { id: 'x4', label: 'Security Assessment — Generate review document',         desc: 'Generate a Health Report highlighting the security gap.',                                  action: 'Generate report',    actionFn: 'report',  done: false },
@@ -1936,7 +1936,11 @@ function renderLifecycle(c) {
         <div class="lifecycle-sub">${item.sub}</div>
       </div>
       <div class="lifecycle-val">${item.val}</div>
-      ${item.modal ? `<button class="inline-action act-primary" data-modal="${item.modal}">${item.icon === "eol" ? "Create opportunity" : item.icon === "renewal" ? "Plan renewal" : item.icon === "warranty" ? "Create opportunity" : "Plan now"}</button>` : ''}
+      ${item.modal ? (
+        item.workflowActive
+          ? `<span class="inline-action act-workflow">&#9654; Workflow active</span>`
+          : `<button class="inline-action act-primary" data-modal="${item.modal}">${item.icon === "eol" ? "Schedule discussion" : item.icon === "renewal" ? "Plan renewal" : item.icon === "warranty" ? "Schedule discussion" : "Plan now"}</button>`
+        ) : ''}
       ${item.modal ? '<span class="signal-arrow">&#8250;</span>' : ''}
     </div>
   `).join('');
