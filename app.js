@@ -765,3 +765,126 @@ NOT FOR: Cleaning up your product catalog — use Product Catalog Guided Cleanup
 SECURITY NOTE:
 Your data stays with you. Files are read locally in the browser and never transmitted to Salesbuildr servers. Credentials are stored in your browser's localStorage only. AI features send only the text you explicitly submit to Anthropic's API over encrypted HTTPS. There is no backend database, no user accounts, and no server-side file storage. Full details: https://docs.google.com/document/d/1Lm-oxSFqTpyntxvKQQIENLODS8GbqBTmczlD3EVomtA/edit?usp=sharing
 `;
+
+/* =========================================================
+   AI Helper modal
+   ========================================================= */
+(function initAiHelper() {
+  const trigger      = document.getElementById('ai-trigger');
+  const overlay      = document.getElementById('ai-overlay');
+  const closeBtn     = document.getElementById('ai-close');
+  const questionEl   = document.getElementById('ai-question');
+  const submitBtn    = document.getElementById('ai-submit');
+  const responseEl   = document.getElementById('ai-response');
+  const loadingEl    = document.getElementById('ai-loading');
+  const feedbackLink = document.getElementById('ai-feedback-link');
+
+  // Feedback shortcut from AI modal
+  feedbackLink.addEventListener('click', () => {
+    closeModal();
+    document.getElementById('feedback-trigger').click();
+  });
+
+  function openModal() {
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => questionEl.focus(), 100);
+  }
+  function closeModal() {
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  trigger.addEventListener('click', openModal);
+  closeBtn.addEventListener('click', closeModal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && overlay.classList.contains('open')) closeModal();
+  });
+
+  // Submit on Cmd/Ctrl+Enter
+  questionEl.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') submitBtn.click();
+  });
+
+  submitBtn.addEventListener('click', async () => {
+    const question = questionEl.value.trim();
+    if (!question) return;
+
+    submitBtn.disabled = true;
+    responseEl.hidden = true;
+    loadingEl.hidden = false;
+
+    try {
+      const res = await fetch('/api/ask-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question })
+      });
+      const data = await res.json();
+
+      if (data.ok && data.answer) {
+        renderResponse(data.answer);
+      } else {
+        renderError('Something went wrong. Please try again.');
+      }
+    } catch {
+      renderError('Could not reach the AI service. Check your connection.');
+    } finally {
+      submitBtn.disabled = false;
+      loadingEl.hidden = true;
+    }
+  });
+
+  function renderResponse(text) {
+    // Parse the structured plain-text response into tool blocks
+    const blocks = [];
+    const lines = text.split('\n');
+    let current = null;
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+
+      if (trimmed.startsWith('Open: http')) {
+        if (current) { current.url = trimmed.replace('Open: ', ''); blocks.push(current); current = null; }
+      } else if (trimmed.startsWith('http')) {
+        if (current) { current.url = trimmed; blocks.push(current); current = null; }
+      } else if (!current && !trimmed.startsWith('Why') && trimmed.length < 60 && !trimmed.includes('.')) {
+        // Likely a tool name line
+        current = { name: trimmed, reason: '', url: '' };
+      } else if (current && !current.reason) {
+        current.reason = trimmed;
+      } else if (current && !current.url && trimmed.startsWith('http')) {
+        current.url = trimmed;
+        blocks.push(current);
+        current = null;
+      }
+    }
+    if (current) blocks.push(current);
+
+    if (blocks.length === 0) {
+      // Fallback: show as plain text
+      responseEl.innerHTML = `<p class="ai-no-match">${escapeHtml(text)}</p>`;
+    } else {
+      responseEl.innerHTML = blocks.map(b => `
+        <div class="ai-tool-result">
+          <div class="ai-tool-name">${escapeHtml(b.name)}</div>
+          <div class="ai-tool-reason">${escapeHtml(b.reason)}</div>
+          ${b.url ? `<a class="ai-tool-link" href="${escapeHtml(b.url)}" target="_blank" rel="noopener noreferrer">
+            Open tool →
+          </a>` : ''}
+        </div>
+      `).join('');
+    }
+
+    responseEl.hidden = false;
+  }
+
+  function renderError(msg) {
+    responseEl.innerHTML = `<p class="ai-no-match">${escapeHtml(msg)}</p>`;
+    responseEl.hidden = false;
+  }
+})();
