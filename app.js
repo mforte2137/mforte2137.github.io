@@ -505,6 +505,8 @@ render();
   const toolSel  = document.getElementById('fb-tool');
   const chips    = document.querySelectorAll('.fb-chip');
   const message  = document.getElementById('fb-message');
+  const nameEl   = document.getElementById('fb-name');
+  const emailEl  = document.getElementById('fb-email');
   const submit   = document.getElementById('feedback-submit');
   const status   = document.getElementById('feedback-status');
 
@@ -567,6 +569,8 @@ render();
           tool: toolSel.value,
           type: selectedType,
           message: msg,
+          name: nameEl.value.trim(),
+          email: emailEl.value.trim(),
           submittedAt: new Date().toISOString()
         })
       });
@@ -574,6 +578,8 @@ render();
       if (data.ok) {
         showStatus('Feedback sent — thank you!', 'success');
         message.value = '';
+        nameEl.value = '';
+        emailEl.value = '';
         toolSel.value = '';
         chips.forEach(c => c.classList.remove('active'));
         chips[0].classList.add('active');
