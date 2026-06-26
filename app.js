@@ -293,6 +293,10 @@ function buildCard(tool) {
         </div>
         <div class="card-foot">
           <span class="card-tag">${escapeHtml(tool.category)}</span>
+          <button class="card-info-btn" data-tool-index="${toolIdx}" aria-label="What does ${escapeHtml(tool.title)} do?">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8" stroke-width="3"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
+            What does this do?
+          </button>
           <span class="open-link">
             Open
             <svg class="arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -303,9 +307,6 @@ function buildCard(tool) {
           </span>
         </div>
       </a>
-      <button class="card-info-btn" data-tool-index="${toolIdx}" aria-label="What does ${escapeHtml(tool.title)} do?">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8" stroke-width="3"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
-      </button>
     </div>
   `;
 }
