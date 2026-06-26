@@ -1404,3 +1404,70 @@ body {
   border: 1px solid var(--accent-border);
   cursor: default;
 }
+
+/* ══════════════════════════════════
+   COLLAPSIBLE SECTION — OPEN STATE
+   All bars get accent blue when expanded
+   ══════════════════════════════════ */
+
+/* Strategic Memory */
+.memory-bar.open {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}
+.memory-bar.open .memory-label { color: var(--accent-2); font-weight: 600; }
+.memory-bar.open .memory-chevron { color: var(--accent-2); }
+.memory-bar.open svg { stroke: var(--accent-2); }
+
+/* Opportunities */
+.opp-bar.open {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+  border-bottom-color: var(--border);
+}
+.opp-bar.open .opp-bar-label { color: var(--accent-2); font-weight: 600; }
+.opp-bar.open .opp-chevron { color: var(--accent-2); }
+
+/* Customer Activity Timeline */
+.timeline-bar.open {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}
+.timeline-bar.open .opp-bar-label,
+.timeline-bar.open .memory-label { color: var(--accent-2); font-weight: 600; }
+.timeline-bar.open .opp-chevron { color: var(--accent-2); }
+.timeline-bar.open svg { stroke: var(--accent-2); }
+
+/* Pipeline timeline bar */
+.pipeline-timeline-bar.open {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}
+.pipeline-timeline-bar.open .opp-bar-label { color: var(--accent-2); font-weight: 600; }
+
+/* Panel titles inside expanded panels — stronger colour */
+.panel-header .panel-title { color: var(--accent-2); font-weight: 700; letter-spacing: 0.1em; }
+
+/* ── Multi-workflow tabs ── */
+.wf-tabs {
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-row);
+  overflow-x: auto;
+}
+.wf-tab {
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; letter-spacing: 0.04em;
+  padding: 9px 16px; border: none; border-bottom: 2px solid transparent;
+  background: transparent; color: var(--text-2);
+  cursor: pointer; white-space: nowrap; transition: color 0.1s;
+  flex-shrink: 0;
+}
+.wf-tab:hover { color: var(--text); }
+.wf-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--bg-panel); }
+.wf-tab-count {
+  font-size: 10px; padding: 1px 6px; border-radius: 20px;
+  background: var(--border); color: var(--text-3);
+}
+.wf-tab.active .wf-tab-count { background: var(--accent-bg); color: var(--accent-2); }
