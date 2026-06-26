@@ -1393,3 +1393,14 @@ body {
   animation: wf-pulse 0.9s ease 2;
   border-color: var(--accent) !important;
 }
+
+/* ── Workflow active signal badge ── */
+.act-workflow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; padding: 3px 10px;
+  border-radius: 20px; white-space: nowrap; flex-shrink: 0;
+  background: var(--accent-bg);
+  color: var(--accent-2);
+  border: 1px solid var(--accent-border);
+  cursor: default;
+}
