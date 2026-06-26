@@ -1,359 +1,701 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Salesbuildr Support Tool</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Growth Operating System</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="chat.css" />
+  <link rel="stylesheet" href="cgos.css">
 </head>
 <body>
 
-  <div class="app">
-
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar-brand">
-        <span class="brand-dot"></span>
-        <span class="brand-name">Support<br/>Tool</span>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-left">
+        <span class="app-logo">&#9646;&#9646;</span>
+        <span class="app-title">Customer Growth Operating System</span>
       </div>
-
-      <nav class="sidebar-nav">
-        <button class="nav-item active" data-tab="reply">
-          <span class="nav-icon">↩</span>
-          <span class="nav-label">Reply</span>
-        </button>
-        <button class="nav-item" data-tab="ticket">
-          <span class="nav-icon">⬡</span>
-          <span class="nav-label">Ticket</span>
-        </button>
-        <button class="nav-item" data-tab="docs">
-          <span class="nav-icon">◎</span>
-          <span class="nav-label">Docs</span>
-        </button>
-      </nav>
-
-      <div class="sidebar-bottom">
-        <button class="settings-btn" id="historyBtn">
-          <span>◷</span>
-          <span>History</span>
-        </button>
-        <button class="settings-btn" id="settingsBtn">
-          <span>⚙</span>
-          <span>Instructions</span>
+      <div class="header-right">
+        <span class="demo-badge">DEMO — Seeded Data</span>
+        <button class="feedback-toggle" id="feedback-toggle" aria-expanded="true">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Feedback
         </button>
       </div>
-    </aside>
+    </div>
+  </header>
 
-    <!-- Main content -->
-    <main class="main">
+  <!-- Classic page tabs -->
+  <div class="view-tabs">
+    <button class="view-tab" id="nav-briefing" data-view="briefing">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Customer Briefing
+    </button>
+    <button class="view-tab active" id="nav-portfolio" data-view="portfolio">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Portfolio View
+    </button>
+    <button class="view-tab" id="nav-team" data-view="team">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Team Performance
+    </button>
+  </div>
 
-      <!-- REPLY TAB -->
-      <section class="tab-panel active" id="tab-reply">
-        <div class="panel-header">
-          <div class="panel-header-row">
-            <div>
-              <h1 class="panel-title">Draft Reply</h1>
-              <p class="panel-subtitle">Paste a customer conversation and get a ready-to-send response.</p>
+  <div class="page-layout">
+
+    <!-- ══════════════════════════════════
+         BRIEFING VIEW
+    ══════════════════════════════════ -->
+    <main class="app-main" id="view-briefing" style="display:none;">
+
+      <!-- Customer bar -->
+      <div class="cust-bar">
+        <div class="cust-bar-left">
+          <div class="cust-search-wrap" id="cust-search-wrap">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-3);flex-shrink:0;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="cust-search-input" class="cust-search-input" placeholder="Search customers..." autocomplete="off" />
+            <div class="cust-search-dropdown" id="cust-search-dropdown">
+              <div class="cust-search-item" data-key="abc"><div class="csi-name">ABC Manufacturing</div><div class="csi-meta">Fully Managed · Houston TX · Urgent</div></div>
+              <div class="cust-search-item" data-key="river"><div class="csi-name">River Tech Solutions</div><div class="csi-meta">Co-Managed · Austin TX · Review soon</div></div>
+              <div class="cust-search-item" data-key="peak"><div class="csi-name">Peak Financial Group</div><div class="csi-meta">Fully Managed · Denver CO · On track</div></div>
             </div>
-            <button class="btn-clear" id="replyClearBtn">Clear</button>
           </div>
+          <!-- Hidden select keeps existing JS working -->
+          <select id="customer-select" class="cust-select" style="display:none;">
+            <option value="abc">ABC Manufacturing</option>
+            <option value="river">River Tech Solutions</option>
+            <option value="peak">Peak Financial Group</option>
+          </select>
         </div>
+        <div class="cust-bar-meta">
+          <span class="cust-chip" id="chip-type">Fully Managed</span>
+          <span class="cust-chip" id="chip-mrr">$3,840 MRR</span>
+          <span class="cust-chip" id="chip-since">Since May 2021</span>
+          <span class="cust-chip health-chip clickable" id="chip-health" title="Click to view health breakdown">Health 82</span>
+          <span class="cust-chip" id="chip-am">Sarah Johnson</span>
+          <span class="cust-chip priority-chip" id="chip-priority" title="AI Priority Score">&#9733; Priority 96</span>
+          <span class="cust-chip confidence-chip" id="chip-confidence" title="Data Confidence">&#10003; Data 92%</span>
+        </div>
+        <div class="source-pills">
+          <span class="toolbar-label">Sources</span>
+          <button class="pill active" data-src="psa">PSA</button>
+          <button class="pill active" data-src="rmm">RMM</button>
+          <button class="pill active" data-src="sb">Salesbuildr</button>
+        </div>
+      </div>
 
-        <div class="panel-body">
-          <div class="input-group">
-            <label class="field-label">Conversation</label>
-            <textarea class="field-textarea tall" id="replyConversation" placeholder="Paste the customer conversation here..."></textarea>
+      <!-- Mode toggle + New Opportunity + Generate Report -->
+      <div class="briefing-mode-bar">
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="mode-intelligence" data-mode="intelligence">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            Intelligence
+          </button>
+          <button class="mode-btn" id="mode-pipeline" data-mode="pipeline">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            Pipeline
+          </button>
+        </div>
+        <div class="briefing-mode-right">
+          <button class="new-opp-btn" id="new-opp-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New opportunity
+          </button>
+          <button class="generate-report-btn" id="generate-report-toolbar-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Generate report
+          </button>
+        </div>
+      </div>
+
+      <!-- Primary contact bar -->
+      <div class="contact-bar" id="contact-bar"></div>
+
+      <!-- INTELLIGENCE MODE SECTIONS -->
+      <div id="intelligence-sections">
+
+      <!-- Nudge: health chip -->
+      <div class="nudge" id="nudge-health">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Click the Health chip above to see a full breakdown
+        <button class="nudge-close" id="nudge-health-close">&times;</button>
+      </div>
+
+      <!-- Strategic memory (collapsed) -->
+      <div class="memory-bar" id="memory-bar">
+        <div class="memory-bar-left">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span class="memory-label">Strategic memory</span>
+          <div class="micro-fb" data-section="Strategic Memory"><button class="micro-btn micro-up" data-val="up" title="Useful">&#128077;</button><button class="micro-btn micro-down" data-val="down" title="Not useful">&#128078;</button></div>
+          <span class="memory-meta" id="memory-meta">Last review: Nov 2025 &middot; 3 open items</span>
+        </div>
+        <div class="memory-bar-right" id="memory-toggle-btn">
+          <span class="memory-items-preview" id="memory-preview"></span>
+          <svg class="memory-chevron" id="memory-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="memory-expanded" id="memory-expanded"></div>
+
+      <!-- Main two-col: signals + alignment -->
+      <div class="two-col">
+
+        <section class="panel" id="signals-panel">
+          <div class="panel-header">
+            <span class="panel-title">CHANGE SIGNALS</span>
+            <span class="signal-count" id="signal-count">5 signals</span>
+            <div class="micro-fb" data-section="Change Signals"><button class="micro-btn micro-up" data-val="up" title="Useful">&#128077;</button><button class="micro-btn micro-down" data-val="down" title="Not useful">&#128078;</button></div>
           </div>
-
-          <div class="input-group">
-            <label class="field-label">Context notes <span class="field-optional">(optional)</span></label>
-            <textarea class="field-textarea short" id="replyContext" placeholder="Any extra framing — e.g. 'customer is on trial', 'this is a repeat issue'..."></textarea>
+          <!-- Nudge: signal drill-down -->
+          <div class="nudge nudge-inline" id="nudge-signal">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            Click any signal row to drill down into the detail
+            <button class="nudge-close" id="nudge-signal-close">&times;</button>
           </div>
+          <div id="signals-list"></div>
+        </section>
 
-          <div class="input-row">
-            <div class="input-group inline">
-              <label class="field-label">Tone</label>
-              <select class="field-select" id="replyTone">
-                <option value="standard">Standard</option>
-                <option value="brief">Brief</option>
-                <option value="detailed">Detailed</option>
-              </select>
-            </div>
-            <button class="btn-primary" id="replyBtn">
-              <span class="btn-text">Generate Reply</span>
-              <span class="btn-loader hidden">...</span>
+        <section class="panel" id="alignment-panel">
+          <div class="panel-header">
+            <span class="panel-title">AGREEMENT ALIGNMENT</span>
+            <span class="alignment-overall" id="alignment-overall">Overall 86%</span>
+            <div class="micro-fb" data-section="Agreement Alignment"><button class="micro-btn micro-up" data-val="up" title="Useful">&#128077;</button><button class="micro-btn micro-down" data-val="down" title="Not useful">&#128078;</button></div>
+          </div>
+          <div id="alignment-list"></div>
+          <div class="alignment-rec" id="alignment-rec"></div>
+        </section>
+
+      </div>
+
+      <!-- Opportunities — collapsed expandable bar -->
+      <div class="opp-bar" id="opp-bar">
+        <div class="opp-bar-left">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          <span class="opp-bar-label">Opportunities</span>
+          <div class="micro-fb micro-fb-inline" data-section="Opportunity Workspace"><button class="micro-btn micro-up" data-val="up" title="Useful">&#128077;</button><button class="micro-btn micro-down" data-val="down" title="Not useful">&#128078;</button></div>
+          <span class="opp-bar-meta" id="opp-bar-meta">3 opportunities &middot; $21,950 potential</span>
+          <div class="opp-categories" id="opp-categories"></div>
+        </div>
+        <div class="opp-bar-right">
+          <svg class="opp-chevron" id="opp-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="opp-expanded" id="opp-expanded">
+        <div id="opp-cards-list"></div>
+      </div>
+
+      <!-- Lifecycle & Renewals -->
+      <section class="panel" id="lifecycle-panel">
+        <div class="panel-header">
+          <span class="panel-title">LIFECYCLE &amp; RENEWALS</span>
+          <span class="lifecycle-total" id="lifecycle-total">$18,400 potential</span>
+          <div class="micro-fb" data-section="Lifecycle &amp; Renewals"><button class="micro-btn micro-up" data-val="up" title="Useful">&#128077;</button><button class="micro-btn micro-down" data-val="down" title="Not useful">&#128078;</button></div>
+        </div>
+        <div id="lifecycle-list"></div>
+      </section>
+
+      <!-- Customer Activity Timeline -->
+      <div class="timeline-bar" id="timeline-bar">
+        <div class="timeline-bar-left">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          <span class="opp-bar-label">Customer Activity Timeline</span>
+          <div class="micro-fb micro-fb-inline" data-section="Activity Timeline"><button class="micro-btn micro-up" data-val="up" title="Useful">&#128077;</button><button class="micro-btn micro-down" data-val="down" title="Not useful">&#128078;</button></div>
+          <span class="timeline-bar-meta" id="timeline-bar-meta">6 events &middot; last activity 3 days ago</span>
+        </div>
+        <div class="opp-bar-right">
+          <svg class="opp-chevron" id="timeline-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="timeline-expanded" id="timeline-expanded">
+        <div id="timeline-list"></div>
+      </div>
+
+      </div><!-- /#intelligence-sections -->
+
+      <!-- PIPELINE MODE PANEL -->
+      <div id="pipeline-sections" style="display:none;">
+        <section class="panel pipeline-panel" id="pipeline-panel">
+          <div class="panel-header">
+            <span class="panel-title">ACTIVE PIPELINE</span>
+            <span class="pipeline-count" id="pipeline-count"></span>
+            <button class="new-opp-btn-inline" id="new-opp-btn-pipeline">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              New opportunity
             </button>
           </div>
+          <div id="pipeline-opp-list"></div>
+        </section>
 
-          <div class="output-block hidden" id="replyOutput">
-            <div class="output-header">
-              <span class="output-label">Draft Response</span>
-              <div class="output-actions">
-                <button class="copy-btn" data-target="replyOutputText">Copy</button>
-              </div>
+        <div class="pipeline-timeline-bar" id="pipeline-timeline-bar">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          <span class="opp-bar-label">Customer Activity Timeline</span>
+          <span class="timeline-bar-meta" id="pipeline-timeline-meta"></span>
+          <svg class="opp-chevron" id="pipeline-timeline-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="timeline-expanded" id="pipeline-timeline-expanded">
+          <div id="pipeline-timeline-list"></div>
+        </div>
+      </div>
+
+      <!-- Review Workflow Panel -->
+      <section class="panel workflow-panel" id="workflow-panel">
+        <div class="wf-panel-header">
+          <div class="wf-panel-left">
+            <span class="panel-title">PREPARE FOR REVIEW</span>
+            <div class="wf-context-chips">
+              <span class="wf-priority-chip" id="wf-priority-chip">&#9733; Priority 96</span>
+              <span class="wf-customer-chip" id="wf-customer-chip">ABC Manufacturing</span>
+              <span class="wf-contact-chip" id="wf-contact-chip">Tom Mitchell</span>
             </div>
-            <div class="output-text" id="replyOutputText"></div>
-            <div class="doc-gap-block hidden" id="replyDocGap">
-              <div class="doc-gap-header">
-                <span>Documentation Gap Detected</span>
-                <button class="copy-btn copy-btn-gap" data-target="replyDocGapText">Copy</button>
-              </div>
-              <div class="doc-gap-text" id="replyDocGapText"></div>
-            </div>
+          </div>
+          <div class="wf-panel-right">
+            <div class="wf-progress-dots" id="wf-progress-dots"></div>
+            <span class="wf-progress-label" id="wf-progress-label">Step 1 of 5</span>
+            <div class="micro-fb" data-section="Suggested Next Conversation"><button class="micro-btn micro-up" data-val="up" title="Useful">&#128077;</button><button class="micro-btn micro-down" data-val="down" title="Not useful">&#128078;</button></div>
+          </div>
+        </div>
+        <div class="wf-tabs" id="wf-tabs" style="display:none;"></div>
+        <div class="wf-steps-list" id="wf-steps-list"></div>
+        <div class="wf-panel-footer">
+          <div class="wf-note-link" id="wf-note-link">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Add a note about this review
+          </div>
+          <div class="wf-add-step-link" id="wf-add-step-link">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add step
           </div>
         </div>
       </section>
 
-      <!-- TICKET TAB -->
-      <section class="tab-panel" id="tab-ticket">
-        <div class="panel-header">
-          <div class="panel-header-row">
-            <div>
-              <h1 class="panel-title">Draft Ticket</h1>
-              <p class="panel-subtitle">Create a Jira-ready bug or feature request ticket.</p>
-            </div>
-            <button class="btn-clear" id="ticketClearBtn">Clear</button>
-          </div>
-        </div>
+      <!-- Hidden IDs kept for JS compatibility -->
+      <span id="suggest-title" style="display:none;"></span>
+      <span id="suggest-desc" style="display:none;"></span>
+      <span id="conf-label" style="display:none;"></span>
+      <div id="conf-bar" style="display:none;"></div>
+      <div id="priority-score" style="display:none;"></div>
+      <div id="priority-reasons" style="display:none;"></div>
+      <div id="priority-action" style="display:none;"></div>
 
-        <div class="panel-body">
-          <div class="input-row flush">
-            <label class="field-label">Type</label>
-            <div class="toggle-group">
-              <button class="toggle-btn active" data-type="bug">Bug</button>
-              <button class="toggle-btn" data-type="feature">Feature Request</button>
-            </div>
-          </div>
-          <input type="hidden" id="ticketType" value="bug" />
-
-          <div class="input-group">
-            <label class="field-label">Area</label>
-            <select class="field-select" id="ticketArea">
-              <option value="">Select area...</option>
-              <option>Opportunities</option>
-              <option>Quotes</option>
-              <option>Products</option>
-              <option>Storefront</option>
-              <option>Whitespace</option>
-              <option>Post-Sale</option>
-              <option>Companies</option>
-              <option>Contacts</option>
-              <option>Distributors</option>
-              <option>Integrations</option>
-              <option>Admin</option>
-              <option>Dashboard</option>
-            </select>
-          </div>
-
-          <div class="input-group">
-            <label class="field-label">Short description</label>
-            <input class="field-input" id="ticketShortDesc" type="text" placeholder="e.g. UDF value not persisted on opportunity creation" />
-          </div>
-
-          <div class="input-group">
-            <label class="field-label">Details / conversation</label>
-            <textarea class="field-textarea tall" id="ticketDetails" placeholder="Paste the conversation or describe the issue in detail..."></textarea>
-          </div>
-
-          <div class="input-row">
-            <label class="checkbox-label">
-              <input type="checkbox" id="ticketAlsoReply" />
-              <span>Also draft a customer reply</span>
-            </label>
-            <button class="btn-primary" id="ticketBtn">
-              <span class="btn-text">Generate Ticket</span>
-              <span class="btn-loader hidden">...</span>
-            </button>
-          </div>
-
-          <div class="output-block hidden" id="ticketKbBlock">
-            <div class="output-header">
-              <span class="output-label">KB Article Found — Review Before Raising</span>
-              <div class="output-actions">
-                <button class="copy-btn" data-target="ticketKbText">Copy</button>
-              </div>
-            </div>
-            <div class="output-text kb-found-text" id="ticketKbText"></div>
-          </div>
-
-          <div class="output-block hidden" id="ticketOutput">
-            <div class="output-header">
-              <span class="output-label">Ticket Draft</span>
-              <div class="output-actions">
-                <button class="copy-btn" data-target="ticketOutputText">Copy</button>
-              </div>
-            </div>
-            <div class="output-text" id="ticketOutputText"></div>
-          </div>
-
-          <div class="output-block hidden" id="ticketReplyOutput">
-            <div class="output-header">
-              <span class="output-label">Customer Reply</span>
-              <div class="output-actions">
-                <button class="copy-btn" data-target="ticketReplyOutputText">Copy</button>
-              </div>
-            </div>
-            <div class="output-text" id="ticketReplyOutputText"></div>
-          </div>
-        </div>
+      <section class="panel ai-panel" id="ai-output" style="display:none;">
+        <div class="panel-header"><span class="panel-title">AI CONVERSATION BRIEF</span><button class="close-btn" id="close-ai">&times;</button></div>
+        <div id="ai-text" class="ai-text"></div>
+      </section>
+      <section class="panel ai-panel" id="exec-output" style="display:none;">
+        <div class="panel-header"><span class="panel-title">EXECUTIVE SUMMARY</span><button class="close-btn" id="close-exec">&times;</button></div>
+        <div id="exec-text" class="ai-text"></div>
       </section>
 
-      <!-- DOCS TAB -->
-      <section class="tab-panel" id="tab-docs">
-        <div class="panel-header">
-          <div class="panel-header-row">
-            <div>
-              <h1 class="panel-title">Docs</h1>
-              <p class="panel-subtitle">Check if documentation exists, identify gaps, and draft new articles.</p>
-            </div>
-            <button class="btn-clear" id="docsClearBtn">Clear</button>
+      <!-- Notes -->
+      <div class="panel" id="notes-panel" style="margin-bottom:12px;"></div>
+
+    </main>
+
+      <!-- Documents tab trigger -->
+      <button class="doc-tab-trigger" id="doc-tab-trigger" aria-label="Open report generator">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Generate<br/>Report
+      </button>
+
+      <!-- Document generator slide-out panel -->
+      <div class="doc-panel" id="doc-panel" aria-hidden="true">
+        <div class="doc-panel-header">
+          <div>
+            <div class="doc-panel-title">GENERATE DOCUMENT</div>
+            <div class="doc-panel-cust" id="doc-panel-cust">ABC Manufacturing</div>
           </div>
+          <button class="doc-panel-close" id="doc-panel-close" aria-label="Close">&times;</button>
         </div>
 
-        <div class="panel-body">
+        <div class="doc-types-list">
 
-          <!-- Step 1: Search -->
-          <div class="docs-section-label">Step 1 — Search Documentation</div>
-          <div class="input-group">
-            <label class="field-label">Topic or question</label>
-            <input class="field-input" id="docsSearchQuery" type="text" placeholder="e.g. 'change font size in a widget', 'user and device settings'..." />
-          </div>
-          <div class="input-row">
-            <div></div>
-            <button class="btn-primary" id="docsSearchBtn">
-              <span class="btn-text">Search Docs</span>
-              <span class="btn-loader hidden">Searching KB...</span>
+          <div class="doc-type-card doc-type-featured" data-doctype="health">
+            <div class="doc-type-top">
+              <div class="doc-type-icon doc-icon-health">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
+              <div class="doc-type-body">
+                <div class="doc-type-name">Health Report</div>
+                <div class="doc-type-desc">One-page snapshot — health score, top signals, alignment summary, next steps</div>
+                <div class="doc-type-tags">
+                  <span class="doc-tag">1 page</span>
+                  <span class="doc-tag">C-Suite ready</span>
+                  <span class="doc-tag">~10 sec</span>
+                </div>
+              </div>
+            </div>
+            <button class="doc-gen-btn doc-gen-primary" data-doctype="health">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              Generate Health Report
             </button>
           </div>
 
-          <!-- Search result -->
-          <div class="output-block hidden" id="docsSearchOutput">
-            <div class="output-header">
-              <span class="output-label">Search Results</span>
-              <div class="output-actions">
-                <button class="copy-btn" data-target="docsSearchOutputText">Copy</button>
+          <div class="doc-type-card" data-doctype="qbr">
+            <div class="doc-type-top">
+              <div class="doc-type-icon doc-icon-qbr">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="9" x2="9" y2="21"/></svg>
+              </div>
+              <div class="doc-type-body">
+                <div class="doc-type-name">QBR Document</div>
+                <div class="doc-type-desc">Two pages — achievements, current state, open items, risk summary, roadmap preview</div>
+                <div class="doc-type-tags">
+                  <span class="doc-tag">2 pages</span>
+                  <span class="doc-tag">Quarterly</span>
+                  <span class="doc-tag">~20 sec</span>
+                </div>
               </div>
             </div>
-            <div class="output-text" id="docsSearchOutputText"></div>
-            <!-- Gap callout -->
-            <div class="doc-gap-block hidden" id="docsSearchGap">
-              <div class="doc-gap-header">
-                <span>The Gap — copy this to share with devs</span>
-                <button class="copy-btn copy-btn-gap" data-target="docsSearchGapText">Copy gap</button>
-              </div>
-              <div class="doc-gap-text" id="docsSearchGapText"></div>
-            </div>
+            <button class="doc-gen-btn" data-doctype="qbr">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              Generate QBR
+            </button>
           </div>
 
-          <!-- Step 2: Write article (always shown) -->
-          <div class="output-block" id="writeArticlePanel">
-            <div class="output-header">
-              <span class="output-label">Step 2 — Draft Article from Your Notes</span>
-            </div>
-            <div class="write-article-body">
-              <p class="write-article-hint">You know the product — jot down the rough details and Claude will turn them into a polished help article. Don't worry about structure or wording, just capture what you know.</p>
-              <textarea class="field-textarea tall" id="writeArticleContext" placeholder="e.g. 'This feature is found under Settings > X. It does Y and Z. Users need to do A before B. The main gotcha is...' — rough notes are fine, don't worry about structure.'"></textarea>
-              <div class="input-row" style="margin-top:12px;">
-                <div></div>
-                <button class="btn-primary" id="writeArticleBtn">
-                  <span class="btn-text">Draft Article</span>
-                  <span class="btn-loader hidden">...</span>
-                </button>
+          <div class="doc-type-card" data-doctype="roadmap">
+            <div class="doc-type-top">
+              <div class="doc-type-icon doc-icon-roadmap">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              </div>
+              <div class="doc-type-body">
+                <div class="doc-type-name">Technology Roadmap</div>
+                <div class="doc-type-desc">12-month forward view — renewals, EOL dates, planned projects, investment overview</div>
+                <div class="doc-type-tags">
+                  <span class="doc-tag">1–2 pages</span>
+                  <span class="doc-tag">Annual</span>
+                  <span class="doc-tag">~20 sec</span>
+                </div>
               </div>
             </div>
-          </div>
-
-          <!-- Article output — rich text rendered -->
-          <div class="output-block hidden" id="articleOutput">
-            <div class="output-header">
-              <span class="output-label">Draft KB Article</span>
-              <div class="output-actions">
-                <button class="btn-copy-article" id="articleCopyBtn">Copy article</button>
-              </div>
-            </div>
-            <div class="article-rendered" id="articleRendered"></div>
+            <button class="doc-gen-btn" data-doctype="roadmap">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              Generate Roadmap
+            </button>
           </div>
 
         </div>
+
+        <div class="doc-history" id="doc-history">
+          <div class="doc-history-label">Previously generated</div>
+          <div id="doc-history-list"></div>
+        </div>
+
+        <div class="doc-autolog">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Generated documents are auto-logged to strategic memory
+        </div>
+      </div>
+
+
+    <!-- ══════════════════════════════════
+         PORTFOLIO VIEW
+    ══════════════════════════════════ -->
+    <main class="app-main" id="view-portfolio">
+
+      <!-- Welcome banner -->
+      <div class="welcome-banner" id="welcome-banner">
+        <div class="welcome-text">
+          <strong>Welcome to the Customer Growth Operating System.</strong>
+          This is a working prototype using seeded data. Every signal, score, and recommendation is clickable — explore freely, then share your thoughts in the feedback panel.
+        </div>
+        <button class="welcome-close" id="welcome-close" aria-label="Dismiss">&times;</button>
+      </div>
+
+      <!-- Portfolio intelligence summary -->
+      <div class="port-intel-grid" id="port-intel-grid">
+        <div class="port-intel-card port-intel-stat port-intel-stat-combined">
+          <div class="pic-stat-row">
+            <div>
+              <div class="pic-val" id="pi-attention">2</div>
+              <div class="pic-label">Needing attention</div>
+              <div class="pic-sub" id="pi-attention-sub">1 urgent &middot; 1 review soon</div>
+            </div>
+            <div class="pic-stat-divider"></div>
+            <div>
+              <div class="pic-val" id="pi-pipeline">$43,450</div>
+              <div class="pic-label">Total pipeline</div>
+              <div class="pic-sub">Across all accounts</div>
+            </div>
+          </div>
+        </div>
+        <div class="port-intel-card port-intel-signal" data-filter-signal="win10" id="pi-win10">
+          <div class="pic-signal-val">14</div>
+          <div class="pic-signal-label">Windows 10 devices</div>
+          <div class="pic-signal-sub">1 customer affected &middot; click to filter</div>
+        </div>
+        <div class="port-intel-card port-intel-signal" data-filter-signal="security" id="pi-security">
+          <div class="pic-signal-val">2</div>
+          <div class="pic-signal-label">Security review overdue</div>
+          <div class="pic-signal-sub">2 customers &middot; click to filter</div>
+        </div>
+        <div class="port-intel-card port-intel-signal" data-filter-signal="license" id="pi-license">
+          <div class="pic-signal-val">2</div>
+          <div class="pic-signal-label">License misalignment</div>
+          <div class="pic-signal-sub">2 customers &middot; click to filter</div>
+        </div>
+        <div class="port-intel-card port-intel-signal" data-filter-signal="price" id="pi-price">
+          <div class="pic-signal-val">2</div>
+          <div class="pic-signal-label">Price increase opportunity</div>
+          <div class="pic-signal-sub">2 customers &middot; click to filter</div>
+        </div>
+      </div>
+
+      <!-- My Work Today + Portfolio two-col -->
+      <div class="work-portfolio-grid">
+
+        <!-- My Work Today -->
+        <div class="panel work-today-container" id="work-today-panel"></div>
+
+        <!-- Portfolio right side -->
+        <div class="port-right-col">
+
+      <div class="portfolio-header">
+        <div>
+          <div class="portfolio-title">Customer portfolio</div>
+          <div class="portfolio-sub" id="port-sub">3 accounts &middot; 1 needs attention this week</div>
+        </div>
+        <div class="micro-fb" data-section="Portfolio View"><button class="micro-btn micro-up" data-val="up" title="Useful">&#128077;</button><button class="micro-btn micro-down" data-val="down" title="Not useful">&#128078;</button></div>
+        <div class="port-filters">
+          <button class="pill active" data-filter="all">All</button>
+          <button class="pill" data-filter="urgent">Urgent only</button>
+          <button class="pill" data-filter="overdue">No review 90d+</button>
+        </div>
+      </div>
+
+      <section class="panel" id="portfolio-panel">
+        <div class="port-table-hdr port-row-action">
+          <span>Customer</span>
+          <span>Why it matters</span>
+          <span>Recommended action</span>
+          <span>Owner</span>
+          <span>Business impact</span>
+          <span></span>
+        </div>
+        <div id="portfolio-list"></div>
+      </section>
+
+      <div class="panel portfolio-ai-bar">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <div class="port-ai-text">
+          <div class="port-ai-title">Portfolio AI brief</div>
+          <div class="port-ai-sub">Generate a prioritised weekly call plan across all accounts</div>
+        </div>
+        <button class="action-btn primary" id="port-ai-btn">Generate &rarr;</button>
+      </div>
+      <section class="panel ai-panel" id="port-ai-output" style="display:none;">
+        <div class="panel-header"><span class="panel-title">PORTFOLIO BRIEF</span><button class="close-btn" id="close-port-ai">&times;</button></div>
+        <div id="port-ai-text" class="ai-text"></div>
+      </section>
+
+        </div><!-- /.port-right-col -->
+      </div><!-- /.work-portfolio-grid -->
+
+    </main>
+
+    <!-- ══════════════════════════════════
+         TEAM PERFORMANCE VIEW
+    ══════════════════════════════════ -->
+    <main class="app-main" id="view-team" style="display:none;">
+
+      <!-- Team summary bar -->
+      <div class="team-summary-grid">
+        <div class="ts-card">
+          <div class="ts-val">$43,450</div>
+          <div class="ts-label">Total pipeline</div>
+          <div class="ts-sub">Across 3 accounts</div>
+        </div>
+        <div class="ts-card">
+          <div class="ts-val">10</div>
+          <div class="ts-label">Open opportunities</div>
+          <div class="ts-sub">Across all AMs</div>
+        </div>
+        <div class="ts-card">
+          <div class="ts-val">81</div>
+          <div class="ts-label">Avg portfolio health</div>
+          <div class="ts-sub">Good — above 75 target</div>
+        </div>
+        <div class="ts-card ts-card-warn">
+          <div class="ts-val">2</div>
+          <div class="ts-label">Overdue reviews</div>
+          <div class="ts-sub">ABC Mfg &middot; River Tech</div>
+        </div>
+      </div>
+
+      <!-- Team performance table -->
+      <section class="panel" id="team-panel" style="margin-bottom:12px;">
+        <div class="panel-header">
+          <span class="panel-title">ACCOUNT MANAGER PERFORMANCE</span>
+          <div class="micro-fb" data-section="Team Performance"><button class="micro-btn micro-up" data-val="up" title="Useful">&#128077;</button><button class="micro-btn micro-down" data-val="down" title="Not useful">&#128078;</button></div>
+          <span style="font-size:10px;color:var(--text-3);font-family:'Courier New',monospace;">Demo data — 3 AMs</span>
+        </div>
+        <div class="team-table-hdr team-row">
+          <span>Account manager</span>
+          <span>Accounts</span>
+          <span>Pipeline</span>
+          <span>Avg health</span>
+          <span>Open opps</span>
+          <span>Last review</span>
+          <span>Status</span>
+        </div>
+        <div id="team-list"></div>
+      </section>
+
+      <!-- Accounts needing attention -->
+      <section class="panel" style="margin-bottom:12px;">
+        <div class="panel-header">
+          <span class="panel-title">ACCOUNTS NEEDING ATTENTION</span>
+          <span style="font-size:10px;color:var(--text-3);font-family:'Courier New',monospace;">Sorted by AI priority score</span>
+        </div>
+        <div id="attention-list"></div>
+      </section>
+
+      <!-- Team AI brief -->
+      <div class="panel portfolio-ai-bar">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <div class="port-ai-text">
+          <div class="port-ai-title">Team AI brief</div>
+          <div class="port-ai-sub">Generate a manager summary — where to focus, who needs coaching, what's at risk</div>
+        </div>
+        <button class="action-btn primary" id="team-ai-btn">Generate &rarr;</button>
+      </div>
+      <section class="panel ai-panel" id="team-ai-output" style="display:none;">
+        <div class="panel-header"><span class="panel-title">TEAM BRIEF</span><button class="close-btn" id="close-team-ai">&times;</button></div>
+        <div id="team-ai-text" class="ai-text"></div>
       </section>
 
     </main>
 
-    <!-- KB Panel (persistent right sidebar) -->
-    <aside class="kb-panel">
-      <div class="kb-panel-header">
-        <div>
-          <h2 class="kb-panel-title">Ask the KB</h2>
-          <p class="kb-panel-subtitle">Get answers grounded in your knowledge base, with article links to share.</p>
-        </div>
-        <span class="kb-panel-brand">Salesbuildr KB</span>
+    <!-- ══════════════════════════════════
+         FEEDBACK PANEL
+    ══════════════════════════════════ -->
+    <aside class="feedback-panel" id="feedback-panel" aria-hidden="true">
+
+      <div class="fb-header">
+        <span class="fb-title">BETA FEEDBACK</span>
+        <button class="fb-close" id="fb-close" aria-label="Close feedback panel">&times;</button>
       </div>
 
-      <div class="kb-panel-body">
-        <textarea class="kb-ask-input" id="kbAskInput" placeholder="e.g. How does the customer set up their email integration?"></textarea>
-        <button class="kb-ask-btn" id="kbAskBtn">
-          <span class="kb-ask-btn-text">Ask</span>
-          <span class="kb-ask-btn-loader hidden">...</span>
-        </button>
+      <p class="fb-intro">Almost every feature in this build came from MSP feedback. Tell us what you think — it directly shapes what gets built next.</p>
 
-        <div class="kb-answer-block hidden" id="kbAnswerBlock">
-          <div class="kb-answer-text" id="kbAnswerText"></div>
-        </div>
+      <!-- Section 1: Identity -->
+      <div class="fb-section">
+        <div class="fb-section-label">YOUR DETAILS <span class="fb-optional">(optional — helps us follow up)</span></div>
+        <input type="text" class="fb-input" id="fb-name" placeholder="Name">
+        <input type="text" class="fb-input" id="fb-company" placeholder="Company / MSP name">
+      </div>
 
-        <div class="kb-articles-block hidden" id="kbArticlesBlock">
-          <div class="kb-articles-label">Related Articles</div>
-          <div class="kb-articles-list" id="kbArticlesList"></div>
+      <!-- Section 2: Most useful section -->
+      <div class="fb-section">
+        <div class="fb-section-label">WHICH SECTION WAS MOST USEFUL TO YOU?</div>
+        <div class="fb-checks" id="fb-sections">
+          <label class="fb-check"><input type="checkbox" value="Portfolio View"> Portfolio View</label>
+          <label class="fb-check"><input type="checkbox" value="Customer Briefing"> Customer Briefing</label>
+          <label class="fb-check"><input type="checkbox" value="Change Signals"> Change Signals</label>
+          <label class="fb-check"><input type="checkbox" value="Agreement Alignment"> Agreement Alignment</label>
+          <label class="fb-check"><input type="checkbox" value="Lifecycle &amp; Renewals"> Lifecycle &amp; Renewals</label>
+          <label class="fb-check"><input type="checkbox" value="Strategic Memory"> Strategic Memory</label>
+          <label class="fb-check"><input type="checkbox" value="AI Conversation Brief"> AI Conversation Brief</label>
+          <label class="fb-check"><input type="checkbox" value="Opportunity Workspace"> Opportunity Workspace</label>
+          <label class="fb-check"><input type="checkbox" value="Team Performance"> Team Performance</label>
         </div>
       </div>
+
+      <!-- Section 3: Missing action -->
+      <div class="fb-section">
+        <div class="fb-section-label">WHAT ACTION IS CURRENTLY MISSING FROM YOUR QBR OR ACCOUNT REVIEW PROCESS?</div>
+        <textarea class="fb-textarea" id="fb-missing-action" placeholder="e.g. scheduling follow-ups, creating proposals directly, notifying the customer..."></textarea>
+      </div>
+
+      <!-- Section 4: Data sources -->
+      <div class="fb-section">
+        <div class="fb-section-label">WHAT DATA SOURCES MATTER MOST TO YOU?</div>
+        <div class="fb-checks" id="fb-sources">
+          <label class="fb-check"><input type="checkbox" value="NinjaRMM"> NinjaRMM</label>
+          <label class="fb-check"><input type="checkbox" value="ConnectWise Automate"> ConnectWise Automate</label>
+          <label class="fb-check"><input type="checkbox" value="Datto RMM"> Datto RMM</label>
+          <label class="fb-check"><input type="checkbox" value="ConnectWise PSA"> ConnectWise PSA</label>
+          <label class="fb-check"><input type="checkbox" value="Autotask PSA"> Autotask PSA</label>
+          <label class="fb-check"><input type="checkbox" value="HaloPSA"> HaloPSA</label>
+          <label class="fb-check"><input type="checkbox" value="Microsoft 365 / Entra ID"> Microsoft 365 / Entra ID</label>
+          <label class="fb-check"><input type="checkbox" value="CRM (HubSpot, Salesforce, etc.)"> CRM (HubSpot, Salesforce, etc.)</label>
+          <label class="fb-check"><input type="checkbox" value="Security platform (Huntress, SentinelOne, etc.)"> Security platform (Huntress, SentinelOne, etc.)</label>
+          <label class="fb-check"><input type="checkbox" value="Distributor / vendor pricing"> Distributor / vendor pricing</label>
+        </div>
+      </div>
+
+      <!-- Section 5: Priority rank -->
+      <div class="fb-section">
+        <div class="fb-section-label">RANK THESE BY VALUE TO YOUR BUSINESS <span class="fb-optional">(drag to reorder)</span></div>
+        <div class="fb-rank-list" id="fb-rank-list">
+          <div class="fb-rank-item" draggable="true" data-val="Agreement Alignment">
+            <span class="fb-rank-handle">&#9776;</span>
+            <span class="fb-rank-num">1</span>
+            Agreement Alignment
+          </div>
+          <div class="fb-rank-item" draggable="true" data-val="Lifecycle &amp; Renewals">
+            <span class="fb-rank-handle">&#9776;</span>
+            <span class="fb-rank-num">2</span>
+            Lifecycle &amp; Renewals
+          </div>
+          <div class="fb-rank-item" draggable="true" data-val="AI Conversation Brief">
+            <span class="fb-rank-handle">&#9776;</span>
+            <span class="fb-rank-num">3</span>
+            AI Conversation Brief
+          </div>
+          <div class="fb-rank-item" draggable="true" data-val="Portfolio Intelligence">
+            <span class="fb-rank-handle">&#9776;</span>
+            <span class="fb-rank-num">4</span>
+            Portfolio Intelligence
+          </div>
+          <div class="fb-rank-item" draggable="true" data-val="Team Performance">
+            <span class="fb-rank-handle">&#9776;</span>
+            <span class="fb-rank-num">5</span>
+            Team Performance
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 6: Timecost -->
+      <div class="fb-section">
+        <div class="fb-section-label">MOST TIME-CONSUMING PART OF PREPARING FOR CUSTOMER REVIEWS TODAY?</div>
+        <textarea class="fb-textarea" id="fb-timecost" placeholder="e.g. gathering data from multiple systems, remembering what was discussed last time..."></textarea>
+      </div>
+
+      <!-- Section 7: One thing -->
+      <div class="fb-section">
+        <div class="fb-section-label">WHAT'S THE ONE THING YOU WISH YOU KNEW ABOUT EVERY CUSTOMER?</div>
+        <textarea class="fb-textarea" id="fb-onething" placeholder="The single insight that would change how you approach every conversation..."></textarea>
+      </div>
+
+      <!-- Section 8: Feature suggestions -->
+      <div class="fb-section">
+        <div class="fb-section-label">WHAT WOULD YOU ADD OR CHANGE?</div>
+        <textarea class="fb-textarea" id="fb-suggestions" placeholder="Feature ideas, workflow gaps, anything missing..."></textarea>
+      </div>
+
+      <button class="fb-submit" id="fb-submit">Send Feedback</button>
+      <div class="fb-status" id="fb-status"></div>
+
     </aside>
 
+  </div><!-- /.page-layout -->
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modal-overlay" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <div class="modal-title" id="modal-title">Signal detail</div>
+        <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-tabs" id="modal-tabs" style="display:none;">
+        <button class="modal-tab active" data-tab="0">Tab 1</button>
+        <button class="modal-tab" data-tab="1">Tab 2</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer" id="modal-footer"></div>
+    </div>
   </div>
 
-  <!-- History drawer -->
-  <div class="drawer-overlay hidden" id="historyOverlay"></div>
-  <aside class="drawer hidden" id="historyDrawer">
-    <div class="drawer-header">
-      <h2 class="drawer-title">History</h2>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button class="btn-secondary" id="historyClearAll">Clear all</button>
-        <button class="drawer-close" id="historyClose">✕</button>
-      </div>
-    </div>
-    <p class="drawer-hint">Last 10 outputs across all tabs. Click any entry to view in full.</p>
-    <div class="history-list" id="historyList"></div>
-  </aside>
-
-  <!-- History detail drawer -->
-  <div class="drawer-overlay hidden" id="historyDetailOverlay"></div>
-  <aside class="drawer hidden" id="historyDetailDrawer">
-    <div class="drawer-header">
-      <h2 class="drawer-title" id="historyDetailTitle">Entry</h2>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button class="copy-btn" id="historyDetailCopy">Copy</button>
-        <button class="drawer-close" id="historyDetailClose">✕</button>
-      </div>
-    </div>
-    <div class="history-detail-text" id="historyDetailText"></div>
-  </aside>
-
-  <!-- Instructions drawer -->
-  <div class="drawer-overlay hidden" id="drawerOverlay"></div>
-  <aside class="drawer hidden" id="instructionsDrawer">
-    <div class="drawer-header">
-      <h2 class="drawer-title">Instructions</h2>
-      <button class="drawer-close" id="drawerClose">✕</button>
-    </div>
-    <p class="drawer-hint">This context is sent with every request. Update it as your product knowledge grows.</p>
-    <textarea class="drawer-textarea" id="instructionsText"></textarea>
-    <div class="drawer-footer">
-      <button class="btn-secondary" id="instructionsReset">Reset to default</button>
-      <button class="btn-primary" id="instructionsSave">Save</button>
-    </div>
-  </aside>
-
-  <script src="chat.js"></script>
+  <script src="cgos.js"></script>
 </body>
 </html>
