@@ -1412,31 +1412,37 @@ body {
 
 /* Strategic Memory */
 .memory-bar.open {
-  background: var(--accent-bg);
-  border-color: var(--accent-border);
+  background: var(--accent-2) !important;
+  border-color: var(--accent-2) !important;
 }
-.memory-bar.open .memory-label { color: var(--accent-2); font-weight: 600; }
-.memory-bar.open .memory-chevron { color: var(--accent-2); }
-.memory-bar.open svg { stroke: var(--accent-2); }
+.memory-bar.open .memory-label { color: #fff !important; font-weight: 700; }
+.memory-bar.open .memory-meta  { color: rgba(255,255,255,0.7) !important; }
+.memory-bar.open .memory-chevron { color: #fff !important; }
+.memory-bar.open svg { stroke: #fff !important; }
+.memory-bar.open .micro-btn { filter: brightness(10); }
 
 /* Opportunities */
 .opp-bar.open {
-  background: var(--accent-bg);
-  border-color: var(--accent-border);
-  border-bottom-color: var(--border);
+  background: var(--accent-2) !important;
+  border-color: var(--accent-2) !important;
 }
-.opp-bar.open .opp-bar-label { color: var(--accent-2); font-weight: 600; }
-.opp-bar.open .opp-chevron { color: var(--accent-2); }
+.opp-bar.open .opp-bar-label { color: #fff !important; font-weight: 700; }
+.opp-bar.open .opp-bar-meta  { color: rgba(255,255,255,0.8) !important; }
+.opp-bar.open .opp-chevron { color: #fff !important; }
+.opp-bar.open .opp-cat-pill { opacity: 0.85; }
+.opp-bar.open .micro-btn { filter: brightness(10); }
 
 /* Customer Activity Timeline */
 .timeline-bar.open {
-  background: var(--accent-bg);
-  border-color: var(--accent-border);
+  background: var(--accent-2) !important;
+  border-color: var(--accent-2) !important;
 }
 .timeline-bar.open .opp-bar-label,
-.timeline-bar.open .memory-label { color: var(--accent-2); font-weight: 600; }
-.timeline-bar.open .opp-chevron { color: var(--accent-2); }
-.timeline-bar.open svg { stroke: var(--accent-2); }
+.timeline-bar.open .memory-label { color: #fff !important; font-weight: 700; }
+.timeline-bar.open .timeline-bar-meta { color: rgba(255,255,255,0.7) !important; }
+.timeline-bar.open .opp-chevron { color: #fff !important; }
+.timeline-bar.open svg { stroke: #fff !important; }
+.timeline-bar.open .micro-btn { filter: brightness(10); }
 
 /* Pipeline timeline bar */
 .pipeline-timeline-bar.open {
@@ -1445,8 +1451,23 @@ body {
 }
 .pipeline-timeline-bar.open .opp-bar-label { color: var(--accent-2); font-weight: 600; }
 
-/* Panel titles inside expanded panels — stronger colour */
-.panel-header .panel-title { color: var(--accent-2); font-weight: 700; letter-spacing: 0.1em; }
+/* Panel header — active section style (medium blue bg, white text) */
+.panel-header {
+  background: var(--accent-2) !important;
+  border-radius: 0;
+  margin: -14px -16px 10px -16px;
+  padding: 10px 16px !important;
+}
+.panel-header .panel-title {
+  color: #fff !important;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+.panel-header .signal-count { color: rgba(255,255,255,0.65) !important; }
+.panel-header .opp-total    { color: rgba(255,255,255,0.85) !important; }
+.panel-header .alignment-overall { color: rgba(255,255,255,0.85) !important; }
+.panel-header .micro-fb .micro-btn { filter: brightness(10); }
+.panel-header svg { stroke: rgba(255,255,255,0.75) !important; }
 
 /* ── Multi-workflow tabs ── */
 .wf-tabs {
