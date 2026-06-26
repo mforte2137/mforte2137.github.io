@@ -1199,3 +1199,36 @@ p, .body-text, .description {
   align-self: flex-start;
 }
 .ai-reset-btn:hover { background: var(--bg-row); }
+
+/* =========================================================
+   Feedback optional contact fields
+   ========================================================= */
+.feedback-optional-label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+.feedback-optional-hint {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--text-3);
+  line-height: 1.4;
+}
+.feedback-input {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-2);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 0;
+  width: 100%;
+}
+.feedback-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+.feedback-input::placeholder { color: var(--text-3); }
