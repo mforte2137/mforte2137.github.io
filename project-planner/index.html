@@ -148,6 +148,30 @@
             <span class="lp-color-dot" id="widgetColorDot"></span>
             <span id="widgetColorHex" style="font-family:var(--mono);font-size:11px;color:var(--text-3);"></span>
           </div>
+          <!-- Column toggles -->
+          <div class="lp-field-label" style="margin-top:2px;">Show in widget</div>
+          <div class="lp-toggles">
+            <div class="lp-toggle-row">
+              <span>Role / SKU</span>
+              <label class="lp-switch"><input type="checkbox" id="showRole" checked><span class="lp-track"></span></label>
+            </div>
+            <div class="lp-toggle-row">
+              <span>Hours per task</span>
+              <label class="lp-switch"><input type="checkbox" id="showHours"><span class="lp-track"></span></label>
+            </div>
+            <div class="lp-toggle-row">
+              <span>Total hours</span>
+              <label class="lp-switch"><input type="checkbox" id="showTotalHours" checked><span class="lp-track"></span></label>
+            </div>
+            <div class="lp-toggle-row">
+              <span>Estimated value</span>
+              <label class="lp-switch"><input type="checkbox" id="showValue" checked><span class="lp-track"></span></label>
+            </div>
+            <div class="lp-toggle-row">
+              <span>Notes</span>
+              <label class="lp-switch"><input type="checkbox" id="showNotes" checked><span class="lp-track"></span></label>
+            </div>
+          </div>
           <button class="lp-btn-good" id="generateBtn"><i class="ti ti-sparkles"></i> Generate &amp; preview</button>
           <button class="lp-btn-secondary" id="copyBtn" disabled><i class="ti ti-copy"></i> Copy HTML</button>
           <div class="lp-divider"></div>
