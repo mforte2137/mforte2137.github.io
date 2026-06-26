@@ -277,30 +277,36 @@ function buildCard(tool) {
   const iconCls  = "icon-" + (tool.gradient || "navy");
   const badgeCls = tool.badge ? "card-badge badge-" + tool.badge : "card-badge badge-empty";
   const badgeTxt = tool.badge || "·";
+  const toolIdx  = TOOLS.indexOf(tool);
 
   return `
-    <a class="tool-card" href="${escapeHtml(tool.url)}" target="_blank" rel="noopener noreferrer"
-       aria-label="Open ${escapeHtml(tool.title)} (opens in a new tab)">
-      <div class="card-body">
-        <div class="card-top">
-          <div class="card-icon ${iconCls}">${iconSvg}</div>
-          <span class="${badgeCls}">${escapeHtml(badgeTxt)}</span>
+    <div class="tool-card-wrap">
+      <a class="tool-card" href="${escapeHtml(tool.url)}" target="_blank" rel="noopener noreferrer"
+         aria-label="Open ${escapeHtml(tool.title)} (opens in a new tab)">
+        <div class="card-body">
+          <div class="card-top">
+            <div class="card-icon ${iconCls}">${iconSvg}</div>
+            <span class="${badgeCls}">${escapeHtml(badgeTxt)}</span>
+          </div>
+          <h3 class="card-title">${escapeHtml(tool.title)}</h3>
+          <p class="card-desc">${escapeHtml(tool.description)}</p>
         </div>
-        <h3 class="card-title">${escapeHtml(tool.title)}</h3>
-        <p class="card-desc">${escapeHtml(tool.description)}</p>
-      </div>
-      <div class="card-foot">
-        <span class="card-tag">${escapeHtml(tool.category)}</span>
-        <span class="open-link">
-          Open
-          <svg class="arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="5" y1="12" x2="19" y2="12"/>
-            <polyline points="13 5 20 12 13 19"/>
-          </svg>
-        </span>
-      </div>
-    </a>
+        <div class="card-foot">
+          <span class="card-tag">${escapeHtml(tool.category)}</span>
+          <span class="open-link">
+            Open
+            <svg class="arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="13 5 20 12 13 19"/>
+            </svg>
+          </span>
+        </div>
+      </a>
+      <button class="card-info-btn" data-tool-index="${toolIdx}" aria-label="What does ${escapeHtml(tool.title)} do?">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8" stroke-width="3"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
+      </button>
+    </div>
   `;
 }
 
@@ -838,8 +844,16 @@ Your data stays with you. Files are read locally in the browser and never transm
     }
   });
 
+  function simpleMd(text) {
+    // Strip markdown formatting for clean display
+    return text
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/^[\-\*]\s+/gm, '')   // remove bullet chars
+      .replace(/`(.+?)`/g, '$1');
+  }
+
   function renderResponse(text) {
-    // Parse the structured plain-text response into tool blocks
     const blocks = [];
     const lines = text.split('\n');
     let current = null;
@@ -848,36 +862,44 @@ Your data stays with you. Files are read locally in the browser and never transm
       const trimmed = line.trim();
       if (!trimmed) continue;
 
-      if (trimmed.startsWith('Open: http')) {
-        if (current) { current.url = trimmed.replace('Open: ', ''); blocks.push(current); current = null; }
-      } else if (trimmed.startsWith('http')) {
+      const urlMatch = trimmed.match(/Open:\s*(https?:\/\/\S+)/);
+      if (urlMatch) {
+        if (current) { current.url = urlMatch[1]; blocks.push(current); current = null; }
+        continue;
+      }
+      if (trimmed.match(/^https?:\/\//)) {
         if (current) { current.url = trimmed; blocks.push(current); current = null; }
-      } else if (!current && !trimmed.startsWith('Why') && trimmed.length < 60 && !trimmed.includes('.')) {
-        // Likely a tool name line
+        continue;
+      }
+      // Tool name: short line, no period, not starting with common prose words
+      const isProse = /^(If|When|There|You|For|Note|No |Consider|Try|I |The |This |Based)/i.test(trimmed);
+      if (!current && !isProse && trimmed.length < 55 && !trimmed.endsWith('.')) {
         current = { name: trimmed, reason: '', url: '' };
-      } else if (current && !current.reason) {
+        continue;
+      }
+      if (current && !current.reason) {
         current.reason = trimmed;
-      } else if (current && !current.url && trimmed.startsWith('http')) {
-        current.url = trimmed;
-        blocks.push(current);
-        current = null;
+        continue;
+      }
+      // Prose after blocks — no match text
+      if (!current && blocks.length === 0) {
+        blocks.push({ name: '', reason: trimmed, url: '' });
       }
     }
     if (current) blocks.push(current);
 
-    if (blocks.length === 0) {
-      // Fallback: show as plain text
-      responseEl.innerHTML = `<p class="ai-no-match">${escapeHtml(text)}</p>`;
+    showResetBtn();
+
+    if (blocks.length === 0 || (blocks.length === 1 && !blocks[0].name)) {
+      responseEl.innerHTML = `<div class="ai-no-match">${simpleMd(escapeHtml(text))}</div>`;
     } else {
-      responseEl.innerHTML = blocks.map(b => `
+      responseEl.innerHTML = blocks.map(b => b.name ? `
         <div class="ai-tool-result">
           <div class="ai-tool-name">${escapeHtml(b.name)}</div>
-          <div class="ai-tool-reason">${escapeHtml(b.reason)}</div>
-          ${b.url ? `<a class="ai-tool-link" href="${escapeHtml(b.url)}" target="_blank" rel="noopener noreferrer">
-            Open tool →
-          </a>` : ''}
+          <div class="ai-tool-reason">${simpleMd(escapeHtml(b.reason))}</div>
+          ${b.url ? `<a class="ai-tool-link" href="${escapeHtml(b.url)}" target="_blank" rel="noopener noreferrer">Open tool →</a>` : ''}
         </div>
-      `).join('');
+      ` : `<div class="ai-no-match">${simpleMd(escapeHtml(b.reason))}</div>`).join('');
     }
 
     responseEl.hidden = false;
@@ -885,6 +907,229 @@ Your data stays with you. Files are read locally in the browser and never transm
 
   function renderError(msg) {
     responseEl.innerHTML = `<p class="ai-no-match">${escapeHtml(msg)}</p>`;
+    showResetBtn();
     responseEl.hidden = false;
   }
+
+  function showResetBtn() {
+    if (!document.getElementById('ai-reset-btn')) {
+      const btn = document.createElement('button');
+      btn.id = 'ai-reset-btn';
+      btn.className = 'ai-reset-btn';
+      btn.textContent = 'Ask another question';
+      btn.addEventListener('click', () => {
+        responseEl.hidden = true;
+        responseEl.innerHTML = '';
+        questionEl.value = '';
+        btn.remove();
+        questionEl.focus();
+      });
+      responseEl.parentNode.insertBefore(btn, responseEl);
+    }
+  }
+})();
+
+/* =========================================================
+   Tool detail modal
+   ========================================================= */
+(function initToolDetail() {
+  const overlay    = document.getElementById('tool-detail-overlay');
+  const closeBtn   = document.getElementById('tool-detail-close');
+  const iconEl     = document.getElementById('tool-detail-icon');
+  const catEl      = document.getElementById('tool-detail-category');
+  const titleEl    = document.getElementById('tool-detail-title');
+  const descEl     = document.getElementById('tool-detail-desc');
+  const gridEl     = document.getElementById('tool-detail-grid');
+  const openLink   = document.getElementById('tool-detail-open');
+  const fbBtn      = document.getElementById('tool-detail-feedback');
+
+  // KB lookup — maps tool title to structured detail
+  const KB_DETAIL = {
+    "Proposal Evaluator": {
+      who:   "MSP sales reps or owners who have written a proposal and want an objective read before sending it to a prospect.",
+      input: "An existing proposal document — PDF or Word.",
+      out:   "Structured evaluation with scores and specific feedback on each of the five buyer questions.",
+      when:  "You've written a proposal and want a sanity check. A deal is important and you want to stress-test the narrative before the meeting.",
+      not:   "Simple hardware quotes. Building a proposal from scratch."
+    },
+    "Proposal Widget Builder": {
+      who:   "MSP sales reps building quotes in Salesbuildr who want professional, persuasive content without writing it from scratch.",
+      input: "A description of what you're selling and a brief profile of the prospect or their industry.",
+      out:   "Five ready-to-paste Salesbuildr widgets — problem, solution, trust, value, and next steps. Can push directly to your widget library via the Public API.",
+      when:  "Building a new quote and wanting industry-focused content quickly. Wanting consistent, professional widget copy across your team.",
+      not:   "Reformatting existing content — use Document Converter or MSP Document to Widget instead."
+    },
+    "Guided Sales Tool": {
+      who:   "MSP sales reps or owners who want a consultative, problem-first proposal.",
+      input: "Customer situation and challenges, or a spreadsheet, or a plain-language description of what you need.",
+      out:   "A structured, buyer-focused proposal ready to turn into a Salesbuildr quote.",
+      when:  "Starting a proposal from scratch. Moving away from product-first selling. Quickly generating a quote via Discovery, Design Desk, or Quick Quote modes.",
+      not:   "Reviewing an existing draft — use Proposal Evaluator. Populating an existing quote — use Proposal Widget Builder."
+    },
+    "ROI Builder": {
+      who:   "MSP sales reps who need to justify solution costs to a business owner or CFO in financial terms.",
+      input: "A few numbers — current costs, proposed costs, efficiency gains, or risk reduction estimates.",
+      out:   "A calculated ROI summary and an attractive Salesbuildr-ready widget presenting the financial case.",
+      when:  "A prospect is price-sensitive and needs financial justification. You want to make the business case, not just the technical case.",
+      not:   "Building the full proposal narrative — use Guided Sales Tool or Proposal Widget Builder."
+    },
+    "Cover Page Creator": {
+      who:   "MSP sales reps who want a polished, personalised quote cover without an in-house marketing department.",
+      input: "The prospect's website URL (auto mode), or company name, contact name, and brand colours/logo.",
+      out:   "Four branded cover pages as high-resolution PNG files ready to add to your Salesbuildr cover page library.",
+      when:  "Sending a formal quote to a new prospect. Wanting to differentiate from competitors with a more polished presentation.",
+      not:   "Banner images inside widgets — use Widget Banner Tool. If marketing has already created branded cover pages."
+    },
+    "MSP Matrix Widgets": {
+      who:   "MSP sales reps who want to visually compare service tiers, product options, or feature sets inside a Salesbuildr quote.",
+      input: "A template selection, or a description of what to compare — products, services, tiers, or frameworks.",
+      out:   "A clean HTML comparison matrix ready to drop into a Salesbuildr widget. Can push directly to your widget library via Public API.",
+      when:  "Showing a prospect the difference between service tiers or support levels. Comparing your offering against a competitor or current state.",
+      not:   "Full security framework assessment matrices — use MSP Security Assessment Tool."
+    },
+    "Customer Growth Operating System": {
+      who:   "MSP owners, account managers, vCIOs, and sales teams who want a proactive way to manage customer relationships.",
+      input: "Customer information from systems you already use, plus knowledge of the customer's business goals and environment.",
+      out:   "A prioritised view of customer health, opportunities, risks, lifecycle events, and recommended actions.",
+      when:  "Preparing for a QBR, roadmap discussion, or customer review. Identifying opportunities across your customer base.",
+      not:   "Building a proposal for a new prospect — use Guided Sales Tool or Proposal Widget Builder."
+    },
+    "SOW Widget Generator": {
+      who:   "MSP project managers, sales reps, or technical leads who need to produce a clear SOW quickly.",
+      input: "A selection from preset project types, or a plain-language description of scope and deliverables.",
+      out:   "A polished, customer-facing SOW ready to drop directly into a Salesbuildr widget.",
+      when:  "Scoping a new project and needing to present the work clearly to the customer. Professionalising project documentation without writing from scratch.",
+      not:   "Calculating effort hours and costs — use Project Tasks → Calculator. Highly detailed SOWs for legal purposes."
+    },
+    "Project Tasks → Calculator": {
+      who:   "MSP project managers or pre-sales engineers who need to scope project effort and present it clearly in a quote.",
+      input: "Project tasks and estimated hours — use presets or AI generation from a description.",
+      out:   "A formatted, professional, customer-facing effort table with totals, ready for a Salesbuildr Quote Widget.",
+      when:  "Scoping a complex project and needing to itemise and price the work. Wanting a professional labour breakdown in a quote.",
+      not:   "The written scope narrative — use SOW Widget Generator for that. Both tools complement each other well."
+    },
+    "Project Reports": {
+      who:   "MSP project managers or account managers who need to keep clients informed without overwhelming them with technical detail.",
+      input: "Current project status, milestones completed, upcoming work, and any issues or risks.",
+      out:   "A clean, professional PDF status report in plain English suitable for sending to a business owner or stakeholder.",
+      when:  "A project is in flight and you need to update the client on progress. Professionalising client communications.",
+      not:   "Scoping or pricing the project — use SOW Widget Generator or Project Tasks → Calculator."
+    },
+    "MSP Quote Preflight": {
+      who:   "MSP sales reps who want a final check on a quote before sending it out. Requires Salesbuildr Public API.",
+      input: "A draft quote ID from Salesbuildr (requires Public API) or quote details for review.",
+      out:   "A list of flagged issues with specific suggestions, plus an AI evaluation of the proposal.",
+      when:  "About to send an important quote and wanting one last review. A deal has stalled and you want to check if the quote is the problem.",
+      not:   "Broader evaluation of proposal narrative — use Proposal Evaluator."
+    },
+    "MSP Security Assessment Tool": {
+      who:   "MSP security specialists, vCISOs, or account managers presenting security assessments to clients.",
+      input: "The security framework being used and the client's current state information.",
+      out:   "Customer-facing proposal widgets, technician checklists, and current/ideal state matrices for Salesbuildr.",
+      when:  "Presenting a security assessment or gap analysis to a client. Visualising the gap between current and ideal security state.",
+      not:   "General product/service comparison matrices — use MSP Matrix Widgets."
+    },
+    "Widget Banner Tool": {
+      who:   "MSP sales reps or marketers who want polished, on-brand Salesbuildr widgets without needing a designer.",
+      input: "A logo file or text content, plus colour or style preferences.",
+      out:   "A banner image ready to use inside a Salesbuildr widget.",
+      when:  "Adding a professional branded header to a widget. Wanting the visual presentation to match your brand.",
+      not:   "Full quote cover pages — use Cover Page Creator."
+    },
+    "Document Converter": {
+      who:   "MSP sales or admin staff who have existing documents they want to bring into Salesbuildr without manual reformatting.",
+      input: "A PDF, Word (.docx), or Excel (.xlsx) file.",
+      out:   "Clean inline HTML ready to paste into the Salesbuildr widget editor.",
+      when:  "You have an existing document — service description, terms sheet, data table — that you want inside a widget.",
+      not:   "Word-format scopes of work — use MSP Document to Widget for a more tailored conversion."
+    },
+    "MSP Document to Widget": {
+      who:   "MSP project managers or sales reps who have a scope written in Word and want it in Salesbuildr quickly.",
+      input: "A Word document containing your project scope.",
+      out:   "A formatted, customer-facing Salesbuildr widget based on the document content.",
+      when:  "You've written a scope in Word and want to move it into Salesbuildr without rebuilding it.",
+      not:   "General PDFs or Excel files — use Document Converter. No scope yet — use SOW Widget Generator."
+    },
+    "Import Special Pricing": {
+      who:   "MSP purchasing or sales staff who receive deal-reg pricing files from vendors.",
+      input: "A vendor deal-reg file in xlsx, xls, or csv format.",
+      out:   "A formatted file ready to import directly into Salesbuildr.",
+      when:  "You've received a special pricing file from a vendor and want to use it in a quote.",
+      not:   "Cleaning up your existing product catalog — use Product Catalog Guided Cleanup."
+    },
+    "Product Catalog — Guided Cleanup": {
+      who:   "MSP administrators or purchasing managers responsible for keeping the Salesbuildr product catalog accurate.",
+      input: "Your Salesbuildr API credentials — the tool fetches your catalog directly.",
+      out:   "A guided cleanup workflow with grouped issues and bulk actions to unlist or merge products.",
+      when:  "Your product catalog has grown messy with duplicates or outdated products. Doing a catalog audit.",
+      not:   "Importing new special pricing — use Import Special Pricing."
+    },
+    "Widget Library Cleanup": {
+      who:   "MSP administrators or sales ops staff who manage the shared widget library in Salesbuildr.",
+      input: "Your Salesbuildr API credentials — the tool fetches your widget library directly.",
+      out:   "A grouped review of potential duplicates and problem widgets with actions to remove or consolidate them.",
+      when:  "Your widget library has grown large and hard to navigate. Doing a periodic audit.",
+      not:   "Cleaning up your product catalog — use Product Catalog Guided Cleanup."
+    }
+  };
+
+  function openDetail(tool) {
+    const detail = KB_DETAIL[tool.title] || {};
+    const iconCls = "card-icon icon-" + (tool.gradient || "navy");
+    const iconSvg = getIconSvg(tool.icon);
+
+    iconEl.className = iconCls;
+    iconEl.innerHTML = iconSvg;
+    catEl.textContent = tool.category;
+    titleEl.textContent = tool.title;
+    descEl.textContent = tool.description;
+    openLink.href = tool.url;
+
+    const rows = [
+      { label: "Who it's for",       value: detail.who },
+      { label: "What you bring",     value: detail.input },
+      { label: "What you get out",   value: detail.out },
+      { label: "Best used when",     value: detail.when },
+      { label: "Not this tool if…",  value: detail.not }
+    ].filter(r => r.value);
+
+    gridEl.innerHTML = rows.map(r => `
+      <div class="tool-detail-row">
+        <div class="tool-detail-row-label">${escapeHtml(r.label)}</div>
+        <div class="tool-detail-row-value">${escapeHtml(r.value)}</div>
+      </div>
+    `).join('');
+
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDetail() {
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  // Event delegation — info buttons are rendered dynamically
+  document.getElementById('tools-grid').addEventListener('click', e => {
+    const btn = e.target.closest('.card-info-btn');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const idx = parseInt(btn.dataset.toolIndex, 10);
+    if (!isNaN(idx) && TOOLS[idx]) openDetail(TOOLS[idx]);
+  });
+
+  closeBtn.addEventListener('click', closeDetail);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeDetail(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && overlay.classList.contains('open')) closeDetail();
+  });
+
+  // Feedback shortcut from detail modal
+  fbBtn.addEventListener('click', () => {
+    closeDetail();
+    document.getElementById('feedback-trigger').click();
+  });
 })();
