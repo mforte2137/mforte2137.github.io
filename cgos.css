@@ -1492,3 +1492,41 @@ body {
   background: var(--border); color: var(--text-3);
 }
 .wf-tab.active .wf-tab-count { background: var(--accent-bg); color: var(--accent-2); }
+
+/* ══════════════════════════════════
+   BLUE BAND — force all text white
+   ══════════════════════════════════ */
+
+/* Panel headers (signals, alignment, lifecycle, etc.) */
+.panel-header * { color: #fff !important; }
+.panel-header .inline-action { display: none; }
+.panel-header button { color: #fff !important; border-color: rgba(255,255,255,0.3) !important; }
+
+/* Lifecycle & renewals label specifically */
+.lifecycle-total { color: rgba(255,255,255,0.85) !important; }
+
+/* Opp bar open state — all children white */
+.opp-bar.open * { color: #fff !important; }
+.opp-bar.open .opp-cat-pill { color: #fff !important; background: rgba(255,255,255,0.15) !important; }
+
+/* Memory bar open */
+.memory-bar.open * { color: #fff !important; }
+
+/* Timeline bar open */
+.timeline-bar.open * { color: #fff !important; }
+
+/* Workflow panel header — active step blue bg */
+.wf-panel-header {
+  background: var(--accent-2) !important;
+}
+.wf-panel-header * { color: #fff !important; }
+.wf-panel-header .wf-priority-chip { background: rgba(255,255,255,0.2) !important; color: #fff !important; }
+.wf-panel-header .wf-customer-chip,
+.wf-panel-header .wf-contact-chip { border-color: rgba(255,255,255,0.3) !important; color: rgba(255,255,255,0.85) !important; }
+.wf-panel-header .wf-dot { opacity: 0.7; }
+.wf-panel-header .wf-dot.done { background: #fff !important; opacity: 1; }
+.wf-panel-header .wf-dot.active { background: #fff !important; }
+.wf-panel-header .micro-btn { filter: brightness(10); }
+
+/* Workflow tabs */
+.wf-tabs { background: rgba(30,91,184,0.08) !important; border-bottom-color: rgba(30,91,184,0.2) !important; }
