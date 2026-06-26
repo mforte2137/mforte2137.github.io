@@ -588,3 +588,180 @@ render();
     status.hidden = false;
   }
 })();
+
+/* =========================================================
+   Security modal
+   ========================================================= */
+(function initSecurity() {
+  const trigger = document.getElementById('security-trigger');
+  const overlay = document.getElementById('security-overlay');
+  const closeBtn = document.getElementById('security-close');
+
+  function openModal() {
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  trigger.addEventListener('click', openModal);
+  closeBtn.addEventListener('click', closeModal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+})();
+
+/* =========================================================
+   Tool Knowledge Base — used by AI helper
+   ========================================================= */
+const TOOL_KB = `
+TOOL: Proposal Evaluator
+WHAT: Reads an uploaded MSP proposal through the buyer's eyes and scores it against five questions: do you understand my situation, why should I care now, why should I trust you, what exactly am I getting, and is it worth the money?
+WHO: MSP sales reps or owners who have written a proposal and want an objective read before sending it to a prospect.
+INPUT: An existing proposal document — PDF or Word.
+OUTPUT: Structured evaluation with scores and specific feedback on each of the five buyer questions.
+USE WHEN: You've written a proposal and want a sanity check before it goes out. A deal is important and you want to stress-test the narrative. You want to understand why your win rate is low. Best for managed services and large project proposals.
+NOT FOR: Simple hardware quotes. Building a proposal from scratch — use Guided Sales Tool or Proposal Widget Builder first.
+
+TOOL: Proposal Widget Builder
+WHAT: Generates five buyer-journey widgets for a Salesbuildr quote based on what you're selling and who you're selling it to. Widgets can be sent directly to your widget library via the Salesbuildr Public API.
+WHO: MSP sales reps building quotes in Salesbuildr who want professional, persuasive content without writing it from scratch.
+INPUT: A description of what you're selling and a brief profile of the prospect or their industry.
+OUTPUT: Five ready-to-paste Salesbuildr widgets covering the buyer journey — problem, solution, trust, value, and next steps.
+USE WHEN: Building a new quote and wanting industry-focused content quickly. Wanting consistent, professional widget copy across your team. Using a proven MSP sales method.
+NOT FOR: Reformatting existing content — use Document Converter or MSP Document to Widget instead.
+
+TOOL: Guided Sales Tool
+WHAT: Walks you through three structured processes — Discovery (customer describes a problem, tool prepares a quote and tech checklist), Design Desk (upload a parts-list spreadsheet, AI builds the proposal), and Quick Quote (speak or type what you need, AI searches your catalog or the web).
+WHO: MSP sales reps or owners who want to build a consultative, problem-first proposal.
+INPUT: Customer situation and challenges, or a spreadsheet, or a plain-language description of what you need.
+OUTPUT: A structured, buyer-focused proposal narrative ready to turn into a Salesbuildr quote.
+USE WHEN: Starting a proposal from scratch. Moving away from product-first selling. Quickly generating a quote from a parts list or verbal description.
+NOT FOR: Reviewing an existing draft — use Proposal Evaluator. Populating an existing quote — use Proposal Widget Builder.
+
+TOOL: ROI Builder
+WHAT: Takes financial inputs and calculates the return on investment for your proposed solution, then generates a customer-facing widget.
+WHO: MSP sales reps who need to justify solution costs to a business owner or CFO in financial terms.
+INPUT: A few numbers — current costs, proposed costs, efficiency gains, or risk reduction estimates.
+OUTPUT: A calculated ROI summary and an attractive Salesbuildr-ready widget presenting the financial case.
+USE WHEN: A prospect is price-sensitive and needs financial justification. You want to make the business case, not just the technical case.
+NOT FOR: Building the full proposal narrative — use Guided Sales Tool or Proposal Widget Builder.
+
+TOOL: Cover Page Creator
+WHAT: Generates a selection of four branded cover pages for a Salesbuildr quote, personalised with the prospect's details and colours. In auto mode, just provide the website URL.
+WHO: MSP sales reps who want a polished, personalised quote cover without an in-house marketing department.
+INPUT: The prospect's website URL (auto mode), or company name, contact name, and brand colours/logo.
+OUTPUT: Four branded cover pages as high-resolution PNG files ready to add to your Salesbuildr cover page library.
+USE WHEN: Sending a formal quote to a new prospect. Wanting to differentiate from competitors with a polished presentation.
+NOT FOR: Banner images inside widgets — use Widget Banner Tool. If marketing has already created branded cover pages.
+
+TOOL: MSP Matrix Widgets
+WHAT: Creates comparison matrix widgets from pre-built templates or generated by AI. All rows and columns are customisable. Can send directly to Salesbuildr widget library via Public API.
+WHO: MSP sales reps who want to visually compare service tiers, product options, or feature sets inside a Salesbuildr quote.
+INPUT: A template selection, or a description of what to compare — products, services, tiers, or frameworks.
+OUTPUT: A clean HTML comparison matrix ready to drop into a Salesbuildr widget.
+USE WHEN: Showing a prospect the difference between service tiers or support levels. Comparing your offering against a competitor or current state.
+NOT FOR: Full security framework assessment matrices — use MSP Security Assessment Tool.
+
+TOOL: Customer Growth Operating System (CGOS)
+WHAT: A beta tool that helps MSPs identify customer risks, growth opportunities, alignment gaps, and recommended next actions by bringing together data from multiple systems into a single customer intelligence workspace.
+WHO: MSP owners, account managers, vCIOs, and sales teams who want a proactive way to manage customer relationships and identify opportunities.
+INPUT: Customer information from systems you already use, plus knowledge of the customer's business goals and environment.
+OUTPUT: A prioritised view of customer health, opportunities, risks, lifecycle events, and recommended actions.
+USE WHEN: Preparing for a QBR, roadmap discussion, or customer review. Identifying opportunities across your customer base. Reviewing customer alignment, licensing, security, or lifecycle gaps.
+NOT FOR: Building a proposal for a new prospect — use Guided Sales Tool or Proposal Widget Builder.
+
+TOOL: SOW Widget Generator
+WHAT: Generates a clean, professional customer-facing Statement of Work for any project type — from pre-built presets or written from scratch by AI.
+WHO: MSP project managers, sales reps, or technical leads who need to produce a clear SOW quickly.
+INPUT: A selection from preset project types, or a plain-language description of scope and deliverables.
+OUTPUT: A polished, customer-facing SOW ready to drop directly into a Salesbuildr widget.
+USE WHEN: Scoping a new project and needing to present the work clearly to the customer. Professionalising project documentation without writing from scratch.
+NOT FOR: Calculating effort hours and costs — use Project Tasks → Calculator. Highly detailed SOWs for legal purposes.
+
+TOOL: Project Tasks → Calculator
+WHAT: Builds a detailed task list for a complex project and generates a clean effort-hour table ready for a Salesbuildr Quote Widget. Use presets or describe your project to AI. Save projects, create templates, collaborate as a team.
+WHO: MSP project managers or pre-sales engineers who need to scope project effort and present it clearly in a quote.
+INPUT: Project tasks and estimated hours — use presets or AI generation from a description.
+OUTPUT: A formatted, professional, customer-facing effort table with totals, ready to paste into a Salesbuildr Quote Widget.
+USE WHEN: Scoping a complex project and needing to itemise and price the work. Wanting a professional labour breakdown in a quote.
+NOT FOR: The written scope narrative — use SOW Widget Generator for that. (Both tools complement each other well.)
+
+TOOL: Project Reports
+WHAT: Generates executive-style PDF project status reports written in plain, non-technical language — suitable for clients managing complex multi-week projects.
+WHO: MSP project managers or account managers who need to keep clients informed of project progress without overwhelming them with technical detail.
+INPUT: Current project status, milestones completed, upcoming work, and any issues or risks.
+OUTPUT: A clean, professional PDF status report in plain English suitable for sending to a business owner or stakeholder.
+USE WHEN: A project is in flight and you need to update the client on progress. Professionalising client communications without spending time formatting documents.
+NOT FOR: Scoping or pricing the project — use SOW Widget Generator or Project Tasks → Calculator.
+
+TOOL: MSP Quote Preflight
+WHAT: Reviews a quote for common issues — missing information, unclear pricing, weak justification — before the buyer sees it. Requires Salesbuildr Public API connection.
+WHO: MSP sales reps who want a final check on a quote before sending it out.
+INPUT: A draft quote ID from Salesbuildr (requires Public API) or quote details for review.
+OUTPUT: A list of flagged issues with specific suggestions for fixing them, plus an AI evaluation of the proposal itself.
+USE WHEN: About to send an important quote and wanting one last review. A deal has stalled and you want to check if the quote is the problem.
+NOT FOR: Broader evaluation of proposal narrative — use Proposal Evaluator for that.
+
+TOOL: MSP Security Assessment Tool
+WHAT: Generates proposal widgets for major security framework assessments (NIST, CIS, and similar), including technician checklists and current-state vs. ideal-state comparison matrices. Technician site survey (generated by the app) is uploaded to populate the current state of compliance.
+WHO: MSP security specialists, vCISOs, or account managers presenting security assessments to clients.
+INPUT: The security framework being used and the client's current state information.
+OUTPUT: Customer-facing proposal widgets, technician checklists, and current/ideal state matrices — all ready for Salesbuildr.
+USE WHEN: Presenting a security assessment or gap analysis to a client. Visualising the gap between current and ideal security state.
+NOT FOR: General product/service comparison matrices — use MSP Matrix Widgets.
+
+TOOL: Widget Banner Tool
+WHAT: Creates visual banner images for Salesbuildr widgets using logos or custom text overlays — no design skills required.
+WHO: MSP sales reps or marketers who want polished, on-brand Salesbuildr widgets without needing a designer.
+INPUT: A logo file or text content, plus colour or style preferences.
+OUTPUT: A banner image ready to use inside a Salesbuildr widget.
+USE WHEN: Adding a professional branded header to a widget. Wanting the visual presentation to match your brand.
+NOT FOR: Full quote cover pages — use Cover Page Creator.
+
+TOOL: Document Converter
+WHAT: Converts PDF, Word, and Excel documents into TinyMCE-ready inline HTML that can be pasted directly into a Salesbuildr widget.
+WHO: MSP sales or admin staff who have existing documents they want to bring into Salesbuildr without manual reformatting.
+INPUT: A PDF, Word (.docx), or Excel (.xlsx) file.
+OUTPUT: Clean inline HTML ready to paste into the Salesbuildr widget editor.
+USE WHEN: You have an existing document — service description, terms sheet, data table — that you want inside a widget. Reusing existing content without rebuilding from scratch.
+NOT FOR: Word-format scopes of work — use MSP Document to Widget for a more tailored conversion.
+
+TOOL: MSP Document to Widget
+WHAT: Converts an existing Word document scope of work into a clean, customer-facing Salesbuildr widget instantly, with no manual reformatting.
+WHO: MSP project managers or sales reps who have a scope written in Word and want it in Salesbuildr quickly.
+INPUT: A Word document containing your project scope.
+OUTPUT: A formatted, customer-facing Salesbuildr widget based on the document content.
+USE WHEN: You've written a scope in Word and want to move it into Salesbuildr without rebuilding it. Migrating existing content into your Salesbuildr quote workflow.
+NOT FOR: General PDFs or Excel files — use Document Converter. No scope yet — use SOW Widget Generator.
+
+TOOL: Import Special Pricing
+WHAT: Converts vendor deal registration files (xlsx, xls, or csv) into a Salesbuildr import-ready format in seconds.
+WHO: MSP purchasing or sales staff who receive deal-reg pricing files from vendors.
+INPUT: A vendor deal-reg file in xlsx, xls, or csv format.
+OUTPUT: A formatted file ready to import directly into Salesbuildr.
+USE WHEN: You've received a special pricing file from a vendor and want to use it in a quote. Converting deal-reg data without manual data entry.
+NOT FOR: Cleaning up your existing product catalog — use Product Catalog Guided Cleanup.
+
+TOOL: Product Catalog — Guided Cleanup
+WHAT: Connects to your Salesbuildr product catalog and uses AI to identify duplicate MPNs, near-duplicate products, EOL items, and missing products — then guides you through resolving them in bulk.
+WHO: MSP administrators or purchasing managers responsible for keeping the Salesbuildr product catalog accurate.
+INPUT: Your Salesbuildr API credentials — the tool fetches your catalog directly.
+OUTPUT: A guided cleanup workflow with grouped issues and bulk actions to unlist or merge products.
+USE WHEN: Your product catalog has grown messy with duplicates or outdated products. Doing a catalog audit before a pricing review or platform migration.
+NOT FOR: Importing new special pricing — use Import Special Pricing.
+
+TOOL: Widget Library Cleanup
+WHAT: Fetches your full Salesbuildr widget library and uses AI to group duplicates, near-duplicates, and suspiciously named widgets for bulk review and cleanup.
+WHO: MSP administrators or sales ops staff who manage the shared widget library in Salesbuildr.
+INPUT: Your Salesbuildr API credentials — the tool fetches your widget library directly.
+OUTPUT: A grouped review of potential duplicates and problem widgets with actions to remove or consolidate them.
+USE WHEN: Your widget library has grown large and hard to navigate. Doing a periodic audit to remove outdated or duplicate widgets.
+NOT FOR: Cleaning up your product catalog — use Product Catalog Guided Cleanup.
+
+SECURITY NOTE:
+Your data stays with you. Files are read locally in the browser and never transmitted to Salesbuildr servers. Credentials are stored in your browser's localStorage only. AI features send only the text you explicitly submit to Anthropic's API over encrypted HTTPS. There is no backend database, no user accounts, and no server-side file storage. Full details: https://docs.google.com/document/d/1Lm-oxSFqTpyntxvKQQIENLODS8GbqBTmczlD3EVomtA/edit?usp=sharing
+`;
