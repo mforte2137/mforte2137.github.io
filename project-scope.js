@@ -1256,9 +1256,6 @@ function updateColorBadge() {
 }
 
 // Patch saveBrandColor to also call updateColorBadge
-const _origSaveBrandColor = saveBrandColor;
-// Already defined above — we hook autoRefresh which calls after color change
-// Instead, call updateColorBadge in setupBrandColorListeners override below
 
 // ── Zone 2.5: Team + template toolbar toggles ─────────────
 document.getElementById('teamToggleBtn').addEventListener('click', () => {
@@ -1325,9 +1322,6 @@ function initSettingsZone() {
 }
 
 // Auto-collapse settings after successful push
-const _origSbPushHandler = document.getElementById('sbPushBtn');
-// We patch the success branch in sbPushBtn listener — check sbResult after push
-// Using MutationObserver on sbResult to detect ok state
 const sbResultEl = document.getElementById('sbResult');
 new MutationObserver(() => {
   if (sbResultEl.classList.contains('ok') && !sbResultEl.hidden) {
@@ -1342,22 +1336,18 @@ new MutationObserver(() => {
   }
 }).observe(sbResultEl, { attributes: true, attributeFilter: ['class'] });
 
-// ── Override initBrandColor to also call updateColorBadge ─
-const _origInitBrandColor = initBrandColor;
+// ── Combined init + badge functions ──────────────────────
 function initBrandColorWithBadge() {
-  _origInitBrandColor();
+  initBrandColor();
   updateColorBadge();
 }
 
-// Override setupBrandColorListeners to hook color badge updates
-const _origSetupBrandColorListeners = setupBrandColorListeners;
 function setupBrandColorListenersWithBadge() {
-  _origSetupBrandColorListeners();
-  // Patch swatch clicks to also update badge
+  setupBrandColorListeners();
+  // Hook badge updates onto swatch clicks and hex apply
   document.querySelectorAll('.brand-swatch:not(.brand-swatch-custom)').forEach(sw => {
     sw.addEventListener('click', () => setTimeout(updateColorBadge, 0));
   });
-  // Patch custom hex apply
   document.getElementById('brandHexApply').addEventListener('click', () => setTimeout(updateColorBadge, 0));
   document.getElementById('brandHexInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') setTimeout(updateColorBadge, 0);
