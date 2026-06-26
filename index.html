@@ -26,9 +26,15 @@
         <span class="brand-text">MSP Tools Hub</span>
       </a>
       <p class="header-sub">A practical toolkit for MSPs — by Salesbuildr</p>
-      <button class="feedback-trigger" id="feedback-trigger" aria-label="Send feedback">
-        Feedback
-      </button>
+      <div class="header-actions">
+        <button class="ai-trigger" id="ai-trigger" aria-label="Find the right tool">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Find the right tool
+        </button>
+        <button class="feedback-trigger" id="feedback-trigger" aria-label="Send feedback">
+          Feedback
+        </button>
+      </div>
     </div>
   </header>
 
@@ -131,6 +137,42 @@
       </div>
     </div>
   </footer>
+
+  <!-- AI Helper modal -->
+  <div class="modal-overlay" id="ai-overlay" aria-hidden="true">
+    <div class="modal-card ai-modal" role="dialog" aria-modal="true" aria-labelledby="ai-modal-title">
+      <div class="modal-header">
+        <div>
+          <p class="modal-kicker">AI Tool Finder</p>
+          <h2 class="modal-title" id="ai-modal-title">What are you trying to do?</h2>
+        </div>
+        <button class="modal-close" id="ai-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body ai-modal-body">
+        <div class="ai-input-row">
+          <textarea id="ai-question" class="ai-textarea" rows="3"
+            placeholder="e.g. I want to build a proposal for a new prospect… or I need to clean up my product catalog…"></textarea>
+          <button class="ai-submit" id="ai-submit">
+            Ask
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 5 20 12 13 19"/>
+            </svg>
+          </button>
+        </div>
+        <div id="ai-response" class="ai-response" hidden></div>
+        <div id="ai-loading" class="ai-loading" hidden>
+          <span class="ai-loading-dot"></span>
+          <span class="ai-loading-dot"></span>
+          <span class="ai-loading-dot"></span>
+        </div>
+        <p class="ai-footer-note">Can't find what you need? Use the <button class="ai-feedback-link" id="ai-feedback-link">Feedback</button> button to request a new tool.</p>
+      </div>
+    </div>
+  </div>
 
   <!-- Security modal -->
   <div class="modal-overlay" id="security-overlay" aria-hidden="true">
