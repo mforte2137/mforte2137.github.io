@@ -125,9 +125,37 @@
         </span>
         <p class="footer-text">MSP Tools Hub — built for MSPs, by Salesbuildr.</p>
       </div>
-      <p class="footer-meta">© <span id="year"></span> Salesbuildr</p>
+      <div class="footer-right">
+        <button class="security-trigger" id="security-trigger">Data &amp; Security</button>
+        <p class="footer-meta">© <span id="year"></span> Salesbuildr</p>
+      </div>
     </div>
   </footer>
+
+  <!-- Security modal -->
+  <div class="modal-overlay" id="security-overlay" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="security-title">
+      <div class="modal-header">
+        <div>
+          <p class="modal-kicker">Salesbuildr Innovation Suite · widgetcreator.netlify.app</p>
+          <h2 class="modal-title" id="security-title">Security &amp; Data Handling</h2>
+        </div>
+        <button class="modal-close" id="security-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-lead">Your data stays with you. The suite is designed to process everything locally in the browser wherever possible, with no persistent storage on Salesbuildr servers.</p>
+        <h3 class="modal-section-title">How the Tools Work</h3>
+        <p>The Salesbuildr Innovation Suite is a collection of browser-based tools hosted as static files on Netlify. There is no backend database, no user authentication system, and no server-side file storage.</p>
+        <a class="modal-read-more" href="https://docs.google.com/document/d/1Lm-oxSFqTpyntxvKQQIENLODS8GbqBTmczlD3EVomtA/edit?usp=sharing" target="_blank" rel="noopener noreferrer">
+          Read full security statement →
+        </a>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
