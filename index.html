@@ -26,8 +26,55 @@
         <span class="brand-text">MSP Tools Hub</span>
       </a>
       <p class="header-sub">A practical toolkit for MSPs — by Salesbuildr</p>
+      <button class="feedback-trigger" id="feedback-trigger" aria-label="Send feedback">
+        Feedback
+      </button>
     </div>
   </header>
+
+  <!-- Feedback overlay -->
+  <div class="feedback-overlay" id="feedback-overlay" aria-hidden="true"></div>
+
+  <!-- Feedback slide-in panel -->
+  <aside class="feedback-panel" id="feedback-panel" aria-label="Feedback form" aria-hidden="true">
+    <div class="feedback-panel-header">
+      <span class="feedback-panel-title">Send Feedback</span>
+      <button class="feedback-close" id="feedback-close" aria-label="Close feedback panel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="feedback-panel-body">
+      <p class="feedback-intro">Got a suggestion, found an issue, or want a new tool? Let us know.</p>
+
+      <div class="feedback-field">
+        <label class="feedback-label" for="fb-tool">Tool</label>
+        <select id="fb-tool" class="feedback-select">
+          <option value="">General — no specific tool</option>
+        </select>
+      </div>
+
+      <div class="feedback-field">
+        <label class="feedback-label">Type</label>
+        <div class="feedback-chips" id="fb-type-chips">
+          <button class="fb-chip active" data-value="Feature Request">Feature Request</button>
+          <button class="fb-chip" data-value="Bug">Bug</button>
+          <button class="fb-chip" data-value="Add a Tool">Add a Tool</button>
+          <button class="fb-chip" data-value="General">General</button>
+        </div>
+      </div>
+
+      <div class="feedback-field">
+        <label class="feedback-label" for="fb-message">Message</label>
+        <textarea id="fb-message" class="feedback-textarea" rows="5"
+          placeholder="Tell us what's on your mind…"></textarea>
+      </div>
+
+      <button class="feedback-submit btn-accent" id="feedback-submit">Send Feedback</button>
+      <p class="feedback-status" id="feedback-status" hidden></p>
+    </div>
+  </aside>
 
   <div class="search-bar-wrap">
     <div class="container">
