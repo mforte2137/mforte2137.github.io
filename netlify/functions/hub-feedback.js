@@ -10,7 +10,7 @@ exports.handler = async (event) => {
   try { body = JSON.parse(event.body); }
   catch { return { statusCode: 400, body: JSON.stringify({ ok: false, error: 'Invalid JSON.' }) }; }
 
-  const { tool, type, message, submittedAt } = body;
+  const { tool, type, message, name, email, submittedAt } = body;
 
   if (!message || !message.trim()) {
     return { statusCode: 400, body: JSON.stringify({ ok: false, error: 'Message is required.' }) };
@@ -22,13 +22,18 @@ exports.handler = async (event) => {
 
   const toolLabel = tool || 'General (no tool selected)';
   const typeLabel = type || 'General';
+  const nameLabel = name || '';
+  const emailLabel = email || '';
+  const hasContact = nameLabel || emailLabel;
 
   // Plain text
   const emailText = `MSP Tools Hub — Feedback
 ========================
 Tool:    ${toolLabel}
 Type:    ${typeLabel}
-Date:    ${date}
+Date:    ${date}${hasContact ? `
+Name:    ${nameLabel || '(not provided)'}
+Email:   ${emailLabel || '(not provided)'}` : ''}
 
 MESSAGE
 ${message}
@@ -45,6 +50,10 @@ ${message}
       <td style="padding:5px 0;color:#9CA3AF;width:80px;font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;">Tool</td>
       <td style="padding:5px 0;"><strong>${toolLabel}</strong></td>
     </tr>
+    ${hasContact ? `<tr>
+      <td style="padding:5px 0;color:#9CA3AF;font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;">From</td>
+      <td style="padding:5px 0;">${nameLabel || ''}${nameLabel && emailLabel ? ' — ' : ''}${emailLabel ? `<a href="mailto:${emailLabel}" style="color:#2E74DC;">${emailLabel}</a>` : ''}</td>
+    </tr>` : ''}
     <tr>
       <td style="padding:5px 0;color:#9CA3AF;font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;">Type</td>
       <td style="padding:5px 0;">
