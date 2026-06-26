@@ -77,6 +77,19 @@
           placeholder="Tell us what's on your mind…"></textarea>
       </div>
 
+      <div class="feedback-optional-label">
+        <span class="feedback-label">Want a response?</span>
+        <span class="feedback-optional-hint">Optional — fill in your details and we'll get back to you.</span>
+      </div>
+      <div class="feedback-field">
+        <label class="feedback-label" for="fb-name">Name</label>
+        <input id="fb-name" type="text" class="feedback-input" placeholder="Your name" autocomplete="name" />
+      </div>
+      <div class="feedback-field">
+        <label class="feedback-label" for="fb-email">Email</label>
+        <input id="fb-email" type="email" class="feedback-input" placeholder="your@email.com" autocomplete="email" />
+      </div>
+
       <button class="feedback-submit btn-accent" id="feedback-submit">Send Feedback</button>
       <p class="feedback-status" id="feedback-status" hidden></p>
     </div>
