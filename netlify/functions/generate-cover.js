@@ -364,7 +364,13 @@ Respond ONLY with valid JSON, no markdown:
     const hex8  = brandColor.replace('#', '').padEnd(6,'0').slice(0,6).toUpperCase() + 'FF';
     const color = '#' + hex8;
     const layers = { photo: { image: photoUrl } };
-    if (logoUrl) layers.logo = { image: logoUrl };
+    // Only include logo if it's actually fetchable
+    if (logoUrl) {
+      try {
+        const t = await fetch(logoUrl, { method: 'HEAD', signal: AbortSignal.timeout(4000), headers: { 'User-Agent': 'Mozilla/5.0' } });
+        if (t.ok) layers.logo = { image: logoUrl };
+      } catch (e) { /* skip logo */ }
+    }
     for (const layer of template.colorLayers) layers[layer] = { background_color: color };
 
     try {
@@ -383,8 +389,28 @@ Respond ONLY with valid JSON, no markdown:
 
   // ── ACTION: start-all ──────────────────────────────────
   if (action === 'start-all') {
-    const { brandColor, logoUrl, photoUrl, photo2Url, photoByTemplate } = body;
+    const { brandColor, photoUrl, photo2Url, photoByTemplate } = body;
+    let { logoUrl } = body;
     if (!brandColor || !photoUrl) return err('brandColor and photoUrl required.', 400);
+
+    // Validate logo URL is publicly fetchable before sending to Placid
+    // An unreachable logo causes Placid to reject the entire request
+    if (logoUrl) {
+      try {
+        const logoTest = await fetch(logoUrl, {
+          method: 'HEAD',
+          signal: AbortSignal.timeout(5000),
+          headers: { 'User-Agent': 'Mozilla/5.0' }
+        });
+        if (!logoTest.ok) {
+          console.log(`start-all: logo rejected (${logoTest.status}), rendering without logo`);
+          logoUrl = null;
+        }
+      } catch (e) {
+        console.log(`start-all: logo unreachable, rendering without logo`);
+        logoUrl = null;
+      }
+    }
 
     const hex8 = brandColor.replace('#', '').padEnd(6,'0').slice(0,6).toUpperCase() + 'FF';
     const color = '#' + hex8;
