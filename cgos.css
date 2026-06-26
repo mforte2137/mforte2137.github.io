@@ -1382,3 +1382,14 @@ body {
 }
 .doc-tab-trigger svg { stroke: #fff !important; }
 .doc-tab-trigger:hover { opacity: 0.88 !important; background: var(--accent) !important; }
+
+/* ── Workflow panel highlight on portfolio navigation ── */
+@keyframes wf-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(46,116,220,0.4); }
+  50%  { box-shadow: 0 0 0 6px rgba(46,116,220,0.15); }
+  100% { box-shadow: 0 0 0 0 rgba(46,116,220,0); }
+}
+.wf-highlight {
+  animation: wf-pulse 0.9s ease 2;
+  border-color: var(--accent) !important;
+}
