@@ -1530,3 +1530,14 @@ body {
 
 /* Workflow tabs */
 .wf-tabs { background: rgba(30,91,184,0.08) !important; border-bottom-color: rgba(30,91,184,0.2) !important; }
+
+/* ── Workflow tabs — ensure visible above steps ── */
+#wf-tabs {
+  order: -1;
+  width: 100%;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border) !important;
+  background: var(--bg-row) !important;
+  z-index: 2;
+  position: relative;
+}
