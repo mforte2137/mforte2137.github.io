@@ -29,39 +29,63 @@
       </div>
     </div>
 
-    <!-- Presets -->
-    <div class="lp-section">
-      <div class="lp-sec-label">Load a preset</div>
-      <div class="lp-row">
-        <select id="presetSelect" class="lp-select">
-          <option value="">— Select preset —</option>
-          <option value="azure">☁️ Azure Migration</option>
-          <option value="m365">📧 Microsoft 365 Migration</option>
-          <option value="network">🔌 Network Infrastructure Upgrade</option>
-          <option value="endpoint">💻 Endpoint Refresh</option>
-          <option value="server">🖥️ Server Refresh</option>
-          <option value="voip">📞 VoIP &amp; Communications</option>
-          <option value="onboarding">🤝 New Client Onboarding</option>
-          <option value="security">🛡️ Cybersecurity Assessment</option>
-          <option value="backup">💾 Backup &amp; DR Implementation</option>
-          <option value="copilot">🤖 Microsoft Copilot &amp; AI</option>
-        </select>
-        <button class="lp-icon-btn" id="loadPresetBtn" title="Load preset"><i class="ti ti-arrow-right"></i></button>
-        <button class="lp-clear-btn" id="clearBtn" title="Clear project and start fresh">Clear</button>
+    <!-- ── ZONE 1: SETTINGS (collapsible) ── -->
+    <div class="lp-zone" id="settingsZone">
+      <button class="lp-zone-toggle" id="settingsToggle">
+        <span class="lp-zone-toggle-left"><i class="ti ti-settings" style="font-size:13px;"></i> Settings</span>
+        <span class="lp-zone-toggle-badges">
+          <span class="lp-color-badge" id="colorBadge"></span>
+        </span>
+        <i class="ti ti-chevron-down lp-chevron" id="settingsChevron"></i>
+      </button>
+      <div class="lp-zone-body" id="settingsBody" hidden>
+
+        <!-- Salesbuildr credentials -->
+        <div class="sb-field">
+          <label class="sb-label">Tenant URL <span class="sb-where">e.g. https://acme.salesbuildr.com</span></label>
+          <input type="text" id="sbTenantUrl" class="lp-input" placeholder="https://yourcompany.salesbuildr.com" autocomplete="off">
+        </div>
+        <div class="sb-field">
+          <label class="sb-label">API Key <span class="sb-where">Admin → Integrations → API Key</span></label>
+          <input type="password" id="sbApiKey" class="lp-input" placeholder="Your API key" autocomplete="new-password">
+        </div>
+        <div class="sb-row">
+          <label class="sb-remember"><input type="checkbox" id="sbRemember"> Remember credentials</label>
+          <input type="text" id="sbPrefix" class="sb-prefix" maxlength="40" placeholder="Label e.g. Acme Corp">
+        </div>
+        <button type="button" id="sbPushBtn" class="lp-btn-good" disabled><i class="ti ti-send" style="font-size:13px;"></i> Push to Salesbuildr</button>
+        <div id="sbResult" class="sb-result" hidden></div>
+
+        <div class="lp-divider"></div>
+
+        <!-- Brand color (moved into settings) -->
+        <div style="font-family:var(--mono);font-size:10px;font-weight:600;color:var(--accent-2);text-transform:uppercase;letter-spacing:.10em;margin-bottom:4px;">Brand color</div>
+        <div class="brand-swatches" id="brandSwatches">
+          <div class="brand-swatch active" data-color="#2563eb" style="background:#2563eb;" title="Blue"></div>
+          <div class="brand-swatch" data-color="#059669" style="background:#059669;" title="Green"></div>
+          <div class="brand-swatch" data-color="#7c3aed" style="background:#7c3aed;" title="Purple"></div>
+          <div class="brand-swatch" data-color="#dc2626" style="background:#dc2626;" title="Red"></div>
+          <div class="brand-swatch" data-color="#d97706" style="background:#d97706;" title="Amber"></div>
+          <div class="brand-swatch" data-color="#0891b2" style="background:#0891b2;" title="Teal"></div>
+          <div class="brand-swatch" data-color="#374151" style="background:#374151;" title="Slate"></div>
+          <div class="brand-swatch brand-swatch-custom" id="brandCustomSwatch" data-color="" title="Custom color" style="background: conic-gradient(red,yellow,lime,aqua,blue,magenta,red);"></div>
+        </div>
+        <div class="brand-hex-row" id="brandHexRow" style="display:none;">
+          <span style="font-size:11px;color:var(--text-3);">Hex</span>
+          <input type="text" id="brandHexInput" class="lp-input" placeholder="#2563eb" maxlength="7" style="font-family:var(--mono);font-size:11px;">
+          <button class="lp-icon-btn" id="brandHexApply" title="Apply"><i class="ti ti-check"></i></button>
+        </div>
       </div>
     </div>
 
-    <!-- Current Projects -->
-    <div class="lp-section">
-      <div class="lp-sec-label">Current projects</div>
-      <div class="lp-projects" id="projectList"></div>
+    <!-- ── ZONE 2: PROJECT ── -->
+    <div class="lp-zone-project">
+      <!-- Projects list -->
+      <div class="lp-proj-slim" id="projectList"></div>
       <button class="lp-new-proj" id="newProjectBtn"><i class="ti ti-plus"></i> New project</button>
-    </div>
 
-    <!-- Project Settings -->
-    <div class="lp-section">
-      <div class="lp-sec-label">Project</div>
-      <div class="lp-field">
+      <!-- Project fields -->
+      <div class="lp-field" style="margin-top:8px;">
         <div class="lp-field-label">Title</div>
         <input type="text" id="projectTitle" class="lp-input" placeholder="e.g. Azure Cloud Migration">
       </div>
@@ -77,95 +101,77 @@
       </div>
     </div>
 
-    <!-- Team -->
-    <div class="lp-section">
-      <div class="lp-sec-label">Team</div>
-      <div class="lp-field">
-        <div class="lp-field-label">Passphrase <span class="lp-opt">(enables shared templates)</span></div>
+    <!-- ── ZONE 2.5: SAVE / TEAM toolbar ── -->
+    <div class="lp-zone-save">
+      <div class="lp-save-toolbar">
+        <button class="lp-save-btn" id="saveTemplateBtn" title="Save as template"><i class="ti ti-device-floppy"></i></button>
+        <button class="lp-save-btn" id="loadTemplateBtn" title="Load template"><i class="ti ti-folder-open"></i></button>
+        <button class="lp-save-btn" id="exportBtn" title="Export JSON"><i class="ti ti-download"></i></button>
+        <label class="lp-save-btn" for="importInput" title="Import JSON" style="cursor:pointer;"><i class="ti ti-upload"></i></label>
+        <input type="file" id="importInput" accept=".json" style="display:none">
+        <button class="lp-save-btn" id="teamToggleBtn" title="Team passphrase"><i class="ti ti-users"></i></button>
+        <button class="lp-save-btn lp-save-btn-danger" id="clearBtn" title="Clear project"><i class="ti ti-trash"></i></button>
+      </div>
+
+      <!-- Team body — toggles on 👥 click -->
+      <div class="lp-team-body" id="teamBody" hidden>
         <div class="lp-passrow">
-          <input type="password" id="tmplPassphrase" class="lp-input" placeholder="Enter to share with team" autocomplete="off">
+          <input type="password" id="tmplPassphrase" class="lp-input" placeholder="Team passphrase" autocomplete="off">
           <span id="tmplPassphraseBadge" class="lp-badge lp-badge-local">💾 Local</span>
         </div>
       </div>
-      <div class="lp-field">
-        <div class="lp-field-label">Templates <span id="tmplModeLabel" class="lp-opt">(local)</span></div>
+
+      <!-- Template select body — toggles on 📂 click -->
+      <div class="lp-team-body" id="templateSelectBody" hidden>
         <div class="lp-row">
           <select id="templateSelect" class="lp-select"><option value="">— No saved templates yet —</option></select>
-          <button class="lp-icon-btn" id="loadTemplateBtn" title="Load template"><i class="ti ti-arrow-right"></i></button>
+          <button class="lp-icon-btn" id="applyTemplateBtn" title="Load template"><i class="ti ti-arrow-right"></i></button>
           <button class="lp-icon-btn lp-icon-btn-danger" id="deleteTemplateBtn" title="Delete template"><i class="ti ti-trash"></i></button>
         </div>
-      </div>
-      <button class="lp-action-btn lp-action-primary" id="saveTemplateBtn"><i class="ti ti-device-floppy"></i> Save as template</button>
-    </div>
-
-    <!-- Show in output toggles -->
-    <div class="lp-section">
-      <div class="lp-sec-label">Show in customer output</div>
-      <div class="lp-toggles">
-        <div class="lp-toggle-row">
-          <span>Role</span>
-          <label class="lp-switch"><input type="checkbox" id="showRole" checked><span class="lp-track"></span></label>
-        </div>
-        <div class="lp-toggle-row">
-          <span>Hours</span>
-          <label class="lp-switch"><input type="checkbox" id="showHours"><span class="lp-track"></span></label>
-        </div>
-        <div class="lp-toggle-row">
-          <span>Notes</span>
-          <label class="lp-switch"><input type="checkbox" id="showNotes" checked><span class="lp-track"></span></label>
-        </div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text-3);" id="tmplModeLabel">(local)</div>
       </div>
     </div>
 
-    <!-- Brand Color -->
-    <div class="lp-section">
-      <div class="lp-sec-label">Brand color</div>
-      <div class="lp-field-label" style="margin-bottom:6px;">Applied to every widget you generate</div>
-      <div class="brand-swatches" id="brandSwatches">
-        <div class="brand-swatch active" data-color="#2563eb" style="background:#2563eb;" title="Blue"></div>
-        <div class="brand-swatch" data-color="#059669" style="background:#059669;" title="Green"></div>
-        <div class="brand-swatch" data-color="#7c3aed" style="background:#7c3aed;" title="Purple"></div>
-        <div class="brand-swatch" data-color="#dc2626" style="background:#dc2626;" title="Red"></div>
-        <div class="brand-swatch" data-color="#d97706" style="background:#d97706;" title="Amber"></div>
-        <div class="brand-swatch" data-color="#0891b2" style="background:#0891b2;" title="Teal"></div>
-        <div class="brand-swatch" data-color="#374151" style="background:#374151;" title="Slate"></div>
-        <div class="brand-swatch brand-swatch-custom" id="brandCustomSwatch" data-color="" title="Custom color" style="background: conic-gradient(red,yellow,lime,aqua,blue,magenta,red);"></div>
-      </div>
-      <div class="brand-hex-row" id="brandHexRow" style="display:none;">
-        <span style="font-size:11px;color:var(--muted);">Hex</span>
-        <input type="text" id="brandHexInput" class="lp-input" placeholder="#2563eb" maxlength="7" style="font-family:var(--mono);font-size:11px;">
-        <button class="lp-icon-btn" id="brandHexApply" title="Apply"><i class="ti ti-check"></i></button>
-      </div>
-    </div>
+    <!-- ── ZONE 3: PUBLISH ── -->
+    <div class="lp-zone-publish">
+      <button class="lp-publish-toggle" id="publishToggle">
+        <span><i class="ti ti-sparkles"></i> Generate scope widget</span>
+        <i class="ti ti-chevron-down lp-chevron" id="publishChevron"></i>
+      </button>
+      <div class="lp-publish-body" id="publishBody" hidden>
+        <div class="lp-publish-inner">
+          <!-- Color preview -->
+          <div class="lp-color-preview">
+            <span style="font-family:var(--mono);font-size:10px;color:var(--text-3);">Widget color</span>
+            <div class="lp-color-dot" id="colorDot"></div>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--text-3);" id="colorHexLabel"></span>
+          </div>
 
-    <!-- Export & Publish -->
-    <div class="lp-section">
-      <div class="lp-sec-label">Export &amp; publish</div>
-      <div class="lp-actions">
-        <button class="lp-action-btn lp-action-good" id="generateBtn"><i class="ti ti-sparkles"></i> Generate scope widget</button>
-        <button class="lp-action-btn" id="copyBtn" disabled><i class="ti ti-copy"></i> Copy HTML</button>
-        <button class="lp-action-btn" id="exportBtn"><i class="ti ti-download"></i> Export JSON</button>
-        <label class="lp-action-btn" for="importInput" style="cursor:pointer;"><i class="ti ti-upload"></i> Import JSON</label>
-        <input type="file" id="importInput" accept=".json" style="display:none">
-        <!-- Salesbuildr inline -->
-        <button class="lp-action-btn lp-action-primary" id="sbToggle"><i class="ti ti-send"></i> Save to Salesbuildr <span id="sbArrow" class="sb-arrow-icon">▼</span></button>
-        <div id="sbBody" class="sb-inline" hidden>
-          <div class="sb-fields">
-            <div class="sb-field">
-              <label class="sb-label">Tenant URL <span class="sb-where">e.g. https://acme.salesbuildr.com</span></label>
-              <input type="text" id="sbTenantUrl" class="sb-input" placeholder="https://yourcompany.salesbuildr.com" autocomplete="off">
+          <!-- Show in widget toggles -->
+          <div style="font-family:var(--mono);font-size:10px;font-weight:600;color:var(--accent-2);text-transform:uppercase;letter-spacing:.10em;">Show in widget</div>
+          <div class="lp-toggles">
+            <div class="lp-toggle-row">
+              <span>Role</span>
+              <label class="lp-switch"><input type="checkbox" id="showRole" checked><span class="lp-track"></span></label>
             </div>
-            <div class="sb-field">
-              <label class="sb-label">API Key <span class="sb-where">Admin → Integrations → API Key</span></label>
-              <input type="password" id="sbApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
+            <div class="lp-toggle-row">
+              <span>Hours per task</span>
+              <label class="lp-switch"><input type="checkbox" id="showHours"><span class="lp-track"></span></label>
+            </div>
+            <div class="lp-toggle-row">
+              <span>Total hours</span>
+              <label class="lp-switch"><input type="checkbox" id="showTotalHours" checked><span class="lp-track"></span></label>
+            </div>
+            <div class="lp-toggle-row">
+              <span>Notes</span>
+              <label class="lp-switch"><input type="checkbox" id="showNotes" checked><span class="lp-track"></span></label>
             </div>
           </div>
-          <div class="sb-row">
-            <label class="sb-remember"><input type="checkbox" id="sbRemember"> Remember credentials</label>
-            <input type="text" id="sbPrefix" class="sb-prefix" maxlength="40" placeholder="Label e.g. Acme Corp">
-            <button type="button" id="sbPushBtn" class="lp-action-btn lp-action-good" disabled>Push →</button>
-          </div>
-          <div id="sbResult" class="sb-result" hidden></div>
+
+          <div class="lp-divider"></div>
+
+          <button class="lp-btn-good" id="generateBtn"><i class="ti ti-sparkles" style="font-size:13px;"></i> Generate scope widget</button>
+          <button class="lp-btn-secondary" id="copyBtn" disabled><i class="ti ti-copy" style="font-size:13px;"></i> Copy HTML</button>
         </div>
       </div>
     </div>
@@ -180,7 +186,7 @@
     <div class="center-header">
       <div>
         <div class="center-title" id="centerTitle">Project Scope Builder</div>
-        <div class="center-sub" id="centerSub">Start by loading a preset or entering your project details</div>
+        <div class="center-sub" id="centerSub">Load a preset in the right panel or describe your project to the AI</div>
       </div>
     </div>
 
@@ -247,7 +253,7 @@
   </main>
 
   <!-- ═══════════════════════════════════════════════════════
-       RIGHT PANEL — AI ASSISTANT
+       RIGHT PANEL — AI ASSISTANT + PRESET GRID
   ════════════════════════════════════════════════════════ -->
   <aside class="ai-panel" id="aiPanel">
 
@@ -261,23 +267,44 @@
       </div>
     </div>
 
-    <div class="ai-body">
-    <div class="ai-messages" id="aiMessages">
-      <div class="ai-msg ai-msg-assistant">
-        <div class="ai-msg-label">Assistant</div>
-        Hi — describe a project and I'll build a full scope with tasks, roles, and hours. Once applied, use Review to validate it or Adjust to fit your team's constraints.
-        <div class="ai-chips">
-          <div class="ai-chip" data-action="generate">✨ Generate scope from description</div>
-          <div class="ai-chip" data-action="review">🔍 Review &amp; validate my scope</div>
-          <div class="ai-chip" data-action="adjust">⏱ Adjust for team / deadline</div>
-        </div>
+    <!-- Preset grid -->
+    <div class="preset-section">
+      <button class="preset-header" id="presetHeader">
+        <span class="preset-header-label">Quick Start</span>
+        <span class="preset-header-hint" id="presetHint">Load a preset to jumpstart your project</span>
+        <i class="ti ti-chevron-down preset-chevron" id="presetChevron"></i>
+      </button>
+      <div class="preset-grid" id="presetGrid">
+        <div class="preset-tile" data-preset="azure">☁️<span>Azure</span></div>
+        <div class="preset-tile" data-preset="m365">📧<span>M365</span></div>
+        <div class="preset-tile" data-preset="network">🔌<span>Network</span></div>
+        <div class="preset-tile" data-preset="endpoint">💻<span>Endpoint</span></div>
+        <div class="preset-tile" data-preset="server">🖥️<span>Server</span></div>
+        <div class="preset-tile" data-preset="voip">📞<span>VoIP</span></div>
+        <div class="preset-tile" data-preset="onboarding">🤝<span>Onboard</span></div>
+        <div class="preset-tile" data-preset="security">🛡️<span>Security</span></div>
+        <div class="preset-tile" data-preset="backup">💾<span>Backup</span></div>
+        <div class="preset-tile" data-preset="copilot">🤖<span>Copilot</span></div>
       </div>
     </div>
 
-    <div class="ai-input-wrap">
-      <textarea class="ai-textarea" id="aiInput" placeholder="Describe a project or ask me to review…" rows="2"></textarea>
-      <button class="ai-send-btn" id="aiSendBtn" title="Send"><i class="ti ti-arrow-up"></i></button>
-    </div>
+    <div class="ai-body">
+      <div class="ai-messages" id="aiMessages">
+        <div class="ai-msg ai-msg-assistant">
+          <div class="ai-msg-label">Assistant</div>
+          Hi — describe a project and I'll build a full scope with tasks, roles, and hours. Once applied, use Review to validate it or Adjust to fit your team's constraints.
+          <div class="ai-chips">
+            <div class="ai-chip" data-action="generate">✨ Generate scope from description</div>
+            <div class="ai-chip" data-action="review">🔍 Review &amp; validate my scope</div>
+            <div class="ai-chip" data-action="adjust">⏱ Adjust for team / deadline</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-input-wrap">
+        <textarea class="ai-textarea" id="aiInput" placeholder="Describe a project or ask me to review…" rows="2"></textarea>
+        <button class="ai-send-btn" id="aiSendBtn" title="Send"><i class="ti ti-arrow-up"></i></button>
+      </div>
     </div>
 
   </aside>
