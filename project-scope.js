@@ -413,6 +413,7 @@ function captureCurrentState() {
     exclusions:   document.getElementById('exclusions').value,
     showRole:     document.getElementById('showRole').checked,
     showHours:    document.getElementById('showHours').checked,
+    showTotalHours: document.getElementById('showTotalHours').checked,
     showNotes:    document.getElementById('showNotes').checked,
     rows:         rows.map(r => ({ ...r }))
   };
@@ -534,13 +535,14 @@ function newProject() {
   document.getElementById('hoursPerDay').value = '8';
   document.getElementById('overview').value = '';
   document.getElementById('exclusions').value = '';
-  document.getElementById('presetSelect').value = '';
   document.getElementById('htmlOut').textContent = '';
   document.getElementById('preview').innerHTML = '';
   document.getElementById('outputPanels').hidden = true;
   document.getElementById('copyBtn').disabled = true;
   render(); updateSummary(); renderProjects(); updateCenterHeader();
   saveState();  // persist blank state so reload doesn't restore old data
+  document.querySelectorAll('.preset-tile').forEach(t => t.classList.remove('active'));
+  document.getElementById('presetHint').textContent = 'Load a preset to jumpstart your project';
   showToast('New project started');
 }
 
@@ -573,9 +575,10 @@ function loadState() {
     document.getElementById('hoursPerDay').value  = s.hoursPerDay  ?? 8;
     document.getElementById('overview').value     = s.overview     ?? '';
     document.getElementById('exclusions').value   = s.exclusions   ?? '';
-    document.getElementById('showRole').checked   = s.showRole  !== false;
-    document.getElementById('showHours').checked  = s.showHours === true;
-    document.getElementById('showNotes').checked  = s.showNotes !== false;
+    document.getElementById('showRole').checked       = s.showRole  !== false;
+    document.getElementById('showHours').checked      = s.showHours === true;
+    document.getElementById('showTotalHours').checked = s.showTotalHours !== false;
+    document.getElementById('showNotes').checked      = s.showNotes !== false;
     rows = s.rows;
     return true;
   } catch { return false; }
@@ -587,9 +590,10 @@ function applyState(s) {
   document.getElementById('hoursPerDay').value  = s.hoursPerDay  ?? 8;
   document.getElementById('overview').value     = s.overview     ?? '';
   document.getElementById('exclusions').value   = s.exclusions   ?? '';
-  document.getElementById('showRole').checked   = s.showRole  !== false;
-  document.getElementById('showHours').checked  = s.showHours === true;
-  document.getElementById('showNotes').checked  = s.showNotes !== false;
+  document.getElementById('showRole').checked       = s.showRole  !== false;
+  document.getElementById('showHours').checked      = s.showHours === true;
+  document.getElementById('showTotalHours').checked = s.showTotalHours !== false;
+  document.getElementById('showNotes').checked      = s.showNotes !== false;
   rows = (s.rows || []).map(r => ({ ...r }));
   render(); updateSummary(); saveState(); updateCenterHeader();
 }
@@ -721,9 +725,10 @@ function generateWidget() {
   const overview   = (document.getElementById('overview').value     || '').trim();
   const exclusions = (document.getElementById('exclusions').value   || '').trim();
   const hpd        = document.getElementById('hoursPerDay').value;
-  const showRole   = document.getElementById('showRole').checked;
-  const showHours  = document.getElementById('showHours').checked;
-  const showNotes  = document.getElementById('showNotes').checked;
+  const showRole       = document.getElementById('showRole').checked;
+  const showHours      = document.getElementById('showHours').checked;
+  const showTotalHours = document.getElementById('showTotalHours').checked;
+  const showNotes      = document.getElementById('showNotes').checked;
 
   // Derive a subtle tint (8% opacity) of the brand color for alternating rows
   // Works by converting hex to rgb and applying rgba
@@ -881,7 +886,7 @@ async function sendAiMessage(userText, mode) {
           hoursPerDay:  document.getElementById('hoursPerDay').value,
           overview:     data.overview || document.getElementById('overview').value,
           exclusions:   data.exclusions || document.getElementById('exclusions').value,
-          showRole: true, showHours: false, showNotes: true,
+          showRole: true, showHours: false, showTotalHours: true, showNotes: true,
           rows: data.tasks
         });
         saveCurrentAsProject(data.projectTitle);
@@ -979,27 +984,32 @@ document.querySelectorAll('.ai-chip').forEach(chip => {
   document.getElementById(id).addEventListener('input', () => { saveState(); autoRefresh(); });
 });
 document.getElementById('hoursPerDay').addEventListener('input', () => { updateSummary(); saveState(); autoRefresh(); });
-['showRole','showHours','showNotes'].forEach(id => {
+['showRole','showHours','showTotalHours','showNotes'].forEach(id => {
   document.getElementById(id).addEventListener('change', () => { saveState(); autoRefresh(); });
 });
 
-// Preset loader
-document.getElementById('loadPresetBtn').addEventListener('click', () => {
-  const key = document.getElementById('presetSelect').value;
-  if (!key) { showToast('Select a preset first'); return; }
-  const p = PRESETS[key];
-  if (!p) return;
-  if (rows.length > 0 && !confirm(`Load "${p.title}" preset? This will replace your current tasks.`)) return;
-  rows = p.tasks.map(t => ({ ...t }));
-  document.getElementById('projectTitle').value = p.title;
-  document.getElementById('overview').value     = p.overview;
-  document.getElementById('exclusions').value   = p.exclusions;
-  document.getElementById('htmlOut').textContent = '';
-  document.getElementById('preview').innerHTML   = '';
-  document.getElementById('outputPanels').hidden = true;
-  document.getElementById('copyBtn').disabled    = true;
-  render(); saveState(); showToast(`Loaded: ${p.title}`);
-  saveCurrentAsProject(p.title); renderProjects();
+// Preset tiles — in right panel
+document.querySelectorAll('.preset-tile').forEach(tile => {
+  tile.addEventListener('click', () => {
+    const key = tile.dataset.preset;
+    const p = PRESETS[key];
+    if (!p) return;
+    if (rows.some(r => r.task || num(r.hours) > 0) && !confirm(`Load "${p.title}" preset? This will replace your current tasks.`)) return;
+    rows = p.tasks.map(t => ({ ...t }));
+    document.getElementById('projectTitle').value = p.title;
+    document.getElementById('overview').value     = p.overview;
+    document.getElementById('exclusions').value   = p.exclusions;
+    document.getElementById('htmlOut').textContent = '';
+    document.getElementById('preview').innerHTML   = '';
+    document.getElementById('outputPanels').hidden = true;
+    document.getElementById('copyBtn').disabled    = true;
+    // Mark active tile, update hint
+    document.querySelectorAll('.preset-tile').forEach(t => t.classList.remove('active'));
+    tile.classList.add('active');
+    document.getElementById('presetHint').textContent = p.title;
+    render(); saveState(); showToast(`Loaded: ${p.title}`);
+    saveCurrentAsProject(p.title); renderProjects();
+  });
 });
 
 // New project
@@ -1106,9 +1116,9 @@ document.getElementById('saveTemplateBtn').addEventListener('click', async () =>
   } catch { showToast('⚠️ Save failed — try again'); } finally { btn.disabled = false; }
 });
 
-document.getElementById('loadTemplateBtn').addEventListener('click', async () => {
+document.getElementById('applyTemplateBtn').addEventListener('click', async () => {
   const name = document.getElementById('templateSelect').value; if (!name) return;
-  const btn  = document.getElementById('loadTemplateBtn'); btn.disabled = true;
+  const btn  = document.getElementById('applyTemplateBtn'); btn.disabled = true;
   try {
     let tmpl;
     if (isTeamMode()) { tmpl = await teamGetTemplate(hashPassphrase(getPassphrase()), name); }
@@ -1133,14 +1143,7 @@ document.getElementById('deleteTemplateBtn').addEventListener('click', async () 
 });
 
 // ── Salesbuildr ───────────────────────────────────────────
-const sbToggleBtn = document.getElementById('sbToggle');
-const sbArrow     = document.getElementById('sbArrow');
-const sbBody      = document.getElementById('sbBody');
-const sbApiKey    = document.getElementById('sbApiKey');
-const sbRemember  = document.getElementById('sbRemember');
-const sbPushBtn   = document.getElementById('sbPushBtn');
-const sbResult    = document.getElementById('sbResult');
-const sbPrefix    = document.getElementById('sbPrefix');
+// Salesbuildr elements now referenced directly via getElementById
 
 function initSbCredentials() {
   const savedApi    = localStorage.getItem(LS_API_KEY);
@@ -1157,10 +1160,7 @@ function updateSbBtn() {
   );
 }
 
-sbToggleBtn.addEventListener('click', () => {
-  const open = !sbBody.hidden; sbBody.hidden = open;
-  sbArrow.classList.toggle('open', !open);
-});
+
 document.getElementById('sbApiKey').addEventListener('input', updateSbBtn);
 document.getElementById('sbTenantUrl').addEventListener('input', updateSbBtn);
 
@@ -1172,19 +1172,19 @@ sbPushBtn.addEventListener('click', async () => {
   if (!apiKey || !tenantUrl) return;
   if (sbRemember.checked) { localStorage.setItem(LS_API_KEY, apiKey); localStorage.setItem(LS_TENANT_URL, tenantUrl); }
   else { localStorage.removeItem(LS_API_KEY); localStorage.removeItem(LS_TENANT_URL); }
-  sbPushBtn.disabled = true; sbPushBtn.textContent = 'Saving…'; sbResult.hidden = true;
+  document.getElementById('sbPushBtn').disabled = true; document.getElementById('sbPushBtn').textContent = 'Saving…'; document.getElementById('sbResult').hidden = true;
   const title  = (document.getElementById('projectTitle').value || 'Project Scope').trim();
   const prefix = sbPrefix.value.trim();
   try {
     const res  = await fetch('/api/push-widgets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ widgets:[{ id:'project-scope', title, html }], prefix, apiKey, tenantUrl }) });
     const data = await res.json();
     if (data.successCount > 0) {
-      sbResult.textContent = `✓ Saved as "${prefix ? prefix + ' – ' : ''}${title}" in Salesbuildr.`;
-      sbResult.className = 'sb-result ok'; sbResult.hidden = false; sbPushBtn.textContent = '✓ Saved';
+      document.getElementById('sbResult').textContent = `✓ Saved as "${prefix ? prefix + ' – ' : ''}${title}" in Salesbuildr.`;
+      document.getElementById('sbResult').className = 'sb-result ok'; document.getElementById('sbResult').hidden = false; document.getElementById('sbPushBtn').textContent = '✓ Saved';
     } else { throw new Error((data.results?.[0]?.error) || data.error || 'Unknown error'); }
   } catch (e) {
-    sbResult.textContent = `✕ ${e.message}`; sbResult.className = 'sb-result error'; sbResult.hidden = false;
-    sbPushBtn.disabled = false; sbPushBtn.textContent = 'Push →';
+    document.getElementById('sbResult').textContent = `✕ ${e.message}`; document.getElementById('sbResult').className = 'sb-result error'; document.getElementById('sbResult').hidden = false;
+    document.getElementById('sbPushBtn').disabled = false; document.getElementById('sbPushBtn').textContent = 'Push →';
   }
 });
 
@@ -1225,8 +1225,9 @@ sbPushBtn.addEventListener('click', async () => {
   updatePassphraseUI();
   updateCenterHeader();
   renderProjects();
-  initBrandColor();
-  setupBrandColorListeners();
+  initBrandColorWithBadge();
+  setupBrandColorListenersWithBadge();
+  initSettingsZone();
   document.getElementById('outputPanels').hidden = true;
   document.getElementById('htmlOut').textContent = '';
   document.getElementById('preview').innerHTML = '';
@@ -1234,3 +1235,131 @@ sbPushBtn.addEventListener('click', async () => {
   await renderTemplateSelect();
   initSbCredentials();
 })();
+
+// ── Zone 1: Settings toggle ───────────────────────────────
+document.getElementById('settingsToggle').addEventListener('click', () => {
+  const body = document.getElementById('settingsBody');
+  const chevron = document.getElementById('settingsChevron');
+  const isHidden = body.hidden;
+  body.hidden = !isHidden;
+  chevron.classList.toggle('open', isHidden);
+});
+
+// ── Color badge + dot update ──────────────────────────────
+function updateColorBadge() {
+  const badge = document.getElementById('colorBadge');
+  const dot   = document.getElementById('colorDot');
+  const label = document.getElementById('colorHexLabel');
+  if (badge) badge.style.background = brandColor;
+  if (dot)   dot.style.background   = brandColor;
+  if (label) label.textContent       = brandColor;
+}
+
+// Patch saveBrandColor to also call updateColorBadge
+const _origSaveBrandColor = saveBrandColor;
+// Already defined above — we hook autoRefresh which calls after color change
+// Instead, call updateColorBadge in setupBrandColorListeners override below
+
+// ── Zone 2.5: Team + template toolbar toggles ─────────────
+document.getElementById('teamToggleBtn').addEventListener('click', () => {
+  const body = document.getElementById('teamBody');
+  const btn  = document.getElementById('teamToggleBtn');
+  body.hidden = !body.hidden;
+  btn.classList.toggle('active', !body.hidden);
+  // Close template body if open
+  if (!body.hidden) {
+    document.getElementById('templateSelectBody').hidden = true;
+    document.getElementById('loadTemplateBtn').classList.remove('active');
+  }
+});
+
+document.getElementById('loadTemplateBtn').addEventListener('click', () => {
+  const body = document.getElementById('templateSelectBody');
+  const btn  = document.getElementById('loadTemplateBtn');
+  body.hidden = !body.hidden;
+  btn.classList.toggle('active', !body.hidden);
+  // Close team body if open
+  if (!body.hidden) {
+    document.getElementById('teamBody').hidden = true;
+    document.getElementById('teamToggleBtn').classList.remove('active');
+  }
+});
+
+// Passphrase input — update UI when typed in team body
+document.getElementById('tmplPassphrase').addEventListener('input', async () => {
+  updatePassphraseUI();
+  await renderTemplateSelect();
+  updateCenterHeader();
+});
+
+// ── Zone 3: Publish toggle ────────────────────────────────
+document.getElementById('publishToggle').addEventListener('click', () => {
+  const body    = document.getElementById('publishBody');
+  const chevron = document.getElementById('publishChevron');
+  const toggle  = document.getElementById('publishToggle');
+  const isHidden = body.hidden;
+  body.hidden = !isHidden;
+  chevron.classList.toggle('open', isHidden);
+  toggle.classList.toggle('active', isHidden);
+});
+
+// ── Preset grid: header toggle ────────────────────────────
+document.getElementById('presetHeader').addEventListener('click', () => {
+  const grid    = document.getElementById('presetGrid');
+  const chevron = document.getElementById('presetChevron');
+  const isHidden = grid.hidden;
+  grid.hidden = !isHidden;
+  chevron.classList.toggle('collapsed', !isHidden);
+});
+
+// ── Settings zone: auto-open/close logic ─────────────────
+function initSettingsZone() {
+  const savedApi    = localStorage.getItem(LS_API_KEY);
+  const savedTenant = localStorage.getItem(LS_TENANT_URL);
+  const hasCredentials = savedApi && savedTenant;
+  const body    = document.getElementById('settingsBody');
+  const chevron = document.getElementById('settingsChevron');
+  // Start open if no credentials saved, closed if credentials exist
+  body.hidden = hasCredentials;
+  chevron.classList.toggle('open', !hasCredentials);
+}
+
+// Auto-collapse settings after successful push
+const _origSbPushHandler = document.getElementById('sbPushBtn');
+// We patch the success branch in sbPushBtn listener — check sbResult after push
+// Using MutationObserver on sbResult to detect ok state
+const sbResultEl = document.getElementById('sbResult');
+new MutationObserver(() => {
+  if (sbResultEl.classList.contains('ok') && !sbResultEl.hidden) {
+    setTimeout(() => {
+      const body = document.getElementById('settingsBody');
+      const chevron = document.getElementById('settingsChevron');
+      if (!body.hidden) {
+        body.hidden = true;
+        chevron.classList.remove('open');
+      }
+    }, 1500);
+  }
+}).observe(sbResultEl, { attributes: true, attributeFilter: ['class'] });
+
+// ── Override initBrandColor to also call updateColorBadge ─
+const _origInitBrandColor = initBrandColor;
+function initBrandColorWithBadge() {
+  _origInitBrandColor();
+  updateColorBadge();
+}
+
+// Override setupBrandColorListeners to hook color badge updates
+const _origSetupBrandColorListeners = setupBrandColorListeners;
+function setupBrandColorListenersWithBadge() {
+  _origSetupBrandColorListeners();
+  // Patch swatch clicks to also update badge
+  document.querySelectorAll('.brand-swatch:not(.brand-swatch-custom)').forEach(sw => {
+    sw.addEventListener('click', () => setTimeout(updateColorBadge, 0));
+  });
+  // Patch custom hex apply
+  document.getElementById('brandHexApply').addEventListener('click', () => setTimeout(updateColorBadge, 0));
+  document.getElementById('brandHexInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') setTimeout(updateColorBadge, 0);
+  });
+}
