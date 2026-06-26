@@ -1332,6 +1332,9 @@ async function sendAiMessage(userText, mode) {
 ['showRole','showHours','showTotalHours','showValue','showNotes'].forEach(id => {
   document.getElementById(id).addEventListener('change', () => { saveState(); autoRefresh(); });
 });
+
+// AI send button
+document.getElementById('aiSendBtn').addEventListener('click', () => {
   const input = document.getElementById('aiInput');
   const text  = input.value.trim();
   if (!text) return;
