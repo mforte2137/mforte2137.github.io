@@ -550,7 +550,7 @@ function renderWorkflow(c) {
   const wfTabsEl = document.getElementById('wf-tabs');
   if (wfTabsEl) {
     if (workflows.length > 1) {
-      wfTabsEl.style.display = 'flex';
+      wfTabsEl.style.cssText = 'display:flex!important';
       wfTabsEl.innerHTML = workflows.map((wf, i) => {
         const doneCount = wf.steps.filter(s => workflowStepDone.has(s.id) || s.done).length;
         const isActive = i === c._activeWfIdx;
@@ -2583,6 +2583,8 @@ document.getElementById('chip-health').addEventListener('click', () => {
 customerSelect.addEventListener('change', e => {
   setBriefingMode('intelligence'); // reset to intelligence on customer change
   updateDocPanel(e.target.value);
+  // Reset workflow tab index on customer change
+  Object.values(CUSTOMERS).forEach(c => { delete c._activeWfIdx; });
   memoryOpen = false;
   memoryBar.classList.remove('open');
   memoryChevron.classList.remove('open');
