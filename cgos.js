@@ -108,7 +108,7 @@ const CUSTOMERS = {
       ]
     },
     signals: [
-      { src: 'RMM',         icon: iconLaptop(), cls: 'high', title: '14 devices reaching Windows 10 EOL',    sub: 'RMM &middot; 10 months away',           modal: 'eol',       action: 'Create opportunity', actionCls: 'act-primary' },
+      { src: 'RMM',         icon: iconLaptop(), cls: 'high', title: '14 devices reaching Windows 10 EOL',    sub: 'RMM &middot; 10 months away',           modal: 'eol',       action: 'Schedule discussion', actionCls: 'act-primary', workflowActive: true, workflowStep: 'Step 2 of 5' },
       { src: 'PSA',         icon: iconLabor(),  cls: 'high', title: 'Labor utilization 27% over agreement',  sub: 'PSA &middot; Last 30 days',             modal: 'labor',     action: 'Review scope', actionCls: 'act-warn' },
       { src: 'PSA',         icon: iconUsers(),  cls: 'med',  title: 'User count increased 18% — 7 unlicensed', sub: 'PSA / M365 &middot; Action needed',   modal: 'users',     action: 'Review users', actionCls: 'act-warn' },
       { src: 'Salesbuildr', icon: iconShield(), cls: 'med',  title: 'No security review in 14 months',       sub: 'Salesbuildr &middot; Overdue',          modal: 'secrev',    action: 'Schedule review', actionCls: 'act-warn' },
@@ -214,16 +214,27 @@ const CUSTOMERS = {
       ],
       action: 'Schedule Strategic Review'
     },
-    workflow: {
-      title: 'Prepare for strategic review',
-      steps: [
-        { id: 's1', label: 'Device Refresh EOL — Draft outreach email to Tom',        desc: 'Explain the key signals and why a review makes sense now. Set a partnership tone.',             action: 'Draft email',            actionFn: 'email',   done: true,  autoLog: 'Email drafted · Jun 10' },
-        { id: 's2', label: 'Device Refresh EOL — Schedule the review meeting',        desc: 'Once Tom responds, lock in a date and generate an agenda based on current signals.',           action: 'Generate agenda',        actionFn: 'agenda',  done: false, waiting: 'Waiting for response'   },
-        { id: 's3', label: 'Device Refresh EOL — Generate conversation brief', desc: 'AI-written brief: how to open, what to raise first, how to close with a next step.',          action: 'Generate brief',         actionFn: 'brief',   done: false  },
-        { id: 's4', label: 'Device Refresh EOL — Generate review document',           desc: 'Generate a Health Report, QBR, or Technology Roadmap to present to Tom.',                    action: 'Generate report',        actionFn: 'report',  done: false  },
-        { id: 's5', label: 'Device Refresh EOL — Create opportunity in Salesbuildr', desc: 'Convert the review outcome into a tracked opportunity and link to a proposal when ready.',    action: 'Create opportunity',     actionFn: 'opp',     done: false  }
-      ]
-    },
+    workflows: [
+      { id: 'wf1', title: 'Device Refresh EOL',
+        steps: [
+          { id: 's1', label: 'Device Refresh EOL — Draft outreach email to Tom',       desc: 'Explain the key signals and why a review makes sense now. Set a partnership tone.',          action: 'Draft email',        actionFn: 'email',   done: true,  autoLog: 'Email drafted · Jun 10' },
+          { id: 's2', label: 'Device Refresh EOL — Schedule the review meeting',       desc: 'Once Tom responds, lock in a date and generate an agenda based on current signals.',        action: 'Generate agenda',    actionFn: 'agenda',  done: false, waiting: 'Waiting for response' },
+          { id: 's3', label: 'Device Refresh EOL — Generate conversation brief',       desc: 'AI-written brief: how to open, what to raise first, how to close with a next step.',       action: 'Generate brief',     actionFn: 'brief',   done: false },
+          { id: 's4', label: 'Device Refresh EOL — Generate review document',          desc: 'Generate a Health Report, QBR, or Technology Roadmap to present to Tom.',                 action: 'Generate report',    actionFn: 'report',  done: false },
+          { id: 's5', label: 'Device Refresh EOL — Create opportunity in Salesbuildr', desc: 'Convert the review outcome into a tracked opportunity.',                                   action: 'Create opportunity', actionFn: 'opp',     done: false }
+        ]
+      },
+      { id: 'wf2', title: 'Security Assessment',
+        steps: [
+          { id: 'x1', label: 'Security Assessment — Draft outreach email to Tom',      desc: 'Frame the security review as a proactive service — not a reaction to a problem.',          action: 'Draft email',        actionFn: 'email',   done: false },
+          { id: 'x2', label: 'Security Assessment — Schedule assessment meeting',      desc: 'Lock in a date for the formal security review with Tom.',                                  action: 'Generate agenda',    actionFn: 'agenda',  done: false },
+          { id: 'x3', label: 'Security Assessment — Generate conversation brief',      desc: 'AI brief covering the 14-month gap, risk exposure, and assessment scope.',                 action: 'Generate brief',     actionFn: 'brief',   done: false },
+          { id: 'x4', label: 'Security Assessment — Generate review document',         desc: 'Generate a Health Report highlighting the security gap.',                                  action: 'Generate report',    actionFn: 'report',  done: false },
+          { id: 'x5', label: 'Security Assessment — Create opportunity in Salesbuildr',desc: '$3,500 security assessment engagement — create and link to proposal.',                     action: 'Create opportunity', actionFn: 'opp',     done: false }
+        ]
+      }
+    ],
+    workflow: null,
     dataConfidence: {
       score: 92,
       cls: 'full',
