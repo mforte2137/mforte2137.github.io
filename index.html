@@ -138,6 +138,39 @@
     </div>
   </footer>
 
+  <!-- Tool detail modal -->
+  <div class="modal-overlay" id="tool-detail-overlay" aria-hidden="true">
+    <div class="modal-card tool-detail-modal" role="dialog" aria-modal="true" aria-labelledby="tool-detail-title">
+      <div class="modal-header">
+        <div class="tool-detail-header-inner">
+          <div class="tool-detail-icon" id="tool-detail-icon"></div>
+          <div>
+            <p class="modal-kicker" id="tool-detail-category"></p>
+            <h2 class="modal-title" id="tool-detail-title"></h2>
+          </div>
+        </div>
+        <button class="modal-close" id="tool-detail-close" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body tool-detail-body">
+        <p class="tool-detail-desc" id="tool-detail-desc"></p>
+        <div class="tool-detail-grid" id="tool-detail-grid"></div>
+      </div>
+      <div class="tool-detail-footer">
+        <a class="tool-detail-open" id="tool-detail-open" href="#" target="_blank" rel="noopener noreferrer">
+          Open tool
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="13 5 20 12 13 19"/>
+          </svg>
+        </a>
+        <button class="tool-detail-feedback" id="tool-detail-feedback">Send Feedback</button>
+      </div>
+    </div>
+  </div>
+
   <!-- AI Helper modal -->
   <div class="modal-overlay" id="ai-overlay" aria-hidden="true">
     <div class="modal-card ai-modal" role="dialog" aria-modal="true" aria-labelledby="ai-modal-title">
