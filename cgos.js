@@ -780,11 +780,11 @@ const taskStatus = {
    ══════════════════════════════════════════ */
 const PORTFOLIO = [
   { key: 'abc',    name: 'ABC Manufacturing',     type: 'Fully Managed', location: 'Houston, TX',   priority: 'urgent', health: 82, highSigs: 2, medSigs: 2, okSigs: 1, mrr: '$3,840', am: 'Sarah Johnson', lastReview: '8 months ago', overdue: true,
-    why: '$18K device refresh — 14 Win10 devices hitting EOL in 10 months. Security review 14 months overdue.', pipeline: '$21,950 pipeline', priorityScore: 96, action: 'Schedule strategic review', actionUrgency: 'urgent', actionSub: 'Discuss device refresh plan and security posture', am: 'Sarah Johnson', impact: '$18,000', impactLevel: 'urgent', impactLabel: 'High priority' },
+    why: '$18K device refresh — 14 Win10 devices hitting EOL in 10 months. Security review 14 months overdue.', pipeline: '$21,950 pipeline', priorityScore: 96, action: 'View plan →', actionUrgency: 'urgent', actionSub: 'Device refresh + security review · Step 2 of 5', am: 'Sarah Johnson', impact: '$18,000', impactLevel: 'urgent', impactLabel: 'High priority' },
   { key: 'river',  name: 'River Tech Solutions',  type: 'Co-Managed',   location: 'Austin, TX',    priority: 'review', health: 71, highSigs: 1, medSigs: 1, okSigs: 1, mrr: '$2,100', am: 'Mark Davies',   lastReview: '4 months ago', overdue: false,
     why: 'Server refresh proposal unanswered 8 days. Backup disk failure risk — SLA breach if not actioned this week.', pipeline: '$14,500 pipeline', priorityScore: 88, action: 'Call Marcus this week', actionUrgency: 'warn' },
   { key: 'peak',   name: 'Peak Financial Group',  type: 'Fully Managed', location: 'Denver, CO',    priority: 'ok',     health: 91, highSigs: 0, medSigs: 1, okSigs: 2, mrr: '$5,200', am: 'Lisa Tran',     lastReview: '2 months ago', overdue: false,
-    why: 'Compliance audit in 60 days — agenda preparation due now. Dark web monitoring gap identified.', pipeline: '$4,000 pipeline', priorityScore: 52, action: 'Prepare audit agenda', actionUrgency: 'info', actionSub: 'Align on audit scope and close security monitoring gap', am: 'Lisa Tran', impact: '$3,000', impactLevel: 'info', impactLabel: 'Lower priority' }
+    why: 'Compliance audit in 60 days — agenda preparation due now. Dark web monitoring gap identified.', pipeline: '$4,000 pipeline', priorityScore: 52, action: 'View plan →', actionUrgency: 'info', actionSub: 'Compliance audit preparation · Step 2 of 5', am: 'Lisa Tran', impact: '$3,000', impactLevel: 'info', impactLabel: 'Lower priority' }
 ];
 
 /* ══════════════════════════════════════════
@@ -2198,17 +2198,27 @@ function renderPortfolioRows(rows) {
   }).join('');
 
   document.querySelectorAll('.port-row-action[data-key]').forEach(row => {
-    const go = () => {
+    const go = (e) => {
       const key = row.dataset.key;
-      if (CUSTOMERS[key]) {
-        activeSignalFilter = null;
-        document.querySelectorAll('.port-intel-signal').forEach(c => c.classList.remove('active'));
-        switchView('briefing');
-        ensureBriefingRendered(key);
+      if (!CUSTOMERS[key]) return;
+      activeSignalFilter = null;
+      document.querySelectorAll('.port-intel-signal').forEach(c => c.classList.remove('active'));
+      switchView('briefing');
+      ensureBriefingRendered(key);
+      // If clicking the action button specifically, scroll to workflow panel
+      if (e && e.target.closest('.port-action-btn')) {
+        setTimeout(() => {
+          const wfPanel = document.getElementById('workflow-panel');
+          if (wfPanel) {
+            wfPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            wfPanel.classList.add('wf-highlight');
+            setTimeout(() => wfPanel.classList.remove('wf-highlight'), 1800);
+          }
+        }, 350);
       }
     };
     row.addEventListener('click', go);
-    row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') go(); });
+    row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') go(e); });
   });
 }
 
