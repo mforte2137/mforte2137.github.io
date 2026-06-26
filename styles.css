@@ -422,6 +422,7 @@ p, .body-text, .description {
   border-top: 1px solid var(--border);
   background: var(--bg);
   transition: background .15s;
+  gap: 8px;
 }
 
 .card-tag {
@@ -1057,27 +1058,23 @@ p, .body-text, .description {
 }
 
 .card-info-btn {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  width: 24px; height: 24px;
-  display: grid; place-items: center;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0;
+  background: none;
+  border: none;
   border-radius: 0;
   cursor: pointer;
-  color: var(--text-3);
-  padding: 0;
-  opacity: 0;
-  transition: opacity .15s, color .15s, background .15s;
-  z-index: 2;
-}
-.tool-card-wrap:hover .card-info-btn { opacity: 1; }
-.card-info-btn:hover {
   color: var(--accent);
-  border-color: var(--accent-border);
-  background: var(--accent-bg);
+  transition: color .15s;
 }
+.card-info-btn:hover { color: var(--accent-2); }
+.card-info-btn svg { flex-shrink: 0; }
 
 /* =========================================================
    Tool detail modal
