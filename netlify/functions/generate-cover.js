@@ -275,6 +275,25 @@ Respond ONLY with valid JSON, no markdown:
       // Fallback: if AI found no logo, pick first logo candidate
       if (!logoUrl && logoImages.length > 0) logoUrl = logoImages[0].url;
 
+      // Verify logo is publicly fetchable by Placid — if not, drop it silently
+      // (an unfetchable logo causes Placid to reject the entire request)
+      if (logoUrl) {
+        try {
+          const logoTest = await fetch(logoUrl, {
+            method: 'HEAD',
+            signal: AbortSignal.timeout(5000),
+            headers: { 'User-Agent': 'Mozilla/5.0' }
+          });
+          if (!logoTest.ok) {
+            console.log(`Logo URL rejected (${logoTest.status}): ${logoUrl}`);
+            logoUrl = null;
+          }
+        } catch (e) {
+          console.log(`Logo URL unreachable: ${logoUrl}`);
+          logoUrl = null;
+        }
+      }
+
       // ── Photo selection from curated GitHub library ────────
       const PHOTO_BASE       = 'https://raw.githubusercontent.com/mforte2137/mforte2137.github.io/main/images/photos/';
       const PHOTO_COUNT      = 12;
