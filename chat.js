@@ -136,7 +136,6 @@ document.getElementById('docsClearBtn').addEventListener('click', () => {
   document.getElementById('docsSearchQuery').value = '';
   document.getElementById('docsSearchOutput').classList.add('hidden');
   document.getElementById('docsSearchGap').classList.add('hidden');
-  document.getElementById('writeArticlePanel').classList.add('hidden');
   document.getElementById('writeArticleContext').value = '';
   document.getElementById('articleOutput').classList.add('hidden');
   document.getElementById('articleRendered').innerHTML = '';
@@ -581,7 +580,6 @@ document.getElementById('docsSearchBtn').addEventListener('click', async () => {
 
   // Reset downstream panels
   document.getElementById('docsSearchGap').classList.add('hidden');
-  document.getElementById('writeArticlePanel').classList.add('hidden');
   document.getElementById('articleOutput').classList.add('hidden');
   document.getElementById('articleRendered').innerHTML = '';
   document.getElementById('writeArticleContext').value = '';
@@ -611,7 +609,6 @@ document.getElementById('docsSearchBtn').addEventListener('click', async () => {
     if (gapContent) {
       gapText.innerText = gapContent;
       gapBlock.classList.remove('hidden');
-      writePanel.classList.remove('hidden');
     }
 
     outputBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
