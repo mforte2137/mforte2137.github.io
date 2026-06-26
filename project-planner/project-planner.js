@@ -501,6 +501,11 @@ function captureCurrentState() {
     hoursPerDay:  document.getElementById('hoursPerDay').value,
     overview:     document.getElementById('overview').value,
     exclusions:   document.getElementById('exclusions').value,
+    showRole:       document.getElementById('showRole').checked,
+    showHours:      document.getElementById('showHours').checked,
+    showTotalHours: document.getElementById('showTotalHours').checked,
+    showValue:      document.getElementById('showValue').checked,
+    showNotes:      document.getElementById('showNotes').checked,
     rows:         rows.map(r => ({ ...r }))
   };
 }
@@ -668,6 +673,11 @@ function applyState(s) {
   document.getElementById('hoursPerDay').value  = s.hoursPerDay  ?? 8;
   document.getElementById('overview').value     = s.overview     ?? '';
   document.getElementById('exclusions').value   = s.exclusions   ?? '';
+  document.getElementById('showRole').checked       = s.showRole       !== false;
+  document.getElementById('showHours').checked      = s.showHours      === true;
+  document.getElementById('showTotalHours').checked = s.showTotalHours !== false;
+  document.getElementById('showValue').checked      = s.showValue      !== false;
+  document.getElementById('showNotes').checked      = s.showNotes      !== false;
   rows = (s.rows || []).map(r => ({ task:'', role:'', skuId:'', hours:'', notes:'', ...r }));
   render(); updateSummary(); saveState(); updateCenterHeader();
 }
@@ -872,6 +882,13 @@ function generateWidget() {
   const exclusions = (document.getElementById('exclusions').value   || '').trim();
   const hpd        = document.getElementById('hoursPerDay').value;
 
+  // Column visibility toggles
+  const showRole       = document.getElementById('showRole').checked;
+  const showHours      = document.getElementById('showHours').checked;
+  const showTotalHours = document.getElementById('showTotalHours').checked;
+  const showValue      = document.getElementById('showValue').checked;
+  const showNotes      = document.getElementById('showNotes').checked;
+
   function hexToRgb(hex) {
     const r = parseInt(hex.slice(1,3),16);
     const g = parseInt(hex.slice(3,5),16);
@@ -897,32 +914,31 @@ function generateWidget() {
   const totalVal = included.reduce((s, r) => s + (r.price != null ? r.hours * r.price : 0), 0);
   const hasVal   = included.some(r => r.price != null);
   const duration = totalDurationStr(totalHrs, hpd);
-  const colCount = 4; // Task, Role, Hours, Notes
+  const colCount = 1 + (showRole?1:0) + (showHours?1:0) + (showNotes?1:0);
 
-  const thCols = [
-    `<th style="text-align:left;padding:9px 12px;border:1px solid #e2e8f0;background:${brandColor};color:#ffffff;font-size:13px;font-weight:600;">Task</th>`,
-    `<th style="text-align:left;padding:9px 12px;border:1px solid #e2e8f0;background:${brandColor};color:#ffffff;font-size:13px;font-weight:600;white-space:nowrap;">Role / SKU</th>`,
-    `<th style="text-align:right;padding:9px 12px;border:1px solid #e2e8f0;background:${brandColor};color:#ffffff;font-size:13px;font-weight:600;white-space:nowrap;">Hours</th>`,
-    `<th style="text-align:left;padding:9px 12px;border:1px solid #e2e8f0;background:${brandColor};color:#ffffff;font-size:13px;font-weight:600;">Notes</th>`
-  ];
+  const thStyle = `text-align:left;padding:9px 12px;border:1px solid #e2e8f0;background:${brandColor};color:#ffffff;font-size:13px;font-weight:600;`;
+  const thCols  = [`<th style="${thStyle}">Task</th>`];
+  if (showRole)  thCols.push(`<th style="${thStyle}white-space:nowrap;">Role / SKU</th>`);
+  if (showHours) thCols.push(`<th style="${thStyle}white-space:nowrap;text-align:right;">Hours</th>`);
+  if (showNotes) thCols.push(`<th style="${thStyle}">Notes</th>`);
 
   const tbRows = included.map((r, i) => {
     const bg = i % 2 === 1 ? `background:${rowTint};` : '';
-    const priceNote = r.price != null ? ` <span style="color:#94a3b8;font-size:11px;">(${fmt(r.price)}/hr)</span>` : '';
-    return `<tr>
-      <td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;${bg}"><strong>${esc(r.task)}</strong></td>
-      <td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;white-space:nowrap;${bg}">${esc(r.role)}${priceNote}</td>
-      <td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;text-align:right;white-space:nowrap;${bg}">${esc(roundDisp(r.hours))}</td>
-      <td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;${bg}">${esc(r.notes)}</td>
-    </tr>`;
+    const cells = [`<td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;${bg}"><strong>${esc(r.task)}</strong></td>`];
+    if (showRole)  cells.push(`<td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;white-space:nowrap;${bg}">${esc(r.role)}</td>`);
+    if (showHours) cells.push(`<td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;text-align:right;white-space:nowrap;${bg}">${esc(roundDisp(r.hours))}</td>`);
+    if (showNotes) cells.push(`<td style="padding:8px 12px;border:1px solid #e2e8f0;vertical-align:top;font-size:13px;${bg}">${esc(r.notes)}</td>`);
+    return `<tr>${cells.join('')}</tr>`;
   }).join('\n      ');
 
-  const valStr = hasVal && totalVal > 0 ? `&nbsp;&nbsp;·&nbsp;&nbsp;<strong style="color:${brandColor};">Est. Value:</strong> <strong>${fmt(totalVal)}</strong>` : '';
-  const totalsRow = `<tr>
+  const valStr  = showValue && hasVal && totalVal > 0 ? `&nbsp;&nbsp;·&nbsp;&nbsp;<strong style="color:${brandColor};">Est. Value:</strong> <strong>${fmt(totalVal)}</strong>` : '';
+  const durStr  = duration !== '—' ? `&nbsp;&nbsp;·&nbsp;&nbsp;<strong style="color:${brandColor};">Est. Duration:</strong> <strong>${esc(duration)}</strong>` : '';
+  const hrsStr  = showTotalHours ? `<strong style="color:${brandColor};">Total Effort:</strong> <strong>${esc(roundDisp(totalHrs))} hours</strong>${durStr}${valStr}` : (valStr ? `<strong style="color:${brandColor};">Est. Value:</strong> <strong>${fmt(totalVal)}</strong>` : '');
+  const totalsRow = hrsStr ? `<tr>
     <td colspan="${colCount}" style="padding:9px 12px;border:1px solid #e2e8f0;font-size:13px;background:${totalTint};">
-      <strong style="color:${brandColor};">Total Effort:</strong> <strong>${esc(roundDisp(totalHrs))} hours</strong>${duration !== '—' ? `&nbsp;&nbsp;·&nbsp;&nbsp;<strong style="color:${brandColor};">Est. Duration:</strong> <strong>${esc(duration)}</strong>` : ''}${valStr}
+      ${hrsStr}
     </td>
-  </tr>`;
+  </tr>` : '';
 
   const exLines = exclusions.split('\n').map(l => l.trim()).filter(Boolean);
   const exclusionsHtml = exLines.length > 0 ? `
@@ -1312,8 +1328,10 @@ async function sendAiMessage(userText, mode) {
   }
 }
 
-// AI send button
-document.getElementById('aiSendBtn').addEventListener('click', () => {
+// Toggle change listeners — live refresh preview if open
+['showRole','showHours','showTotalHours','showValue','showNotes'].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => { saveState(); autoRefresh(); });
+});
   const input = document.getElementById('aiInput');
   const text  = input.value.trim();
   if (!text) return;
