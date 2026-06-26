@@ -486,3 +486,105 @@ const ICONS = {
 /* Initial render — runs after GRADIENTS and ICONS are defined */
 buildTabs();
 render();
+
+/* =========================================================
+   Feedback panel
+   ========================================================= */
+(function initFeedback() {
+  const trigger  = document.getElementById('feedback-trigger');
+  const panel    = document.getElementById('feedback-panel');
+  const overlay  = document.getElementById('feedback-overlay');
+  const closeBtn = document.getElementById('feedback-close');
+  const toolSel  = document.getElementById('fb-tool');
+  const chips    = document.querySelectorAll('.fb-chip');
+  const message  = document.getElementById('fb-message');
+  const submit   = document.getElementById('feedback-submit');
+  const status   = document.getElementById('feedback-status');
+
+  /* Populate tool dropdown from TOOLS array */
+  TOOLS.slice().sort((a, b) => a.title.localeCompare(b.title)).forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.title;
+    opt.textContent = t.title;
+    toolSel.appendChild(opt);
+  });
+
+  /* Open / close */
+  function openPanel() {
+    panel.classList.add('open');
+    overlay.classList.add('open');
+    panel.setAttribute('aria-hidden', 'false');
+    overlay.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+  function closePanel() {
+    panel.classList.remove('open');
+    overlay.classList.remove('open');
+    panel.setAttribute('aria-hidden', 'true');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  trigger.addEventListener('click', openPanel);
+  closeBtn.addEventListener('click', closePanel);
+  overlay.addEventListener('click', closePanel);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+
+  /* Type chip selection */
+  let selectedType = 'Feature Request';
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      chips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      selectedType = chip.dataset.value;
+    });
+  });
+
+  /* Submit */
+  submit.addEventListener('click', async () => {
+    const msg = message.value.trim();
+    if (!msg) {
+      showStatus('Please add a message before sending.', 'error');
+      return;
+    }
+
+    submit.disabled = true;
+    submit.textContent = 'Sending…';
+    status.hidden = true;
+
+    try {
+      const res = await fetch('/api/hub-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tool: toolSel.value,
+          type: selectedType,
+          message: msg,
+          submittedAt: new Date().toISOString()
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showStatus('Feedback sent — thank you!', 'success');
+        message.value = '';
+        toolSel.value = '';
+        chips.forEach(c => c.classList.remove('active'));
+        chips[0].classList.add('active');
+        selectedType = 'Feature Request';
+      } else {
+        showStatus('Something went wrong. Please try again.', 'error');
+      }
+    } catch {
+      showStatus('Could not send feedback. Check your connection.', 'error');
+    } finally {
+      submit.disabled = false;
+      submit.textContent = 'Send Feedback';
+    }
+  });
+
+  function showStatus(msg, type) {
+    status.textContent = msg;
+    status.className = 'feedback-status ' + type;
+    status.hidden = false;
+  }
+})();
