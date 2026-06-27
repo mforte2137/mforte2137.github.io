@@ -50,6 +50,7 @@ Rules:
 - Tone: confident, professional, empathetic — not salesy or alarmist
 - Do not invent compliance regulations — only reference frameworks that genuinely apply to the specified vertical
 - For body content, use short paragraphs or bullet list lines starting with "- " for scannable lists
+- You may use **bold** to highlight a key term or service name at the start of a bullet line (e.g. "- **Service name** — description"). Do not bold anything else.
 - Keep all body content under 100 words per widget${isPersonalised ? `
 
 Merge tags:
