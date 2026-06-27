@@ -202,12 +202,12 @@
     <p class="result-auto-lead">All four templates rendered with their branding. Click one to select it, then download.</p>
 
     <div id="logo-missing-banner" class="logo-missing-banner" hidden>
-      <div class="logo-missing-icon">⚠</div>
+      <div class="logo-missing-icon" id="logo-banner-icon">⚠</div>
       <div class="logo-missing-body">
-        <strong>Logo not found automatically.</strong> Paste their logo URL below and we'll re-render all four covers with it.
+        <strong id="logo-banner-title">Logo not found automatically.</strong> <span id="logo-banner-desc">Paste their logo URL below and we'll re-render all four covers with it.</span>
         <div class="logo-missing-row">
-          <input type="url" id="logo-missing-input" class="logo-missing-input" placeholder="https://example.com/logo.png">
-          <button type="button" id="logo-missing-btn" class="logo-missing-btn">Add Logo & Re-render →</button>
+          <input type="url" id="logo-missing-input" class="logo-missing-input" placeholder="https://example.com/logo.png or .svg">
+          <button type="button" id="logo-missing-btn" class="logo-missing-btn">Apply Logo & Re-render →</button>
         </div>
       </div>
     </div>
