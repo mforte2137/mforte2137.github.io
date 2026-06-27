@@ -1,9 +1,12 @@
 /* ============================================================
    SALESBUILDR — Complementary Services Widget Builder
-   complementary-services.js  v3
+   complementary-services.js  v4
    ============================================================ */
 
 'use strict';
+
+const LS_API_KEY    = 'sb_api_key';
+const LS_TENANT_URL = 'sb_tenant_url';
 
 // ── State ──────────────────────────────────────────────────────
 const state = {
@@ -43,6 +46,7 @@ const PROJECT_PRESETS = [
   { id: 'custom',          icon: '✏️',  name: 'Custom Project',        prompt: '' },
 ];
 
+// Each library item gets a stable `libId` used to restore it when removed from stack
 const LIBRARY_SERVICES = [
   { id: 'lib-mfa',        name: 'MFA & Conditional Access',      description: 'Prevents credential-based attacks by requiring a second factor for every login — one of the highest-impact security controls available.' },
   { id: 'lib-edr',        name: 'Endpoint Detection & Response',  description: 'Monitors every device for suspicious behaviour in real time, catching threats that traditional antivirus misses.' },
@@ -150,7 +154,7 @@ function bindEvents() {
     });
   });
 
-  // Stack drop zone for library drag — attached once here, never removed
+  // Stack drop zone for library drag — attached once, never removed
   $('service-stack').addEventListener('dragover', e => {
     if (e.dataTransfer.types.includes('application/x-lib-id')) e.preventDefault();
   });
@@ -158,7 +162,7 @@ function bindEvents() {
     const libId = e.dataTransfer.getData('application/x-lib-id');
     if (!libId) return;
     const lib = LIBRARY_SERVICES.find(l => l.id === libId);
-    if (lib) addServiceToStack({ id: `lib-${lib.id}-${Date.now()}`, name: lib.name, description: lib.description, priority: 'recommended' });
+    if (lib) addServiceToStack({ id: `lib-${lib.id}-${Date.now()}`, libId: lib.id, name: lib.name, description: lib.description, priority: 'recommended' });
   });
 }
 
@@ -175,12 +179,12 @@ function applyCustomHex() {
 
 // ── Settings ───────────────────────────────────────────────────
 function loadSettings() {
-  $('input-tenant-url').value = localStorage.getItem('sb_tenant_url') || '';
-  $('input-api-key').value    = localStorage.getItem('sb_api_key') || '';
+  $('input-tenant-url').value = localStorage.getItem(LS_TENANT_URL) || '';
+  $('input-api-key').value    = localStorage.getItem(LS_API_KEY) || '';
 }
 function saveSettings() {
-  localStorage.setItem('sb_tenant_url', $('input-tenant-url').value.trim());
-  localStorage.setItem('sb_api_key',    $('input-api-key').value.trim());
+  localStorage.setItem(LS_TENANT_URL, $('input-tenant-url').value.trim());
+  localStorage.setItem(LS_API_KEY,    $('input-api-key').value.trim());
   $('settings-status').textContent = 'Saved ✓';
   setTimeout(() => { $('settings-status').textContent = ''; }, 2000);
 }
@@ -198,8 +202,6 @@ function buildProjectString() {
 
 // ── AI Suggest ─────────────────────────────────────────────────
 async function handleSuggest() {
-  console.log('handleSuggest called, selectedProject:', state.selectedProject);
-
   if (!state.selectedProject) { showToast('Select a project type first.'); return; }
   if (state.selectedProject === 'custom' && !$('input-project').value.trim()) {
     showToast('Describe the custom project first.');
@@ -208,13 +210,10 @@ async function handleSuggest() {
   }
 
   const project = buildProjectString();
-  console.log('Calling API with project:', project.slice(0, 80));
   showLoading('Analysing your project…');
 
   state.abortController = new AbortController();
-  const timeoutId = setTimeout(() => {
-    if (state.abortController) { state.abortController.abort(); }
-  }, 25000);
+  const timeoutId = setTimeout(() => { if (state.abortController) state.abortController.abort(); }, 25000);
 
   try {
     const res = await fetch('/api/complementary-services', {
@@ -223,19 +222,15 @@ async function handleSuggest() {
       body: JSON.stringify({ project }),
       signal: state.abortController.signal,
     });
-
     clearTimeout(timeoutId);
-    console.log('API response status:', res.status);
-
     const data = await res.json();
-    console.log('API response data:', data);
     hideLoading();
-
     if (!data.ok) throw new Error(data.error || 'The AI service returned an error.');
 
     const incoming = Array.isArray(data.result) ? data.result : [data.result];
     state.services = incoming.slice(0, 4).map((s, i) => ({
       id: `svc-${Date.now()}-${i}`,
+      libId: null,   // AI-generated — not from library
       name: s.name || 'Unnamed Service',
       description: s.description || s.reason || '',
       priority: s.priority === 'optional' ? 'optional' : 'recommended',
@@ -246,11 +241,8 @@ async function handleSuggest() {
   } catch (err) {
     clearTimeout(timeoutId);
     hideLoading();
-    console.error('handleSuggest error:', err);
     if (err.name === 'AbortError') {
       showToast('Request timed out — check the Netlify function is deployed.');
-    } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-      showToast('Cannot reach /api/complementary-services — is the function deployed?');
     } else {
       showToast('Error: ' + err.message);
     }
@@ -289,12 +281,11 @@ async function handleAiCustom() {
     hideLoading();
     if (!data.ok) throw new Error(data.error || 'AI service error');
     const s = Array.isArray(data.result) ? data.result[0] : data.result;
-    addServiceToStack({ id: `svc-custom-${Date.now()}`, name: s.name || 'Custom Service', description: s.description || desc, priority: 'recommended' });
+    addServiceToStack({ id: `svc-custom-${Date.now()}`, libId: null, name: s.name || 'Custom Service', description: s.description || desc, priority: 'recommended' });
     $('custom-desc').value = '';
   } catch (err) {
     clearTimeout(timeoutId);
     hideLoading();
-    console.error('handleAiCustom error:', err);
     showToast(err.name === 'AbortError' ? 'Request timed out.' : 'Error: ' + err.message);
   }
 }
@@ -305,21 +296,21 @@ function cancelLoading() {
   showToast('Cancelled.');
 }
 
-// ── Stack ──────────────────────────────────────────────────────
+// ── Stack management ───────────────────────────────────────────
 function addServiceToStack(svc) {
   if (state.services.length >= 4) { showToast('Stack is full (max 4). Remove a service first.'); return; }
   state.services.push(svc);
   $('panel-builder').hidden = false;
   $('panel-preview').hidden = false;
   renderStack();
-  renderLibrary();
+  renderLibrary();  // update ✓ state
   renderPreview();
 }
 
 function removeService(id) {
   state.services = state.services.filter(s => s.id !== id);
   renderStack();
-  renderLibrary();
+  renderLibrary();  // restore item to library if it came from there
   renderPreview();
 }
 
@@ -331,6 +322,7 @@ function togglePriority(id) {
   renderPreview();
 }
 
+// ── Render stack ───────────────────────────────────────────────
 function renderStack() {
   const container = $('service-stack');
   $('stack-count').textContent = `${state.services.length} / 4`;
@@ -407,14 +399,15 @@ function renderStack() {
   });
 }
 
-// ── Library ────────────────────────────────────────────────────
+// ── Render library ─────────────────────────────────────────────
 function renderLibrary() {
   const list = $('library-list');
-  const stackNames = state.services.map(s => s.name.toLowerCase());
+  // A library item is "in stack" if any stack service has a matching libId
+  const inStackLibIds = new Set(state.services.map(s => s.libId).filter(Boolean));
   list.innerHTML = '';
 
   LIBRARY_SERVICES.forEach(lib => {
-    const inStack = stackNames.includes(lib.name.toLowerCase());
+    const inStack = inStackLibIds.has(lib.id);
     const item = document.createElement('div');
     item.className = `lib-item${inStack ? ' in-stack' : ''}`;
     item.dataset.name = lib.name;
@@ -423,7 +416,7 @@ function renderLibrary() {
 
     if (!inStack) {
       item.querySelector('.lib-add-btn').addEventListener('click', () => {
-        addServiceToStack({ id: `lib-${lib.id}-${Date.now()}`, name: lib.name, description: lib.description, priority: 'recommended' });
+        addServiceToStack({ id: `lib-${lib.id}-${Date.now()}`, libId: lib.id, name: lib.name, description: lib.description, priority: 'recommended' });
       });
       item.addEventListener('dragstart', e => {
         e.dataTransfer.setData('application/x-lib-id', lib.id);
@@ -455,7 +448,7 @@ function generateWidgetHtml() {
   return `<div style="background:#FFFFFF;border:1px solid #E8E6DF;border-radius:6px;padding:22px 24px;font-family:Arial,Helvetica,sans-serif;max-width:100%;"><table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:18px;border-collapse:collapse;"><tr><td width="4" style="background:${color};padding:0;">&nbsp;</td><td width="12" style="padding:0;">&nbsp;</td><td style="padding:4px 0;"><h5 style="margin:0 0 3px;font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:bold;color:#0B0E14;line-height:1.25;">${escHtml(state.widgetTitle)}</h5><p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6B7280;">${escHtml(state.widgetSubtitle)}</p></td></tr></table>\n${rows}\n</div>`;
 }
 
-// ── Export ─────────────────────────────────────────────────────
+// ── Export: Copy ───────────────────────────────────────────────
 function handleCopy() {
   if (state.services.length === 0) { showToast('Add at least one service first.'); return; }
   navigator.clipboard.writeText(generateWidgetHtml()).then(() => {
@@ -465,24 +458,54 @@ function handleCopy() {
   }).catch(() => showToast('Copy failed — please try again.'));
 }
 
+// ── Export: Push to Salesbuildr (via /api/push-widgets) ────────
 async function handlePush() {
   if (state.services.length === 0) { showToast('Add at least one service first.'); return; }
-  const tenantUrl = localStorage.getItem('sb_tenant_url');
-  const apiKey    = localStorage.getItem('sb_api_key');
-  if (!tenantUrl || !apiKey) { $('settings-drawer').hidden = false; showToast('Enter your Salesbuildr connection details first.'); return; }
+
+  const apiKey    = localStorage.getItem(LS_API_KEY);
+  const tenantUrl = localStorage.getItem(LS_TENANT_URL);
+
+  if (!apiKey || !tenantUrl) {
+    $('settings-drawer').hidden = false;
+    showToast('Enter your Salesbuildr connection details first.');
+    return;
+  }
+
   const preset = PROJECT_PRESETS.find(p => p.id === state.selectedProject);
-  const widgetName = preset && preset.id !== 'custom' ? `Complementary Services — ${preset.name}` : `Complementary Services — ${($('input-project').value.trim() || 'Custom').slice(0, 60)}`;
-  $('export-status').textContent = 'Pushing…';
+  const title = preset && preset.id !== 'custom'
+    ? `Complementary Services — ${preset.name}`
+    : `Complementary Services — ${($('input-project').value.trim() || 'Custom').slice(0, 60)}`;
+
+  const html = generateWidgetHtml();
+  const btn = $('btn-push');
+  btn.disabled = true;
+  btn.textContent = 'Pushing…';
+
   try {
-    const res = await fetch(`${tenantUrl.replace(/\/$/, '')}/api/public/widgets`, {
+    const res = await fetch('/api/push-widgets', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({ name: widgetName, content: generateWidgetHtml() }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        widgets: [{ type: 'html', content: html, title }],
+        prefix: title,
+        apiKey,
+        tenantUrl,
+      })
     });
-    $('export-status').textContent = '';
-    if (res.ok) { showToast('Widget pushed to Salesbuildr ✓'); }
-    else { const err = await res.json().catch(() => ({})); showToast(`Push failed: ${err.message || res.status}`); }
-  } catch { $('export-status').textContent = ''; showToast('Push failed — check your connection settings.'); }
+    const data = await res.json();
+
+    if (data.ok || data.successCount > 0) {
+      showToast('✓ Pushed to Salesbuildr');
+      btn.textContent = '✓ Pushed';
+      setTimeout(() => { btn.textContent = 'Push to Salesbuildr'; btn.disabled = false; }, 3000);
+    } else {
+      throw new Error((data.results?.[0]?.error) || data.error || 'Unknown error');
+    }
+  } catch (err) {
+    showToast('Push failed: ' + err.message);
+    btn.textContent = 'Push to Salesbuildr';
+    btn.disabled = false;
+  }
 }
 
 // ── Loading ────────────────────────────────────────────────────
