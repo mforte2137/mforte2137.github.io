@@ -1,30 +1,43 @@
-exports.handler = async (event) => {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  };
+const axios = require('axios');
 
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers, body: '' };
-  }
-
+exports.handler = async function(event, context) {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: JSON.stringify({ ok: false, error: 'POST required.' }) };
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ ok: false, error: 'Method Not Allowed' }),
+      headers: { 'Content-Type': 'application/json' }
+    };
   }
 
   let body;
   try {
     body = JSON.parse(event.body);
   } catch {
-    return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: 'Invalid JSON.' }) };
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ ok: false, error: 'Invalid JSON.' }),
+      headers: { 'Content-Type': 'application/json' }
+    };
   }
 
   const { project, mode, customDescription } = body;
 
   if (!project && !customDescription) {
-    return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: 'project or customDescription is required.' }) };
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ ok: false, error: 'project or customDescription is required.' }),
+      headers: { 'Content-Type': 'application/json' }
+    };
+  }
+
+  const claudeApiKey = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY;
+  if (!claudeApiKey) {
+    console.error('No API key found — set CLAUDE_API_KEY or ANTHROPIC_API_KEY in Netlify environment variables');
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ ok: false, error: 'Claude API key is not configured' }),
+      headers: { 'Content-Type': 'application/json' }
+    };
   }
 
   const systemPrompt = mode === 'custom'
@@ -49,44 +62,53 @@ Rules:
     ? `Build a service card for: ${customDescription}`
     : `Project being proposed: ${project}`;
 
+  console.log(`Complementary services request — mode: ${mode || 'suggest'}, project: ${project}`);
+
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
+    const response = await axios({
+      method: 'post',
+      url: 'https://api.anthropic.com/v1/messages',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
+        'x-api-key': claudeApiKey,
+        'anthropic-version': '2023-06-01'
       },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+      data: {
+        model: 'claude-3-haiku-20240307',
         max_tokens: 1000,
         system: systemPrompt,
-        messages: [{ role: 'user', content: userMessage }],
-      }),
+        messages: [{ role: 'user', content: userMessage }]
+      },
+      timeout: 25000
     });
 
-    const data = await response.json();
+    console.log('Received response from Claude API');
 
-    if (!response.ok) {
-      console.error('Anthropic API error:', data);
-      return { statusCode: 502, headers, body: JSON.stringify({ ok: false, error: 'AI service error. Please try again.' }) };
-    }
-
-    const text = data.content[0].text.trim();
+    const text = response.data.content[0].text.trim();
     const clean = text.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(clean);
 
     return {
       statusCode: 200,
-      headers,
       body: JSON.stringify({ ok: true, result: parsed }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
     };
-  } catch (err) {
-    console.error('Function error:', err);
+
+  } catch (error) {
+    console.error('Claude API error:', error.message);
     return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ ok: false, error: 'Unexpected error. Please try again.' }),
+      statusCode: 502,
+      body: JSON.stringify({
+        ok: false,
+        error: 'Error generating suggestions',
+        message: error.message,
+        status: error.response ? error.response.status : 'unknown',
+        data: error.response && error.response.data ? error.response.data : null
+      }),
+      headers: { 'Content-Type': 'application/json' }
     };
   }
 };
