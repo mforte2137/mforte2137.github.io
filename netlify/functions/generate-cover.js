@@ -110,7 +110,6 @@ async function getPhoto(industry) {
 
 // ── Proxy logo to Placid file storage ────────────────────
 // Fetches logo server-side and re-hosts on Placid's CDN.
-// This bypasses CDN restrictions that block Placid from fetching direct URLs.
 async function proxyLogoToPlacid(logoUrl) {
   const fetchRes = await fetch(logoUrl, {
     headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FirstImpression/1.0)' },
@@ -143,6 +142,35 @@ async function proxyLogoToPlacid(logoUrl) {
   const uploadData = await uploadRes.json();
   if (!uploadRes.ok) throw new Error(uploadData.message || 'Placid file upload failed');
   return uploadData.url;
+}
+
+// ── Resolve logo URL ──────────────────────────────────────
+// Try the original URL first (fast path).
+// If Placid can't fetch it directly, proxy it through our server.
+async function resolveLogoUrl(logoUrl) {
+  if (!logoUrl) return null;
+  try {
+    // Quick check: can our server fetch it at all?
+    const test = await fetch(logoUrl, {
+      method:  'HEAD',
+      signal:  AbortSignal.timeout(4000),
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    if (test.ok) {
+      // Server can fetch it — try using original URL directly (faster, no upload needed)
+      // But some CDNs allow HEAD and block GET, so we still proxy SVGs and known CDN patterns
+      const needsProxy = logoUrl.toLowerCase().includes('nitrocdn') ||
+                         logoUrl.toLowerCase().includes('cloudfront') ||
+                         logoUrl.toLowerCase().includes('cdn-') ||
+                         logoUrl.toLowerCase().endsWith('.svg');
+      if (!needsProxy) return logoUrl;
+    }
+    // Proxy through Placid file storage
+    return await resolveLogoUrl(logoUrl);
+  } catch (e) {
+    console.log('resolveLogoUrl failed:', e.message);
+    return null;
+  }
 }
 
 // ── Placid image generation ───────────────────────────────
@@ -312,16 +340,11 @@ Respond ONLY with valid JSON, no markdown:
       // Fallback: if AI found no logo, pick first logo candidate
       if (!logoUrl && logoImages.length > 0) logoUrl = logoImages[0].url;
 
-      // Proxy the logo through Placid's file storage so Placid can always fetch it
-      // This bypasses CDN restrictions on the original URL
+      // Resolve logo — try direct URL first, proxy via Placid if needed
       if (logoUrl) {
-        try {
-          logoUrl = await proxyLogoToPlacid(logoUrl);
-          console.log('Logo proxied to Placid:', logoUrl);
-        } catch (e) {
-          console.log('Logo proxy failed, rendering without logo:', e.message);
-          logoUrl = null;
-        }
+        logoUrl = await resolveLogoUrl(logoUrl);
+        if (logoUrl) console.log('Logo resolved:', logoUrl);
+        else console.log('Logo could not be resolved, rendering without logo');
       }
 
       // ── Photo selection from curated GitHub library ────────
@@ -396,7 +419,7 @@ Respond ONLY with valid JSON, no markdown:
     const layers = { photo: { image: photoUrl } };
     if (logoUrl) {
       try {
-        const proxiedLogo = await proxyLogoToPlacid(logoUrl);
+        const proxiedLogo = await resolveLogoUrl(logoUrl);
         layers.logo = { image: proxiedLogo };
       } catch (e) { /* skip logo if proxy fails */ }
     }
@@ -425,7 +448,7 @@ Respond ONLY with valid JSON, no markdown:
     // Proxy logo through Placid file storage for reliable fetching
     if (logoUrl) {
       try {
-        logoUrl = await proxyLogoToPlacid(logoUrl);
+        logoUrl = await resolveLogoUrl(logoUrl);
       } catch (e) {
         console.log('start-all: logo proxy failed, rendering without logo:', e.message);
         logoUrl = null;
