@@ -562,8 +562,9 @@ logoMissingBtn.addEventListener('click', async () => {
 
   } catch (e) {
     logoMissingBtn.disabled    = false;
-    logoMissingBtn.textContent = 'Add Logo & Re-render →';
-    logoMissingBanner.querySelector('.logo-missing-body strong').textContent = `✕ ${e.message} —`;
+    logoMissingBtn.textContent = 'Apply Logo & Re-render →';
+    logoMissingBanner.querySelector('.logo-missing-body strong').textContent = `✕ Could not apply that logo URL.`;
+    document.getElementById('logo-banner-desc').textContent = 'Try a different URL — look for a direct PNG or SVG link from their website.';
   }
 });
 
