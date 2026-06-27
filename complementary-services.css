@@ -514,6 +514,7 @@ input::placeholder, textarea::placeholder { color: var(--text-3); }
 }
 
 /* ── Loading Overlay ──────────────────────────────────────── */
+.loading-overlay[hidden] { display: none; }
 .loading-overlay {
   position: fixed; inset: 0; z-index: 200;
   background: rgba(11, 14, 20, 0.35);
