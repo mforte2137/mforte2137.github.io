@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Complementary Services — Salesbuildr</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="complementary-services.css" />
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- HEADER -->
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="header-brand">
+          <span class="header-logo">SB</span>
+          <div>
+            <p class="header-title">Widget Builder</p>
+            <p class="header-sub">Complementary Services</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn-secondary" id="btn-settings">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Salesbuildr Settings
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- SETTINGS DRAWER -->
+    <div class="settings-drawer" id="settings-drawer" hidden>
+      <div class="settings-inner">
+        <div class="settings-header">
+          <p class="settings-title">Salesbuildr Connection</p>
+          <button class="icon-btn" id="btn-close-settings" aria-label="Close settings">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="settings-body">
+          <label class="form-label">Tenant URL</label>
+          <input type="url" id="input-tenant-url" placeholder="https://acme.salesbuildr.com" />
+          <label class="form-label" style="margin-top:12px">API Key</label>
+          <input type="password" id="input-api-key" placeholder="Enter your Salesbuildr API key" />
+          <div class="settings-footer">
+            <button class="btn-accent" id="btn-save-settings">Save Connection</button>
+            <span class="settings-status" id="settings-status"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN LAYOUT -->
+    <main class="main-layout">
+
+      <!-- LEFT COLUMN: Input + Builder -->
+      <div class="left-col">
+
+        <!-- STEP 1: Project Input -->
+        <section class="panel" id="panel-input">
+          <div class="panel-header">
+            <span class="step-badge">1</span>
+            <div>
+              <p class="panel-title">Describe the project</p>
+              <p class="panel-desc">What are you proposing to this customer?</p>
+            </div>
+          </div>
+          <textarea
+            id="input-project"
+            class="project-input"
+            rows="3"
+            placeholder="e.g. M365 Business Premium migration for a 45-seat accounting firm — moving from on-premise Exchange and file shares to Exchange Online and SharePoint"
+          ></textarea>
+          <div class="input-actions">
+            <button class="btn-accent" id="btn-suggest">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1l1.8 5.4H15l-4.7 3.4 1.8 5.5L8 12l-4.1 3.3 1.8-5.5L1 6.4h5.2L8 1z" fill="currentColor"/></svg>
+              Suggest Services
+            </button>
+            <span class="char-hint" id="char-hint"></span>
+          </div>
+        </section>
+
+        <!-- STEP 2: Service Builder -->
+        <section class="panel" id="panel-builder" hidden>
+          <div class="panel-header">
+            <span class="step-badge">2</span>
+            <div>
+              <p class="panel-title">Build your service stack</p>
+              <p class="panel-desc">Reorder, toggle recommended, edit inline, or add from the library.</p>
+            </div>
+          </div>
+
+          <!-- Widget title editor -->
+          <div class="title-editor">
+            <label class="form-label">Widget title</label>
+            <input type="text" id="widget-title" value="Here's what we recommend next" />
+            <label class="form-label" style="margin-top:8px">Subtitle</label>
+            <input type="text" id="widget-subtitle" value="Services that pair well with this project — let's talk about what makes sense for you." />
+          </div>
+
+          <!-- Color theme picker -->
+          <div class="theme-picker">
+            <label class="form-label">Colour theme</label>
+            <div class="theme-swatches" id="theme-swatches">
+              <button class="swatch active" data-theme="blue" style="background:#2E74DC" title="Salesbuildr Blue" aria-label="Blue theme"></button>
+              <button class="swatch" data-theme="slate" style="background:#334155" title="Slate" aria-label="Slate theme"></button>
+              <button class="swatch" data-theme="teal" style="background:#0F766E" title="Teal" aria-label="Teal theme"></button>
+              <button class="swatch" data-theme="violet" style="background:#6D28D9" title="Violet" aria-label="Violet theme"></button>
+              <button class="swatch" data-theme="orange" style="background:#C2410C" title="Orange" aria-label="Orange theme"></button>
+              <button class="swatch" data-theme="rose" style="background:#BE123C" title="Rose" aria-label="Rose theme"></button>
+              <button class="swatch" data-theme="green" style="background:#166534" title="Green" aria-label="Green theme"></button>
+              <button class="swatch" data-theme="charcoal" style="background:#1C1C1E" title="Charcoal" aria-label="Charcoal theme"></button>
+              <button class="swatch swatch-custom" data-theme="custom" title="Custom colour" aria-label="Custom colour">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+            <div class="custom-hex-wrap" id="custom-hex-wrap" hidden>
+              <input type="text" id="custom-hex" placeholder="#2E74DC" maxlength="7" style="width:120px;font-family:'JetBrains Mono',monospace;font-size:12px;" />
+              <button class="btn-secondary" id="btn-apply-hex" style="padding:7px 12px">Apply</button>
+            </div>
+          </div>
+
+          <!-- Service stack (drag to reorder) -->
+          <div class="stack-label">
+            <span class="form-label" style="margin:0">Service stack</span>
+            <span class="stack-count" id="stack-count">0 / 4</span>
+          </div>
+          <div class="service-stack" id="service-stack">
+            <!-- Cards injected by JS -->
+          </div>
+
+          <div class="stack-empty" id="stack-empty" hidden>
+            <p>No services added yet. Generate suggestions or drag from the library.</p>
+          </div>
+
+          <!-- Export actions -->
+          <div class="export-bar" id="export-bar">
+            <button class="btn-primary" id="btn-copy">Copy Widget HTML</button>
+            <button class="btn-secondary" id="btn-push">Push to Salesbuildr</button>
+            <span class="export-status" id="export-status"></span>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Library + Preview -->
+      <div class="right-col">
+
+        <!-- SERVICE LIBRARY -->
+        <section class="panel panel-library">
+          <div class="panel-header">
+            <span class="step-badge">L</span>
+            <div>
+              <p class="panel-title">Service library</p>
+              <p class="panel-desc">Drag into your stack or click to add.</p>
+            </div>
+          </div>
+          <div class="library-search-wrap">
+            <input type="text" id="library-search" placeholder="Search services…" />
+          </div>
+          <div class="library-list" id="library-list">
+            <!-- Populated by JS -->
+          </div>
+          <div class="library-custom">
+            <p class="form-label">Add a custom service</p>
+            <textarea id="custom-desc" rows="2" placeholder="Describe the service (e.g. 'Proactive patch management for all Windows servers')"></textarea>
+            <button class="btn-secondary" id="btn-ai-custom" style="margin-top:8px;width:100%">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1l1.8 5.4H15l-4.7 3.4 1.8 5.5L8 12l-4.1 3.3 1.8-5.5L1 6.4h5.2L8 1z" fill="currentColor"/></svg>
+              Build with AI &amp; Add
+            </button>
+          </div>
+        </section>
+
+        <!-- LIVE PREVIEW -->
+        <section class="panel panel-preview" id="panel-preview" hidden>
+          <div class="panel-header">
+            <span class="step-badge">3</span>
+            <div>
+              <p class="panel-title">Widget preview</p>
+              <p class="panel-desc">Exactly as it will appear in the proposal.</p>
+            </div>
+          </div>
+          <div class="preview-frame" id="preview-frame">
+            <!-- Rendered by JS -->
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- LOADING OVERLAY -->
+  <div class="loading-overlay" id="loading-overlay" hidden>
+    <div class="loading-card">
+      <div class="spinner"></div>
+      <p class="loading-msg" id="loading-msg">Analysing your project…</p>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="complementary-services.js"></script>
+</body>
+</html>
