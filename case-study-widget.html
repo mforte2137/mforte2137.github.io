@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Case Study Widget Builder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="case-study-widget.css" />
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="header-title">
+          <span class="header-kicker">Proposal Tools</span>
+          <h1>Case Study Widget Builder</h1>
+        </div>
+        <p class="header-desc">Turn a customer win into a polished proposal widget — in minutes.</p>
+      </div>
+    </header>
+
+    <main class="main-layout">
+
+      <!-- LEFT: Input Form -->
+      <section class="form-panel">
+
+        <div class="form-section">
+          <h2 class="section-title">Client Details</h2>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="companyName">Company Name</label>
+              <input type="text" id="companyName" placeholder="Acme Legal Group" />
+            </div>
+            <div class="field">
+              <label for="industry">Industry</label>
+              <select id="industry">
+                <option value="">Select industry…</option>
+                <option>Accounting</option>
+                <option>Construction</option>
+                <option>Finance</option>
+                <option>Healthcare</option>
+                <option>Legal</option>
+                <option>Manufacturing</option>
+                <option>Retail</option>
+                <option>Real Estate</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="companySize">Company Size</label>
+              <input type="text" id="companySize" placeholder="45-person firm" />
+            </div>
+            <div class="field">
+              <label for="location">Location <span class="optional">Optional</span></label>
+              <input type="text" id="location" placeholder="Denver, CO" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="engagementType">Engagement Type</label>
+            <input type="text" id="engagementType" placeholder="Full IT Managed Services" />
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2 class="section-title">The Story</h2>
+
+          <div class="field">
+            <label for="challenge">The Challenge</label>
+            <textarea id="challenge" rows="3" placeholder="What problem were they facing before you helped?"></textarea>
+          </div>
+
+          <div class="field">
+            <label for="solution">What You Did</label>
+            <textarea id="solution" rows="3" placeholder="What did you do? Keep it service-focused, not technical."></textarea>
+          </div>
+
+          <div class="field">
+            <label for="outcome">The Outcome</label>
+            <textarea id="outcome" rows="3" placeholder="What changed? Include at least one metric if you have one."></textarea>
+          </div>
+
+          <div class="field">
+            <label for="clientQuote">Client Quote <span class="optional">Optional</span></label>
+            <textarea id="clientQuote" rows="2" placeholder="One or two sentences. Leave blank if you don't have one."></textarea>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2 class="section-title">Output Options</h2>
+
+          <!-- Anonymise Toggle -->
+          <div class="toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-label">Anonymise client</span>
+              <span class="toggle-hint">Replaces the company name with an industry descriptor — use this if you don't have permission to name the client.</span>
+            </div>
+            <button class="toggle-btn" id="anonymiseToggle" role="switch" aria-checked="true" data-state="on">
+              <span class="toggle-knob"></span>
+            </button>
+          </div>
+
+          <!-- Colour Theme -->
+          <div class="field">
+            <label>Colour Theme</label>
+            <div class="colour-picker">
+              <div class="swatches">
+                <button class="swatch active" data-hex="#0f1f3d" title="Navy" style="background:#0f1f3d"></button>
+                <button class="swatch" data-hex="#2E74DC" title="Blue" style="background:#2E74DC"></button>
+                <button class="swatch" data-hex="#475569" title="Slate" style="background:#475569"></button>
+                <button class="swatch" data-hex="#065f46" title="Emerald" style="background:#065f46"></button>
+                <button class="swatch" data-hex="#0f766e" title="Teal" style="background:#0f766e"></button>
+                <button class="swatch" data-hex="#991B1B" title="Crimson" style="background:#991B1B"></button>
+                <button class="swatch" data-hex="#92400e" title="Amber" style="background:#92400e"></button>
+                <button class="swatch" data-hex="#1a1a1a" title="Charcoal" style="background:#1a1a1a"></button>
+              </div>
+              <div class="hex-input-wrap">
+                <span class="hex-prefix">#</span>
+                <input type="text" id="customHex" maxlength="6" placeholder="0f1f3d" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-primary generate-btn" id="generateBtn">Generate Widget</button>
+          <button class="btn-secondary" id="regenerateBtn" hidden>Regenerate</button>
+        </div>
+
+      </section>
+
+      <!-- RIGHT: Preview -->
+      <section class="preview-panel">
+        <div class="preview-header">
+          <h2 class="section-title">Preview</h2>
+          <div class="preview-actions" id="previewActions" hidden>
+            <button class="btn-secondary" id="copyBtn">Copy HTML</button>
+            <button class="btn-accent" id="pushBtn">Push to Salesbuildr</button>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">◈</div>
+          <p>Fill in the details and click <strong>Generate Widget</strong> to build your case study.</p>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading-state" id="loadingState" hidden>
+          <div class="loading-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <p class="loading-text">Writing your case study<span class="loading-ellipsis"></span></p>
+        </div>
+
+        <!-- Widget preview -->
+        <div class="widget-preview" id="widgetPreview" hidden>
+          <!-- Inline editable sections -->
+          <div class="widget-frame" id="widgetFrame"></div>
+        </div>
+
+        <!-- Salesbuildr credentials form (shown inline if missing) -->
+        <div class="sb-creds-panel" id="sbCredsPanel" hidden>
+          <h3>Salesbuildr Credentials</h3>
+          <p>Enter your API key and tenant URL to push widgets directly.</p>
+          <div class="field">
+            <label for="sbApiKey">API Key</label>
+            <input type="text" id="sbApiKey" placeholder="sk-..." />
+          </div>
+          <div class="field">
+            <label for="sbTenantUrl">Tenant URL</label>
+            <input type="text" id="sbTenantUrl" placeholder="https://yourcompany.salesbuildr.com" />
+          </div>
+          <div class="creds-actions">
+            <button class="btn-primary" id="saveCredsBtn">Save & Push</button>
+            <button class="btn-secondary" id="cancelCredsBtn">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Push feedback -->
+        <div class="push-feedback" id="pushFeedback" hidden></div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <script src="case-study-widget.js"></script>
+</body>
+</html>
