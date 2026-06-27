@@ -139,8 +139,12 @@ async function proxyLogoToPlacid(logoUrl) {
     },
     body: bodyParts
   });
-  const uploadData = await uploadRes.json();
-  if (!uploadRes.ok) throw new Error(uploadData.message || 'Placid file upload failed');
+  const uploadText = await uploadRes.text();
+  console.log('Placid files API response:', uploadRes.status, uploadText.slice(0, 300));
+  let uploadData;
+  try { uploadData = JSON.parse(uploadText); } catch(e) { throw new Error(`Placid files API non-JSON: ${uploadText.slice(0,100)}`); }
+  if (!uploadRes.ok) throw new Error(uploadData.message || `Placid file upload failed: ${uploadRes.status}`);
+  if (!uploadData.url) throw new Error(`Placid file upload: no URL in response: ${uploadText.slice(0,200)}`);
   return uploadData.url;
 }
 
@@ -305,13 +309,19 @@ Website: ${websiteUrl}
 ALL IMAGES FROM SITE (${allForAI.length} total):
 ${allForAI.map((img, i) => `${i+1}. URL: ${img.url} | alt: "${img.alt || ''}" | size: ${img.width||'?'}x${img.height||'?'}`).join('\n')}
 
-Task: Pick the single best logo for the company at ${websiteUrl}.
+Task: Pick the single best COMPANY LOGO for ${websiteUrl}.
+
+STRICT RULES — you MUST follow these:
+- ONLY pick the company's own logo (their brand mark/wordmark)
+- The logo URL or alt text should relate to the company name/domain
+- NEVER pick: certification badges, award badges, "Great Place to Work", partner logos, Microsoft logos, vendor badges, "Certified" badges, ISO badges, or any third-party badge
+- NEVER pick: product screenshots, icons for features, social media icons
+- If the only images are badges/certifications and no actual company logo exists, return null
+
 PREFER in this order:
-1. Full lockup logo (company name + icon together) — SVG format ideal
-2. Full lockup logo in PNG
+1. Full lockup (company name + icon) in SVG
+2. Full lockup in PNG or WebP
 3. Icon/mark only if no full lockup exists
-AVOID: Microsoft/vendor logos, certification badges, partner logos, favicon-sized images
-Return null if no suitable logo found.
 
 Respond ONLY with valid JSON, no markdown:
 {"logoUrl": "url or null"}`;
