@@ -281,6 +281,13 @@
   }
 
   // ─── Build widget HTML (inline styles, TinyMCE-safe) ──────
+
+  // Escape HTML first, then convert **bold** markdown to <strong> tags.
+  // Order matters: escape before converting so asterisks aren't double-processed.
+  function renderInline(text) {
+    return escHtml(text).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  }
+
   function buildWidgetHtml(widget, themeHex) {
     if (!widget) return '';
     const { headline, body } = widget;
@@ -295,12 +302,12 @@
     if (isBulletList) {
       const items = lines.map(l => {
         const text = l.trim().replace(/^- /, '');
-        return `<li style="margin:0 0 6px 0;padding:0;font-size:13px;color:#4B5563;line-height:1.55;">${escHtml(text)}</li>`;
+        return `<li style="margin:0 0 6px 0;padding:0;font-size:13px;color:#4B5563;line-height:1.55;">${renderInline(text)}</li>`;
       }).join('');
       bodyHtml = `<ul style="margin:0;padding:0 0 0 18px;list-style:disc;">${items}</ul>`;
     } else {
       bodyHtml = lines.map(l =>
-        `<p style="margin:0 0 8px 0;font-size:13px;color:#4B5563;line-height:1.55;">${escHtml(l.trim())}</p>`
+        `<p style="margin:0 0 8px 0;font-size:13px;color:#4B5563;line-height:1.55;">${renderInline(l.trim())}</p>`
       ).join('');
     }
 
