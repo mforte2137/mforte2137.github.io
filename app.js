@@ -34,6 +34,18 @@ const TOOLS = [
     icon: "calc"
   },
   {
+    title: "Case Study Widget Builder",
+    shortLabel: "Case Study Builder",
+    description:
+      "Turn a customer win into a persuasive proposal widget in minutes. Describe the challenge, solution, and outcome — AI writes the case study. Use the client\'s name or anonymise it automatically.",
+    category: "Proposal",
+    url: "https://widgetcreator.netlify.app/case-study-widget.html",
+    badge: "new",
+    updated: "2026-06-27",
+    gradient: "ruby",
+    icon: "checklist"
+  },
+  {
     title: "Upsell Services Widget Builder",
     shortLabel: "Upsell Builder",
     description:
@@ -404,6 +416,7 @@ const GRADIENTS = {
   sky:     "linear-gradient(135deg, #0c4a6e 0%, #0284c7 55%, #7dd3fc 100%)",
   coral:   "linear-gradient(135deg, #7c2d12 0%, #ea580c 55%, #fdba74 100%)",
   lime:    "linear-gradient(135deg, #1a4731 0%, #16a34a 55%, #86efac 100%)",
+  ruby:    "linear-gradient(135deg, #881337 0%, #e11d48 55%, #fb7185 100%)",
   mint:    "linear-gradient(135deg, #022c22 0%, #059669 55%, #6ee7b7 100%)",
   cyan:    "linear-gradient(135deg, #164e63 0%, #0891b2 55%, #67e8f9 100%)",
   forest:  "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #86efac 100%)",
@@ -965,6 +978,13 @@ Your data stays with you. Files are read locally in the browser and never transm
 
   // KB lookup — maps tool title to structured detail
   const KB_DETAIL = {
+    "Case Study Widget Builder": {
+      who:   "MSP sales reps or owners who want to include social proof in proposals without the pain of writing case studies from scratch.",
+      input: "Industry, company size, the challenge, what you did, the outcome, engagement type, and an optional client quote. Toggle between using the real company name or anonymising automatically. Choose a colour theme.",
+      out:   "A polished, professionally written case study widget with headline, challenge, solution, and outcome sections — colour-branded, TinyMCE-ready, and exportable directly to Salesbuildr.",
+      when:  "You are pitching to a prospect in the same industry as an existing customer win. You want to add credibility and social proof to a proposal without writing it yourself.",
+      not:   "Not a review collector or long-form case study document — produces a compact proposal widget only."
+    },
     "Upsell Services Widget Builder": {
       who:   "MSPs sending project-type proposals who want to identify and present complementary services for future revenue.",
       input: "Choose a pre-set engagement type or describe a custom project.",
