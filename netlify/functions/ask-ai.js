@@ -2,6 +2,15 @@
 // Receives a user question and returns tool recommendations using the KB
 
 const TOOL_KB = `
+TOOL: Case Study Widget Builder
+WHAT: Generates a polished case study widget from a customer win. The MSP enters the industry, challenge, solution, and outcome — AI writes the narrative. Toggle between using the real company name or anonymising to a descriptor like "a mid-sized healthcare provider". Includes a colour theme selector with 8 presets and custom hex.
+WHO: MSP sales reps or owners who want to include social proof in proposals without writing case studies from scratch.
+INPUT: Industry, company size, location (optional), the challenge, the solution, the outcome, engagement type, optional client quote, and a colour theme.
+OUTPUT: A professional, colour-branded case study widget with headline, challenge, solution, and outcome sections — TinyMCE-ready, with Copy HTML or Push to Salesbuildr export.
+USE WHEN: Pitching to a prospect in the same industry as an existing customer win. Wanting to add credibility and social proof to a proposal quickly and professionally.
+NOT FOR: Collecting reviews or producing long-form case study documents.
+URL: https://widgetcreator.netlify.app/case-study-widget.html
+
 TOOL: Upsell Services Widget Builder
 WHAT: Generates a curated, branded widget listing complementary services that pair with any managed services proposal. Acts as a mini-roadmap and conversation starter — showing the customer a logical path of future services alongside the current engagement.
 WHO: MSPs sending project-type proposals who want to identify and present complementary services to generate future revenue.
