@@ -1,43 +1,35 @@
-const axios = require('axios');
+// Netlify function — Complementary Services Widget Builder
+// Pattern matches generate-widgets.js exactly
 
-exports.handler = async function(event, context) {
+exports.handler = async (event) => {
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  };
+
+  // Handle CORS preflight
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 204, headers, body: '' };
+  }
+
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ ok: false, error: 'Method Not Allowed' }),
-      headers: { 'Content-Type': 'application/json' }
-    };
+    return { statusCode: 405, headers, body: JSON.stringify({ ok: false, error: 'POST required.' }) };
   }
 
   let body;
   try {
     body = JSON.parse(event.body);
-  } catch {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ ok: false, error: 'Invalid JSON.' }),
-      headers: { 'Content-Type': 'application/json' }
-    };
+  } catch (e) {
+    return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: 'Invalid JSON in request body.' }) };
   }
 
   const { project, mode, customDescription } = body;
 
   if (!project && !customDescription) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ ok: false, error: 'project or customDescription is required.' }),
-      headers: { 'Content-Type': 'application/json' }
-    };
-  }
-
-  const claudeApiKey = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY;
-  if (!claudeApiKey) {
-    console.error('No API key found — set CLAUDE_API_KEY or ANTHROPIC_API_KEY in Netlify environment variables');
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ ok: false, error: 'Claude API key is not configured' }),
-      headers: { 'Content-Type': 'application/json' }
-    };
+    return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: 'project or customDescription is required.' }) };
   }
 
   const systemPrompt = mode === 'custom'
@@ -62,53 +54,47 @@ Rules:
     ? `Build a service card for: ${customDescription}`
     : `Project being proposed: ${project}`;
 
-  console.log(`Complementary services request — mode: ${mode || 'suggest'}, project: ${project}`);
-
   try {
-    const response = await axios({
-      method: 'post',
-      url: 'https://api.anthropic.com/v1/messages',
+    const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': claudeApiKey,
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01'
       },
-      data: {
-        model: 'claude-3-haiku-20240307',
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 1000,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }]
-      },
-      timeout: 25000
+      })
     });
 
-    console.log('Received response from Claude API');
+    if (!anthropicResponse.ok) {
+      const errorText = await anthropicResponse.text();
+      return {
+        statusCode: anthropicResponse.status,
+        headers,
+        body: JSON.stringify({ ok: false, error: `Anthropic API returned ${anthropicResponse.status}`, details: errorText })
+      };
+    }
 
-    const text = response.data.content[0].text.trim();
+    const data = await anthropicResponse.json();
+    const text = data.content[0].text.trim();
     const clean = text.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(clean);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ ok: true, result: parsed }),
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      }
+      headers,
+      body: JSON.stringify({ ok: true, result: parsed })
     };
 
-  } catch (error) {
-    console.error('Claude API error:', error.message);
+  } catch (err) {
     return {
-      statusCode: 502,
-      body: JSON.stringify({
-        ok: false,
-        error: 'Error generating suggestions',
-        message: error.message,
-        status: error.response ? error.response.status : 'unknown',
-        data: error.response && error.response.data ? error.response.data : null
-      }),
-      headers: { 'Content-Type': 'application/json' }
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ ok: false, error: 'Function threw an error.', details: err.message })
     };
   }
 };
