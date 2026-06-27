@@ -1,6 +1,6 @@
 /* ============================================================
    SALESBUILDR — Complementary Services Widget Builder
-   complementary-services.js  v2
+   complementary-services.js  v3
    ============================================================ */
 
 'use strict';
@@ -12,12 +12,11 @@ const state = {
   themeColor: '#2E74DC',
   widgetTitle: "Here's what we recommend next",
   widgetSubtitle: "Services that pair well with this project — let's talk about what makes sense for you.",
-  selectedProject: null,   // preset id or 'custom'
+  selectedProject: null,
   dragSrcIndex: null,
   abortController: null,
 };
 
-// ── Theme palette ──────────────────────────────────────────────
 const THEMES = {
   blue:     '#2E74DC',
   slate:    '#334155',
@@ -29,83 +28,21 @@ const THEMES = {
   charcoal: '#1C1C1E',
 };
 
-// ── Common MSP project presets ─────────────────────────────────
 const PROJECT_PRESETS = [
-  {
-    id: 'm365-migration',
-    icon: '☁️',
-    name: 'M365 Migration',
-    prompt: 'Microsoft 365 Business Premium migration — moving email to Exchange Online, files to SharePoint, and collaboration to Teams',
-  },
-  {
-    id: 'server-refresh',
-    icon: '🖥️',
-    name: 'Server Refresh',
-    prompt: 'On-premise server hardware refresh — replacing ageing physical servers with new infrastructure, including data migration and reconfiguration',
-  },
-  {
-    id: 'network-install',
-    icon: '🌐',
-    name: 'Network Install',
-    prompt: 'New network installation — structured cabling, managed switches, firewall, wireless access points, and WAN connectivity',
-  },
-  {
-    id: 'security-stack',
-    icon: '🔒',
-    name: 'Security Stack',
-    prompt: 'Security stack deployment — rolling out endpoint protection, MFA, email filtering, and security awareness training across the business',
-  },
-  {
-    id: 'voip-comms',
-    icon: '📞',
-    name: 'VoIP & Comms',
-    prompt: 'VoIP and business communications upgrade — replacing the legacy phone system with a cloud-based platform including number porting and Teams voice integration',
-  },
-  {
-    id: 'cloud-migration',
-    icon: '⬆️',
-    name: 'Cloud Migration',
-    prompt: 'On-premise to cloud migration — moving servers, line-of-business applications and file storage to cloud-hosted infrastructure',
-  },
-  {
-    id: 'azure-setup',
-    icon: '🔷',
-    name: 'Azure Setup',
-    prompt: 'Azure environment build — setting up Azure tenant, virtual machines, networking, storage, and identity services (Entra ID)',
-  },
-  {
-    id: 'backup-dr',
-    icon: '💾',
-    name: 'Backup & DR',
-    prompt: 'Backup and disaster recovery implementation — deploying cloud backup for servers and endpoints, with tested recovery procedures',
-  },
-  {
-    id: 'compliance',
-    icon: '📋',
-    name: 'Compliance Project',
-    prompt: 'Compliance and governance project — helping the business meet a specific regulatory standard such as Cyber Essentials, ISO 27001, or GDPR requirements',
-  },
-  {
-    id: 'new-office',
-    icon: '🏢',
-    name: 'Office IT Setup',
-    prompt: 'New office IT setup — complete infrastructure for a new or relocated office including network, workstations, printers, and connectivity',
-  },
-  {
-    id: 'sharepoint',
-    icon: '📁',
-    name: 'SharePoint / Intranet',
-    prompt: 'SharePoint intranet and document management project — migrating file shares to SharePoint Online with folder structure, permissions, and user training',
-  },
-  {
-    id: 'custom',
-    icon: '✏️',
-    name: 'Custom Project',
-    prompt: '',
-  },
+  { id: 'm365-migration',  icon: '☁️',  name: 'M365 Migration',       prompt: 'Microsoft 365 Business Premium migration — moving email to Exchange Online, files to SharePoint, and collaboration to Teams' },
+  { id: 'server-refresh',  icon: '🖥️',  name: 'Server Refresh',        prompt: 'On-premise server hardware refresh — replacing ageing physical servers with new infrastructure, including data migration and reconfiguration' },
+  { id: 'network-install', icon: '🌐',  name: 'Network Install',       prompt: 'New network installation — structured cabling, managed switches, firewall, wireless access points, and WAN connectivity' },
+  { id: 'security-stack',  icon: '🔒',  name: 'Security Stack',        prompt: 'Security stack deployment — rolling out endpoint protection, MFA, email filtering, and security awareness training across the business' },
+  { id: 'voip-comms',      icon: '📞',  name: 'VoIP & Comms',          prompt: 'VoIP and business communications upgrade — replacing the legacy phone system with a cloud-based platform including number porting and Teams voice integration' },
+  { id: 'cloud-migration', icon: '⬆️',  name: 'Cloud Migration',       prompt: 'On-premise to cloud migration — moving servers, line-of-business applications and file storage to cloud-hosted infrastructure' },
+  { id: 'azure-setup',     icon: '🔷',  name: 'Azure Setup',           prompt: 'Azure environment build — setting up Azure tenant, virtual machines, networking, storage, and identity services (Entra ID)' },
+  { id: 'backup-dr',       icon: '💾',  name: 'Backup & DR',           prompt: 'Backup and disaster recovery implementation — deploying cloud backup for servers and endpoints, with tested recovery procedures' },
+  { id: 'compliance',      icon: '📋',  name: 'Compliance Project',    prompt: 'Compliance and governance project — helping the business meet a specific regulatory standard such as Cyber Essentials, ISO 27001, or GDPR requirements' },
+  { id: 'new-office',      icon: '🏢',  name: 'Office IT Setup',       prompt: 'New office IT setup — complete infrastructure for a new or relocated office including network, workstations, printers, and connectivity' },
+  { id: 'sharepoint',      icon: '📁',  name: 'SharePoint / Intranet', prompt: 'SharePoint intranet and document management project — migrating file shares to SharePoint Online with folder structure, permissions, and user training' },
+  { id: 'custom',          icon: '✏️',  name: 'Custom Project',        prompt: '' },
 ];
 
-// ── Baked-in service library ───────────────────────────────────
 const LIBRARY_SERVICES = [
   { id: 'lib-mfa',        name: 'MFA & Conditional Access',      description: 'Prevents credential-based attacks by requiring a second factor for every login — one of the highest-impact security controls available.' },
   { id: 'lib-edr',        name: 'Endpoint Detection & Response',  description: 'Monitors every device for suspicious behaviour in real time, catching threats that traditional antivirus misses.' },
@@ -125,18 +62,22 @@ const LIBRARY_SERVICES = [
   { id: 'lib-vci',        name: 'Virtual CIO Advisory',           description: 'Provides strategic IT guidance aligned to your business goals — budgeting, roadmap planning, and vendor management.' },
 ];
 
-// ── DOM shorthand ──────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
 // ── Init ───────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  loadSettings();
-  renderProjectGrid();
-  renderLibrary();
-  bindEvents();
+  try {
+    loadSettings();
+    renderProjectGrid();
+    renderLibrary();
+    bindEvents();
+    console.log('Complementary Services builder initialised OK');
+  } catch (err) {
+    console.error('Init error:', err);
+  }
 });
 
-// ── Render project preset grid ─────────────────────────────────
+// ── Project grid ───────────────────────────────────────────────
 function renderProjectGrid() {
   const grid = $('project-grid');
   grid.innerHTML = '';
@@ -144,10 +85,8 @@ function renderProjectGrid() {
     const btn = document.createElement('button');
     btn.className = 'project-chip';
     btn.dataset.id = preset.id;
-    btn.innerHTML = `
-      <span class="project-chip-icon" aria-hidden="true">${preset.icon}</span>
-      <span class="project-chip-name">${preset.name}</span>
-    `;
+    btn.type = 'button';
+    btn.innerHTML = `<span class="project-chip-icon" aria-hidden="true">${preset.icon}</span><span class="project-chip-name">${preset.name}</span>`;
     btn.addEventListener('click', () => selectProject(preset.id));
     grid.appendChild(btn);
   });
@@ -156,28 +95,20 @@ function renderProjectGrid() {
 function selectProject(id) {
   state.selectedProject = id;
   const preset = PROJECT_PRESETS.find(p => p.id === id);
-
-  // Update chip visual
   document.querySelectorAll('.project-chip').forEach(c => {
     c.classList.toggle('selected', c.dataset.id === id);
   });
-
-  // Enable suggest button
   $('btn-suggest').disabled = false;
   $('input-hint').textContent = id === 'custom'
-    ? 'Describe your project in the box below, then click Suggest Services'
-    : 'Add optional details below, or click Suggest Services now';
-
-  // For custom: clear and focus textarea; for presets: pre-fill placeholder hint
+    ? 'Describe your project below, then click Suggest Services'
+    : 'Add optional context below, or click Suggest Services now';
   const ta = $('input-project');
   if (id === 'custom') {
     ta.placeholder = 'Describe the project you are proposing…';
     ta.value = '';
     ta.focus();
   } else {
-    ta.placeholder = preset ? `e.g. ${preset.prompt.slice(0, 80)}…` : '';
-    // Don't overwrite if the rep has typed something
-    if (!ta.value.trim()) ta.value = '';
+    ta.placeholder = preset && preset.prompt ? `e.g. ${preset.prompt.slice(0, 80)}…` : '';
   }
 }
 
@@ -186,23 +117,15 @@ function bindEvents() {
   $('btn-settings').addEventListener('click', toggleSettings);
   $('btn-close-settings').addEventListener('click', toggleSettings);
   $('btn-save-settings').addEventListener('click', saveSettings);
-
   $('btn-suggest').addEventListener('click', handleSuggest);
+  $('btn-cancel-loading').addEventListener('click', cancelLoading);
+  $('btn-copy').addEventListener('click', handleCopy);
+  $('btn-push').addEventListener('click', handlePush);
+  $('btn-ai-custom').addEventListener('click', handleAiCustom);
+  $('btn-apply-hex').addEventListener('click', applyCustomHex);
 
-  $('btn-cancel-loading').addEventListener('click', () => {
-    if (state.abortController) state.abortController.abort();
-    hideLoading();
-    showToast('Cancelled.');
-  });
-
-  $('widget-title').addEventListener('input', () => {
-    state.widgetTitle = $('widget-title').value;
-    renderPreview();
-  });
-  $('widget-subtitle').addEventListener('input', () => {
-    state.widgetSubtitle = $('widget-subtitle').value;
-    renderPreview();
-  });
+  $('widget-title').addEventListener('input', () => { state.widgetTitle = $('widget-title').value; renderPreview(); });
+  $('widget-subtitle').addEventListener('input', () => { state.widgetSubtitle = $('widget-subtitle').value; renderPreview(); });
 
   $('theme-swatches').addEventListener('click', e => {
     const swatch = e.target.closest('.swatch');
@@ -220,20 +143,6 @@ function bindEvents() {
     }
   });
 
-  $('btn-apply-hex').addEventListener('click', () => {
-    const val = $('custom-hex').value.trim();
-    if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
-      state.theme = 'custom';
-      state.themeColor = val;
-      renderPreview();
-    } else {
-      showToast('Enter a valid hex colour e.g. #2E74DC');
-    }
-  });
-
-  $('btn-copy').addEventListener('click', handleCopy);
-  $('btn-push').addEventListener('click', handlePush);
-
   $('library-search').addEventListener('input', () => {
     const q = $('library-search').value.toLowerCase();
     document.querySelectorAll('.lib-item').forEach(el => {
@@ -241,7 +150,27 @@ function bindEvents() {
     });
   });
 
-  $('btn-ai-custom').addEventListener('click', handleAiCustom);
+  // Stack drop zone for library drag — attached once here, never removed
+  $('service-stack').addEventListener('dragover', e => {
+    if (e.dataTransfer.types.includes('application/x-lib-id')) e.preventDefault();
+  });
+  $('service-stack').addEventListener('drop', e => {
+    const libId = e.dataTransfer.getData('application/x-lib-id');
+    if (!libId) return;
+    const lib = LIBRARY_SERVICES.find(l => l.id === libId);
+    if (lib) addServiceToStack({ id: `lib-${lib.id}-${Date.now()}`, name: lib.name, description: lib.description, priority: 'recommended' });
+  });
+}
+
+function applyCustomHex() {
+  const val = $('custom-hex').value.trim();
+  if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+    state.theme = 'custom';
+    state.themeColor = val;
+    renderPreview();
+  } else {
+    showToast('Enter a valid hex colour e.g. #2E74DC');
+  }
 }
 
 // ── Settings ───────────────────────────────────────────────────
@@ -259,24 +188,19 @@ function toggleSettings() {
   $('settings-drawer').hidden = !$('settings-drawer').hidden;
 }
 
-// ── Build the project string sent to AI ───────────────────────
+// ── Build project string ───────────────────────────────────────
 function buildProjectString() {
   const preset = PROJECT_PRESETS.find(p => p.id === state.selectedProject);
   const customText = $('input-project').value.trim();
-
-  if (!preset || state.selectedProject === 'custom') {
-    return customText || 'Custom IT project';
-  }
-  // Combine preset prompt with any extra detail the rep typed
+  if (!preset || state.selectedProject === 'custom') return customText || 'Custom IT project';
   return customText ? `${preset.prompt}. Additional context: ${customText}` : preset.prompt;
 }
 
-// ── Step 1: AI Suggest ─────────────────────────────────────────
+// ── AI Suggest ─────────────────────────────────────────────────
 async function handleSuggest() {
-  if (!state.selectedProject) {
-    showToast('Select a project type first.');
-    return;
-  }
+  console.log('handleSuggest called, selectedProject:', state.selectedProject);
+
+  if (!state.selectedProject) { showToast('Select a project type first.'); return; }
   if (state.selectedProject === 'custom' && !$('input-project').value.trim()) {
     showToast('Describe the custom project first.');
     $('input-project').focus();
@@ -284,11 +208,12 @@ async function handleSuggest() {
   }
 
   const project = buildProjectString();
+  console.log('Calling API with project:', project.slice(0, 80));
   showLoading('Analysing your project…');
 
   state.abortController = new AbortController();
   const timeoutId = setTimeout(() => {
-    if (state.abortController) state.abortController.abort();
+    if (state.abortController) { state.abortController.abort(); }
   }, 25000);
 
   try {
@@ -300,7 +225,10 @@ async function handleSuggest() {
     });
 
     clearTimeout(timeoutId);
+    console.log('API response status:', res.status);
+
     const data = await res.json();
+    console.log('API response data:', data);
     hideLoading();
 
     if (!data.ok) throw new Error(data.error || 'The AI service returned an error.');
@@ -318,10 +246,11 @@ async function handleSuggest() {
   } catch (err) {
     clearTimeout(timeoutId);
     hideLoading();
+    console.error('handleSuggest error:', err);
     if (err.name === 'AbortError') {
-      showToast('Request timed out — check the server is running and try again.');
+      showToast('Request timed out — check the Netlify function is deployed.');
     } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-      showToast('Cannot reach the API — is the Netlify dev server running? (netlify dev)');
+      showToast('Cannot reach /api/complementary-services — is the function deployed?');
     } else {
       showToast('Error: ' + err.message);
     }
@@ -334,12 +263,11 @@ function openBuilder() {
   $('widget-title').value = state.widgetTitle;
   $('widget-subtitle').value = state.widgetSubtitle;
   renderStack();
-  renderLibrary();
   renderPreview();
   $('panel-builder').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// ── AI Custom Service ──────────────────────────────────────────
+// ── AI Custom ──────────────────────────────────────────────────
 async function handleAiCustom() {
   const desc = $('custom-desc').value.trim();
   if (!desc) { showToast('Describe the service first.'); return; }
@@ -347,7 +275,7 @@ async function handleAiCustom() {
 
   showLoading('Building custom service…');
   state.abortController = new AbortController();
-  const timeoutId = setTimeout(() => state.abortController.abort(), 25000);
+  const timeoutId = setTimeout(() => { if (state.abortController) state.abortController.abort(); }, 25000);
 
   try {
     const res = await fetch('/api/complementary-services', {
@@ -356,39 +284,30 @@ async function handleAiCustom() {
       body: JSON.stringify({ project: desc, mode: 'custom', customDescription: desc }),
       signal: state.abortController.signal,
     });
-
     clearTimeout(timeoutId);
     const data = await res.json();
     hideLoading();
-
     if (!data.ok) throw new Error(data.error || 'AI service error');
-
     const s = Array.isArray(data.result) ? data.result[0] : data.result;
-    addServiceToStack({
-      id: `svc-custom-${Date.now()}`,
-      name: s.name || 'Custom Service',
-      description: s.description || s.reason || desc,
-      priority: 'recommended',
-    });
+    addServiceToStack({ id: `svc-custom-${Date.now()}`, name: s.name || 'Custom Service', description: s.description || desc, priority: 'recommended' });
     $('custom-desc').value = '';
-
   } catch (err) {
     clearTimeout(timeoutId);
     hideLoading();
-    if (err.name === 'AbortError') {
-      showToast('Request timed out — check the server is running.');
-    } else {
-      showToast('Error: ' + err.message);
-    }
+    console.error('handleAiCustom error:', err);
+    showToast(err.name === 'AbortError' ? 'Request timed out.' : 'Error: ' + err.message);
   }
 }
 
-// ── Stack Management ───────────────────────────────────────────
+function cancelLoading() {
+  if (state.abortController) state.abortController.abort();
+  hideLoading();
+  showToast('Cancelled.');
+}
+
+// ── Stack ──────────────────────────────────────────────────────
 function addServiceToStack(svc) {
-  if (state.services.length >= 4) {
-    showToast('Stack is full (max 4). Remove a service first.');
-    return;
-  }
+  if (state.services.length >= 4) { showToast('Stack is full (max 4). Remove a service first.'); return; }
   state.services.push(svc);
   $('panel-builder').hidden = false;
   $('panel-preview').hidden = false;
@@ -412,16 +331,12 @@ function togglePriority(id) {
   renderPreview();
 }
 
-// ── Render Stack ───────────────────────────────────────────────
 function renderStack() {
   const container = $('service-stack');
   $('stack-count').textContent = `${state.services.length} / 4`;
   container.innerHTML = '';
 
-  if (state.services.length === 0) {
-    $('stack-empty').hidden = false;
-    return;
-  }
+  if (state.services.length === 0) { $('stack-empty').hidden = false; return; }
   $('stack-empty').hidden = true;
 
   state.services.forEach((svc, index) => {
@@ -435,29 +350,21 @@ function renderStack() {
     card.innerHTML = `
       <div class="card-accent-bar" style="background:${isRec ? state.themeColor : '#D1D5DB'}"></div>
       <div class="card-drag-handle" aria-label="Drag to reorder">
-        <div class="drag-icon">
-          <div class="drag-dot"></div>
-          <div class="drag-dot"></div>
-          <div class="drag-dot"></div>
-        </div>
+        <div class="drag-icon"><div class="drag-dot"></div><div class="drag-dot"></div><div class="drag-dot"></div></div>
       </div>
       <div class="card-body">
         <div class="card-top">
           <input class="card-name-input" type="text" value="${escHtml(svc.name)}" aria-label="Service name" data-id="${svc.id}" />
-          <button class="rec-toggle ${isRec ? 'is-recommended' : 'is-optional'}" data-id="${svc.id}" title="Click to toggle Recommended / Optional">
-            ${isRec ? '★ Recommended' : '◎ Optional'}
-          </button>
+          <button type="button" class="rec-toggle ${isRec ? 'is-recommended' : 'is-optional'}" data-id="${svc.id}" title="Click to toggle">${isRec ? '★ Recommended' : '◎ Optional'}</button>
         </div>
         <textarea class="card-desc-input" aria-label="Service description" data-id="${svc.id}" rows="2">${escHtml(svc.description)}</textarea>
       </div>
       <div class="card-actions">
-        <button class="card-remove-btn" data-id="${svc.id}" aria-label="Remove service" title="Remove">
+        <button type="button" class="card-remove-btn" data-id="${svc.id}" aria-label="Remove" title="Remove">
           <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 2l12 12M14 2L2 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </button>
-      </div>
-    `;
+      </div>`;
 
-    // Drag events (stack reorder)
     card.addEventListener('dragstart', e => {
       state.dragSrcIndex = index;
       card.classList.add('dragging');
@@ -470,7 +377,6 @@ function renderStack() {
     });
     card.addEventListener('dragover', e => {
       e.preventDefault();
-      if (!e.dataTransfer.types.includes('text/plain')) return;
       document.querySelectorAll('.svc-card').forEach(c => c.classList.remove('drag-over'));
       card.classList.add('drag-over');
     });
@@ -486,7 +392,6 @@ function renderStack() {
       }
     });
 
-    // Inline edit
     card.querySelector('.card-name-input').addEventListener('input', e => {
       const s = state.services.find(x => x.id === e.target.dataset.id);
       if (s) { s.name = e.target.value; renderPreview(); }
@@ -495,19 +400,14 @@ function renderStack() {
       const s = state.services.find(x => x.id === e.target.dataset.id);
       if (s) { s.description = e.target.value; renderPreview(); }
     });
-
-    card.querySelector('.rec-toggle').addEventListener('click', e => {
-      togglePriority(e.currentTarget.dataset.id);
-    });
-    card.querySelector('.card-remove-btn').addEventListener('click', e => {
-      removeService(e.currentTarget.dataset.id);
-    });
+    card.querySelector('.rec-toggle').addEventListener('click', e => togglePriority(e.currentTarget.dataset.id));
+    card.querySelector('.card-remove-btn').addEventListener('click', e => removeService(e.currentTarget.dataset.id));
 
     container.appendChild(card);
   });
 }
 
-// ── Render Library ─────────────────────────────────────────────
+// ── Library ────────────────────────────────────────────────────
 function renderLibrary() {
   const list = $('library-list');
   const stackNames = state.services.map(s => s.name.toLowerCase());
@@ -519,10 +419,7 @@ function renderLibrary() {
     item.className = `lib-item${inStack ? ' in-stack' : ''}`;
     item.dataset.name = lib.name;
     item.draggable = !inStack;
-    item.innerHTML = `
-      <span class="lib-item-name">${escHtml(lib.name)}</span>
-      <button class="lib-add-btn" title="${inStack ? 'Already in stack' : 'Add to stack'}">${inStack ? '✓' : '+'}</button>
-    `;
+    item.innerHTML = `<span class="lib-item-name">${escHtml(lib.name)}</span><button type="button" class="lib-add-btn" title="${inStack ? 'Already in stack' : 'Add to stack'}">${inStack ? '✓' : '+'}</button>`;
 
     if (!inStack) {
       item.querySelector('.lib-add-btn').addEventListener('click', () => {
@@ -535,34 +432,16 @@ function renderLibrary() {
     }
     list.appendChild(item);
   });
-
-  // Stack drop zone for library items
-  const stack = $('service-stack');
-  // Remove old listeners by cloning, then re-attach
-  const newStack = stack.cloneNode(true);
-  stack.parentNode.replaceChild(newStack, stack);
-  // Re-render into new node — but since renderStack already ran we just attach the dragover/drop
-  $('service-stack').addEventListener('dragover', e => {
-    if (e.dataTransfer.types.includes('application/x-lib-id')) e.preventDefault();
-  });
-  $('service-stack').addEventListener('drop', e => {
-    const libId = e.dataTransfer.getData('application/x-lib-id');
-    if (libId) {
-      const lib = LIBRARY_SERVICES.find(l => l.id === libId);
-      if (lib) addServiceToStack({ id: `lib-${lib.id}-${Date.now()}`, name: lib.name, description: lib.description, priority: 'recommended' });
-    }
-  });
 }
 
-// ── Live Preview ───────────────────────────────────────────────
+// ── Preview ────────────────────────────────────────────────────
 function renderPreview() {
   $('preview-frame').innerHTML = generateWidgetHtml();
 }
 
-// ── Widget HTML Generator (TinyMCE-safe) ───────────────────────
 function generateWidgetHtml() {
   const color = state.themeColor;
-  const recBadgeBg  = hexToRgba(color, 0.10);
+  const recBadgeBg = hexToRgba(color, 0.10);
 
   const rows = state.services.map(svc => {
     const isRec = svc.priority === 'recommended';
@@ -570,14 +449,13 @@ function generateWidgetHtml() {
     const badge = isRec
       ? `<span style="display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:bold;letter-spacing:0.07em;text-transform:uppercase;padding:2px 9px;border-radius:20px;background:${recBadgeBg};color:${color};">&#9733; Recommended</span>`
       : `<span style="display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:bold;letter-spacing:0.07em;text-transform:uppercase;padding:2px 9px;border-radius:20px;background:#F5F5F2;color:#9CA3AF;border:1px solid #E5E3DC;">Optional</span>`;
-
     return `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:8px;border-collapse:collapse;"><tr><td width="4" style="background:${accentColor};padding:0;">&nbsp;</td><td width="8" style="padding:0;">&nbsp;</td><td style="padding:12px 14px;background:#FAFAF7;border:1px solid #E8E6DF;border-left:none;"><table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding-bottom:5px;"><span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;color:#0B0E14;">${escHtml(svc.name)}</span>&nbsp;&nbsp;${badge}</td></tr><tr><td><p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#4B5563;line-height:1.55;">${escHtml(svc.description)}</p></td></tr></table></td></tr></table>`;
   }).join('\n');
 
   return `<div style="background:#FFFFFF;border:1px solid #E8E6DF;border-radius:6px;padding:22px 24px;font-family:Arial,Helvetica,sans-serif;max-width:100%;"><table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:18px;border-collapse:collapse;"><tr><td width="4" style="background:${color};padding:0;">&nbsp;</td><td width="12" style="padding:0;">&nbsp;</td><td style="padding:4px 0;"><h5 style="margin:0 0 3px;font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:bold;color:#0B0E14;line-height:1.25;">${escHtml(state.widgetTitle)}</h5><p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6B7280;">${escHtml(state.widgetSubtitle)}</p></td></tr></table>\n${rows}\n</div>`;
 }
 
-// ── Export: Copy ───────────────────────────────────────────────
+// ── Export ─────────────────────────────────────────────────────
 function handleCopy() {
   if (state.services.length === 0) { showToast('Add at least one service first.'); return; }
   navigator.clipboard.writeText(generateWidgetHtml()).then(() => {
@@ -587,22 +465,13 @@ function handleCopy() {
   }).catch(() => showToast('Copy failed — please try again.'));
 }
 
-// ── Export: Push to Salesbuildr ────────────────────────────────
 async function handlePush() {
   if (state.services.length === 0) { showToast('Add at least one service first.'); return; }
   const tenantUrl = localStorage.getItem('sb_tenant_url');
   const apiKey    = localStorage.getItem('sb_api_key');
-  if (!tenantUrl || !apiKey) {
-    $('settings-drawer').hidden = false;
-    showToast('Enter your Salesbuildr connection details first.');
-    return;
-  }
-
+  if (!tenantUrl || !apiKey) { $('settings-drawer').hidden = false; showToast('Enter your Salesbuildr connection details first.'); return; }
   const preset = PROJECT_PRESETS.find(p => p.id === state.selectedProject);
-  const widgetName = preset && preset.id !== 'custom'
-    ? `Complementary Services — ${preset.name}`
-    : `Complementary Services — ${($('input-project').value.trim() || 'Custom').slice(0, 60)}`;
-
+  const widgetName = preset && preset.id !== 'custom' ? `Complementary Services — ${preset.name}` : `Complementary Services — ${($('input-project').value.trim() || 'Custom').slice(0, 60)}`;
   $('export-status').textContent = 'Pushing…';
   try {
     const res = await fetch(`${tenantUrl.replace(/\/$/, '')}/api/public/widgets`, {
@@ -611,27 +480,14 @@ async function handlePush() {
       body: JSON.stringify({ name: widgetName, content: generateWidgetHtml() }),
     });
     $('export-status').textContent = '';
-    if (res.ok) {
-      showToast('Widget pushed to Salesbuildr ✓');
-    } else {
-      const err = await res.json().catch(() => ({}));
-      showToast(`Push failed: ${err.message || res.status}`);
-    }
-  } catch {
-    $('export-status').textContent = '';
-    showToast('Push failed — check your connection settings.');
-  }
+    if (res.ok) { showToast('Widget pushed to Salesbuildr ✓'); }
+    else { const err = await res.json().catch(() => ({})); showToast(`Push failed: ${err.message || res.status}`); }
+  } catch { $('export-status').textContent = ''; showToast('Push failed — check your connection settings.'); }
 }
 
 // ── Loading ────────────────────────────────────────────────────
-function showLoading(msg) {
-  $('loading-msg').textContent = msg || 'Working…';
-  $('loading-overlay').hidden = false;
-}
-function hideLoading() {
-  $('loading-overlay').hidden = true;
-  state.abortController = null;
-}
+function showLoading(msg) { $('loading-msg').textContent = msg || 'Working…'; $('loading-overlay').hidden = false; }
+function hideLoading()    { $('loading-overlay').hidden = true; state.abortController = null; }
 
 // ── Toast ──────────────────────────────────────────────────────
 let toastTimer;
@@ -645,15 +501,9 @@ function showToast(msg) {
 
 // ── Helpers ────────────────────────────────────────────────────
 function escHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 function hexToRgba(hex, alpha) {
-  const r = parseInt(hex.slice(1,3), 16);
-  const g = parseInt(hex.slice(3,5), 16);
-  const b = parseInt(hex.slice(5,7), 16);
+  const r = parseInt(hex.slice(1,3), 16), g = parseInt(hex.slice(3,5), 16), b = parseInt(hex.slice(5,7), 16);
   return `rgba(${r},${g},${b},${alpha})`;
 }
