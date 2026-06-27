@@ -64,22 +64,33 @@
           <div class="panel-header">
             <span class="step-badge">1</span>
             <div>
-              <p class="panel-title">Describe the project</p>
-              <p class="panel-desc">What are you proposing to this customer?</p>
+              <p class="panel-title">Select or describe the project</p>
+              <p class="panel-desc">Choose a common project type or describe your own.</p>
             </div>
           </div>
-          <textarea
-            id="input-project"
-            class="project-input"
-            rows="3"
-            placeholder="e.g. M365 Business Premium migration for a 45-seat accounting firm — moving from on-premise Exchange and file shares to Exchange Online and SharePoint"
-          ></textarea>
+
+          <!-- Project quick-select grid -->
+          <div class="project-grid" id="project-grid">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Custom description (shown when 'Custom' selected or always visible below grid) -->
+          <div class="project-custom-wrap" id="project-custom-wrap">
+            <label class="form-label" style="margin-bottom:6px">Project details <span class="form-label-opt">(optional — add context to improve suggestions)</span></label>
+            <textarea
+              id="input-project"
+              class="project-input"
+              rows="3"
+              placeholder="e.g. 45-seat accounting firm, moving from on-premise Exchange to Exchange Online and SharePoint"
+            ></textarea>
+          </div>
+
           <div class="input-actions">
-            <button class="btn-accent" id="btn-suggest">
+            <button class="btn-accent" id="btn-suggest" disabled>
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1l1.8 5.4H15l-4.7 3.4 1.8 5.5L8 12l-4.1 3.3 1.8-5.5L1 6.4h5.2L8 1z" fill="currentColor"/></svg>
               Suggest Services
             </button>
-            <span class="char-hint" id="char-hint"></span>
+            <span class="input-hint" id="input-hint">Select a project type above to continue</span>
           </div>
         </section>
 
@@ -105,14 +116,14 @@
           <div class="theme-picker">
             <label class="form-label">Colour theme</label>
             <div class="theme-swatches" id="theme-swatches">
-              <button class="swatch active" data-theme="blue" style="background:#2E74DC" title="Salesbuildr Blue" aria-label="Blue theme"></button>
-              <button class="swatch" data-theme="slate" style="background:#334155" title="Slate" aria-label="Slate theme"></button>
-              <button class="swatch" data-theme="teal" style="background:#0F766E" title="Teal" aria-label="Teal theme"></button>
-              <button class="swatch" data-theme="violet" style="background:#6D28D9" title="Violet" aria-label="Violet theme"></button>
-              <button class="swatch" data-theme="orange" style="background:#C2410C" title="Orange" aria-label="Orange theme"></button>
-              <button class="swatch" data-theme="rose" style="background:#BE123C" title="Rose" aria-label="Rose theme"></button>
-              <button class="swatch" data-theme="green" style="background:#166534" title="Green" aria-label="Green theme"></button>
-              <button class="swatch" data-theme="charcoal" style="background:#1C1C1E" title="Charcoal" aria-label="Charcoal theme"></button>
+              <button class="swatch active" data-theme="blue"     style="background:#2E74DC" title="Salesbuildr Blue" aria-label="Blue theme"></button>
+              <button class="swatch"        data-theme="slate"    style="background:#334155" title="Slate"            aria-label="Slate theme"></button>
+              <button class="swatch"        data-theme="teal"     style="background:#0F766E" title="Teal"             aria-label="Teal theme"></button>
+              <button class="swatch"        data-theme="violet"   style="background:#6D28D9" title="Violet"           aria-label="Violet theme"></button>
+              <button class="swatch"        data-theme="orange"   style="background:#C2410C" title="Orange"           aria-label="Orange theme"></button>
+              <button class="swatch"        data-theme="rose"     style="background:#BE123C" title="Rose"             aria-label="Rose theme"></button>
+              <button class="swatch"        data-theme="green"    style="background:#166534" title="Green"            aria-label="Green theme"></button>
+              <button class="swatch"        data-theme="charcoal" style="background:#1C1C1E" title="Charcoal"         aria-label="Charcoal theme"></button>
               <button class="swatch swatch-custom" data-theme="custom" title="Custom colour" aria-label="Custom colour">
                 <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
               </button>
@@ -128,10 +139,7 @@
             <span class="form-label" style="margin:0">Service stack</span>
             <span class="stack-count" id="stack-count">0 / 4</span>
           </div>
-          <div class="service-stack" id="service-stack">
-            <!-- Cards injected by JS -->
-          </div>
-
+          <div class="service-stack" id="service-stack"></div>
           <div class="stack-empty" id="stack-empty" hidden>
             <p>No services added yet. Generate suggestions or drag from the library.</p>
           </div>
@@ -155,15 +163,13 @@
             <span class="step-badge">L</span>
             <div>
               <p class="panel-title">Service library</p>
-              <p class="panel-desc">Drag into your stack or click to add.</p>
+              <p class="panel-desc">Drag into your stack or click + to add.</p>
             </div>
           </div>
           <div class="library-search-wrap">
             <input type="text" id="library-search" placeholder="Search services…" />
           </div>
-          <div class="library-list" id="library-list">
-            <!-- Populated by JS -->
-          </div>
+          <div class="library-list" id="library-list"></div>
           <div class="library-custom">
             <p class="form-label">Add a custom service</p>
             <textarea id="custom-desc" rows="2" placeholder="Describe the service (e.g. 'Proactive patch management for all Windows servers')"></textarea>
@@ -183,14 +189,11 @@
               <p class="panel-desc">Exactly as it will appear in the proposal.</p>
             </div>
           </div>
-          <div class="preview-frame" id="preview-frame">
-            <!-- Rendered by JS -->
-          </div>
+          <div class="preview-frame" id="preview-frame"></div>
         </section>
 
       </div>
     </main>
-
   </div>
 
   <!-- LOADING OVERLAY -->
@@ -198,6 +201,7 @@
     <div class="loading-card">
       <div class="spinner"></div>
       <p class="loading-msg" id="loading-msg">Analysing your project…</p>
+      <button class="btn-secondary" id="btn-cancel-loading" style="margin-top:4px;font-size:10px;padding:5px 12px;">Cancel</button>
     </div>
   </div>
 
