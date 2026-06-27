@@ -108,6 +108,43 @@ async function getPhoto(industry) {
   throw new Error('Could not find a suitable photo. Try a different industry.');
 }
 
+// ── Proxy logo to Placid file storage ────────────────────
+// Fetches logo server-side and re-hosts on Placid's CDN.
+// This bypasses CDN restrictions that block Placid from fetching direct URLs.
+async function proxyLogoToPlacid(logoUrl) {
+  const fetchRes = await fetch(logoUrl, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FirstImpression/1.0)' },
+    signal:  AbortSignal.timeout(8000)
+  });
+  if (!fetchRes.ok) throw new Error(`Could not fetch logo: ${fetchRes.status}`);
+
+  const contentType = fetchRes.headers.get('content-type') || 'image/png';
+  const buffer      = Buffer.from(await fetchRes.arrayBuffer());
+  const ext         = contentType.includes('svg')  ? 'svg'  :
+                      contentType.includes('jpeg') ? 'jpg'  :
+                      contentType.includes('webp') ? 'webp' : 'png';
+  const filename    = `logo-${Date.now()}.${ext}`;
+  const boundary    = 'FIBoundary' + Date.now().toString(36);
+
+  const bodyParts = Buffer.concat([
+    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: ${contentType}\r\n\r\n`),
+    buffer,
+    Buffer.from(`\r\n--${boundary}--\r\n`)
+  ]);
+
+  const uploadRes  = await fetch('https://api.placid.app/api/rest/files', {
+    method:  'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.PLACID_API_TOKEN}`,
+      'Content-Type':  `multipart/form-data; boundary=${boundary}`
+    },
+    body: bodyParts
+  });
+  const uploadData = await uploadRes.json();
+  if (!uploadRes.ok) throw new Error(uploadData.message || 'Placid file upload failed');
+  return uploadData.url;
+}
+
 // ── Placid image generation ───────────────────────────────
 async function generateImage(templateId, brandColor, photoUrl, logoUrl) {
   const template = TEMPLATES[templateId];
@@ -275,21 +312,14 @@ Respond ONLY with valid JSON, no markdown:
       // Fallback: if AI found no logo, pick first logo candidate
       if (!logoUrl && logoImages.length > 0) logoUrl = logoImages[0].url;
 
-      // Verify logo is publicly fetchable by Placid — if not, drop it silently
-      // (an unfetchable logo causes Placid to reject the entire request)
+      // Proxy the logo through Placid's file storage so Placid can always fetch it
+      // This bypasses CDN restrictions on the original URL
       if (logoUrl) {
         try {
-          const logoTest = await fetch(logoUrl, {
-            method: 'HEAD',
-            signal: AbortSignal.timeout(5000),
-            headers: { 'User-Agent': 'Mozilla/5.0' }
-          });
-          if (!logoTest.ok) {
-            console.log(`Logo URL rejected (${logoTest.status}): ${logoUrl}`);
-            logoUrl = null;
-          }
+          logoUrl = await proxyLogoToPlacid(logoUrl);
+          console.log('Logo proxied to Placid:', logoUrl);
         } catch (e) {
-          console.log(`Logo URL unreachable: ${logoUrl}`);
+          console.log('Logo proxy failed, rendering without logo:', e.message);
           logoUrl = null;
         }
       }
@@ -364,12 +394,11 @@ Respond ONLY with valid JSON, no markdown:
     const hex8  = brandColor.replace('#', '').padEnd(6,'0').slice(0,6).toUpperCase() + 'FF';
     const color = '#' + hex8;
     const layers = { photo: { image: photoUrl } };
-    // Only include logo if it's actually fetchable
     if (logoUrl) {
       try {
-        const t = await fetch(logoUrl, { method: 'HEAD', signal: AbortSignal.timeout(4000), headers: { 'User-Agent': 'Mozilla/5.0' } });
-        if (t.ok) layers.logo = { image: logoUrl };
-      } catch (e) { /* skip logo */ }
+        const proxiedLogo = await proxyLogoToPlacid(logoUrl);
+        layers.logo = { image: proxiedLogo };
+      } catch (e) { /* skip logo if proxy fails */ }
     }
     for (const layer of template.colorLayers) layers[layer] = { background_color: color };
 
@@ -393,21 +422,12 @@ Respond ONLY with valid JSON, no markdown:
     let { logoUrl } = body;
     if (!brandColor || !photoUrl) return err('brandColor and photoUrl required.', 400);
 
-    // Validate logo URL is publicly fetchable before sending to Placid
-    // An unreachable logo causes Placid to reject the entire request
+    // Proxy logo through Placid file storage for reliable fetching
     if (logoUrl) {
       try {
-        const logoTest = await fetch(logoUrl, {
-          method: 'HEAD',
-          signal: AbortSignal.timeout(5000),
-          headers: { 'User-Agent': 'Mozilla/5.0' }
-        });
-        if (!logoTest.ok) {
-          console.log(`start-all: logo rejected (${logoTest.status}), rendering without logo`);
-          logoUrl = null;
-        }
+        logoUrl = await proxyLogoToPlacid(logoUrl);
       } catch (e) {
-        console.log(`start-all: logo unreachable, rendering without logo`);
+        console.log('start-all: logo proxy failed, rendering without logo:', e.message);
         logoUrl = null;
       }
     }
