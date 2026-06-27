@@ -237,15 +237,23 @@ autoBtn.addEventListener('click', async () => {
     selectedCoverActions.hidden = true;
     autoResults = {};
 
-    // Show logo missing banner if no logo was found
-    if (!autoLogoUrl) {
-      logoMissingBanner.hidden = false;
-      logoMissingInput.value   = '';
-      logoMissingBtn.disabled  = false;
-      logoMissingBtn.textContent = 'Add Logo & Re-render →';
+    // Always show logo banner — allows replacing wrong logo or adding missing one
+    const logoBannerIcon  = document.getElementById('logo-banner-icon');
+    const logoBannerTitle = document.getElementById('logo-banner-title');
+    const logoBannerDesc  = document.getElementById('logo-banner-desc');
+    if (autoLogoUrl) {
+      logoBannerIcon.textContent  = '🖼';
+      logoBannerTitle.textContent = 'Wrong logo?';
+      logoBannerDesc.textContent  = 'Paste the correct logo URL below and we\'ll re-render all four covers.';
     } else {
-      logoMissingBanner.hidden = true;
+      logoBannerIcon.textContent  = '⚠';
+      logoBannerTitle.textContent = 'Logo not found automatically.';
+      logoBannerDesc.textContent  = 'Paste their logo URL below and we\'ll re-render all four covers with it.';
     }
+    logoMissingBanner.hidden = false;
+    logoMissingInput.value   = '';
+    logoMissingBtn.disabled  = false;
+    logoMissingBtn.textContent = 'Apply Logo & Re-render →';
 
     // Build tiles — show spinner until each image is ready
     renders.forEach(({ templateId, name, imageId, imageUrl }) => {
