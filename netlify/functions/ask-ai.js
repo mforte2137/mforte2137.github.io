@@ -2,6 +2,15 @@
 // Receives a user question and returns tool recommendations using the KB
 
 const TOOL_KB = `
+TOOL: Upsell Services Widget Builder
+WHAT: Generates a curated, branded widget listing complementary services that pair with any managed services proposal. Acts as a mini-roadmap and conversation starter — showing the customer a logical path of future services alongside the current engagement.
+WHO: MSPs sending project-type proposals who want to identify and present complementary services to generate future revenue.
+INPUT: Choose a pre-set engagement type (e.g. M365 migration, network refresh, security deployment) or describe a custom project. Add your own proprietary services to the AI-generated list.
+OUTPUT: A Salesbuildr-ready widget with AI-generated complementary services — tagged as recommended or optional, reordered to preference, colour-branded, and ready to paste or push directly into a quote.
+USE WHEN: Sending a managed services or project proposal and wanting to open conversations about additional services. Wanting to position yourself as a strategic partner with a forward-looking roadmap.
+NOT FOR: Simple hardware or product-only quotes with no service component.
+URL: https://widgetcreator.netlify.app/complementary-services.html
+
 TOOL: Proposal Evaluator
 WHAT: Reads an uploaded MSP proposal through the buyer's eyes and scores it against five questions: do you understand my situation, why should I care now, why should I trust you, what exactly am I getting, and is it worth the money?
 WHO: MSP sales reps or owners who have written a proposal and want an objective read before sending it to a prospect.
