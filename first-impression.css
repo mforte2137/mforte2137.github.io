@@ -442,16 +442,19 @@ footer.tag { margin-top: 64px; font-family: 'JetBrains Mono', monospace; font-si
 .website-photo-empty { font-size: 13px; color: var(--text-3); padding: 16px 0; }
 .website-photo-loading[hidden] { display: none; }
 
-/* Logo missing banner */
+/* Logo banner — shown always, changes tone based on context */
 .logo-missing-banner {
   display: flex; gap: 14px; align-items: flex-start;
-  background: var(--warn-bg); border: 1px solid var(--warn);
-  padding: 16px 18px; margin-bottom: 20px; border-radius: 0;
+  background: var(--bg-row); border: 1px solid var(--border-2);
+  padding: 14px 18px; margin-bottom: 20px; border-radius: 0;
 }
 .logo-missing-banner[hidden] { display: none; }
+.logo-missing-banner.is-warning {
+  background: var(--warn-bg); border-color: var(--warn);
+}
 .logo-missing-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
-.logo-missing-body { font-size: 13px; color: var(--warn); line-height: 1.5; flex: 1; }
-.logo-missing-body strong { color: var(--warn); font-weight: 700; }
+.logo-missing-body { font-size: 13px; color: var(--text-2); line-height: 1.5; flex: 1; }
+.logo-missing-body strong { color: var(--text); font-weight: 700; }
 .logo-missing-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
 .logo-missing-input {
   flex: 1; min-width: 200px; font-family: 'Inter', sans-serif; font-size: 13px;
