@@ -34,6 +34,18 @@ const TOOLS = [
     icon: "calc"
   },
   {
+    title: "Upsell Services Widget Builder",
+    shortLabel: "Upsell Builder",
+    description:
+      "Turn any proposal into a revenue roadmap. Describe your engagement and AI generates a curated list of complementary services — tag them, reorder them, brand them, and drop the widget straight into your quote.",
+    category: "Proposal",
+    url: "https://widgetcreator.netlify.app/complementary-services.html",
+    badge: "new",
+    updated: "2026-06-27",
+    gradient: "lime",
+    icon: "chart"
+  },
+  {
     title: "Customer Growth Operating System",
     shortLabel: "Growth OS",
     description:
@@ -391,6 +403,7 @@ const GRADIENTS = {
   gold:    "linear-gradient(135deg, #78350f 0%, #d97706 55%, #fbbf24 100%)",
   sky:     "linear-gradient(135deg, #0c4a6e 0%, #0284c7 55%, #7dd3fc 100%)",
   coral:   "linear-gradient(135deg, #7c2d12 0%, #ea580c 55%, #fdba74 100%)",
+  lime:    "linear-gradient(135deg, #1a4731 0%, #16a34a 55%, #86efac 100%)",
   mint:    "linear-gradient(135deg, #022c22 0%, #059669 55%, #6ee7b7 100%)",
   cyan:    "linear-gradient(135deg, #164e63 0%, #0891b2 55%, #67e8f9 100%)",
   forest:  "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #86efac 100%)",
@@ -952,6 +965,13 @@ Your data stays with you. Files are read locally in the browser and never transm
 
   // KB lookup — maps tool title to structured detail
   const KB_DETAIL = {
+    "Upsell Services Widget Builder": {
+      who:   "MSPs sending project-type proposals who want to identify and present complementary services for future revenue.",
+      input: "Choose a pre-set engagement type or describe a custom project.",
+      out:   "A branded, Salesbuildr-ready widget listing AI-generated complementary services — tagged as recommended or optional, reordered to your preference, ready to drop into your proposal.",
+      when:  "You are sending a managed services or project proposal and want to open conversations about additional services. You want to present a mini-roadmap that positions you as a strategic partner.",
+      not:   "Simple hardware or product-only quotes with no service component."
+    },
     "Proposal Evaluator": {
       who:   "MSP sales reps or owners who have written a proposal and want an objective read before sending it to a prospect.",
       input: "An existing proposal document — PDF or Word.",
