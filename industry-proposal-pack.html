@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Industry Proposal Pack — Salesbuildr Widget Creator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="industry-proposal-pack.css" />
+</head>
+<body>
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay" id="loadingOverlay" hidden>
+    <div class="loading-box">
+      <div class="loading-dots">
+        <span></span><span></span><span></span>
+      </div>
+      <p class="loading-msg" id="loadingMsg">Generating your industry pack…</p>
+    </div>
+  </div>
+
+  <div class="app-shell">
+
+    <!-- Header -->
+    <header class="app-header">
+      <a href="/" class="back-link">← Back to Hub</a>
+      <div class="header-meta">
+        <span class="badge badge-new">NEW</span>
+        <span class="header-category">Proposal</span>
+      </div>
+    </header>
+
+    <!-- Page title -->
+    <div class="page-title-block">
+      <h1 class="page-title">Industry Proposal Pack</h1>
+      <p class="page-subtitle">Select your prospect's industry and generate five coordinated, vertical-specific widgets that make your proposal feel written for their world.</p>
+    </div>
+
+    <!-- Main layout -->
+    <div class="main-layout">
+
+      <!-- Left: Inputs -->
+      <aside class="inputs-panel">
+
+        <div class="panel">
+          <div class="panel-section-label">Configuration</div>
+
+          <!-- Vertical -->
+          <div class="field-group">
+            <label class="field-label" for="vertical">Industry Vertical</label>
+            <select id="vertical" class="input-el">
+              <option value="">Select an industry…</option>
+              <option value="Healthcare">Healthcare</option>
+              <option value="Legal">Legal</option>
+              <option value="Accounting & Finance">Accounting &amp; Finance</option>
+              <option value="Education">Education</option>
+              <option value="Government & Municipalities">Government &amp; Municipalities</option>
+              <option value="Manufacturing">Manufacturing</option>
+              <option value="Construction">Construction</option>
+              <option value="Real Estate">Real Estate</option>
+              <option value="Non-Profit">Non-Profit</option>
+              <option value="Insurance">Insurance</option>
+              <option value="Engineering & Architecture">Engineering &amp; Architecture</option>
+              <option value="Professional Services">Professional Services</option>
+            </select>
+          </div>
+
+          <!-- Engagement description -->
+          <div class="field-group">
+            <label class="field-label" for="engagement">
+              What are you proposing?
+              <span class="field-optional">Optional but recommended</span>
+            </label>
+            <textarea
+              id="engagement"
+              class="input-el textarea-el"
+              placeholder="e.g. Full managed IT services for a 3-site practice, including Microsoft 365, endpoint security, and helpdesk support."
+              maxlength="300"
+              rows="4"
+            ></textarea>
+            <div class="char-counter"><span id="charCount">0</span>/300</div>
+            <p class="field-hint">Adding a description helps AI tailor the widgets to your specific engagement. Leave blank for general industry content.</p>
+          </div>
+
+          <!-- Merge tag mode -->
+          <div class="field-group">
+            <label class="field-label">Merge Tag Mode</label>
+            <div class="toggle-group">
+              <button class="toggle-btn active" id="btnGeneric" data-mode="generic">Generic</button>
+              <button class="toggle-btn" id="btnPersonalised" data-mode="personalised">Personalised</button>
+            </div>
+            <p class="field-hint merge-tag-note" id="mergeTagNote" hidden>Merge tags resolve when this widget is placed inside a Salesbuildr quote with those fields populated.</p>
+          </div>
+
+          <!-- Colour theme -->
+          <div class="field-group">
+            <label class="field-label">Widget Colour Theme</label>
+            <div class="swatch-row" id="swatchRow">
+              <button class="swatch active" data-hex="#0f1f3d" title="Navy" style="background:#0f1f3d;"></button>
+              <button class="swatch" data-hex="#2E74DC" title="Blue" style="background:#2E74DC;"></button>
+              <button class="swatch" data-hex="#475569" title="Slate" style="background:#475569;"></button>
+              <button class="swatch" data-hex="#065f46" title="Emerald" style="background:#065f46;"></button>
+              <button class="swatch" data-hex="#0f766e" title="Teal" style="background:#0f766e;"></button>
+              <button class="swatch" data-hex="#991B1B" title="Crimson" style="background:#991B1B;"></button>
+              <button class="swatch" data-hex="#92400e" title="Amber" style="background:#92400e;"></button>
+              <button class="swatch" data-hex="#1a1a1a" title="Charcoal" style="background:#1a1a1a;"></button>
+            </div>
+            <div class="custom-hex-row">
+              <span class="hex-prefix">#</span>
+              <input type="text" id="customHex" class="input-el hex-input" placeholder="Custom hex…" maxlength="6" />
+            </div>
+          </div>
+
+          <button class="btn-generate" id="generateBtn">Generate Pack</button>
+        </div>
+
+        <!-- Delivery panel — shown after generation -->
+        <div class="panel delivery-panel" id="deliveryPanel" hidden>
+          <div class="panel-section-label">Export</div>
+
+          <div class="delivery-btns">
+            <button class="btn-secondary delivery-btn" id="copyHtmlBtn">Copy HTML (Full Pack)</button>
+            <button class="btn-secondary delivery-btn" id="pushPackBtn">Push as Pack</button>
+            <button class="btn-secondary delivery-btn" id="pushIndividualBtn">Push Individual Widgets</button>
+          </div>
+
+          <div class="push-status" id="pushStatus" hidden></div>
+
+          <!-- Credentials form — shown if missing -->
+          <div class="creds-form" id="credsForm" hidden>
+            <p class="field-hint" style="margin-bottom:8px;">Enter your Salesbuildr credentials to push widgets.</p>
+            <div class="field-group" style="margin-bottom:8px;">
+              <label class="field-label" for="sbApiKey">API Key</label>
+              <input type="text" id="sbApiKey" class="input-el" placeholder="Your Salesbuildr API key" />
+            </div>
+            <div class="field-group" style="margin-bottom:8px;">
+              <label class="field-label" for="sbTenantUrl">Tenant URL</label>
+              <input type="text" id="sbTenantUrl" class="input-el" placeholder="https://yourcompany.salesbuildr.com" />
+            </div>
+            <button class="btn-primary" id="saveCredsBtn" style="width:100%;">Save &amp; Continue</button>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- Right: Widget output -->
+      <main class="output-area" id="outputArea">
+
+        <div class="output-empty" id="outputEmpty">
+          <div class="empty-icon">⬡</div>
+          <p class="empty-label">Your five widgets will appear here after generation.</p>
+          <p class="empty-sub">Select an industry vertical and click <strong>Generate Pack</strong> to begin.</p>
+        </div>
+
+        <div class="widgets-container" id="widgetsContainer" hidden>
+
+          <!-- Regenerate all -->
+          <div class="regen-all-row">
+            <span class="widgets-label" id="widgetsLabel">Healthcare — 5 Widgets</span>
+            <button class="btn-secondary regen-all-btn" id="regenAllBtn">Regenerate All</button>
+          </div>
+
+          <!-- Widget panels — rendered by JS -->
+          <div id="widgetPanels"></div>
+
+        </div>
+
+      </main>
+
+    </div><!-- end main-layout -->
+
+  </div><!-- end app-shell -->
+
+  <script src="industry-proposal-pack.js"></script>
+</body>
+</html>
