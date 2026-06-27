@@ -119,19 +119,23 @@ async function proxyLogoToPlacid(logoUrl) {
 
   const contentType = fetchRes.headers.get('content-type') || 'image/png';
   const buffer      = Buffer.from(await fetchRes.arrayBuffer());
-  const ext         = contentType.includes('svg')  ? 'svg'  :
-                      contentType.includes('jpeg') ? 'jpg'  :
-                      contentType.includes('webp') ? 'webp' : 'png';
+  // Placid files API works better with explicit image types
+  // For SVG, use image/svg+xml but also try as octet-stream if that fails
+  const isSvg = contentType.includes('svg') || logoUrl.toLowerCase().endsWith('.svg');
+  const uploadType = isSvg ? 'image/svg+xml' : contentType.split(';')[0].trim();
+  const ext     = isSvg ? 'svg' :
+                  contentType.includes('jpeg') ? 'jpg' :
+                  contentType.includes('webp') ? 'webp' : 'png';
   const filename    = `logo-${Date.now()}.${ext}`;
   const boundary    = 'FIBoundary' + Date.now().toString(36);
 
   const bodyParts = Buffer.concat([
-    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: ${contentType}\r\n\r\n`),
+    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: ${uploadType}\r\n\r\n`),
     buffer,
     Buffer.from(`\r\n--${boundary}--\r\n`)
   ]);
 
-  const uploadRes  = await fetch('https://api.placid.app/api/rest/files', {
+  const uploadRes  = await fetch('https://api.placid.app/api/rest/uploads', {
     method:  'POST',
     headers: {
       'Authorization': `Bearer ${process.env.PLACID_API_TOKEN}`,
@@ -140,11 +144,12 @@ async function proxyLogoToPlacid(logoUrl) {
     body: bodyParts
   });
   const uploadText = await uploadRes.text();
-  console.log('Placid files API response:', uploadRes.status, uploadText.slice(0, 300));
+  console.log('Placid uploads API response:', uploadRes.status, uploadText.slice(0, 400));
+  if (uploadText.trim().startsWith('<')) throw new Error(`Placid uploads API returned HTML (${uploadRes.status}) — wrong endpoint or auth failed`);
   let uploadData;
-  try { uploadData = JSON.parse(uploadText); } catch(e) { throw new Error(`Placid files API non-JSON: ${uploadText.slice(0,100)}`); }
-  if (!uploadRes.ok) throw new Error(uploadData.message || `Placid file upload failed: ${uploadRes.status}`);
-  if (!uploadData.url) throw new Error(`Placid file upload: no URL in response: ${uploadText.slice(0,200)}`);
+  try { uploadData = JSON.parse(uploadText); } catch(e) { throw new Error(`Placid uploads API non-JSON: ${uploadText.slice(0,100)}`); }
+  if (!uploadRes.ok) throw new Error(uploadData.message || `Placid uploads failed: ${uploadRes.status}`);
+  if (!uploadData.url) throw new Error(`Placid uploads: no URL in response: ${uploadText.slice(0,200)}`);
   return uploadData.url;
 }
 
@@ -455,10 +460,12 @@ Respond ONLY with valid JSON, no markdown:
     let { logoUrl } = body;
     if (!brandColor || !photoUrl) return err('brandColor and photoUrl required.', 400);
 
-    // Proxy logo through Placid file storage for reliable fetching
+    // Always proxy manual logo URLs through Placid file storage
+    // This ensures Placid can always fetch the logo regardless of CDN restrictions
     if (logoUrl) {
       try {
-        logoUrl = await resolveLogoUrl(logoUrl);
+        logoUrl = await proxyLogoToPlacid(logoUrl);
+        console.log('start-all: logo proxied to Placid:', logoUrl);
       } catch (e) {
         console.log('start-all: logo proxy failed, rendering without logo:', e.message);
         logoUrl = null;
