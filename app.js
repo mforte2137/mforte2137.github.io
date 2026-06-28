@@ -46,6 +46,18 @@ const TOOLS = [
     icon: "checklist"
   },
   {
+    title: "Renewal Proposal Widget Creator",
+    shortLabel: "Renewal Pack",
+    description:
+      "Paste in a renewal quote URL and the tool reads the services, generates up to seven targeted proposal widgets, and pushes them to your Salesbuildr library. Standard or At-Risk mode depending on the client situation.",
+    category: "Proposal",
+    url: "https://widgetcreator.netlify.app/renewal-pack.html",
+    badge: "new",
+    updated: "2026-06-27",
+    gradient: "pine",
+    icon: "doc"
+  },
+  {
     title: "Industry Proposal Pack",
     shortLabel: "Industry Pack",
     description:
@@ -430,6 +442,7 @@ const GRADIENTS = {
   lime:    "linear-gradient(135deg, #1a4731 0%, #16a34a 55%, #86efac 100%)",
   ruby:    "linear-gradient(135deg, #881337 0%, #e11d48 55%, #fb7185 100%)",
   ocean:   "linear-gradient(135deg, #0c4a6e 0%, #0369a1 55%, #38bdf8 100%)",
+  pine:    "linear-gradient(135deg, #052e16 0%, #15803d 55%, #4ade80 100%)",
   mint:    "linear-gradient(135deg, #022c22 0%, #059669 55%, #6ee7b7 100%)",
   cyan:    "linear-gradient(135deg, #164e63 0%, #0891b2 55%, #67e8f9 100%)",
   forest:  "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #86efac 100%)",
@@ -991,6 +1004,13 @@ Your data stays with you. Files are read locally in the browser and never transm
 
   // KB lookup — maps tool title to structured detail
   const KB_DETAIL = {
+    "Renewal Proposal Widget Creator": {
+      who:   "MSP account managers preparing for a contract renewal — routine or where the client relationship needs to be actively defended.",
+      input: "Paste a Salesbuildr renewal quote URL — services are read automatically. Add optional context: support stats, key wins, client concerns (At-Risk mode), and upsell recommendations.",
+      out:   "Up to seven renewal widgets — Executive Cover Letter, Value Delivered, IT Partnership Summary, Why Continuity Matters, What\'s Included, What\'s Next, plus one Recommended Addition card per upsell selected. Push individually or as a pack.",
+      when:  "A managed services contract is approaching renewal. A client has raised concerns or is evaluating competitors. You want a structured, professional renewal proposal rather than just resending last year\'s quote.",
+      not:   "Not a replacement for creating the renewal quote in Salesbuildr first. Not a PSA integration — support stats are entered manually."
+    },
     "Industry Proposal Pack": {
       who:   "MSP sales reps pitching to prospects in a specific vertical who want their proposal to speak the buyer\'s language.",
       input: "Select an industry vertical from 12 options, optionally describe your engagement, choose Generic or Personalised merge tag mode, and pick a colour theme.",
