@@ -25,10 +25,17 @@
 
   <main class="main-layout">
 
-    <!-- ══════════════════════════════════════
-         LEFT PANEL
-    ══════════════════════════════════════ -->
+    <!-- ══════════════════════════════════════ LEFT PANEL ══════════════════════════════════════ -->
     <aside class="form-panel">
+
+      <!-- Session resume cards -->
+      <div class="section-block" id="sessionsBlock" hidden>
+        <div class="section-label-row">
+          <div class="section-label">In-Progress Renewals</div>
+          <button class="btn-text" id="showArchivedBtn">Show archived</button>
+        </div>
+        <div class="session-cards" id="sessionCards"></div>
+      </div>
 
       <!-- STEP 1: Quote URL -->
       <div class="section-block">
@@ -38,24 +45,21 @@
             placeholder="https://portal.us1-salesbuildr.com/…/quotes/56rVwDfwtnJd"
             autocomplete="off" />
         </div>
-
-        <!-- Credentials (needed for fetch) -->
-        <div class="creds-row" id="credsRow">
+        <div class="creds-row">
           <div class="creds-fields" id="credsFields">
             <input type="password" id="sbApiKey" placeholder="API Key" autocomplete="off" />
             <input type="text" id="sbTenantUrl" placeholder="https://yourco.salesbuildr.com" />
           </div>
-          <div class="creds-hint" id="credsHint">
+          <div class="creds-hint">
             <span class="creds-saved-label" id="credsSavedLabel" hidden>✓ Credentials saved</span>
             <button class="btn-text" id="toggleCredsBtn">Enter credentials</button>
           </div>
         </div>
-
         <button class="btn-fetch" id="fetchBtn">Fetch Quote</button>
         <div class="fetch-status" id="fetchStatus" hidden></div>
       </div>
 
-      <!-- STEP 2: Confirm items (shown after fetch) -->
+      <!-- STEP 2: Confirm items -->
       <div class="section-block" id="step2Block" hidden>
         <div class="step-label"><span class="step-num">2</span> Confirm services to include</div>
         <div class="quote-meta" id="quoteMeta"></div>
@@ -67,7 +71,7 @@
         </div>
       </div>
 
-      <!-- STEP 3: Mode + context (shown after fetch) -->
+      <!-- STEP 3: Mode -->
       <div class="section-block" id="step3Block" hidden>
         <div class="step-label"><span class="step-num">3</span> Renewal mode</div>
         <div class="mode-toggle">
@@ -89,7 +93,7 @@
         <div class="badge badge-warn at-risk-badge" id="atRiskBadge" hidden>AT-RISK MODE ACTIVE</div>
       </div>
 
-      <!-- STEP 4: Optional context -->
+      <!-- STEP 4: Context -->
       <div class="section-block" id="step4Block" hidden>
         <div class="step-label"><span class="step-num">4</span> Add context <span class="optional-label">optional but improves output</span></div>
 
@@ -109,41 +113,109 @@
         </div>
         <div class="field-group">
           <label class="field-label">Key wins / highlights</label>
-          <textarea id="highlights" rows="3"
-            placeholder="2–3 sentences on the biggest value moments this contract period — specific events, projects, incidents handled"></textarea>
+          <textarea id="highlights" rows="3" placeholder="2–3 sentences on the biggest value moments this contract period"></textarea>
         </div>
 
-        <!-- At-risk only -->
+        <!-- At-risk pickers — hidden in standard mode -->
         <div id="atRiskContext" hidden>
           <div class="at-risk-divider">At-Risk context</div>
+
           <div class="field-group">
             <label class="field-label">Client's stated concern(s) <span class="req">*</span></label>
-            <textarea id="concern" rows="3"
-              placeholder="What have they said or signalled? e.g. cost too high, evaluating alternatives…"></textarea>
+            <div class="picker-grid" id="concernPicker">
+              <label class="picker-item"><input type="checkbox" value="Cost too high / cheaper quotes received" /><span>Cost too high</span></label>
+              <label class="picker-item"><input type="checkbox" value="Poor response times or service quality issues" /><span>Poor response times</span></label>
+              <label class="picker-item"><input type="checkbox" value="Staff changes — new IT manager or decision maker" /><span>New decision maker</span></label>
+              <label class="picker-item"><input type="checkbox" value="Evaluating alternatives and shopping around" /><span>Shopping around</span></label>
+              <label class="picker-item"><input type="checkbox" value="Paying for services they feel they don't use" /><span>Scope feels wrong</span></label>
+              <label class="picker-item"><input type="checkbox" value="Planning to hire internal IT staff" /><span>Internal IT hire planned</span></label>
+              <label class="picker-item"><input type="checkbox" value="Budget cuts or economic pressure" /><span>Budget pressure</span></label>
+              <label class="picker-item"><input type="checkbox" value="Unhappy with how a specific incident was handled" /><span>Specific incident</span></label>
+              <label class="picker-item"><input type="checkbox" value="Gone quiet or unresponsive" /><span>Gone quiet</span></label>
+            </div>
+            <input type="text" id="concernCustom" placeholder="Other concern…" style="margin-top:6px;" />
           </div>
+
           <div class="field-group">
             <label class="field-label">What has changed since signing</label>
-            <textarea id="changesSinceSigning" rows="2"
-              placeholder="New services added, response times improved, issues resolved…"></textarea>
+            <div class="picker-grid" id="changesPicker">
+              <label class="picker-item"><input type="checkbox" value="Response times have improved significantly" /><span>Response times improved</span></label>
+              <label class="picker-item"><input type="checkbox" value="New services added and scope expanded" /><span>Scope expanded</span></label>
+              <label class="picker-item"><input type="checkbox" value="Team has grown and deeply knows their environment" /><span>Deep environment knowledge</span></label>
+              <label class="picker-item"><input type="checkbox" value="Handled a major incident successfully with no data loss" /><span>Major incident resolved</span></label>
+              <label class="picker-item"><input type="checkbox" value="Proactive projects completed ahead of schedule" /><span>Proactive projects done</span></label>
+              <label class="picker-item"><input type="checkbox" value="Pricing held flat despite rising costs" /><span>Pricing held flat</span></label>
+              <label class="picker-item"><input type="checkbox" value="New tooling and platform upgrades deployed" /><span>New tooling deployed</span></label>
+              <label class="picker-item"><input type="checkbox" value="Strong relationship built with key contacts" /><span>Strong relationship built</span></label>
+            </div>
+            <input type="text" id="changesCustom" placeholder="Other change…" style="margin-top:6px;" />
           </div>
+
           <div class="field-group">
             <label class="field-label">Your proposed response / offer</label>
-            <textarea id="proposedResponse" rows="2"
-              placeholder="What are you offering to address their concerns?"></textarea>
+            <div class="picker-grid" id="responsePicker">
+              <label class="picker-item"><input type="checkbox" value="Hold pricing flat for the next contract term" /><span>Hold pricing flat</span></label>
+              <label class="picker-item"><input type="checkbox" value="Lock in current rate with a multi-year agreement" /><span>Multi-year rate lock</span></label>
+              <label class="picker-item"><input type="checkbox" value="Add a service at no extra cost for year one" /><span>Free service year one</span></label>
+              <label class="picker-item"><input type="checkbox" value="Include quarterly business reviews" /><span>Quarterly reviews</span></label>
+              <label class="picker-item"><input type="checkbox" value="Offer a service credit for the inconvenience" /><span>Service credit</span></label>
+              <label class="picker-item"><input type="checkbox" value="Schedule an executive-level review meeting" /><span>Exec review meeting</span></label>
+              <label class="picker-item"><input type="checkbox" value="Provide a formal service improvement plan" /><span>Service improvement plan</span></label>
+              <label class="picker-item"><input type="checkbox" value="Offer flexible payment terms" /><span>Flexible payment terms</span></label>
+            </div>
+            <input type="text" id="responseCustom" placeholder="Other offer…" style="margin-top:6px;" />
           </div>
         </div>
 
-        <div class="field-group">
-          <label class="field-label">Upgrade opportunity <span class="optional-label">optional</span></label>
-          <textarea id="upgrade" rows="2"
-            placeholder="e.g. Adding Microsoft Intune device management at no extra cost for year one"></textarea>
+        <!-- Upsell service picker -->
+        <div class="field-group" style="margin-top:4px;">
+          <label class="field-label">Recommended additions <span class="optional-label">optional — one card generated per selection</span></label>
+          <div class="upsell-categories" id="upsellPicker">
+
+            <div class="upsell-cat-label">Security</div>
+            <div class="picker-grid">
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="Dark Web Monitoring" /><span>Dark Web Monitoring</span></label>
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="Security Awareness Training" /><span>Security Awareness Training</span></label>
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="Phishing Simulation" /><span>Phishing Simulation</span></label>
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="EDR / Endpoint Detection & Response" /><span>EDR / Endpoint Detection</span></label>
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="SIEM / SOC Monitoring" /><span>SIEM / SOC Monitoring</span></label>
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="Multi-Factor Authentication" /><span>Multi-Factor Authentication</span></label>
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="Vulnerability Scanning" /><span>Vulnerability Scanning</span></label>
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="Cyber Insurance Readiness Assessment" /><span>Cyber Insurance Readiness</span></label>
+            </div>
+
+            <div class="upsell-cat-label">Cloud & Productivity</div>
+            <div class="picker-grid">
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="Microsoft 365 Management" /><span>Microsoft 365 Management</span></label>
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="Microsoft Intune Device Management" /><span>Microsoft Intune</span></label>
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="Azure / Cloud Management" /><span>Azure / Cloud Management</span></label>
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="SharePoint & Teams Governance" /><span>SharePoint & Teams</span></label>
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="Email Filtering & Anti-Spam" /><span>Email Filtering</span></label>
+            </div>
+
+            <div class="upsell-cat-label">Infrastructure</div>
+            <div class="picker-grid">
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="Advanced Patch Management" /><span>Advanced Patch Management</span></label>
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="Upgraded Backup & Disaster Recovery" /><span>Upgraded Backup & DR</span></label>
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="Business Continuity Planning" /><span>Business Continuity</span></label>
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="SD-WAN" /><span>SD-WAN</span></label>
+            </div>
+
+            <div class="upsell-cat-label">Compliance</div>
+            <div class="picker-grid">
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="HIPAA / PCI / SOC2 Readiness" /><span>HIPAA / PCI / SOC2</span></label>
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="IT Risk Assessment" /><span>IT Risk Assessment</span></label>
+              <label class="picker-item"><input type="checkbox" class="upsell-cb" value="IT Policy Documentation" /><span>Policy Documentation</span></label>
+            </div>
+
+          </div>
+          <input type="text" id="upsellCustom" placeholder="Custom addition not listed above…" style="margin-top:6px;" />
         </div>
       </div>
 
-      <!-- Colour + personalisation -->
+      <!-- STEP 5: Brand & options -->
       <div class="section-block" id="step5Block" hidden>
         <div class="step-label"><span class="step-num">5</span> Brand & options</div>
-
         <div class="field-group">
           <label class="field-label">Brand colour</label>
           <div class="colour-swatches" id="colourSwatches">
@@ -162,7 +234,6 @@
             <div class="hex-preview" id="hexPreview"></div>
           </div>
         </div>
-
         <label class="checkbox-label">
           <input type="checkbox" id="personalised" checked />
           Use merge tags ({{company.name}}, {{contact.firstName}}, {{servicingBranch.name}})
@@ -177,9 +248,7 @@
 
     </aside>
 
-    <!-- ══════════════════════════════════════
-         RIGHT PANEL: Output
-    ══════════════════════════════════════ -->
+    <!-- ══════════════════════════════════════ RIGHT PANEL ══════════════════════════════════════ -->
     <section class="output-panel">
 
       <div class="loading-overlay" id="loadingOverlay" hidden>
@@ -192,7 +261,7 @@
       <div class="empty-state" id="emptyState">
         <div class="empty-icon">↻</div>
         <div class="empty-title">Paste a quote URL to get started</div>
-        <div class="empty-sub">Drop in the URL of the renewal quote you just created in Salesbuildr. We'll read the services, analyse what's being renewed, and generate five targeted widgets ready to push to your widget library.</div>
+        <div class="empty-sub">Drop in the URL of the renewal quote you just created in Salesbuildr. We'll read the services, analyse what's being renewed, and generate targeted widgets ready to push to your library.</div>
         <div class="empty-steps">
           <div class="empty-step"><span>1</span> Create renewal quote in Salesbuildr</div>
           <div class="empty-step"><span>2</span> Copy the quote URL and paste it here</div>
@@ -207,6 +276,7 @@
         <div class="delivery-bar">
           <div class="delivery-title" id="deliveryTitle"></div>
           <div class="delivery-actions">
+            <button class="btn-secondary" id="saveSessionBtn">Save Session</button>
             <button class="btn-secondary" id="copyAllBtn">Copy HTML (Full Pack)</button>
             <button class="btn-secondary" id="pushIndividualBtn">Push Individual Widgets</button>
             <button class="btn-primary" id="pushPackBtn">Push as Pack</button>
@@ -225,17 +295,32 @@
           </div>
         </div>
 
-        <!-- Widget cards 1–5 -->
+        <!-- Widget 0 — Executive Cover Letter -->
+        <div class="widget-card" id="widget0Card" hidden>
+          <div class="widget-header">
+            <div class="widget-label">Widget 0 — Executive Cover Letter</div>
+            <div class="widget-actions">
+              <button class="btn-secondary widget-regen" data-widget="0">Regenerate</button>
+              <button class="btn-secondary widget-copy" data-widget="0">Copy HTML</button>
+              <button class="btn-text show-html-btn" data-widget="0">Show HTML</button>
+            </div>
+          </div>
+          <div class="widget-preview" id="widget0Preview"></div>
+          <textarea class="widget-editor" id="widget0Editor" rows="7" hidden></textarea>
+        </div>
+
+        <!-- Widgets 1–5 -->
         <div class="widget-card" id="widget1Card">
           <div class="widget-header">
             <div class="widget-label">Widget 1 — Value Delivered</div>
             <div class="widget-actions">
               <button class="btn-secondary widget-regen" data-widget="1">Regenerate</button>
               <button class="btn-secondary widget-copy" data-widget="1">Copy HTML</button>
+              <button class="btn-text show-html-btn" data-widget="1">Show HTML</button>
             </div>
           </div>
           <div class="widget-preview" id="widget1Preview"></div>
-          <textarea class="widget-editor" id="widget1Editor" rows="7"></textarea>
+          <textarea class="widget-editor" id="widget1Editor" rows="7" hidden></textarea>
         </div>
 
         <div class="widget-card" id="widget2Card">
@@ -244,10 +329,11 @@
             <div class="widget-actions">
               <button class="btn-secondary widget-regen" data-widget="2">Regenerate</button>
               <button class="btn-secondary widget-copy" data-widget="2">Copy HTML</button>
+              <button class="btn-text show-html-btn" data-widget="2">Show HTML</button>
             </div>
           </div>
           <div class="widget-preview" id="widget2Preview"></div>
-          <textarea class="widget-editor" id="widget2Editor" rows="7"></textarea>
+          <textarea class="widget-editor" id="widget2Editor" rows="7" hidden></textarea>
         </div>
 
         <div class="widget-card" id="widget3Card">
@@ -256,10 +342,11 @@
             <div class="widget-actions">
               <button class="btn-secondary widget-regen" data-widget="3">Regenerate</button>
               <button class="btn-secondary widget-copy" data-widget="3">Copy HTML</button>
+              <button class="btn-text show-html-btn" data-widget="3">Show HTML</button>
             </div>
           </div>
           <div class="widget-preview" id="widget3Preview"></div>
-          <textarea class="widget-editor" id="widget3Editor" rows="7"></textarea>
+          <textarea class="widget-editor" id="widget3Editor" rows="7" hidden></textarea>
         </div>
 
         <div class="widget-card" id="widget4Card">
@@ -268,10 +355,11 @@
             <div class="widget-actions">
               <button class="btn-secondary widget-regen" data-widget="4">Regenerate</button>
               <button class="btn-secondary widget-copy" data-widget="4">Copy HTML</button>
+              <button class="btn-text show-html-btn" data-widget="4">Show HTML</button>
             </div>
           </div>
           <div class="widget-preview" id="widget4Preview"></div>
-          <textarea class="widget-editor" id="widget4Editor" rows="7"></textarea>
+          <textarea class="widget-editor" id="widget4Editor" rows="7" hidden></textarea>
         </div>
 
         <div class="widget-card" id="widget5Card">
@@ -280,11 +368,15 @@
             <div class="widget-actions">
               <button class="btn-secondary widget-regen" data-widget="5">Regenerate</button>
               <button class="btn-secondary widget-copy" data-widget="5">Copy HTML</button>
+              <button class="btn-text show-html-btn" data-widget="5">Show HTML</button>
             </div>
           </div>
           <div class="widget-preview" id="widget5Preview"></div>
-          <textarea class="widget-editor" id="widget5Editor" rows="7"></textarea>
+          <textarea class="widget-editor" id="widget5Editor" rows="7" hidden></textarea>
         </div>
+
+        <!-- Upsell cards injected here by JS -->
+        <div id="upsellCards"></div>
 
       </div><!-- /outputArea -->
     </section>
