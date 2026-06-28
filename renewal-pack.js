@@ -105,6 +105,14 @@
 
     generateBtn.addEventListener('click', onGenerate);
 
+    const saveEarlyBtn = $('saveEarlyBtn');
+    if (saveEarlyBtn) saveEarlyBtn.addEventListener('click', () => {
+      if (!fetchedQuote) return;
+      autoSaveSession(Object.keys(widgets).length > 0 ? 'generated' : 'fetched');
+      saveEarlyBtn.textContent = 'Saved ✓ — come back any time';
+      setTimeout(() => saveEarlyBtn.textContent = 'Save & come back later', 2000);
+    });
+
     saveSessionBtn.addEventListener('click', onSaveSession);
     copyAllBtn.addEventListener('click', onCopyAll);
     pushPackBtn.addEventListener('click', () => onPush('pack'));
@@ -683,18 +691,18 @@
   // ── Session management ─────────────────────
   function buildSessionSnapshot(status) {
     return {
-      id:        currentSessionId,
-      quoteId:   fetchedQuote?.id || '',
-      company:   fetchedQuote?.company?.name || 'Unknown',
-      title:     fetchedQuote?.title || '',
+      id:             currentSessionId,
+      quoteId:        fetchedQuote?.id || '',
+      company:        fetchedQuote?.company?.name || 'Unknown',
+      title:          fetchedQuote?.title || '',
       status,
-      savedAt:   Date.now(),
-      mode:      currentMode,
-      theme:     currentTheme,
-      quoteData: fetchedQuote,
-      payload:   lastPayload,
-      widgets,
-      upsellWidgetIds
+      savedAt:        Date.now(),
+      mode:           currentMode,
+      theme:          currentTheme,
+      quoteData:      fetchedQuote,
+      payload:        lastPayload,
+      widgets:        JSON.parse(JSON.stringify(widgets)),   // deep copy — not a reference
+      upsellWidgetIds: [...upsellWidgetIds]
     };
   }
 
@@ -783,9 +791,10 @@
     showArchivedBtn.textContent = showArchived ? 'Hide archived' : 'Show archived';
   }
 
+  let _showingArchived = false;
   function onShowArchived() {
-    const showing = showArchivedBtn.textContent === 'Hide archived';
-    renderSessionCards(!showing);
+    _showingArchived = !_showingArchived;
+    renderSessionCards(_showingArchived);
   }
 
   function discardSession(id, isArchived) {
