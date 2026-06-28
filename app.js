@@ -46,6 +46,18 @@ const TOOLS = [
     icon: "checklist"
   },
   {
+    title: "Industry Proposal Pack",
+    shortLabel: "Industry Pack",
+    description:
+      "Select your prospect's industry and AI generates five coordinated, vertical-specific widgets — pain points, compliance, approach, and more — that make your proposal feel written for their world.",
+    category: "Proposal",
+    url: "https://widgetcreator.netlify.app/industry-proposal-pack.html",
+    badge: "new",
+    updated: "2026-06-27",
+    gradient: "ocean",
+    icon: "idea"
+  },
+  {
     title: "Upsell Services Widget Builder",
     shortLabel: "Upsell Builder",
     description:
@@ -417,6 +429,7 @@ const GRADIENTS = {
   coral:   "linear-gradient(135deg, #7c2d12 0%, #ea580c 55%, #fdba74 100%)",
   lime:    "linear-gradient(135deg, #1a4731 0%, #16a34a 55%, #86efac 100%)",
   ruby:    "linear-gradient(135deg, #881337 0%, #e11d48 55%, #fb7185 100%)",
+  ocean:   "linear-gradient(135deg, #0c4a6e 0%, #0369a1 55%, #38bdf8 100%)",
   mint:    "linear-gradient(135deg, #022c22 0%, #059669 55%, #6ee7b7 100%)",
   cyan:    "linear-gradient(135deg, #164e63 0%, #0891b2 55%, #67e8f9 100%)",
   forest:  "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #86efac 100%)",
@@ -978,6 +991,13 @@ Your data stays with you. Files are read locally in the browser and never transm
 
   // KB lookup — maps tool title to structured detail
   const KB_DETAIL = {
+    "Industry Proposal Pack": {
+      who:   "MSP sales reps pitching to prospects in a specific vertical who want their proposal to speak the buyer\'s language.",
+      input: "Select an industry vertical from 12 options, optionally describe your engagement, choose Generic or Personalised merge tag mode, and pick a colour theme.",
+      out:   "Five short, coordinated Salesbuildr widgets tailored to the selected vertical — Industry Pain Points, Why IT Matters, Compliance & Risk, Our Approach, and What\'s Included. Push as a pack or individually.",
+      when:  "You are pitching to a prospect in healthcare, legal, education, government, manufacturing, or another specific vertical and want the proposal to demonstrate genuine sector knowledge.",
+      not:   "Not a substitute for the Proposal Widget Builder — these widgets prove industry knowledge, not the sales narrative. Not suitable for generic or multi-vertical prospects."
+    },
     "Case Study Widget Builder": {
       who:   "MSP sales reps or owners who want to include social proof in proposals without the pain of writing case studies from scratch.",
       input: "Industry, company size, the challenge, what you did, the outcome, engagement type, and an optional client quote. Toggle between using the real company name or anonymising automatically. Choose a colour theme.",
