@@ -257,9 +257,16 @@
     currentMode = mode;
     modeStandard.classList.toggle('active', mode === 'standard');
     modeAtRisk.classList.toggle('active',   mode === 'at-risk');
-    atRiskBadge.hidden   = mode !== 'at-risk';
-    atRiskContext.hidden = mode !== 'at-risk';
-    widget5Label.textContent = mode === 'at-risk'
+
+    // Use both hidden attribute AND explicit style to guarantee visibility toggle —
+    // the badge's inline-block display can override the hidden attribute in some browsers
+    const isAtRisk = mode === 'at-risk';
+    atRiskBadge.hidden          = !isAtRisk;
+    atRiskBadge.style.display   = isAtRisk ? 'inline-block' : 'none';
+    atRiskContext.hidden        = !isAtRisk;
+    atRiskContext.style.display = isAtRisk ? 'block' : 'none';
+
+    widget5Label.textContent = isAtRisk
       ? 'Widget 5 — Our Commitment Going Forward'
       : "Widget 5 — What's Next";
   }
@@ -371,7 +378,7 @@
     deliveryTitle.textContent = clientName + ' — Renewal Pack';
     emptyState.hidden  = true;
     outputArea.hidden  = false;
-    outputArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Do not auto-scroll — let the rep see the delivery bar first
   }
 
   // ── Widget HTML (TinyMCE/Salesbuildr safe) ───
@@ -436,7 +443,7 @@
     navigator.clipboard.writeText(widgets[i]).then(() => {
       const btn = document.querySelector(`.widget-copy[data-widget="${i}"]`);
       btn.textContent = 'Copied ✓';
-      setTimeout(() => btn.textContent = 'Copy', 2000);
+      setTimeout(() => btn.textContent = 'Copy HTML', 2000);
     });
   }
 
