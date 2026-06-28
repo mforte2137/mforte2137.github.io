@@ -23,7 +23,7 @@ const WIDGETS_TOOL = {
         type: 'object',
         description: 'Widget 1 — Proves the relationship has been worth it.',
         properties: {
-          headline: { type: 'string', description: 'Punchy headline, metric-driven if stats exist. Max 10 words.' },
+          headline: { type: 'string', description: 'Punchy, metric-driven if stats exist. Hard limit: 60 characters. Must be a grammatically complete phrase.' },
           body:     { type: 'string', description: '3–5 sentences. Use \\n to separate paragraphs.' }
         },
         required: ['headline', 'body']
@@ -32,7 +32,7 @@ const WIDGETS_TOOL = {
         type: 'object',
         description: 'Widget 2 — Frames the relationship as a partnership, not a vendor transaction.',
         properties: {
-          headline: { type: 'string', description: 'Warm, relationship-focused. Max 10 words.' },
+          headline: { type: 'string', description: 'Warm, relationship-focused. Hard limit: 60 characters. Must be a grammatically complete phrase.' },
           body:     { type: 'string', description: '3–5 sentences. Use \\n to separate paragraphs.' }
         },
         required: ['headline', 'body']
@@ -41,7 +41,7 @@ const WIDGETS_TOOL = {
         type: 'object',
         description: 'Widget 3 — Makes the case for staying without being defensive.',
         properties: {
-          headline: { type: 'string', description: 'Direct and practical. Max 10 words.' },
+          headline: { type: 'string', description: 'Direct and complete. Hard limit: 60 characters. Must be a full grammatical sentence — never end on a preposition, verb, or incomplete thought. Wrong: "Here\'s why we hold" — Right: "Here\'s why staying makes sense".' },
           body:     { type: 'string', description: '3–5 sentences. Use \\n to separate paragraphs.' }
         },
         required: ['headline', 'body']
@@ -50,7 +50,7 @@ const WIDGETS_TOOL = {
         type: 'object',
         description: "Widget 4 — What's included in the renewed agreement.",
         properties: {
-          headline: { type: 'string', description: 'Clear and direct. Max 10 words.' },
+          headline: { type: 'string', description: 'Clear and direct. Hard limit: 60 characters. Must be a grammatically complete phrase.' },
           body:     { type: 'string', description: 'Each service on its own line with a one-sentence plain-language value statement. Use \\n between services.' }
         },
         required: ['headline', 'body']
@@ -59,7 +59,7 @@ const WIDGETS_TOOL = {
         type: 'object',
         description: "Widget 5 — What's Next (standard) or Our Commitment Going Forward (at-risk).",
         properties: {
-          headline: { type: 'string', description: 'Forward-looking (standard) or commitment-framing (at-risk). Max 10 words.' },
+          headline: { type: 'string', description: 'Forward-looking (standard) or commitment-framing (at-risk). Hard limit: 60 characters. Must be a grammatically complete phrase — never trail off mid-thought.' },
           body:     { type: 'string', description: '3–5 sentences. Use \\n to separate paragraphs.' }
         },
         required: ['headline', 'body']
@@ -191,6 +191,15 @@ PERSONALISED: ${body.personalised ? 'Yes — use merge tags naturally' : 'No'}`;
     for (const key of required) {
       if (!result[key]?.headline || !result[key]?.body) {
         return { statusCode: 502, headers, body: JSON.stringify({ ok: false, error: `Missing widget data: ${key}` }) };
+      }
+    }
+
+    // Safety net: hard-truncate any headline over 60 chars at the last complete word
+    for (const key of required) {
+      const h = result[key].headline;
+      if (h.length > 60) {
+        const truncated = h.slice(0, 60).replace(/\s+\S*$/, '').replace(/[.,;:—–-]+$/, '');
+        result[key].headline = truncated;
       }
     }
 
