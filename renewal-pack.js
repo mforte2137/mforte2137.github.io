@@ -666,8 +666,14 @@
       });
     }
 
+    // Show working state — disable both buttons and change labels
     pushStatus.hidden = true;
-    pushPackBtn.disabled = true; pushIndividualBtn.disabled = true;
+    pushPackBtn.disabled       = true;
+    pushIndividualBtn.disabled = true;
+    const packLabel       = pushPackBtn.textContent;
+    const individualLabel = pushIndividualBtn.textContent;
+    pushPackBtn.textContent       = type === 'pack'       ? 'Pushing…' : packLabel;
+    pushIndividualBtn.textContent = type === 'individual' ? 'Pushing…' : individualLabel;
 
     try {
       const res  = await fetch('/api/push-widgets', {
@@ -675,16 +681,37 @@
         body: JSON.stringify({ widgets: widgetsToSend, prefix, apiKey, tenantUrl, cleanup: false })
       });
       const data = await res.json();
+
       if (data.ok || (data.successCount && data.successCount > 0)) {
-        showPushStatus(`Pushed ${data.successCount} widget${data.successCount !== 1 ? 's' : ''} to Salesbuildr library.`, 'ok');
+        const count = data.successCount || widgetsToSend.length;
+        const msg   = `✓ ${count} widget${count !== 1 ? 's' : ''} pushed to Salesbuildr library`;
+
+        // Update the button that was clicked to show success — keep it disabled
+        if (type === 'pack') {
+          pushPackBtn.textContent = '✓ Pushed';
+        } else {
+          pushIndividualBtn.textContent = '✓ Pushed';
+        }
+        // Re-enable the other button
+        if (type === 'pack') { pushIndividualBtn.disabled = false; pushIndividualBtn.textContent = individualLabel; }
+        else                 { pushPackBtn.disabled = false;       pushPackBtn.textContent = packLabel; }
+
+        // Persistent success bar — no auto-dismiss
+        pushStatus.textContent  = msg;
+        pushStatus.className    = 'push-status ok persistent';
+        pushStatus.hidden       = false;
+
         autoArchiveSession();
       } else {
+        // On failure: restore buttons and show dismissible error
+        pushPackBtn.disabled       = false; pushPackBtn.textContent       = packLabel;
+        pushIndividualBtn.disabled = false; pushIndividualBtn.textContent = individualLabel;
         showPushStatus('Push failed: ' + (data.error || data.results?.find(r => !r.ok)?.error || 'Unknown error'), 'err');
       }
     } catch (err) {
+      pushPackBtn.disabled       = false; pushPackBtn.textContent       = packLabel;
+      pushIndividualBtn.disabled = false; pushIndividualBtn.textContent = individualLabel;
       showPushStatus('Push failed: ' + err.message, 'err');
-    } finally {
-      pushPackBtn.disabled = false; pushIndividualBtn.disabled = false;
     }
   }
 
@@ -870,7 +897,13 @@
 
   function showFetchStatus(msg, type) { fetchStatus.textContent = msg; fetchStatus.className = 'fetch-status ' + type; fetchStatus.hidden = false; }
   function hideFetchStatus() { fetchStatus.hidden = true; }
-  function showPushStatus(msg, type) { pushStatus.textContent = msg; pushStatus.className = 'push-status ' + type; pushStatus.hidden = false; setTimeout(() => { pushStatus.hidden = true; }, 6000); }
+  function showPushStatus(msg, type) {
+    pushStatus.textContent = msg;
+    pushStatus.className   = 'push-status ' + type;
+    pushStatus.hidden      = false;
+    // Auto-dismiss errors after 8 seconds — success bars are persistent (dismissed by next action)
+    if (type === 'err') setTimeout(() => { pushStatus.hidden = true; }, 8000);
+  }
   function setOutputLoading(on, msg) { loadingOverlay.hidden = !on; if (msg) loadingMsg.textContent = msg; }
   function showError(msg) { formError.textContent = msg; formError.hidden = false; }
   function hideError()    { formError.hidden = true; }
