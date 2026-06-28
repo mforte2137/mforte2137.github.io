@@ -11,13 +11,8 @@ exports.handler = async (event) => {
     'Access-Control-Allow-Methods': 'POST, OPTIONS'
   };
 
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers, body: '' };
-  }
-
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: JSON.stringify({ ok: false, error: 'POST required.' }) };
-  }
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers, body: '' };
+  if (event.httpMethod !== 'POST')    return { statusCode: 405, headers, body: JSON.stringify({ ok: false, error: 'POST required.' }) };
 
   let body;
   try { body = JSON.parse(event.body); }
@@ -32,83 +27,105 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: 'API key not configured.' }) };
   }
 
-  // Build structured discovery summary for the prompt
   const isProspect  = body.clientType !== 'existing';
-  const clientLabel = isProspect ? 'prospect' : 'existing customer';
   const toneNote    = isProspect
     ? 'Tone: aspirational and collaborative — use "together", "we\'ll", "your goals". Frame as a vision the MSP will help them achieve.'
-    : 'Tone: continuation and strategic — reference the established partnership, frame as evolution not replacement. Use "as we continue", "our next chapter".';
+    : 'Tone: continuation and strategic — reference the established partnership, frame as natural evolution. Use "as we continue", "our next chapter", "building on what we\'ve achieved".';
 
-  const phases = (body.phases || []).filter(p => p.services && p.services.length > 0);
-  const phaseSummary = phases.map(p =>
-    `Phase ${p.number}${p.label ? ` (${p.label})` : ''}: ${p.timeframe || 'TBD'} | Priority: ${p.priority || 'Not set'} | Services: ${p.services.join(', ')}`
+  const isAiPhases  = body.phaseMode !== 'manual';
+
+  // Build stack summary, handling multi-select arrays
+  function stackVal(v) {
+    if (Array.isArray(v)) return v.length ? v.join(', ') : 'Not specified';
+    return v || 'Not specified';
+  }
+  const stack = body.stack || {};
+  const stackSummary = [
+    `Endpoints: ${stackVal(stack.endpoints)}`,
+    `Email: ${stackVal(stack.email)}`,
+    `Security: ${stackVal(stack.security)}`,
+    `Backup: ${stackVal(stack.backup)}`,
+    `Connectivity: ${stackVal(stack.connectivity)}`,
+    `Server: ${stackVal(stack.server)}`,
+    `Remote access: ${stackVal(stack.remote)}`,
+    `Identity: ${stackVal(stack.identity)}`,
+    `Compliance: ${stackVal(stack.compliance)}${stack.complianceCert ? ` (${stack.complianceCert})` : ''}`,
+    `IT support: ${stackVal(stack.itSupport)}`
+  ].join(' | ');
+
+  // Phase instructions vary by mode
+  const phaseInstruction = isAiPhases
+    ? `PHASE BUILDING: You are building the phases from scratch using best practices for this industry and company profile. Assign services intelligently across three phases: Phase 1 should address immediate security and stability gaps (Critical priority, 0-3 or 3-6 months); Phase 2 should optimize and modernize core infrastructure (High priority, 3-12 months); Phase 3 should deliver strategic transformation and competitive advantage (Strategic priority, 9-24 months). Draw from the goals and stack assessment to decide which services go in which phase. Use appropriate labels (Stabilize / Optimize / Transform or similar). Base timeframes on the complexity of the work involved.`
+    : `PHASE BUILDING: Use the phases exactly as provided by the MSP. Do not invent or reorder services. Write outcomes that match the specific services in each phase.`;
+
+  const manualPhaseSummary = !isAiPhases && (body.phases || []).filter(p => p.services && p.services.length).map(p =>
+    `Phase ${p.number}${p.label ? ` (${p.label})` : ''}: ${p.timeframe || 'TBD'} | Priority: ${p.priority || 'unset'} | Services: ${p.services.join(', ')}`
   ).join('\n');
 
-  const stackEntries = Object.entries(body.stack || {})
-    .filter(([k, v]) => v && k !== 'notes')
-    .map(([k, v]) => `${k}: ${v}`)
-    .join(', ');
-
-  const systemPrompt = `You are an expert MSP copywriter generating executive-facing technology roadmap content. Return ONLY valid JSON — no preamble, no markdown, no backticks.
+  const systemPrompt = `You are an expert MSP copywriter generating executive-facing technology roadmap content for a US-based MSP. Return ONLY valid JSON — no preamble, no markdown, no backticks.
 
 RULES:
-- Write for a business owner or executive — no technical jargon, no unexplained acronyms
+- Write in US English throughout (optimize not optimise, center not centre, fiber not fibre, etc.)
+- Write for a business owner or executive — no unexplained technical jargon or acronyms
 - ${toneNote}
-- Roadmap phase outcomes are the most important part — each must be a clear business benefit, not a technical description
-- Business outcomes must map directly to the goals provided — do not invent goals
-- Investment Summary: frame as budget phasing and business value — never mention specific prices
-- Industry context must be woven into the content — a healthcare roadmap reads very differently from a construction roadmap
-- Keep every widget concise — executives scan, not read. Short paragraphs, clear structure.
+- Phase outcomes are the most important part — each must be a clear business benefit, not a technical description
+- Business outcomes must map directly to the selected goals — do not invent goals that were not chosen
+- Investment Summary: frame as phased, planned investment — never mention specific prices. Use budget range only to frame scale if provided.
+- Weave industry context into all content — a healthcare roadmap reads very differently from a construction roadmap
+- Keep every widget concise — executives scan, not read
+- ${phaseInstruction}
 - Return JSON only — no preamble, no markdown, no backticks
 
 Return this exact JSON shape:
 {
   "whereYouAreToday": {
     "headline": "...",
-    "body": "Two to three short paragraphs separated by newline characters (\\n). Acknowledge strengths before gaps. Written empathetically — an honest picture that makes the roadmap feel necessary, not a list of failures."
+    "body": "Two to three short paragraphs separated by newline characters (\\n). Acknowledge genuine strengths first, then gaps. Empathetic tone — makes the roadmap feel necessary, not a judgment."
   },
   "roadmap": {
     "headline": "Your Technology Roadmap",
     "phases": [
       {
-        "label": "Phase label (use provided label or suggest one like Stabilise/Optimise/Transform)",
-        "timeframe": "...",
-        "priority": "...",
+        "label": "Phase label (e.g. Stabilize)",
+        "timeframe": "0–3 months",
+        "priority": "Critical",
         "services": ["Service 1", "Service 2", "Service 3"],
-        "outcome": "One sentence — a clear business benefit, not a technical description."
+        "outcome": "One clear sentence stating the business benefit achieved — not a technical description."
       }
     ]
   },
   "businessOutcomes": {
     "headline": "What This Means for Your Business",
     "outcomes": [
-      { "goal": "Goal name", "result": "One sentence outcome written in the client's language." }
+      { "goal": "Exact goal name from the list provided", "result": "One sentence outcome in the client's language, not the MSP's." }
     ]
   },
   "investmentSummary": {
     "headline": "Phased Investment Overview",
-    "body": "Three to four sentences max. Frame the financial commitment as a phased, planned investment. Close with a confident forward statement. No specific prices. Use the budget range only to frame scale if provided."
+    "body": "Three to four sentences. Frame the commitment as a planned, phased investment. Close with a confident forward statement. No specific prices."
   }
 }`;
 
   const userMessage = `Generate technology roadmap content for the following:
 
 Client: ${body.clientName}
-Client type: ${clientLabel}
+Client type: ${isProspect ? 'Prospect' : 'Existing customer'}
 Industry: ${body.industry || 'Not specified'}
 Company size: ${body.companySize || 'Not specified'}
 Locations: ${body.locationCount || 'Not specified'}
 
-Current stack: ${stackEntries || 'Not assessed'}
-${body.stack?.notes ? `Stack notes: ${body.stack.notes}` : ''}
+Current stack: ${stackSummary}
+${stack.notes ? `Stack notes: ${stack.notes}` : ''}
 
 Business goals: ${(body.goals || []).join(', ') || 'Not specified'}
 
-Roadmap phases:
-${phaseSummary || 'No phases defined'}
+${isAiPhases
+  ? 'Phase mode: AI-generated — build optimal phases from best practices for this profile.'
+  : `Phase mode: Manual — use exactly as provided:\n${manualPhaseSummary}`
+}
 
 Budget range: ${body.budget || 'Not disclosed'}
-Constraints: ${(body.constraints || []).join(', ') || 'None'}
+Constraints: ${(body.constraints || []).join(', ') || 'None specified'}
 ${body.notes ? `Additional notes: ${body.notes}` : ''}`;
 
   try {
@@ -128,8 +145,8 @@ ${body.notes ? `Additional notes: ${body.notes}` : ''}`;
     });
 
     if (!aiRes.ok) {
-      const errText = await aiRes.text();
-      return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: 'AI API error: ' + errText.slice(0, 200) }) };
+      const txt = await aiRes.text();
+      return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: 'AI API error: ' + txt.slice(0, 200) }) };
     }
 
     const aiData = await aiRes.json();
@@ -139,18 +156,16 @@ ${body.notes ? `Additional notes: ${body.notes}` : ''}`;
     try {
       const clean = text.replace(/```json|```/g, '').trim();
       parsed = JSON.parse(clean);
-    } catch (e) {
+    } catch {
       return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: 'AI returned invalid JSON. Raw: ' + text.slice(0, 300) }) };
     }
 
-    // Validate shape
     if (!parsed.whereYouAreToday || !parsed.roadmap || !parsed.businessOutcomes || !parsed.investmentSummary) {
       return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: 'AI response missing required sections.' }) };
     }
 
     return {
-      statusCode: 200,
-      headers,
+      statusCode: 200, headers,
       body: JSON.stringify({
         ok: true,
         whereYouAreToday:  parsed.whereYouAreToday,
