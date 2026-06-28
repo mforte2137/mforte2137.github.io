@@ -369,7 +369,8 @@
 
     // Widget 0 — cover letter
     if (data.coverLetter) {
-      const html = buildWidgetHtml(data.coverLetter.headline, data.coverLetter.body, true);
+      const cl   = data.coverLetter;
+      const html = buildCoverLetterHtml(cl.headline, cl.intro, cl.stats || [], cl.closing, currentTheme);
       widgets[0] = html;
       $('widget0Editor').value = html;
       renderPreview(0);
@@ -853,8 +854,8 @@
   // ── UI helpers ─────────────────────────────
   function buildCoverWithData(d) {
     if (!d) return '';
-    if (d.stats) return buildCoverLetterHtml(d.headline, d.intro, d.stats, d.closing, currentTheme);
-    return buildWidgetHtml(d.headline, d.body || (d.intro + '\n' + d.closing));
+    // Always use buildCoverLetterHtml — coverLetter never has a plain 'body' field
+    return buildCoverLetterHtml(d.headline, d.intro || '', d.stats || [], d.closing || '', currentTheme);
   }
 
   function showFetchStatus(msg, type) { fetchStatus.textContent = msg; fetchStatus.className = 'fetch-status ' + type; fetchStatus.hidden = false; }
