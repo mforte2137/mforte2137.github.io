@@ -37,6 +37,11 @@ h1,h2,h3,h4 {
   letter-spacing: -0.02em;
 }
 
+/* ── Hidden attribute override ──
+   Prevents display:inline-block / display:flex on badges and overlays
+   from overriding the HTML hidden attribute — per TechRef debugging guide */
+[hidden] { display: none !important; }
+
 /* ── Header ── */
 .app-header {
   background: var(--bg-panel);
