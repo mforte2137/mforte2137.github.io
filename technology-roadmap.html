@@ -24,503 +24,561 @@
     </div>
   </header>
 
-  <main class="app-main">
+  <!-- Two-column layout wrapper -->
+  <div class="two-col-layout">
 
-    <!-- Session picker -->
-    <section id="sessionsBlock" hidden>
-      <div class="section-label">ACTIVE SESSIONS</div>
-      <div id="sessionCards" class="session-cards"></div>
-      <div class="session-actions-row">
-        <button id="newRoadmapBtn" class="btn-accent">+ New Roadmap</button>
-        <button id="showArchivedBtn" class="btn-secondary">Show archived</button>
-      </div>
-    </section>
+    <!-- LEFT: Discovery form -->
+    <aside class="col-form">
 
-    <!-- Step 1: Client & Context -->
-    <section class="form-section" id="step1Block">
-      <div class="section-label">STEP 1 — CLIENT & CONTEXT</div>
+      <!-- Session picker -->
+      <section id="sessionsBlock" hidden>
+        <div class="section-label">ACTIVE SESSIONS</div>
+        <div id="sessionCards" class="session-cards"></div>
+        <div class="session-actions-row">
+          <button id="newRoadmapBtn" class="btn-accent">+ New Roadmap</button>
+          <button id="showArchivedBtn" class="btn-secondary">Show archived</button>
+        </div>
+      </section>
 
-      <div class="field-row">
-        <div class="field-group" style="flex:2;">
-          <label class="field-label">Client name</label>
-          <input type="text" id="clientName" placeholder="e.g. Riverside Medical" autocomplete="off" />
-        </div>
-        <div class="field-group" style="flex:1;">
-          <label class="field-label">Client type</label>
-          <div class="toggle-row" id="clientTypeToggle">
-            <button class="toggle-btn active" data-val="prospect">Prospect</button>
-            <button class="toggle-btn" data-val="existing">Existing Customer</button>
-          </div>
-        </div>
-      </div>
+      <!-- Step 1: Client & Context -->
+      <section class="form-section" id="step1Block">
+        <div class="section-label">STEP 1 — CLIENT & CONTEXT</div>
 
-      <div class="field-row">
-        <div class="field-group">
-          <label class="field-label">Industry</label>
-          <select id="industry">
-            <option value="">Select industry…</option>
-            <option>Healthcare</option>
-            <option>Legal</option>
-            <option>Accounting & Finance</option>
-            <option>Education</option>
-            <option>Government & Municipalities</option>
-            <option>Manufacturing</option>
-            <option>Construction</option>
-            <option>Real Estate</option>
-            <option>Non-Profit</option>
-            <option>Insurance</option>
-            <option>Engineering & Architecture</option>
-            <option>Professional Services</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label class="field-label">Company size</label>
-          <select id="companySize">
-            <option value="">Select…</option>
-            <option>1–10</option>
-            <option>11–50</option>
-            <option>51–200</option>
-            <option>201–500</option>
-            <option>500+</option>
-          </select>
-        </div>
-        <div class="field-group">
-          <label class="field-label">Number of locations</label>
-          <select id="locationCount">
-            <option value="">Select…</option>
-            <option>1</option>
-            <option>2–3</option>
-            <option>4–10</option>
-            <option>10+</option>
-          </select>
-        </div>
-      </div>
-    </section>
-
-    <!-- Step 2: Current Stack -->
-    <section class="form-section collapsible" id="step2Block">
-      <button class="collapsible-header" data-target="step2Body">
-        <span class="section-label">STEP 2 — CURRENT STACK ASSESSMENT</span>
-        <span class="collapse-icon">▾</span>
-      </button>
-      <div class="collapsible-body" id="step2Body">
-        <div class="stack-grid">
-          <div class="field-group">
-            <label class="field-label">Endpoints</label>
-            <select id="stackEndpoints">
-              <option value="">Select…</option>
-              <option>Windows</option><option>Mac</option><option>Mixed</option><option>Unmanaged</option><option>Unknown</option>
-            </select>
+        <div class="field-row">
+          <div class="field-group" style="flex:2;">
+            <label class="field-label">Client name</label>
+            <input type="text" id="clientName" placeholder="e.g. Riverside Medical" autocomplete="off" />
           </div>
-          <div class="field-group">
-            <label class="field-label">Email platform</label>
-            <select id="stackEmail">
-              <option value="">Select…</option>
-              <option>Microsoft 365</option><option>Google Workspace</option><option>On-premise Exchange</option><option>Mixed</option><option>None</option>
-            </select>
-          </div>
-          <div class="field-group">
-            <label class="field-label">Security</label>
-            <select id="stackSecurity">
-              <option value="">Select…</option>
-              <option>Basic AV only</option><option>EDR</option><option>MDR</option><option>None</option><option>Unknown</option>
-            </select>
-          </div>
-          <div class="field-group">
-            <label class="field-label">Backup</label>
-            <select id="stackBackup">
-              <option value="">Select…</option>
-              <option>Cloud backup</option><option>Local only</option><option>Cloud + Local</option><option>None</option><option>Unknown</option>
-            </select>
-          </div>
-          <div class="field-group">
-            <label class="field-label">Connectivity</label>
-            <select id="stackConnectivity">
-              <option value="">Select…</option>
-              <option>Fibre</option><option>ADSL</option><option>4G/5G failover</option><option>Redundant links</option><option>Unknown</option>
-            </select>
-          </div>
-          <div class="field-group">
-            <label class="field-label">Server infrastructure</label>
-            <select id="stackServer">
-              <option value="">Select…</option>
-              <option>On-premise</option><option>Cloud (Azure/AWS/GCP)</option><option>Hybrid</option><option>None</option><option>Unknown</option>
-            </select>
-          </div>
-          <div class="field-group">
-            <label class="field-label">Remote access</label>
-            <select id="stackRemote">
-              <option value="">Select…</option>
-              <option>VPN</option><option>Zero Trust</option><option>RDP</option><option>None</option>
-            </select>
-          </div>
-          <div class="field-group">
-            <label class="field-label">Identity management</label>
-            <select id="stackIdentity">
-              <option value="">Select…</option>
-              <option>Active Directory</option><option>Azure AD</option><option>Google</option><option>None</option>
-            </select>
-          </div>
-          <div class="field-group">
-            <label class="field-label">Compliance status</label>
-            <select id="stackCompliance">
-              <option value="">Select…</option>
-              <option>None</option><option>In progress</option><option>Certified</option>
-            </select>
-          </div>
-          <div class="field-group">
-            <label class="field-label">Current IT support</label>
-            <select id="stackITSupport">
-              <option value="">Select…</option>
-              <option>Internal IT team</option><option>Another MSP</option><option>Self-managed</option><option>None</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="field-group" id="complianceCertGroup" hidden>
-          <label class="field-label">Compliance certification(s)</label>
-          <input type="text" id="complianceCert" placeholder="e.g. Cyber Essentials, HIPAA" />
-        </div>
-
-        <div class="field-group" style="margin-top:12px;">
-          <label class="field-label">Stack notes <span class="field-hint">(optional)</span></label>
-          <textarea id="stackNotes" rows="2" placeholder="Anything else we should know about the current environment?"></textarea>
-        </div>
-      </div>
-    </section>
-
-    <!-- Step 3: Business Goals -->
-    <section class="form-section collapsible" id="step3Block">
-      <button class="collapsible-header" data-target="step3Body">
-        <span class="section-label">STEP 3 — BUSINESS GOALS</span>
-        <span class="collapse-icon">▾</span>
-      </button>
-      <div class="collapsible-body" id="step3Body">
-        <p class="field-hint" style="margin-bottom:12px;">Select all that apply — tap to toggle.</p>
-        <div class="chip-group" id="goalsChips">
-          <button class="chip" data-val="Reduce IT costs">Reduce IT costs</button>
-          <button class="chip" data-val="Improve security posture">Improve security posture</button>
-          <button class="chip" data-val="Enable / improve remote work">Enable / improve remote work</button>
-          <button class="chip" data-val="Support business growth">Support business growth</button>
-          <button class="chip" data-val="Achieve compliance">Achieve compliance</button>
-          <button class="chip" data-val="Reduce downtime">Reduce downtime</button>
-          <button class="chip" data-val="Migrate to cloud">Migrate to cloud</button>
-          <button class="chip" data-val="Modernise aging infrastructure">Modernise aging infrastructure</button>
-          <button class="chip" data-val="Improve user experience">Improve user experience</button>
-          <button class="chip" data-val="Support M&A activity">Support M&A activity</button>
-          <button class="chip" data-val="Increase operational resilience">Increase operational resilience</button>
-          <button class="chip" data-val="Reduce vendor complexity">Reduce vendor complexity</button>
-          <button class="chip chip-custom" data-val="custom">+ Custom goal</button>
-        </div>
-        <div id="customGoalWrap" hidden style="margin-top:10px;">
-          <input type="text" id="customGoal" placeholder="Describe your custom goal…" />
-        </div>
-      </div>
-    </section>
-
-    <!-- Step 4: Roadmap Phases -->
-    <section class="form-section collapsible" id="step4Block">
-      <button class="collapsible-header" data-target="step4Body">
-        <span class="section-label">STEP 4 — ROADMAP PHASES</span>
-        <span class="collapse-icon">▾</span>
-      </button>
-      <div class="collapsible-body" id="step4Body">
-
-        <!-- Phase 1 -->
-        <div class="phase-block" id="phase1">
-          <div class="phase-header">
-            <span class="phase-badge">Phase 1</span>
-            <input type="text" class="phase-label-input" placeholder="Label (e.g. Stabilise) — optional" data-phase="1" />
-          </div>
-          <div class="field-row">
-            <div class="field-group">
-              <label class="field-label">Timeframe</label>
-              <select class="phase-timeframe" data-phase="1">
-                <option value="">Select…</option>
-                <option>0–3 months</option><option>3–6 months</option><option>6–12 months</option><option>12–18 months</option><option>18–24 months</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label class="field-label">Priority</label>
-              <select class="phase-priority" data-phase="1">
-                <option value="">Select…</option>
-                <option>Critical</option><option>High</option><option>Strategic</option>
-              </select>
-            </div>
-          </div>
-          <div class="field-label" style="margin-bottom:6px;">Services</div>
-          <div class="service-picker" id="picker1">
-            <div class="service-search-wrap">
-              <input type="text" class="service-search" placeholder="Search services…" data-phase="1" />
-            </div>
-            <div class="service-list" id="list1"></div>
-            <div class="service-selected" id="selected1"></div>
-            <div class="custom-service-row">
-              <input type="text" class="custom-service-input" id="customService1" placeholder="Add custom service…" />
-              <button class="btn-secondary custom-service-add" data-phase="1">Add</button>
+          <div class="field-group" style="flex:1;">
+            <label class="field-label">Client type</label>
+            <div class="toggle-row" id="clientTypeToggle">
+              <button class="toggle-btn active" data-val="prospect">Prospect</button>
+              <button class="toggle-btn" data-val="existing">Existing Customer</button>
             </div>
           </div>
         </div>
 
-        <!-- Phase 2 -->
-        <div class="phase-block" id="phase2">
-          <div class="phase-header">
-            <span class="phase-badge">Phase 2</span>
-            <input type="text" class="phase-label-input" placeholder="Label (e.g. Optimise) — optional" data-phase="2" />
-          </div>
-          <div class="field-row">
-            <div class="field-group">
-              <label class="field-label">Timeframe</label>
-              <select class="phase-timeframe" data-phase="2">
-                <option value="">Select…</option>
-                <option>0–3 months</option><option>3–6 months</option><option>6–12 months</option><option>12–18 months</option><option>18–24 months</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label class="field-label">Priority</label>
-              <select class="phase-priority" data-phase="2">
-                <option value="">Select…</option>
-                <option>Critical</option><option>High</option><option>Strategic</option>
-              </select>
-            </div>
-          </div>
-          <div class="field-label" style="margin-bottom:6px;">Services</div>
-          <div class="service-picker" id="picker2">
-            <div class="service-search-wrap">
-              <input type="text" class="service-search" placeholder="Search services…" data-phase="2" />
-            </div>
-            <div class="service-list" id="list2"></div>
-            <div class="service-selected" id="selected2"></div>
-            <div class="custom-service-row">
-              <input type="text" class="custom-service-input" id="customService2" placeholder="Add custom service…" />
-              <button class="btn-secondary custom-service-add" data-phase="2">Add</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Phase 3 -->
-        <div class="phase-block" id="phase3">
-          <div class="phase-header">
-            <span class="phase-badge">Phase 3</span>
-            <input type="text" class="phase-label-input" placeholder="Label (e.g. Transform) — optional" data-phase="3" />
-          </div>
-          <div class="field-row">
-            <div class="field-group">
-              <label class="field-label">Timeframe</label>
-              <select class="phase-timeframe" data-phase="3">
-                <option value="">Select…</option>
-                <option>0–3 months</option><option>3–6 months</option><option>6–12 months</option><option>12–18 months</option><option>18–24 months</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label class="field-label">Priority</label>
-              <select class="phase-priority" data-phase="3">
-                <option value="">Select…</option>
-                <option>Critical</option><option>High</option><option>Strategic</option>
-              </select>
-            </div>
-          </div>
-          <div class="field-label" style="margin-bottom:6px;">Services</div>
-          <div class="service-picker" id="picker3">
-            <div class="service-search-wrap">
-              <input type="text" class="service-search" placeholder="Search services…" data-phase="3" />
-            </div>
-            <div class="service-list" id="list3"></div>
-            <div class="service-selected" id="selected3"></div>
-            <div class="custom-service-row">
-              <input type="text" class="custom-service-input" id="customService3" placeholder="Add custom service…" />
-              <button class="btn-secondary custom-service-add" data-phase="3">Add</button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- Step 5: Optional Context -->
-    <section class="form-section collapsible" id="step5Block">
-      <button class="collapsible-header" data-target="step5Body">
-        <span class="section-label">STEP 5 — OPTIONAL CONTEXT</span>
-        <span class="collapse-icon">▾</span>
-      </button>
-      <div class="collapsible-body" id="step5Body">
         <div class="field-row">
           <div class="field-group">
-            <label class="field-label">Budget range</label>
-            <select id="budgetRange">
-              <option value="">Not disclosed</option>
-              <option>Under $1k/mo</option>
-              <option>$1k–$3k/mo</option>
-              <option>$3k–$7k/mo</option>
-              <option>$7k–$15k/mo</option>
-              <option>$15k+/mo</option>
+            <label class="field-label">Industry</label>
+            <select id="industry">
+              <option value="">Select industry…</option>
+              <option>Healthcare</option>
+              <option>Legal</option>
+              <option>Accounting &amp; Finance</option>
+              <option>Education</option>
+              <option>Government &amp; Municipalities</option>
+              <option>Manufacturing</option>
+              <option>Construction</option>
+              <option>Real Estate</option>
+              <option>Non-Profit</option>
+              <option>Insurance</option>
+              <option>Engineering &amp; Architecture</option>
+              <option>Professional Services</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Company size</label>
+            <select id="companySize">
+              <option value="">Select…</option>
+              <option>1–10</option>
+              <option>11–50</option>
+              <option>51–200</option>
+              <option>201–500</option>
+              <option>500+</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Number of locations</label>
+            <select id="locationCount">
+              <option value="">Select…</option>
+              <option>1</option>
+              <option>2–3</option>
+              <option>4–10</option>
+              <option>10+</option>
             </select>
           </div>
         </div>
+      </section>
 
-        <div class="field-group">
-          <label class="field-label">Key constraints</label>
-          <div class="chip-group" id="constraintChips">
-            <button class="chip" data-val="Budget">Budget</button>
-            <button class="chip" data-val="Timeline">Timeline</button>
-            <button class="chip" data-val="Internal resistance">Internal resistance</button>
-            <button class="chip" data-val="Legacy systems">Legacy systems</button>
-            <button class="chip" data-val="Compliance deadline">Compliance deadline</button>
-            <button class="chip" data-val="Staffing">Staffing</button>
-            <button class="chip" data-val="Other">Other</button>
+      <!-- Step 2: Current Stack -->
+      <section class="form-section collapsible" id="step2Block">
+        <button class="collapsible-header" data-target="step2Body">
+          <span class="section-label">STEP 2 — CURRENT STACK ASSESSMENT</span>
+          <span class="collapse-icon">▾</span>
+        </button>
+        <div class="collapsible-body" id="step2Body">
+          <div class="stack-grid">
+
+            <div class="field-group">
+              <label class="field-label">Endpoints</label>
+              <select id="stackEndpoints">
+                <option value="">Select…</option>
+                <option>Windows</option><option>Mac</option><option>Mixed</option><option>Unmanaged</option><option>Unknown</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Email platform</label>
+              <select id="stackEmail">
+                <option value="">Select…</option>
+                <option>Microsoft 365</option><option>Google Workspace</option><option>On-premise Exchange</option><option>Mixed</option><option>None</option>
+              </select>
+            </div>
+
+            <!-- Security — multi-select chips -->
+            <div class="field-group stack-grid-full">
+              <label class="field-label">Security <span class="field-hint">(select all that apply)</span></label>
+              <div class="chip-group stack-chip-group" id="stackSecurityChips">
+                <button class="chip" data-val="Basic AV">Basic AV</button>
+                <button class="chip" data-val="EDR">EDR</button>
+                <button class="chip" data-val="MDR">MDR</button>
+                <button class="chip" data-val="Email security">Email security</button>
+                <button class="chip" data-val="None">None</button>
+                <button class="chip" data-val="Unknown">Unknown</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Backup</label>
+              <select id="stackBackup">
+                <option value="">Select…</option>
+                <option>Cloud backup</option><option>Local only</option><option>Cloud + Local</option><option>None</option><option>Unknown</option>
+              </select>
+            </div>
+
+            <!-- Connectivity — multi-select chips -->
+            <div class="field-group stack-grid-full">
+              <label class="field-label">Connectivity <span class="field-hint">(select all that apply)</span></label>
+              <div class="chip-group stack-chip-group" id="stackConnectivityChips">
+                <button class="chip" data-val="Fiber">Fiber</button>
+                <button class="chip" data-val="ADSL">ADSL</button>
+                <button class="chip" data-val="4G/5G failover">4G/5G failover</button>
+                <button class="chip" data-val="Redundant links">Redundant links</button>
+                <button class="chip" data-val="Unknown">Unknown</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Server infrastructure</label>
+              <select id="stackServer">
+                <option value="">Select…</option>
+                <option>On-premise</option><option>Cloud (Azure/AWS/GCP)</option><option>Hybrid</option><option>None</option><option>Unknown</option>
+              </select>
+            </div>
+
+            <!-- Remote access — multi-select chips -->
+            <div class="field-group stack-grid-full">
+              <label class="field-label">Remote access <span class="field-hint">(select all that apply)</span></label>
+              <div class="chip-group stack-chip-group" id="stackRemoteChips">
+                <button class="chip" data-val="VPN">VPN</button>
+                <button class="chip" data-val="Zero Trust">Zero Trust</button>
+                <button class="chip" data-val="RDP">RDP</button>
+                <button class="chip" data-val="None">None</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Identity management</label>
+              <select id="stackIdentity">
+                <option value="">Select…</option>
+                <option>Active Directory</option><option>Azure AD / Entra ID</option><option>Google</option><option>None</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Compliance status</label>
+              <select id="stackCompliance">
+                <option value="">Select…</option>
+                <option>None</option><option>In progress</option><option>Certified</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Current IT support</label>
+              <select id="stackITSupport">
+                <option value="">Select…</option>
+                <option>Internal IT team</option><option>Another MSP</option><option>Self-managed</option><option>None</option>
+              </select>
+            </div>
+
+          </div>
+
+          <div class="field-group" id="complianceCertGroup" hidden>
+            <label class="field-label">Compliance certification(s)</label>
+            <input type="text" id="complianceCert" placeholder="e.g. Cyber Essentials, HIPAA" />
+          </div>
+
+          <div class="field-group" style="margin-top:12px;">
+            <label class="field-label">Stack notes <span class="field-hint">(optional)</span></label>
+            <textarea id="stackNotes" rows="2" placeholder="Anything else we should know about the current environment?"></textarea>
           </div>
         </div>
+      </section>
 
-        <div class="field-group" style="margin-top:12px;">
-          <label class="field-label">Additional notes <span class="field-hint">(max 300 characters)</span></label>
-          <textarea id="additionalNotes" rows="2" maxlength="300" placeholder="Anything the roadmap should reflect that isn't captured above?"></textarea>
-        </div>
-      </div>
-    </section>
-
-    <!-- Colour theme -->
-    <section class="form-section" id="themeBlock">
-      <div class="section-label">THEME COLOUR</div>
-      <div class="swatch-row" id="colourSwatches">
-        <button class="swatch active" data-hex="#0f1f3d" style="background:#0f1f3d;" title="Navy"></button>
-        <button class="swatch" data-hex="#2E74DC" style="background:#2E74DC;" title="Blue"></button>
-        <button class="swatch" data-hex="#475569" style="background:#475569;" title="Slate"></button>
-        <button class="swatch" data-hex="#065f46" style="background:#065f46;" title="Emerald"></button>
-        <button class="swatch" data-hex="#0f766e" style="background:#0f766e;" title="Teal"></button>
-        <button class="swatch" data-hex="#991B1B" style="background:#991B1B;" title="Crimson"></button>
-        <button class="swatch" data-hex="#92400e" style="background:#92400e;" title="Amber"></button>
-        <button class="swatch" data-hex="#1a1a1a" style="background:#1a1a1a;" title="Charcoal"></button>
-      </div>
-      <div class="custom-hex-row">
-        <span class="field-hint">Custom hex:</span>
-        <input type="text" id="customHex" placeholder="2E74DC" maxlength="6" style="width:90px;" />
-        <span id="hexPreview" class="hex-preview"></span>
-      </div>
-    </section>
-
-    <!-- Generate -->
-    <section class="form-section generate-section">
-      <div id="formError" class="form-error" hidden></div>
-      <button id="generateBtn" class="btn-accent generate-btn">Generate Roadmap Widgets</button>
-      <div class="auto-save-label" id="autoSaveLabel" hidden>Saved ✓</div>
-    </section>
-
-    <!-- Loading overlay -->
-    <div id="loadingOverlay" class="loading-overlay" hidden>
-      <div class="loading-inner">
-        <div class="loading-dots"><span></span><span></span><span></span></div>
-        <div id="loadingMsg" class="loading-msg">Building your technology roadmap…</div>
-        <div class="loading-sub">This may take a moment as AI generates all four widgets from your discovery data.</div>
-      </div>
-    </div>
-
-    <!-- Output area -->
-    <section id="outputArea" hidden>
-      <div class="output-header">
-        <h2 id="deliveryTitle" class="output-title">— Technology Roadmap</h2>
-        <div class="output-meta-row">
-          <span id="autoSaveChip" class="badge badge-neutral" hidden>Saved</span>
-        </div>
-      </div>
-
-      <!-- Widget 1 — Where You Are Today -->
-      <div class="widget-card" id="widget1Card">
-        <div class="widget-card-header">
-          <div>
-            <div class="widget-card-label">Widget 1</div>
-            <div class="widget-card-title">Where You Are Today</div>
+      <!-- Step 3: Business Goals -->
+      <section class="form-section collapsible" id="step3Block">
+        <button class="collapsible-header" data-target="step3Body">
+          <span class="section-label">STEP 3 — BUSINESS GOALS</span>
+          <span class="collapse-icon">▾</span>
+        </button>
+        <div class="collapsible-body" id="step3Body">
+          <p class="field-hint" style="margin-bottom:12px;">Select all that apply — tap to toggle.</p>
+          <div class="chip-group" id="goalsChips">
+            <button class="chip" data-val="Reduce IT costs">Reduce IT costs</button>
+            <button class="chip" data-val="Improve security posture">Improve security posture</button>
+            <button class="chip" data-val="Enable / improve remote work">Enable / improve remote work</button>
+            <button class="chip" data-val="Support business growth">Support business growth</button>
+            <button class="chip" data-val="Achieve compliance">Achieve compliance</button>
+            <button class="chip" data-val="Reduce downtime">Reduce downtime</button>
+            <button class="chip" data-val="Migrate to cloud">Migrate to cloud</button>
+            <button class="chip" data-val="Modernize aging infrastructure">Modernize aging infrastructure</button>
+            <button class="chip" data-val="Improve user experience">Improve user experience</button>
+            <button class="chip" data-val="Support M&amp;A activity">Support M&amp;A activity</button>
+            <button class="chip" data-val="Increase operational resilience">Increase operational resilience</button>
+            <button class="chip" data-val="Reduce vendor complexity">Reduce vendor complexity</button>
+            <button class="chip chip-custom" data-val="custom">+ Custom goal</button>
           </div>
-          <div class="widget-card-actions">
-            <button class="btn-secondary widget-regen" data-widget="1">↺ Regenerate</button>
-            <button class="btn-secondary widget-copy" data-widget="1">Copy HTML</button>
-            <button class="btn-secondary show-html-btn" data-widget="1">Show HTML</button>
+          <div id="customGoalWrap" hidden style="margin-top:10px;">
+            <input type="text" id="customGoal" placeholder="Describe your custom goal…" />
           </div>
         </div>
-        <div class="widget-preview" id="preview1"></div>
-        <textarea class="widget-editor" id="widget1Editor" rows="6" placeholder="HTML will appear here after generation…"></textarea>
-      </div>
+      </section>
 
-      <!-- Widget 2 — Technology Roadmap (centrepiece) -->
-      <div class="widget-card" id="widget2Card">
-        <div class="widget-card-header">
-          <div>
-            <div class="widget-card-label">Widget 2 — Centrepiece</div>
-            <div class="widget-card-title">Your Technology Roadmap</div>
+      <!-- Step 4: Roadmap Phases -->
+      <section class="form-section collapsible" id="step4Block">
+        <button class="collapsible-header" data-target="step4Body">
+          <span class="section-label">STEP 4 — ROADMAP PHASES</span>
+          <span class="collapse-icon">▾</span>
+        </button>
+        <div class="collapsible-body" id="step4Body">
+
+          <!-- Phase mode toggle -->
+          <div class="phase-mode-row">
+            <div class="phase-mode-toggle" id="phaseModeToggle">
+              <button class="toggle-btn active" data-val="ai">
+                <span class="phase-mode-icon">✦</span> AI builds phases
+                <span class="phase-mode-sub">Recommended based on your discovery data</span>
+              </button>
+              <button class="toggle-btn" data-val="manual">
+                <span class="phase-mode-icon">✎</span> I'll define them
+                <span class="phase-mode-sub">Choose services for each phase manually</span>
+              </button>
+            </div>
+            <div class="callout phase-ai-note" id="phaseAiNote">
+              AI will analyze your stack assessment, industry, and goals to suggest optimal phases and service assignments. You can edit the generated widgets afterward.
+            </div>
           </div>
-          <div class="widget-card-actions">
-            <button class="btn-secondary widget-regen" data-widget="2">↺ Regenerate</button>
-            <button class="btn-secondary widget-copy" data-widget="2">Copy HTML</button>
-            <button class="btn-secondary show-html-btn" data-widget="2">Show HTML</button>
-          </div>
+
+          <!-- Manual phase entry (hidden when AI mode active) -->
+          <div id="manualPhaseBlocks" hidden>
+
+            <!-- Phase 1 -->
+            <div class="phase-block" id="phase1">
+              <div class="phase-header">
+                <span class="phase-badge">Phase 1</span>
+                <input type="text" class="phase-label-input" placeholder="Label (e.g. Stabilize) — optional" data-phase="1" />
+              </div>
+              <div class="field-row">
+                <div class="field-group">
+                  <label class="field-label">Timeframe</label>
+                  <select class="phase-timeframe" data-phase="1">
+                    <option value="">Select…</option>
+                    <option>0–3 months</option><option>3–6 months</option><option>6–12 months</option><option>12–18 months</option><option>18–24 months</option>
+                  </select>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Priority</label>
+                  <select class="phase-priority" data-phase="1">
+                    <option value="">Select…</option>
+                    <option>Critical</option><option>High</option><option>Strategic</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field-label" style="margin-bottom:6px;">Services</div>
+              <div class="service-picker" id="picker1">
+                <div class="service-search-wrap">
+                  <input type="text" class="service-search" placeholder="Search services…" data-phase="1" />
+                </div>
+                <div class="service-list" id="list1"></div>
+                <div class="service-selected" id="selected1"></div>
+                <div class="custom-service-row">
+                  <input type="text" class="custom-service-input" id="customService1" placeholder="Add custom service…" />
+                  <button class="btn-secondary custom-service-add" data-phase="1">Add</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Phase 2 -->
+            <div class="phase-block" id="phase2">
+              <div class="phase-header">
+                <span class="phase-badge">Phase 2</span>
+                <input type="text" class="phase-label-input" placeholder="Label (e.g. Optimize) — optional" data-phase="2" />
+              </div>
+              <div class="field-row">
+                <div class="field-group">
+                  <label class="field-label">Timeframe</label>
+                  <select class="phase-timeframe" data-phase="2">
+                    <option value="">Select…</option>
+                    <option>0–3 months</option><option>3–6 months</option><option>6–12 months</option><option>12–18 months</option><option>18–24 months</option>
+                  </select>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Priority</label>
+                  <select class="phase-priority" data-phase="2">
+                    <option value="">Select…</option>
+                    <option>Critical</option><option>High</option><option>Strategic</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field-label" style="margin-bottom:6px;">Services</div>
+              <div class="service-picker" id="picker2">
+                <div class="service-search-wrap">
+                  <input type="text" class="service-search" placeholder="Search services…" data-phase="2" />
+                </div>
+                <div class="service-list" id="list2"></div>
+                <div class="service-selected" id="selected2"></div>
+                <div class="custom-service-row">
+                  <input type="text" class="custom-service-input" id="customService2" placeholder="Add custom service…" />
+                  <button class="btn-secondary custom-service-add" data-phase="2">Add</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Phase 3 -->
+            <div class="phase-block" id="phase3">
+              <div class="phase-header">
+                <span class="phase-badge">Phase 3</span>
+                <input type="text" class="phase-label-input" placeholder="Label (e.g. Transform) — optional" data-phase="3" />
+              </div>
+              <div class="field-row">
+                <div class="field-group">
+                  <label class="field-label">Timeframe</label>
+                  <select class="phase-timeframe" data-phase="3">
+                    <option value="">Select…</option>
+                    <option>0–3 months</option><option>3–6 months</option><option>6–12 months</option><option>12–18 months</option><option>18–24 months</option>
+                  </select>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Priority</label>
+                  <select class="phase-priority" data-phase="3">
+                    <option value="">Select…</option>
+                    <option>Critical</option><option>High</option><option>Strategic</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field-label" style="margin-bottom:6px;">Services</div>
+              <div class="service-picker" id="picker3">
+                <div class="service-search-wrap">
+                  <input type="text" class="service-search" placeholder="Search services…" data-phase="3" />
+                </div>
+                <div class="service-list" id="list3"></div>
+                <div class="service-selected" id="selected3"></div>
+                <div class="custom-service-row">
+                  <input type="text" class="custom-service-input" id="customService3" placeholder="Add custom service…" />
+                  <button class="btn-secondary custom-service-add" data-phase="3">Add</button>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /manualPhaseBlocks -->
         </div>
-        <div class="widget-preview" id="preview2"></div>
-        <textarea class="widget-editor" id="widget2Editor" rows="6" placeholder="HTML will appear here after generation…"></textarea>
-      </div>
+      </section>
 
-      <!-- Widget 3 — Business Outcomes -->
-      <div class="widget-card" id="widget3Card">
-        <div class="widget-card-header">
-          <div>
-            <div class="widget-card-label">Widget 3</div>
-            <div class="widget-card-title">Business Outcomes</div>
-          </div>
-          <div class="widget-card-actions">
-            <button class="btn-secondary widget-regen" data-widget="3">↺ Regenerate</button>
-            <button class="btn-secondary widget-copy" data-widget="3">Copy HTML</button>
-            <button class="btn-secondary show-html-btn" data-widget="3">Show HTML</button>
-          </div>
-        </div>
-        <div class="widget-preview" id="preview3"></div>
-        <textarea class="widget-editor" id="widget3Editor" rows="6" placeholder="HTML will appear here after generation…"></textarea>
-      </div>
-
-      <!-- Widget 4 — Investment Summary -->
-      <div class="widget-card" id="widget4Card">
-        <div class="widget-card-header">
-          <div>
-            <div class="widget-card-label">Widget 4</div>
-            <div class="widget-card-title">Investment Summary</div>
-          </div>
-          <div class="widget-card-actions">
-            <button class="btn-secondary widget-regen" data-widget="4">↺ Regenerate</button>
-            <button class="btn-secondary widget-copy" data-widget="4">Copy HTML</button>
-            <button class="btn-secondary show-html-btn" data-widget="4">Show HTML</button>
-          </div>
-        </div>
-        <div class="widget-preview" id="preview4"></div>
-        <textarea class="widget-editor" id="widget4Editor" rows="6" placeholder="HTML will appear here after generation…"></textarea>
-      </div>
-
-      <!-- Delivery -->
-      <div class="delivery-panel">
-        <div class="section-label" style="margin-bottom:12px;">DELIVER WIDGETS</div>
-        <div class="delivery-btn-row">
-          <button id="pushIndividualBtn" class="btn-primary">Push Individual Widgets to Salesbuildr</button>
-          <button id="pushPackBtn" class="btn-accent">Push as Pack</button>
-          <button id="copyAllBtn" class="btn-secondary">Copy All HTML</button>
-        </div>
-        <div id="pushStatus" class="push-status" hidden></div>
-
-        <!-- Inline credentials form -->
-        <div id="credsInline" class="creds-inline" hidden>
+      <!-- Step 5: Optional Context -->
+      <section class="form-section collapsible" id="step5Block">
+        <button class="collapsible-header" data-target="step5Body">
+          <span class="section-label">STEP 5 — OPTIONAL CONTEXT</span>
+          <span class="collapse-icon">▾</span>
+        </button>
+        <div class="collapsible-body" id="step5Body">
           <div class="field-row">
             <div class="field-group">
-              <label class="field-label">Salesbuildr API key</label>
-              <input type="password" id="pushApiKey" placeholder="sb_…" />
+              <label class="field-label">Budget range</label>
+              <select id="budgetRange">
+                <option value="">Not disclosed</option>
+                <option>Under $1k/mo</option>
+                <option>$1k–$3k/mo</option>
+                <option>$3k–$7k/mo</option>
+                <option>$7k–$15k/mo</option>
+                <option>$15k+/mo</option>
+              </select>
             </div>
-            <div class="field-group">
-              <label class="field-label">Tenant URL</label>
-              <input type="text" id="pushTenantUrl" placeholder="https://acme.salesbuildr.com" />
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Key constraints</label>
+            <div class="chip-group" id="constraintChips">
+              <button class="chip" data-val="Budget">Budget</button>
+              <button class="chip" data-val="Timeline">Timeline</button>
+              <button class="chip" data-val="Internal resistance">Internal resistance</button>
+              <button class="chip" data-val="Legacy systems">Legacy systems</button>
+              <button class="chip" data-val="Compliance deadline">Compliance deadline</button>
+              <button class="chip" data-val="Staffing">Staffing</button>
+              <button class="chip" data-val="Other">Other</button>
             </div>
-            <div class="field-group" style="justify-content:flex-end;display:flex;align-items:flex-end;">
-              <button id="saveAndPushBtn" class="btn-accent">Save & Push</button>
+          </div>
+
+          <div class="field-group" style="margin-top:12px;">
+            <label class="field-label">Additional notes <span class="field-hint">(max 300 characters)</span></label>
+            <textarea id="additionalNotes" rows="2" maxlength="300" placeholder="Anything the roadmap should reflect that isn't captured above?"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- Color theme -->
+      <section class="form-section" id="themeBlock">
+        <div class="section-label">THEME COLOR</div>
+        <div class="swatch-row" id="colourSwatches">
+          <button class="swatch active" data-hex="#0f1f3d" style="background:#0f1f3d;" title="Navy"></button>
+          <button class="swatch" data-hex="#2E74DC" style="background:#2E74DC;" title="Blue"></button>
+          <button class="swatch" data-hex="#475569" style="background:#475569;" title="Slate"></button>
+          <button class="swatch" data-hex="#065f46" style="background:#065f46;" title="Emerald"></button>
+          <button class="swatch" data-hex="#0f766e" style="background:#0f766e;" title="Teal"></button>
+          <button class="swatch" data-hex="#991B1B" style="background:#991B1B;" title="Crimson"></button>
+          <button class="swatch" data-hex="#92400e" style="background:#92400e;" title="Amber"></button>
+          <button class="swatch" data-hex="#1a1a1a" style="background:#1a1a1a;" title="Charcoal"></button>
+        </div>
+        <div class="custom-hex-row">
+          <span class="field-hint">Custom hex:</span>
+          <input type="text" id="customHex" placeholder="2E74DC" maxlength="6" style="width:90px;" />
+          <span id="hexPreview" class="hex-preview"></span>
+        </div>
+      </section>
+
+      <!-- Generate -->
+      <section class="form-section generate-section">
+        <div id="formError" class="form-error" hidden></div>
+        <button id="generateBtn" class="btn-accent generate-btn">Generate Roadmap Widgets</button>
+        <div class="auto-save-label" id="autoSaveLabel">Saved ✓</div>
+      </section>
+
+    </aside><!-- /col-form -->
+
+    <!-- RIGHT: Output -->
+    <main class="col-output">
+
+      <!-- Loading overlay (scoped to right column) -->
+      <div id="loadingOverlay" class="loading-overlay" hidden>
+        <div class="loading-inner">
+          <div class="loading-dots"><span></span><span></span><span></span></div>
+          <div id="loadingMsg" class="loading-msg">Building your technology roadmap…</div>
+          <div class="loading-sub">This may take a moment as AI generates all four widgets.</div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div id="emptyState" class="empty-state">
+        <div class="empty-icon">◈</div>
+        <div class="empty-title">Widgets will appear here</div>
+        <div class="empty-sub">Complete the discovery form and click Generate to build your roadmap widgets.</div>
+      </div>
+
+      <!-- Output area -->
+      <section id="outputArea" hidden>
+        <div class="output-header">
+          <h2 id="deliveryTitle" class="output-title">Technology Roadmap</h2>
+        </div>
+
+        <!-- Widget 1 -->
+        <div class="widget-card" id="widget1Card">
+          <div class="widget-card-header">
+            <div>
+              <div class="widget-card-label">Widget 1</div>
+              <div class="widget-card-title">Where You Are Today</div>
+            </div>
+            <div class="widget-card-actions">
+              <button class="btn-secondary widget-regen" data-widget="1">↺ Regen</button>
+              <button class="btn-secondary widget-copy" data-widget="1">Copy HTML</button>
+              <button class="btn-secondary show-html-btn" data-widget="1">Show HTML</button>
+            </div>
+          </div>
+          <div class="widget-preview" id="preview1"></div>
+          <textarea class="widget-editor" id="widget1Editor" rows="6" placeholder="HTML will appear here after generation…"></textarea>
+        </div>
+
+        <!-- Widget 2 — Centerpiece -->
+        <div class="widget-card" id="widget2Card">
+          <div class="widget-card-header">
+            <div>
+              <div class="widget-card-label">Widget 2 — Centerpiece</div>
+              <div class="widget-card-title">Your Technology Roadmap</div>
+            </div>
+            <div class="widget-card-actions">
+              <button class="btn-secondary widget-regen" data-widget="2">↺ Regen</button>
+              <button class="btn-secondary widget-copy" data-widget="2">Copy HTML</button>
+              <button class="btn-secondary show-html-btn" data-widget="2">Show HTML</button>
+            </div>
+          </div>
+          <div class="widget-preview" id="preview2"></div>
+          <textarea class="widget-editor" id="widget2Editor" rows="6" placeholder="HTML will appear here after generation…"></textarea>
+        </div>
+
+        <!-- Widget 3 -->
+        <div class="widget-card" id="widget3Card">
+          <div class="widget-card-header">
+            <div>
+              <div class="widget-card-label">Widget 3</div>
+              <div class="widget-card-title">Business Outcomes</div>
+            </div>
+            <div class="widget-card-actions">
+              <button class="btn-secondary widget-regen" data-widget="3">↺ Regen</button>
+              <button class="btn-secondary widget-copy" data-widget="3">Copy HTML</button>
+              <button class="btn-secondary show-html-btn" data-widget="3">Show HTML</button>
+            </div>
+          </div>
+          <div class="widget-preview" id="preview3"></div>
+          <textarea class="widget-editor" id="widget3Editor" rows="6" placeholder="HTML will appear here after generation…"></textarea>
+        </div>
+
+        <!-- Widget 4 -->
+        <div class="widget-card" id="widget4Card">
+          <div class="widget-card-header">
+            <div>
+              <div class="widget-card-label">Widget 4</div>
+              <div class="widget-card-title">Investment Summary</div>
+            </div>
+            <div class="widget-card-actions">
+              <button class="btn-secondary widget-regen" data-widget="4">↺ Regen</button>
+              <button class="btn-secondary widget-copy" data-widget="4">Copy HTML</button>
+              <button class="btn-secondary show-html-btn" data-widget="4">Show HTML</button>
+            </div>
+          </div>
+          <div class="widget-preview" id="preview4"></div>
+          <textarea class="widget-editor" id="widget4Editor" rows="6" placeholder="HTML will appear here after generation…"></textarea>
+        </div>
+
+        <!-- Delivery -->
+        <div class="delivery-panel">
+          <div class="section-label" style="margin-bottom:12px;">DELIVER WIDGETS</div>
+          <div class="delivery-btn-row">
+            <button id="pushIndividualBtn" class="btn-primary">Push Individual Widgets</button>
+            <button id="pushPackBtn" class="btn-accent">Push as Pack</button>
+            <button id="copyAllBtn" class="btn-secondary">Copy All HTML</button>
+          </div>
+          <div id="pushStatus" class="push-status" hidden></div>
+
+          <div id="credsInline" class="creds-inline" hidden>
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label">Salesbuildr API key</label>
+                <input type="password" id="pushApiKey" placeholder="sb_…" />
+              </div>
+              <div class="field-group">
+                <label class="field-label">Tenant URL</label>
+                <input type="text" id="pushTenantUrl" placeholder="https://acme.salesbuildr.com" />
+              </div>
+              <div class="field-group" style="justify-content:flex-end;display:flex;align-items:flex-end;">
+                <button id="saveAndPushBtn" class="btn-accent">Save &amp; Push</button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
 
-  </main>
+      </section>
+    </main><!-- /col-output -->
+
+  </div><!-- /two-col-layout -->
 </div>
 
 <script src="technology-roadmap.js"></script>
