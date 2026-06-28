@@ -391,7 +391,8 @@
     upsellCardsEl.innerHTML = '';
     if (data.upsells && data.upsells.length) {
       data.upsells.forEach(u => {
-        const uid  = 'upsell_' + u.service.replace(/\s+/g, '_');
+        // Strip anything that isn't alphanumeric or underscore — keeps IDs/selectors valid
+        const uid  = 'upsell_' + u.service.replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '');
         const html = buildUpsellHtml(u.service, u.headline, u.body);
         widgets[uid] = html;
         upsellWidgetIds.push(uid);
