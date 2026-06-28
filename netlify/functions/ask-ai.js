@@ -2,6 +2,15 @@
 // Receives a user question and returns tool recommendations using the KB
 
 const TOOL_KB = `
+TOOL: Renewal Proposal Widget Creator
+WHAT: Paste in a Salesbuildr renewal quote URL — the tool reads the services automatically and generates up to seven targeted proposal widgets ready to push to your widget library. Standard mode for healthy clients, At-Risk mode for clients who are wavering or have raised concerns. At-Risk mode addresses the client's specific concern directly. Optional upsell selections generate additional benefit-led recommendation cards. Sessions auto-save so reps can pause and resume.
+WHO: MSP account managers preparing for a contract renewal — routine or where the client relationship needs defending.
+INPUT: Salesbuildr renewal quote URL (services read automatically), mode selection (Standard / At-Risk), optional support stats and highlights, optional client concerns and proposed response (At-Risk), optional upsell service selections, colour theme.
+OUTPUT: Up to seven widgets — Executive Cover Letter, Value Delivered, IT Partnership Summary, Why Continuity Matters, What's Included, What's Next / Our Commitment, plus Recommended Addition cards per upsell. Push individually, as a pack, or copy HTML.
+USE WHEN: A managed services contract is coming up for renewal. A client has raised concerns or gone quiet. You want to make a structured, professional case for renewal rather than just resending the same quote.
+NOT FOR: New business proposals — use Guided Sales Tool or Proposal Widget Builder. Hardware-only quotes. Requires the renewal quote to be created in Salesbuildr first.
+URL: https://widgetcreator.netlify.app/renewal-pack.html
+
 TOOL: Industry Proposal Pack
 WHAT: Generates five short, coordinated Salesbuildr widgets tailored to a specific industry vertical. Widgets cover: Industry Pain Points, Why IT Matters to Your Business, Compliance & Risk, Our Approach for the vertical, and What's Included. Supports Generic or Personalised mode with Salesbuildr merge tags ({{company.name}}, {{contact.firstName}}, {{servicingBranch.name}}). Includes colour theme selector with 8 presets and custom hex.
 WHO: MSP sales reps pitching to prospects in a specific industry vertical who want their proposal to speak the buyer's language and demonstrate genuine sector knowledge.
