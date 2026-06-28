@@ -190,21 +190,34 @@
     }
   }
 
+  // ── Calculate monthly value from items (paymentDetails is often empty) ──
+  function calcMonthlyValue(quote) {
+    const fromPayment = quote.paymentDetails?.monthlyRecurringRevenue
+                     ?? quote.paymentDetails?.recurringTotal
+                     ?? null;
+    if (fromPayment != null) return fromPayment;
+    // Sum price × quantity across all items
+    const items = quote.items || [];
+    return items.reduce((sum, item) => {
+      const price = parseFloat(item.price) || 0;
+      const qty   = parseFloat(item.quantity) || 1;
+      return sum + (price * qty);
+    }, 0);
+  }
+
   // ── Render quote meta panel ─────────────────
   function renderQuoteMeta(quote) {
-    const company  = quote.company?.name  || '—';
-    const title    = quote.title          || '—';
+    const company  = quote.company?.name || '—';
+    const title    = quote.title         || '—';
     const start    = fmtDate(quote.contractStartDate);
     const end      = fmtDate(quote.contractEndDate);
-    const monthly  = quote.paymentDetails?.monthlyRecurringRevenue
-                  ?? quote.paymentDetails?.recurringTotal
-                  ?? null;
+    const monthly  = calcMonthlyValue(quote);
 
     quoteMeta.innerHTML = `
       <strong>${company}</strong><br>
       ${title}<br>
       ${start && end ? `Contract: ${start} → ${end}<br>` : ''}
-      ${monthly != null ? `Monthly value: ${fmtCurrency(monthly)}` : ''}
+      ${monthly > 0 ? `Monthly value: ${fmtCurrency(monthly)}` : ''}
     `.trim();
   }
 
@@ -231,19 +244,18 @@
     });
   }
 
-  // Classify a quote item as service / labor / product / other
-  // Salesbuildr doesn't expose a type field directly on quote items,
-  // so we use heuristics on the item data. Adjust if you have more info.
+  // Classify using category.name from Salesbuildr — this is the reliable field.
+  // All items in this test quote have category.name = "Managed services".
+  // Fallback to term (month/year = recurring service) if category is absent.
   function classifyItem(item) {
-    const name = (item.name || '').toLowerCase();
-    const cat  = (item.category?.name || item.categoryName || '').toLowerCase();
+    const cat = (item.category?.name || '').toLowerCase();
 
-    // Labor signals
-    if (/\blabou?r\b|engineer|technician|onsite|on-site|hour|day rate|professional service/i.test(name + ' ' + cat)) return 'labor';
-    // Product signals
-    if (/\bswitch|router|firewall|laptop|desktop|server|printer|cable|hardware|device|disk|ssd|ram|ups\b/i.test(name + ' ' + cat)) return 'product';
-    // Service signals (recurring / managed)
-    if (/\bmanaged|monitoring|backup|365|antivirus|edr|endpoint|helpdesk|support|security|patch|hosted|voip|cloud|connectivity|broadband|license|licence|subscription|siem|mdr|soc\b/i.test(name + ' ' + cat)) return 'service';
+    if (/labou?r|professional service|engineer|technician/i.test(cat)) return 'labor';
+    if (/\bproduct\b|hardware|equipment/i.test(cat)) return 'product';
+    if (/service|managed|monitoring|support|subscription|recurring/i.test(cat)) return 'service';
+
+    // Fallback: recurring billing term strongly implies a service
+    if (item.term === 'month' || item.term === 'year') return 'service';
 
     return 'other';
   }
@@ -308,9 +320,7 @@
       quoteTitle:       fetchedQuote.title || '',
       contractStart:    fetchedQuote.contractStartDate || '',
       contractEnd:      fetchedQuote.contractEndDate   || '',
-      monthlyValue:     fetchedQuote.paymentDetails?.monthlyRecurringRevenue
-                     ?? fetchedQuote.paymentDetails?.recurringTotal
-                     ?? 0,
+      monthlyValue:     calcMonthlyValue(fetchedQuote),
       services:         checkedItems,
       stats: {
         tickets:      parseInt(document.getElementById('tickets').value) || null,
