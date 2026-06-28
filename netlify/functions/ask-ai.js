@@ -2,6 +2,15 @@
 // Receives a user question and returns tool recommendations using the KB
 
 const TOOL_KB = `
+TOOL: Industry Proposal Pack
+WHAT: Generates five short, coordinated Salesbuildr widgets tailored to a specific industry vertical. Widgets cover: Industry Pain Points, Why IT Matters to Your Business, Compliance & Risk, Our Approach for the vertical, and What's Included. Supports Generic or Personalised mode with Salesbuildr merge tags ({{company.name}}, {{contact.firstName}}, {{servicingBranch.name}}). Includes colour theme selector with 8 presets and custom hex.
+WHO: MSP sales reps pitching to prospects in a specific industry vertical who want their proposal to speak the buyer's language and demonstrate genuine sector knowledge.
+INPUT: Industry vertical (Healthcare, Legal, Accounting & Finance, Education, Government & Municipalities, Manufacturing, Construction, Real Estate, Non-Profit, Insurance, Engineering & Architecture, or Professional Services), optional engagement description, merge tag mode, and colour theme.
+OUTPUT: Five industry-tailored widgets — push as a full pack or individually to Salesbuildr, or copy combined HTML.
+USE WHEN: Pitching to a prospect in a specific industry and wanting the proposal to feel genuinely tailored to their sector. Wanting to demonstrate compliance knowledge, sector pain points, and specialist positioning without writing it from scratch.
+NOT FOR: Generic proposals without a clear vertical. Use the Proposal Widget Builder for the core sales narrative.
+URL: https://widgetcreator.netlify.app/industry-proposal-pack.html
+
 TOOL: Case Study Widget Builder
 WHAT: Generates a polished case study widget from a customer win. The MSP enters the industry, challenge, solution, and outcome — AI writes the narrative. Toggle between using the real company name or anonymising to a descriptor like "a mid-sized healthcare provider". Includes a colour theme selector with 8 presets and custom hex.
 WHO: MSP sales reps or owners who want to include social proof in proposals without writing case studies from scratch.
