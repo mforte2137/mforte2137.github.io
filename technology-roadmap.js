@@ -359,6 +359,7 @@
       companySize:   companySizeEl.value,
       locationCount: locationCountEl.value,
       phaseMode,
+      roadmapHorizon: $('roadmapHorizon').value || '24 months',
       stack: {
         endpoints:    $('stackEndpoints').value,
         email:        $('stackEmail').value,
@@ -761,6 +762,7 @@
     if ($('stackNotes'))      $('stackNotes').value      = stack.notes || '';
     if ($('budgetRange'))     $('budgetRange').value     = fd.budget || '';
     if ($('additionalNotes')) $('additionalNotes').value = fd.notes  || '';
+    if ($('roadmapHorizon'))  $('roadmapHorizon').value  = fd.roadmapHorizon || '24 months';
 
     complianceCertGroup.hidden = (stack.compliance !== 'Certified');
 
@@ -809,8 +811,8 @@
     if (Object.keys(widgets).length) {
       WIDGET_IDS.forEach(i => { if (widgets[i]) { $(`widget${i}Editor`).value = widgets[i]; renderPreview(i); } });
       deliveryTitle.textContent = (fd.clientName || '') + ' — Technology Roadmap';
-      emptyState.hidden = true;
-      outputArea.hidden = false;
+    emptyState.hidden = true;
+    outputArea.hidden = false;
     }
   }
 
