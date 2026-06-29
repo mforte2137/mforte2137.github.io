@@ -139,7 +139,7 @@ ${body.notes ? `Additional notes: ${body.notes}` : ''}`;
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1000,
+        max_tokens: 2500,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }]
       })
@@ -155,7 +155,11 @@ ${body.notes ? `Additional notes: ${body.notes}` : ''}`;
 
     let parsed;
     try {
-      const clean = text.replace(/```json|```/g, '').trim();
+      // Strip markdown fences if present, then extract the outermost JSON object
+      let clean = text.replace(/```json|```/g, '').trim();
+      const start = clean.indexOf('{');
+      const end   = clean.lastIndexOf('}');
+      if (start !== -1 && end !== -1) clean = clean.slice(start, end + 1);
       parsed = JSON.parse(clean);
     } catch {
       return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: 'AI returned invalid JSON. Raw: ' + text.slice(0, 300) }) };
