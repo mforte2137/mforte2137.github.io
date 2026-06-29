@@ -815,13 +815,27 @@
     if (Object.keys(widgets).length) {
       WIDGET_IDS.forEach(i => { if (widgets[i]) { $(`widget${i}Editor`).value = widgets[i]; renderPreview(i); } });
       deliveryTitle.textContent = (fd.clientName || '') + ' — Technology Roadmap';
-    emptyState.hidden = true;
-    outputArea.hidden = false;
+      emptyState.hidden = true;
+      outputArea.hidden = false;
     }
   }
 
   function getSessions()   { try { return JSON.parse(localStorage.getItem(SESSION_KEY)  || '[]'); } catch { return []; } }
-  function saveSessions(s) { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
+  function saveSessions(s) {
+    try {
+      const json = JSON.stringify(s);
+      // Warn if approaching localStorage limits
+      if (json.length > 3_000_000) {
+        // Strip widget HTML from older sessions to save space, keep the most recent
+        const trimmed = s.map((sess, i) => i === 0 ? sess : { ...sess, widgets: {}, lastPayload: null });
+        localStorage.setItem(SESSION_KEY, JSON.stringify(trimmed));
+      } else {
+        localStorage.setItem(SESSION_KEY, json);
+      }
+    } catch (e) {
+      console.warn('Session save failed:', e);
+    }
+  }
   function getArchived()   { try { return JSON.parse(localStorage.getItem(ARCHIVE_KEY) || '[]'); } catch { return []; } }
   function saveArchived(a) { localStorage.setItem(ARCHIVE_KEY, JSON.stringify(a)); }
 
