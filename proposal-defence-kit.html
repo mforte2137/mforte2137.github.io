@@ -31,6 +31,18 @@
     <!-- ─── LEFT COLUMN: Inputs ─── -->
     <aside class="input-column">
 
+      <!-- ─── Sessions Block ─── -->
+      <div class="sessions-block" id="sessions-block" hidden>
+        <div class="sessions-header">
+          <span class="section-label" style="margin:0;">Active Sessions</span>
+          <div class="sessions-header-actions">
+            <button class="btn-secondary btn-sm" id="btn-show-archived">Show archived</button>
+            <button class="btn-accent btn-sm" id="btn-new-defence">+ New Defence</button>
+          </div>
+        </div>
+        <div class="session-cards" id="session-cards"></div>
+      </div>
+
       <!-- Common Inputs -->
       <section class="panel section-common">
         <h2 class="section-label">Deal Context</h2>
@@ -119,7 +131,7 @@
           </div>
 
           <div class="module-inputs" id="inputs-competitor" hidden>
-            <div class="module-disclaimer callout">
+            <div class="module-disclaimer">
               <strong>Reminder:</strong> Base this on what the prospect told you. The widget focuses on your strengths — not claims about the competitor.
             </div>
 
@@ -193,6 +205,10 @@
                 <button class="chip" data-value="Compliance Support">Compliance Support</button>
                 <button class="chip" data-value="On-site Support">On-site Support</button>
               </div>
+              <div class="custom-chip-row" id="custom-included-row">
+                <input type="text" id="custom-included-input" class="custom-chip-input" placeholder="Add another service…" autocomplete="off" maxlength="60" />
+                <button class="btn-add-chip" id="custom-included-add">+ Add</button>
+              </div>
             </div>
 
             <div class="field-group">
@@ -243,6 +259,7 @@
             <div class="objection-group">
               <span class="objection-category-label">Incumbent / Alternatives</span>
               <div class="chip-grid">
+                <button class="chip objection-chip" data-value="We've received a competitive quote">"We've received a competitive quote"</button>
                 <button class="chip objection-chip" data-value="We already have someone handling IT">"We already have someone handling IT"</button>
                 <button class="chip objection-chip" data-value="We'll handle it in-house">"We'll handle it in-house"</button>
                 <button class="chip objection-chip" data-value="Our current provider is good enough">"Our current provider is good enough"</button>
@@ -318,7 +335,7 @@
       <!-- Results area -->
       <div class="results-area" id="results-area" hidden>
 
-        <!-- Sticky action bar -->
+        <!-- Action bar -->
         <div class="results-action-bar" id="results-action-bar">
           <div class="action-bar-left">
             <span class="results-prospect-name" id="results-prospect-label"></span>
@@ -380,9 +397,7 @@
           <button class="modal-close" id="talktrack-close">✕</button>
         </div>
       </div>
-      <div class="modal-body" id="talktrack-body">
-        <!-- Populated by JS -->
-      </div>
+      <div class="modal-body" id="talktrack-body"></div>
     </div>
   </div>
 
