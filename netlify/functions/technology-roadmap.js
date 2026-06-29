@@ -33,6 +33,7 @@ exports.handler = async (event) => {
     : 'Tone: continuation and strategic — reference the established partnership, frame as natural evolution. Use "as we continue", "our next chapter", "building on what we\'ve achieved".';
 
   const isAiPhases  = body.phaseMode !== 'manual';
+  const horizon     = body.roadmapHorizon || '24 months';
 
   // Build stack summary, handling multi-select arrays
   function stackVal(v) {
@@ -55,7 +56,7 @@ exports.handler = async (event) => {
 
   // Phase instructions vary by mode
   const phaseInstruction = isAiPhases
-    ? `PHASE BUILDING: You are building the phases from scratch using best practices for this industry and company profile. Assign services intelligently across three phases: Phase 1 should address immediate security and stability gaps (Critical priority, 0-3 or 3-6 months); Phase 2 should optimize and modernize core infrastructure (High priority, 3-12 months); Phase 3 should deliver strategic transformation and competitive advantage (Strategic priority, 9-24 months). Draw from the goals and stack assessment to decide which services go in which phase. Use appropriate labels (Stabilize / Optimize / Transform or similar). Base timeframes on the complexity of the work involved.`
+    ? `PHASE BUILDING: You are building the phases from scratch to fit within a total horizon of ${horizon}. Distribute the three phases across this window intelligently. For shorter horizons (6–12 months), keep phases tight and focused on immediate impact. For longer horizons (24–36 months), allow more breathing room and include strategic transformation in later phases. Phase 1 should address immediate security and stability gaps (Critical priority); Phase 2 should optimize and modernize core infrastructure (High priority); Phase 3 should deliver strategic transformation and competitive advantage (Strategic priority). Draw from the goals and stack assessment to decide which services go in which phase. Use appropriate labels (Stabilize / Optimize / Transform or similar). Ensure all three phase timeframes together add up to approximately ${horizon}.`
     : `PHASE BUILDING: Use the phases exactly as provided by the MSP. Do not invent or reorder services. Write outcomes that match the specific services in each phase.`;
 
   const manualPhaseSummary = !isAiPhases && (body.phases || []).filter(p => p.services && p.services.length).map(p =>
@@ -120,7 +121,7 @@ ${stack.notes ? `Stack notes: ${stack.notes}` : ''}
 Business goals: ${(body.goals || []).join(', ') || 'Not specified'}
 
 ${isAiPhases
-  ? 'Phase mode: AI-generated — build optimal phases from best practices for this profile.'
+  ? `Phase mode: AI-generated — build optimal phases from best practices for this profile, fitting within a ${horizon} total horizon.`
   : `Phase mode: Manual — use exactly as provided:\n${manualPhaseSummary}`
 }
 
