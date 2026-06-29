@@ -1,5 +1,7 @@
 // netlify/functions/proposal-defence-kit.js
-// Parallel AI calls — one per active module — to stay well within the 26s timeout.
+// Two calls per active module, all in parallel:
+//   call A → raw HTML widget only (no JSON wrapping, nothing to corrupt)
+//   call B → talk track JSON only (no HTML, clean parse every time)
 
 exports.handler = async (event) => {
   const headers = {
@@ -12,7 +14,6 @@ exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers, body: '' };
   }
-
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, headers, body: JSON.stringify({ ok: false, error: 'POST required.' }) };
   }
@@ -34,30 +35,29 @@ exports.handler = async (event) => {
   const claudeApiKey = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY;
   const theme = themeColor || '#0f1f3d';
 
-  // Build one promise per active module, all fired in parallel
-  const tasks = {};
+  // For each active module fire widget + talktrack calls simultaneously
+  const activeKeys = ['competitor', 'pricing', 'objections'].filter(k => modules[k] && modules[k].active);
 
-  if (modules.competitor && modules.competitor.active) {
-    tasks.competitor = callModule('competitor', body, theme, claudeApiKey);
-  }
-  if (modules.pricing && modules.pricing.active) {
-    tasks.pricing = callModule('pricing', body, theme, claudeApiKey);
-  }
-  if (modules.objections && modules.objections.active) {
-    tasks.objections = callModule('objections', body, theme, claudeApiKey);
-  }
+  const promises = activeKeys.map(k => Promise.all([
+    callWidget(k, body, theme, claudeApiKey),
+    callTalkTrack(k, body, theme, claudeApiKey)
+  ]));
 
-  // Run all in parallel
-  const keys = Object.keys(tasks);
-  let settled;
-  try {
-    settled = await Promise.all(keys.map(k => tasks[k]));
-  } catch (e) {
-    return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: 'One or more AI calls failed.' }) };
-  }
+  const settled = await Promise.allSettled(promises);
 
   const result = {};
-  keys.forEach((k, i) => { result[k] = settled[i]; });
+  activeKeys.forEach((k, i) => {
+    const outcome = settled[i];
+    if (outcome.status === 'fulfilled') {
+      const [html, talkTrack] = outcome.value;
+      result[k] = { widget: { html }, talkTrack };
+    } else {
+      result[k] = {
+        widget: { html: errorWidget(k, theme) },
+        talkTrack: { opener: 'Could not load talking points. Please regenerate.' }
+      };
+    }
+  });
 
   return {
     statusCode: 200,
@@ -66,10 +66,61 @@ exports.handler = async (event) => {
   };
 };
 
-/* ─── Call AI for a single module ─── */
-async function callModule(moduleKey, body, theme, apiKey) {
-  const system = buildModuleSystemPrompt(moduleKey, theme);
-  const user   = buildModuleUserMessage(moduleKey, body, theme);
+/* ─── Call A: widget HTML only — AI returns raw HTML, no JSON wrapper ─── */
+async function callWidget(moduleKey, body, theme, apiKey) {
+  const { prospect, industry, offering, situation, modules } = body;
+  const ctx = `Prospect: ${prospect} | Industry: ${industry} | Offering: ${offering} | Situation: ${situation}`;
+
+  const systemPrompt = `You are an expert MSP sales coach writing a customer-facing HTML widget for a re-proposal.
+
+OUTPUT RULES — non-negotiable:
+- Return ONLY raw HTML. No JSON. No markdown. No backticks. No preamble. No explanation.
+- Your entire response must start with <div and end with </div>
+- All styles must be inline (style="...") — no CSS classes, no <style> blocks
+- Width 100% — never fixed pixel widths
+- Headings: <h5> or <h6> only — never h1/h2/h3/h4
+- No Flexbox, no CSS Grid — use <table width="100%"> for any multi-column layout, max 3 columns
+- No JavaScript. Safe elements only: div, table, tr, td, p, span, h5, h6, ul, li, strong, em
+- Inline hex colors only — no CSS variables
+- Body text 13–14px. Keep each section to 3–5 lines. Concise and scannable.
+- Theme accent color: ${theme}
+- Brand colors: primary text #0B0E14, secondary #4B5563, muted #9CA3AF, background #FAFAF7, white #FFFFFF, border #E5E7EB
+- Tone: calm, confident, professional — never defensive or aggressive`;
+
+  const userMessages = {
+    competitor: () => {
+      const m = modules.competitor;
+      return `${ctx}
+Competitor: ${m.competitorName || 'a competitor'}
+What prospect was told: ${m.prospectTold || 'not specified'}
+Our differentiators: ${m.differentiators}
+${m.ourPrice ? `Our price: ${m.ourPrice}` : ''}
+${m.theirPrice ? `Their price: ${m.theirPrice}` : ''}
+
+Write a widget titled "What You're Really Comparing". Show what the prospect is comparing in a calm, structured way. Focus entirely on our strengths and the risk of the cheaper option in business terms. Never disparage the competitor or make unverifiable claims about them. Frame it as "here is what you are comparing" not "here is why they are worse". Use a table if helpful for side-by-side structure.`;
+    },
+    pricing: () => {
+      const m = modules.pricing;
+      const perUser = calculatePerUser(m.monthlyPrice, m.users);
+      return `${ctx}
+Monthly price: ${m.monthlyPrice}
+Users/devices: ${m.users || 'not specified'}
+Included services: ${m.included && m.included.length ? m.included.join(', ') : 'full managed IT'}
+${m.inHouseCost ? `In-house alternative cost: ${m.inHouseCost}` : ''}
+Primary risk if uncovered: ${m.riskFocus || 'various'}
+${perUser ? `Per-user calculation: ${perUser}` : ''}
+
+Write a widget titled "Understanding Your Investment". Break down what the monthly fee covers, reframe the per-user cost into a daily or per-user figure, compare it to the cost of a single incident or the in-house alternative. Position managed IT as insurance not overhead. Factual and calm — no pressure language.`;
+    },
+    objections: () => {
+      const m = modules.objections;
+      return `${ctx}
+Objections to address: ${m.objections && m.objections.length ? m.objections.join(' | ') : 'general value and pricing objections'}
+${m.context ? `Additional context: ${m.context}` : ''}
+
+Write a widget titled "Common Questions Answered". Format as an FAQ — each objection becomes a question, each answer is calm and confident. Follow this structure per answer: Acknowledge the concern → Reframe it → Provide brief evidence → End with a forward-leaning statement. Max 4–5 Q&As — combine closely related objections into one. Keep answers concise, 2–4 sentences each.`;
+    }
+  };
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -80,103 +131,67 @@ async function callModule(moduleKey, body, theme, apiKey) {
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1400,
-      system,
-      messages: [{ role: 'user', content: user }]
+      max_tokens: 1200,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMessages[moduleKey]() }]
     })
   });
 
   const data = await res.json();
-  if (!data.content || !data.content[0]) throw new Error(`No content from AI for ${moduleKey}`);
+  if (!data.content || !data.content[0]) throw new Error(`No widget content for ${moduleKey}`);
 
-  const text = data.content[0].text;
-  let parsed;
-  try {
-    const clean = text.replace(/```json|```/g, '').trim();
-    parsed = JSON.parse(clean);
-  } catch {
-    // Last-resort: return a plain error widget so the UI doesn't crash
-    return {
-      widget: { html: errorWidget(moduleKey, theme) },
-      talkTrack: { opener: 'AI response could not be parsed. Please regenerate this module.' }
-    };
+  // Strip any accidental markdown fences, return raw HTML
+  let html = data.content[0].text.trim();
+  html = html.replace(/^```html?\s*/i, '').replace(/\s*```$/, '').trim();
+
+  // Sanity check — if it doesn't look like HTML, use fallback
+  if (!html.startsWith('<')) {
+    throw new Error(`Widget response for ${moduleKey} was not HTML`);
   }
 
-  // Ensure widget.html exists
-  if (parsed.widget && !parsed.widget.html) {
-    parsed.widget.html = widgetFallback(parsed.widget, theme);
-  }
-  return parsed;
+  return html;
 }
 
-/* ─── Per-module system prompt — tight and focused ─── */
-function buildModuleSystemPrompt(moduleKey, theme) {
-  const shared = `You are an expert MSP sales coach. Tone: calm, confident, professional. Never defensive or aggressive.
-
-WIDGET HTML RULES (non-negotiable):
-- All styles inline — no CSS classes, no <style> blocks
-- Width 100% — no fixed pixel widths
-- Headings: <h5> or <h6> only
-- No Flexbox, no CSS Grid — use <table width="100%"> for columns
-- Max 3 columns per table row
-- No JavaScript
-- Safe elements only: div, table, tr, td, p, span, h5, h6, ul, li, strong, em
-- Inline hex colors only — no CSS variables
-- Body text 13–14px, each section 3–5 lines max
-- Theme color: ${theme}
-Brand colors: text #0B0E14, secondary #4B5563, muted #9CA3AF, bg #FAFAF7, white #FFFFFF, border #E5E7EB, accent ${theme}
-
-TALK TRACK: Natural spoken language the rep will say on a call. Conversational, not formal copy.
-
-Return ONLY valid JSON — no preamble, no markdown, no backticks.`;
+/* ─── Call B: talk track JSON only — no HTML anywhere near this call ─── */
+async function callTalkTrack(moduleKey, body, theme, apiKey) {
+  const { prospect, industry, offering, situation, modules } = body;
+  const ctx = `Prospect: ${prospect} | Industry: ${industry} | Offering: ${offering} | Situation: ${situation}`;
 
   const shapes = {
-    competitor: `${shared}
-
-Output shape:
-{"widget":{"html":"<full inline-styled HTML>"},"talkTrack":{"opener":"string","responses":["string","string"],"riskQuestion":"string","closingAsk":"string"}}`,
-
-    pricing: `${shared}
-
-Output shape:
-{"widget":{"html":"<full inline-styled HTML>"},"talkTrack":{"opener":"string","reframe":"string","riskQuestion":"string","insuranceAnalogy":"string","closingAsk":"string"}}`,
-
-    objections: `${shared}
-
-Output shape (max 4–5 Q&As, combine related ones):
-{"widget":{"html":"<full inline-styled HTML>"},"talkTrack":{"responses":[{"objection":"string","response":"string"}],"transitionLine":"string"}}`
+    competitor: `{"opener":"string","responses":["string","string"],"riskQuestion":"string","closingAsk":"string"}`,
+    pricing:    `{"opener":"string","reframe":"string","riskQuestion":"string","insuranceAnalogy":"string","closingAsk":"string"}`,
+    objections: `{"responses":[{"objection":"string","response":"string"}],"transitionLine":"string"}`
   };
 
-  return shapes[moduleKey];
-}
+  const systemPrompt = `You are an expert MSP sales coach writing private talking points for a sales rep to use on a follow-up call.
 
-/* ─── Per-module user message — only the relevant inputs ─── */
-function buildModuleUserMessage(moduleKey, body, theme) {
-  const { prospect, industry, offering, situation, modules } = body;
-  const ctx = `Prospect: ${prospect} | Industry: ${industry} | Offering: ${offering} | Situation: ${situation} | Theme: ${theme}`;
+OUTPUT RULES — non-negotiable:
+- Return ONLY a valid JSON object. No markdown. No backticks. No preamble. No explanation.
+- Your entire response must be a single JSON object starting with { and ending with }
+- All string values must use straight double quotes and have no unescaped characters
+- Keep all strings as plain text — no HTML tags inside JSON values
+- Tone: natural spoken language the rep will actually say on a call — conversational, not formal copy
+- Weave in the industry and prospect context naturally
 
-  if (moduleKey === 'competitor') {
-    const m = modules.competitor;
-    return `${ctx}
+Required JSON shape for ${moduleKey}:
+${shapes[moduleKey]}`;
 
-MODULE: Competitor Comparison
+  const userMessages = {
+    competitor: () => {
+      const m = modules.competitor;
+      return `${ctx}
 Competitor: ${m.competitorName || 'a competitor'}
 What prospect was told: ${m.prospectTold || 'not specified'}
 Our differentiators: ${m.differentiators}
 ${m.ourPrice ? `Our price: ${m.ourPrice}` : ''}
 ${m.theirPrice ? `Their price: ${m.theirPrice}` : ''}
 
-Generate widget titled "What You're Really Comparing" — calm, confident, focused on value depth and risk. Never disparage the competitor. Frame as "here's what you're comparing."
-Generate talk track for re-engaging after the competing quote was mentioned.
-Return only the JSON.`;
-  }
-
-  if (moduleKey === 'pricing') {
-    const m = modules.pricing;
-    const perUser = calculatePerUser(m.monthlyPrice, m.users);
-    return `${ctx}
-
-MODULE: Pricing Justification
+Write talking points to re-engage the prospect after they mentioned a competing quote. Include: an opener to restart the conversation naturally, 2-3 calm responses to "but they're cheaper", a risk question to plant, and a suggested closing ask for this conversation.`;
+    },
+    pricing: () => {
+      const m = modules.pricing;
+      const perUser = calculatePerUser(m.monthlyPrice, m.users);
+      return `${ctx}
 Monthly price: ${m.monthlyPrice}
 Users/devices: ${m.users || 'not specified'}
 Included: ${m.included && m.included.length ? m.included.join(', ') : 'full managed IT'}
@@ -184,23 +199,50 @@ ${m.inHouseCost ? `In-house alternative: ${m.inHouseCost}` : ''}
 Risk if uncovered: ${m.riskFocus || 'various'}
 ${perUser ? `Per-user math: ${perUser}` : ''}
 
-Generate widget titled "Understanding Your Investment" — break down what's included, reframe per-user cost, compare to the cost of a single incident. Position IT as insurance not overhead.
-Generate talk track addressing the price objection without being defensive.
-Return only the JSON.`;
-  }
-
-  if (moduleKey === 'objections') {
-    const m = modules.objections;
-    return `${ctx}
-
-MODULE: Objection & FAQ
+Write talking points to address the price objection. Include: an opener that addresses pricing without being defensive, a per-user reframe script, a cost-of-not-having-it question, an insurance analogy and when to use it, and a closing ask.`;
+    },
+    objections: () => {
+      const m = modules.objections;
+      return `${ctx}
 Objections: ${m.objections && m.objections.length ? m.objections.join(' | ') : 'general objections'}
 ${m.context ? `Context: ${m.context}` : ''}
 
-Generate widget titled "Common Questions Answered" — FAQ style. Each objection becomes a calm Q&A. Format: Acknowledge → Reframe → Evidence → Ask. Max 4–5 Q&As, combine related ones.
-Generate talk track with one response per objection (Acknowledge → Reframe → Evidence → Ask) plus a transition line to move back to the proposal.
-Return only the JSON.`;
+Write one talk track response per objection. Each response follows: Acknowledge the concern → Reframe it → Brief evidence → Ask to move forward. Also include a transition line to move from objection-handling back to the proposal.`;
+    }
+  };
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 800,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMessages[moduleKey]() }]
+    })
+  });
+
+  const data = await res.json();
+  if (!data.content || !data.content[0]) throw new Error(`No talk track content for ${moduleKey}`);
+
+  const text = data.content[0].text.trim();
+
+  // Strip any accidental markdown fences before parsing
+  const clean = text.replace(/^```json?\s*/i, '').replace(/\s*```$/, '').trim();
+
+  let parsed;
+  try {
+    parsed = JSON.parse(clean);
+  } catch {
+    // Return a minimal valid structure so the widget still renders
+    return { opener: 'Talking points could not be loaded — please use the Regenerate button.' };
   }
+
+  return parsed;
 }
 
 /* ─── Helpers ─── */
@@ -213,16 +255,9 @@ function calculatePerUser(priceStr, users) {
   return `$${perUser}/user/month (~$${perDay}/user/working day)`;
 }
 
-function widgetFallback(widget, theme) {
-  return `<div style="font-family:Inter,sans-serif;width:100%;padding:20px;background:#FFFFFF;border:1px solid #E5E7EB;">
-<h5 style="font-size:15px;font-weight:700;color:${theme};margin:0 0 10px;">${widget.headline || ''}</h5>
-<p style="font-size:13px;color:#4B5563;line-height:1.6;margin:0;">${widget.body || ''}</p>
-</div>`;
-}
-
 function errorWidget(moduleKey, theme) {
   const labels = { competitor: 'Competitor Comparison', pricing: 'Pricing Justification', objections: 'Objection & FAQ' };
-  return `<div style="font-family:Inter,sans-serif;width:100%;padding:16px;background:#FEE2E2;border:1px solid #FCA5A5;">
+  return `<div style="font-family:Inter,sans-serif;width:100%;padding:16px;background:#FEE2E2;border:1px solid #FCA5A5;border-radius:4px;">
 <p style="font-size:13px;color:#991B1B;margin:0;">Could not generate ${labels[moduleKey] || moduleKey} widget. Please use the Regenerate button to retry.</p>
 </div>`;
 }
