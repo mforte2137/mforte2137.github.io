@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proposal Defence Kit — Salesbuildr</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="proposal-defence-kit.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-left">
+        <a href="/" class="back-link">← Hub</a>
+        <div class="header-title-group">
+          <span class="header-eyebrow">Proposal Tools</span>
+          <h1 class="header-title">Proposal Defence Kit</h1>
+        </div>
+      </div>
+      <p class="header-desc">Deal stalled? Activate the modules that match your situation — get customer-facing widgets and private talking points for the follow-up call.</p>
+    </div>
+  </header>
+
+  <!-- Main layout -->
+  <main class="main-layout">
+
+    <!-- ─── LEFT COLUMN: Inputs ─── -->
+    <aside class="input-column">
+
+      <!-- Common Inputs -->
+      <section class="panel section-common">
+        <h2 class="section-label">Deal Context</h2>
+
+        <div class="field-group">
+          <label class="field-label" for="prospect-name">Prospect / Company Name</label>
+          <input type="text" id="prospect-name" placeholder="e.g. Riverside Legal Group" autocomplete="off" />
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="industry">Industry</label>
+          <select id="industry">
+            <option value="">Select industry…</option>
+            <option>Accounting & Finance</option>
+            <option>Architecture & Engineering</option>
+            <option>Construction & Trades</option>
+            <option>Education</option>
+            <option>Healthcare & Medical</option>
+            <option>Hospitality & Retail</option>
+            <option>Legal</option>
+            <option>Logistics & Transport</option>
+            <option>Manufacturing</option>
+            <option>Non-Profit</option>
+            <option>Professional Services</option>
+            <option>Real Estate</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="offering">What You're Proposing</label>
+          <textarea id="offering" rows="3" placeholder="e.g. Full managed IT services, M365, EDR, 24/7 helpdesk for 45 users at $2,400/month"></textarea>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="situation">Situation</label>
+          <select id="situation">
+            <option value="">Select situation…</option>
+            <option>Quote declined</option>
+            <option>Gone quiet</option>
+            <option>Competitor mentioned</option>
+            <option>Verbal concerns raised</option>
+            <option>Pre-empting objections</option>
+          </select>
+        </div>
+
+        <!-- Colour Theme -->
+        <div class="field-group">
+          <label class="field-label">Widget Color Theme</label>
+          <div class="color-swatches" id="color-swatches">
+            <button class="swatch active" data-hex="#0f1f3d" title="Navy" style="background:#0f1f3d"></button>
+            <button class="swatch" data-hex="#2E74DC" title="Blue" style="background:#2E74DC"></button>
+            <button class="swatch" data-hex="#475569" title="Slate" style="background:#475569"></button>
+            <button class="swatch" data-hex="#065f46" title="Emerald" style="background:#065f46"></button>
+            <button class="swatch" data-hex="#0f766e" title="Teal" style="background:#0f766e"></button>
+            <button class="swatch" data-hex="#991B1B" title="Crimson" style="background:#991B1B"></button>
+            <button class="swatch" data-hex="#92400e" title="Amber" style="background:#92400e"></button>
+            <button class="swatch" data-hex="#1a1a1a" title="Charcoal" style="background:#1a1a1a"></button>
+            <div class="custom-color-wrap" title="Custom color">
+              <input type="color" id="custom-color" value="#0f1f3d" />
+              <span class="custom-color-label">Custom</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Module Toggles ─── -->
+      <section class="modules-section">
+        <div class="section-label-row">
+          <h2 class="section-label">Modules</h2>
+          <span class="section-hint">Activate the modules that apply</span>
+        </div>
+
+        <!-- Module 1: Competitor Comparison -->
+        <div class="module-card" id="module-card-competitor">
+          <div class="module-toggle-row" data-module="competitor">
+            <div class="module-toggle-left">
+              <div class="module-icon">⚖️</div>
+              <div class="module-meta">
+                <span class="module-name">Competitor Comparison</span>
+                <span class="module-when">Use when a prospect mentions a competitor or cheaper quote</span>
+              </div>
+            </div>
+            <div class="toggle-switch" id="toggle-competitor" role="switch" aria-checked="false" tabindex="0">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+
+          <div class="module-inputs" id="inputs-competitor" hidden>
+            <div class="module-disclaimer callout">
+              <strong>Reminder:</strong> Base this on what the prospect told you. The widget focuses on your strengths — not claims about the competitor.
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="comp-name">Competitor Name or Type</label>
+              <input type="text" id="comp-name" placeholder="e.g. a national provider, LocalBreakFix IT" autocomplete="off" />
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="comp-offered">What the Prospect Said They Were Offered</label>
+              <textarea id="comp-offered" rows="2" placeholder="e.g. Quoted $1,400/month for managed IT, included helpdesk and monitoring"></textarea>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="comp-differentiators">What Makes Your Offering Stronger</label>
+              <textarea id="comp-differentiators" rows="3" placeholder="e.g. Local team, 14-min avg response, legal sector experience, proactive not reactive, ISO 27001 certified"></textarea>
+            </div>
+
+            <div class="field-row-2">
+              <div class="field-group">
+                <label class="field-label" for="comp-your-price">Your Monthly Price <span class="field-optional">(optional)</span></label>
+                <input type="text" id="comp-your-price" placeholder="e.g. $2,400/month" autocomplete="off" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="comp-their-price">Competitor Price <span class="field-optional">(optional)</span></label>
+                <input type="text" id="comp-their-price" placeholder="e.g. $1,400/month" autocomplete="off" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Module 2: Pricing Justification -->
+        <div class="module-card" id="module-card-pricing">
+          <div class="module-toggle-row" data-module="pricing">
+            <div class="module-toggle-left">
+              <div class="module-icon">💰</div>
+              <div class="module-meta">
+                <span class="module-name">Pricing Justification</span>
+                <span class="module-when">Use when the prospect thinks the price is too high</span>
+              </div>
+            </div>
+            <div class="toggle-switch" id="toggle-pricing" role="switch" aria-checked="false" tabindex="0">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+
+          <div class="module-inputs" id="inputs-pricing" hidden>
+            <div class="field-row-2">
+              <div class="field-group">
+                <label class="field-label" for="price-monthly">Monthly Price</label>
+                <input type="text" id="price-monthly" placeholder="e.g. $2,400" autocomplete="off" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="price-users">Number of Users / Devices</label>
+                <input type="number" id="price-users" placeholder="e.g. 45" min="1" />
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">What's Included</label>
+              <div class="chip-grid" id="included-chips">
+                <button class="chip" data-value="24/7 Helpdesk">24/7 Helpdesk</button>
+                <button class="chip" data-value="Endpoint Management">Endpoint Management</button>
+                <button class="chip" data-value="Patch Management">Patch Management</button>
+                <button class="chip" data-value="EDR/Security">EDR/Security</button>
+                <button class="chip" data-value="Email Security">Email Security</button>
+                <button class="chip" data-value="Backup & DR">Backup &amp; DR</button>
+                <button class="chip" data-value="Microsoft 365 Management">Microsoft 365 Management</button>
+                <button class="chip" data-value="Network Monitoring">Network Monitoring</button>
+                <button class="chip" data-value="vCIO / Strategic Guidance">vCIO / Strategic Guidance</button>
+                <button class="chip" data-value="Compliance Support">Compliance Support</button>
+                <button class="chip" data-value="On-site Support">On-site Support</button>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="price-inhouse">In-House Alternative Cost <span class="field-optional">(optional)</span></label>
+              <input type="text" id="price-inhouse" placeholder="e.g. $85,000/year average IT salary" autocomplete="off" />
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="price-risk">Key Risk if Not Covered</label>
+              <select id="price-risk">
+                <option value="">Select primary risk…</option>
+                <option>Ransomware</option>
+                <option>Downtime</option>
+                <option>Compliance failure</option>
+                <option>Data loss</option>
+                <option>All of the above</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Module 3: Objection & FAQ -->
+        <div class="module-card" id="module-card-objections">
+          <div class="module-toggle-row" data-module="objections">
+            <div class="module-toggle-left">
+              <div class="module-icon">💬</div>
+              <div class="module-meta">
+                <span class="module-name">Objection &amp; FAQ</span>
+                <span class="module-when">Use when specific concerns have been raised — or to get ahead of them</span>
+              </div>
+            </div>
+            <div class="toggle-switch" id="toggle-objections" role="switch" aria-checked="false" tabindex="0">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+
+          <div class="module-inputs" id="inputs-objections" hidden>
+
+            <div class="objection-group">
+              <span class="objection-category-label">Pricing</span>
+              <div class="chip-grid">
+                <button class="chip objection-chip" data-value="It's too expensive">"It's too expensive"</button>
+                <button class="chip objection-chip" data-value="We don't have budget right now">"We don't have budget right now"</button>
+                <button class="chip objection-chip" data-value="We want to reduce costs, not add them">"We want to reduce costs, not add them"</button>
+              </div>
+            </div>
+
+            <div class="objection-group">
+              <span class="objection-category-label">Incumbent / Alternatives</span>
+              <div class="chip-grid">
+                <button class="chip objection-chip" data-value="We already have someone handling IT">"We already have someone handling IT"</button>
+                <button class="chip objection-chip" data-value="We'll handle it in-house">"We'll handle it in-house"</button>
+                <button class="chip objection-chip" data-value="Our current provider is good enough">"Our current provider is good enough"</button>
+              </div>
+            </div>
+
+            <div class="objection-group">
+              <span class="objection-category-label">Trust / Readiness</span>
+              <div class="chip-grid">
+                <button class="chip objection-chip" data-value="We're not ready to make a decision yet">"We're not ready to make a decision yet"</button>
+                <button class="chip objection-chip" data-value="We need to think about it">"We need to think about it"</button>
+                <button class="chip objection-chip" data-value="We've had bad experiences with IT providers before">"We've had bad experiences with IT providers before"</button>
+              </div>
+            </div>
+
+            <div class="objection-group">
+              <span class="objection-category-label">Value</span>
+              <div class="chip-grid">
+                <button class="chip objection-chip" data-value="We don't really need all of this">"We don't really need all of this"</button>
+                <button class="chip objection-chip" data-value="We're a small business — this seems like overkill">"We're a small business — this seems like overkill"</button>
+                <button class="chip objection-chip" data-value="What do we actually get for this price?">"What do we actually get for this price?"</button>
+              </div>
+            </div>
+
+            <div class="objection-group">
+              <span class="objection-category-label">Control</span>
+              <div class="chip-grid">
+                <button class="chip objection-chip" data-value="We don't want to be locked into a contract">"We don't want to be locked into a contract"</button>
+                <button class="chip objection-chip" data-value="We want to keep control of our IT">"We want to keep control of our IT"</button>
+              </div>
+            </div>
+
+            <div class="field-group" style="margin-top:12px;">
+              <label class="field-label" for="obj-custom">Custom Objection <span class="field-optional">(optional)</span></label>
+              <textarea id="obj-custom" rows="2" placeholder="Anything else the prospect said or that you want to pre-empt…"></textarea>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label" for="obj-context">Additional Context <span class="field-optional">(optional)</span></label>
+              <textarea id="obj-context" rows="2" placeholder="What specifically did they say? Any useful detail…"></textarea>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- Generate Button -->
+      <div class="generate-row">
+        <button class="btn-generate" id="btn-generate">Build Defence Kit</button>
+        <span class="generate-hint" id="module-count-hint">Activate at least one module above</span>
+      </div>
+
+    </aside>
+
+    <!-- ─── RIGHT COLUMN: Output ─── -->
+    <div class="output-column" id="output-column">
+
+      <!-- Empty state -->
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">🛡️</div>
+        <p class="empty-title">Your defence kit will appear here</p>
+        <p class="empty-body">Fill in the deal context, activate the modules that apply, and click Build Defence Kit.</p>
+      </div>
+
+      <!-- Loading state -->
+      <div class="loading-state" id="loading-state" hidden>
+        <div class="loading-dots">
+          <span></span><span></span><span></span>
+        </div>
+        <p class="loading-text" id="loading-text">Building your defence kit…</p>
+      </div>
+
+      <!-- Results area -->
+      <div class="results-area" id="results-area" hidden>
+
+        <!-- Sticky action bar -->
+        <div class="results-action-bar" id="results-action-bar">
+          <div class="action-bar-left">
+            <span class="results-prospect-name" id="results-prospect-label"></span>
+          </div>
+          <div class="action-bar-right">
+            <button class="btn-secondary btn-sm" id="btn-view-talking-points">📋 View Talking Points</button>
+            <button class="btn-secondary btn-sm" id="btn-copy-html">Copy HTML</button>
+            <button class="btn-secondary btn-sm" id="btn-push-pack">Push as Pack</button>
+            <button class="btn-accent btn-sm" id="btn-push-individual">Push Widgets</button>
+          </div>
+        </div>
+
+        <!-- Widget cards rendered here -->
+        <div class="widget-cards" id="widget-cards"></div>
+
+        <!-- Regenerate -->
+        <div class="regen-row">
+          <button class="btn-secondary btn-sm" id="btn-regenerate">↺ Regenerate All</button>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ─── Salesbuildr Credentials Modal ─── -->
+  <div class="modal-overlay" id="creds-overlay" hidden>
+    <div class="modal-box modal-box--sm">
+      <div class="modal-header">
+        <h3 class="modal-title">Connect to Salesbuildr</h3>
+        <button class="modal-close" id="creds-close">✕</button>
+      </div>
+      <p class="modal-body-text">Enter your Salesbuildr credentials to push widgets directly.</p>
+      <div class="field-group">
+        <label class="field-label" for="sb-tenant">Tenant URL</label>
+        <input type="text" id="sb-tenant" placeholder="https://yourcompany.salesbuildr.com" />
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="sb-api-key">API Key</label>
+        <input type="password" id="sb-api-key" placeholder="Your Salesbuildr API key" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="creds-cancel">Cancel</button>
+        <button class="btn-accent" id="creds-save">Save &amp; Push</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Talking Points Modal ─── -->
+  <div class="modal-overlay" id="talktrack-overlay" hidden>
+    <div class="modal-box modal-box--lg">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="talktrack-title">Talking Points</h3>
+          <span class="modal-subtitle" id="talktrack-subtitle"></span>
+        </div>
+        <div class="modal-header-actions">
+          <button class="btn-secondary btn-sm" id="btn-copy-all-talk">Copy All</button>
+          <button class="modal-close" id="talktrack-close">✕</button>
+        </div>
+      </div>
+      <div class="modal-body" id="talktrack-body">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <script src="proposal-defence-kit.js"></script>
+</body>
+</html>
