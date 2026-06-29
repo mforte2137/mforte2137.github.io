@@ -136,11 +136,18 @@
     // Phase mode toggle
     phaseModeToggle.querySelectorAll('.toggle-btn').forEach(btn => {
       btn.addEventListener('click', () => {
+        const prev = phaseMode;
         phaseModeToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         phaseMode = btn.dataset.val;
         manualPhaseBlocks.hidden = (phaseMode === 'ai');
         phaseAiNote.hidden       = (phaseMode !== 'ai');
+        // Clear Widget 2 when switching to manual so the MSP knows to define phases and regenerate
+        if (phaseMode === 'manual' && prev === 'ai' && widgets[2]) {
+          widgets[2] = '';
+          $('widget2Editor').value = '';
+          $('preview2').innerHTML = '<div class="widget2-prompt">Define your phases above, then click <strong>Generate Roadmap Widgets</strong> to build Widget 2.</div>';
+        }
         autoSave();
       });
     });
@@ -416,7 +423,7 @@
     lastPayload = payload;
     setLoading(true, phaseMode === 'ai'
       ? 'AI is building your roadmap phases and widgets…'
-      : 'Building your roadmap widgets…');
+      : 'Generating widgets — using your phase selections for Widget 2…');
     generateBtn.disabled = true;
 
     try {
