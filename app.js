@@ -46,6 +46,18 @@ const TOOLS = [
     icon: "checklist"
   },
   {
+    title: "Technology Roadmap Builder",
+    shortLabel: "Roadmap Builder",
+    description:
+      "Build a 12–24 month technology roadmap in minutes using guided dropdowns and preselects. AI generates four executive-facing widgets — current state, phased roadmap, business outcomes, and investment summary — ready to push into any Salesbuildr quote.",
+    category: "Proposal",
+    url: "https://widgetcreator.netlify.app/technology-roadmap.html",
+    badge: "new",
+    updated: "2026-06-27",
+    gradient: "dusk",
+    icon: "compass"
+  },
+  {
     title: "Renewal Proposal Widget Creator",
     shortLabel: "Renewal Pack",
     description:
@@ -443,6 +455,7 @@ const GRADIENTS = {
   ruby:    "linear-gradient(135deg, #881337 0%, #e11d48 55%, #fb7185 100%)",
   ocean:   "linear-gradient(135deg, #0c4a6e 0%, #0369a1 55%, #38bdf8 100%)",
   pine:    "linear-gradient(135deg, #052e16 0%, #15803d 55%, #4ade80 100%)",
+  dusk:    "linear-gradient(135deg, #2e1065 0%, #6d28d9 55%, #a78bfa 100%)",
   mint:    "linear-gradient(135deg, #022c22 0%, #059669 55%, #6ee7b7 100%)",
   cyan:    "linear-gradient(135deg, #164e63 0%, #0891b2 55%, #67e8f9 100%)",
   forest:  "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #86efac 100%)",
@@ -1004,6 +1017,13 @@ Your data stays with you. Files are read locally in the browser and never transm
 
   // KB lookup — maps tool title to structured detail
   const KB_DETAIL = {
+    "Technology Roadmap Builder": {
+      who:   "MSP sales reps, account managers, or vCIOs presenting a structured technology roadmap to a prospect or existing customer.",
+      input: "Client type (Prospect / Existing Customer), industry, company size, current stack assessment (dropdowns), business goals (chip selection), phased roadmap services (preset library + custom), and optional budget and constraints. Sessions auto-save to localStorage.",
+      out:   "Four executive-facing widgets — Where You Are Today, Your Technology Roadmap (phased table), Business Outcomes, and Investment Summary. Push individually or as a pack to Salesbuildr, or copy HTML.",
+      when:  "You want to position yourself as a strategic partner rather than a vendor. A prospect or existing customer wants to understand where their technology is going over the next 1–2 years. Preparing for a QBR, roadmap review, or new business proposal.",
+      not:   "Not a pricing tool — no specific figures in the output. Quote creation and service line item push are Phase 2. Discovery data is entered manually — no PSA integration."
+    },
     "Renewal Proposal Widget Creator": {
       who:   "MSP account managers preparing for a contract renewal — routine or where the client relationship needs to be actively defended.",
       input: "Paste a Salesbuildr renewal quote URL — services are read automatically. Add optional context: support stats, key wins, client concerns (At-Risk mode), and upsell recommendations.",
