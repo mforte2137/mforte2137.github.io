@@ -738,6 +738,8 @@
     WIDGET_IDS.forEach(i => { $(`widget${i}Editor`).value = ''; $(`preview${i}`).innerHTML = ''; });
     hideError();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    autoSave('draft');
+    sessionsBlock.hidden = false;
   }
 
   function resumeSession(sess) {
@@ -821,6 +823,7 @@
       emptyState.hidden = true;
       outputArea.hidden = false;
     }
+    renderSessionCards();
   }
 
   function getSessions()   { try { return JSON.parse(localStorage.getItem(SESSION_KEY)  || '[]'); } catch { return []; } }
