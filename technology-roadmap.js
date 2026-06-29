@@ -61,6 +61,7 @@
   let widgets           = {};
   let currentSessionId  = null;
   let lastPayload       = null;
+  let autoSaveReady     = false; // prevents saves firing before session restore
   let phaseState        = {
     1: { services: new Set(), custom: [] },
     2: { services: new Set(), custom: [] },
@@ -233,6 +234,7 @@
       resumeSession(sessions[0]);
     }
     updateClientTypeUI();
+    autoSaveReady = true; // safe to save from here on
   }
 
   // ── Client type UI ───────────────────────────
@@ -670,6 +672,7 @@
   }
 
   function autoSave(status) {
+    if (!autoSaveReady) return;
     if (!currentSessionId) currentSessionId = 'roadmap_session_' + Date.now();
     let sessions = getSessions();
     const idx    = sessions.findIndex(s => s.id === currentSessionId);
@@ -689,6 +692,7 @@
 
   function startNewSession() {
     currentSessionId  = 'roadmap_session_' + Date.now();
+    autoSaveReady     = true;
     currentTheme      = '#0f1f3d';
     currentClientType = 'prospect';
     phaseMode         = 'ai';
