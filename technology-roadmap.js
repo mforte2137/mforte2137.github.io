@@ -128,6 +128,7 @@
         clientTypeToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentClientType = btn.dataset.val;
+        updateClientTypeUI();
         autoSave();
       });
     });
@@ -224,6 +225,13 @@
       sessionsBlock.hidden = false;
       resumeSession(sessions[0]);
     }
+    updateClientTypeUI();
+  }
+
+  // ── Client type UI ───────────────────────────
+  function updateClientTypeUI() {
+    const itSupportGroup = $('itSupportGroup');
+    if (itSupportGroup) itSupportGroup.hidden = (currentClientType === 'existing');
   }
 
   // ── Service picker ──────────────────────────
@@ -704,6 +712,7 @@
 
     // Reset client type
     clientTypeToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.val === 'prospect'));
+    updateClientTypeUI();
 
     // Reset swatch
     colourSwatches.querySelectorAll('.swatch').forEach(s => s.classList.toggle('active', s.dataset.hex === '#0f1f3d'));
@@ -762,6 +771,7 @@
 
     // Client type + phase mode
     clientTypeToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.val === currentClientType));
+    updateClientTypeUI();
     phaseModeToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.val === phaseMode));
     manualPhaseBlocks.hidden = (phaseMode === 'ai');
     phaseAiNote.hidden       = (phaseMode !== 'ai');
