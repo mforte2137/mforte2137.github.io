@@ -2,6 +2,15 @@
 // Receives a user question and returns tool recommendations using the KB
 
 const TOOL_KB = `
+TOOL: Technology Roadmap Builder
+WHAT: Guided discovery tool that generates four executive-facing Salesbuildr widgets from a structured technology assessment. Works for prospects (aspirational tone) and existing customers (strategic continuation tone). MSP completes a discovery form using dropdowns, chip selectors, and a preset service library — minimal typing. Sessions auto-save to localStorage so the MSP can pause and resume. Includes colour theme selector.
+WHO: MSP sales reps, account managers, or vCIOs presenting a technology roadmap as part of a proposal or account review.
+INPUT: Client type (Prospect / Existing Customer), industry vertical (12 options), company size, current stack assessment (endpoints, email, security, backup, connectivity etc. — all dropdowns), business goals (multi-select chips), phased roadmap (3 phases with timeframes and services from a preset library), optional budget range and constraints.
+OUTPUT: Four widgets — Where You Are Today, Your Technology Roadmap (phased table), Business Outcomes, and Investment Summary. Push individually or as a pack to Salesbuildr, or copy HTML.
+USE WHEN: Positioning as a strategic partner rather than a vendor. A prospect or customer wants to understand their technology direction over 12–24 months. Preparing for a QBR, strategic review, or new business proposal that needs a roadmap component.
+NOT FOR: Simple hardware or product quotes. Detailed pricing proposals — Investment Summary is narrative only, no specific figures. Requires manual discovery input — no PSA or RMM integration.
+URL: https://widgetcreator.netlify.app/technology-roadmap.html
+
 TOOL: Renewal Proposal Widget Creator
 WHAT: Paste in a Salesbuildr renewal quote URL — the tool reads the services automatically and generates up to seven targeted proposal widgets ready to push to your widget library. Standard mode for healthy clients, At-Risk mode for clients who are wavering or have raised concerns. At-Risk mode addresses the client's specific concern directly. Optional upsell selections generate additional benefit-led recommendation cards. Sessions auto-save so reps can pause and resume.
 WHO: MSP account managers preparing for a contract renewal — routine or where the client relationship needs defending.
