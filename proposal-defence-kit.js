@@ -579,7 +579,14 @@ function renderResults(result, payload) {
     on(btn, 'click', () => copyToClipboard(state.generatedData[btn.dataset.module].widget.html, btn, 'Copy HTML'));
   });
   container.querySelectorAll('.btn-push-widget').forEach(btn => {
-    on(btn, 'click', () => initPush([{ type: 'html', content: state.generatedData[btn.dataset.module].widget.html, title: btn.dataset.title }]));
+    on(btn, 'click', () => {
+      const mod = btn.dataset.module;
+      const nameMap = { competitor: 'Why Choose Us', pricing: 'Understanding Your Investment', objections: 'Common Questions Answered' };
+      initPush(
+        [{ html: state.generatedData[mod].widget.html, title: nameMap[mod] }],
+        state.lastPayload.prospect + ' — Defence'
+      );
+    });
   });
   container.querySelectorAll('.btn-regen-module').forEach(btn => {
     on(btn, 'click', () => regenModule(btn.dataset.module));
@@ -630,8 +637,8 @@ on($('btn-push-individual'), 'click', () => {
   const nameMap = { competitor: 'Why Choose Us', pricing: 'Understanding Your Investment', objections: 'Common Questions Answered' };
   const widgets = ['competitor','pricing','objections']
     .filter(k => state.activeModules[k] && state.generatedData[k])
-    .map(k => ({ type: 'html', content: state.generatedData[k].widget.html, title: `${state.lastPayload.prospect} — Defence — ${nameMap[k]}` }));
-  initPush(widgets);
+    .map(k => ({ html: state.generatedData[k].widget.html, title: nameMap[k] }));
+  initPush(widgets, state.lastPayload.prospect + ' — Defence');
 });
 
 /* ─── Push as pack ─── */
@@ -640,28 +647,28 @@ on($('btn-push-pack'), 'click', () => {
   const parts = ['competitor','pricing','objections']
     .filter(k => state.activeModules[k] && state.generatedData[k])
     .map(k => state.generatedData[k].widget.html);
-  initPush([{ type: 'html', content: parts.join('\n\n'), title: `${state.lastPayload.prospect} — Proposal Defence Kit` }]);
+  initPush([{ html: parts.join('\n\n'), title: 'Proposal Defence Kit' }], state.lastPayload.prospect);
 });
 
 /* ─── Push flow ─── */
-function initPush(widgets) {
+function initPush(widgets, prefix) {
   const apiKey    = localStorage.getItem('sb_api_key');
   const tenantUrl = localStorage.getItem('sb_tenant_url');
   if (!apiKey || !tenantUrl) {
-    state.pushPendingWidgets = widgets;
+    state.pushPendingWidgets = { widgets, prefix };
     $('creds-overlay').removeAttribute('hidden');
     if ($('sb-tenant')) $('sb-tenant').value = tenantUrl || '';
     if ($('sb-api-key')) $('sb-api-key').value = '';
     return;
   }
-  doPush(widgets, apiKey, tenantUrl);
+  doPush(widgets, prefix, apiKey, tenantUrl);
 }
 
-async function doPush(widgets, apiKey, tenantUrl) {
+async function doPush(widgets, prefix, apiKey, tenantUrl) {
   try {
     const res  = await fetch('/api/push-widgets', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ widgets, apiKey, tenantUrl })
+      body: JSON.stringify({ widgets, prefix: prefix || '', apiKey, tenantUrl })
     });
     const data = await res.json();
     if (data.ok || (data.successCount && data.successCount > 0)) {
@@ -681,7 +688,10 @@ on($('creds-save'), 'click', () => {
   localStorage.setItem('sb_tenant_url', tenant);
   localStorage.setItem('sb_api_key', key);
   $('creds-overlay').setAttribute('hidden', '');
-  if (state.pushPendingWidgets) { doPush(state.pushPendingWidgets, key, tenant); state.pushPendingWidgets = null; }
+  if (state.pushPendingWidgets) {
+    doPush(state.pushPendingWidgets.widgets, state.pushPendingWidgets.prefix, key, tenant);
+    state.pushPendingWidgets = null;
+  }
 });
 on($('creds-cancel'), 'click', () => $('creds-overlay').setAttribute('hidden', ''));
 on($('creds-close'),  'click', () => $('creds-overlay').setAttribute('hidden', ''));
