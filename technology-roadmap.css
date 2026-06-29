@@ -502,6 +502,18 @@ textarea { resize: vertical; }
 .creds-inline { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
 .creds-inline[hidden] { display: none; }
 
+/* ── Widget 2 manual prompt ───────────────────── */
+.widget2-prompt {
+  padding: 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-3);
+  border: 1px dashed var(--border-2);
+  border-radius: 4px;
+  line-height: 1.6;
+}
+.widget2-prompt strong { color: var(--text-2); }
+
 /* ── Badges ──────────────────────────────────── */
 .badge { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 20px; }
 .badge-good    { background: var(--good-bg);    color: var(--good); }
