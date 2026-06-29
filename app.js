@@ -46,6 +46,18 @@ const TOOLS = [
     icon: "checklist"
   },
   {
+    title: "Proposal Defence Kit",
+    shortLabel: "Defence Kit",
+    description:
+      "Deal stalled? Prospect mentioned a competitor or pushed back on price? Activate the modules you need — competitor comparison, pricing justification, objection FAQ — and get customer-facing widgets plus private talking points for the follow-up call.",
+    category: "Proposal",
+    url: "https://widgetcreator.netlify.app/proposal-defence-kit.html",
+    badge: "new",
+    updated: "2026-06-29",
+    gradient: "steel",
+    icon: "search"
+  },
+  {
     title: "Technology Roadmap Builder",
     shortLabel: "Roadmap Builder",
     description:
@@ -456,6 +468,7 @@ const GRADIENTS = {
   ocean:   "linear-gradient(135deg, #0c4a6e 0%, #0369a1 55%, #38bdf8 100%)",
   pine:    "linear-gradient(135deg, #052e16 0%, #15803d 55%, #4ade80 100%)",
   dusk:    "linear-gradient(135deg, #2e1065 0%, #6d28d9 55%, #a78bfa 100%)",
+  steel:   "linear-gradient(135deg, #0f172a 0%, #334155 55%, #94a3b8 100%)",
   mint:    "linear-gradient(135deg, #022c22 0%, #059669 55%, #6ee7b7 100%)",
   cyan:    "linear-gradient(135deg, #164e63 0%, #0891b2 55%, #67e8f9 100%)",
   forest:  "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #86efac 100%)",
@@ -1017,6 +1030,13 @@ Your data stays with you. Files are read locally in the browser and never transm
 
   // KB lookup — maps tool title to structured detail
   const KB_DETAIL = {
+    "Proposal Defence Kit": {
+      who:   "MSP sales reps dealing with a stalled or rejected proposal — where a prospect has raised pricing concerns, mentioned a competitor, flagged objections, or gone quiet.",
+      input: "Prospect name, industry, your offering description, situation (declined / competitor mentioned / objections raised). Activate modules as needed: Competitor Comparison, Pricing Justification, Objection & FAQ (preset or custom objections).",
+      out:   "Customer-facing widgets to add to a re-quote (push to Salesbuildr or copy HTML) plus private rep-only talking points in an on-screen modal with a copy button. One widget and one talk track per active module.",
+      when:  "A proposal has been declined or stalled. A prospect mentioned a competitor or cheaper quote. Price objections have been raised. You are preparing for a follow-up call and need structured talking points.",
+      not:   "Not for making unsubstantiated claims about competitors. Not a replacement for a strong original proposal. Works best when the objection is about perception, not the substance of the offer."
+    },
     "Technology Roadmap Builder": {
       who:   "MSP sales reps, account managers, or vCIOs presenting a structured technology roadmap to a prospect or existing customer.",
       input: "Client type (Prospect / Existing Customer), industry, company size, current stack assessment (dropdowns), business goals (chip selection), phased roadmap services (preset library + custom), and optional budget and constraints. Sessions auto-save to localStorage.",
