@@ -196,8 +196,8 @@
 
     // Auto-save on any input change
     document.querySelectorAll('input:not([type="checkbox"]), select, textarea').forEach(el => {
-      el.addEventListener('change', autoSave);
-      el.addEventListener('input', autoSave);
+      el.addEventListener('change', () => autoSave());
+      el.addEventListener('input',  () => autoSave());
     });
 
     // Widget editors
@@ -652,11 +652,12 @@
   // ── Session management (renewal-pack.js pattern) ──
   function buildSessionSnapshot(status) {
     const payload = buildPayload();
+    const safeStatus = (typeof status === 'string' && ['draft','generated','pushed'].includes(status)) ? status : 'draft';
     return {
       id:         currentSessionId,
       clientName: payload.clientName || 'Untitled',
       savedAt:    Date.now(),
-      status:     status || 'draft',
+      status:     safeStatus,
       theme:      currentTheme,
       clientType: currentClientType,
       phaseMode,
@@ -676,7 +677,9 @@
     if (!currentSessionId) currentSessionId = 'roadmap_session_' + Date.now();
     let sessions = getSessions();
     const idx    = sessions.findIndex(s => s.id === currentSessionId);
-    const snap   = buildSessionSnapshot(status || sessions[idx]?.status || 'draft');
+    const storedStatus = sessions[idx]?.status;
+    const safeStored   = (typeof storedStatus === 'string') ? storedStatus : 'draft';
+    const snap = buildSessionSnapshot(status || safeStored);
     if (idx >= 0) sessions[idx] = snap; else sessions.unshift(snap);
     sessions = sessions.slice(0, 20);
     saveSessions(sessions);
