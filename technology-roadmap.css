@@ -413,6 +413,7 @@ textarea { resize: vertical; }
   text-align: center;
   color: var(--text-3);
 }
+.empty-state[hidden] { display: none; }
 .empty-icon { font-size: 40px; margin-bottom: 16px; opacity: 0.3; }
 .empty-title { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 600; color: var(--text-2); margin-bottom: 8px; }
 .empty-sub { font-size: 13px; max-width: 280px; line-height: 1.6; }
