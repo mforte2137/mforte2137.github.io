@@ -2,6 +2,15 @@
 // Receives a user question and returns tool recommendations using the KB
 
 const TOOL_KB = `
+TOOL: Proposal Defence Kit
+WHAT: A modular tool for stalled or rejected proposals. Three optional modules — Competitor Comparison (calm value comparison when a cheaper quote has been mentioned), Pricing Justification (breaks down what's included and reframes cost as insurance), and Objection & FAQ (addresses specific concerns in a confident FAQ widget). Each active module generates a customer-facing widget for a re-quote AND private talking points for the follow-up call, shown in an on-screen modal with a copy button.
+WHO: MSP sales reps dealing with a stalled proposal, a rejected quote, a competitor mention, or pricing pushback.
+INPUT: Prospect name, industry, offering description, situation. Per module: competitor details and differentiators (Module 1), monthly price and services included (Module 2), preset or custom objections (Module 3). Colour theme.
+OUTPUT: Up to three customer-facing widgets (push to Salesbuildr individually or as a pack, or copy HTML) plus private talk track copied from an on-screen modal.
+USE WHEN: A proposal has been declined or gone quiet. A prospect mentioned a competitor or cheaper quote. Price or value objections have been raised. You need structured talking points before a follow-up call or meeting.
+NOT FOR: New business proposals — use Guided Sales Tool or Proposal Widget Builder. Making specific claims about competitors that cannot be substantiated.
+URL: https://widgetcreator.netlify.app/proposal-defence-kit.html
+
 TOOL: Technology Roadmap Builder
 WHAT: Guided discovery tool that generates four executive-facing Salesbuildr widgets from a structured technology assessment. Works for prospects (aspirational tone) and existing customers (strategic continuation tone). MSP completes a discovery form using dropdowns, chip selectors, and a preset service library — minimal typing. Sessions auto-save to localStorage so the MSP can pause and resume. Includes colour theme selector.
 WHO: MSP sales reps, account managers, or vCIOs presenting a technology roadmap as part of a proposal or account review.
