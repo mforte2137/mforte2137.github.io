@@ -229,12 +229,15 @@
     // Load sessions
     renderSessionCards();
     const sessions = getSessions();
+    console.log('[Roadmap] Sessions on load:', sessions.length, sessions.map(s => s.clientName));
     if (sessions.length) {
       sessionsBlock.hidden = false;
+      console.log('[Roadmap] Resuming session:', sessions[0].id, sessions[0].clientName);
       resumeSession(sessions[0]);
     }
     updateClientTypeUI();
-    autoSaveReady = true; // safe to save from here on
+    autoSaveReady = true;
+    console.log('[Roadmap] Init complete, autoSaveReady = true');
   }
 
   // ── Client type UI ───────────────────────────
@@ -673,8 +676,9 @@
   }
 
   function autoSave(status) {
-    if (!autoSaveReady) return;
+    if (!autoSaveReady) { console.log('[Roadmap] autoSave blocked — not ready yet'); return; }
     if (!currentSessionId) currentSessionId = 'roadmap_session_' + Date.now();
+    console.log('[Roadmap] autoSave called, status:', status, 'id:', currentSessionId);
     let sessions = getSessions();
     const idx    = sessions.findIndex(s => s.id === currentSessionId);
     const storedStatus = sessions[idx]?.status;
@@ -830,6 +834,7 @@
   function saveSessions(s) {
     try {
       const json = JSON.stringify(s);
+      console.log('[Roadmap] saveSessions:', s.length, 'sessions, size:', json.length, 'bytes');
       // Warn if approaching localStorage limits
       if (json.length > 3_000_000) {
         // Strip widget HTML from older sessions to save space, keep the most recent
