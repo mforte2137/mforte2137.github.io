@@ -116,9 +116,13 @@ Our differentiators: ${m.differentiators}
 ${m.ourPrice ? `Our price: ${m.ourPrice}` : ''}
 ${m.theirPrice ? `Their price: ${m.theirPrice}` : ''}
 
-Write a widget with heading "What You're Really Comparing". 
-Structure: brief intro paragraph (1-2 sentences, calm and factual) → comparison table with header row in theme color showing Service Element / Our Model / What You Achieve (3 columns) → a section headed "The Value Behind the Price" with 2-3 bullet points using › as bullet in theme color explaining the risk of the cheaper option in business terms.
-Never disparage the competitor or make claims that can't be substantiated. Focus entirely on our strengths and the prospect's risk.`;
+Write a widget with heading "What You're Really Comparing".
+Structure:
+1. Brief intro paragraph (1-2 sentences, calm and factual).
+2. Comparison table with colored header row: SERVICE ELEMENT / OUR MODEL / WHAT YOU ACHIEVE. 3-4 rows based on the differentiators provided.
+3. A section headed "THE VALUE BEHIND THE PRICE" with exactly 3 bullet points using › as bullet marker in theme color. CRITICAL: every bullet must be a complete, specific sentence of 15-25 words explaining a real business risk or benefit — never a single word, never a placeholder, never truncated. Write all 3 bullets before closing any tags. Example of a good bullet: "› Without local on-site support, hardware failures can mean days of downtime waiting for a remote provider to dispatch a technician."
+
+Never disparage the competitor. Focus on our strengths and the prospect's business risk.`;
     },
     pricing: () => {
       const m = modules.pricing;
@@ -156,7 +160,7 @@ Format as an FAQ. Each objection becomes a bold question in theme color. Each an
     headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1400,
+      max_tokens: 1600,
       system: systemPrompt,
       messages: [{ role: 'user', content: userMessages[moduleKey]() }]
     })
