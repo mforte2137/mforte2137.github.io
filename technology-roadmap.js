@@ -835,7 +835,7 @@
           <span class="session-card-status ${statusClass}">${(sess.status||'draft').toUpperCase()}</span>
           <button class="session-discard" data-id="${escHtml(sess.id)}" title="Discard">×</button>
         </div>`;
-      card.querySelector('.session-card-info').addEventListener('click', () => resumeSession(sess));
+      card.addEventListener('click', () => resumeSession(sess));
       card.querySelector('.session-discard').addEventListener('click', e => { e.stopPropagation(); discardSession(sess.id, showArchived); });
       sessionCards.appendChild(card);
     });
