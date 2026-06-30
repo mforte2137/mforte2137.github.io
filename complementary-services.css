@@ -47,7 +47,7 @@ body {
   z-index: 50;
 }
 .header-inner {
-  max-width: 1280px;
+  max-width: 1480px;
   margin: 0 auto;
   padding: 0 24px;
   height: 56px;
@@ -186,11 +186,11 @@ input::placeholder, textarea::placeholder { color: var(--text-3); }
 
 /* ── Main Layout ──────────────────────────────────────────── */
 .main-layout {
-  max-width: 1280px;
+  max-width: 1480px;
   margin: 0 auto;
   padding: 24px;
   display: grid;
-  grid-template-columns: 1fr 400px;
+  grid-template-columns: 1fr 520px;
   gap: 20px;
   align-items: start;
 }
