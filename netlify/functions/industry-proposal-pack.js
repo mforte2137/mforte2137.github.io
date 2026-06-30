@@ -40,7 +40,7 @@ exports.handler = async (event) => {
 
   const systemPrompt = `You are an expert MSP proposal copywriter. You write concise, professional, industry-specific content for managed IT service provider proposals.
 
-Your output must be a JSON object — no preamble, no markdown, no backticks.
+Your output must be a JSON object — no preamble, no markdown, no backticks. Return ONLY the JSON object, starting with { and ending with }.
 
 Rules:
 - Write for a business owner or decision-maker — not a technical audience
@@ -51,7 +51,9 @@ Rules:
 - Do not invent compliance regulations — only reference frameworks that genuinely apply to the specified vertical
 - For body content, use short paragraphs or bullet list lines starting with "- " for scannable lists
 - You may use **bold** to highlight a key term or service name at the start of a bullet line (e.g. "- **Service name** — description"). Do not bold anything else.
-- Keep all body content under 100 words per widget${isPersonalised ? `
+- Keep all body content under 100 words per widget
+- Inside any string value, never use literal double quotes ("). Use single quotes (') instead if you need to quote something.
+- Do not use line breaks inside a single bullet line — keep each "- " line as one continuous sentence on one line, separated by \\n between bullets${isPersonalised ? `
 
 Merge tags:
 - You are in Personalised mode. Weave in {{company.name}}, {{contact.firstName}}, and {{servicingBranch.name}} at natural, conversational points
@@ -107,8 +109,7 @@ Return exactly this JSON shape:
     return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: 'API key not configured.' }) };
   }
 
-  let aiText;
-  try {
+  async function callClaude() {
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -118,7 +119,7 @@ Return exactly this JSON shape:
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1000,
+        max_tokens: 2000,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }]
       })
@@ -128,31 +129,58 @@ Return exactly this JSON shape:
 
     if (!aiRes.ok) {
       console.error('Anthropic API error:', aiData);
-      return {
-        statusCode: 502,
-        headers,
-        body: JSON.stringify({ ok: false, error: 'AI request failed: ' + (aiData.error?.message || aiRes.status) })
-      };
+      throw new Error('AI request failed: ' + (aiData.error?.message || aiRes.status));
     }
 
-    aiText = aiData.content[0].text;
+    if (aiData.stop_reason === 'max_tokens') {
+      console.error('Response truncated at max_tokens. Raw:', aiData.content?.[0]?.text);
+      throw new Error('truncated');
+    }
+
+    return aiData.content[0].text;
+  }
+
+  // Defensively pull the JSON object out of a response even if the model
+  // added stray preamble/trailing text around it.
+  function extractJson(text) {
+    const clean = text.replace(/```json|```/g, '').trim();
+    try {
+      return JSON.parse(clean);
+    } catch (e) {
+      const start = clean.indexOf('{');
+      const end = clean.lastIndexOf('}');
+      if (start !== -1 && end !== -1 && end > start) {
+        return JSON.parse(clean.slice(start, end + 1));
+      }
+      throw e;
+    }
+  }
+
+  let aiText;
+  try {
+    aiText = await callClaude();
   } catch (err) {
     console.error('Fetch error calling Anthropic:', err);
     return { statusCode: 502, headers, body: JSON.stringify({ ok: false, error: 'Failed to reach AI service.' }) };
   }
 
-  // 7. Parse JSON
+  // 7. Parse JSON — retry once with a fresh call if parsing fails
   let widgets;
   try {
-    const clean = aiText.replace(/```json|```/g, '').trim();
-    widgets = JSON.parse(clean);
+    widgets = extractJson(aiText);
   } catch (e) {
-    console.error('JSON parse error. Raw AI response:', aiText);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ ok: false, error: 'AI returned invalid JSON. Try regenerating.' })
-    };
+    console.error('JSON parse error on first attempt. Raw AI response:', aiText);
+    try {
+      aiText = await callClaude();
+      widgets = extractJson(aiText);
+    } catch (e2) {
+      console.error('JSON parse error on retry. Raw AI response:', aiText);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ ok: false, error: 'AI returned invalid JSON. Try regenerating.' })
+      };
+    }
   }
 
   // 8. If regenKey, return only that widget
