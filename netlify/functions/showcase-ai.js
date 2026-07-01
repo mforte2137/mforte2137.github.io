@@ -47,6 +47,7 @@ async function handleSummary(body, claudeApiKey, headers) {
 Rules:
 - 3 to 5 sentences maximum.
 - Cover what's progressing well, what's in exploration, and flag anything stuck.
+- Where a "nextStep" is provided for an item, weave in what's planned for next week.
 - Name each contributor by first name.
 - Tone: upbeat, professional, like a brief standup summary.
 - Return plain text only — no markdown, no headings, no preamble.`;
