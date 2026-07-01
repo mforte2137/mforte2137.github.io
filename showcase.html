@@ -93,6 +93,10 @@
           <textarea class="f-description" rows="3" required></textarea>
         </label>
         <label>
+          Next step <span class="f-optional">(optional)</span>
+          <textarea class="f-nextstep" rows="2" placeholder="What's happening next week?"></textarea>
+        </label>
+        <label>
           Loom URL <span class="f-optional">(optional)</span>
           <input type="url" class="f-loom" placeholder="https://www.loom.com/share/..." />
         </label>
@@ -122,6 +126,10 @@
     </div>
     <p class="card-mood"></p>
     <p class="card-description"></p>
+    <div class="card-nextstep" hidden>
+      <span class="card-nextstep-label">Next up →</span>
+      <p class="card-nextstep-text"></p>
+    </div>
     <div class="card-screenshots" hidden></div>
     <div class="card-loom" hidden></div>
     <div class="card-stuck-helper" hidden>
