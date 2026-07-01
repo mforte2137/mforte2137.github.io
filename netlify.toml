@@ -13,3 +13,8 @@
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
+
+[[headers]]
+  for = "/showcase.html"
+  [headers.values]
+    Basic-Auth = "salesbuildr:victor-buildr"
