@@ -2,9 +2,9 @@
   'use strict';
 
   const CONTRIBUTORS = [
-    { key: 'victor',  name: 'Victor',  role: 'Prospects & Lite CRM', emoji: '🎯', prefix: 'Prospects — ',  password: 'victor2026'  },
-    { key: 'michael', name: 'Michael', role: 'CGOS / 360 View',      emoji: '🔄', prefix: 'CGOS — ',       password: 'michael2026' },
-    { key: 'bram',    name: 'Bram',    role: 'Storefront',           emoji: '🛍️', prefix: 'Storefront — ', password: 'bram2026'    }
+    { key: 'victor',  name: 'Victor',  role: 'Prospects & Lite CRM', emoji: '🎯', prefix: 'Prospects — '  },
+    { key: 'michael', name: 'Michael', role: 'CGOS / 360 View',      emoji: '🔄', prefix: 'CGOS — '       },
+    { key: 'bram',    name: 'Bram',    role: 'Storefront',           emoji: '🛍️', prefix: 'Storefront — ' }
   ];
 
   const STATUS_CONFIG = {
@@ -47,6 +47,11 @@
       const form = zoneEl.querySelector('.post-form');
       form.dataset.contributor = c.key;
       form.querySelector('.f-name').value = c.prefix;
+      form._screenshots = [];
+
+      const screenshotInput = form.querySelector('.f-screenshots');
+      const previewBox = form.querySelector('.f-screenshot-preview');
+      screenshotInput.addEventListener('change', (e) => handleScreenshotSelect(e, form, previewBox));
 
       toggleBtn.addEventListener('click', () => togglePostForm(form));
       form.querySelector('.f-cancel').addEventListener('click', () => closePostForm(form));
@@ -61,6 +66,19 @@
     document.getElementById('closeModalBtn').addEventListener('click', closeModal);
     document.getElementById('modalBackdrop').addEventListener('click', (e) => {
       if (e.target.id === 'modalBackdrop') closeModal();
+    });
+
+    document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+    document.getElementById('lightboxBackdrop').addEventListener('click', (e) => {
+      if (e.target.id === 'lightboxBackdrop') closeLightbox();
+    });
+    document.getElementById('lightboxPrev').addEventListener('click', showPrevScreenshot);
+    document.getElementById('lightboxNext').addEventListener('click', showNextScreenshot);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      closeLightbox();
+      closeModal();
     });
   }
 
@@ -115,6 +133,19 @@
     card.querySelector('.card-mood').textContent = update.mood || '';
     card.querySelector('.card-description').textContent = update.description || '';
 
+    const shotsBox = card.querySelector('.card-screenshots');
+    if (Array.isArray(update.screenshots) && update.screenshots.length) {
+      shotsBox.hidden = false;
+      update.screenshots.forEach((src, idx) => {
+        const thumb = document.createElement('img');
+        thumb.src = src;
+        thumb.className = 'card-screenshot-thumb';
+        thumb.alt = `${update.featureName} screenshot ${idx + 1}`;
+        thumb.addEventListener('click', () => openLightbox(update.screenshots, idx));
+        shotsBox.appendChild(thumb);
+      });
+    }
+
     const dateEl = card.querySelector('.card-date');
     dateEl.textContent = formatDate(update.postedAt);
 
@@ -150,7 +181,33 @@
       });
     }
 
+    // Delete
+    const deleteBtn = card.querySelector('.delete-btn');
+    deleteBtn.addEventListener('click', () => handleDelete(contributorKey, update.id, card));
+
     return node;
+  }
+
+  async function handleDelete(contributorKey, id, cardEl) {
+    const confirmed = window.confirm('Delete this update? This cannot be undone.');
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch('/api/showcase-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contributor: contributorKey, action: 'delete', id })
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Failed to delete update.');
+
+      state[contributorKey] = state[contributorKey].filter((u) => u.id !== id);
+      cardEl.remove();
+      renderStatusBar();
+    } catch (err) {
+      console.error(err);
+      window.alert('Could not delete this update — please try again.');
+    }
   }
 
   function formatDate(iso) {
@@ -216,13 +273,6 @@
     const errorEl = form.querySelector('.f-error');
     errorEl.hidden = true;
 
-    const password = form.querySelector('.f-password').value;
-    if (password !== contributor.password) {
-      errorEl.textContent = 'Incorrect password for this zone.';
-      errorEl.hidden = false;
-      return;
-    }
-
     const update = {
       id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
       featureName: form.querySelector('.f-name').value.trim(),
@@ -230,6 +280,7 @@
       mood: form.querySelector('.f-mood').value,
       description: form.querySelector('.f-description').value.trim(),
       loomUrl: form.querySelector('.f-loom').value.trim(),
+      screenshots: [...form._screenshots],
       postedAt: new Date().toISOString()
     };
 
@@ -252,6 +303,8 @@
 
       form.reset();
       form.querySelector('.f-name').value = contributor.prefix;
+      form._screenshots = [];
+      form.querySelector('.f-screenshot-preview').innerHTML = '';
       closePostForm(form);
     } catch (err) {
       errorEl.textContent = 'Something went wrong posting your update. Please try again.';
@@ -260,6 +313,106 @@
     } finally {
       submitBtn.disabled = false;
     }
+  }
+
+  // ---------- Screenshot handling ----------
+
+  function handleScreenshotSelect(e, form, previewBox) {
+    const files = Array.from(e.target.files || []);
+    const remainingSlots = 2 - form._screenshots.length;
+    const filesToAdd = files.slice(0, Math.max(remainingSlots, 0));
+
+    Promise.all(filesToAdd.map(compressImage))
+      .then((dataUrls) => {
+        form._screenshots.push(...dataUrls);
+        renderScreenshotPreview(form, previewBox);
+      })
+      .catch((err) => console.error('Failed to process screenshot:', err));
+
+    e.target.value = ''; // allow re-selecting the same file later
+  }
+
+  function renderScreenshotPreview(form, previewBox) {
+    previewBox.innerHTML = '';
+    form._screenshots.forEach((dataUrl, idx) => {
+      const item = document.createElement('div');
+      item.className = 'f-screenshot-item';
+
+      const img = document.createElement('img');
+      img.src = dataUrl;
+      item.appendChild(img);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'f-screenshot-remove';
+      removeBtn.textContent = '×';
+      removeBtn.setAttribute('aria-label', 'Remove screenshot');
+      removeBtn.addEventListener('click', () => {
+        form._screenshots.splice(idx, 1);
+        renderScreenshotPreview(form, previewBox);
+      });
+      item.appendChild(removeBtn);
+
+      previewBox.appendChild(item);
+    });
+  }
+
+  function compressImage(file, maxWidth = 900, quality = 0.72) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = reject;
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > maxWidth) {
+            height = Math.round(height * (maxWidth / width));
+            width = maxWidth;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ---------- Lightbox ----------
+
+  let lightboxImages = [];
+  let lightboxIndex = 0;
+
+  function openLightbox(images, index) {
+    lightboxImages = images;
+    lightboxIndex = index;
+    updateLightboxView();
+    document.getElementById('lightboxBackdrop').hidden = false;
+  }
+
+  function closeLightbox() {
+    document.getElementById('lightboxBackdrop').hidden = true;
+  }
+
+  function showPrevScreenshot() {
+    lightboxIndex = (lightboxIndex - 1 + lightboxImages.length) % lightboxImages.length;
+    updateLightboxView();
+  }
+
+  function showNextScreenshot() {
+    lightboxIndex = (lightboxIndex + 1) % lightboxImages.length;
+    updateLightboxView();
+  }
+
+  function updateLightboxView() {
+    document.getElementById('lightboxImage').src = lightboxImages[lightboxIndex];
+    const multiple = lightboxImages.length > 1;
+    document.getElementById('lightboxPrev').hidden = !multiple;
+    document.getElementById('lightboxNext').hidden = !multiple;
   }
 
   // ---------- Feedback ----------
