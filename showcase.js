@@ -49,6 +49,8 @@
       form.querySelector('.f-name').value = c.prefix;
       form._screenshots = [];
 
+      form.querySelectorAll('.rte').forEach(initRichTextEditor);
+
       const screenshotInput = form.querySelector('.f-screenshots');
       const previewBox = form.querySelector('.f-screenshot-preview');
       screenshotInput.addEventListener('change', (e) => handleScreenshotSelect(e, form, previewBox));
@@ -131,12 +133,12 @@
     badge.classList.add(statusInfo.className);
 
     card.querySelector('.card-mood').textContent = update.mood || '';
-    card.querySelector('.card-description').textContent = update.description || '';
+    card.querySelector('.card-description').innerHTML = sanitizeRichText(update.description || '');
 
     const nextStepBox = card.querySelector('.card-nextstep');
     if (update.nextStep) {
       nextStepBox.hidden = false;
-      card.querySelector('.card-nextstep-text').textContent = update.nextStep;
+      card.querySelector('.card-nextstep-text').innerHTML = sanitizeRichText(update.nextStep);
     }
 
     const shotsBox = card.querySelector('.card-screenshots');
@@ -254,6 +256,68 @@
     });
   }
 
+  // ---------- Rich text editing ----------
+
+  function initRichTextEditor(rteContainer) {
+    const editor = rteContainer.querySelector('.rte-editor');
+
+    rteContainer.querySelectorAll('.rte-btn').forEach((btn) => {
+      // Prevent the button from stealing focus/selection away from the editor.
+      btn.addEventListener('mousedown', (e) => e.preventDefault());
+      btn.addEventListener('click', () => {
+        document.execCommand(btn.dataset.cmd, false, null);
+        editor.focus();
+        updatePlaceholderState(editor);
+      });
+    });
+
+    editor.addEventListener('input', () => updatePlaceholderState(editor));
+  }
+
+  function updatePlaceholderState(editor) {
+    const isEmpty = editor.textContent.trim() === '';
+    editor.classList.toggle('is-empty', isEmpty);
+  }
+
+  function resetRichTextEditor(editor) {
+    editor.innerHTML = '';
+    editor.classList.add('is-empty');
+  }
+
+  // Whitelist-based sanitizer: strips any tag not in the allowed set (keeping
+  // its inner content), and strips all attributes from tags that are kept.
+  const RTE_ALLOWED_TAGS = new Set(['B', 'STRONG', 'I', 'EM', 'BR', 'DIV', 'P', 'UL', 'OL', 'LI']);
+
+  function sanitizeRichText(html) {
+    const template = document.createElement('template');
+    template.innerHTML = html;
+
+    const clean = (parent) => {
+      [...parent.childNodes].forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          if (!RTE_ALLOWED_TAGS.has(node.tagName)) {
+            while (node.firstChild) parent.insertBefore(node.firstChild, node);
+            parent.removeChild(node);
+          } else {
+            [...node.attributes].forEach((attr) => node.removeAttribute(attr.name));
+            clean(node);
+          }
+        } else if (node.nodeType !== Node.TEXT_NODE) {
+          parent.removeChild(node);
+        }
+      });
+    };
+
+    clean(template.content);
+    return template.innerHTML.trim();
+  }
+
+  function stripHtml(html) {
+    const div = document.createElement('div');
+    div.innerHTML = html || '';
+    return div.textContent || '';
+  }
+
   // ---------- Posting an update ----------
 
   function togglePostForm(form) {
@@ -279,13 +343,22 @@
     const errorEl = form.querySelector('.f-error');
     errorEl.hidden = true;
 
+    const descriptionEditor = form.querySelector('.f-description');
+    const nextStepEditor = form.querySelector('.f-nextstep');
+
+    if (descriptionEditor.textContent.trim() === '') {
+      errorEl.textContent = 'Description is required.';
+      errorEl.hidden = false;
+      return;
+    }
+
     const update = {
       id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
       featureName: form.querySelector('.f-name').value.trim(),
       status: form.querySelector('.f-status').value,
       mood: form.querySelector('.f-mood').value,
-      description: form.querySelector('.f-description').value.trim(),
-      nextStep: form.querySelector('.f-nextstep').value.trim(),
+      description: sanitizeRichText(descriptionEditor.innerHTML),
+      nextStep: nextStepEditor.textContent.trim() ? sanitizeRichText(nextStepEditor.innerHTML) : '',
       loomUrl: form.querySelector('.f-loom').value.trim(),
       screenshots: [...form._screenshots],
       postedAt: new Date().toISOString()
@@ -310,6 +383,8 @@
 
       form.reset();
       form.querySelector('.f-name').value = contributor.prefix;
+      resetRichTextEditor(descriptionEditor);
+      resetRichTextEditor(nextStepEditor);
       form._screenshots = [];
       form.querySelector('.f-screenshot-preview').innerHTML = '';
       closePostForm(form);
@@ -500,7 +575,7 @@
         body: JSON.stringify({
           mode: 'stuck',
           featureName: update.featureName,
-          description: update.description
+          description: stripHtml(update.description)
         })
       });
       const data = await res.json();
@@ -536,8 +611,8 @@
       updates: state[c.key].map(u => ({
         featureName: u.featureName,
         status: u.status,
-        description: u.description,
-        nextStep: u.nextStep || ''
+        description: stripHtml(u.description),
+        nextStep: stripHtml(u.nextStep || '')
       }))
     }));
 
