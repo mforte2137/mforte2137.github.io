@@ -2,6 +2,20 @@ const { getStore } = require('@netlify/blobs');
 
 const CONTRIBUTORS = ['victor', 'michael', 'bram'];
 
+function getShowcaseStore() {
+  // Prefer explicit config — Netlify's automatic environment injection for
+  // Blobs doesn't always work reliably (see MissingBlobsEnvironmentError).
+  // Falls back to zero-config auto-detection if these aren't set.
+  if (process.env.BLOBS_SITE_ID && process.env.NETLIFY_BLOBS_TOKEN) {
+    return getStore({
+      name: 'showcase',
+      siteID: process.env.BLOBS_SITE_ID,
+      token: process.env.NETLIFY_BLOBS_TOKEN
+    });
+  }
+  return getStore('showcase');
+}
+
 exports.handler = async (event) => {
   const headers = {
     'Content-Type': 'application/json',
@@ -15,7 +29,7 @@ exports.handler = async (event) => {
     return { statusCode: 204, headers, body: '' };
   }
 
-  const store = getStore('showcase');
+  const store = getShowcaseStore();
 
   // 2. Read all updates
   if (event.httpMethod === 'GET') {
