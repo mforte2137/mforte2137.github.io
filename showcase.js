@@ -133,6 +133,12 @@
     card.querySelector('.card-mood').textContent = update.mood || '';
     card.querySelector('.card-description').textContent = update.description || '';
 
+    const nextStepBox = card.querySelector('.card-nextstep');
+    if (update.nextStep) {
+      nextStepBox.hidden = false;
+      card.querySelector('.card-nextstep-text').textContent = update.nextStep;
+    }
+
     const shotsBox = card.querySelector('.card-screenshots');
     if (Array.isArray(update.screenshots) && update.screenshots.length) {
       shotsBox.hidden = false;
@@ -279,6 +285,7 @@
       status: form.querySelector('.f-status').value,
       mood: form.querySelector('.f-mood').value,
       description: form.querySelector('.f-description').value.trim(),
+      nextStep: form.querySelector('.f-nextstep').value.trim(),
       loomUrl: form.querySelector('.f-loom').value.trim(),
       screenshots: [...form._screenshots],
       postedAt: new Date().toISOString()
@@ -321,13 +328,24 @@
     const files = Array.from(e.target.files || []);
     const remainingSlots = 2 - form._screenshots.length;
     const filesToAdd = files.slice(0, Math.max(remainingSlots, 0));
+    const errorEl = form.querySelector('.f-error');
 
-    Promise.all(filesToAdd.map(compressImage))
-      .then((dataUrls) => {
-        form._screenshots.push(...dataUrls);
-        renderScreenshotPreview(form, previewBox);
-      })
-      .catch((err) => console.error('Failed to process screenshot:', err));
+    Promise.allSettled(filesToAdd.map(compressImage)).then((results) => {
+      let hadError = false;
+      results.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          form._screenshots.push(result.value);
+        } else {
+          hadError = true;
+          console.error('Failed to process screenshot:', result.reason);
+        }
+      });
+      renderScreenshotPreview(form, previewBox);
+      if (hadError) {
+        errorEl.textContent = 'One of those images could not be processed — try a different file.';
+        errorEl.hidden = false;
+      }
+    });
 
     e.target.value = ''; // allow re-selecting the same file later
   }
@@ -359,12 +377,11 @@
 
   function compressImage(file, maxWidth = 900, quality = 0.72) {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = reject;
-      reader.onload = () => {
-        const img = new Image();
-        img.onerror = reject;
-        img.onload = () => {
+      const objectUrl = URL.createObjectURL(file);
+      const img = new Image();
+
+      img.onload = () => {
+        try {
           let { width, height } = img;
           if (width > maxWidth) {
             height = Math.round(height * (maxWidth / width));
@@ -374,11 +391,21 @@
           canvas.width = width;
           canvas.height = height;
           canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', quality));
-        };
-        img.src = reader.result;
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          URL.revokeObjectURL(objectUrl);
+          resolve(dataUrl);
+        } catch (err) {
+          URL.revokeObjectURL(objectUrl);
+          reject(err);
+        }
       };
-      reader.readAsDataURL(file);
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error('Could not load image file.'));
+      };
+
+      img.src = objectUrl;
     });
   }
 
@@ -509,7 +536,8 @@
       updates: state[c.key].map(u => ({
         featureName: u.featureName,
         status: u.status,
-        description: u.description
+        description: u.description,
+        nextStep: u.nextStep || ''
       }))
     }));
 
