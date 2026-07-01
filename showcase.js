@@ -142,14 +142,17 @@
     }
 
     const shotsBox = card.querySelector('.card-screenshots');
-    if (Array.isArray(update.screenshots) && update.screenshots.length) {
+    const validScreenshots = Array.isArray(update.screenshots)
+      ? update.screenshots.filter((src) => typeof src === 'string' && src.startsWith('data:image'))
+      : [];
+    if (validScreenshots.length) {
       shotsBox.hidden = false;
-      update.screenshots.forEach((src, idx) => {
+      validScreenshots.forEach((src, idx) => {
         const thumb = document.createElement('img');
         thumb.src = src;
         thumb.className = 'card-screenshot-thumb';
         thumb.alt = `${update.featureName} screenshot ${idx + 1}`;
-        thumb.addEventListener('click', () => openLightbox(update.screenshots, idx));
+        thumb.addEventListener('click', () => openLightbox(validScreenshots, idx));
         shotsBox.appendChild(thumb);
       });
     }
@@ -265,6 +268,9 @@
       // Prevent the button from stealing focus/selection away from the editor.
       btn.addEventListener('mousedown', (e) => e.preventDefault());
       btn.addEventListener('click', () => {
+        // Force semantic <b>/<i> tags instead of style-based <span> wrappers,
+        // which some browsers use by default and our sanitizer would strip.
+        document.execCommand('styleWithCSS', false, false);
         document.execCommand(btn.dataset.cmd, false, null);
         editor.focus();
         updatePlaceholderState(editor);
@@ -286,6 +292,9 @@
 
   // Whitelist-based sanitizer: strips any tag not in the allowed set (keeping
   // its inner content), and strips all attributes from tags that are kept.
+  // Before dropping a disallowed wrapper, it checks for bold/italic inline
+  // styling (e.g. a browser-generated <span style="font-weight: bold">) and
+  // converts that into a semantic <strong>/<em> tag so formatting survives.
   const RTE_ALLOWED_TAGS = new Set(['B', 'STRONG', 'I', 'EM', 'BR', 'DIV', 'P', 'UL', 'OL', 'LI']);
 
   function sanitizeRichText(html) {
@@ -294,17 +303,41 @@
 
     const clean = (parent) => {
       [...parent.childNodes].forEach((node) => {
-        if (node.nodeType === Node.ELEMENT_NODE) {
-          if (!RTE_ALLOWED_TAGS.has(node.tagName)) {
-            while (node.firstChild) parent.insertBefore(node.firstChild, node);
-            parent.removeChild(node);
-          } else {
-            [...node.attributes].forEach((attr) => node.removeAttribute(attr.name));
-            clean(node);
-          }
-        } else if (node.nodeType !== Node.TEXT_NODE) {
-          parent.removeChild(node);
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+          if (node.nodeType !== Node.TEXT_NODE) parent.removeChild(node);
+          return;
         }
+
+        if (RTE_ALLOWED_TAGS.has(node.tagName)) {
+          [...node.attributes].forEach((attr) => node.removeAttribute(attr.name));
+          clean(node);
+          return;
+        }
+
+        const style = node.getAttribute ? (node.getAttribute('style') || '') : '';
+        const isBold = /font-weight\s*:\s*(bold|[6-9]00)/i.test(style);
+        const isItalic = /font-style\s*:\s*italic/i.test(style);
+
+        if (isBold || isItalic) {
+          let wrapper = document.createDocumentFragment();
+          while (node.firstChild) wrapper.appendChild(node.firstChild);
+          if (isItalic) {
+            const em = document.createElement('em');
+            em.appendChild(wrapper);
+            wrapper = em;
+          }
+          if (isBold) {
+            const strong = document.createElement('strong');
+            strong.appendChild(wrapper);
+            wrapper = strong;
+          }
+          parent.replaceChild(wrapper, node);
+          clean(wrapper); // sanitize whatever was moved inside the new wrapper
+          return;
+        }
+
+        while (node.firstChild) parent.insertBefore(node.firstChild, node);
+        parent.removeChild(node);
       });
     };
 
@@ -451,37 +484,42 @@
   }
 
   function compressImage(file, maxWidth = 900, quality = 0.72) {
-    return new Promise((resolve, reject) => {
-      const objectUrl = URL.createObjectURL(file);
-      const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.src = objectUrl;
 
-      img.onload = () => {
-        try {
-          let { width, height } = img;
-          if (width > maxWidth) {
-            height = Math.round(height * (maxWidth / width));
-            width = maxWidth;
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL('image/jpeg', quality);
-          URL.revokeObjectURL(objectUrl);
-          resolve(dataUrl);
-        } catch (err) {
-          URL.revokeObjectURL(objectUrl);
-          reject(err);
+    // img.decode() only resolves once the image is fully decoded with real
+    // dimensions available — onload can fire too early on some browsers
+    // (especially with blob: URLs), leaving width/height at 0 and producing
+    // a canvas that encodes to the empty "data:," string.
+    return img
+      .decode()
+      .then(() => {
+        const width0 = img.naturalWidth;
+        const height0 = img.naturalHeight;
+        if (!width0 || !height0) {
+          throw new Error('Image has no usable dimensions.');
         }
-      };
 
-      img.onerror = () => {
-        URL.revokeObjectURL(objectUrl);
-        reject(new Error('Could not load image file.'));
-      };
+        let width = width0;
+        let height = height0;
+        if (width > maxWidth) {
+          height = Math.round(height * (maxWidth / width));
+          width = maxWidth;
+        }
 
-      img.src = objectUrl;
-    });
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+
+        if (!dataUrl || !dataUrl.startsWith('data:image')) {
+          throw new Error('Failed to encode image.');
+        }
+        return dataUrl;
+      })
+      .finally(() => URL.revokeObjectURL(objectUrl));
   }
 
   // ---------- Lightbox ----------
