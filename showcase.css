@@ -254,6 +254,33 @@ h1, h2, h3, h4 {
   white-space: pre-wrap;
 }
 
+.card-nextstep {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: var(--accent-bg);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+}
+.card-nextstep[hidden] { display: none; }
+
+.card-nextstep-label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-2);
+  margin-bottom: 3px;
+}
+
+.card-nextstep-text {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-2);
+  white-space: pre-wrap;
+}
+
 .card-screenshots {
   display: flex;
   gap: 8px;
