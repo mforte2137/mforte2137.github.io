@@ -44,6 +44,14 @@
   </div>
 </div>
 
+<!-- Screenshot lightbox -->
+<div id="lightboxBackdrop" class="lightbox-backdrop" hidden>
+  <button id="lightboxClose" class="lightbox-close" aria-label="Close">✕</button>
+  <button id="lightboxPrev" class="lightbox-nav lightbox-prev" aria-label="Previous screenshot">‹</button>
+  <img id="lightboxImage" class="lightbox-image" src="" alt="Screenshot" />
+  <button id="lightboxNext" class="lightbox-nav lightbox-next" aria-label="Next screenshot">›</button>
+</div>
+
 <!-- Templates -->
 <template id="zoneTemplate">
   <section class="zone" data-contributor="">
@@ -89,9 +97,10 @@
           <input type="url" class="f-loom" placeholder="https://www.loom.com/share/..." />
         </label>
         <label>
-          Password
-          <input type="password" class="f-password" required />
+          Screenshots <span class="f-optional">(optional, up to 2)</span>
+          <input type="file" accept="image/*" multiple class="f-screenshots" />
         </label>
+        <div class="f-screenshot-preview"></div>
         <div class="post-form-actions">
           <button type="button" class="btn-secondary f-cancel">Cancel</button>
           <button type="submit" class="btn-accent">Post update</button>
@@ -106,10 +115,14 @@
   <article class="card update-card">
     <div class="card-top">
       <h3 class="card-feature"></h3>
-      <span class="badge card-badge"></span>
+      <div class="card-top-right">
+        <span class="badge card-badge"></span>
+        <button type="button" class="delete-btn" title="Delete update" aria-label="Delete update">🗑</button>
+      </div>
     </div>
     <p class="card-mood"></p>
     <p class="card-description"></p>
+    <div class="card-screenshots" hidden></div>
     <div class="card-loom" hidden></div>
     <div class="card-stuck-helper" hidden>
       <a href="#" class="stuck-ai-link">✦ Ask AI for ideas</a>
