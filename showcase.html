@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Salesbuildr Product Showroom</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="showcase.css" />
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-left">
+    <h1 class="app-title">Salesbuildr Product Showroom</h1>
+    <p class="app-subtitle">Sprint visibility — Victor · Michael · Bram</p>
+  </div>
+  <div class="header-right">
+    <span class="header-kicker">Weekly Summary</span>
+    <button id="aiSummaryBtn" class="btn-accent">✦ AI Summary</button>
+  </div>
+</header>
+
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="spinner"></div>
+  <p>Loading updates…</p>
+</div>
+
+<main id="zonesGrid" class="zones-grid" hidden></main>
+
+<footer id="statusBar" class="status-bar"></footer>
+
+<!-- AI Summary Modal -->
+<div id="modalBackdrop" class="modal-backdrop" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">This Week at Salesbuildr Lab</h3>
+      <button id="closeModalBtn" class="btn-ghost" aria-label="Close">✕</button>
+    </div>
+    <div id="modalBody" class="modal-body"></div>
+  </div>
+</div>
+
+<!-- Templates -->
+<template id="zoneTemplate">
+  <section class="zone" data-contributor="">
+    <div class="zone-header">
+      <span class="zone-emoji"></span>
+      <h2 class="zone-name"></h2>
+      <p class="zone-role"></p>
+    </div>
+    <div class="zone-cards"></div>
+    <div class="zone-post">
+      <button class="btn-secondary post-toggle">＋ Post an update</button>
+      <form class="post-form" hidden>
+        <label>
+          Feature name
+          <input type="text" class="f-name" required />
+        </label>
+        <label>
+          Status
+          <select class="f-status" required>
+            <option value="discovery">🔍 Exploring</option>
+            <option value="inprogress">⚡ In Flight</option>
+            <option value="building">🛠 Building</option>
+            <option value="review">👀 Review</option>
+            <option value="shipped">✅ Shipped</option>
+            <option value="stuck">🚨 Stuck!</option>
+          </select>
+        </label>
+        <label>
+          Heading / mood
+          <select class="f-mood" required>
+            <option>Where I'm at</option>
+            <option>What's happening</option>
+            <option>Check out the progress</option>
+            <option>I'm stuck!</option>
+          </select>
+        </label>
+        <label>
+          Description
+          <textarea class="f-description" rows="3" required></textarea>
+        </label>
+        <label>
+          Loom URL <span class="f-optional">(optional)</span>
+          <input type="url" class="f-loom" placeholder="https://www.loom.com/share/..." />
+        </label>
+        <label>
+          Password
+          <input type="password" class="f-password" required />
+        </label>
+        <div class="post-form-actions">
+          <button type="button" class="btn-secondary f-cancel">Cancel</button>
+          <button type="submit" class="btn-accent">Post update</button>
+        </div>
+        <p class="f-error" hidden></p>
+      </form>
+    </div>
+  </section>
+</template>
+
+<template id="cardTemplate">
+  <article class="card update-card">
+    <div class="card-top">
+      <h3 class="card-feature"></h3>
+      <span class="badge card-badge"></span>
+    </div>
+    <p class="card-mood"></p>
+    <p class="card-description"></p>
+    <div class="card-loom" hidden></div>
+    <div class="card-stuck-helper" hidden>
+      <a href="#" class="stuck-ai-link">✦ Ask AI for ideas</a>
+    </div>
+    <div class="card-bottom">
+      <span class="card-date"></span>
+      <a href="#" class="feedback-link">💬 Leave feedback</a>
+    </div>
+    <form class="feedback-form" hidden>
+      <label>
+        Comment
+        <textarea class="fb-comment" rows="2" required></textarea>
+      </label>
+      <label>
+        Your name <span class="f-optional">(optional)</span>
+        <input type="text" class="fb-name" />
+      </label>
+      <div class="post-form-actions">
+        <button type="button" class="btn-secondary fb-cancel">Cancel</button>
+        <button type="submit" class="btn-accent">Send</button>
+      </div>
+      <p class="fb-status" hidden></p>
+    </form>
+  </article>
+</template>
+
+<script src="showcase.js"></script>
+</body>
+</html>
