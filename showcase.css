@@ -158,50 +158,24 @@ h1, h2, h3, h4 {
 }
 
 .zone-header {
-  position: relative;
-  overflow: hidden;
   border-radius: 8px;
   padding: 18px 18px 16px;
+  background: var(--accent);
   color: #fff;
 }
 
-.zone-header::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(rgba(255,255,255,0.16) 1px, transparent 1px);
-  background-size: 14px 14px;
-  pointer-events: none;
-}
-
-.zone[data-contributor="victor"] .zone-header {
-  background: linear-gradient(135deg, #1a3a5c 0%, #2E74DC 100%);
-}
-.zone[data-contributor="michael"] .zone-header {
-  background: linear-gradient(135deg, #0a3d35 0%, #0f766e 100%);
-}
-.zone[data-contributor="bram"] .zone-header {
-  background: linear-gradient(135deg, #2d1a5c 0%, #7c3aed 100%);
-}
-
 .zone-emoji {
-  position: relative;
-  z-index: 1;
   float: right;
   font-size: 22px;
   line-height: 1;
 }
 
 .zone-name {
-  position: relative;
-  z-index: 1;
   font-size: 19px;
   color: #fff;
 }
 
 .zone-role {
-  position: relative;
-  z-index: 1;
   margin: 6px 0 0;
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
