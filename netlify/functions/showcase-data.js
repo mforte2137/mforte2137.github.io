@@ -90,6 +90,25 @@ exports.handler = async (event) => {
         return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
       }
 
+      if (action === 'edit') {
+        if (!update || !update.id || !update.featureName || !update.status) {
+          return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({ ok: false, error: 'update.id, update.featureName and update.status are required to edit.' })
+          };
+        }
+        const existing = await store.get(key, { type: 'json' }).catch(() => []);
+        const index = (existing || []).findIndex((u) => u.id === update.id);
+        if (index === -1) {
+          return { statusCode: 404, headers, body: JSON.stringify({ ok: false, error: 'Update not found.' }) };
+        }
+        const updatedList = [...existing];
+        updatedList[index] = update;
+        await store.set(key, JSON.stringify(updatedList));
+        return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
+      }
+
       // Default action: create a new update
       if (!update || !update.featureName || !update.status) {
         return {
