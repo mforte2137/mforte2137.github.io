@@ -18,6 +18,7 @@
 
   let state = { victor: [], michael: [], bram: [] };
   let openForm = null; // currently-open post form element, if any
+  const zoneForms = {}; // contributor key -> that zone's post/edit form
   let loomObserver = null;
 
   // ---------- Init ----------
@@ -48,6 +49,7 @@
       form.dataset.contributor = c.key;
       form.querySelector('.f-name').value = c.prefix;
       form._screenshots = [];
+      zoneForms[c.key] = form;
 
       form.querySelectorAll('.rte').forEach(initRichTextEditor);
 
@@ -55,8 +57,15 @@
       const previewBox = form.querySelector('.f-screenshot-preview');
       screenshotInput.addEventListener('change', (e) => handleScreenshotSelect(e, form, previewBox));
 
-      toggleBtn.addEventListener('click', () => togglePostForm(form));
-      form.querySelector('.f-cancel').addEventListener('click', () => closePostForm(form));
+      toggleBtn.addEventListener('click', () => {
+        const wasHidden = form.hidden;
+        togglePostForm(form);
+        if (wasHidden) resetFormToCreateMode(form, c); // opened fresh via "+", not via Edit
+      });
+      form.querySelector('.f-cancel').addEventListener('click', () => {
+        closePostForm(form);
+        resetFormToCreateMode(form, c);
+      });
       form.addEventListener('submit', (e) => handlePostSubmit(e, c, form));
 
       grid.appendChild(node);
@@ -192,6 +201,10 @@
       });
     }
 
+    // Edit
+    const editBtn = card.querySelector('.edit-btn');
+    editBtn.addEventListener('click', () => handleEditClick(contributorKey, update));
+
     // Delete
     const deleteBtn = card.querySelector('.delete-btn');
     deleteBtn.addEventListener('click', () => handleDelete(contributorKey, update.id, card));
@@ -274,6 +287,18 @@
         document.execCommand(btn.dataset.cmd, false, null);
         editor.focus();
         updatePlaceholderState(editor);
+      });
+    });
+
+    // Browsers can carry a "bold"/"italic" toggle state across into a
+    // different, freshly-focused contenteditable field. Clear it whenever
+    // an empty editor gains focus so typing starts unformatted.
+    editor.addEventListener('focus', () => {
+      if (editor.textContent.trim() !== '') return;
+      ['bold', 'italic'].forEach((cmd) => {
+        if (document.queryCommandState && document.queryCommandState(cmd)) {
+          document.execCommand(cmd, false, null);
+        }
       });
     });
 
@@ -385,8 +410,13 @@
       return;
     }
 
+    const editingId = form.dataset.editingId || null;
+    const existingEntry = editingId
+      ? state[contributor.key].find((u) => u.id === editingId)
+      : null;
+
     const update = {
-      id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
+      id: editingId || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
       featureName: form.querySelector('.f-name').value.trim(),
       status: form.querySelector('.f-status').value,
       mood: form.querySelector('.f-mood').value,
@@ -394,40 +424,90 @@
       nextStep: nextStepEditor.textContent.trim() ? sanitizeRichText(nextStepEditor.innerHTML) : '',
       loomUrl: form.querySelector('.f-loom').value.trim(),
       screenshots: [...form._screenshots],
-      postedAt: new Date().toISOString()
+      postedAt: existingEntry ? existingEntry.postedAt : new Date().toISOString()
     };
 
-    const submitBtn = form.querySelector('button[type="submit"]');
+    const submitBtn = form.querySelector('.f-submit');
     submitBtn.disabled = true;
+
+    const payload = editingId
+      ? { contributor: contributor.key, action: 'edit', update }
+      : { contributor: contributor.key, update };
 
     try {
       const res = await fetch('/api/showcase-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contributor: contributor.key, update })
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || 'Failed to post update.');
 
-      state[contributor.key] = [update, ...state[contributor.key]];
+      if (editingId) {
+        state[contributor.key] = state[contributor.key].map((u) => (u.id === editingId ? update : u));
+      } else {
+        state[contributor.key] = [update, ...state[contributor.key]];
+      }
       renderZoneCards(contributor.key);
       renderStatusBar();
       setupLoomObserver();
 
-      form.reset();
-      form.querySelector('.f-name').value = contributor.prefix;
-      resetRichTextEditor(descriptionEditor);
-      resetRichTextEditor(nextStepEditor);
-      form._screenshots = [];
-      form.querySelector('.f-screenshot-preview').innerHTML = '';
+      resetFormToCreateMode(form, contributor);
       closePostForm(form);
     } catch (err) {
-      errorEl.textContent = 'Something went wrong posting your update. Please try again.';
+      errorEl.textContent = editingId
+        ? 'Something went wrong saving your changes. Please try again.'
+        : 'Something went wrong posting your update. Please try again.';
       errorEl.hidden = false;
       console.error(err);
     } finally {
       submitBtn.disabled = false;
     }
+  }
+
+  function resetFormToCreateMode(form, contributor) {
+    form.reset();
+    form.querySelector('.f-name').value = contributor.prefix;
+    resetRichTextEditor(form.querySelector('.f-description'));
+    resetRichTextEditor(form.querySelector('.f-nextstep'));
+    form._screenshots = [];
+    form.querySelector('.f-screenshot-preview').innerHTML = '';
+    delete form.dataset.editingId;
+    form.querySelector('.f-submit').textContent = 'Post update';
+  }
+
+  function handleEditClick(contributorKey, update) {
+    const contributor = CONTRIBUTORS.find((c) => c.key === contributorKey);
+    const form = zoneForms[contributorKey];
+    if (!form || !contributor) return;
+
+    if (openForm && openForm !== form) closePostForm(openForm);
+    form.hidden = false;
+    openForm = form;
+
+    form.querySelector('.f-name').value = update.featureName || contributor.prefix;
+    form.querySelector('.f-status').value = update.status || 'discovery';
+    form.querySelector('.f-mood').value = update.mood || "Where I'm at";
+    form.querySelector('.f-loom').value = update.loomUrl || '';
+
+    const descriptionEditor = form.querySelector('.f-description');
+    descriptionEditor.innerHTML = sanitizeRichText(update.description || '');
+    updatePlaceholderState(descriptionEditor);
+
+    const nextStepEditor = form.querySelector('.f-nextstep');
+    nextStepEditor.innerHTML = sanitizeRichText(update.nextStep || '');
+    updatePlaceholderState(nextStepEditor);
+
+    form._screenshots = Array.isArray(update.screenshots)
+      ? update.screenshots.filter((s) => typeof s === 'string' && s.startsWith('data:image'))
+      : [];
+    renderScreenshotPreview(form, form.querySelector('.f-screenshot-preview'));
+
+    form.dataset.editingId = update.id;
+    form.querySelector('.f-submit').textContent = 'Save changes';
+    form.querySelector('.f-error').hidden = true;
+
+    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   // ---------- Screenshot handling ----------
@@ -438,7 +518,7 @@
     const filesToAdd = files.slice(0, Math.max(remainingSlots, 0));
     const errorEl = form.querySelector('.f-error');
 
-    Promise.allSettled(filesToAdd.map(compressImage)).then((results) => {
+    Promise.allSettled(filesToAdd.map(readImageAsDataUrl)).then((results) => {
       let hadError = false;
       results.forEach((result) => {
         if (result.status === 'fulfilled') {
@@ -483,43 +563,22 @@
     });
   }
 
-  function compressImage(file, maxWidth = 900, quality = 0.72) {
-    const objectUrl = URL.createObjectURL(file);
-    const img = new Image();
-    img.src = objectUrl;
-
-    // img.decode() only resolves once the image is fully decoded with real
-    // dimensions available — onload can fire too early on some browsers
-    // (especially with blob: URLs), leaving width/height at 0 and producing
-    // a canvas that encodes to the empty "data:," string.
-    return img
-      .decode()
-      .then(() => {
-        const width0 = img.naturalWidth;
-        const height0 = img.naturalHeight;
-        if (!width0 || !height0) {
-          throw new Error('Image has no usable dimensions.');
-        }
-
-        let width = width0;
-        let height = height0;
-        if (width > maxWidth) {
-          height = Math.round(height * (maxWidth / width));
-          width = maxWidth;
-        }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL('image/jpeg', quality);
-
-        if (!dataUrl || !dataUrl.startsWith('data:image')) {
-          throw new Error('Failed to encode image.');
-        }
-        return dataUrl;
-      })
-      .finally(() => URL.revokeObjectURL(objectUrl));
+  // Simple, proven pattern (matches the Banner Creator tool's loadLayerFile):
+  // read the file straight to a data URL with FileReader, no canvas involved.
+  // No resizing/re-encoding means no canvas-related failure modes, at the
+  // cost of not shrinking file size — a reasonable trade-off for a small
+  // team's sprint screenshots.
+  function readImageAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      if (file.size > 6 * 1024 * 1024) {
+        reject(new Error('Image is too large (max ~6MB). Try a smaller screenshot.'));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Could not read image file.'));
+      reader.readAsDataURL(file);
+    });
   }
 
   // ---------- Lightbox ----------
