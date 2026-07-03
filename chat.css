@@ -975,6 +975,15 @@ h1, h2, h3, h4 {
   padding-top: 8px;
 }
 
+.inline-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  background: var(--bg-row);
+  border: 1px solid var(--border-2);
+  padding: 1px 5px;
+  color: var(--accent-2);
+}
+
 /* =============================================
    KB PANEL (persistent right sidebar)
 ============================================= */
