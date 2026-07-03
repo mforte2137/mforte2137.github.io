@@ -3916,6 +3916,225 @@ Max 4 priorities, 2 strengths, 2 gaps. Be specific, forward-looking, business-fo
 
 
 /* ══════════════════════════════════════════
+   FOCUS MODE ENGINE
+   ══════════════════════════════════════════ */
+
+const FOCUS_QUEUE = [
+  { key: 'abc',   urgency: 'urgent', stepLabel: 'Step 2 of 5 — Schedule the review meeting', btnClass: '', am: 'Sarah Johnson' },
+  { key: 'river', urgency: 'warn',   stepLabel: 'Step 2 of 5 — Follow up on server refresh proposal', btnClass: 'warn', am: 'Mark Davies' },
+  { key: 'peak',  urgency: 'info',   stepLabel: 'Step 2 of 5 — Prepare compliance audit agenda', btnClass: 'info', am: 'Lisa Tran' },
+];
+
+let focusIdx     = 0;
+let focusActive  = false;
+const skipped    = new Set();
+const focusDone  = new Set();
+
+function initFocusMode() {
+  const startBtn     = document.getElementById('focus-start-btn');
+  const focusBanner  = document.getElementById('focus-banner');
+  const focusModeWrap= document.getElementById('focus-mode-wrap');
+  const doneBanner   = document.getElementById('focus-done-wrap');
+  const intelGrid    = document.getElementById('port-intel-grid');
+  const workPortGrid = document.querySelector('.work-portfolio-grid');
+
+  // AM name from first queue item
+  const amName = FOCUS_QUEUE[0]?.am?.split(' ')[0] || 'there';
+  const greetingEl = document.getElementById('focus-greeting');
+  const subEl      = document.getElementById('focus-sub');
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  if (greetingEl) greetingEl.textContent = `${greet}, ${amName}. ${FOCUS_QUEUE.length} accounts need attention today.`;
+  if (subEl) {
+    const first = CUSTOMERS[FOCUS_QUEUE[0].key];
+    if (first) subEl.textContent = `Start with ${first.name} — Priority ${first.priority.score} · ${FOCUS_QUEUE[0].urgency === 'urgent' ? 'Urgent' : FOCUS_QUEUE[0].urgency === 'warn' ? 'Review soon' : 'On track'} · ${PORTFOLIO.find(p=>p.key===FOCUS_QUEUE[0].key)?.why?.slice(0,60)}...`;
+  }
+
+  if (!startBtn) return;
+
+  // Toggle: Focus / Portfolio
+  const focusToggle     = document.getElementById('focus-toggle-focus');
+  const portfolioToggle = document.getElementById('focus-toggle-portfolio');
+  if (focusToggle) focusToggle.addEventListener('click', () => enterFocusMode());
+  if (portfolioToggle) portfolioToggle.addEventListener('click', () => exitFocusMode());
+
+  startBtn.addEventListener('click', () => {
+    focusIdx = 0;
+    focusDone.clear();
+    skipped.clear();
+    enterFocusMode();
+  });
+
+  function enterFocusMode() {
+    focusActive = true;
+    focusBanner.style.display = 'none';
+    focusModeWrap.style.display = 'block';
+    doneBanner.style.display = 'none';
+    if (intelGrid)    intelGrid.style.display = 'none';
+    if (workPortGrid) workPortGrid.style.display = 'none';
+    renderFocusCard(focusIdx);
+  }
+
+  function exitFocusMode() {
+    focusActive = false;
+    focusBanner.style.display = 'flex';
+    focusModeWrap.style.display = 'none';
+    doneBanner.style.display = 'none';
+    if (intelGrid)    intelGrid.style.display = '';
+    if (workPortGrid) workPortGrid.style.display = '';
+  }
+
+  function showCompletion() {
+    focusModeWrap.style.display = 'none';
+    doneBanner.style.display = 'block';
+    const doneEl = document.getElementById('focus-done-state');
+    const totalPipeline = FOCUS_QUEUE.reduce((t,q) => {
+      const r = PORTFOLIO.find(p=>p.key===q.key);
+      const v = parseFloat((r?.pipeline||'0').replace(/[^0-9.]/g,''));
+      return t + (isNaN(v)?0:v);
+    },0);
+    if (doneEl) doneEl.innerHTML = `
+      <div class="focus-done-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="focus-done-title">You're caught up, ${amName}.</div>
+      <div class="focus-done-sub">All ${FOCUS_QUEUE.length} accounts reviewed for today. Actions taken have been logged to each customer's activity timeline.</div>
+      <div class="focus-done-stats">
+        <div class="focus-done-stat"><div class="focus-done-stat-val">${FOCUS_QUEUE.length}</div><div class="focus-done-stat-lbl">Accounts reviewed</div></div>
+        <div class="focus-done-stat"><div class="focus-done-stat-val">${focusDone.size}</div><div class="focus-done-stat-lbl">Steps advanced</div></div>
+        <div class="focus-done-stat"><div class="focus-done-stat-val">$${totalPipeline.toLocaleString()}</div><div class="focus-done-stat-lbl">Pipeline touched</div></div>
+      </div>
+      <div class="focus-done-actions">
+        <button class="focus-done-primary" id="focus-done-portfolio">View full portfolio</button>
+        <button class="focus-done-secondary" id="focus-done-team">Review team performance</button>
+      </div>
+      <button class="focus-done-brief" id="focus-done-brief">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Generate portfolio AI brief for today
+      </button>`;
+
+    document.getElementById('focus-done-portfolio')?.addEventListener('click', () => {
+      exitFocusMode();
+    });
+    document.getElementById('focus-done-team')?.addEventListener('click', () => {
+      exitFocusMode();
+      switchView('team');
+    });
+    document.getElementById('focus-done-brief')?.addEventListener('click', () => {
+      exitFocusMode();
+      setTimeout(() => document.getElementById('port-ai-btn')?.click(), 300);
+    });
+  }
+
+  function renderFocusCard(idx) {
+    const q   = FOCUS_QUEUE[idx];
+    const c   = CUSTOMERS[q.key];
+    const row = PORTFOLIO.find(p=>p.key===q.key);
+    if (!c || !row) return;
+
+    // Update dots
+    const dotsEl = document.getElementById('focus-dots');
+    if (dotsEl) dotsEl.innerHTML = FOCUS_QUEUE.map((_,i) => {
+      const cls = focusDone.has(i) ? 'done' : i === idx ? 'active' : '';
+      return `<div class="focus-dot ${cls}"></div>`;
+    }).join('');
+
+    const labelEl = document.getElementById('focus-progress-label');
+    if (labelEl) labelEl.textContent = `Account ${idx+1} of ${FOCUS_QUEUE.length}`;
+
+    // Sidebar queue
+    const sidebar = document.getElementById('focus-sidebar');
+    if (sidebar) sidebar.innerHTML = `
+      <div class="focus-sidebar-hdr">Today's queue</div>
+      ${FOCUS_QUEUE.map((fq,i) => {
+        const fc = CUSTOMERS[fq.key];
+        const fr = PORTFOLIO.find(p=>p.key===fq.key);
+        const isDone = focusDone.has(i);
+        const isActive = i === idx;
+        return `<div class="focus-queue-item ${isDone?'done':isActive?'active':''}" data-qidx="${i}">
+          <div class="focus-queue-num ${isDone?'done':isActive?'active':''}">${isDone?'✓ Done':isActive?`${i+1} — Active`:`${i+1} — Up next`}</div>
+          <div class="focus-queue-cust">${fc.name}</div>
+          <div class="focus-queue-why">${(fr?.why||'').slice(0,55)}...</div>
+        </div>`;
+      }).join('')}`;
+
+    sidebar.querySelectorAll('.focus-queue-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const qi = parseInt(item.dataset.qidx);
+        if (!focusDone.has(qi)) { focusIdx = qi; renderFocusCard(qi); }
+      });
+    });
+
+    // Active workflow step
+    const wfs = c.workflows || (c.workflow ? [c.workflow] : []);
+    const activeWf = wfs[c._activeWfIdx||0] || wfs[0];
+    const steps = activeWf?.steps || [];
+    const doneCount = steps.filter(s=>s.done).length;
+    const activeStep = steps[doneCount] || steps[steps.length-1];
+
+    // Main focus card
+    const main = document.getElementById('focus-main');
+    if (main) main.innerHTML = `
+      <div>
+        <div class="focus-eyebrow">Priority ${c.priority.score} · ${q.urgency === 'urgent' ? 'Urgent' : q.urgency === 'warn' ? 'Review soon' : 'On track'}</div>
+        <div class="focus-cust-name">${c.name}</div>
+        <div class="focus-cust-sub">${c.type} · ${c.mrr} MRR · ${c.contact?.name} · ${c.contact?.role}</div>
+      </div>
+      <div class="focus-card">
+        <div class="focus-card-lbl">Why this matters</div>
+        <div class="focus-why-text">${row.why}</div>
+        <div class="focus-why-meta">${row.pipeline} · ${c.opportunities?.map(o=>o.title+' '+o.value).join(' · ')||''}</div>
+      </div>
+      ${activeStep ? `<div class="focus-card">
+        <div class="focus-card-lbl">Recommended action · ${activeWf?.title||''} · Step ${doneCount+1} of ${steps.length}</div>
+        <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--text);margin-bottom:8px;">${activeStep.label}</div>
+        <div style="font-family:'Inter',sans-serif;font-size:12px;color:var(--text-2);margin-bottom:10px;">${activeStep.desc}</div>
+        <button class="focus-action-btn" style="font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;" data-action="brief">${activeStep.action}</button>
+      </div>` : ''}
+      <div class="focus-action-row">
+        <button class="focus-primary-btn ${q.btnClass}" id="focus-view-plan">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          View full briefing
+        </button>
+        <button class="focus-skip-btn" id="focus-skip">Skip for now</button>
+        <button class="focus-next-btn" id="focus-next">
+          Next account
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>`;
+
+    // Wire buttons
+    document.getElementById('focus-view-plan')?.addEventListener('click', () => {
+      focusDone.add(idx);
+      exitFocusMode();
+      switchView('briefing');
+      ensureBriefingRendered(q.key);
+    });
+
+    document.getElementById('focus-skip')?.addEventListener('click', () => {
+      skipped.add(idx);
+      advanceFocus();
+    });
+
+    document.getElementById('focus-next')?.addEventListener('click', () => {
+      focusDone.add(idx);
+      advanceFocus();
+    });
+  }
+
+  function advanceFocus() {
+    let next = focusIdx + 1;
+    while (next < FOCUS_QUEUE.length && (focusDone.has(next) || skipped.has(next))) next++;
+    if (next >= FOCUS_QUEUE.length) {
+      showCompletion();
+    } else {
+      focusIdx = next;
+      renderFocusCard(focusIdx);
+    }
+  }
+}
+
+/* ══════════════════════════════════════════
    INIT
    ══════════════════════════════════════════ */
 
@@ -3926,6 +4145,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDocPanel();
   initWelcomeBanner();
   initPortfolioIntel();
+  initFocusMode();
   // Feedback closed by default — user opens when ready
   switchView('portfolio');
 });
