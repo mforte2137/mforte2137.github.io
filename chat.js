@@ -136,9 +136,18 @@ document.getElementById('docsClearBtn').addEventListener('click', () => {
   document.getElementById('docsSearchQuery').value = '';
   document.getElementById('docsSearchOutput').classList.add('hidden');
   document.getElementById('docsSearchGap').classList.add('hidden');
-  document.getElementById('writeArticleContext').value = '';
-  document.getElementById('articleOutput').classList.add('hidden');
-  document.getElementById('articleRendered').innerHTML = '';
+  document.getElementById('docsArticleTitle').value = '';
+  document.getElementById('docsContentNotes').value = '';
+  document.getElementById('docsScreenshots').value = '';
+  document.getElementById('docsRelatedArticles').value = '';
+  document.getElementById('docsExistingArticle').value = '';
+  document.getElementById('docsCollection').selectedIndex = 0;
+  document.getElementById('docsTicketOutput').classList.add('hidden');
+  // Reset type toggle to New
+  document.querySelectorAll('[data-doctype]').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-doctype="new"]').classList.add('active');
+  document.getElementById('docsArticleType').value = 'new';
+  document.getElementById('docsExistingArticleGroup').classList.add('hidden');
 });
 
 // ─── HISTORY DRAWER ───────────────────────────
@@ -621,124 +630,100 @@ document.getElementById('docsSearchBtn').addEventListener('click', async () => {
   }
 });
 
-// ─── MARKDOWN TO HTML ─────────────────────────
-function markdownToHtml(md) {
-  // Store code blocks
-  const codeBlocks = [];
-  md = md.replace(/`([^`]+)`/g, (_, code) => {
-    codeBlocks.push(`<code>${code.replace(/</g,'&lt;')}</code>`);
-    return `%%CODE${codeBlocks.length - 1}%%`;
+// ─── DOCS TYPE TOGGLE ─────────────────────────
+document.querySelectorAll('[data-doctype]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-doctype]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const type = btn.dataset.doctype;
+    document.getElementById('docsArticleType').value = type;
+    const existingGroup = document.getElementById('docsExistingArticleGroup');
+    existingGroup.classList.toggle('hidden', type === 'new');
   });
+});
 
-  // Highlight [confirm with dev] placeholders
-  md = md.replace(/\[confirm with dev\]/gi, '<span class="placeholder-note">[confirm with dev]</span>');
+// ─── BUILD JIRA TICKET ────────────────────────
+document.getElementById('docsTicketBtn').addEventListener('click', async () => {
+  const articleTitle    = document.getElementById('docsArticleTitle').value.trim();
+  const type            = document.getElementById('docsArticleType').value;
+  const collection      = document.getElementById('docsCollection').value;
+  const notes           = document.getElementById('docsContentNotes').value.trim();
+  const screenshots     = document.getElementById('docsScreenshots').value.trim();
+  const relatedArticles = document.getElementById('docsRelatedArticles').value.trim();
+  const existingArticle = document.getElementById('docsExistingArticle').value.trim();
+  const searchContext   = document.getElementById('docsSearchOutputText').innerText.trim();
+  const btn             = document.getElementById('docsTicketBtn');
 
-  const lines = md.split('\n');
-  let html = '';
-  let inUl = false, inOl = false;
+  if (!articleTitle) { alert('Please enter an article title.'); return; }
+  if (!notes)        { alert('Please add some notes for the content field.'); return; }
 
-  const closeList = () => {
-    if (inUl) { html += '</ul>'; inUl = false; }
-    if (inOl) { html += '</ol>'; inOl = false; }
-  };
-
-  lines.forEach(line => {
-    if (/^### (.+)/.test(line))      { closeList(); html += `<h3>${line.slice(4).trim()}</h3>`; }
-    else if (/^## (.+)/.test(line))  { closeList(); html += `<h2>${line.slice(3).trim()}</h2>`; }
-    else if (/^# (.+)/.test(line))   { closeList(); html += `<h1>${line.slice(2).trim()}</h1>`; }
-    else if (/^\d+\. (.+)/.test(line)) {
-      if (inUl) { html += '</ul>'; inUl = false; }
-      if (!inOl) { html += '<ol>'; inOl = true; }
-      html += `<li>${inline(line.replace(/^\d+\. /, ''))}</li>`;
-    }
-    else if (/^[-*] (.+)/.test(line)) {
-      if (inOl) { html += '</ol>'; inOl = false; }
-      if (!inUl) { html += '<ul>'; inUl = true; }
-      html += `<li>${inline(line.slice(2).trim())}</li>`;
-    }
-    else if (line.trim() === '') { closeList(); html += ''; }
-    else { closeList(); html += `<p>${inline(line)}</p>`; }
-  });
-
-  closeList();
-
-  // Restore code blocks
-  html = html.replace(/%%CODE(\d+)%%/g, (_, i) => codeBlocks[parseInt(i)]);
-
-  return html;
-}
-
-function inline(text) {
-  return text
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
-}
-
-// ─── WRITE KB ARTICLE ─────────────────────────
-document.getElementById('writeArticleBtn').addEventListener('click', async () => {
-  const gapText    = document.getElementById('docsSearchGapText').innerText.trim();
-  const searchText = document.getElementById('docsSearchOutputText').innerText.trim();
-  const context    = document.getElementById('writeArticleContext').value.trim();
-  const query      = document.getElementById('docsSearchQuery').value.trim();
-  const btn        = document.getElementById('writeArticleBtn');
-
-  const prompt = `Write a help centre article for Salesbuildr's knowledge base on the following topic.
-
-TOPIC: ${query}
-
-DOCUMENTATION GAP (what is missing):
-${gapText}
-
-EXISTING DOCS CONTEXT:
-${searchText}
-
-${context ? `NOTES FROM SUPPORT AGENT (use these as your primary source of truth):\n${context}` : 'No additional notes provided — draft based on the gap description. Use [confirm with dev] for any specific UI steps or details you are not certain about.'}
-
-Write a complete, publish-ready KB article in Markdown. Rules:
-- Use # for the article title, ## for section headings, ### for sub-headings if needed
-- Use numbered lists for steps, bullet points for options or lists
-- Bold key terms or UI labels with **bold**
-- Do not use double dashes (--)
-- Where you are not certain of specific UI details, write [confirm with dev] as an inline placeholder
-- Keep the tone clear, direct and practical — match the style of help.salesbuildr.com
-- Output Markdown only — no preamble, no commentary`;
+  const typeLabel = type === 'new' ? 'New article'
+    : type === 'update' ? `Update existing${existingArticle ? ` — ${existingArticle}` : ''}`
+    : 'Not sure — agent, check and decide';
 
   setLoading(btn, true);
 
   try {
-    const result = await callClaude(prompt);
+    // Ask Claude to polish the notes into proper article content
+    const contentPrompt = `You are preparing the CONTENT field for a Jira [customer-docs] ticket that an AI agent (Skynet) will use to write a Salesbuildr help-center article.
 
-    // Store raw markdown for copying
-    const articleOutput  = document.getElementById('articleOutput');
-    const articleRendered = document.getElementById('articleRendered');
+ARTICLE TITLE: ${articleTitle}
+${searchContext ? `\nKB SEARCH CONTEXT (what currently exists or is missing):\n${searchContext}` : ''}
 
-    articleRendered.innerHTML = markdownToHtml(result);
-    articleOutput.classList.remove('hidden');
-    articleOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+AGENT NOTES FROM SUPPORT TEAM:
+${notes}
 
-    // Wire copy button to plain text version
-    const copyBtn = document.getElementById('articleCopyBtn');
-    copyBtn._rawMarkdown = result;
+Write polished, structured article content that Skynet can use directly. Rules:
+- Use clear headings, numbered steps for procedures, bullet points for options
+- Bold key UI labels and menu paths
+- Where you are unsure of specific UI details, write [confirm with dev] as a placeholder
+- Do not use double dashes (--)
+- Keep the tone clear, direct and practical
+- Do not add a title line — just the body content
+- Output the content only, no preamble`;
 
-    saveToHistory('KB Article Draft', query, result);
+    const polishedContent = await callClaude(contentPrompt);
+
+    // Build the full Jira ticket
+    const ticket = `TITLE
+[customer-docs] ${articleTitle}
+
+ASSIGNEE
+Skynet
+
+WHAT
+Help-center article. Documentation only — no code changes.
+
+NEW OR UPDATE?
+${typeLabel}
+
+COLLECTION (HELP-CENTER SECTION)
+${collection}
+
+ARTICLE TITLE
+${articleTitle}
+
+CONTENT
+${polishedContent}
+
+Verify the facts against how the product actually works and correct the text if something is wrong.
+${screenshots ? `\nSCREENSHOTS\n${screenshots}` : '\nSCREENSHOTS\nNone provided — agent to capture as needed.'}
+
+RELATED ARTICLES
+${relatedArticles || 'Only if they exist, otherwise skip.'}`;
+
+    const outputBlock = document.getElementById('docsTicketOutput');
+    const outputText  = document.getElementById('docsTicketOutputText');
+    outputText.innerText = ticket;
+    outputBlock.classList.remove('hidden');
+    outputBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    saveToHistory('Docs Ticket', articleTitle, ticket);
 
   } catch (e) {
     alert('Error: ' + e.message);
   } finally {
     setLoading(btn, false);
   }
-});
-
-// Article copy button (copies raw markdown, not rendered HTML)
-document.getElementById('articleCopyBtn').addEventListener('click', function() {
-  const text = this._rawMarkdown || document.getElementById('articleRendered').innerText;
-  navigator.clipboard.writeText(text).then(() => {
-    this.textContent = 'Copied!';
-    this.classList.add('copied');
-    setTimeout(() => { this.textContent = 'Copy article'; this.classList.remove('copied'); }, 2000);
-  });
 });
 
 // ─── KB PANEL ─────────────────────────────────
