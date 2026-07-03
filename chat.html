@@ -207,7 +207,7 @@
           <div class="panel-header-row">
             <div>
               <h1 class="panel-title">Docs</h1>
-              <p class="panel-subtitle">Check if documentation exists, identify gaps, and draft new articles.</p>
+              <p class="panel-subtitle">Search the KB, then build a Jira <code class="inline-code">[customer-docs]</code> ticket ready for Skynet.</p>
             </div>
             <button class="btn-clear" id="docsClearBtn">Clear</button>
           </div>
@@ -219,7 +219,7 @@
           <div class="docs-section-label">Step 1 — Search Documentation</div>
           <div class="input-group">
             <label class="field-label">Topic or question</label>
-            <input class="field-input" id="docsSearchQuery" type="text" placeholder="e.g. 'change font size in a widget', 'user and device settings'..." />
+            <input class="field-input" id="docsSearchQuery" type="text" placeholder="e.g. 'multi-currency', 'ConnectWise permissions'..." />
           </div>
           <div class="input-row">
             <div></div>
@@ -238,43 +238,88 @@
               </div>
             </div>
             <div class="output-text" id="docsSearchOutputText"></div>
-            <!-- Gap callout -->
             <div class="doc-gap-block hidden" id="docsSearchGap">
               <div class="doc-gap-header">
-                <span>The Gap — copy this to share with devs</span>
+                <span>Gap Detected</span>
                 <button class="copy-btn copy-btn-gap" data-target="docsSearchGapText">Copy gap</button>
               </div>
               <div class="doc-gap-text" id="docsSearchGapText"></div>
             </div>
           </div>
 
-          <!-- Step 2: Write article (always shown) -->
-          <div class="output-block" id="writeArticlePanel">
-            <div class="output-header">
-              <span class="output-label">Step 2 — Draft Article from Your Notes</span>
-            </div>
-            <div class="write-article-body">
-              <p class="write-article-hint">You know the product — jot down the rough details and Claude will turn them into a polished help article. Don't worry about structure or wording, just capture what you know.</p>
-              <textarea class="field-textarea tall" id="writeArticleContext" placeholder="e.g. 'This feature is found under Settings > X. It does Y and Z. Users need to do A before B. The main gotcha is...' — rough notes are fine, don't worry about structure.'"></textarea>
-              <div class="input-row" style="margin-top:12px;">
-                <div></div>
-                <button class="btn-primary" id="writeArticleBtn">
-                  <span class="btn-text">Draft Article</span>
-                  <span class="btn-loader hidden">...</span>
-                </button>
-              </div>
-            </div>
+          <!-- Step 2: Build Jira ticket -->
+          <div class="docs-section-label">Step 2 — Build Jira Ticket for Skynet</div>
+
+          <div class="input-group">
+            <label class="field-label">Article title <span class="field-optional">(as customers will see it)</span></label>
+            <input class="field-input" id="docsArticleTitle" type="text" placeholder="e.g. Where to configure multi-currency" />
           </div>
 
-          <!-- Article output — rich text rendered -->
-          <div class="output-block hidden" id="articleOutput">
+          <div class="input-row flush">
+            <label class="field-label">New or update?</label>
+            <div class="toggle-group">
+              <button class="toggle-btn active" data-doctype="new">New article</button>
+              <button class="toggle-btn" data-doctype="update">Update existing</button>
+              <button class="toggle-btn" data-doctype="unsure">Not sure</button>
+            </div>
+          </div>
+          <input type="hidden" id="docsArticleType" value="new" />
+
+          <div class="input-group hidden" id="docsExistingArticleGroup">
+            <label class="field-label">Existing article <span class="field-optional">(name or URL)</span></label>
+            <input class="field-input" id="docsExistingArticle" type="text" placeholder="e.g. Multi-Entity & Currency or https://..." />
+          </div>
+
+          <div class="input-group">
+            <label class="field-label">Collection <span class="field-optional">(help-center section)</span></label>
+            <select class="field-select" id="docsCollection">
+              <option value="agent, pick the best fit">Not sure — agent, pick the best fit</option>
+              <option value="Getting Started">Getting Started</option>
+              <option value="Quotes">Quotes</option>
+              <option value="Products">Products</option>
+              <option value="Storefront">Storefront</option>
+              <option value="Whitespace">Whitespace</option>
+              <option value="Post-Sale">Post-Sale</option>
+              <option value="Companies">Companies</option>
+              <option value="Contacts">Contacts</option>
+              <option value="Distributors">Distributors</option>
+              <option value="Integrations">Integrations</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label class="field-label">Your notes <span class="field-optional">(rough is fine — Claude will polish for the CONTENT field)</span></label>
+            <textarea class="field-textarea tall" id="docsContentNotes" placeholder="Describe what the article should cover. How the feature works, where to find it, gotchas, steps... Claude will turn these into polished article content."></textarea>
+          </div>
+
+          <div class="input-group">
+            <label class="field-label">Screenshots <span class="field-optional">(optional)</span></label>
+            <textarea class="field-textarea short" id="docsScreenshots" placeholder="Menu paths to capture (e.g. Settings > Financial > Pricing Rules) and/or numbered filenames (01-pricing-rules.png). Test account: triple-seven, connectwise-dev-1, or halo-demo."></textarea>
+          </div>
+
+          <div class="input-group">
+            <label class="field-label">Related articles <span class="field-optional">(optional — only if they exist)</span></label>
+            <input class="field-input" id="docsRelatedArticles" type="text" placeholder="e.g. Multi-Entity & Currency, Quote Editor..." />
+          </div>
+
+          <div class="input-row">
+            <div></div>
+            <button class="btn-primary" id="docsTicketBtn">
+              <span class="btn-text">Build Ticket</span>
+              <span class="btn-loader hidden">...</span>
+            </button>
+          </div>
+
+          <!-- Ticket output -->
+          <div class="output-block hidden" id="docsTicketOutput">
             <div class="output-header">
-              <span class="output-label">Draft KB Article</span>
+              <span class="output-label">Jira Ticket — [customer-docs]</span>
               <div class="output-actions">
-                <button class="btn-copy-article" id="articleCopyBtn">Copy article</button>
+                <button class="copy-btn" data-target="docsTicketOutputText">Copy ticket</button>
               </div>
             </div>
-            <div class="article-rendered" id="articleRendered"></div>
+            <div class="output-text" id="docsTicketOutputText"></div>
           </div>
 
         </div>
