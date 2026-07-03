@@ -401,6 +401,41 @@
         <button class="welcome-close" id="welcome-close" aria-label="Dismiss">&times;</button>
       </div>
 
+      <!-- Focus Mode banner -->
+      <div class="focus-banner" id="focus-banner">
+        <div class="focus-banner-left">
+          <div class="focus-banner-greeting" id="focus-greeting">Good morning. 3 accounts need attention today.</div>
+          <div class="focus-banner-sub" id="focus-sub">Start with ABC Manufacturing — Priority 96 · Urgent · device refresh + security gap</div>
+        </div>
+        <button class="focus-start-btn" id="focus-start-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Start my day
+        </button>
+      </div>
+
+      <!-- Focus Card view (hidden by default) -->
+      <div class="focus-mode-wrap" id="focus-mode-wrap" style="display:none;">
+        <div class="focus-mode-bar">
+          <div class="focus-toggle">
+            <button class="focus-toggle-btn active" id="focus-toggle-focus">Focus</button>
+            <button class="focus-toggle-btn" id="focus-toggle-portfolio">Portfolio</button>
+          </div>
+          <div class="focus-progress" id="focus-progress">
+            <div class="focus-dots" id="focus-dots"></div>
+            <span class="focus-progress-label" id="focus-progress-label">Account 1 of 3</span>
+          </div>
+        </div>
+        <div class="focus-layout">
+          <div class="focus-sidebar" id="focus-sidebar"></div>
+          <div class="focus-main" id="focus-main"></div>
+        </div>
+      </div>
+
+      <!-- Completion state (hidden by default) -->
+      <div class="focus-done-wrap" id="focus-done-wrap" style="display:none;">
+        <div class="focus-done-state" id="focus-done-state"></div>
+      </div>
+
       <!-- Portfolio intelligence summary -->
       <div class="port-intel-grid" id="port-intel-grid">
         <div class="port-intel-card port-intel-stat port-intel-stat-combined">
