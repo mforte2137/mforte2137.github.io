@@ -133,9 +133,6 @@ document.getElementById('ticketClearBtn').addEventListener('click', () => {
 });
 
 document.getElementById('docsClearBtn').addEventListener('click', () => {
-  document.getElementById('docsSearchQuery').value = '';
-  document.getElementById('docsSearchOutput').classList.add('hidden');
-  document.getElementById('docsSearchGap').classList.add('hidden');
   document.getElementById('docsArticleTitle').value = '';
   document.getElementById('docsContentNotes').value = '';
   document.getElementById('docsScreenshots').value = '';
@@ -143,7 +140,6 @@ document.getElementById('docsClearBtn').addEventListener('click', () => {
   document.getElementById('docsExistingArticle').value = '';
   document.getElementById('docsCollection').selectedIndex = 0;
   document.getElementById('docsTicketOutput').classList.add('hidden');
-  // Reset type toggle to New
   document.querySelectorAll('[data-doctype]').forEach(b => b.classList.remove('active'));
   document.querySelector('[data-doctype="new"]').classList.add('active');
   document.getElementById('docsArticleType').value = 'new';
@@ -591,58 +587,6 @@ Only use URLs from the list. Never construct URLs.`;
   return await callClaude(prompt);
 }
 
-// ─── DOCS SEARCH ──────────────────────────────
-document.getElementById('docsSearchBtn').addEventListener('click', async () => {
-  const query = document.getElementById('docsSearchQuery').value.trim();
-  const btn   = document.getElementById('docsSearchBtn');
-
-  if (!query) { alert('Please enter a topic or question to search.'); return; }
-
-  setLoading(btn, true);
-
-  // Reset downstream panels
-  document.getElementById('docsSearchGap').classList.add('hidden');
-  document.getElementById('articleOutput').classList.add('hidden');
-  document.getElementById('articleRendered').innerHTML = '';
-  document.getElementById('writeArticleContext').value = '';
-
-  try {
-    const result = await searchFeaturebase(query);
-
-    const outputBlock = document.getElementById('docsSearchOutput');
-    const outputText  = document.getElementById('docsSearchOutputText');
-    const gapBlock    = document.getElementById('docsSearchGap');
-    const gapText     = document.getElementById('docsSearchGapText');
-    const writePanel  = document.getElementById('writeArticlePanel');
-
-    const gapMarker = 'THE GAP';
-    const gapIndex  = result.indexOf(gapMarker);
-    let searchText  = result;
-    let gapContent  = '';
-
-    if (gapIndex !== -1) {
-      searchText = result.slice(0, gapIndex).trim();
-      gapContent = result.slice(gapIndex + gapMarker.length).trim();
-    }
-
-    outputText.innerText = searchText;
-    outputBlock.classList.remove('hidden');
-
-    if (gapContent) {
-      gapText.innerText = gapContent;
-      gapBlock.classList.remove('hidden');
-    }
-
-    outputBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    saveToHistory('Doc Search', query, searchText + (gapContent ? '\n\nTHE GAP\n' + gapContent : ''));
-
-  } catch (e) {
-    alert('Error: ' + e.message);
-  } finally {
-    setLoading(btn, false);
-  }
-});
-
 // ─── DOCS TYPE TOGGLE ─────────────────────────
 document.querySelectorAll('[data-doctype]').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -784,10 +728,14 @@ Answer the question directly and concisely based only on the KB context above. 2
 Do not invent product details. Do not use double dashes.`;
 
     const answer = await callClaude(answerPrompt);
-    answerText.innerText = answer;
+    // Render answer with basic markdown
+    answerText.innerHTML = kbClean
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:var(--accent);">$1</a>')
+      .replace(/\n/g, '<br>');
     answerBlock.classList.remove('hidden');
 
-    // Step 3: extract article links from KB response and render them
+    // Extract article links
     const urlRegex = /https?:\/\/[^\s\)\"]+/g;
     const titleUrlPairs = [];
     const lines = kbClean.split('\n');
@@ -796,7 +744,6 @@ Do not invent product details. Do not use double dashes.`;
       const line = lines[i];
       const urls = line.match(urlRegex);
       if (urls) {
-        // Try to get title from previous or same line
         let title = '';
         const boldMatch = line.match(/\*\*([^*]+)\*\*/);
         if (boldMatch) {
@@ -806,9 +753,8 @@ Do not invent product details. Do not use double dashes.`;
           if (prevBold) title = prevBold[1];
         }
         for (const url of urls) {
-          if (url.includes('featurebase') || url.includes('salesbuildr')) {
+          if (url.includes('featurebase') || url.includes('salesbuildr') || url.includes('feedback')) {
             if (!title) {
-              // Derive title from URL slug
               const slug = url.split('/').pop() || '';
               title = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).replace(/^\d+\s*/, '');
             }
@@ -845,6 +791,9 @@ Do not invent product details. Do not use double dashes.`;
       articlesBlock.classList.remove('hidden');
     }
 
+    // Always show create ticket button after a search
+    document.getElementById('kbCreateTicket').classList.remove('hidden');
+
   } catch (e) {
     document.getElementById('kbAnswerText').innerText = 'Something went wrong: ' + e.message;
     document.getElementById('kbAnswerBlock').classList.remove('hidden');
@@ -859,4 +808,23 @@ document.getElementById('kbAskBtn').addEventListener('click', runKbAsk);
 
 document.getElementById('kbAskInput').addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) runKbAsk();
+});
+
+document.getElementById('kbCreateTicketBtn').addEventListener('click', () => {
+  // Switch to docs tab
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('.nav-item[data-tab="docs"]').classList.add('active');
+  document.getElementById('tab-docs').classList.add('active');
+
+  // Pre-fill article title from KB query
+  const query = document.getElementById('kbAskInput').value.trim();
+  if (query) {
+    const titleEl = document.getElementById('docsArticleTitle');
+    if (!titleEl.value) titleEl.value = query.charAt(0).toUpperCase() + query.slice(1);
+  }
+
+  // Scroll to top of docs tab
+  document.getElementById('tab-docs').scrollTo({ top: 0, behavior: 'smooth' });
+  document.getElementById('docsArticleTitle').focus();
 });
