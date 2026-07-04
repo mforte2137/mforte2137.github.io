@@ -93,7 +93,7 @@ const FIELD_DEFS = {
   ],
   investmentSummary: [
     { key: 'currentMonthlyInvestment', label: 'Current monthly investment', type: 'text', placeholder: 'e.g. $2,400/month', optional: true },
-    { key: 'periodTotal', label: 'Period total', type: 'text', placeholder: 'e.g. $28,800', optional: true },
+    { key: 'periodTotal', label: 'Period total', type: 'text', placeholder: 'Auto-calculated from monthly — edit to override', optional: true },
     { key: 'valueFraming', label: 'Value framing note', type: 'textarea', span2: true, optional: true },
     { key: 'proposedNextPeriod', label: 'Proposed next period', type: 'text', optional: true },
     { key: 'budgetNarrative', label: 'Budget narrative', type: 'dropdown', options: ['No change proposed','Minor adjustment','Investment increase recommended'] }
@@ -200,38 +200,96 @@ function badgeClassForRating(rating) {
   return 'br-badge-danger';
 }
 
-/* ─────────────────────────────────────────────────────────
-   4. SESSION PERSISTENCE (Netlify Blobs via /api/business-review-data)
-   ───────────────────────────────────────────────────────── */
-
-async function apiData(action, payload) {
-  const res = await fetch('/api/business-review-data', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, ...payload })
-  });
-  let data;
-  try { data = await res.json(); } catch { data = { ok: false, error: 'Invalid server response.' }; }
-  if (!data.ok) throw new Error(data.error || 'Request failed.');
-  return data;
+function periodMonthsFor(reviewPeriod) {
+  if (!reviewPeriod) return null;
+  if (/^Q/i.test(reviewPeriod)) return 3;
+  if (/^H/i.test(reviewPeriod)) return 6;
+  if (/^Annual/i.test(reviewPeriod)) return 12;
+  return null; // Custom or unrecognized — don't auto-calculate
 }
 
-async function loadSessionIndex() {
-  try {
-    const data = await apiData('list', {});
-    state.sessions = data.sessions || [];
-  } catch (e) {
-    state.sessions = [];
-    showToast('Could not load saved reviews: ' + e.message);
+function parseCurrencyNumber(str) {
+  if (!str) return null;
+  const m = String(str).replace(/,/g, '').match(/[\d.]+/);
+  return m ? parseFloat(m[0]) : null;
+}
+
+function formatCurrencyNumber(n) {
+  return '$' + n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+function recalcInvestmentTotal() {
+  const sec = state.current.sections.investmentSummary;
+  if (!sec || !sec.enabled) return;
+  const totalInput = document.getElementById('f_investmentSummary_periodTotal');
+  if (!totalInput || totalInput.dataset.autoCalc === 'false') return;
+  const months = periodMonthsFor(state.current.reviewPeriod);
+  const monthly = parseCurrencyNumber(sec.inputs.currentMonthlyInvestment);
+  if (months && monthly !== null) {
+    const total = formatCurrencyNumber(monthly * months);
+    totalInput.value = total;
+    totalInput.dataset.autoCalc = 'true';
+    sec.inputs.periodTotal = total;
+    sec.inputs._totalAutoCalc = true;
+    scheduleSave();
   }
 }
 
-async function loadSession(id) {
-  const data = await apiData('get', { id });
-  return data.session;
+function narrativeToBullets(narrative) {
+  if (!narrative) return [];
+  const sentences = narrative.match(/[^.!?]+[.!?]+(\s|$)/g) || [narrative];
+  const trimmed = sentences.map(s => s.trim()).filter(Boolean);
+  if (trimmed.length <= 1) return trimmed;
+  if (trimmed.length > 4) {
+    const head = trimmed.slice(0, 3);
+    const tail = trimmed.slice(3).join(' ');
+    return [...head, tail];
+  }
+  return trimmed;
 }
 
-const saveSessionDebounced = debounce(saveSessionNow, 900);
+/* ─────────────────────────────────────────────────────────
+   4. SESSION PERSISTENCE — browser localStorage only.
+   Nothing is sent to or stored on a server, so different MSPs
+   using this tool never see each other's reviews — each
+   browser only ever sees what was created in it. To move a
+   review to another computer or hand it to a colleague, use
+   Export Session (.json) / Import Session (.json), or
+   Download Presentation (.html) for the finished deck.
+   ───────────────────────────────────────────────────────── */
+
+const LS_INDEX_KEY = 'businessReview.sessionIndex';
+const lsSessionKey = id => `businessReview.session.${id}`;
+
+function lsReadIndex() {
+  try { return JSON.parse(localStorage.getItem(LS_INDEX_KEY)) || []; }
+  catch { return []; }
+}
+function lsWriteIndex(index) {
+  localStorage.setItem(LS_INDEX_KEY, JSON.stringify(index));
+}
+function lsReadSession(id) {
+  try { return JSON.parse(localStorage.getItem(lsSessionKey(id))); }
+  catch { return null; }
+}
+function lsWriteSession(session) {
+  localStorage.setItem(lsSessionKey(session.id), JSON.stringify(session));
+}
+function lsDeleteSession(id) {
+  localStorage.removeItem(lsSessionKey(id));
+}
+
+async function loadSessionIndex() {
+  state.sessions = lsReadIndex();
+}
+
+async function loadSession(id) {
+  const session = lsReadSession(id);
+  if (!session) throw new Error("That review isn't in this browser's storage. If it was created on a different computer, ask for its exported .json file and use Import Session.");
+  return session;
+}
+
+const saveSessionDebounced = debounce(saveSessionNow, 400);
 
 function scheduleSave() {
   if (!state.current) return;
@@ -242,10 +300,31 @@ function scheduleSave() {
 async function saveSessionNow() {
   if (!state.current) return;
   try {
-    await apiData('save', { session: state.current });
+    state.current.updatedAt = new Date().toISOString();
+    lsWriteSession(state.current);
+
+    const index = lsReadIndex();
+    const existingIdx = index.findIndex(s => s.id === state.current.id);
+    const indexEntry = {
+      id: state.current.id,
+      clientName: state.current.clientName || 'Untitled review',
+      reviewPeriod: state.current.reviewPeriod || '',
+      reviewType: state.current.reviewType || '',
+      archived: !!state.current.archived,
+      updatedAt: state.current.updatedAt
+    };
+    if (existingIdx >= 0) index[existingIdx] = indexEntry;
+    else index.push(indexEntry);
+    lsWriteIndex(index);
+    state.sessions = index;
+
     flashSaved();
   } catch (e) {
-    showToast('Could not save: ' + e.message);
+    if (e && e.name === 'QuotaExceededError') {
+      showToast("This browser's storage is full. Archive or delete an older review, or remove the logo, then try again.");
+    } else {
+      showToast('Could not save: ' + e.message);
+    }
   } finally {
     state.saving = false;
   }
@@ -259,11 +338,19 @@ function flashSaved() {
 }
 
 async function archiveSession(id) {
-  await apiData('archive', { id });
+  const session = lsReadSession(id);
+  if (!session) return;
+  session.archived = true;
+  session.updatedAt = new Date().toISOString();
+  lsWriteSession(session);
+  const index = lsReadIndex().map(s => s.id === id ? { ...s, archived: true, updatedAt: session.updatedAt } : s);
+  lsWriteIndex(index);
 }
 
 async function deleteSession(id) {
-  await apiData('delete', { id });
+  lsDeleteSession(id);
+  const index = lsReadIndex().filter(s => s.id !== id);
+  lsWriteIndex(index);
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -343,8 +430,25 @@ function renderPicker() {
       <div class="picker-card-name">${escapeHtml(s.clientName || 'Untitled review')}</div>
       <div class="picker-card-meta">${escapeHtml(s.reviewType || '')} · ${escapeHtml(s.reviewPeriod || '')}</div>
       <div class="picker-card-updated">Updated ${new Date(s.updatedAt).toLocaleDateString()}</div>
+      <div class="picker-card-actions">
+        <button type="button" class="picker-card-action" data-action="archive">Archive</button>
+        <button type="button" class="picker-card-action" data-action="delete">Delete</button>
+      </div>
     `;
     card.addEventListener('click', () => openSession(s.id));
+    $('[data-action="archive"]', card).addEventListener('click', async e => {
+      e.stopPropagation();
+      await archiveSession(s.id);
+      showToast('Review archived.');
+      loadSessionIndex().then(renderPicker);
+    });
+    $('[data-action="delete"]', card).addEventListener('click', async e => {
+      e.stopPropagation();
+      if (!confirm(`Delete the review for ${s.clientName || 'this client'}? This can't be undone.`)) return;
+      await deleteSession(s.id);
+      showToast('Review deleted.');
+      loadSessionIndex().then(renderPicker);
+    });
     grid.appendChild(card);
   });
 
@@ -353,10 +457,6 @@ function renderPicker() {
   newCard.textContent = active.length >= MAX_SESSIONS ? 'Archive a review to start a new one' : '+ New Review';
   if (active.length < MAX_SESSIONS) newCard.addEventListener('click', startNewSession);
   grid.appendChild(newCard);
-
-  if (active.length === 0) {
-    // keep grid tidy; new-card tile still shown
-  }
 }
 
 function showPicker() {
@@ -513,6 +613,14 @@ function buildSectionFormPanel(sec) {
     ${sec.key === 'recommendedServices' ? `<div class="callout">These recommendations are based on gaps identified in your review. Add the actual service line items in Salesbuildr from your services catalog.</div>` : ''}
   `;
 
+  if (sec.key === 'investmentSummary') {
+    const totalInput = $('#f_investmentSummary_periodTotal', panel);
+    if (totalInput) {
+      const autoFlag = inputs._totalAutoCalc !== false;
+      totalInput.dataset.autoCalc = autoFlag ? 'true' : 'false';
+    }
+  }
+
   wireFieldEvents(panel, sec.key);
   return panel;
 }
@@ -548,6 +656,13 @@ function wireFieldEvents(panel, sectionKey) {
     el.addEventListener(evt, () => {
       const key = el.dataset.key;
       state.current.sections[sectionKey].inputs[key] = el.value;
+      if (sectionKey === 'investmentSummary' && key === 'periodTotal') {
+        el.dataset.autoCalc = 'false';
+        state.current.sections.investmentSummary.inputs._totalAutoCalc = false;
+      }
+      if (sectionKey === 'investmentSummary' && key === 'currentMonthlyInvestment') {
+        recalcInvestmentTotal();
+      }
       scheduleSave();
     });
   });
@@ -713,6 +828,11 @@ function buildContentSlideHtml(sec, data, s, index, total) {
     ? `<img src="${s.logoBase64}" alt="${escapeHtml(s.mspName || 'logo')}">`
     : `<span>${escapeHtml(s.mspName || '')}</span>`;
 
+  const bullets = narrativeToBullets(data.narrative);
+  const narrativeHtml = bullets.length > 1
+    ? `<ul class="br-narrative-list">${bullets.map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>`
+    : `<p class="br-narrative">${escapeHtml(data.narrative || '')}</p>`;
+
   return `
   <div class="br-slide" data-index="${index}">
     <div class="br-slide-header">
@@ -725,7 +845,7 @@ function buildContentSlideHtml(sec, data, s, index, total) {
         ${badge}
       </div>
       ${statsHtml}
-      <div class="br-narrative">${escapeHtml(data.narrative || '')}</div>
+      ${narrativeHtml}
     </div>
     <div class="br-slide-footer">
       <span class="br-slide-company">${escapeHtml(s.mspName || 'Business Review')}</span>
@@ -819,6 +939,15 @@ window.addEventListener('afterprint', () => {
    11. WIDGETS — TinyMCE/Salesbuildr-safe HTML
    ───────────────────────────────────────────────────────── */
 
+function widgetBadgeHtml(text, bg, fg) {
+  // TinyMCE / PDF export sometimes strips inline "background" styles on
+  // spans. The bgcolor attribute on a table cell is an older, more widely
+  // honoured way to guarantee the fill colour survives export.
+  return `<table cellpadding="0" cellspacing="0" style="margin-bottom:6px;"><tr><td bgcolor="${bg}" style="background:${bg};border-radius:20px;padding:3px 12px;">
+    <span style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:${fg};">${escapeHtml(text)}</span>
+  </td></tr></table>`;
+}
+
 function buildWidgetHtml(key, session) {
   const data = session.generated && session.generated[key];
   if (!data) return '';
@@ -844,7 +973,7 @@ function buildWidgetHtml(key, session) {
   if (chips.length) {
     const cells = chips.map(c => {
       const { value, label } = splitStat(c);
-      return `<td width="${Math.floor(100 / chips.length)}%" style="padding:10px 8px;text-align:center;vertical-align:top;">
+      return `<td width="${Math.floor(100 / chips.length)}%" bgcolor="#FFFFFF" style="padding:10px 8px;text-align:center;vertical-align:top;">
         <div style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:${theme};">${escapeHtml(value)}</div>
         <div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#586273;margin-top:2px;">${escapeHtml(label)}</div>
       </td>`;
@@ -853,8 +982,8 @@ function buildWidgetHtml(key, session) {
   }
 
   let badge = '';
-  if (data.riskLevel) badge = `<span style="display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#b3760a;background:#FEF3C7;border-radius:20px;padding:3px 10px;margin-bottom:6px;">${escapeHtml(data.riskLevel)} risk</span>`;
-  if (data.rating) badge = `<span style="display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#15a05a;background:#DCFCE7;border-radius:20px;padding:3px 10px;margin-bottom:6px;">${escapeHtml(data.rating)}</span>`;
+  if (data.riskLevel) badge = widgetBadgeHtml(`${data.riskLevel} risk`, '#FEF3C7', '#b3760a');
+  if (data.rating) badge = widgetBadgeHtml(data.rating, '#DCFCE7', '#15a05a');
 
   return `<div style="width:100%;background:#FFFFFF;border:1px solid #E5E7EB;padding:16px 18px;">
     <h5 style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;color:#0b1220;font-size:15px;">${escapeHtml(data.headline || SECTION_TITLES[key])}</h5>
@@ -955,7 +1084,191 @@ function pushPack() {
 }
 
 /* ─────────────────────────────────────────────────────────
-   13. INIT
+   14. PORTABILITY — standalone presentation file + session JSON
+   ───────────────────────────────────────────────────────── */
+
+function downloadFile(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+function safeFileName(name) {
+  return (name || 'business-review').replace(/[^a-z0-9]+/gi, '-').toLowerCase().replace(/^-+|-+$/g, '');
+}
+
+// Standalone deck CSS is intentionally duplicated from business-review.css
+// rather than shared, so the exported file has zero dependency on this app,
+// the backend, or an internet connection at presentation time.
+function buildStandaloneDeckCss(theme) {
+  return `
+:root { --theme: ${theme}; }
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+body { font-family: 'Source Sans Pro', system-ui, -apple-system, sans-serif; }
+.br-deck { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+.br-slide { display: none; position: relative; overflow: hidden; background: #fff; width: min(100vw, 177.78vh); height: min(100vh, 56.25vw); flex-shrink: 0; color: #0b1220; padding: 4.5% 6%; flex-direction: column; }
+.br-slide.active { display: flex; }
+.br-slide-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 2%; border-bottom: 1px solid rgba(11,18,32,0.1); margin-bottom: 4%; }
+.br-client-name { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: clamp(14px, 1.6vw, 20px); }
+.br-msp-brand { display: flex; align-items: center; gap: 8px; }
+.br-msp-brand img { height: clamp(22px, 2.6vw, 34px); max-width: 160px; object-fit: contain; }
+.br-msp-brand span { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: clamp(11px, 1.1vw, 14px); color: #586273; }
+.br-slide-body { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+.br-cover { align-items: center; justify-content: center; text-align: center; }
+.br-cover-kicker { font-size: clamp(11px, 1vw, 13px); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--theme); margin-bottom: 1em; }
+.br-cover-headline { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: clamp(2.2rem, 5.4vw, 4.6rem); line-height: 1.05; letter-spacing: -0.02em; margin-bottom: 0.4em; }
+.br-cover-sub { font-size: clamp(13px, 1.4vw, 17px); color: #586273; margin-bottom: 1.4em; }
+.br-cover-logo img { max-height: 60px; max-width: 220px; object-fit: contain; margin-bottom: 1.2em; }
+.br-cover-date { font-size: clamp(11px, 1vw, 13px); color: #9CA3AF; }
+.br-section-kicker { display: flex; align-items: center; gap: 10px; margin-bottom: 0.6em; }
+.br-section-title { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: clamp(1.3rem, 2.6vw, 2.3rem); letter-spacing: -0.01em; color: var(--theme); }
+.br-badge { font-size: clamp(9px, 0.85vw, 11px); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; }
+.br-badge-good { background: #DCFCE7; color: #15a05a; }
+.br-badge-warn { background: #FEF3C7; color: #b3760a; }
+.br-badge-danger { background: #FEE2E2; color: #d8402e; }
+.br-stats-row { display: flex; gap: 3%; margin: 1.2em 0; }
+.br-stat { flex: 1; text-align: center; }
+.br-stat-value { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: clamp(1.8rem, 3.6vw, 3.2rem); color: var(--theme); line-height: 1; }
+.br-stat-label { font-size: clamp(11px, 1vw, 13px); color: #586273; margin-top: 0.4em; }
+.br-narrative, .br-narrative-list { font-size: clamp(16px, 1.9vw, 23px); color: #0b1220; line-height: 1.6; max-width: 94%; }
+.br-narrative-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6em; }
+.br-narrative-list li { position: relative; padding-left: 1.3em; }
+.br-narrative-list li::before { content: ''; position: absolute; left: 0; top: 0.5em; width: 9px; height: 9px; border-radius: 50%; background: var(--theme); }
+.br-slide-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 2%; margin-top: auto; border-top: 1px solid rgba(11,18,32,0.08); }
+.br-slide-company { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: clamp(10px, 0.9vw, 12px); color: #586273; }
+.br-slide-counter { font-size: clamp(9px, 0.8vw, 11px); color: #9CA3AF; letter-spacing: 0.1em; }
+.br-nav { position: fixed; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1100; color: #fff; font-size: 16px; transition: background 0.2s; }
+.br-nav:hover { background: rgba(255,255,255,0.22); }
+.br-nav.hidden { opacity: 0; pointer-events: none; }
+.br-nav-prev { left: 16px; }
+.br-nav-next { right: 16px; }
+.br-progress { position: fixed; top: 0; left: 0; height: 3px; background: var(--theme); z-index: 1200; transition: width 0.35s cubic-bezier(0.4,0,0.2,1); }
+#fsBtn { position: fixed; top: 16px; right: 16px; z-index: 1200; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.3); color: #fff; font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; padding: 8px 14px; border-radius: 20px; cursor: pointer; }
+#fsBtn:hover { background: rgba(255,255,255,0.22); }
+#hintBar { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.55); font-size: 11px; letter-spacing: 0.02em; z-index: 1100; }
+@media print {
+  html, body { background: #fff !important; overflow: visible !important; height: auto !important; }
+  .br-nav, .br-progress, #fsBtn, #hintBar { display: none !important; }
+  .br-deck { width: auto; height: auto; display: block; }
+  .br-slide { display: flex !important; width: 100%; height: 100vh; page-break-after: always; }
+  .br-slide:last-child { page-break-after: auto; }
+  @page { size: landscape; margin: 0; }
+}`;
+}
+
+function buildStandaloneHtml(session) {
+  const slides = buildDeckSlides(session);
+  const css = buildStandaloneDeckCss(session.colorTheme || '#2E74DC');
+  const title = `${session.clientName || 'Business Review'} — ${session.reviewPeriod || ''}`.trim();
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHtml(title)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+<style>${css}</style>
+</head>
+<body>
+<button id="fsBtn" type="button">⛶ Present full-screen</button>
+<div class="br-progress" id="progress"></div>
+<button class="br-nav br-nav-prev hidden" id="prevBtn" aria-label="Previous slide">&#8592;</button>
+<button class="br-nav br-nav-next" id="nextBtn" aria-label="Next slide">&#8594;</button>
+<div class="br-deck" id="deck">
+${slides.join('\n')}
+</div>
+<div id="hintBar">← → to navigate · click to advance · F for full-screen · Ctrl/Cmd+P to save as PDF</div>
+<script>
+(function () {
+  var slides = document.querySelectorAll('.br-slide');
+  var cur = 0;
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+  var progress = document.getElementById('progress');
+  var fsBtn = document.getElementById('fsBtn');
+  var deck = document.getElementById('deck');
+
+  function goTo(n) {
+    if (!slides.length) return;
+    slides[cur].classList.remove('active');
+    cur = Math.max(0, Math.min(n, slides.length - 1));
+    slides[cur].classList.add('active');
+    prevBtn.classList.toggle('hidden', cur === 0);
+    nextBtn.classList.toggle('hidden', cur === slides.length - 1);
+    progress.style.width = (slides.length > 1 ? (cur / (slides.length - 1)) * 100 : 0) + '%';
+  }
+
+  prevBtn.addEventListener('click', function (e) { e.stopPropagation(); goTo(cur - 1); });
+  nextBtn.addEventListener('click', function (e) { e.stopPropagation(); goTo(cur + 1); });
+  deck.addEventListener('click', function () { goTo(cur + 1); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); goTo(cur + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); goTo(cur - 1); }
+    if (e.key === 'f' || e.key === 'F') { enterFullscreen(); }
+  });
+
+  function enterFullscreen() {
+    var el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen().catch(function () {});
+    fsBtn.style.display = 'none';
+  }
+  fsBtn.addEventListener('click', enterFullscreen);
+  document.addEventListener('fullscreenchange', function () {
+    fsBtn.style.display = document.fullscreenElement ? 'none' : 'block';
+  });
+
+  goTo(0);
+})();
+</script>
+</body>
+</html>`;
+}
+
+function downloadStandalonePresentation() {
+  const s = state.current;
+  if (!s || !s.generated) { showToast('Generate the review first.'); return; }
+  const html = buildStandaloneHtml(s);
+  downloadFile(`${safeFileName(s.clientName)}-presentation.html`, html, 'text/html');
+  showToast('Presentation downloaded ✓');
+}
+
+function exportSessionJson() {
+  const s = state.current;
+  if (!s) return;
+  downloadFile(`${safeFileName(s.clientName)}-session.json`, JSON.stringify(s, null, 2), 'application/json');
+  showToast('Session exported ✓');
+}
+
+function importSessionJson(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    let imported;
+    try { imported = JSON.parse(e.target.result); }
+    catch { showToast('That file is not valid JSON.'); return; }
+    if (!imported || typeof imported !== 'object' || !imported.sections) {
+      showToast('That file does not look like a Business Review session.');
+      return;
+    }
+    if (!imported.id) imported.id = 'rev_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    state.current = imported;
+    showBuilder();
+    showToast('Session imported. Edit, present, or save it to your list.');
+  };
+  reader.onerror = () => showToast('Could not read that file.');
+  reader.readAsText(file);
+}
+
+/* ─────────────────────────────────────────────────────────
+   15. INIT
    ───────────────────────────────────────────────────────── */
 
 function wireStaticEvents() {
@@ -969,7 +1282,11 @@ function wireStaticEvents() {
   $('#btnAllReviews').addEventListener('click', showPicker);
 
   $('#fClientName').addEventListener('input', e => { state.current.clientName = e.target.value; scheduleSave(); });
-  $('#fReviewPeriod').addEventListener('change', e => { state.current.reviewPeriod = e.target.value; scheduleSave(); });
+  $('#fReviewPeriod').addEventListener('change', e => {
+    state.current.reviewPeriod = e.target.value;
+    recalcInvestmentTotal();
+    scheduleSave();
+  });
   $('#fReviewType').addEventListener('change', e => { state.current.reviewType = e.target.value; scheduleSave(); });
   $('#fMspName').addEventListener('input', e => { state.current.mspName = e.target.value; scheduleSave(); });
   $('#fIndustry').addEventListener('change', e => { state.current.industry = e.target.value; scheduleSave(); });
@@ -983,6 +1300,17 @@ function wireStaticEvents() {
   $('#btnPrint').addEventListener('click', printReview);
   $('#btnCopyAll').addEventListener('click', copyAllWidgets);
   $('#btnPushPack').addEventListener('click', pushPack);
+
+  $('#btnToggleForm').addEventListener('click', () => {
+    const grid = document.querySelector('.builder-grid');
+    const collapsed = grid.classList.toggle('form-collapsed');
+    $('#btnToggleForm').textContent = collapsed ? 'Show inputs' : 'Hide inputs';
+  });
+
+  $('#btnDownloadStandalone').addEventListener('click', downloadStandalonePresentation);
+  $('#btnExportJson').addEventListener('click', exportSessionJson);
+  $('#btnImportJsonTrigger').addEventListener('click', () => $('#fImportJson').click());
+  $('#fImportJson').addEventListener('change', e => importSessionJson(e.target.files[0]));
 
   initDeckControls();
 }
