@@ -47,17 +47,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Header ── */
-.app-header {
-  background: var(--bg-panel);
-  color: var(--text);
-  border-bottom: 1px solid var(--border-2);
-  position: sticky; top: 0; z-index: 200;
-}
-.header-inner {
-  padding: 0 20px; height: var(--header-h);
-  display: flex; align-items: center; justify-content: space-between; gap: 16px;
-}
+/* ── Old header — replaced by .sb-topbar ── */
 .header-left  { display: flex; align-items: center; gap: 10px; }
 .app-logo     { font-size: 16px; letter-spacing: -2px; color: var(--accent); opacity: 0.7; }
 .app-title    {
@@ -110,7 +100,7 @@ body {
 .view-tab:not(.active) svg { stroke: var(--text-3); }
 
 /* ── Page layout ── */
-.page-layout { display: flex; align-items: flex-start; min-height: calc(100vh - 136px); padding-top: 140px !important; }
+.page-layout { display: flex; align-items: flex-start; min-height: calc(100vh - 136px); padding-top: 136px !important; }
 .app-main    { flex: 1; min-width: 0; padding: 18px 20px 48px; }
 
 /* ── Customer bar ── */
