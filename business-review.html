@@ -18,7 +18,7 @@
     <h1 class="topbar-title">Business Review Builder</h1>
   </div>
   <div class="topbar-right">
-    <span class="save-indicator" id="saveIndicator">Saved</span>
+    <span class="save-indicator" id="saveIndicator">Saved locally</span>
     <button class="btn-secondary" id="btnNewReview">+ New Review</button>
     <button class="btn-secondary" id="btnAllReviews">All Reviews</button>
   </div>
@@ -30,7 +30,7 @@
   <section id="viewPicker" class="view">
     <div class="picker-head">
       <h2>Your reviews</h2>
-      <p>Resume a review in progress, or start a new one. Up to 5 active reviews at a time.</p>
+      <p>Resume a review in progress, or start a new one. Up to 5 active reviews at a time — stored only in this browser, never on a server. To move a review to another computer, export it as JSON from the builder and import it there.</p>
     </div>
     <div class="picker-grid" id="pickerGrid"></div>
   </section>
@@ -94,7 +94,10 @@
       <!-- RIGHT: OUTPUT -->
       <div class="builder-output">
         <div class="panel output-panel">
-          <div class="panel-kicker">Output</div>
+          <div class="output-panel-head">
+            <div class="panel-kicker">Output</div>
+            <button class="btn-secondary btn-tiny" id="btnToggleForm" type="button">Hide inputs</button>
+          </div>
 
           <button class="btn-generate" id="btnGenerate">✦ Generate Business Review</button>
           <div class="generate-hint">AI writes the narrative for every active section at once. You can edit anything after.</div>
@@ -118,6 +121,18 @@
                 <button class="btn-secondary" id="btnCopyAll">Copy HTML (all)</button>
                 <button class="btn-accent" id="btnPushPack">Push as Pack</button>
               </div>
+            </div>
+
+            <div class="portability-actions">
+              <div class="panel-kicker">Portability</div>
+              <button class="btn-accent" id="btnDownloadStandalone">⬇ Download Presentation (.html)</button>
+              <div class="generate-hint">A single self-contained file — no login, no internet, no builder needed. Hand it to whoever is presenting; they open it in any browser and click Present.</div>
+              <div class="output-secondary-row">
+                <button class="btn-secondary" id="btnExportJson">Export Session (.json)</button>
+                <button class="btn-secondary" id="btnImportJsonTrigger">Import Session (.json)</button>
+              </div>
+              <input type="file" id="fImportJson" accept="application/json" hidden>
+              <div class="generate-hint">Export the working draft to move it to another computer, or hand it to a colleague to keep editing.</div>
             </div>
           </div>
         </div>
