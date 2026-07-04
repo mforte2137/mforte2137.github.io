@@ -87,8 +87,8 @@ body {
 .view-tabs {
   display: flex; align-items: flex-end; gap: 0;
   background: var(--bg-panel); padding: 0 20px;
-  border-bottom: 2px solid var(--border-2);
-  position: sticky; top: var(--header-h); z-index: 150;
+  border-bottom: 1px solid rgba(11,18,32,0.1);
+  position: fixed; top: 92px; left: 0; right: 0; z-index: 150;
 }
 .view-tab {
   display: flex; align-items: center; gap: 7px;
@@ -109,7 +109,7 @@ body {
 .view-tab:not(.active) svg { stroke: var(--text-3); }
 
 /* ── Page layout ── */
-.page-layout { display: flex; align-items: flex-start; min-height: calc(100vh - var(--header-h) - var(--tabs-h)); }
+.page-layout { display: flex; align-items: flex-start; min-height: calc(100vh - 136px); padding-top: 136px !important; }
 .app-main    { flex: 1; min-width: 0; padding: 18px 20px 48px; }
 
 /* ── Customer bar ── */
@@ -1200,6 +1200,9 @@ body {
 
 /* Show doc tab only when briefing view is active */
 .briefing-active .doc-tab-trigger { display: flex; }
+/* Ensure Reports tab never shows on portfolio or team */
+.portfolio-active .doc-tab-trigger,
+.team-active .doc-tab-trigger { display: none !important; }
 
 /* ══════════════════════════════════
    CUSTOMER SEARCH (Phase C)
