@@ -372,10 +372,31 @@ function openPanel(id) {
 
     // Reset panel state
     wpResetSearch();
-    document.getElementById('wpSolutionInput').value = issue.solution || '';
-    document.getElementById('wpContextInput').value  = issue.solution || '';
-    document.getElementById('wpDraftArea').style.display   = 'none';
-    document.getElementById('wpDraftText').value = '';
+    document.getElementById('wpSolutionInput').value  = issue.solution || '';
+    document.getElementById('wpContextInput').value   = issue.solution || '';
+    document.getElementById('wpDraftArea').style.display    = 'none';
+    document.getElementById('wpDraftText').value      = '';
+    // Reset ticket builder fields
+    const titleEl = document.getElementById('wpArticleTitle');
+    if (titleEl) titleEl.value = issue.title || '';
+    const colEl = document.getElementById('wpCollection');
+    if (colEl) colEl.value = '';
+    const ssEl = document.getElementById('wpScreenshots');
+    if (ssEl) ssEl.value = '';
+    const relEl = document.getElementById('wpRelatedArticles');
+    if (relEl) relEl.value = '';
+    const exEl = document.getElementById('wpExistingArticle');
+    if (exEl) exEl.value = '';
+    const exRow = document.getElementById('wpExistingArticleRow');
+    if (exRow) exRow.style.display = 'none';
+    // Reset toggle to "New article"
+    document.querySelectorAll('.wp-toggle').forEach(b => b.classList.remove('active'));
+    const firstToggle = document.querySelector('.wp-toggle[data-val="new"]');
+    if (firstToggle) firstToggle.classList.add('active');
+    const typeEl = document.getElementById('wpArticleType');
+    if (typeEl) typeEl.value = 'new';
+    const draftBtnEl = document.getElementById('wpDraftBtn');
+    if (draftBtnEl) { draftBtnEl.textContent = 'Build Jira Ticket'; draftBtnEl.disabled = false; }
 
     // Show/hide steps based on status
     document.getElementById('wpStep2').style.display = status === 'pending'  ? 'block' : 'none';
@@ -522,42 +543,68 @@ function wpSaveSolution() {
     meta.innerHTML = `<span class="kb-category">${issue.category}</span><span class="kb-status-badge solved" style="margin-left:6px;">✓ Solved</span>`;
 }
 
-// ── Step 3: Draft Article ─────────────────────
-async function wpDraftArticle() {
+// ── Step 3: Toggle helpers ────────────────────
+function wpSetToggle(btn, hiddenId) {
+    btn.closest('.wp-toggle-row').querySelectorAll('.wp-toggle').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(hiddenId).value = btn.dataset.val;
+    // Show/hide existing article field
+    const existingRow = document.getElementById('wpExistingArticleRow');
+    if (existingRow) existingRow.style.display = btn.dataset.val === 'update' ? 'block' : 'none';
+}
+
+// ── Step 3: Build Jira Ticket ─────────────────
+async function wpBuildTicket() {
     const issue = knowledgeBase.find(i => i.id === activePanelId);
     if (!issue) return;
 
-    const context    = document.getElementById('wpContextInput').value.trim();
-    const draftArea  = document.getElementById('wpDraftArea');
-    const draftText  = document.getElementById('wpDraftText');
-    const draftBtn   = document.getElementById('wpDraftBtn');
+    const articleType    = document.getElementById('wpArticleType').value;
+    const existingArt    = document.getElementById('wpExistingArticle')?.value.trim() || '';
+    const collection     = document.getElementById('wpCollection').value;
+    const articleTitle   = document.getElementById('wpArticleTitle').value.trim() || issue.title;
+    const notes          = document.getElementById('wpContextInput').value.trim();
+    const screenshots    = document.getElementById('wpScreenshots').value.trim();
+    const relatedArts    = document.getElementById('wpRelatedArticles').value.trim();
+
+    if (!notes) { showError('Please add your notes before building the ticket.'); return; }
+
+    const draftArea = document.getElementById('wpDraftArea');
+    const draftText = document.getElementById('wpDraftText');
+    const draftBtn  = document.getElementById('wpDraftBtn');
 
     draftArea.style.display = 'block';
-    draftText.value = 'Drafting article…';
-    draftBtn.textContent = 'Drafting…';
+    draftText.value = 'Building ticket…';
+    draftBtn.textContent = 'Building…';
     draftBtn.disabled = true;
     draftArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-    const solution = issue.solution || '';
-    const devSection = context ? `\n\nContext from support/dev team (use this as the source of truth):\n${context}` : '';
+    // Determine NEW OR UPDATE line
+    let newOrUpdate;
+    if (articleType === 'new')     newOrUpdate = 'New article';
+    else if (articleType === 'update') newOrUpdate = `Update existing — ${existingArt || 'see article title above'}`;
+    else                            newOrUpdate = 'Not sure — agent, check and decide';
 
+    const collectionLine = collection || 'Agent, pick the best fit';
+    const screenshotLine = screenshots || 'None provided — agent to capture as needed.';
+    const relatedLine    = relatedArts || 'Only if they exist, otherwise skip.';
+
+    // Ask Claude to polish the notes into proper CONTENT
     const prompt = `You are a technical writer for Salesbuildr, a B2B quoting and sales platform for MSPs.
 
+A support agent has the following rough notes about a customer issue and its solution:
+
 Issue: "${issue.title}"
-Category: ${issue.category}
-${issue.description ? `Description: ${issue.description}` : ''}
-${solution ? `Known solution: ${solution}` : ''}${devSection}
+${issue.description ? `Context: ${issue.description}` : ''}
+Notes / solution: ${notes}
 
-Please draft a complete, well-structured help centre article. The article should:
-- Have a clear title
-- Include a brief intro paragraph
-- Use numbered steps where relevant
-- Include tips or notes where helpful
-- Be written for end-users (not developers)
-- Be approximately 300–500 words
-${context ? '- Base the article on the context provided above — do not contradict it' : ''}
+Polish these notes into clear, well-structured help article content for an end-user audience. Use:
+- A brief intro paragraph explaining what this article covers
+- Numbered steps where the solution involves a sequence of actions
+- Tips or notes where relevant
+- Plain language — no jargon, no developer terminology
+- Approximately 200–400 words
 
-Return ONLY the article content, ready to publish.`;
+Return ONLY the article content — no title, no preamble. The content will be placed into a Jira ticket CONTENT field.`;
 
     try {
         const response = await fetch('/.netlify/functions/kb-claude', {
@@ -569,22 +616,58 @@ Return ONLY the article content, ready to publish.`;
                 messages: [{ role: 'user', content: prompt }]
             })
         });
-        const data = await response.json();
-        draftText.value = data.content?.map(b => b.text || '').join('\n') || 'Error generating draft.';
+        const data     = await response.json();
+        const content  = data.content?.map(b => b.text || '').join('\n') || notes;
+
+        // Assemble the full Jira ticket
+        const ticket = `TITLE
+[customer-docs] ${articleTitle}
+
+ASSIGNEE
+Skynet
+
+WHAT
+Help-center article. Documentation only — no code changes.
+
+NEW OR UPDATE?
+${newOrUpdate}
+
+COLLECTION (HELP-CENTER SECTION)
+${collectionLine}
+
+ARTICLE TITLE
+${articleTitle}
+
+CONTENT
+${content}
+
+Verify the facts against how the product actually works and correct the text if something is wrong.
+
+SCREENSHOTS
+${screenshotLine}
+
+RELATED ARTICLES
+${relatedLine}
+
+---
+@skynet please execute this ticket.`;
+
+        draftText.value = ticket;
+
     } catch (err) {
-        draftText.value = 'Error: ' + err.message;
+        draftText.value = 'Error building ticket: ' + err.message;
     }
 
-    draftBtn.textContent = 'Re-draft article';
+    draftBtn.textContent = 'Rebuild ticket';
     draftBtn.disabled = false;
 }
 
 function wpCopyDraft() {
     const text = document.getElementById('wpDraftText').value;
-    navigator.clipboard.writeText(text).then(() => showSuccess('Article copied to clipboard!'));
+    navigator.clipboard.writeText(text).then(() => showSuccess('Ticket copied to clipboard!'));
 }
 
-// ── Step 4: Mark Published ────────────────────
+// ── Step 4: Mark as submitted ─────────────────
 function wpMarkPublished() {
     const issue = knowledgeBase.find(i => i.id === activePanelId);
     if (!issue) return;
@@ -592,7 +675,7 @@ function wpMarkPublished() {
     issue.status    = 'published';
     issue.updatedAt = new Date().toISOString();
     saveLocalData();
-    showSuccess('Marked as published!');
+    showSuccess('Marked as ticket submitted!');
     updateStats();
     renderKB();
 
@@ -602,10 +685,10 @@ function wpMarkPublished() {
 }
 
 function wpRedraftArticle() {
-    document.getElementById('wpStep3').style.display = 'block';
     document.getElementById('wpDraftArea').style.display = 'none';
     document.getElementById('wpDraftText').value = '';
-    document.getElementById('wpDraftBtn').textContent = 'Draft Article';
+    document.getElementById('wpDraftBtn').textContent = 'Build Jira Ticket';
+    document.getElementById('wpDraftBtn').disabled = false;
 }
 
 // ── Shared Helpers ────────────────────────────
