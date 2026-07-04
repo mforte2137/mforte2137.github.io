@@ -160,9 +160,9 @@ const CUSTOMERS = {
         status: 'active', statusLabel: 'Identified',
         value: '$3,500', created: 'Jun 5, 2026',
         emails: 0, meetings: 0, proposalSent: false,
-        lastActivity: 'Opportunity created from CGOS signal', lastActivityAge: '7 days ago',
+        lastActivity: 'Opportunity created from 360° View signal', lastActivityAge: '7 days ago',
         timeline: [
-          { date: 'Jun 5',  type: 'opp',      title: 'Opportunity created',                    detail: 'No security review in 14 months — flagged by CGOS' }
+          { date: 'Jun 5',  type: 'opp',      title: 'Opportunity created',                    detail: 'No security review in 14 months — flagged by 360° View' }
         ]
       }
     ],
@@ -732,7 +732,7 @@ const TASK_LIBRARY = {
   w7: { id: 'w7', text: 'Call Marcus — server refresh decision due', source: 'Scheduled follow-up · Jun 19',        modal: 'opp_river_1',  custKey: 'river', taskSignal: true,
     taskBrief: 'Marcus was given until Jun 19 to decide on cloud vs on-prem for the server refresh. Today is the day to call and close the direction.',
     taskWhy: '$12,000 pipeline · Decision deadline today',
-    taskContext: { deadline: 'Jun 19 · today', value: '$12,000', options: 'Cloud vs on-prem', source: 'CGOS · Scheduled follow-up', confidence: '100% — manually scheduled' },
+    taskContext: { deadline: 'Jun 19 · today', value: '$12,000', options: 'Cloud vs on-prem', source: '360° View · Scheduled follow-up', confidence: '100% — manually scheduled' },
     oppTitle: 'Server Refresh — 3 Servers EOW' },
   w8: { id: 'w8', text: 'Peak Financial — pre-call brief review',    source: 'Scheduled · Jun 20 call at 2pm',      modal: 'audit',        custKey: 'peak',  taskSignal: true,
     taskBrief: 'You have a call with Rachel Chen on Friday at 2pm. Review the compliance audit brief and confirm all four workstreams are documented before the call.',
@@ -2430,6 +2430,8 @@ function openFeedback()  { feedbackPanel.classList.add('open');    feedbackPanel
 function closeFeedback() { feedbackPanel.classList.remove('open'); feedbackPanel.setAttribute('aria-hidden','true');  feedbackToggle.classList.remove('active'); feedbackToggle.setAttribute('aria-expanded','false'); }
 
 feedbackToggle.addEventListener('click', () => feedbackPanel.classList.contains('open') ? closeFeedback() : openFeedback());
+const feedbackToggle2 = document.getElementById('feedback-toggle-2');
+if (feedbackToggle2) feedbackToggle2.addEventListener('click', () => feedbackPanel.classList.contains('open') ? closeFeedback() : openFeedback());
 fbClose.addEventListener('click', closeFeedback);
 
 /* ── Drag-to-rank ── */
