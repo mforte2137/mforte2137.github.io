@@ -712,12 +712,6 @@ body {
 .micro-btn:hover { opacity: 0.75; transform: scale(1.15); }
 .micro-btn.voted { opacity: 1; transform: scale(1.1); }
 
-/* ── Welcome banner ── */
-.welcome-banner { display: flex; align-items: flex-start; gap: 12px; background: var(--accent-2); color: #fff; padding: 12px 16px; margin-bottom: 16px; border-radius: 8px; }
-.welcome-text   { flex: 1; font-family: 'Source Sans Pro', 'Inter', sans-serif; font-size: 13px; line-height: 1.55; color: rgba(255,255,255,0.9); }
-.welcome-text strong { font-family: 'Montserrat', 'Space Grotesk', sans-serif; font-weight: 600; color: #fff; }
-.welcome-close  { background: none; border: none; color: rgba(255,255,255,0.55); font-size: 20px; cursor: pointer; line-height: 1; padding: 0 2px; flex-shrink: 0; }
-.welcome-close:hover { color: #fff; }
 
 /* ── Nudges ── */
 .nudge { display: flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent-2); padding: 6px 10px; background: var(--accent-bg); border: 1px solid var(--accent-border); margin-bottom: 10px; border-radius: 6px; }
