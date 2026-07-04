@@ -1800,7 +1800,7 @@ body {
 .sb-feedback-btn svg { stroke: #586273; }
 
 /* Push app content below both nav bars */
-.page-layout { padding-top: 96px !important; }
+/* page-layout offset handled by JS */
 .tabs-bar { top: 96px !important; }
 .app-tabs { top: 96px !important; }
 .feedback-panel { top: 96px !important; }
