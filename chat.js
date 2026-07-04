@@ -326,20 +326,11 @@ ${conversation}`;
     // ── Step 2: Search Featurebase KB for relevant articles ───────────────
     let kbContext = '';
     try {
-      const kbRes = await fetch('/.netlify/functions/featurebase', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: coreQuestion, instructions })
-      });
-      if (kbRes.ok) {
-        const kbData = await kbRes.json();
-        const kbText = kbData.content?.[0]?.text || '';
-        // Strip any THE GAP section — we handle that separately below
-        const gapIdx = kbText.indexOf('THE GAP');
-        kbContext = gapIdx !== -1 ? kbText.slice(0, gapIdx).trim() : kbText.trim();
-      }
+      const kbText = await searchFeaturebase(coreQuestion);
+      const gapIdx = kbText.indexOf('THE GAP');
+      kbContext = gapIdx !== -1 ? kbText.slice(0, gapIdx).trim() : kbText.trim();
     } catch (_) {
-      // KB search failed silently — reply will still be drafted without it
+      // KB search failed silently — reply still drafts without it
     }
 
     // ── Step 3: Draft reply grounded in KB results ────────────────────────
@@ -449,23 +440,15 @@ document.getElementById('ticketBtn').addEventListener('click', async () => {
     // ── Step 1: Search KB to check if this is documented behaviour ────────
     let kbNote = '';
     try {
-      const kbRes = await fetch('/.netlify/functions/featurebase', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: shortDesc, instructions })
-      });
-      if (kbRes.ok) {
-        const kbData = await kbRes.json();
-        const kbText = kbData.content?.[0]?.text || '';
-        const gapIdx = kbText.indexOf('THE GAP');
-        const kbResult = gapIdx !== -1 ? kbText.slice(0, gapIdx).trim() : kbText.trim();
-        const noArticle = kbResult.toLowerCase().includes('no articles') ||
-                          kbResult.toLowerCase().includes('no published') ||
-                          kbResult.toLowerCase().includes('does not exist');
-        // Strip any trailing separator or gap section that leaked through
-        const cleanResult = kbResult.split(/\n---|\n## Documentation Gap/i)[0].trim();
-        if (!noArticle) kbNote = cleanResult;
-      }
+      const kbText   = await searchFeaturebase(shortDesc);
+      const gapIdx   = kbText.indexOf('THE GAP');
+      const kbResult = gapIdx !== -1 ? kbText.slice(0, gapIdx).trim() : kbText.trim();
+      const noArticle = kbResult.toLowerCase().includes('no articles') ||
+                        kbResult.toLowerCase().includes('no published') ||
+                        kbResult.toLowerCase().includes('does not exist') ||
+                        kbResult.toLowerCase().includes('none found');
+      const cleanResult = kbResult.split(/\n---|\n## Documentation Gap/i)[0].trim();
+      if (!noArticle) kbNote = cleanResult;
     } catch (_) {
       // KB check failed silently — ticket still drafts without it
     }
@@ -563,19 +546,49 @@ ${alsoReply ? '\nAfter the ticket, add a section clearly separated by the marker
 
 // ─── FEATUREBASE SEARCH ───────────────────────
 async function searchFeaturebase(query) {
-  const response = await fetch('/.netlify/functions/featurebase', {
+  // Step 1: fetch article list from Featurebase
+  const fbRes = await fetch('/.netlify/functions/featurebase', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, instructions })
+    body: JSON.stringify({})
   });
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.error || `Search error ${response.status}`);
+  if (!fbRes.ok) {
+    const err = await fbRes.json().catch(() => ({}));
+    throw new Error(err.error || `Featurebase error ${fbRes.status}`);
   }
 
-  const data = await response.json();
-  return data.content?.[0]?.text || '';
+  const { articles } = await fbRes.json();
+
+  if (!articles || !articles.length) {
+    return 'No articles found in the Salesbuildr knowledge base.';
+  }
+
+  // Step 2: ask Claude to match query against the article list
+  const articleList = articles
+    .map((a, i) => {
+      const desc = a.description ? ` — ${a.description}` : '';
+      return `${i + 1}. ${a.title}${desc}\n   ${a.url}`;
+    })
+    .join('\n');
+
+  const prompt = `Search the Salesbuildr knowledge base for: "${query}"
+
+ARTICLES (${articles.length} total):
+${articleList}
+
+Match the query against titles AND descriptions. Reply with:
+1. Relevant articles found (title + URL) — or "None found" if nothing matches
+2. One sentence on what each covers
+3. Whether anything in the query is NOT covered
+
+If there is a gap, end with exactly:
+THE GAP
+[plain-English description of what is missing]
+
+Only use URLs from the list. Never construct URLs.`;
+
+  return await callClaude(prompt);
 }
 
 // ─── DOCS SEARCH ──────────────────────────────
@@ -750,22 +763,13 @@ async function runKbAsk() {
 
   try {
     // Step 1: search KB for matching articles
-    const kbRes = await fetch('/.netlify/functions/featurebase', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, instructions })
-    });
-
-    if (!kbRes.ok) throw new Error('KB search failed');
-    const kbData = await kbRes.json();
-    const kbText = kbData.content?.[0]?.text || '';
-
-    // Strip gap section — KB panel just shows articles + answer
+    const kbText    = await searchFeaturebase(query);
     const gapIdx    = kbText.indexOf('THE GAP');
     const kbClean   = gapIdx !== -1 ? kbText.slice(0, gapIdx).trim() : kbText.trim();
     const noResults = kbClean.toLowerCase().includes('no articles') ||
                       kbClean.toLowerCase().includes('no published') ||
-                      kbClean.toLowerCase().includes('does not exist');
+                      kbClean.toLowerCase().includes('does not exist') ||
+                      kbClean.toLowerCase().includes('none found');
 
     // Step 2: ask Claude to give a direct answer grounded in KB results
     const answerPrompt = `You are answering a support question on behalf of Salesbuildr.
