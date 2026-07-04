@@ -39,28 +39,79 @@
             <button class="btn btn-primary" onclick="wpSaveSolution()">Save Solution</button>
         </div>
 
-        <!-- Step 3: Draft Article -->
+        <!-- Step 3: Build Jira Ticket -->
         <div class="wp-step" id="wpStep3">
-            <div class="wp-step-label">Step 3 — Draft Help Article</div>
-            <div class="wp-step-desc">Claude will write a help article based on the solution. Add any extra context before drafting.</div>
-            <div class="wp-context-label">Extra context (optional)</div>
-            <textarea class="wp-context-input" id="wpContextInput" placeholder="e.g. There is a toggle in Settings → Products to allow MPNs in name fields."></textarea>
-            <button class="btn btn-accent" onclick="wpDraftArticle()" id="wpDraftBtn">Draft Article</button>
+            <div class="wp-step-label">Step 3 — Create Jira Ticket</div>
+            <div class="wp-step-desc">Claude will polish your notes into a formatted <code style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--bg-row);padding:1px 5px;">[customer-docs]</code> Jira ticket for Skynet to action.</div>
+
+            <div class="wp-field-group">
+                <div class="wp-context-label">New or Update?</div>
+                <div class="wp-toggle-row">
+                    <button class="wp-toggle active" data-val="new" onclick="wpSetToggle(this,'wpArticleType')">New article</button>
+                    <button class="wp-toggle" data-val="update" onclick="wpSetToggle(this,'wpArticleType')">Update existing</button>
+                    <button class="wp-toggle" data-val="notsure" onclick="wpSetToggle(this,'wpArticleType')">Not sure</button>
+                </div>
+                <input type="hidden" id="wpArticleType" value="new">
+                <div id="wpExistingArticleRow" style="display:none;margin-top:8px;">
+                    <input class="wp-text-input" id="wpExistingArticle" placeholder="Article name or URL to update">
+                </div>
+            </div>
+
+            <div class="wp-field-group">
+                <div class="wp-context-label">Collection (Help Centre section)</div>
+                <select class="wp-select" id="wpCollection">
+                    <option value="">Agent, pick the best fit</option>
+                    <option value="Getting Started">Getting Started</option>
+                    <option value="Quotes">Quotes</option>
+                    <option value="Products">Products</option>
+                    <option value="Storefront">Storefront</option>
+                    <option value="Whitespace">Whitespace</option>
+                    <option value="Post-Sale">Post-Sale</option>
+                    <option value="Companies">Companies</option>
+                    <option value="Contacts">Contacts</option>
+                    <option value="Distributors">Distributors</option>
+                    <option value="Integrations">Integrations</option>
+                    <option value="Admin">Admin</option>
+                </select>
+            </div>
+
+            <div class="wp-field-group">
+                <div class="wp-context-label">Article Title <span style="font-weight:400;color:var(--text-3);">(as customers see it)</span></div>
+                <input class="wp-text-input" id="wpArticleTitle" placeholder="e.g. How to allow MPN names for synced products">
+            </div>
+
+            <div class="wp-field-group">
+                <div class="wp-context-label">Your notes <span style="font-weight:400;color:var(--text-3);">(rough bullet points — Claude polishes these)</span></div>
+                <textarea class="wp-solution-input" id="wpContextInput" placeholder="Paste the solution and any extra context here…"></textarea>
+            </div>
+
+            <div class="wp-field-group">
+                <div class="wp-context-label">Screenshots <span style="font-weight:400;color:var(--text-3);">(optional)</span></div>
+                <textarea class="wp-short-input" id="wpScreenshots" placeholder="Menu paths e.g. Settings → Integrations → Autotask&#10;Or numbered filenames: 01-autotask-flag.png"></textarea>
+            </div>
+
+            <div class="wp-field-group">
+                <div class="wp-context-label">Related articles <span style="font-weight:400;color:var(--text-3);">(optional)</span></div>
+                <input class="wp-text-input" id="wpRelatedArticles" placeholder="Article names or URLs — leave blank if none">
+            </div>
+
+            <button class="btn btn-accent" onclick="wpBuildTicket()" id="wpDraftBtn">Build Jira Ticket</button>
+
             <div class="wp-draft-area" id="wpDraftArea" style="display:none;">
-                <div class="wp-draft-label">Draft Article</div>
+                <div class="wp-draft-label">📋 Jira Ticket — ready to copy</div>
                 <textarea class="wp-draft-text" id="wpDraftText"></textarea>
-                <div style="display:flex;gap:8px;margin-top:10px;">
-                    <button class="btn btn-secondary btn-small" onclick="wpCopyDraft()">📋 Copy Article</button>
-                    <button class="btn btn-primary btn-small" onclick="wpMarkPublished()">✓ Mark as Published</button>
+                <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+                    <button class="btn btn-primary btn-small" onclick="wpCopyDraft()">📋 Copy Ticket</button>
+                    <button class="btn btn-secondary btn-small" onclick="wpMarkPublished()">✓ Ticket submitted</button>
                 </div>
             </div>
         </div>
 
-        <!-- Step 4: Published -->
+        <!-- Step 4: Ticket Submitted -->
         <div class="wp-step wp-step-published" id="wpStep4" style="display:none;">
-            <div class="wp-step-label">✓ Published</div>
-            <div class="wp-step-desc">This issue has a help article in the Featurebase KB.</div>
-            <button class="btn btn-secondary btn-small" onclick="wpRedraftArticle()">Re-draft article</button>
+            <div class="wp-step-label">✓ Ticket Submitted</div>
+            <div class="wp-step-desc">Jira ticket sent to Skynet. Article will appear in Featurebase as a draft after the next release.</div>
+            <button class="btn btn-secondary btn-small" onclick="wpRedraftArticle()">Rebuild ticket</button>
         </div>
 
     </div>
