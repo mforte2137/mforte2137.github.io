@@ -207,48 +207,13 @@
           <div class="panel-header-row">
             <div>
               <h1 class="panel-title">Docs</h1>
-              <p class="panel-subtitle">Search the KB, then build a Jira <code class="inline-code">[customer-docs]</code> ticket ready for Skynet.</p>
+              <p class="panel-subtitle">Build a Jira <code class="inline-code">[customer-docs]</code> ticket ready for Skynet. Use the KB panel on the right to check if an article already exists.</p>
             </div>
             <button class="btn-clear" id="docsClearBtn">Clear</button>
           </div>
         </div>
 
         <div class="panel-body">
-
-          <!-- Step 1: Search -->
-          <div class="docs-section-label">Step 1 — Search Documentation</div>
-          <div class="input-group">
-            <label class="field-label">Topic or question</label>
-            <input class="field-input" id="docsSearchQuery" type="text" placeholder="e.g. 'multi-currency', 'ConnectWise permissions'..." />
-          </div>
-          <div class="input-row">
-            <div></div>
-            <button class="btn-primary" id="docsSearchBtn">
-              <span class="btn-text">Search Docs</span>
-              <span class="btn-loader hidden">Searching KB...</span>
-            </button>
-          </div>
-
-          <!-- Search result -->
-          <div class="output-block hidden" id="docsSearchOutput">
-            <div class="output-header">
-              <span class="output-label">Search Results</span>
-              <div class="output-actions">
-                <button class="copy-btn" data-target="docsSearchOutputText">Copy</button>
-              </div>
-            </div>
-            <div class="output-text" id="docsSearchOutputText"></div>
-            <div class="doc-gap-block hidden" id="docsSearchGap">
-              <div class="doc-gap-header">
-                <span>Gap Detected</span>
-                <button class="copy-btn copy-btn-gap" data-target="docsSearchGapText">Copy gap</button>
-              </div>
-              <div class="doc-gap-text" id="docsSearchGapText"></div>
-            </div>
-          </div>
-
-          <!-- Step 2: Build Jira ticket -->
-          <div class="docs-section-label">Step 2 — Build Jira Ticket for Skynet</div>
 
           <div class="input-group">
             <label class="field-label">Article title <span class="field-optional">(as customers will see it)</span></label>
@@ -351,6 +316,12 @@
         <div class="kb-articles-block hidden" id="kbArticlesBlock">
           <div class="kb-articles-label">Related Articles</div>
           <div class="kb-articles-list" id="kbArticlesList"></div>
+        </div>
+
+        <div class="kb-create-ticket hidden" id="kbCreateTicket">
+          <button class="kb-create-ticket-btn" id="kbCreateTicketBtn">
+            + Create Jira ticket for this topic
+          </button>
         </div>
       </div>
     </aside>
