@@ -3239,15 +3239,6 @@ function renderPortfolioBySignal(sig) {
 /* ══════════════════════════════════════════
    WELCOME BANNER & NUDGES
    ══════════════════════════════════════════ */
-function initWelcomeBanner() {
-  const banner = document.getElementById('welcome-banner');
-  const closeBtn = document.getElementById('welcome-close');
-  if (!banner || !closeBtn) return;
-  closeBtn.addEventListener('click', () => {
-    banner.style.display = 'none';
-  });
-}
-
 function initNudges() {
   // Signal nudge
   const nudgeSignal = document.getElementById('nudge-signal');
@@ -4147,7 +4138,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initRankList();
   initMicroFeedback();
   initDocPanel();
-  initWelcomeBanner();
   initPortfolioIntel();
   initFocusMode();
   // Feedback closed by default — user opens when ready
