@@ -2297,6 +2297,8 @@ function switchView(view) {
   const pl = document.querySelector('.page-layout');
   if (pl) {
     pl.classList.toggle('briefing-active', view === 'briefing');
+    pl.classList.toggle('portfolio-active', view === 'portfolio');
+    pl.classList.toggle('team-active', view === 'team');
     // Close doc panel if leaving briefing
     if (view !== 'briefing') {
       const dp = document.getElementById('doc-panel');
