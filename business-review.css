@@ -120,6 +120,12 @@ button { font-family: inherit; }
 .picker-card-name { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 14px; }
 .picker-card-meta { font-size: 11px; color: var(--text-2); }
 .picker-card-updated { font-size: 10px; color: var(--text-3); margin-top: auto; }
+.picker-card-actions { display: flex; gap: 12px; margin-top: 6px; }
+.picker-card-action {
+  background: none; border: none; padding: 0; font-size: 10px; font-weight: 600;
+  color: var(--text-3); cursor: pointer; text-decoration: underline;
+}
+.picker-card-action:hover { color: var(--text-2); }
 .picker-card-badge {
   align-self: flex-start; font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
   text-transform: uppercase; padding: 2px 8px; border-radius: 20px;
@@ -133,8 +139,18 @@ button { font-family: inherit; }
 .picker-empty { color: var(--text-3); font-size: 13px; padding: 30px 0; }
 
 /* ── BUILDER LAYOUT ── */
-.builder-grid { display: grid; grid-template-columns: 1fr 380px; gap: 20px; align-items: start; }
-.builder-output { position: sticky; top: 78px; }
+.builder-grid { display: flex; gap: 20px; align-items: flex-start; }
+.builder-form {
+  flex: 0 0 400px; max-width: 400px; min-width: 0; overflow: hidden;
+  transition: flex-basis 0.25s ease, max-width 0.25s ease, opacity 0.2s ease, margin 0.25s ease;
+}
+.builder-grid.form-collapsed .builder-form {
+  flex-basis: 0; max-width: 0; opacity: 0; margin-right: -20px; pointer-events: none;
+}
+.builder-output { flex: 1 1 auto; min-width: 0; position: sticky; top: 78px; }
+
+.output-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.output-panel-head .panel-kicker { margin-bottom: 0; }
 
 .panel {
   background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px;
@@ -254,6 +270,10 @@ input:focus, select:focus, textarea:focus {
 .generated-actions button { flex: 1; font-size: 10px; padding: 6px 8px; }
 
 .widget-actions { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px; }
+.portability-actions { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px; }
+.portability-actions .btn-accent { display: block; width: 100%; padding: 11px 16px; margin-bottom: 6px; }
+.portability-actions .generate-hint { margin-bottom: 14px; }
+.portability-actions .output-secondary-row { margin-bottom: 4px; }
 
 /* ── MODAL ── */
 .modal-overlay {
@@ -376,7 +396,13 @@ input:focus, select:focus, textarea:focus {
 .br-stat-value { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: clamp(1.8rem, 3.6vw, 3.2rem); color: var(--theme); line-height: 1; }
 .br-stat-label { font-size: clamp(11px, 1vw, 13px); color: #586273; margin-top: 0.4em; }
 
-.br-narrative { font-size: clamp(13px, 1.35vw, 17px); color: #0b1220; line-height: 1.7; max-width: 92%; }
+.br-narrative, .br-narrative-list { font-size: clamp(16px, 1.9vw, 23px); color: #0b1220; line-height: 1.6; max-width: 94%; }
+.br-narrative-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6em; }
+.br-narrative-list li { position: relative; padding-left: 1.3em; }
+.br-narrative-list li::before {
+  content: ''; position: absolute; left: 0; top: 0.5em;
+  width: 9px; height: 9px; border-radius: 50%; background: var(--theme);
+}
 
 .br-slide-footer {
   display: flex; align-items: center; justify-content: space-between;
@@ -409,12 +435,15 @@ input:focus, select:focus, textarea:focus {
 
 /* ═══════════════════════════════════════════════════════
    PRINT — each slide becomes one full page
+   Bug fix: visibility:hidden keeps layout space, which was
+   printing the builder UI as blank pages before the deck.
+   display:none removes it from flow entirely.
    ═══════════════════════════════════════════════════════ */
 @media print {
-  body * { visibility: hidden; }
-  .br-deck-root, .br-deck-root * { visibility: visible; }
+  .topbar, #app, .modal-overlay, .loading-overlay, .toast { display: none !important; }
+  body { background: #fff !important; }
   .br-deck-root {
-    position: static; inset: auto; background: #fff !important;
+    position: static !important; inset: auto; background: #fff !important; display: block !important;
   }
   .br-nav, .br-close, .br-progress { display: none !important; }
   .br-deck { width: auto; height: auto; display: block; }
@@ -430,7 +459,8 @@ input:focus, select:focus, textarea:focus {
 
 /* ── RESPONSIVE ── */
 @media (max-width: 900px) {
-  .builder-grid { grid-template-columns: 1fr; }
+  .builder-grid { flex-direction: column; }
+  .builder-form { flex-basis: auto; max-width: none; }
   .builder-output { position: static; }
   .field-grid, .section-form-fields { grid-template-columns: 1fr; }
   .field.span-2 { grid-column: span 1; }
