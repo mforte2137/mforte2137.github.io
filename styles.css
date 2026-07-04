@@ -45,7 +45,7 @@ html { font-size: 16px; }
 html, body { margin: 0; padding: 0; }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Source Sans Pro', system-ui, -apple-system, sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.55;
@@ -58,14 +58,14 @@ a { color: var(--accent); text-decoration: none; }
 a:hover { color: var(--accent-2); }
 
 h1, h2, h3, h4 {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text);
 }
 
 p, .body-text, .description {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 14px;
   color: var(--text-2);
   line-height: 1.6;
@@ -122,7 +122,7 @@ p, .body-text, .description {
 .brand-mark.small svg { width: 12px; height: 12px; }
 
 .brand-text {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -131,10 +131,11 @@ p, .body-text, .description {
 
 .header-sub {
   margin: 0;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 11px;
   color: var(--text-3);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 /* =========================================================
@@ -164,7 +165,7 @@ p, .body-text, .description {
 #search {
   width: 100%;
   padding: 8px 36px 8px 36px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 13px;
   color: var(--text);
   background: var(--bg);
@@ -215,9 +216,9 @@ p, .body-text, .description {
   align-items: center;
   gap: 7px;
   padding: 13px 16px 11px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-3);
   background: none;
   border: none;
@@ -240,9 +241,9 @@ p, .body-text, .description {
   justify-content: center;
   min-width: 18px;
   padding: 1px 5px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
   border-radius: 20px;
   background: var(--bg-row);
   color: var(--text-3);
@@ -268,7 +269,7 @@ p, .body-text, .description {
 
 .result-count {
   margin: 0;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -380,7 +381,7 @@ p, .body-text, .description {
 
 /* Badge — aligned to design system */
 .card-badge {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -397,7 +398,7 @@ p, .body-text, .description {
 .badge-empty { visibility: hidden; }
 
 .card-title {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 14px;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -407,7 +408,7 @@ p, .body-text, .description {
 }
 
 .card-desc {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 13px;
   color: var(--text-2);
   margin: 0;
@@ -432,9 +433,9 @@ p, .body-text, .description {
 }
 
 .card-tag {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-3);
@@ -444,9 +445,9 @@ p, .body-text, .description {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--accent);
   letter-spacing: 0.02em;
 }
@@ -476,13 +477,13 @@ p, .body-text, .description {
 }
 .footer-text {
   margin: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 13px;
   color: var(--text-2);
 }
 .footer-meta {
   margin: 0;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 11px;
   color: var(--text-3);
 }
@@ -504,7 +505,7 @@ p, .body-text, .description {
    Feedback button (header)
    ========================================================= */
 .feedback-trigger {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Montserrat', sans-serif;
   font-size: 11px;
   font-weight: 600;
   padding: 6px 14px;
@@ -567,7 +568,7 @@ p, .body-text, .description {
   flex-shrink: 0;
 }
 .feedback-panel-title {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -608,7 +609,7 @@ p, .body-text, .description {
   gap: 7px;
 }
 .feedback-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -617,7 +618,7 @@ p, .body-text, .description {
 }
 
 .feedback-select {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 13px;
   padding: 8px 10px;
   border: 1px solid var(--border-2);
@@ -640,7 +641,7 @@ p, .body-text, .description {
   gap: 6px;
 }
 .fb-chip {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -660,7 +661,7 @@ p, .body-text, .description {
 }
 
 .feedback-textarea {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 13px;
   padding: 9px 10px;
   border: 1px solid var(--border-2);
@@ -679,7 +680,7 @@ p, .body-text, .description {
 .feedback-textarea::placeholder { color: var(--text-3); }
 
 .feedback-submit {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Montserrat', sans-serif;
   font-size: 12px;
   font-weight: 600;
   padding: 10px 20px;
@@ -697,7 +698,7 @@ p, .body-text, .description {
 
 .feedback-status {
   margin: 0;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 11px;
   padding: 8px 12px;
   border-radius: 0;
@@ -728,7 +729,7 @@ p, .body-text, .description {
 }
 
 .security-trigger {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -783,7 +784,7 @@ p, .body-text, .description {
 }
 
 .modal-kicker {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -793,7 +794,7 @@ p, .body-text, .description {
 }
 
 .modal-title {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 16px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -823,7 +824,7 @@ p, .body-text, .description {
 }
 
 .modal-lead {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 14px;
   font-weight: 500;
   color: var(--text);
@@ -835,7 +836,7 @@ p, .body-text, .description {
 }
 
 .modal-section-title {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 13px;
   font-weight: 700;
   color: var(--text);
@@ -844,7 +845,7 @@ p, .body-text, .description {
 }
 
 .modal-body p {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 13px;
   color: var(--text-2);
   line-height: 1.6;
@@ -855,7 +856,7 @@ p, .body-text, .description {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 11px;
   font-weight: 600;
   color: var(--accent);
@@ -882,7 +883,7 @@ p, .body-text, .description {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Montserrat', sans-serif;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -917,7 +918,7 @@ p, .body-text, .description {
 
 .ai-textarea {
   flex: 1;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 13px;
   padding: 9px 10px;
   border: 1px solid var(--border-2);
@@ -938,7 +939,7 @@ p, .body-text, .description {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Montserrat', sans-serif;
   font-size: 11px;
   font-weight: 600;
   padding: 9px 14px;
@@ -997,7 +998,7 @@ p, .body-text, .description {
 }
 
 .ai-tool-name {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 13px;
   font-weight: 700;
   color: var(--text);
@@ -1005,7 +1006,7 @@ p, .body-text, .description {
 }
 
 .ai-tool-reason {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 13px;
   color: var(--text-2);
   line-height: 1.5;
@@ -1015,7 +1016,7 @@ p, .body-text, .description {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 11px;
   font-weight: 600;
   color: var(--accent);
@@ -1025,7 +1026,7 @@ p, .body-text, .description {
 .ai-tool-link:hover { color: var(--accent-2); }
 
 .ai-no-match {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 13px;
   color: var(--text-2);
   line-height: 1.6;
@@ -1033,7 +1034,7 @@ p, .body-text, .description {
 
 /* Footer note */
 .ai-footer-note {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 12px;
   color: var(--text-3);
   margin: 0;
@@ -1067,7 +1068,7 @@ p, .body-text, .description {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -1101,7 +1102,7 @@ p, .body-text, .description {
 }
 
 .tool-detail-desc {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 13px;
   color: var(--text-2);
   line-height: 1.6;
@@ -1127,7 +1128,7 @@ p, .body-text, .description {
 .tool-detail-row:last-child { border-bottom: none; }
 
 .tool-detail-row-label {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -1141,7 +1142,7 @@ p, .body-text, .description {
 }
 
 .tool-detail-row-value {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 13px;
   color: var(--text-2);
   line-height: 1.5;
@@ -1162,7 +1163,7 @@ p, .body-text, .description {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Montserrat', sans-serif;
   font-size: 12px;
   font-weight: 700;
   padding: 8px 16px;
@@ -1175,7 +1176,7 @@ p, .body-text, .description {
 .tool-detail-open:hover { opacity: 0.85; color: var(--bg); }
 
 .tool-detail-feedback {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 11px;
   font-weight: 600;
   padding: 8px 14px;
@@ -1192,7 +1193,7 @@ p, .body-text, .description {
    AI reset button
    ========================================================= */
 .ai-reset-btn {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 11px;
   font-weight: 600;
   padding: 7px 14px;
@@ -1217,13 +1218,13 @@ p, .body-text, .description {
   border-top: 1px solid var(--border);
 }
 .feedback-optional-hint {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 12px;
   color: var(--text-3);
   line-height: 1.4;
 }
 .feedback-input {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   font-size: 13px;
   padding: 8px 10px;
   border: 1px solid var(--border-2);
