@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Business Review Builder — Salesbuildr</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="business-review.css">
+</head>
+<body>
+
+<!-- ══════════════════ APP CHROME ══════════════════ -->
+<header class="topbar">
+  <div class="topbar-left">
+    <span class="topbar-kicker">Salesbuildr · Proposal</span>
+    <h1 class="topbar-title">Business Review Builder</h1>
+  </div>
+  <div class="topbar-right">
+    <span class="save-indicator" id="saveIndicator">Saved</span>
+    <button class="btn-secondary" id="btnNewReview">+ New Review</button>
+    <button class="btn-secondary" id="btnAllReviews">All Reviews</button>
+  </div>
+</header>
+
+<main id="app">
+
+  <!-- ══════════════════ SESSION PICKER ══════════════════ -->
+  <section id="viewPicker" class="view">
+    <div class="picker-head">
+      <h2>Your reviews</h2>
+      <p>Resume a review in progress, or start a new one. Up to 5 active reviews at a time.</p>
+    </div>
+    <div class="picker-grid" id="pickerGrid"></div>
+  </section>
+
+  <!-- ══════════════════ BUILDER ══════════════════ -->
+  <section id="viewBuilder" class="view" hidden>
+
+    <div class="builder-grid">
+      <!-- LEFT: FORM -->
+      <div class="builder-form">
+
+        <div class="panel">
+          <div class="panel-kicker">Client &amp; branding</div>
+          <div class="field-grid">
+            <label class="field">
+              <span>Client name</span>
+              <input type="text" id="fClientName" placeholder="Riverside Medical">
+            </label>
+            <label class="field">
+              <span>Review period</span>
+              <select id="fReviewPeriod"></select>
+            </label>
+            <label class="field">
+              <span>Review type</span>
+              <select id="fReviewType"></select>
+            </label>
+            <label class="field">
+              <span>MSP name</span>
+              <input type="text" id="fMspName" placeholder="Your company name">
+            </label>
+            <label class="field">
+              <span>Industry</span>
+              <select id="fIndustry"></select>
+            </label>
+            <label class="field">
+              <span>Logo</span>
+              <div class="logo-upload">
+                <input type="file" id="fLogo" accept=".png,.jpg,.jpeg,.svg">
+                <img id="logoPreview" class="logo-preview" hidden alt="Logo preview">
+                <button class="btn-secondary btn-tiny" id="btnRemoveLogo" hidden type="button">Remove</button>
+              </div>
+            </label>
+          </div>
+
+          <div class="field-block">
+            <span class="field-label">Colour theme</span>
+            <div class="theme-row" id="themeRow"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-kicker">Sections</div>
+          <p class="panel-note">Toggle on only what's relevant to this meeting. Title / Cover is always included.</p>
+          <div class="section-cards" id="sectionCards"></div>
+        </div>
+
+        <div id="sectionForms"></div>
+
+      </div>
+
+      <!-- RIGHT: OUTPUT -->
+      <div class="builder-output">
+        <div class="panel output-panel">
+          <div class="panel-kicker">Output</div>
+
+          <button class="btn-generate" id="btnGenerate">✦ Generate Business Review</button>
+          <div class="generate-hint">AI writes the narrative for every active section at once. You can edit anything after.</div>
+
+          <div id="outputEmpty" class="output-empty">
+            Fill in the sections you need, then generate. Your review will appear here — editable, presentable, and pushable to Salesbuildr.
+          </div>
+
+          <div id="outputContent" hidden>
+            <button class="btn-present" id="btnPresent">▶ Present</button>
+            <div class="output-secondary-row">
+              <button class="btn-secondary" id="btnPrint">Print / Save as PDF</button>
+              <button class="btn-secondary" id="btnRegenerateAll">Regenerate All</button>
+            </div>
+
+            <div id="generatedSections"></div>
+
+            <div class="widget-actions">
+              <div class="panel-kicker">Salesbuildr widgets</div>
+              <div class="output-secondary-row">
+                <button class="btn-secondary" id="btnCopyAll">Copy HTML (all)</button>
+                <button class="btn-accent" id="btnPushPack">Push as Pack</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ══════════════════ SALESBUILDR CREDENTIALS MODAL ══════════════════ -->
+<div class="modal-overlay" id="credModal" hidden>
+  <div class="modal">
+    <h3>Connect to Salesbuildr</h3>
+    <p>Enter your Salesbuildr API key and tenant URL to push widgets. This is stored locally in your browser and reused across tools.</p>
+    <label class="field">
+      <span>API key</span>
+      <input type="text" id="credApiKey" placeholder="sb_live_...">
+    </label>
+    <label class="field">
+      <span>Tenant URL</span>
+      <input type="text" id="credTenantUrl" placeholder="https://acme.salesbuildr.com">
+    </label>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="credCancel">Cancel</button>
+      <button class="btn-accent" id="credSave">Save &amp; Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ LOADING OVERLAY ══════════════════ -->
+<div class="loading-overlay" id="loadingOverlay" hidden>
+  <div class="loading-box">
+    <div class="loading-dots"><span></span><span></span><span></span></div>
+    <div id="loadingText">Building your business review…</div>
+  </div>
+</div>
+
+<!-- ══════════════════ TOAST ══════════════════ -->
+<div class="toast" id="toast" hidden></div>
+
+<!-- ══════════════════ PRESENTATION DECK (fullscreen + print) ══════════════════ -->
+<div id="brDeckRoot" class="br-deck-root" hidden>
+  <div id="brProgress" class="br-progress"></div>
+  <button class="br-nav br-nav-prev hidden" id="brPrev">&#8592;</button>
+  <button class="br-nav br-nav-next" id="brNext">&#8594;</button>
+  <button class="br-close" id="brClose">✕</button>
+  <div id="brDeck" class="br-deck"></div>
+</div>
+
+<script src="business-review.js"></script>
+</body>
+</html>
