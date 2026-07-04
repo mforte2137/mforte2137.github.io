@@ -680,3 +680,91 @@ h1, h2, h3, h4 {
     :root { --panel-width: 100vw; }
     .controls { flex-direction: column; align-items: stretch; }
 }
+
+/* ── Step 3: Jira ticket builder ── */
+.wp-field-group {
+    margin-bottom: 14px;
+}
+
+.wp-toggle-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.wp-toggle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border: 1px solid var(--border-2);
+    background: var(--bg);
+    color: var(--text-2);
+    cursor: pointer;
+    border-radius: 0;
+    transition: all 0.15s;
+}
+.wp-toggle:hover { background: var(--bg-row); }
+.wp-toggle.active {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+}
+
+.wp-text-input {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--border-2);
+    border-radius: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    box-sizing: border-box;
+    margin-top: 6px;
+}
+.wp-text-input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.wp-select {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--border-2);
+    border-radius: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    box-sizing: border-box;
+    margin-top: 6px;
+    cursor: pointer;
+}
+.wp-select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.wp-short-input {
+    width: 100%;
+    min-height: 60px;
+    max-height: 100px;
+    resize: vertical;
+    padding: 7px 10px;
+    border: 1px solid var(--border-2);
+    border-radius: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    box-sizing: border-box;
+    margin-top: 6px;
+}
+.wp-short-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Make ticket output monospace for easy reading */
+#wpDraftText {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    min-height: 300px;
+}
