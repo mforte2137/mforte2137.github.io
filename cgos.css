@@ -89,6 +89,7 @@ body {
   background: var(--bg-panel); padding: 0 20px;
   border-bottom: 1px solid rgba(11,18,32,0.1);
   position: fixed; top: 92px; left: 0; right: 0; z-index: 150;
+  height: 44px;
 }
 .view-tab {
   display: flex; align-items: center; gap: 7px;
@@ -109,7 +110,7 @@ body {
 .view-tab:not(.active) svg { stroke: var(--text-3); }
 
 /* ── Page layout ── */
-.page-layout { display: flex; align-items: flex-start; min-height: calc(100vh - 136px); padding-top: 136px !important; }
+.page-layout { display: flex; align-items: flex-start; min-height: calc(100vh - 136px); padding-top: 140px !important; }
 .app-main    { flex: 1; min-width: 0; padding: 18px 20px 48px; }
 
 /* ── Customer bar ── */
