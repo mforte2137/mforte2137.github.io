@@ -4134,6 +4134,9 @@ function initFocusMode() {
    ══════════════════════════════════════════ */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Fix layout offset for Salesbuildr nav (topbar 48 + subnav 44 + tabs 44 = 136px)
+  const pl = document.querySelector('.page-layout');
+  if (pl) pl.style.paddingTop = '136px';
   WORK_TODAY.customers = buildDayCustomers(TODAY_KEY);
   initRankList();
   initMicroFeedback();
