@@ -703,7 +703,11 @@ async function generateReview(regenerateOnly) {
     return;
   }
 
-  setLoading(true, 'Building your business review…');
+  const isSingleSection = regenerateOnly && regenerateOnly.length === 1;
+  const loadingMessage = isSingleSection
+    ? `Regenerating ${SECTION_TITLES[regenerateOnly[0]] || 'section'}…`
+    : 'Building your business review…';
+  setLoading(true, loadingMessage);
   try {
     const payload = {
       clientName: s.clientName,
