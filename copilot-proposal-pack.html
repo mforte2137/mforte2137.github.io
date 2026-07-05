@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Copilot Proposal Widget Pack — Salesbuildr</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="copilot-proposal-pack.css" />
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ Header ============ -->
+  <header class="app-header">
+    <div class="app-header-inner">
+      <div class="app-title-group">
+        <span class="app-kicker">AI TOOLS</span>
+        <h1 class="app-title">Copilot Proposal Widget Pack</h1>
+        <p class="app-subtitle">Sell Microsoft 365 Copilot in plain English — what it does, what it means for the team, and why the data is safe. No hype, no jargon.</p>
+      </div>
+      <a class="hub-link" href="index.html">← Back to Hub</a>
+    </div>
+  </header>
+
+  <div class="app-body">
+
+    <!-- ============ Form column ============ -->
+    <section class="form-col">
+
+      <!-- Recommended-readiness callout -->
+      <div class="callout-info" id="recommendedCallout" hidden>
+        We recommend completing an AI Readiness Assessment before deploying Copilot.
+        <a href="ai-readiness-pack.html">Use the AI Readiness Proposal Pack</a> to propose that service first.
+      </div>
+
+      <!-- Section toggles -->
+      <div class="panel">
+        <h2 class="panel-title">Sections to Include</h2>
+        <p class="panel-hint">Toggle which widgets get generated. You can regenerate any section individually afterwards.</p>
+
+        <div class="section-toggle-grid" id="sectionToggleGrid"><!-- injected --></div>
+
+        <div class="optional-toggle-row">
+          <label class="optional-toggle">
+            <input type="checkbox" id="includeTierMatrix" />
+            <span class="optional-toggle-box"></span>
+            <span class="optional-toggle-text">
+              <strong>Include Copilot Tier Comparison</strong>
+              <small>Compares Copilot Business / Business Standard + Copilot / Business Premium + Copilot side by side. No pricing — add SKU line items in Salesbuildr separately.</small>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Client details -->
+      <div class="panel">
+        <h2 class="panel-title">Client Details</h2>
+
+        <div class="field">
+          <label for="clientName">Client Name</label>
+          <input type="text" id="clientName" placeholder="e.g. Parkside Accounting Group" />
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="industry">Industry</label>
+            <select id="industry">
+              <option value="">Select industry…</option>
+              <option>Healthcare</option>
+              <option>Legal</option>
+              <option>Accounting & Finance</option>
+              <option>Education</option>
+              <option>Government & Municipalities</option>
+              <option>Manufacturing</option>
+              <option>Construction</option>
+              <option>Real Estate</option>
+              <option>Non-Profit</option>
+              <option>Insurance</option>
+              <option>Engineering & Architecture</option>
+              <option>Professional Services</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="companySize">Company Size</label>
+            <select id="companySize">
+              <option value="">Select size…</option>
+              <option value="1-10">1–10</option>
+              <option value="11-50">11–50</option>
+              <option value="51-200">51–200</option>
+              <option value="201-500">201–500</option>
+              <option value="500+">500+</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="copilotSku">Copilot SKU Being Proposed</label>
+          <select id="copilotSku">
+            <option value="">Select SKU…</option>
+            <option value="M365 Copilot Business">M365 Copilot Business (standalone add-on)</option>
+            <option value="M365 Business Standard + Copilot Business">M365 Business Standard + Copilot Business</option>
+            <option value="M365 Business Premium + Copilot Business">M365 Business Premium + Copilot Business</option>
+            <option value="M365 Copilot (enterprise)">M365 Copilot (Enterprise — E3/E5 base)</option>
+            <option value="Not yet decided">Not yet decided / exploring options</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="readinessStatus">Readiness Status</label>
+          <select id="readinessStatus">
+            <option value="">Select status…</option>
+            <option value="completed">Readiness completed</option>
+            <option value="in-progress">Readiness in progress</option>
+            <option value="recommended">Readiness recommended as first step</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="mspName">Your MSP Name</label>
+          <input type="text" id="mspName" placeholder="e.g. Acme IT Solutions" />
+        </div>
+      </div>
+
+      <!-- Colour theme -->
+      <div class="panel">
+        <h2 class="panel-title">Colour Theme</h2>
+        <div class="swatch-row" id="colourSwatches">
+          <button type="button" class="swatch active" data-hex="#0f1f3d" style="background:#0f1f3d" title="Navy"></button>
+          <button type="button" class="swatch" data-hex="#2E74DC" style="background:#2E74DC" title="Blue"></button>
+          <button type="button" class="swatch" data-hex="#475569" style="background:#475569" title="Slate"></button>
+          <button type="button" class="swatch" data-hex="#065f46" style="background:#065f46" title="Emerald"></button>
+          <button type="button" class="swatch" data-hex="#0f766e" style="background:#0f766e" title="Teal"></button>
+          <button type="button" class="swatch" data-hex="#991B1B" style="background:#991B1B" title="Crimson"></button>
+          <button type="button" class="swatch" data-hex="#92400e" style="background:#92400e" title="Amber"></button>
+          <button type="button" class="swatch" data-hex="#1a1a1a" style="background:#1a1a1a" title="Charcoal"></button>
+        </div>
+        <div class="hex-row">
+          <span class="hex-prefix">#</span>
+          <input type="text" id="customHex" maxlength="6" placeholder="0f1f3d" />
+          <span class="hex-preview" id="hexPreview" style="background:#0f1f3d"></span>
+        </div>
+      </div>
+
+      <div class="form-error" id="formError" hidden></div>
+
+      <button class="btn-accent btn-generate" id="generateBtn">Generate Copilot Proposal</button>
+
+    </section>
+
+    <!-- ============ Output column ============ -->
+    <section class="output-col">
+
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">✓</div>
+        <h3>Your Copilot widgets will appear here</h3>
+        <p>Fill in the client details, choose your sections, and generate.</p>
+      </div>
+
+      <div class="loading-state" id="loadingState" hidden>
+        <div class="loading-dots"><span></span><span></span><span></span></div>
+        <p id="loadingMsg">Building your Copilot proposal…</p>
+      </div>
+
+      <div class="output-area" id="outputArea" hidden>
+
+        <div class="output-toolbar">
+          <h2 id="deliveryTitle">Copilot Proposal</h2>
+          <button class="btn-secondary btn-sm" id="regenerateAllBtn">↺ Regenerate All</button>
+        </div>
+
+        <div id="widgetList"><!-- injected widget cards --></div>
+
+        <!-- Delivery -->
+        <div class="delivery-panel">
+          <h3 class="delivery-title">Deliver</h3>
+          <div class="delivery-actions">
+            <button class="btn-secondary" id="copyAllBtn">Copy All HTML</button>
+            <button class="btn-secondary" id="pushIndividualBtn">Push Individually</button>
+            <button class="btn-accent" id="pushPackBtn">Push as Pack</button>
+          </div>
+
+          <div class="creds-inline" id="credsInline" hidden>
+            <p>Enter your Salesbuildr connection details to push:</p>
+            <input type="password" id="pushApiKey" placeholder="Salesbuildr API key" autocomplete="off" />
+            <input type="text" id="pushTenantUrl" placeholder="https://yourtenant.salesbuildr.com" />
+            <button class="btn-accent btn-sm" id="saveAndPushBtn">Save & Push</button>
+          </div>
+
+          <div class="push-status" id="pushStatus" hidden></div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </div>
+</div>
+
+<script src="copilot-proposal-pack.js"></script>
+</body>
+</html>
