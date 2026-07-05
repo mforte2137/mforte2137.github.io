@@ -173,6 +173,10 @@ function splitStat(str) {
   return { value: '', label: s };
 }
 
+function isStatLike(str) {
+  return !!splitStat(str).value;
+}
+
 function getSlideChips(key, data) {
   if (!data) return [];
   switch (key) {
@@ -974,6 +978,83 @@ function buildWidgetHtml(key, session) {
       <h5 style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;color:#0b1220;font-size:15px;">${escapeHtml(data.headline || 'For Your Consideration')}</h5>
       <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
       ${rows}
+    </div>`;
+  }
+
+  // Pilot redesign — theme-colored header band, short numeric stats kept
+  // separate from longer descriptive highlights (which read badly crammed
+  // into multi-column table cells), semantic risk badge, and a callout for
+  // outstanding risk pulled from the raw form input (the AI schema doesn't
+  // return it). Other sections still use the original layout below until
+  // this pattern is confirmed to survive a real Salesbuildr test.
+  if (key === 'securityPosture') {
+    const allHighlights = getSlideChips(key, data);
+    const statItems = allHighlights.filter(isStatLike).slice(0, 3);
+    const checklistItems = allHighlights.filter(h => !isStatLike(h));
+
+    const riskPalette = {
+      low: { bg: '#DCFCE7', fg: '#15a05a' },
+      medium: { bg: '#FEF3C7', fg: '#b3760a' },
+      'medium-high': { bg: '#FEF3C7', fg: '#b3760a' },
+      high: { bg: '#FEE2E2', fg: '#d8402e' }
+    };
+    const riskColor = riskPalette[(data.riskLevel || '').toLowerCase()] || riskPalette.medium;
+
+    const statCellsHtml = statItems.map(s => {
+      const { value, label } = splitStat(s);
+      return `<td width="${Math.floor(100 / statItems.length)}%" bgcolor="#FFFFFF" style="text-align:center;padding:8px 4px;vertical-align:top;">
+        <div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:700;color:${theme};">${escapeHtml(value)}</div>
+        <div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#586273;margin-top:2px;">${escapeHtml(label)}</div>
+      </td>`;
+    }).join('');
+    const statsRowHtml = statCellsHtml
+      ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;"><tr>${statCellsHtml}</tr></table>`
+      : '';
+
+    // One full-width row per checklist item (icon cell + text cell) rather
+    // than several items squeezed side by side — long phrases get the
+    // whole row's width instead of a cramped fraction of it.
+    const checklistHtml = checklistItems.map(item => `
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:6px;"><tr>
+        <td width="24" valign="top" style="padding:2px 0;">
+          <table cellpadding="0" cellspacing="0"><tr><td bgcolor="#DCFCE7" style="background:#DCFCE7;width:18px;height:18px;border-radius:50%;text-align:center;line-height:18px;">
+            <span style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#15a05a;">&#10003;</span>
+          </td></tr></table>
+        </td>
+        <td valign="top" style="padding:2px 0 2px 8px;">
+          <span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;">${escapeHtml(item)}</span>
+        </td>
+      </tr></table>`).join('');
+
+    const outstandingRisks = session.sections && session.sections.securityPosture &&
+      session.sections.securityPosture.inputs && session.sections.securityPosture.inputs.outstandingRisks;
+    const calloutHtml = outstandingRisks ? `
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;"><tr>
+        <td bgcolor="#FEF3C7" style="background:#FEF3C7;border-radius:8px;padding:10px 14px;">
+          <span style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#854f0b;"><strong>Outstanding:</strong> ${escapeHtml(outstandingRisks)}</span>
+        </td>
+      </tr></table>` : '';
+
+    return `<div style="width:100%;border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;">
+      <table width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td bgcolor="${theme}" style="background:${theme};padding:16px 18px;">
+          <table width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td style="font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.04em;color:#ffffff;">Security posture update</td>
+            <td align="right">
+              <table cellpadding="0" cellspacing="0"><tr><td bgcolor="${riskColor.bg}" style="background:${riskColor.bg};border-radius:20px;padding:3px 10px;">
+                <span style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;color:${riskColor.fg};">${escapeHtml(data.riskLevel || 'Unknown')} risk</span>
+              </td></tr></table>
+            </td>
+          </tr></table>
+          <h5 style="margin:8px 0 0 0;font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:16px;">${escapeHtml(data.headline || SECTION_TITLES.securityPosture)}</h5>
+        </td>
+      </tr></table>
+      <div style="padding:16px 18px;background:#FFFFFF;">
+        ${statsRowHtml}
+        ${checklistItems.length ? `<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#0b1220;margin-bottom:4px;">This quarter</div>${checklistHtml}` : ''}
+        <p style="margin:${checklistItems.length ? '10px' : '8px'} 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
+        ${calloutHtml}
+      </div>
     </div>`;
   }
 
