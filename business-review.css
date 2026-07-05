@@ -275,10 +275,6 @@ input:focus, select:focus, textarea:focus {
 .generated-section textarea.narrative-edit {
   font-size: 12.5px; min-height: 70px; background: #fff;
 }
-.generated-stats-row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
-.generated-stat { flex: 1; min-width: 70px; text-align: center; background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 6px 4px; }
-.generated-stat-val { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 15px; color: var(--theme); }
-.generated-stat-label { font-size: 9px; color: var(--text-2); }
 .generated-actions { display: flex; gap: 6px; margin-top: 8px; }
 .generated-actions button { flex: 1; font-size: 10px; padding: 6px 8px; }
 
