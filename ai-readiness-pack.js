@@ -256,9 +256,18 @@
     return `<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${hex};margin-bottom:6px;">${escHtml(text)}</div>`;
   }
 
-  function widgetShell(kicker, title, subtitle, bodyHtml, hex, footerNote) {
+  // Darken a hex colour by mixing it toward black, so the gradient anchor
+  // always relates to the chosen theme colour instead of a fixed navy.
+  function darken(hex, amount) {
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+    const dr = Math.round(r * (1 - amount)), dg = Math.round(g * (1 - amount)), db = Math.round(b * (1 - amount));
+    return '#' + [dr, dg, db].map(v => v.toString(16).padStart(2, '0')).join('');
+  }
+
+  function widgetShell(kicker, title, subtitle, bodyHtml, hex) {
+    const gradientStart = darken(hex, 0.55);
     return `<div style="background:${HEX.panel};border:1px solid ${HEX.border};border-top:3px solid ${hex};overflow:hidden;font-family:Arial,Helvetica,sans-serif;width:100%;">
-  <div style="background:linear-gradient(135deg, ${HEX.gradientStart} 0%, ${hex} 100%);background-image:linear-gradient(135deg, ${HEX.gradientStart} 0%, ${hex} 100%), radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);background-size:auto, 14px 14px;padding:16px 18px 14px;">
+  <div style="background:linear-gradient(135deg, ${gradientStart} 0%, ${hex} 100%);background-image:linear-gradient(135deg, ${gradientStart} 0%, ${hex} 100%), radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);background-size:auto, 14px 14px;padding:16px 18px 14px;">
     <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.65);margin-bottom:4px;">${escHtml(kicker)}</div>
     <h5 style="margin:0;font-size:16px;font-weight:700;color:#ffffff;letter-spacing:-0.01em;">${escHtml(title)}</h5>
     ${subtitle ? `<div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:3px;">${escHtml(subtitle)}</div>` : ''}
@@ -266,13 +275,8 @@
   <div style="padding:16px 18px;">
     ${bodyHtml}
   </div>
-  <div style="background:${HEX.row};border-top:1px solid ${HEX.border};padding:8px 18px;">
-    <span style="font-size:10.5px;color:${HEX.muted};">${escHtml(footerNote)}</span>
-  </div>
 </div>`;
   }
-
-  const FOOTER_NOTE = 'Add your AI Readiness service line items in Salesbuildr from your services catalog.';
 
   function buildSectionWidget(key, d, hex, form) {
     if (key === 'whyMatters') {
@@ -281,7 +285,7 @@
         d.headline || 'Before Your Team Uses AI, Your Environment Needs to Be Ready',
         form.clientName,
         `<p style="margin:0;font-size:13px;color:${HEX.text2};line-height:1.65;">${escHtml(d.body || '')}</p>`,
-        hex, FOOTER_NOTE
+        hex
       );
     }
 
@@ -297,7 +301,7 @@
         d.headline || 'What Our AI Readiness Service Includes',
         form.clientName,
         `<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid ${HEX.border};"><tr>${cells}</tr></table>`,
-        hex, FOOTER_NOTE
+        hex
       );
     }
 
@@ -314,7 +318,7 @@
         d.headline || 'What You Receive at the End',
         form.clientName,
         `<div>${pills}</div>${handoff}`,
-        hex, FOOTER_NOTE
+        hex
       );
     }
 
@@ -329,7 +333,7 @@
         d.headline || "What We've Seen Happen Without a Readiness Check",
         form.clientName,
         `<div>${rows}</div>`,
-        hex, FOOTER_NOTE
+        hex
       );
     }
 
@@ -342,7 +346,7 @@
          <div style="margin-top:14px;">
            <span style="display:inline-block;background:${hex};color:#fff;font-size:11px;font-weight:700;padding:8px 18px;border-radius:4px;">Ready when you are →</span>
          </div>`,
-        hex, FOOTER_NOTE
+        hex
       );
     }
 
@@ -374,7 +378,7 @@
          <tr>${headerCells}</tr>
          ${featureRows}
        </table>`,
-      hex, FOOTER_NOTE
+      hex
     );
   }
 
@@ -400,14 +404,12 @@
           <span class="wname">${escHtml(widgetTitle)}</span>
           <div class="wactions">
             <button class="btn-secondary btn-sm widget-regen" data-key="${key}">↺ Regenerate</button>
-            <button class="btn-secondary btn-sm widget-toggle-html" data-key="${key}">Show HTML</button>
             <button class="btn-secondary btn-sm widget-copy" data-key="${key}">Copy HTML</button>
             <button class="btn-accent btn-sm widget-push" data-key="${key}" data-title="${escHtml(widgetTitle)}">Push Widget</button>
           </div>
         </div>
         <div class="widget-card-body">
           <div class="widget-preview" data-key="${key}" contenteditable="true">${widgets[key]}</div>
-          <textarea class="widget-html-editor" data-key="${key}"></textarea>
         </div>`;
       widgetList.appendChild(card);
 
@@ -420,8 +422,6 @@
     // Bind per-card actions
     widgetList.querySelectorAll('.widget-regen').forEach(btn =>
       btn.addEventListener('click', () => regenSection(btn.dataset.key)));
-    widgetList.querySelectorAll('.widget-toggle-html').forEach(btn =>
-      btn.addEventListener('click', () => onToggleHtml(btn.dataset.key)));
     widgetList.querySelectorAll('.widget-copy').forEach(btn =>
       btn.addEventListener('click', () => onCopyWidget(btn.dataset.key)));
     widgetList.querySelectorAll('.widget-push').forEach(btn =>
@@ -432,18 +432,6 @@
     const card = widgetList.querySelector(`.widget-card[data-key="${key}"]`);
     if (!card) return;
     card.querySelector('.widget-preview').innerHTML = widgets[key];
-    const editor = card.querySelector('.widget-html-editor');
-    if (editor.style.display === 'block') editor.value = widgets[key];
-  }
-
-  function onToggleHtml(key) {
-    const card = widgetList.querySelector(`.widget-card[data-key="${key}"]`);
-    const editor = card.querySelector('.widget-html-editor');
-    const btn = card.querySelector('.widget-toggle-html');
-    const shown = editor.style.display === 'block';
-    if (!shown) editor.value = widgets[key];
-    editor.style.display = shown ? 'none' : 'block';
-    btn.textContent = shown ? 'Show HTML' : 'Hide HTML';
   }
 
   function onCopyWidget(key) {
