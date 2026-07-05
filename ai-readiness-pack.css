@@ -180,23 +180,23 @@ h1, h2, h3, h4 {
   margin-top: 2px;
 }
 
-.tier-toggle-row { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-2); }
-.tier-toggle { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
-.tier-toggle input { display: none; }
-.tier-toggle-box {
+.maturity-toggle-row { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-2); }
+.maturity-toggle { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+.maturity-toggle input { display: none; }
+.maturity-toggle-box {
   width: 18px; height: 18px; flex: none; margin-top: 1px;
   border: 1px solid var(--border-2); border-radius: 4px; background: var(--bg-panel);
   position: relative;
 }
-.tier-toggle input:checked + .tier-toggle-box {
+.maturity-toggle input:checked + .maturity-toggle-box {
   background: var(--accent); border-color: var(--accent);
 }
-.tier-toggle input:checked + .tier-toggle-box::after {
+.maturity-toggle input:checked + .maturity-toggle-box::after {
   content: ''; position: absolute; left: 5px; top: 1px;
   width: 5px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg);
 }
-.tier-toggle-text strong { display: block; font-family: 'Montserrat', sans-serif; font-size: 12.5px; }
-.tier-toggle-text small { display: block; font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.maturity-toggle-text strong { display: block; font-family: 'Montserrat', sans-serif; font-size: 12.5px; }
+.maturity-toggle-text small { display: block; font-size: 11px; color: var(--text-3); margin-top: 2px; }
 
 /* ── Fields ───────────────────────────────────────── */
 .field { margin-bottom: 12px; }
