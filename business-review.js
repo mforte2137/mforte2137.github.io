@@ -776,45 +776,54 @@ function buildGeneratedSectionEl(sec, data) {
     <div class="generated-section-head">
       <span class="generated-section-title">${escapeHtml(sec.title)}${sec.widgetOnly ? ' · widget only' : ''}</span>
     </div>
-    <input type="text" class="headline-edit" value="${escapeHtml(data.headline || '')}" data-field="headline">
-    <textarea class="narrative-edit" data-field="narrative">${escapeHtml(data.narrative || '')}</textarea>
 
-    <div class="widget-preview-label">Widget preview</div>
+    <div class="widget-preview-hint">Click the headline or paragraph below to edit them directly.</div>
     <div class="widget-preview-surface"></div>
-    <textarea class="widget-html-source" readonly hidden></textarea>
 
     <div class="generated-actions">
       <button class="btn-secondary regen-btn">Regenerate</button>
-      <button class="btn-secondary html-toggle-btn">Show HTML</button>
       <button class="btn-secondary copy-btn">Copy widget HTML</button>
       <button class="btn-accent push-btn">Push widget</button>
     </div>
   `;
 
   const previewSurface = $('.widget-preview-surface', el);
-  const htmlSource = $('.widget-html-source', el);
 
-  function refreshPreview() {
-    const html = buildWidgetHtml(sec.key, state.current);
-    // Direct innerHTML injection, same as the Technology Roadmap tool —
-    // the widget HTML is fully inline-styled already, so it renders
-    // correctly sitting right in the page without needing an iframe.
+  function renderPreview() {
+    // The preview copy is rendered with contenteditable fields baked in —
+    // editing happens directly on the styled widget, so there's only ever
+    // one representation of the content on screen. Copy/Push always pull
+    // a fresh, clean (non-editable) build separately, so no editing
+    // artifacts ever leak into what actually goes to Salesbuildr. Raw HTML
+    // is intentionally never shown in the UI — sales users don't need it,
+    // and the widget is directly editable inside Salesbuildr regardless.
+    const html = buildWidgetHtml(sec.key, state.current, { editable: true });
     previewSurface.innerHTML = html || '<div class="widget-preview-empty">Nothing generated yet.</div>';
-    htmlSource.value = html;
   }
 
-  $('.headline-edit', el).addEventListener('input', e => { data.headline = e.target.value; scheduleSave(); refreshPreview(); });
-  $('.narrative-edit', el).addEventListener('input', e => { data.narrative = e.target.value; scheduleSave(); refreshPreview(); });
-  $('.regen-btn', el).addEventListener('click', () => generateReview([sec.key]));
-  $('.html-toggle-btn', el).addEventListener('click', e => {
-    const willShow = htmlSource.hidden;
-    htmlSource.hidden = !willShow;
-    e.target.textContent = willShow ? 'Hide HTML' : 'Show HTML';
+  // Live-update the underlying data as the person types, without
+  // re-rendering the preview (which would blow away cursor position).
+  previewSurface.addEventListener('input', e => {
+    const field = e.target.dataset && e.target.dataset.field;
+    if (!field) return;
+    data[field] = e.target.textContent;
+    scheduleSave();
   });
+
+  // On leaving a field, trim whitespace.
+  previewSurface.addEventListener('focusout', e => {
+    const field = e.target.dataset && e.target.dataset.field;
+    if (!field) return;
+    data[field] = e.target.textContent.trim();
+    e.target.textContent = data[field];
+    scheduleSave();
+  });
+
+  $('.regen-btn', el).addEventListener('click', () => generateReview([sec.key]));
   $('.copy-btn', el).addEventListener('click', () => copyWidgetHtml(sec.key));
   $('.push-btn', el).addEventListener('click', () => pushWidgets([sec.key]));
 
-  refreshPreview();
+  renderPreview();
 
   return el;
 }
@@ -975,16 +984,24 @@ window.addEventListener('afterprint', () => {
    survives more reliably.
    ───────────────────────────────────────────────────────── */
 
-function widgetHeaderBand(theme, kicker, headline, badgeHtml) {
+function widgetHeaderBand(theme, kicker, headline, badgeHtml, opts) {
+  opts = opts || {};
+  const editAttrs = opts.editable ? ' contenteditable="true" data-field="headline" spellcheck="false"' : '';
   return `<table width="100%" cellpadding="0" cellspacing="0"><tr>
     <td bgcolor="${theme}" style="background:${theme};padding:16px 18px;">
       <table width="100%" cellpadding="0" cellspacing="0"><tr>
         <td style="font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.04em;color:#ffffff;">${escapeHtml(kicker)}</td>
         ${badgeHtml ? `<td align="right">${badgeHtml}</td>` : ''}
       </tr></table>
-      <h5 style="margin:8px 0 0 0;font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:16px;">${escapeHtml(headline)}</h5>
+      <h5${editAttrs} style="margin:8px 0 0 0;font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:16px;outline:none;">${escapeHtml(headline)}</h5>
     </td>
   </tr></table>`;
+}
+
+function widgetNarrativeP(text, opts, margin) {
+  opts = opts || {};
+  const editAttrs = opts.editable ? ' contenteditable="true" data-field="narrative" spellcheck="false"' : '';
+  return `<p${editAttrs} style="margin:${margin || '8px 0 0 0'};font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;outline:none;">${escapeHtml(text || '')}</p>`;
 }
 
 function widgetPillBadge(text, bg, fg) {
@@ -1065,7 +1082,8 @@ const URGENCY_PALETTE = {
   low: { bg: '#DCFCE7', fg: '#15a05a' }
 };
 
-function buildWidgetHtml(key, session) {
+function buildWidgetHtml(key, session, opts) {
+  opts = opts || {};
   const data = session.generated && session.generated[key];
   if (!data) return '';
   const theme = session.colorTheme || '#2E74DC';
@@ -1075,11 +1093,11 @@ function buildWidgetHtml(key, session) {
     const all = getSlideChips(key, data);
     const statItems = all.filter(isStatLike).slice(0, 3);
     const listItems = all.filter(s => !isStatLike(s));
-    const header = widgetHeaderBand(theme, 'Period in review', data.headline || SECTION_TITLES.periodInReview, null);
+    const header = widgetHeaderBand(theme, 'Period in review', data.headline || SECTION_TITLES.periodInReview, null, opts);
     const body = widgetBody(`
       ${widgetStatsRow(statItems, theme)}
       ${listItems.length ? `<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#0b1220;margin-bottom:4px;">Highlights</div>${widgetListRows(listItems)}` : ''}
-      <p style="margin:${listItems.length ? '10px' : '8px'} 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
+      ${widgetNarrativeP(data.narrative, opts, listItems.length ? '10px 0 0 0' : '8px 0 0 0')}
     `);
     return widgetCardWrap(header + body);
   }
@@ -1090,7 +1108,7 @@ function buildWidgetHtml(key, session) {
     const listItems = all.filter(h => !isStatLike(h));
     const riskColor = RISK_PALETTE[(data.riskLevel || '').toLowerCase()] || RISK_PALETTE.medium;
     const badge = widgetPillBadge(`${data.riskLevel || 'Unknown'} risk`, riskColor.bg, riskColor.fg);
-    const header = widgetHeaderBand(theme, 'Security posture update', data.headline || SECTION_TITLES.securityPosture, badge);
+    const header = widgetHeaderBand(theme, 'Security posture update', data.headline || SECTION_TITLES.securityPosture, badge, opts);
 
     const outstandingRisks = rawInputs.outstandingRisks;
     const callout = outstandingRisks
@@ -1100,7 +1118,7 @@ function buildWidgetHtml(key, session) {
     const body = widgetBody(`
       ${widgetStatsRow(statItems, theme)}
       ${listItems.length ? `<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#0b1220;margin-bottom:4px;">This quarter</div>${widgetListRows(listItems)}` : ''}
-      <p style="margin:${listItems.length ? '10px' : '8px'} 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
+      ${widgetNarrativeP(data.narrative, opts, listItems.length ? '10px 0 0 0' : '8px 0 0 0')}
       ${callout}
     `);
     return widgetCardWrap(header + body);
@@ -1110,11 +1128,11 @@ function buildWidgetHtml(key, session) {
     const all = getSlideChips(key, data);
     const statItems = all.filter(isStatLike).slice(0, 3);
     const listItems = all.filter(w => !isStatLike(w));
-    const header = widgetHeaderBand(theme, 'What we delivered', data.headline || SECTION_TITLES.whatWeDelivered, null);
+    const header = widgetHeaderBand(theme, 'What we delivered', data.headline || SECTION_TITLES.whatWeDelivered, null, opts);
     const body = widgetBody(`
       ${widgetStatsRow(statItems, theme)}
       ${listItems.length ? widgetListRows(listItems) : ''}
-      <p style="margin:${listItems.length ? '10px' : '0'} 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
+      ${widgetNarrativeP(data.narrative, opts, listItems.length ? '10px 0 0 0' : '0')}
     `);
     return widgetCardWrap(header + body);
   }
@@ -1125,18 +1143,18 @@ function buildWidgetHtml(key, session) {
     const listItems = all.filter(a => !isStatLike(a));
     const ratingColor = RATING_PALETTE[(data.rating || '').toLowerCase()] || RATING_PALETTE.fair;
     const badge = data.rating ? widgetPillBadge(data.rating, ratingColor.bg, ratingColor.fg) : null;
-    const header = widgetHeaderBand(theme, 'Technology health', data.headline || SECTION_TITLES.technologyHealth, badge);
+    const header = widgetHeaderBand(theme, 'Technology health', data.headline || SECTION_TITLES.technologyHealth, badge, opts);
     const body = widgetBody(`
       ${widgetStatsRow(statItems, theme)}
       ${listItems.length ? `<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#0b1220;margin-bottom:4px;">Flagged this quarter</div>${widgetListRows(listItems, { bg: '#FEF3C7', fg: '#b3760a', mark: '!' })}` : ''}
-      <p style="margin:${listItems.length ? '10px' : '8px'} 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
+      ${widgetNarrativeP(data.narrative, opts, listItems.length ? '10px 0 0 0' : '8px 0 0 0')}
     `);
     return widgetCardWrap(header + body);
   }
 
   if (key === 'lookingAhead') {
     const priorities = getSlideChips(key, data);
-    const header = widgetHeaderBand(theme, 'Looking ahead', data.headline || SECTION_TITLES.lookingAhead, null);
+    const header = widgetHeaderBand(theme, 'Looking ahead', data.headline || SECTION_TITLES.lookingAhead, null, opts);
     const numberedRows = priorities.map((p, i) => `
       <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:6px;"><tr>
         <td width="24" valign="top" style="padding:2px 0;">
@@ -1150,13 +1168,13 @@ function buildWidgetHtml(key, session) {
       </tr></table>`).join('');
     const body = widgetBody(`
       ${numberedRows}
-      <p style="margin:${priorities.length ? '10px' : '0'} 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
+      ${widgetNarrativeP(data.narrative, opts, priorities.length ? '10px 0 0 0' : '0')}
     `);
     return widgetCardWrap(header + body);
   }
 
   if (key === 'investmentSummary') {
-    const header = widgetHeaderBand(theme, 'Investment summary', data.headline || SECTION_TITLES.investmentSummary, null);
+    const header = widgetHeaderBand(theme, 'Investment summary', data.headline || SECTION_TITLES.investmentSummary, null, opts);
     let comparison = '';
     if (rawInputs.currentMonthlyInvestment || rawInputs.proposedNextPeriod) {
       comparison = `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;"><tr>
@@ -1172,7 +1190,7 @@ function buildWidgetHtml(key, session) {
     }
     const body = widgetBody(`
       ${comparison}
-      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
+      ${widgetNarrativeP(data.narrative, opts, '0')}
     `);
     return widgetCardWrap(header + body);
   }
@@ -1189,9 +1207,9 @@ function buildWidgetHtml(key, session) {
         ${r.urgency ? `<td valign="top" align="right" style="white-space:nowrap;">${widgetPillBadge(r.urgency, uc.bg, uc.fg)}</td>` : ''}
       </tr></table>`;
     }).join('');
-    const header = widgetHeaderBand(theme, 'Recommended services', data.headline || 'For your consideration', null);
+    const header = widgetHeaderBand(theme, 'Recommended services', data.headline || 'For your consideration', null, opts);
     const body = widgetBody(`
-      <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
+      ${widgetNarrativeP(data.narrative, opts, '0 0 4px 0')}
       ${rows}
     `);
     return widgetCardWrap(header + body);
@@ -1200,8 +1218,8 @@ function buildWidgetHtml(key, session) {
   // Fallback — shouldn't be reached since every section key above is
   // handled explicitly, but keeps the function safe if a new section key
   // is ever added without a matching branch.
-  return widgetCardWrap(widgetHeaderBand(theme, SECTION_TITLES[key] || key, data.headline || '', null) +
-    widgetBody(`<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>`));
+  return widgetCardWrap(widgetHeaderBand(theme, SECTION_TITLES[key] || key, data.headline || '', null, opts) +
+    widgetBody(widgetNarrativeP(data.narrative, opts, '0')));
 }
 
 function widgetTitle(key, session) {
