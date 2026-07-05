@@ -46,6 +46,18 @@ const TOOLS = [
     icon: "checklist"
   },
   {
+    title: "Business Review Builder",
+    shortLabel: "Review Builder",
+    description:
+      "Build a professional client business review in minutes. Produces three outputs: a full-screen web presentation for in-person meetings, a PDF for email follow-up, and Salesbuildr widgets for a combined QBR + proposal — ideal for smaller accounts where face-to-face isn't possible.",
+    category: "Proposal",
+    url: "https://widgetcreator.netlify.app/business-review.html",
+    badge: "new",
+    updated: "2026-07-05",
+    gradient: "sapphire",
+    icon: "chart"
+  },
+  {
     title: "Proposal Defence Kit",
     shortLabel: "Defence Kit",
     description:
@@ -469,6 +481,7 @@ const GRADIENTS = {
   pine:    "linear-gradient(135deg, #052e16 0%, #15803d 55%, #4ade80 100%)",
   dusk:    "linear-gradient(135deg, #2e1065 0%, #6d28d9 55%, #a78bfa 100%)",
   steel:   "linear-gradient(135deg, #0f172a 0%, #334155 55%, #94a3b8 100%)",
+  sapphire:"linear-gradient(135deg, #1e1b4b 0%, #1d4ed8 55%, #60a5fa 100%)",
   mint:    "linear-gradient(135deg, #022c22 0%, #059669 55%, #6ee7b7 100%)",
   cyan:    "linear-gradient(135deg, #164e63 0%, #0891b2 55%, #67e8f9 100%)",
   forest:  "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #86efac 100%)",
@@ -1030,6 +1043,13 @@ Your data stays with you. Files are read locally in the browser and never transm
 
   // KB lookup — maps tool title to structured detail
   const KB_DETAIL = {
+    "Business Review Builder": {
+      who:   "MSP account managers, vCIOs, or owners preparing for a client business review — quarterly, annual, or any structured client conversation.",
+      input: "Client name, review period, logo upload, colour theme, industry, and guided fields for each active section: support stats, security posture, key wins, technology health, roadmap priorities, investment summary, and recommended services. Eight toggleable sections.",
+      out:   "Three outputs: (1) A full-screen web-based slideshow for in-person meetings — open in browser, present full-screen, navigate with arrow keys. (2) A PDF via browser print for emailing as a follow-up or to smaller clients. (3) Salesbuildr widgets pushed individually or as a pack — combine with recommended services for a QBR + proposal sent to accounts where face-to-face meetings aren't possible.",
+      when:  "Preparing for a quarterly or annual client business review. Sending a professional review remotely to smaller accounts via Salesbuildr. Wanting to combine a business review with an upsell proposal in one Salesbuildr quote.",
+      not:   "Not a PSA or RMM integration — data is entered manually. Not a replacement for Project Reports, which handles in-flight project status updates by email."
+    },
     "Proposal Defence Kit": {
       who:   "MSP sales reps dealing with a stalled or rejected proposal — where a prospect has raised pricing concerns, mentioned a competitor, flagged objections, or gone quiet.",
       input: "Prospect name, industry, your offering description, situation (declined / competitor mentioned / objections raised). Activate modules as needed: Competitor Comparison, Pricing Justification, Objection & FAQ (preset or custom objections).",
