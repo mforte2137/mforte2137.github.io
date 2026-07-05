@@ -24,12 +24,26 @@
     { key: 'withoutIt', label: 'What Happens Without It', widgetName: 'What Happens Without It', hint: 'The cost of skipping — calm and factual, not a threat.', defaultOn: true },
     { key: 'nextStep', label: 'Your Next Step', widgetName: 'Next Steps', hint: 'Clear call to action for starting the engagement.', defaultOn: false },
   ];
-  const TIER_KEY = 'tierMatrix';
+  const MATURITY_KEY = 'maturityMatrix';
+
+  // Fixed, generic readiness-maturity content — not AI-generated and not client-specific.
+  // This is the factual "what unready vs ready looks like" reference across the three
+  // pillars already used elsewhere in the pack. No guessing, no editing friction.
+  const MATURITY_DEFAULT = {
+    headline: 'Where does your environment stand today?',
+    rows: [
+      { label: 'Identity & Access', notReady: 'Over-permissioned, no MFA', partial: 'Reviewed, some gaps remain', full: 'Least-privilege, MFA enforced' },
+      { label: 'Data Governance', notReady: 'No labels, no DLP policies', partial: 'Partial classification in place', full: 'Fully labeled, DLP active' },
+      { label: 'Security Baseline', notReady: 'Ad hoc controls, no baseline', partial: 'Baseline defined, rollout underway', full: 'Conditional access, device compliance' }
+    ],
+    disclaimer: 'Educational reference — not an assessment of this environment.'
+  };
+  function cloneMaturityDefault() { return JSON.parse(JSON.stringify(MATURITY_DEFAULT)); }
 
   // ── State ──────────────────────────────────────────
   let currentThemeHex = '#0f1f3d';
   let activeSections  = new Set(SECTIONS.filter(s => s.defaultOn).map(s => s.key));
-  let includeTierMatrix = false;
+  let includeMaturityMatrix = false;
   let widgets   = {};   // key -> clean exportable html string (source of truth for copy/push)
   let rawData   = {};   // key -> raw AI/editable data object (source of truth for rebuilds)
   let lastPayload = null;
@@ -52,7 +66,7 @@
   const pushTenantUrl    = $('pushTenantUrl');
   const saveAndPushBtn   = $('saveAndPushBtn');
   const pushStatus       = $('pushStatus');
-  const includeTierMatrixEl = $('includeTierMatrix');
+  const includeMaturityMatrixEl = $('includeMaturityMatrix');
 
   // ── Init ───────────────────────────────────────────
   function init() {
@@ -88,8 +102,8 @@
     });
   }
 
-  includeTierMatrixEl.addEventListener('change', () => {
-    includeTierMatrix = includeTierMatrixEl.checked;
+  includeMaturityMatrixEl.addEventListener('change', () => {
+    includeMaturityMatrix = includeMaturityMatrixEl.checked;
   });
 
   // ── Colour theme ─────────────────────────────────────
@@ -169,8 +183,7 @@
       companySize: data.companySize,
       copilotSku: data.copilotSku,
       mspName: data.mspName,
-      activeSections: [...activeSections],
-      includeTierMatrix
+      activeSections: [...activeSections]
     };
     lastPayload = payload;
 
@@ -191,9 +204,9 @@
           widgets[sec.key] = buildSectionWidget(sec.key, rawData[sec.key], currentThemeHex, data);
         }
       });
-      if (includeTierMatrix && json.data[TIER_KEY]) {
-        rawData[TIER_KEY] = json.data[TIER_KEY];
-        widgets[TIER_KEY] = buildTierMatrixWidget(rawData[TIER_KEY], currentThemeHex, data);
+      if (includeMaturityMatrix) {
+        rawData[MATURITY_KEY] = cloneMaturityDefault();
+        widgets[MATURITY_KEY] = buildMaturityMatrixWidget(rawData[MATURITY_KEY], currentThemeHex, data);
       }
 
       renderWidgetList(data);
@@ -214,6 +227,14 @@
 
   // ── Regenerate single section ────────────────────────
   async function regenSection(key) {
+    // Maturity matrix is fixed, generic content — "regenerate" just resets any edits.
+    if (key === MATURITY_KEY) {
+      rawData[key] = cloneMaturityDefault();
+      widgets[key] = buildMaturityMatrixWidget(rawData[key], currentThemeHex, getFormData());
+      updateWidgetCard(key);
+      return;
+    }
+
     if (!lastPayload) return;
     const btn = document.querySelector(`.widget-regen[data-key="${key}"]`);
     if (btn) { btn.disabled = true; btn.textContent = '…'; }
@@ -228,13 +249,8 @@
       if (!json.ok) throw new Error(json.error || 'Regeneration failed.');
 
       const data = getFormData();
-      if (key === TIER_KEY) {
-        rawData[key] = json.data[key];
-        widgets[key] = buildTierMatrixWidget(rawData[key], currentThemeHex, data);
-      } else {
-        rawData[key] = json.data[key];
-        widgets[key] = buildSectionWidget(key, rawData[key], currentThemeHex, data);
-      }
+      rawData[key] = json.data[key];
+      widgets[key] = buildSectionWidget(key, rawData[key], currentThemeHex, data);
       updateWidgetCard(key);
     } catch (e) {
       alert('Regeneration failed: ' + e.message);
@@ -247,8 +263,8 @@
     if (Object.keys(rawData).length === 0) return; // nothing generated yet
     const form = getFormData();
     Object.keys(rawData).forEach(key => {
-      widgets[key] = (key === TIER_KEY)
-        ? buildTierMatrixWidget(rawData[key], currentThemeHex, form)
+      widgets[key] = (key === MATURITY_KEY)
+        ? buildMaturityMatrixWidget(rawData[key], currentThemeHex, form)
         : buildSectionWidget(key, rawData[key], currentThemeHex, form);
       updateWidgetCard(key);
     });
@@ -390,45 +406,49 @@
     return '';
   }
 
-  function buildTierMatrixWidget(d, hex, form) {
-    const tiers = (d.tiers || []).slice(0, 3);
-    const colWidth = Math.floor(100 / Math.max(tiers.length, 1));
-    const headerCells = tiers.map((t, i) => `
-      <td width="${colWidth}%" style="padding:10px 8px;text-align:center;border-right:1px solid ${HEX.border};background:${t.recommended ? hex : HEX.row};">
-        ${t.recommended ? `<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#fff;margin-bottom:2px;">Recommended</div>` : ''}
-        <div data-editable-id="tiers.${i}.name" style="font-size:13px;font-weight:700;color:${t.recommended ? '#fff' : HEX.text};">${escHtml(t.name || '')}</div>
-        <div data-editable-id="tiers.${i}.price" style="font-size:11px;color:${t.recommended ? 'rgba(255,255,255,0.8)' : HEX.text2};margin-top:2px;min-height:14px;">${escHtml(t.price || '')}</div>
-      </td>`).join('');
+  function buildMaturityMatrixWidget(d, hex, form) {
+    const rows = (d.rows || []).map((r, i) => {
+      const isLast = i === (d.rows.length - 1);
+      const bb = isLast ? '' : `border-bottom:1px solid ${HEX.border};`;
+      return `<tr>
+        <td style="padding:10px;background:${HEX.row};border-right:1px solid ${HEX.border};${bb}font-size:11.5px;font-weight:700;color:${HEX.text};vertical-align:top;" data-editable-id="rows.${i}.label">${escHtml(r.label || '')}</td>
+        <td style="padding:10px;border-right:1px solid ${HEX.border};${bb}font-size:11px;color:${HEX.text2};line-height:1.5;vertical-align:top;"><span style="color:#791f1f;">&#10005;</span> <span data-editable-id="rows.${i}.notReady">${escHtml(r.notReady || '')}</span></td>
+        <td style="padding:10px;border-right:1px solid ${HEX.border};${bb}font-size:11px;color:${HEX.text2};line-height:1.5;vertical-align:top;"><span style="color:#633806;">&#9680;</span> <span data-editable-id="rows.${i}.partial">${escHtml(r.partial || '')}</span></td>
+        <td style="padding:10px;${bb}font-size:11px;color:${HEX.text2};line-height:1.5;vertical-align:top;"><span style="color:#085041;">&#10003;</span> <span data-editable-id="rows.${i}.full">${escHtml(r.full || '')}</span></td>
+      </tr>`;
+    }).join('');
 
-    const maxFeatures = Math.max(0, ...tiers.map(t => (t.features || []).length));
-    let featureRows = '';
-    for (let i = 0; i < maxFeatures; i++) {
-      featureRows += `<tr>${tiers.map((t, ti) => `
-        <td data-editable-id="tiers.${ti}.features.${i}" style="padding:8px;border-right:1px solid ${HEX.border};border-top:1px solid ${HEX.border};text-align:center;font-size:11.5px;color:${HEX.text2};">${escHtml((t.features || [])[i] || '')}</td>`).join('')}</tr>`;
-    }
+    const table = `<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid ${HEX.border};">
+      <tr>
+        <td style="width:22%;padding:8px 10px;background:${HEX.row};border-right:1px solid ${HEX.border};border-bottom:1px solid ${HEX.border};"></td>
+        <td style="width:26%;padding:8px 10px;text-align:center;background:#fee2e2;border-right:1px solid ${HEX.border};border-bottom:1px solid ${HEX.border};font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#791f1f;">Not ready</td>
+        <td style="width:26%;padding:8px 10px;text-align:center;background:#fef3c7;border-right:1px solid ${HEX.border};border-bottom:1px solid ${HEX.border};font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#633806;">Partially ready</td>
+        <td style="width:26%;padding:8px 10px;text-align:center;background:#dcfce7;border-bottom:1px solid ${HEX.border};font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#085041;">Fully ready</td>
+      </tr>
+      ${rows}
+    </table>
+    <div style="margin-top:12px;padding:9px 12px;background:${HEX.row};border-left:3px solid ${hex};border-radius:4px;">
+      <span data-editable-id="disclaimer" style="font-size:11px;color:${HEX.text2};font-style:italic;">${escHtml(d.disclaimer || '')}</span>
+    </div>`;
 
     return widgetShell(
-      'AI Readiness — Service Tiers',
-      d.headline || 'Choose Your Readiness Package',
+      'AI Readiness — Maturity Check',
+      d.headline || 'Where does your environment stand today?',
       form.clientName,
-      `<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid ${HEX.border};">
-         <tr>${headerCells}</tr>
-
-         ${featureRows}
-       </table>`,
+      table,
       hex
     );
   }
 
   // ── Render widget list ────────────────────────────────
   function widgetMeta(key) {
-    if (key === TIER_KEY) return { widgetName: 'Service Tiers' };
+    if (key === MATURITY_KEY) return { widgetName: 'Readiness Maturity' };
     return SECTIONS.find(s => s.key === key) || { widgetName: key };
   }
 
   function renderWidgetList(form) {
     widgetList.innerHTML = '';
-    const order = [...SECTIONS.map(s => s.key), TIER_KEY];
+    const order = [...SECTIONS.map(s => s.key), MATURITY_KEY];
     order.forEach(key => {
       if (!widgets[key]) return;
       const meta = widgetMeta(key);
@@ -536,7 +556,7 @@
   async function executePush(type, apiKey, tenantUrl) {
     const form = getFormData();
     const prefix = `${form.clientName} — AI Readiness`;
-    const order = [...SECTIONS.map(s => s.key), TIER_KEY].filter(k => widgets[k]);
+    const order = [...SECTIONS.map(s => s.key), MATURITY_KEY].filter(k => widgets[k]);
 
     const body = type === 'pack'
       ? { widgets: [{ type: 'html', content: order.map(k => widgets[k]).join('\n\n'), title: `${prefix} — Full Pack` }], prefix, apiKey, tenantUrl }
