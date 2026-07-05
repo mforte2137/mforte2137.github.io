@@ -973,137 +973,243 @@ window.addEventListener('afterprint', () => {
 
 /* ─────────────────────────────────────────────────────────
    11. WIDGETS — TinyMCE/Salesbuildr-safe HTML
+
+   Shared building blocks used by every section's widget, so
+   the modern look confirmed on Security Posture stays
+   consistent everywhere rather than drifting per section.
+   All colour fills use bgcolor + inline style redundantly —
+   TinyMCE/PDF export has been seen stripping inline
+   "background" alone on spans, bgcolor on a table cell
+   survives more reliably.
    ───────────────────────────────────────────────────────── */
 
-function widgetBadgeHtml(text, bg, fg) {
-  // TinyMCE / PDF export sometimes strips inline "background" styles on
-  // spans. The bgcolor attribute on a table cell is an older, more widely
-  // honoured way to guarantee the fill colour survives export.
-  return `<table cellpadding="0" cellspacing="0" style="margin-bottom:6px;"><tr><td bgcolor="${bg}" style="background:${bg};border-radius:20px;padding:3px 12px;">
-    <span style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:${fg};">${escapeHtml(text)}</span>
+function widgetHeaderBand(theme, kicker, headline, badgeHtml) {
+  return `<table width="100%" cellpadding="0" cellspacing="0"><tr>
+    <td bgcolor="${theme}" style="background:${theme};padding:16px 18px;">
+      <table width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td style="font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.04em;color:#ffffff;">${escapeHtml(kicker)}</td>
+        ${badgeHtml ? `<td align="right">${badgeHtml}</td>` : ''}
+      </tr></table>
+      <h5 style="margin:8px 0 0 0;font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:16px;">${escapeHtml(headline)}</h5>
+    </td>
+  </tr></table>`;
+}
+
+function widgetPillBadge(text, bg, fg) {
+  return `<table cellpadding="0" cellspacing="0"><tr><td bgcolor="${bg}" style="background:${bg};border-radius:20px;padding:3px 10px;">
+    <span style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;color:${fg};">${escapeHtml(text)}</span>
   </td></tr></table>`;
 }
+
+function widgetStatsRow(items, theme) {
+  if (!items.length) return '';
+  const cells = items.map(s => {
+    const { value, label } = splitStat(s);
+    return `<td width="${Math.floor(100 / items.length)}%" bgcolor="#FFFFFF" style="text-align:center;padding:8px 4px;vertical-align:top;">
+      <div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:700;color:${theme};">${escapeHtml(value)}</div>
+      <div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#586273;margin-top:2px;">${escapeHtml(label)}</div>
+    </td>`;
+  }).join('');
+  return `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;"><tr>${cells}</tr></table>`;
+}
+
+// One full-width row per item (icon cell + text cell) rather than several
+// items squeezed side by side in one row — long phrases get the whole
+// row's width instead of a cramped fraction of it.
+function widgetListRows(items, opts) {
+  opts = opts || {};
+  const bg = opts.bg || '#DCFCE7';
+  const fg = opts.fg || '#15a05a';
+  const mark = opts.mark || '&#10003;';
+  return items.map(item => `
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:6px;"><tr>
+      <td width="24" valign="top" style="padding:2px 0;">
+        <table cellpadding="0" cellspacing="0"><tr><td bgcolor="${bg}" style="background:${bg};width:18px;height:18px;border-radius:50%;text-align:center;line-height:18px;">
+          <span style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;color:${fg};">${mark}</span>
+        </td></tr></table>
+      </td>
+      <td valign="top" style="padding:2px 0 2px 8px;">
+        <span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;">${escapeHtml(item)}</span>
+      </td>
+    </tr></table>`).join('');
+}
+
+function widgetCalloutBox(innerHtml, bg, fg) {
+  return `<table width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;"><tr>
+    <td bgcolor="${bg}" style="background:${bg};border-radius:8px;padding:10px 14px;">
+      <span style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:${fg};">${innerHtml}</span>
+    </td>
+  </tr></table>`;
+}
+
+function widgetBody(innerHtml) {
+  return `<div style="padding:16px 18px;background:#FFFFFF;">${innerHtml}</div>`;
+}
+
+function widgetCardWrap(innerHtml) {
+  return `<div style="width:100%;border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;">${innerHtml}</div>`;
+}
+
+const RISK_PALETTE = {
+  low: { bg: '#DCFCE7', fg: '#15a05a' },
+  medium: { bg: '#FEF3C7', fg: '#b3760a' },
+  'medium-high': { bg: '#FEF3C7', fg: '#b3760a' },
+  high: { bg: '#FEE2E2', fg: '#d8402e' }
+};
+const RATING_PALETTE = {
+  excellent: { bg: '#DCFCE7', fg: '#15a05a' },
+  good: { bg: '#DCFCE7', fg: '#15a05a' },
+  fair: { bg: '#FEF3C7', fg: '#b3760a' },
+  'action required': { bg: '#FEE2E2', fg: '#d8402e' }
+};
+const URGENCY_PALETTE = {
+  'critical — action required': { bg: '#FEE2E2', fg: '#d8402e' },
+  critical: { bg: '#FEE2E2', fg: '#d8402e' },
+  high: { bg: '#FEE2E2', fg: '#d8402e' },
+  'recommended this quarter': { bg: '#FEF3C7', fg: '#b3760a' },
+  recommended: { bg: '#FEF3C7', fg: '#b3760a' },
+  medium: { bg: '#FEF3C7', fg: '#b3760a' },
+  'for your consideration': { bg: '#DCFCE7', fg: '#15a05a' },
+  low: { bg: '#DCFCE7', fg: '#15a05a' }
+};
 
 function buildWidgetHtml(key, session) {
   const data = session.generated && session.generated[key];
   if (!data) return '';
   const theme = session.colorTheme || '#2E74DC';
+  const rawInputs = (session.sections && session.sections[key] && session.sections[key].inputs) || {};
 
-  if (key === 'recommendedServices') {
-    const recs = data.recommendations || [];
-    const rows = recs.map(r => `
-      <div style="padding:8px 0;border-bottom:1px solid #E5E7EB;">
-        <span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#0b1220;">${escapeHtml(r.name || '')}</span>
-        ${r.urgency ? `<span style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:${theme};margin-left:8px;">${escapeHtml(r.urgency)}</span>` : ''}
-        <div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#586273;margin-top:2px;">${escapeHtml(r.reason || '')}</div>
-      </div>`).join('');
-    return `<div style="width:100%;background:#FFFFFF;border:1px solid #E5E7EB;padding:16px 18px;">
-      <h5 style="margin:0 0 6px 0;font-family:Arial,Helvetica,sans-serif;color:#0b1220;font-size:15px;">${escapeHtml(data.headline || 'For Your Consideration')}</h5>
-      <p style="margin:0 0 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
-      ${rows}
-    </div>`;
+  if (key === 'periodInReview') {
+    const all = getSlideChips(key, data);
+    const statItems = all.filter(isStatLike).slice(0, 3);
+    const listItems = all.filter(s => !isStatLike(s));
+    const header = widgetHeaderBand(theme, 'Period in review', data.headline || SECTION_TITLES.periodInReview, null);
+    const body = widgetBody(`
+      ${widgetStatsRow(statItems, theme)}
+      ${listItems.length ? `<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#0b1220;margin-bottom:4px;">Highlights</div>${widgetListRows(listItems)}` : ''}
+      <p style="margin:${listItems.length ? '10px' : '8px'} 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
+    `);
+    return widgetCardWrap(header + body);
   }
 
-  // Pilot redesign — theme-colored header band, short numeric stats kept
-  // separate from longer descriptive highlights (which read badly crammed
-  // into multi-column table cells), semantic risk badge, and a callout for
-  // outstanding risk pulled from the raw form input (the AI schema doesn't
-  // return it). Other sections still use the original layout below until
-  // this pattern is confirmed to survive a real Salesbuildr test.
   if (key === 'securityPosture') {
-    const allHighlights = getSlideChips(key, data);
-    const statItems = allHighlights.filter(isStatLike).slice(0, 3);
-    const checklistItems = allHighlights.filter(h => !isStatLike(h));
+    const all = getSlideChips(key, data);
+    const statItems = all.filter(isStatLike).slice(0, 3);
+    const listItems = all.filter(h => !isStatLike(h));
+    const riskColor = RISK_PALETTE[(data.riskLevel || '').toLowerCase()] || RISK_PALETTE.medium;
+    const badge = widgetPillBadge(`${data.riskLevel || 'Unknown'} risk`, riskColor.bg, riskColor.fg);
+    const header = widgetHeaderBand(theme, 'Security posture update', data.headline || SECTION_TITLES.securityPosture, badge);
 
-    const riskPalette = {
-      low: { bg: '#DCFCE7', fg: '#15a05a' },
-      medium: { bg: '#FEF3C7', fg: '#b3760a' },
-      'medium-high': { bg: '#FEF3C7', fg: '#b3760a' },
-      high: { bg: '#FEE2E2', fg: '#d8402e' }
-    };
-    const riskColor = riskPalette[(data.riskLevel || '').toLowerCase()] || riskPalette.medium;
-
-    const statCellsHtml = statItems.map(s => {
-      const { value, label } = splitStat(s);
-      return `<td width="${Math.floor(100 / statItems.length)}%" bgcolor="#FFFFFF" style="text-align:center;padding:8px 4px;vertical-align:top;">
-        <div style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:700;color:${theme};">${escapeHtml(value)}</div>
-        <div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#586273;margin-top:2px;">${escapeHtml(label)}</div>
-      </td>`;
-    }).join('');
-    const statsRowHtml = statCellsHtml
-      ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;"><tr>${statCellsHtml}</tr></table>`
+    const outstandingRisks = rawInputs.outstandingRisks;
+    const callout = outstandingRisks
+      ? widgetCalloutBox(`<strong>Outstanding:</strong> ${escapeHtml(outstandingRisks)}`, '#FEF3C7', '#854f0b')
       : '';
 
-    // One full-width row per checklist item (icon cell + text cell) rather
-    // than several items squeezed side by side — long phrases get the
-    // whole row's width instead of a cramped fraction of it.
-    const checklistHtml = checklistItems.map(item => `
+    const body = widgetBody(`
+      ${widgetStatsRow(statItems, theme)}
+      ${listItems.length ? `<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#0b1220;margin-bottom:4px;">This quarter</div>${widgetListRows(listItems)}` : ''}
+      <p style="margin:${listItems.length ? '10px' : '8px'} 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
+      ${callout}
+    `);
+    return widgetCardWrap(header + body);
+  }
+
+  if (key === 'whatWeDelivered') {
+    const all = getSlideChips(key, data);
+    const statItems = all.filter(isStatLike).slice(0, 3);
+    const listItems = all.filter(w => !isStatLike(w));
+    const header = widgetHeaderBand(theme, 'What we delivered', data.headline || SECTION_TITLES.whatWeDelivered, null);
+    const body = widgetBody(`
+      ${widgetStatsRow(statItems, theme)}
+      ${listItems.length ? widgetListRows(listItems) : ''}
+      <p style="margin:${listItems.length ? '10px' : '0'} 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
+    `);
+    return widgetCardWrap(header + body);
+  }
+
+  if (key === 'technologyHealth') {
+    const all = getSlideChips(key, data);
+    const statItems = all.filter(isStatLike).slice(0, 3);
+    const listItems = all.filter(a => !isStatLike(a));
+    const ratingColor = RATING_PALETTE[(data.rating || '').toLowerCase()] || RATING_PALETTE.fair;
+    const badge = data.rating ? widgetPillBadge(data.rating, ratingColor.bg, ratingColor.fg) : null;
+    const header = widgetHeaderBand(theme, 'Technology health', data.headline || SECTION_TITLES.technologyHealth, badge);
+    const body = widgetBody(`
+      ${widgetStatsRow(statItems, theme)}
+      ${listItems.length ? `<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#0b1220;margin-bottom:4px;">Flagged this quarter</div>${widgetListRows(listItems, { bg: '#FEF3C7', fg: '#b3760a', mark: '!' })}` : ''}
+      <p style="margin:${listItems.length ? '10px' : '8px'} 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
+    `);
+    return widgetCardWrap(header + body);
+  }
+
+  if (key === 'lookingAhead') {
+    const priorities = getSlideChips(key, data);
+    const header = widgetHeaderBand(theme, 'Looking ahead', data.headline || SECTION_TITLES.lookingAhead, null);
+    const numberedRows = priorities.map((p, i) => `
       <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:6px;"><tr>
         <td width="24" valign="top" style="padding:2px 0;">
-          <table cellpadding="0" cellspacing="0"><tr><td bgcolor="#DCFCE7" style="background:#DCFCE7;width:18px;height:18px;border-radius:50%;text-align:center;line-height:18px;">
-            <span style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#15a05a;">&#10003;</span>
+          <table cellpadding="0" cellspacing="0"><tr><td bgcolor="${theme}" style="background:${theme};width:18px;height:18px;border-radius:50%;text-align:center;line-height:18px;">
+            <span style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;color:#ffffff;">${i + 1}</span>
           </td></tr></table>
         </td>
         <td valign="top" style="padding:2px 0 2px 8px;">
-          <span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;">${escapeHtml(item)}</span>
+          <span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;">${escapeHtml(p)}</span>
         </td>
       </tr></table>`).join('');
-
-    const outstandingRisks = session.sections && session.sections.securityPosture &&
-      session.sections.securityPosture.inputs && session.sections.securityPosture.inputs.outstandingRisks;
-    const calloutHtml = outstandingRisks ? `
-      <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;"><tr>
-        <td bgcolor="#FEF3C7" style="background:#FEF3C7;border-radius:8px;padding:10px 14px;">
-          <span style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#854f0b;"><strong>Outstanding:</strong> ${escapeHtml(outstandingRisks)}</span>
-        </td>
-      </tr></table>` : '';
-
-    return `<div style="width:100%;border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;">
-      <table width="100%" cellpadding="0" cellspacing="0"><tr>
-        <td bgcolor="${theme}" style="background:${theme};padding:16px 18px;">
-          <table width="100%" cellpadding="0" cellspacing="0"><tr>
-            <td style="font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.04em;color:#ffffff;">Security posture update</td>
-            <td align="right">
-              <table cellpadding="0" cellspacing="0"><tr><td bgcolor="${riskColor.bg}" style="background:${riskColor.bg};border-radius:20px;padding:3px 10px;">
-                <span style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;color:${riskColor.fg};">${escapeHtml(data.riskLevel || 'Unknown')} risk</span>
-              </td></tr></table>
-            </td>
-          </tr></table>
-          <h5 style="margin:8px 0 0 0;font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:16px;">${escapeHtml(data.headline || SECTION_TITLES.securityPosture)}</h5>
-        </td>
-      </tr></table>
-      <div style="padding:16px 18px;background:#FFFFFF;">
-        ${statsRowHtml}
-        ${checklistItems.length ? `<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;color:#0b1220;margin-bottom:4px;">This quarter</div>${checklistHtml}` : ''}
-        <p style="margin:${checklistItems.length ? '10px' : '8px'} 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
-        ${calloutHtml}
-      </div>
-    </div>`;
+    const body = widgetBody(`
+      ${numberedRows}
+      <p style="margin:${priorities.length ? '10px' : '0'} 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
+    `);
+    return widgetCardWrap(header + body);
   }
 
-  const chips = getSlideChips(key, data).slice(0, 3);
-  let statsTable = '';
-  if (chips.length) {
-    const cells = chips.map(c => {
-      const { value, label } = splitStat(c);
-      return `<td width="${Math.floor(100 / chips.length)}%" bgcolor="#FFFFFF" style="padding:10px 8px;text-align:center;vertical-align:top;">
-        <div style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:${theme};">${escapeHtml(value)}</div>
-        <div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#586273;margin-top:2px;">${escapeHtml(label)}</div>
-      </td>`;
+  if (key === 'investmentSummary') {
+    const header = widgetHeaderBand(theme, 'Investment summary', data.headline || SECTION_TITLES.investmentSummary, null);
+    let comparison = '';
+    if (rawInputs.currentMonthlyInvestment || rawInputs.proposedNextPeriod) {
+      comparison = `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:10px;"><tr>
+        <td width="50%" bgcolor="#FFFFFF" style="text-align:center;padding:8px 4px;">
+          <div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.04em;">Current</div>
+          <div style="font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:700;color:#586273;">${escapeHtml(rawInputs.currentMonthlyInvestment || '—')}</div>
+        </td>
+        <td width="50%" bgcolor="#FFFFFF" style="text-align:center;padding:8px 4px;">
+          <div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.04em;">Proposed</div>
+          <div style="font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:700;color:${theme};">${escapeHtml(rawInputs.proposedNextPeriod || '—')}</div>
+        </td>
+      </tr></table>`;
+    }
+    const body = widgetBody(`
+      ${comparison}
+      <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
+    `);
+    return widgetCardWrap(header + body);
+  }
+
+  if (key === 'recommendedServices') {
+    const recs = data.recommendations || [];
+    const rows = recs.map(r => {
+      const uc = URGENCY_PALETTE[(r.urgency || '').toLowerCase()] || URGENCY_PALETTE.recommended;
+      return `<table width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px;border-top:1px solid #E5E7EB;padding-top:10px;"><tr>
+        <td valign="top">
+          <span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#0b1220;">${escapeHtml(r.name || '')}</span>
+          <div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#586273;margin-top:4px;">${escapeHtml(r.reason || '')}</div>
+        </td>
+        ${r.urgency ? `<td width="1" valign="top" align="right">${widgetPillBadge(r.urgency, uc.bg, uc.fg)}</td>` : ''}
+      </tr></table>`;
     }).join('');
-    statsTable = `<table width="100%" cellpadding="0" cellspacing="0" style="margin:10px 0;"><tr>${cells}</tr></table>`;
+    const header = widgetHeaderBand(theme, 'Recommended services', data.headline || 'For your consideration', null);
+    const body = widgetBody(`
+      <p style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
+      ${rows}
+    `);
+    return widgetCardWrap(header + body);
   }
 
-  let badge = '';
-  if (data.riskLevel) badge = widgetBadgeHtml(`${data.riskLevel} risk`, '#FEF3C7', '#b3760a');
-  if (data.rating) badge = widgetBadgeHtml(data.rating, '#DCFCE7', '#15a05a');
-
-  return `<div style="width:100%;background:#FFFFFF;border:1px solid #E5E7EB;padding:16px 18px;">
-    <h5 style="margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;color:#0b1220;font-size:15px;">${escapeHtml(data.headline || SECTION_TITLES[key])}</h5>
-    ${badge}
-    ${statsTable}
-    <p style="margin:8px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>
-  </div>`;
+  // Fallback — shouldn't be reached since every section key above is
+  // handled explicitly, but keeps the function safe if a new section key
+  // is ever added without a matching branch.
+  return widgetCardWrap(widgetHeaderBand(theme, SECTION_TITLES[key] || key, data.headline || '', null) +
+    widgetBody(`<p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0b1220;line-height:1.6;">${escapeHtml(data.narrative || '')}</p>`));
 }
 
 function widgetTitle(key, session) {
