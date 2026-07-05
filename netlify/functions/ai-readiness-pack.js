@@ -9,15 +9,17 @@
 // Accepts POST {
 //   clientName, industry, companySize, copilotSku, mspName,
 //   activeSections: [ "whyMatters" | "whatCovers" | "whatYouGet" | "withoutIt" | "nextStep" ],
-//   includeTierMatrix: boolean,
-//   regenSection?: string   // if present, only that one section/tierMatrix is (re)generated
+//   regenSection?: string   // if present, only that one section is (re)generated
 // }
+//
+// Note: the Readiness Maturity Matrix widget is fixed, generic content
+// (not client-specific) and is built entirely client-side — it never
+// hits this function.
 // =========================================================
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 
 const SECTION_KEYS = ['whyMatters', 'whatCovers', 'whatYouGet', 'withoutIt', 'nextStep'];
-const TIER_KEY = 'tierMatrix';
 
 const SYSTEM_PROMPT = `You write customer-facing sales copy for MSPs (Managed Service Providers) proposing an "AI Readiness" service to their clients — before any assessment work has been done. No results are shown, no client environment has been scanned. This is a proposal tool, not a reporting tool.
 
@@ -70,17 +72,6 @@ function sectionInstructions(keys, ctx) {
   "body": string, 2-3 sentences — how long the readiness assessment takes, what's needed from the client (typically minimal — access credentials and a discovery call), what happens after. Low-friction, high-value framing.
 }`);
   }
-  if (keys.includes(TIER_KEY)) {
-    parts.push(`"tierMatrix": {
-  "headline": string,
-  "tiers": [
-    { "name": "Basic", "price": "" , "features": array of 3-4 short strings, "recommended": false },
-    { "name": "Standard", "price": "", "features": array of 4-5 short strings (superset of Basic), "recommended": true },
-    { "name": "Comprehensive", "price": "", "features": array of 5-6 short strings (superset of Standard), "recommended": false }
-  ]
-  — leave "price" as an empty string; the MSP will fill in their own pricing.
-}`);
-  }
   return parts.join(',\n');
 }
 
@@ -121,7 +112,7 @@ exports.handler = async (event) => {
   try { body = JSON.parse(event.body); }
   catch { return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: 'Invalid JSON.' }) }; }
 
-  const { clientName, industry, companySize, copilotSku, mspName, activeSections, includeTierMatrix, regenSection } = body;
+  const { clientName, industry, companySize, copilotSku, mspName, activeSections, regenSection } = body;
 
   if (!clientName || !industry || !companySize || !copilotSku || !mspName) {
     return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: 'clientName, industry, companySize, copilotSku and mspName are all required.' }) };
@@ -133,7 +124,6 @@ exports.handler = async (event) => {
     keys = [regenSection];
   } else {
     keys = (Array.isArray(activeSections) ? activeSections : []).filter(k => SECTION_KEYS.includes(k));
-    if (includeTierMatrix) keys.push(TIER_KEY);
   }
 
   if (keys.length === 0) {
