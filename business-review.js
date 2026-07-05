@@ -722,12 +722,21 @@ async function generateReview(regenerateOnly) {
     s.generated = { ...(s.generated || {}), ...data.generated };
     scheduleSave();
     renderOutput();
+    if (!regenerateOnly) scrollOutputIntoView();
     showToast(regenerateOnly ? 'Section regenerated.' : 'Business review generated.');
   } catch (e) {
     showToast('Could not generate: ' + e.message);
   } finally {
     setLoading(false);
   }
+}
+
+function scrollOutputIntoView() {
+  const target = document.getElementById('outputContent') || document.querySelector('.output-panel');
+  if (!target) return;
+  const rect = target.getBoundingClientRect();
+  const targetY = window.scrollY + rect.top - 90; // clear the sticky topbar
+  window.scrollTo({ top: Math.max(targetY, 0), behavior: 'smooth' });
 }
 
 function setLoading(on, text) {
