@@ -35,7 +35,6 @@
     'M365 Business Premium + Copilot Business'
   ];
   const TIER_DISPLAY_NAMES = ['Copilot Business', 'Business Standard + Copilot', 'Business Premium + Copilot'];
-  const TIER_DISCLAIMER = 'Feature availability is general guidance — confirm exact SKU inclusions with your Microsoft licensing partner.';
 
   // Fixed, generic data-privacy facts — not AI-generated, not client-specific.
   const DATA_PRIVACY_FACTS = [
@@ -258,8 +257,7 @@
       if (includeTierMatrix && json.data[TIER_KEY]) {
         rawData[TIER_KEY] = {
           headline: json.data[TIER_KEY].headline || 'Comparing Your Copilot Options',
-          tiers: TIER_DISPLAY_NAMES.map((name, i) => ({ name, features: (json.data[TIER_KEY].tiers && json.data[TIER_KEY].tiers[i] && json.data[TIER_KEY].tiers[i].features) || [] })),
-          disclaimer: TIER_DISCLAIMER
+          tiers: TIER_DISPLAY_NAMES.map((name, i) => ({ name, features: (json.data[TIER_KEY].tiers && json.data[TIER_KEY].tiers[i] && json.data[TIER_KEY].tiers[i].features) || [] }))
         };
         widgets[TIER_KEY] = buildTierMatrixWidget(rawData[TIER_KEY], currentThemeHex, data);
       }
@@ -308,8 +306,7 @@
       } else if (key === TIER_KEY) {
         rawData[TIER_KEY] = {
           headline: json.data[TIER_KEY].headline || 'Comparing Your Copilot Options',
-          tiers: TIER_DISPLAY_NAMES.map((name, i) => ({ name, features: (json.data[TIER_KEY].tiers && json.data[TIER_KEY].tiers[i] && json.data[TIER_KEY].tiers[i].features) || [] })),
-          disclaimer: TIER_DISCLAIMER
+          tiers: TIER_DISPLAY_NAMES.map((name, i) => ({ name, features: (json.data[TIER_KEY].tiers && json.data[TIER_KEY].tiers[i] && json.data[TIER_KEY].tiers[i].features) || [] }))
         };
         widgets[TIER_KEY] = buildTierMatrixWidget(rawData[TIER_KEY], currentThemeHex, data);
       } else {
@@ -501,10 +498,7 @@
     const table = `<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid ${HEX.border};">
       <tr>${headerCells}</tr>
       ${featureRows}
-    </table>
-    <div style="margin-top:12px;padding:9px 12px;background:${HEX.row};border-left:3px solid ${hex};border-radius:4px;">
-      <span data-editable-id="disclaimer" style="font-size:11px;color:${HEX.text2};font-style:italic;">${escHtml(d.disclaimer || '')}</span>
-    </div>`;
+    </table>`;
 
     return widgetShell(
       'Copilot — Compare Your Options',
