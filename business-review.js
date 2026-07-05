@@ -771,20 +771,12 @@ function renderOutput() {
 function buildGeneratedSectionEl(sec, data) {
   const el = document.createElement('div');
   el.className = 'generated-section';
-  const chips = getSlideChips(sec.key, data);
-  const statsHtml = chips.length ? `<div class="generated-stats-row">${
-    chips.slice(0, 3).map(c => {
-      const { value, label } = splitStat(c);
-      return `<div class="generated-stat"><div class="generated-stat-val">${escapeHtml(value)}</div><div class="generated-stat-label">${escapeHtml(label)}</div></div>`;
-    }).join('')
-  }</div>` : '';
 
   el.innerHTML = `
     <div class="generated-section-head">
       <span class="generated-section-title">${escapeHtml(sec.title)}${sec.widgetOnly ? ' · widget only' : ''}</span>
     </div>
     <input type="text" class="headline-edit" value="${escapeHtml(data.headline || '')}" data-field="headline">
-    ${statsHtml}
     <textarea class="narrative-edit" data-field="narrative">${escapeHtml(data.narrative || '')}</textarea>
 
     <div class="widget-preview-label">Widget preview</div>
@@ -996,8 +988,8 @@ function widgetHeaderBand(theme, kicker, headline, badgeHtml) {
 }
 
 function widgetPillBadge(text, bg, fg) {
-  return `<table cellpadding="0" cellspacing="0"><tr><td bgcolor="${bg}" style="background:${bg};border-radius:20px;padding:3px 10px;">
-    <span style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;color:${fg};">${escapeHtml(text)}</span>
+  return `<table cellpadding="0" cellspacing="0"><tr><td bgcolor="${bg}" style="background:${bg};border-radius:20px;padding:3px 10px;white-space:nowrap;">
+    <span style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;color:${fg};white-space:nowrap;">${escapeHtml(text)}</span>
   </td></tr></table>`;
 }
 
@@ -1194,7 +1186,7 @@ function buildWidgetHtml(key, session) {
           <span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#0b1220;">${escapeHtml(r.name || '')}</span>
           <div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#586273;margin-top:4px;">${escapeHtml(r.reason || '')}</div>
         </td>
-        ${r.urgency ? `<td width="1" valign="top" align="right">${widgetPillBadge(r.urgency, uc.bg, uc.fg)}</td>` : ''}
+        ${r.urgency ? `<td valign="top" align="right" style="white-space:nowrap;">${widgetPillBadge(r.urgency, uc.bg, uc.fg)}</td>` : ''}
       </tr></table>`;
     }).join('');
     const header = widgetHeaderBand(theme, 'Recommended services', data.headline || 'For your consideration', null);
