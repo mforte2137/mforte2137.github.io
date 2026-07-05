@@ -30,7 +30,7 @@
   // This is the factual "what unready vs ready looks like" reference across the three
   // pillars already used elsewhere in the pack. No guessing, no editing friction.
   const MATURITY_DEFAULT = {
-    headline: 'Where does your environment stand today?',
+    headline: "The path we'll guide you toward",
     rows: [
       { label: 'Identity & Access', notReady: 'Over-permissioned, no MFA', partial: 'Reviewed, some gaps remain', full: 'Least-privilege, MFA enforced' },
       { label: 'Data Governance', notReady: 'No labels, no DLP policies', partial: 'Partial classification in place', full: 'Fully labeled, DLP active' },
@@ -432,8 +432,8 @@
     </div>`;
 
     return widgetShell(
-      'AI Readiness — Maturity Check',
-      d.headline || 'Where does your environment stand today?',
+      'AI Readiness — How It Works',
+      d.headline || "The path we'll guide you toward",
       form.clientName,
       table,
       hex
