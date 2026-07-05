@@ -30,7 +30,8 @@
   let currentThemeHex = '#0f1f3d';
   let activeSections  = new Set(SECTIONS.filter(s => s.defaultOn).map(s => s.key));
   let includeTierMatrix = false;
-  let widgets   = {};   // key -> html string
+  let widgets   = {};   // key -> clean exportable html string (source of truth for copy/push)
+  let rawData   = {};   // key -> raw AI/editable data object (source of truth for rebuilds)
   let lastPayload = null;
 
   const $ = id => document.getElementById(id);
@@ -100,7 +101,7 @@
         currentThemeHex = swatch.dataset.hex;
         $('customHex').value = currentThemeHex.replace('#', '');
         $('hexPreview').style.background = currentThemeHex;
-        if (Object.keys(widgets).length) rebuildAllFromTheme();
+        rebuildAllFromTheme();
       });
     });
 
@@ -110,7 +111,7 @@
         currentThemeHex = '#' + val;
         document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
         $('hexPreview').style.background = currentThemeHex;
-        if (Object.keys(widgets).length) rebuildAllFromTheme();
+        rebuildAllFromTheme();
       }
     });
   }
@@ -183,13 +184,16 @@
       if (!json.ok) throw new Error(json.error || 'Generation failed.');
 
       widgets = {};
+      rawData = {};
       SECTIONS.forEach(sec => {
         if (activeSections.has(sec.key) && json.data[sec.key]) {
-          widgets[sec.key] = buildSectionWidget(sec.key, json.data[sec.key], currentThemeHex, data);
+          rawData[sec.key] = json.data[sec.key];
+          widgets[sec.key] = buildSectionWidget(sec.key, rawData[sec.key], currentThemeHex, data);
         }
       });
       if (includeTierMatrix && json.data[TIER_KEY]) {
-        widgets[TIER_KEY] = buildTierMatrixWidget(json.data[TIER_KEY], currentThemeHex, data);
+        rawData[TIER_KEY] = json.data[TIER_KEY];
+        widgets[TIER_KEY] = buildTierMatrixWidget(rawData[TIER_KEY], currentThemeHex, data);
       }
 
       renderWidgetList(data);
@@ -225,9 +229,11 @@
 
       const data = getFormData();
       if (key === TIER_KEY) {
-        widgets[key] = buildTierMatrixWidget(json.data[key], currentThemeHex, data);
+        rawData[key] = json.data[key];
+        widgets[key] = buildTierMatrixWidget(rawData[key], currentThemeHex, data);
       } else {
-        widgets[key] = buildSectionWidget(key, json.data[key], currentThemeHex, data);
+        rawData[key] = json.data[key];
+        widgets[key] = buildSectionWidget(key, rawData[key], currentThemeHex, data);
       }
       updateWidgetCard(key);
     } catch (e) {
@@ -238,23 +244,54 @@
   }
 
   function rebuildAllFromTheme() {
-    // Re-render existing widgets under the new theme colour without calling the AI again.
-    // Requires the last raw AI data — simplest safe approach is a full regenerate call is NOT needed;
-    // instead we keep the widgets as-is since colour is baked into HTML at build time.
-    // To support live recolour we rebuild from the DOM text content is unreliable, so we just
-    // note that changing colour after generation requires Regenerate All.
-    document.querySelectorAll('.regen-notice').forEach(n => n.remove());
-    const notice = document.createElement('div');
-    notice.className = 'regen-notice';
-    notice.style.cssText = 'background:#fef3c7;color:#b3760a;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:12px;';
-    notice.textContent = 'Colour theme changed — click "Regenerate All" to apply it to your widgets.';
-    widgetList.parentNode.insertBefore(notice, widgetList);
+    if (Object.keys(rawData).length === 0) return; // nothing generated yet
+    const form = getFormData();
+    Object.keys(rawData).forEach(key => {
+      widgets[key] = (key === TIER_KEY)
+        ? buildTierMatrixWidget(rawData[key], currentThemeHex, form)
+        : buildSectionWidget(key, rawData[key], currentThemeHex, form);
+      updateWidgetCard(key);
+    });
+  }
+
+  // Set a value on rawData by a dot-path like "pillars.0.description" or "deliverables.2"
+  function setByPath(obj, path, value) {
+    const parts = path.split('.');
+    let cur = obj;
+    for (let i = 0; i < parts.length - 1; i++) {
+      const seg = /^\d+$/.test(parts[i]) ? parseInt(parts[i], 10) : parts[i];
+      if (cur[seg] === undefined) return;
+      cur = cur[seg];
+    }
+    const lastSeg = /^\d+$/.test(parts[parts.length - 1]) ? parseInt(parts[parts.length - 1], 10) : parts[parts.length - 1];
+    cur[lastSeg] = value;
+  }
+
+  // Attach contenteditable to every [data-editable-id] element inside a rendered
+  // widget preview, wiring edits back into rawData so colour changes and pushes
+  // always reflect the rep's latest text.
+  function makeEditable(previewEl, key) {
+    previewEl.querySelectorAll('[data-editable-id]').forEach(el => {
+      el.setAttribute('contenteditable', 'true');
+      el.title = 'Click to edit';
+      el.addEventListener('input', () => {
+        if (rawData[key]) setByPath(rawData[key], el.dataset.editableId, el.textContent);
+        widgets[key] = getCleanHtml(previewEl);
+      });
+    });
+  }
+
+  // Strip contenteditable/title attributes for a clean, exportable HTML string
+  function getCleanHtml(el) {
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll('[contenteditable]').forEach(n => {
+      n.removeAttribute('contenteditable');
+      n.removeAttribute('title');
+    });
+    return clone.innerHTML;
   }
 
   // ── Widget HTML builders ──────────────────────────────
-  function sectionLabel(text, hex) {
-    return `<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${hex};margin-bottom:6px;">${escHtml(text)}</div>`;
-  }
 
   // Darken a hex colour by mixing it toward black, so the gradient anchor
   // always relates to the chosen theme colour instead of a fixed navy.
@@ -269,7 +306,7 @@
     return `<div style="background:${HEX.panel};border:1px solid ${HEX.border};border-top:3px solid ${hex};overflow:hidden;font-family:Arial,Helvetica,sans-serif;width:100%;">
   <div style="background:linear-gradient(135deg, ${gradientStart} 0%, ${hex} 100%);background-image:linear-gradient(135deg, ${gradientStart} 0%, ${hex} 100%), radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);background-size:auto, 14px 14px;padding:16px 18px 14px;">
     <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.65);margin-bottom:4px;">${escHtml(kicker)}</div>
-    <h5 style="margin:0;font-size:16px;font-weight:700;color:#ffffff;letter-spacing:-0.01em;">${escHtml(title)}</h5>
+    <h5 data-editable-id="headline" style="margin:0;font-size:16px;font-weight:700;color:#ffffff;letter-spacing:-0.01em;">${escHtml(title)}</h5>
     ${subtitle ? `<div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:3px;">${escHtml(subtitle)}</div>` : ''}
   </div>
   <div style="padding:16px 18px;">
@@ -284,17 +321,17 @@
         'AI Readiness — Why It Matters',
         d.headline || 'Before Your Team Uses AI, Your Environment Needs to Be Ready',
         form.clientName,
-        `<p style="margin:0;font-size:13px;color:${HEX.text2};line-height:1.65;">${escHtml(d.body || '')}</p>`,
+        `<p data-editable-id="body" style="margin:0;font-size:13px;color:${HEX.text2};line-height:1.65;">${escHtml(d.body || '')}</p>`,
         hex
       );
     }
 
     if (key === 'whatCovers') {
       const pillars = (d.pillars || []).slice(0, 3);
-      const cells = pillars.map(p => `
+      const cells = pillars.map((p, i) => `
         <td width="${Math.floor(100 / Math.max(pillars.length,1))}%" style="padding:12px 10px;border-right:1px solid ${HEX.border};vertical-align:top;">
-          ${sectionLabel(p.name || '', hex)}
-          <p style="margin:0;font-size:12px;color:${HEX.text2};line-height:1.55;">${escHtml(p.description || '')}</p>
+          <div data-editable-id="pillars.${i}.name" style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${hex};margin-bottom:6px;">${escHtml(p.name || '')}</div>
+          <p data-editable-id="pillars.${i}.description" style="margin:0;font-size:12px;color:${HEX.text2};line-height:1.55;">${escHtml(p.description || '')}</p>
         </td>`).join('');
       return widgetShell(
         'AI Readiness Service',
@@ -306,12 +343,12 @@
     }
 
     if (key === 'whatYouGet') {
-      const pills = (d.deliverables || []).map(item =>
-        `<span style="display:inline-block;background:${HEX.successBg};color:${HEX.successText};font-size:10px;font-weight:700;padding:4px 11px;border-radius:20px;margin:0 6px 6px 0;">✓ ${escHtml(item)}</span>`
+      const pills = (d.deliverables || []).map((item, i) =>
+        `<span data-editable-id="deliverables.${i}" style="display:inline-block;background:${HEX.successBg};color:${HEX.successText};font-size:10px;font-weight:700;padding:4px 11px;border-radius:20px;margin:0 6px 6px 0;">✓ ${escHtml(item)}</span>`
       ).join('');
       const handoff = d.handoff
         ? `<div style="margin-top:12px;padding:10px 12px;background:${HEX.row};border-left:3px solid ${hex};border-radius:4px;">
-             <p style="margin:0;font-size:12px;color:${HEX.text};font-style:italic;line-height:1.55;">${escHtml(d.handoff)}</p>
+             <p data-editable-id="handoff" style="margin:0;font-size:12px;color:${HEX.text};font-style:italic;line-height:1.55;">${escHtml(d.handoff)}</p>
            </div>` : '';
       return widgetShell(
         'AI Readiness — Deliverables',
@@ -323,10 +360,10 @@
     }
 
     if (key === 'withoutIt') {
-      const rows = (d.risks || []).map(r =>
+      const rows = (d.risks || []).map((r, i) =>
         `<div style="padding:8px 0;border-bottom:1px solid ${HEX.border};display:flex;gap:8px;align-items:flex-start;">
            <span style="flex:none;display:inline-block;width:16px;height:16px;border-radius:50%;background:${HEX.warnBg};color:${HEX.warnText};font-size:10px;font-weight:700;text-align:center;line-height:16px;">!</span>
-           <span style="font-size:12px;color:${HEX.text2};line-height:1.55;">${escHtml(r)}</span>
+           <span data-editable-id="risks.${i}" style="font-size:12px;color:${HEX.text2};line-height:1.55;">${escHtml(r)}</span>
          </div>`).join('');
       return widgetShell(
         'AI Readiness — The Risk of Waiting',
@@ -342,7 +379,7 @@
         'AI Readiness — Getting Started',
         d.headline || 'Getting Started',
         form.clientName,
-        `<p style="margin:0;font-size:13px;color:${HEX.text2};line-height:1.65;">${escHtml(d.body || '')}</p>
+        `<p data-editable-id="body" style="margin:0;font-size:13px;color:${HEX.text2};line-height:1.65;">${escHtml(d.body || '')}</p>
          <div style="margin-top:14px;">
            <span style="display:inline-block;background:${hex};color:#fff;font-size:11px;font-weight:700;padding:8px 18px;border-radius:4px;">Ready when you are →</span>
          </div>`,
@@ -356,18 +393,18 @@
   function buildTierMatrixWidget(d, hex, form) {
     const tiers = (d.tiers || []).slice(0, 3);
     const colWidth = Math.floor(100 / Math.max(tiers.length, 1));
-    const headerCells = tiers.map(t => `
+    const headerCells = tiers.map((t, i) => `
       <td width="${colWidth}%" style="padding:10px 8px;text-align:center;border-right:1px solid ${HEX.border};background:${t.recommended ? hex : HEX.row};">
         ${t.recommended ? `<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#fff;margin-bottom:2px;">Recommended</div>` : ''}
-        <div style="font-size:13px;font-weight:700;color:${t.recommended ? '#fff' : HEX.text};">${escHtml(t.name || '')}</div>
-        ${t.price ? `<div style="font-size:11px;color:${t.recommended ? 'rgba(255,255,255,0.8)' : HEX.text2};margin-top:2px;">${escHtml(t.price)}</div>` : ''}
+        <div data-editable-id="tiers.${i}.name" style="font-size:13px;font-weight:700;color:${t.recommended ? '#fff' : HEX.text};">${escHtml(t.name || '')}</div>
+        <div data-editable-id="tiers.${i}.price" style="font-size:11px;color:${t.recommended ? 'rgba(255,255,255,0.8)' : HEX.text2};margin-top:2px;min-height:14px;">${escHtml(t.price || '')}</div>
       </td>`).join('');
 
     const maxFeatures = Math.max(0, ...tiers.map(t => (t.features || []).length));
     let featureRows = '';
     for (let i = 0; i < maxFeatures; i++) {
-      featureRows += `<tr>${tiers.map(t => `
-        <td style="padding:8px;border-right:1px solid ${HEX.border};border-top:1px solid ${HEX.border};text-align:center;font-size:11.5px;color:${HEX.text2};">${escHtml((t.features || [])[i] || '')}</td>`).join('')}</tr>`;
+      featureRows += `<tr>${tiers.map((t, ti) => `
+        <td data-editable-id="tiers.${ti}.features.${i}" style="padding:8px;border-right:1px solid ${HEX.border};border-top:1px solid ${HEX.border};text-align:center;font-size:11.5px;color:${HEX.text2};">${escHtml((t.features || [])[i] || '')}</td>`).join('')}</tr>`;
     }
 
     return widgetShell(
@@ -376,6 +413,7 @@
       form.clientName,
       `<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid ${HEX.border};">
          <tr>${headerCells}</tr>
+
          ${featureRows}
        </table>`,
       hex
@@ -409,14 +447,11 @@
           </div>
         </div>
         <div class="widget-card-body">
-          <div class="widget-preview" data-key="${key}" contenteditable="true">${widgets[key]}</div>
+          <div class="widget-preview" data-key="${key}">${widgets[key]}</div>
         </div>`;
       widgetList.appendChild(card);
 
-      const preview = card.querySelector('.widget-preview');
-      preview.addEventListener('input', () => {
-        widgets[key] = preview.innerHTML;
-      });
+      makeEditable(card.querySelector('.widget-preview'), key);
     });
 
     // Bind per-card actions
@@ -431,7 +466,9 @@
   function updateWidgetCard(key) {
     const card = widgetList.querySelector(`.widget-card[data-key="${key}"]`);
     if (!card) return;
-    card.querySelector('.widget-preview').innerHTML = widgets[key];
+    const preview = card.querySelector('.widget-preview');
+    preview.innerHTML = widgets[key];
+    makeEditable(preview, key);
   }
 
   function onCopyWidget(key) {
