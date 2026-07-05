@@ -285,6 +285,8 @@ input:focus, select:focus, textarea:focus {
   padding: 40px;
   color: var(--text-2);
 }
+/* CSS gotcha: display:flex overrides the hidden attribute unless overridden explicitly */
+.empty-state[hidden], .loading-state[hidden] { display: none; }
 .empty-icon {
   width: 44px; height: 44px;
   border-radius: 50%;
@@ -344,17 +346,6 @@ input:focus, select:focus, textarea:focus {
 }
 .widget-card-toolbar .wactions { display: flex; gap: 6px; }
 .widget-card-body { padding: 18px; }
-.widget-html-editor {
-  display: none;
-  width: 100%;
-  min-height: 160px;
-  margin-top: 12px;
-  font-family: 'SF Mono', Consolas, monospace;
-  font-size: 11px;
-  padding: 10px;
-  border: 1px solid var(--border-2);
-  background: var(--bg-row);
-}
 
 /* ── Delivery panel ────────────────────────────────── */
 .delivery-panel {
