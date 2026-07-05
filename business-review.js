@@ -736,11 +736,9 @@ async function generateReview(regenerateOnly) {
 }
 
 function scrollOutputIntoView() {
-  const target = document.getElementById('outputContent') || document.querySelector('.output-panel');
-  if (!target) return;
-  const rect = target.getBoundingClientRect();
-  const targetY = window.scrollY + rect.top - 90; // clear the sticky topbar
-  window.scrollTo({ top: Math.max(targetY, 0), behavior: 'smooth' });
+  const container = document.querySelector('.builder-output');
+  if (!container) return;
+  container.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function setLoading(on, text) {
@@ -788,35 +786,45 @@ function buildGeneratedSectionEl(sec, data) {
     <input type="text" class="headline-edit" value="${escapeHtml(data.headline || '')}" data-field="headline">
     ${statsHtml}
     <textarea class="narrative-edit" data-field="narrative">${escapeHtml(data.narrative || '')}</textarea>
+
+    <div class="widget-preview-label">Widget preview</div>
+    <div class="widget-preview-surface"></div>
+    <textarea class="widget-html-source" readonly hidden></textarea>
+
     <div class="generated-actions">
       <button class="btn-secondary regen-btn">Regenerate</button>
-      <button class="btn-secondary preview-btn">Preview widget</button>
+      <button class="btn-secondary html-toggle-btn">Show HTML</button>
       <button class="btn-secondary copy-btn">Copy widget HTML</button>
       <button class="btn-accent push-btn">Push widget</button>
     </div>
   `;
 
-  $('.headline-edit', el).addEventListener('input', e => { data.headline = e.target.value; scheduleSave(); });
-  $('.narrative-edit', el).addEventListener('input', e => { data.narrative = e.target.value; scheduleSave(); });
+  const previewSurface = $('.widget-preview-surface', el);
+  const htmlSource = $('.widget-html-source', el);
+
+  function refreshPreview() {
+    const html = buildWidgetHtml(sec.key, state.current);
+    // Direct innerHTML injection, same as the Technology Roadmap tool —
+    // the widget HTML is fully inline-styled already, so it renders
+    // correctly sitting right in the page without needing an iframe.
+    previewSurface.innerHTML = html || '<div class="widget-preview-empty">Nothing generated yet.</div>';
+    htmlSource.value = html;
+  }
+
+  $('.headline-edit', el).addEventListener('input', e => { data.headline = e.target.value; scheduleSave(); refreshPreview(); });
+  $('.narrative-edit', el).addEventListener('input', e => { data.narrative = e.target.value; scheduleSave(); refreshPreview(); });
   $('.regen-btn', el).addEventListener('click', () => generateReview([sec.key]));
-  $('.preview-btn', el).addEventListener('click', () => previewWidget(sec.key));
+  $('.html-toggle-btn', el).addEventListener('click', e => {
+    const willShow = htmlSource.hidden;
+    htmlSource.hidden = !willShow;
+    e.target.textContent = willShow ? 'Hide HTML' : 'Show HTML';
+  });
   $('.copy-btn', el).addEventListener('click', () => copyWidgetHtml(sec.key));
   $('.push-btn', el).addEventListener('click', () => pushWidgets([sec.key]));
 
-  return el;
-}
+  refreshPreview();
 
-function previewWidget(key) {
-  const html = buildWidgetHtml(key, state.current);
-  if (!html) { showToast('Generate this section first.'); return; }
-  const frame = $('#widgetPreviewFrame');
-  // Wrap in a minimal page so the widget renders the way it will inside
-  // Salesbuildr's editor — isolated from this app's own CSS, not floating
-  // unstyled against a transparent background.
-  frame.srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-    <style>body{margin:16px;background:#fbfcfe;font-family:Arial,Helvetica,sans-serif;}</style>
-    </head><body>${html}</body></html>`;
-  $('#widgetPreviewModal').hidden = false;
+  return el;
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -1416,7 +1424,6 @@ function wireStaticEvents() {
   $('#btnExportJson').addEventListener('click', exportSessionJson);
   $('#btnImportJsonTrigger').addEventListener('click', () => $('#fImportJson').click());
   $('#fImportJson').addEventListener('change', e => importSessionJson(e.target.files[0]));
-  $('#widgetPreviewClose').addEventListener('click', () => { $('#widgetPreviewModal').hidden = true; });
 
   initDeckControls();
 }
