@@ -38,6 +38,27 @@ exports.handler = async (event) => {
 
   const isAnnual = /annual/i.test(session.reviewType || '');
 
+  // Work out whether the proposed investment is going up, down, or staying flat,
+  // and tell the model explicitly rather than leaving it to infer direction from
+  // two loosely-formatted currency strings — a decrease deserves very different
+  // framing than an increase, and the model shouldn't guess wrong.
+  function parseMoney(str) {
+    if (!str) return null;
+    const m = String(str).replace(/,/g, '').match(/[\d.]+/);
+    return m ? parseFloat(m[0]) : null;
+  }
+  if (sections.investmentSummary) {
+    const current = parseMoney(sections.investmentSummary.currentMonthlyInvestment);
+    const proposed = parseMoney(sections.investmentSummary.proposedNextPeriod);
+    let direction = 'unknown';
+    if (current !== null && proposed !== null) {
+      if (proposed < current) direction = 'decrease';
+      else if (proposed > current) direction = 'increase';
+      else direction = 'flat';
+    }
+    sections.investmentSummary._computedDirection = direction;
+  }
+
   const systemPrompt = `You write client-facing business review content for an MSP (managed service provider) preparing for a client business review meeting.
 
 Voice and rules:
@@ -48,6 +69,11 @@ Voice and rules:
 - Tone: confident, warm, and partner-like — this is a relationship conversation, not a compliance report.
 - ${isAnnual ? 'This is an annual/strategic review — write in a more reflective, strategic tone, looking back across the full period.' : 'This is a quarterly/project check-in — keep the tone focused and action-oriented.'}
 - For Recommended Services: lead every recommendation with the business benefit, not the product name. Reference specific gaps or risks identified elsewhere in the review inputs where relevant.
+- For Investment Summary specifically, the input includes a "_computedDirection" field ("increase", "decrease", "flat", or "unknown") comparing the current monthly investment to the proposed figure. Follow it exactly — do not contradict it or soften a decrease into vague language like "slight adjustment" that obscures which direction it's moving:
+  - "decrease": Say plainly and early that the monthly investment is going down. Give the concrete reason from the inputs (e.g. a project rolling off, work moving from active buildout to steady-state support). Explicitly reassure the client that their level of service is not being reduced — a lower bill should read as good stewardship, not a downgrade.
+  - "increase": Say plainly that the investment is going up, and explain what new scope, risk, or work is driving it.
+  - "flat": Reinforce the value already being delivered at the current level; do not imply any change.
+  - "unknown": No usable numbers were given — write a value-focused narrative without stating a direction or inventing figures.
 - Return JSON only. No preamble, no markdown formatting, no code fences, no commentary — just the raw JSON object.
 
 Only include keys in your response for the sections present in the input. Use exactly this shape per section key:
