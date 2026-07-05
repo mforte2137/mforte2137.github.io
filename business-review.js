@@ -790,6 +790,7 @@ function buildGeneratedSectionEl(sec, data) {
     <textarea class="narrative-edit" data-field="narrative">${escapeHtml(data.narrative || '')}</textarea>
     <div class="generated-actions">
       <button class="btn-secondary regen-btn">Regenerate</button>
+      <button class="btn-secondary preview-btn">Preview widget</button>
       <button class="btn-secondary copy-btn">Copy widget HTML</button>
       <button class="btn-accent push-btn">Push widget</button>
     </div>
@@ -798,10 +799,24 @@ function buildGeneratedSectionEl(sec, data) {
   $('.headline-edit', el).addEventListener('input', e => { data.headline = e.target.value; scheduleSave(); });
   $('.narrative-edit', el).addEventListener('input', e => { data.narrative = e.target.value; scheduleSave(); });
   $('.regen-btn', el).addEventListener('click', () => generateReview([sec.key]));
+  $('.preview-btn', el).addEventListener('click', () => previewWidget(sec.key));
   $('.copy-btn', el).addEventListener('click', () => copyWidgetHtml(sec.key));
   $('.push-btn', el).addEventListener('click', () => pushWidgets([sec.key]));
 
   return el;
+}
+
+function previewWidget(key) {
+  const html = buildWidgetHtml(key, state.current);
+  if (!html) { showToast('Generate this section first.'); return; }
+  const frame = $('#widgetPreviewFrame');
+  // Wrap in a minimal page so the widget renders the way it will inside
+  // Salesbuildr's editor — isolated from this app's own CSS, not floating
+  // unstyled against a transparent background.
+  frame.srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <style>body{margin:16px;background:#fbfcfe;font-family:Arial,Helvetica,sans-serif;}</style>
+    </head><body>${html}</body></html>`;
+  $('#widgetPreviewModal').hidden = false;
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -1401,6 +1416,7 @@ function wireStaticEvents() {
   $('#btnExportJson').addEventListener('click', exportSessionJson);
   $('#btnImportJsonTrigger').addEventListener('click', () => $('#fImportJson').click());
   $('#fImportJson').addEventListener('change', e => importSessionJson(e.target.files[0]));
+  $('#widgetPreviewClose').addEventListener('click', () => { $('#widgetPreviewModal').hidden = true; });
 
   initDeckControls();
 }
