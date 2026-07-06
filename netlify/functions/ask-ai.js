@@ -65,6 +65,24 @@ USE WHEN: Sending a managed services or project proposal and wanting to open con
 NOT FOR: Simple hardware or product-only quotes with no service component.
 URL: https://widgetcreator.netlify.app/complementary-services.html
 
+TOOL: Copilot Proposal Widget Pack
+WHAT: Generates customer-facing proposal widgets for selling Microsoft 365 Copilot to SMB clients. Plain-language, no marketing hype. Six toggleable sections: What Copilot Does in Plain English (app-by-app, industry-specific), What This Means for Your Team (concrete day-in-the-life scenarios), Your Data Stays Yours (data privacy facts, calm and factual), Getting Started (realistic adoption timeline), optional Investment section (ROI framing using Forrester benchmarks — 14-26 minutes saved per user per day), and optional Readiness Confirmed section. Optional tier comparison matrix for MSPs proposing multiple SKU options. Second tool in the AI Tools family.
+WHO: MSP sales reps proposing Microsoft 365 Copilot Business or M365 Copilot to SMB clients after an AI Readiness Assessment.
+INPUT: Client name, industry, company size, Copilot SKU (Business / Business Standard bundle / Business Premium bundle / Enterprise), readiness status, MSP name, section toggles, colour theme.
+OUTPUT: Customer-facing widgets for a Salesbuildr proposal — push individually or as a pack, or copy HTML. MSP adds Copilot licence line items in Salesbuildr separately.
+USE WHEN: Proposing Microsoft 365 Copilot to an SMB client. A prospect asks what Copilot actually does. You need to address data privacy concerns in a proposal. Building a Copilot proposal after an AI Readiness Assessment.
+NOT FOR: Technical Copilot deployment or configuration. Use AI Readiness Proposal Pack first if the client has not completed a readiness assessment.
+URL: https://widgetcreator.netlify.app/copilot-proposal-pack.html
+
+TOOL: AI Readiness Proposal Pack
+WHAT: Generates customer-facing proposal widgets for selling an AI Readiness service engagement — before any assessment work has been done. Explains what the readiness service includes (Identity & Access, Data Governance, Security Baseline), why it's essential before deploying Microsoft 365 Copilot, what deliverables the client receives, and what the risk is of skipping it. Five toggleable sections plus an optional tier comparison matrix. Industry-specific framing across 12 verticals. First tool in the AI Tools family — designed to be used before the Copilot Proposal Widget Pack.
+WHO: MSP sales reps proposing an AI Readiness service to clients considering Microsoft 365 Copilot or AI tooling.
+INPUT: Client name, industry, company size, Copilot SKU being considered, MSP name, section toggles, colour theme.
+OUTPUT: Customer-facing widgets for a Salesbuildr proposal — push individually or as a pack, or copy HTML. MSP adds service line items in Salesbuildr separately.
+USE WHEN: A client is asking about Copilot or AI. You want to position readiness as the essential first step before deployment. Building a proposal for an AI Readiness engagement.
+NOT FOR: Showing assessment results — this tool sells the service before the work begins. Use after a readiness assessment is complete to build the Copilot proposal instead.
+URL: https://widgetcreator.netlify.app/ai-readiness-pack.html
+
 TOOL: Proposal Evaluator
 WHAT: Reads an uploaded MSP proposal through the buyer's eyes and scores it against five questions: do you understand my situation, why should I care now, why should I trust you, what exactly am I getting, and is it worth the money?
 WHO: MSP sales reps or owners who have written a proposal and want an objective read before sending it to a prospect.
