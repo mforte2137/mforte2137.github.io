@@ -174,6 +174,7 @@
     emptyState.hidden = true;
     outputArea.hidden = true;
     loadingState.hidden = false;
+    loadingState.scrollIntoView({ behavior: 'smooth', block: 'start' });
     generateBtn.disabled = true;
     regenerateAllBtn.disabled = true;
 
