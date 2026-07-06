@@ -768,3 +768,42 @@ h1, h2, h3, h4 {
     line-height: 1.6;
     min-height: 300px;
 }
+
+/* ── Solution expand/collapse ── */
+.kb-solution-preview {
+    background: var(--info-bg);
+    border-left: 3px solid var(--accent);
+    padding: 10px 12px;
+    margin: 8px 0;
+    font-size: 0.85rem;
+    color: var(--text-2);
+    line-height: 1.5;
+}
+.kb-solution-preview strong {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent-2);
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* ── Skynet reminder note ── */
+.wp-skynet-note {
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: var(--warn-bg);
+    border: 1px solid #F59E0B;
+    font-size: 11px;
+    color: var(--warn);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.5;
+}
+.wp-skynet-note code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: rgba(0,0,0,0.06);
+    padding: 1px 4px;
+}
