@@ -3939,10 +3939,10 @@ function initFocusMode() {
   const subEl      = document.getElementById('focus-sub');
   const hour = new Date().getHours();
   const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  if (greetingEl) greetingEl.textContent = `${greet}, ${amName}. ${FOCUS_QUEUE.length} accounts need attention today.`;
+  if (greetingEl) greetingEl.textContent = `${greet}, ${amName}. I've organised today's priorities for you.`;
   if (subEl) {
     const first = CUSTOMERS[FOCUS_QUEUE[0].key];
-    if (first) subEl.textContent = `Start with ${first.name} — Priority ${first.priority.score} · ${FOCUS_QUEUE[0].urgency === 'urgent' ? 'Urgent' : FOCUS_QUEUE[0].urgency === 'warn' ? 'Review soon' : 'On track'} · ${PORTFOLIO.find(p=>p.key===FOCUS_QUEUE[0].key)?.why?.slice(0,60)}...`;
+    if (first) subEl.innerHTML = `Start with ${first.name} — the Windows 10 refresh and overdue security review represent an $18,000 opportunity. <span style="opacity:0.75;">Estimated preparation time: 12 minutes.</span>`;
   }
 
   if (!startBtn) return;
