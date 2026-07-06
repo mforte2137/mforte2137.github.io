@@ -268,9 +268,19 @@ function renderKB(issues = knowledgeBase) {
         if (issue.references?.loom)       refs.push(`<a href="${issue.references.loom}" class="reference-link" target="_blank">🎥 Loom</a>`);
         if (issue.references?.additional) refs.push(`<a href="${issue.references.additional}" class="reference-link" target="_blank">💬 Slack</a>`);
 
-        const solutionHtml = issue.solution
-            ? `<div class="kb-solution-preview"><strong>Solution</strong>${issue.solution.slice(0, 200)}${issue.solution.length > 200 ? '…' : ''}</div>`
-            : '';
+        const hasSolution = !!issue.solution;
+        const isLong = hasSolution && issue.solution.length > 220;
+        const solutionHtml = hasSolution ? `
+            <div class="kb-solution-preview" id="sol-wrap-${issue.id}">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <strong>Solution</strong>
+                    <div style="display:flex;gap:6px;">
+                        <button class="btn btn-secondary btn-small" onclick="copySolution('${issue.id}')">📋 Copy</button>
+                        ${isLong ? `<button class="btn btn-secondary btn-small" id="sol-toggle-${issue.id}" onclick="toggleSolution('${issue.id}')">Show more ▾</button>` : ''}
+                    </div>
+                </div>
+                <div id="sol-text-${issue.id}" style="${isLong ? 'max-height:80px;overflow:hidden;' : ''}">${issue.solution.replace(/\n/g, '<br>')}</div>
+            </div>` : '';
 
         const images = (issue.images || []).map(img =>
             `<img src="${img.data}" alt="${img.name}" style="max-width:180px;margin:8px 8px 0 0;cursor:pointer;border:1px solid var(--border);" onclick="window.open('${img.data}','_blank')">`
@@ -620,6 +630,8 @@ Return ONLY the article content — no title, no preamble. The content will be p
         const content  = data.content?.map(b => b.text || '').join('\n') || notes;
 
         // Assemble the full Jira ticket
+        const collectionVal = document.getElementById('wpCollection').value || 'Agent, pick the best fit';
+
         const ticket = `TITLE
 [customer-docs] ${articleTitle}
 
@@ -633,7 +645,7 @@ NEW OR UPDATE?
 ${newOrUpdate}
 
 COLLECTION (HELP-CENTER SECTION)
-${collectionLine}
+${collectionVal}
 
 ARTICLE TITLE
 ${articleTitle}
@@ -647,10 +659,9 @@ SCREENSHOTS
 ${screenshotLine}
 
 RELATED ARTICLES
-${relatedLine}
+${relatedLine}`;
 
----
-@skynet please execute this ticket.`;
+        // Note: paste the ticket into Jira, then add a comment: @skynet please execute this ticket.
 
         draftText.value = ticket;
 
@@ -694,6 +705,22 @@ function wpRedraftArticle() {
 // ── Shared Helpers ────────────────────────────
 function copyLink(url) {
     navigator.clipboard.writeText(url).then(() => showSuccess('Link copied!'));
+}
+
+function copySolution(id) {
+    const issue = knowledgeBase.find(i => i.id === id);
+    if (!issue?.solution) return;
+    navigator.clipboard.writeText(issue.solution).then(() => showSuccess('Solution copied!'));
+}
+
+function toggleSolution(id) {
+    const textEl   = document.getElementById('sol-text-' + id);
+    const toggleEl = document.getElementById('sol-toggle-' + id);
+    if (!textEl || !toggleEl) return;
+    const expanded = textEl.style.maxHeight === 'none';
+    textEl.style.maxHeight  = expanded ? '80px' : 'none';
+    textEl.style.overflow   = expanded ? 'hidden' : 'visible';
+    toggleEl.textContent    = expanded ? 'Show more ▾' : 'Show less ▴';
 }
 
 function formatMarkdown(text) {
