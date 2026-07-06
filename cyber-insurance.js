@@ -1,5 +1,8 @@
 /* ============================================================
    CYBER INSURANCE READINESS WIDGET — cyber-insurance.js
+   Single-page workspace: config (left) + live preview (right).
+   Colour changes and checklist edits re-render instantly from
+   cached data — no AI call unless the rep asks to regenerate copy.
    ============================================================ */
 (function () {
   'use strict';
@@ -21,10 +24,20 @@
     { id: 11, key: 'encryption', name: 'Data Encryption',                     desc: 'Encryption at rest and in transit for sensitive data.',                 critical: false },
     { id: 12, key: 'vendor',     name: 'Third-Party / Vendor Risk',           desc: 'Process for assessing vendor security.',                                critical: false },
   ];
-
-  const STATUS_LABEL = { inPlace: 'In place', partial: 'Partial', notInPlace: 'Not in place', unknown: 'Unknown' };
-  const STATUS_ORDER  = ['inPlace', 'partial', 'notInPlace', 'unknown'];
+  const CRITICAL_KEYS = ['mfa', 'edr', 'backup', 'email', 'irplan'];
   const SESSION_KEY   = 'cyber_insurance_session';
+  const DEFAULT_DISCLAIMER = 'This assessment is based on information provided and does not constitute a formal insurance audit.';
+  const DEFAULT_CLOSING    = 'Once these controls are in place, your environment will meet the requirements of most major cyber insurance underwriters.';
+
+  const HEX = {
+    accent: '#2e74dc', dark: '#1e5bb8', gradStart: '#0f172a',
+    text: '#0b1220', secondary: '#586273', muted: '#9ca3af',
+    bg: '#fbfcfe', panel: '#ffffff', soft: '#f4f7fb', border: '#e3e7ee',
+    successBg: '#dcfce7', successText: '#15a05a',
+    warnBg: '#fef3c7', warnText: '#b3760a',
+    dangerBg: '#fee2e2', dangerText: '#d8402e',
+    unkBg: '#f4f7fb', unkText: '#9ca3af'
+  };
 
   // ── STATE ────────────────────────────────────────────────────
   let state = {
@@ -32,30 +45,18 @@
     controls: CONTROLS_DEF.map(c => ({ id: c.id, status: 'unknown', notes: '' })),
     theme:   { color: '#2e74dc' },
     widget3: false,
+    aiCopy:  { gapExplanations: [], pathItems: [], pathClosing: '', disclaimer: DEFAULT_DISCLAIMER },
     widgets: {}
   };
-  let lastGaps = [];
 
   // ── DOM REFS ─────────────────────────────────────────────────
-  const stepBtns   = document.querySelectorAll('.step-btn');
-  const stepPanels = document.querySelectorAll('.step-panel');
-
   const clientNameEl     = $('clientName');
   const clientIndustryEl = $('clientIndustry');
   const checklistRows    = $('checklistRows');
   const completionCount  = $('completionCount');
 
-  const scoreNumber    = $('scoreNumber');
-  const scoreLabel     = $('scoreLabel');
-  const scoreMarker    = $('scoreMarker');
-  const scoreBreakdown = $('scoreBreakdown');
-  const gapCritical    = $('gapCritical');
-  const gapRecommended = $('gapRecommended');
-  const gapUnknown     = $('gapUnknown');
-
-  const step1Next = $('step1Next');
-  const step2Back = $('step2Back');
-  const step3Back = $('step3Back');
+  const scoreNumber = $('scoreNumber'), scoreLabel = $('scoreLabel'), scoreMarker = $('scoreMarker');
+  const gapCritical = $('gapCritical'), gapRecommended = $('gapRecommended'), gapUnknown = $('gapUnknown');
 
   const downloadTechBtn = $('downloadTechBtn');
   const importTechBtn   = $('importTechBtn');
@@ -64,16 +65,13 @@
   const colourSwatches = $('colourSwatches');
   const customHex      = $('customHex');
   const hexPreview     = $('hexPreview');
-  const themePreviewHeader = $('themePreviewHeader');
-  const themePreviewName   = $('themePreviewName');
   const widget3Toggle  = $('widget3Toggle');
 
-  const generateBtn    = $('generateBtn');
-  const formError      = $('formError');
-  const loadingOverlay = $('loadingOverlay');
-  const loadingMsg     = $('loadingMsg');
-  const widgetsOutput  = $('widgetsOutput');
-  const deliveryTitle  = $('deliveryTitle');
+  const generateBtn   = $('generateBtn');
+  const formError     = $('formError');
+  const emptyState    = $('emptyState');
+  const widgetsOutput = $('widgetsOutput');
+  const deliveryTitle = $('deliveryTitle');
 
   const regenAllBtn       = $('regenAllBtn');
   const copyAllBtn        = $('copyAllBtn');
@@ -85,26 +83,14 @@
   const pushTenantUrl     = $('pushTenantUrl');
   const saveAndPushBtn    = $('saveAndPushBtn');
 
-  const saveSessionBtn   = $('saveSessionBtn');
-  const loadSessionBtn   = $('loadSessionBtn');
-  const newSessionBtn    = $('newSessionBtn');
+  const saveSessionBtn    = $('saveSessionBtn');
+  const loadSessionBtn    = $('loadSessionBtn');
+  const newSessionBtn     = $('newSessionBtn');
   const importSessionFile = $('importSessionFile');
-  const sessionIndicator = $('sessionIndicator');
+  const sessionIndicator  = $('sessionIndicator');
 
   const toast = $('toast');
-
   const WIDGET_IDS = [1, 2, 3];
-
-  // ── STEP NAV ─────────────────────────────────────────────────
-  function goToStep(n) {
-    stepBtns.forEach(b => b.classList.toggle('active', Number(b.dataset.step) === n));
-    stepPanels.forEach(p => p.classList.toggle('active', p.id === `panel-${n}`));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-  stepBtns.forEach(b => b.addEventListener('click', () => goToStep(Number(b.dataset.step))));
-  step1Next.addEventListener('click', () => goToStep(2));
-  step2Back.addEventListener('click', () => goToStep(1));
-  step3Back.addEventListener('click', () => goToStep(2));
 
   // ── CHECKLIST RENDER ─────────────────────────────────────────
   function renderChecklist() {
@@ -114,17 +100,15 @@
       const row = document.createElement('div');
       row.className = 'checklist-row';
       row.innerHTML = `
-        <div class="checklist-row-info">
-          <div class="checklist-row-name">${def.name}</div>
-          <div class="checklist-row-desc">${esc(def.desc)}</div>
-          <textarea class="checklist-row-notes" data-id="${def.id}" placeholder="Optional notes&hellip;">${esc(c.notes)}</textarea>
-        </div>
+        <div class="checklist-row-name">${esc(def.name)}</div>
+        <div class="checklist-row-desc">${esc(def.desc)}</div>
         <div class="segmented" data-id="${def.id}">
           <button data-val="inPlace"    class="${c.status === 'inPlace'    ? 'selected' : ''}">In place</button>
           <button data-val="partial"    class="${c.status === 'partial'    ? 'selected' : ''}">Partial</button>
           <button data-val="notInPlace" class="${c.status === 'notInPlace' ? 'selected' : ''}">Not in place</button>
           <button data-val="unknown"    class="${c.status === 'unknown'    ? 'selected' : ''}">Unknown</button>
         </div>
+        <textarea class="checklist-row-notes" data-id="${def.id}" placeholder="Optional notes&hellip;">${esc(c.notes)}</textarea>
       `;
       checklistRows.appendChild(row);
     });
@@ -133,10 +117,10 @@
       btn.addEventListener('click', () => {
         const id  = Number(btn.parentElement.dataset.id);
         const val = btn.dataset.val;
-        const c   = state.controls.find(x => x.id === id);
-        c.status  = val;
+        state.controls.find(x => x.id === id).status = val;
         btn.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('selected', b === btn));
         refresh();
+        liveRebuildIfGenerated();
         autoSave();
       });
     });
@@ -156,14 +140,12 @@
     const total = controls.reduce((sum, c) => sum + weights[c.status], 0);
     return Math.round((total / controls.length) * 100) / 10;
   }
-
   function scoreBand(score) {
     if (score >= 8.0) return { label: 'Low Risk — Renewal Ready',      color: '#15a05a' };
     if (score >= 6.0) return { label: 'Medium Risk — Some Gaps',       color: '#b3760a' };
     if (score >= 4.0) return { label: 'Elevated Risk — Action Needed', color: '#ea580c' };
     return               { label: 'High Risk — Coverage at Risk',      color: '#d8402e' };
   }
-
   function updateScore() {
     const score = calculateScore(state.controls);
     const band  = scoreBand(score);
@@ -171,61 +153,35 @@
     scoreLabel.textContent = band.label;
     scoreLabel.style.color = band.color;
     scoreMarker.style.left = `${Math.min(100, Math.max(0, score * 10))}%`;
-
-    scoreBreakdown.innerHTML = state.controls.map(c => {
-      const def = CONTROLS_DEF.find(d => d.id === c.id);
-      return `<div class="score-breakdown-row"><span>${esc(def.name)}</span><strong>${STATUS_LABEL[c.status]}</strong></div>`;
-    }).join('');
-
-    const answered = state.controls.filter(c => c.status !== 'unknown' || false).length;
-    // "assessed" = anything the rep has actively set away from default unknown is still counted per spec as unknown counts too;
-    // count controls that have an explicit non-empty status (all do) — show total marked (not unknown) for signal
-    const assessedCount = state.controls.filter(c => c.status !== 'unknown').length;
-    completionCount.textContent = assessedCount;
+    completionCount.textContent = state.controls.filter(c => c.status !== 'unknown').length;
   }
 
   // ── GAP CLASSIFICATION ───────────────────────────────────────
-  const CRITICAL_KEYS = ['mfa', 'edr', 'backup', 'email', 'irplan'];
-
   function classifyGaps() {
     const gaps = [];
     state.controls.forEach(c => {
       if (c.status === 'inPlace') return;
       const def = CONTROLS_DEF.find(d => d.id === c.id);
       let severity;
-      if (c.status === 'unknown') {
-        severity = 'unknown';
-      } else if (c.status === 'notInPlace' && CRITICAL_KEYS.includes(def.key)) {
-        severity = 'critical';
-      } else {
-        severity = 'recommended';
-      }
+      if (c.status === 'unknown') severity = 'unknown';
+      else if (c.status === 'notInPlace' && CRITICAL_KEYS.includes(def.key)) severity = 'critical';
+      else severity = 'recommended';
       gaps.push({ id: def.id, key: def.key, control: def.name, status: c.status, severity, notes: c.notes });
     });
     const order = { critical: 0, recommended: 1, unknown: 2 };
     gaps.sort((a, b) => order[a.severity] - order[b.severity]);
     return gaps;
   }
-
   function updateGapSummary() {
     const gaps = classifyGaps();
-    lastGaps = gaps;
     gapCritical.textContent    = gaps.filter(g => g.severity === 'critical').length;
     gapRecommended.textContent = gaps.filter(g => g.severity === 'recommended').length;
     gapUnknown.textContent     = gaps.filter(g => g.severity === 'unknown').length;
+    return gaps;
   }
-
-  function refresh() {
-    updateScore();
-    updateGapSummary();
-  }
+  function refresh() { updateScore(); updateGapSummary(); }
 
   // ── THEME ────────────────────────────────────────────────────
-  function applyThemePreview() {
-    themePreviewHeader.style.background = `linear-gradient(120deg, #0f172a, ${state.theme.color})`;
-    themePreviewName.textContent = state.client.name || 'Client Name';
-  }
-
   colourSwatches.querySelectorAll('.swatch').forEach(s => {
     s.addEventListener('click', () => {
       colourSwatches.querySelectorAll('.swatch').forEach(x => x.classList.remove('active'));
@@ -233,7 +189,7 @@
       state.theme.color = s.dataset.hex;
       customHex.value = '';
       hexPreview.style.background = 'transparent';
-      applyThemePreview();
+      liveRebuildIfGenerated();
       autoSave();
     });
   });
@@ -243,20 +199,39 @@
       state.theme.color = '#' + v;
       hexPreview.style.background = state.theme.color;
       colourSwatches.querySelectorAll('.swatch').forEach(x => x.classList.remove('active'));
-      applyThemePreview();
+      liveRebuildIfGenerated();
       autoSave();
     }
   });
   widget3Toggle.addEventListener('change', () => {
     state.widget3 = widget3Toggle.checked;
+    liveRebuildIfGenerated();
     autoSave();
   });
-
-  clientNameEl.addEventListener('input', () => { state.client.name = clientNameEl.value; applyThemePreview(); autoSave(); });
+  clientNameEl.addEventListener('input', () => { state.client.name = clientNameEl.value; liveRebuildIfGenerated(); autoSave(); });
   clientIndustryEl.addEventListener('change', () => { state.client.industry = clientIndustryEl.value; autoSave(); });
 
-  // ── EXCEL EXPORT (security.js pattern) ──────────────────────
-  downloadTechBtn.addEventListener('click', () => {
+  function tintColor(hex, amount) {
+    const c = (hex || '#2e74dc').replace('#', '');
+    const r = parseInt(c.substring(0, 2), 16) || 0, g = parseInt(c.substring(2, 4), 16) || 0, b = parseInt(c.substring(4, 6), 16) || 0;
+    const nr = Math.round(r + (255 - r) * amount);
+    const ng = Math.round(g + (255 - g) * amount);
+    const nb = Math.round(b + (255 - b) * amount);
+    return `rgb(${nr},${ng},${nb})`;
+  }
+
+  // ── EXCEL EXPORT — with a REAL dropdown ─────────────────────
+  // SheetJS's free build (xlsx.full.min.js) can READ data validation
+  // but does not persist it when writing. To get an actual working
+  // dropdown in Excel/M365, we build the workbook normally, then open
+  // the resulting .xlsx as a zip (it's OOXML) and inject the
+  // <dataValidations> XML into the Assessment sheet directly.
+  downloadTechBtn.addEventListener('click', async () => {
+    if (typeof JSZip === 'undefined') {
+      showToast('Could not build the dropdown file — JSZip failed to load. Check your connection and try again.');
+      return;
+    }
+
     const wb = XLSX.utils.book_new();
 
     const instrRows = [
@@ -268,7 +243,7 @@
       [''],
       ['INSTRUCTIONS FOR TECH:'],
       ['1. Go to the "Assessment" sheet.'],
-      ['2. For each control, select the CURRENT STATUS from the dropdown:'],
+      ['2. For each control, click the Current Status cell and choose from the dropdown:'],
       ['   • In Place — fully implemented'],
       ['   • Partial — in place for some users/systems but not all'],
       ['   • Not In Place — not implemented'],
@@ -294,25 +269,84 @@
     });
     const assessSheet = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows]);
     assessSheet['!cols'] = [{ wch: 8 }, { wch: 34 }, { wch: 46 }, { wch: 46 }, { wch: 16 }, { wch: 34 }];
-    assessSheet['!dataValidation'] = assessSheet['!dataValidation'] || [];
-    assessSheet['!dataValidation'].push({
-      type: 'list',
-      sqref: `E2:E${CONTROLS_DEF.length + 1}`,
-      formula1: '"In Place,Partial,Not In Place,Unknown"',
-      showDropDown: false,
-      showErrorMessage: true,
-      errorTitle: 'Invalid value',
-      error: 'Please select: In Place, Partial, Not In Place, or Unknown'
-    });
     XLSX.utils.book_append_sheet(wb, assessSheet, 'Assessment');
 
     const defaultName = `${state.client.name || 'Client'} — Cyber Insurance Assessment`;
     const userLabel = window.prompt('Name this spreadsheet file:', defaultName);
     if (userLabel === null) return;
     const safeName = (userLabel.trim() || defaultName).replace(/[^a-z0-9 _\-–—]/gi, '').trim().replace(/\s+/g, '-');
-    XLSX.writeFile(wb, `${safeName}.xlsx`);
-    showToast('Spreadsheet downloaded — send to tech or client contact for completion.');
+
+    downloadTechBtn.disabled = true;
+    const originalLabel = downloadTechBtn.textContent;
+    downloadTechBtn.textContent = 'Building…';
+
+    try {
+      const wbArray = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const zip = await JSZip.loadAsync(wbArray);
+      const sheetPath = await findSheetPathByName(zip, 'Assessment');
+      const lastRow = CONTROLS_DEF.length + 1;
+      const validationXml = `<dataValidations count="1"><dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1" sqref="E2:E${lastRow}"><formula1>"In Place,Partial,Not In Place,Unknown"</formula1></dataValidation></dataValidations>`;
+
+      if (sheetPath && zip.file(sheetPath)) {
+        let xml = await zip.file(sheetPath).async('string');
+        zip.file(sheetPath, insertDataValidations(xml, validationXml));
+      }
+
+      const outBlob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(outBlob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `${safeName}.xlsx`; a.click();
+      URL.revokeObjectURL(url);
+      showToast('Spreadsheet downloaded — the Current Status column has a real dropdown in Excel/M365.');
+    } catch (e) {
+      console.error('Dropdown injection failed, falling back to plain export:', e);
+      XLSX.writeFile(wb, `${safeName}.xlsx`);
+      showToast('Spreadsheet downloaded (dropdown could not be embedded this time — type the status manually).');
+    } finally {
+      downloadTechBtn.disabled = false;
+      downloadTechBtn.textContent = originalLabel;
+    }
   });
+
+  async function findSheetPathByName(zip, name) {
+    const fallback = 'xl/worksheets/sheet2.xml';
+    try {
+      const wbXml = await zip.file('xl/workbook.xml').async('string');
+      const sheetTagMatch = wbXml.match(new RegExp(`<sheet[^>]*name="${name}"[^>]*/?>`));
+      if (!sheetTagMatch) return fallback;
+      const ridMatch = sheetTagMatch[0].match(/r:id="([^"]+)"/);
+      if (!ridMatch) return fallback;
+      const relsXml = await zip.file('xl/_rels/workbook.xml.rels').async('string');
+      const relMatch = relsXml.match(new RegExp(`<Relationship[^>]*Id="${ridMatch[1]}"[^>]*Target="([^"]+)"`));
+      if (!relMatch) return fallback;
+      let target = relMatch[1].replace(/^\//, '');
+      return target.startsWith('xl/') ? target : `xl/${target}`;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  // OOXML requires strict element order inside <worksheet>. dataValidations must
+  // come AFTER mergeCells/phoneticPr/conditionalFormatting (which, if present,
+  // already appear earlier in the string — nothing special needed for those)
+  // and BEFORE everything in this list. Inserting blindly before </worksheet>
+  // or only before <pageMargins> breaks the schema whenever SheetJS emits e.g.
+  // <ignoredErrors> with no <pageMargins> — Excel can flag such a file for repair.
+  function insertDataValidations(xml, validationXml) {
+    const afterTags = [
+      'hyperlinks', 'printOptions', 'pageMargins', 'pageSetup', 'headerFooter',
+      'rowBreaks', 'colBreaks', 'customProperties', 'cellWatches', 'ignoredErrors',
+      'smartTags', 'drawing', 'legacyDrawing', 'oleObjects', 'controls',
+      'webPublishItems', 'tableParts', 'extLst'
+    ];
+    let insertAt = -1;
+    for (const tag of afterTags) {
+      const idx = xml.indexOf(`<${tag}`);
+      if (idx !== -1 && (insertAt === -1 || idx < insertAt)) insertAt = idx;
+    }
+    if (insertAt === -1) return xml.replace('</worksheet>', validationXml + '</worksheet>');
+    return xml.slice(0, insertAt) + validationXml + xml.slice(insertAt);
+  }
 
   function whyItMatters(key) {
     const map = {
@@ -332,9 +366,8 @@
     return map[key] || '';
   }
 
-  // ── EXCEL IMPORT (security.js pattern) ──────────────────────
+  // ── EXCEL IMPORT ─────────────────────────────────────────────
   importTechBtn.addEventListener('click', () => { importXlsxFile.value = ''; importXlsxFile.click(); });
-
   importXlsxFile.addEventListener('change', () => {
     const file = importXlsxFile.files[0];
     if (!file) return;
@@ -352,11 +385,8 @@
           showToast(`Only ${dataRows.length} rows found — expected ${CONTROLS_DEF.length}. Check the file.`);
           return;
         }
-
         const blanks = [];
-        dataRows.slice(0, CONTROLS_DEF.length).forEach((row, idx) => {
-          if (!String(row[4] || '').trim()) blanks.push(idx + 1);
-        });
+        dataRows.slice(0, CONTROLS_DEF.length).forEach((row, idx) => { if (!String(row[4] || '').trim()) blanks.push(idx + 1); });
         if (blanks.length > 0) {
           showToast(`${blanks.length} control${blanks.length > 1 ? 's' : ''} missing a Current Status. All ${CONTROLS_DEF.length} required.`);
           return;
@@ -373,9 +403,9 @@
 
         renderChecklist();
         refresh();
+        liveRebuildIfGenerated();
         autoSave();
         showToast(`✓ Imported ${updated} controls from spreadsheet.`);
-        goToStep(1);
       } catch (err) {
         showToast('Could not read spreadsheet — is it the correct file?');
         console.error(err);
@@ -383,7 +413,6 @@
     };
     reader.readAsArrayBuffer(file);
   });
-
   function normalizeStatus(raw) {
     const s = String(raw || '').trim().toLowerCase();
     if (s === 'in place') return 'inPlace';
@@ -392,34 +421,29 @@
     return 'unknown';
   }
 
-  // ── SESSION SAVE / LOAD (localStorage) ──────────────────────
+  // ── SESSION SAVE / LOAD ──────────────────────────────────────
   function autoSave() {
-    try {
-      localStorage.setItem(SESSION_KEY, JSON.stringify(state));
-      flashSaved();
-    } catch (e) { console.warn('Session save failed:', e); }
+    try { localStorage.setItem(SESSION_KEY, JSON.stringify(state)); flashSaved(); }
+    catch (e) { console.warn('Session save failed:', e); }
   }
-
   function flashSaved() {
     sessionIndicator.hidden = false;
     sessionIndicator.textContent = `Session saved · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   }
-
   function loadFromLocalStorage() {
     try {
       const raw = localStorage.getItem(SESSION_KEY);
       if (!raw) return false;
-      const saved = JSON.parse(raw);
-      restoreState(saved);
+      restoreState(JSON.parse(raw));
       return true;
     } catch (e) { return false; }
   }
-
   function restoreState(saved) {
     state.client   = saved.client   || { name: '', industry: '' };
     state.controls = saved.controls || CONTROLS_DEF.map(c => ({ id: c.id, status: 'unknown', notes: '' }));
     state.theme    = saved.theme    || { color: '#2e74dc' };
     state.widget3  = !!saved.widget3;
+    state.aiCopy   = saved.aiCopy   || { gapExplanations: [], pathItems: [], pathClosing: '', disclaimer: DEFAULT_DISCLAIMER };
     state.widgets  = saved.widgets  || {};
 
     clientNameEl.value = state.client.name || '';
@@ -430,16 +454,19 @@
     colourSwatches.querySelectorAll('.swatch').forEach(s => s.classList.toggle('active', s.dataset.hex === state.theme.color));
     const matched = [...colourSwatches.querySelectorAll('.swatch')].some(s => s.dataset.hex === state.theme.color);
     if (!matched) { customHex.value = state.theme.color.replace('#', ''); hexPreview.style.background = state.theme.color; }
-    applyThemePreview();
+    else { customHex.value = ''; hexPreview.style.background = 'transparent'; }
 
     widget3Toggle.checked = state.widget3;
-    $('widgetBlock-3').hidden = !state.widget3;
 
-    if (Object.keys(state.widgets).length) {
-      WIDGET_IDS.forEach(i => {
-        if (state.widgets[i]) { $(`widget${i}Editor`).value = state.widgets[i]; renderPreview(i); }
-      });
+    if (Object.keys(state.widgets).length && state.widgets[1]) {
+      const gaps = classifyGaps();
+      renderAllWidgets(gaps);
+      emptyState.hidden = true;
+      widgetsOutput.hidden = false;
       deliveryTitle.textContent = `${state.client.name || ''} — Cyber Insurance Widgets`;
+    } else {
+      emptyState.hidden = false;
+      widgetsOutput.hidden = true;
     }
   }
 
@@ -455,24 +482,19 @@
       controls: CONTROLS_DEF.map(c => ({ id: c.id, status: 'unknown', notes: '' })),
       theme: { color: '#2e74dc' },
       widget3: false,
+      aiCopy: { gapExplanations: [], pathItems: [], pathClosing: '', disclaimer: DEFAULT_DISCLAIMER },
       widgets: {}
     };
     clientNameEl.value = ''; clientIndustryEl.value = '';
     renderChecklist(); refresh();
     colourSwatches.querySelectorAll('.swatch').forEach((s, i) => s.classList.toggle('active', i === 0));
     customHex.value = ''; hexPreview.style.background = 'transparent';
-    applyThemePreview();
     widget3Toggle.checked = false;
-    $('widgetBlock-3').hidden = true;
-    WIDGET_IDS.forEach(i => { $(`widget${i}Editor`).value = ''; $(`preview${i}`).innerHTML = ''; });
+    emptyState.hidden = false;
+    widgetsOutput.hidden = true;
     sessionIndicator.hidden = true;
-    goToStep(1);
+    formError.hidden = true;
   });
-
-  // Export/import full session as JSON (backup/restore across devices)
-  const exportJsonBtn = document.createElement('button');
-  // (kept simple: bundled into save button behaviour via prompt is out of scope here;
-  //  JSON export/import wired through hidden file input for symmetry with security.js pattern)
   importSessionFile.addEventListener('change', () => {
     const file = importSessionFile.files[0];
     if (!file) return;
@@ -485,7 +507,6 @@
         restoreState(s);
         autoSave();
         showToast(`Session loaded: ${s.client.name || 'Untitled'}`);
-        goToStep(1);
       } catch (err) {
         showToast('Could not read session file — is it a valid JSON export?');
       }
@@ -493,191 +514,7 @@
     reader.readAsText(file);
   });
 
-  // ── GENERATE WIDGETS ─────────────────────────────────────────
-  function validate() {
-    if (!state.client.name.trim()) return 'Enter a client name before generating.';
-    if (!state.client.industry) return 'Select an industry.';
-    return null;
-  }
-
-  generateBtn.addEventListener('click', onGenerate);
-
-  async function onGenerate() {
-    formError.hidden = true;
-    const err = validate();
-    if (err) { formError.textContent = err; formError.hidden = false; return; }
-
-    const gaps = classifyGaps();
-    lastGaps = gaps;
-
-    goToStep(3);
-    loadingOverlay.hidden = false;
-    widgetsOutput.style.display = 'none';
-    generateBtn.disabled = true;
-
-    try {
-      let aiCopy = { gapExplanations: [], pathToReadiness: { items: [], closing: '' } };
-      if (gaps.length > 0) {
-        loadingMsg.textContent = 'Generating your readiness widgets…';
-        const res = await fetch('/api/cyber-insurance-ai', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            clientName: state.client.name,
-            industry: state.client.industry,
-            gaps: gaps.map(g => ({ control: g.control, status: g.status, severity: g.severity })),
-            includePathToReadiness: state.widget3
-          })
-        });
-        const data = await res.json();
-        if (data && data.ok) aiCopy = data;
-      }
-
-      state.widgets[1] = buildScoreWidget();
-      state.widgets[2] = gaps.length ? buildGapWidget(gaps, aiCopy.gapExplanations || []) : '';
-      $('widgetBlock-2').hidden = gaps.length === 0;
-
-      $('widgetBlock-3').hidden = !state.widget3;
-      if (state.widget3) {
-        state.widgets[3] = buildPathWidget(gaps, aiCopy.pathToReadiness || { items: [], closing: '' });
-      }
-
-      WIDGET_IDS.forEach(i => {
-        if (i === 3 && !state.widget3) return;
-        if (i === 2 && !gaps.length) return;
-        $(`widget${i}Editor`).value = state.widgets[i];
-        renderPreview(i);
-      });
-
-      deliveryTitle.textContent = `${state.client.name} — Cyber Insurance Widgets`;
-      autoSave();
-    } catch (e) {
-      formError.textContent = 'Something went wrong generating widgets: ' + e.message;
-      formError.hidden = false;
-    } finally {
-      loadingOverlay.hidden = true;
-      widgetsOutput.style.display = 'block';
-      generateBtn.disabled = false;
-    }
-  }
-
-  // ── WIDGET BUILDERS (TinyMCE-safe inline HTML) ──────────────
-  function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-
-  const HEX = {
-    accent: '#2e74dc', dark: '#1e5bb8', gradStart: '#0f172a',
-    text: '#0b1220', secondary: '#586273', muted: '#9ca3af',
-    bg: '#fbfcfe', panel: '#ffffff', soft: '#f4f7fb', border: '#e3e7ee',
-    successBg: '#dcfce7', successText: '#15a05a',
-    warnBg: '#fef3c7', warnText: '#b3760a',
-    dangerBg: '#fee2e2', dangerText: '#d8402e',
-    unkBg: '#f4f7fb', unkText: '#9ca3af'
-  };
-
-  function statusPill(status) {
-    const conf = {
-      inPlace:    { bg: HEX.successBg, text: HEX.successText, label: 'In Place' },
-      partial:    { bg: HEX.warnBg,    text: HEX.warnText,    label: 'Partial' },
-      notInPlace: { bg: HEX.dangerBg,  text: HEX.dangerText,  label: 'Not in Place' },
-      unknown:    { bg: HEX.unkBg,     text: HEX.unkText,     label: 'Unknown' }
-    }[status];
-    return `<span style="display:inline-block;padding:3px 10px;border-radius:999px;background:${conf.bg};color:${conf.text};font-family:Source Sans Pro,Arial,sans-serif;font-size:12px;font-weight:600;">${conf.label}</span>`;
-  }
-
-  function buildScoreWidget() {
-    const score = calculateScore(state.controls);
-    const band  = scoreBand(score);
-    const theme = state.theme.color;
-    const period = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
-    const cells = CONTROLS_DEF.map(def => {
-      const c = state.controls.find(x => x.id === def.id);
-      return `<td width="50%" style="padding:12px 14px;border:1px solid ${HEX.border};background:${HEX.panel};">
-        <table width="100%" cellpadding="0" cellspacing="0"><tr>
-          <td style="font-family:Source Sans Pro,Arial,sans-serif;font-size:13px;color:${HEX.text};font-weight:600;">${esc(def.name)}</td>
-          <td align="right">${statusPill(c.status)}</td>
-        </tr></table>
-      </td>`;
-    });
-    let rows = '';
-    for (let i = 0; i < cells.length; i += 2) {
-      rows += `<tr>${cells[i]}${cells[i + 1] || `<td width="50%" style="background:${HEX.panel};border:1px solid ${HEX.border};"></td>`}</tr>`;
-    }
-
-    return `<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:${HEX.panel};border:1px solid ${HEX.border};border-radius:10px;overflow:hidden;">
-  <tr><td style="background:linear-gradient(120deg, ${HEX.gradStart}, ${theme});padding:26px 28px;">
-    <h6 style="margin:0 0 6px 0;font-family:Source Sans Pro,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;color:rgba(255,255,255,0.8);text-transform:uppercase;">Cyber Insurance Readiness</h6>
-    <h5 style="margin:0 0 4px 0;font-family:Montserrat,Arial,sans-serif;font-size:22px;font-weight:700;color:#ffffff;">${esc(state.client.name)}</h5>
-    <div style="font-family:Source Sans Pro,Arial,sans-serif;font-size:13px;color:rgba(255,255,255,0.75);">Assessment &middot; ${period}</div>
-  </td></tr>
-  <tr><td style="padding:24px 28px 10px 28px;">
-    <table width="100%" cellpadding="0" cellspacing="0"><tr>
-      <td width="30%" style="vertical-align:middle;">
-        <span style="font-family:Montserrat,Arial,sans-serif;font-size:40px;font-weight:800;color:${band.color};">${score.toFixed(1)}</span><span style="font-family:Source Sans Pro,Arial,sans-serif;font-size:16px;color:${HEX.muted};">/10</span>
-      </td>
-      <td width="70%" style="vertical-align:middle;">
-        <div style="font-family:Source Sans Pro,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.04em;color:${HEX.muted};text-transform:uppercase;margin-bottom:6px;">Readiness Level</div>
-        <div style="height:8px;border-radius:999px;background:linear-gradient(90deg,#15a05a,#b3760a,#ea580c,#d8402e);"></div>
-        <table width="100%" cellpadding="0" cellspacing="0"><tr>
-          <td style="font-family:Source Sans Pro,Arial,sans-serif;font-size:11px;color:#15a05a;">Low risk</td>
-          <td align="center" style="font-family:Source Sans Pro,Arial,sans-serif;font-size:11px;color:${HEX.muted};">Medium</td>
-          <td align="right" style="font-family:Source Sans Pro,Arial,sans-serif;font-size:11px;color:#d8402e;">High risk</td>
-        </tr></table>
-      </td>
-    </tr></table>
-  </td></tr>
-  <tr><td style="padding:6px 28px 26px 28px;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
-      ${rows}
-    </table>
-  </td></tr>
-</table>`;
-  }
-
-  function buildGapWidget(gaps, explanations) {
-    const explMap = {};
-    (explanations || []).forEach(e => { explMap[e.control] = e.explanation; });
-
-    const severityConf = {
-      critical:    { icon: '⚠️', label: 'CRITICAL — MAY AFFECT COVERAGE',   color: HEX.dangerText, bg: HEX.dangerBg },
-      recommended: { icon: '⚡', label: 'RECOMMENDED — MAY AFFECT PREMIUM', color: HEX.warnText,   bg: HEX.warnBg },
-      unknown:     { icon: '❓', label: 'UNKNOWN — VERIFY BEFORE RENEWAL',  color: HEX.unkText,    bg: HEX.unkBg }
-    };
-
-    const rows = gaps.map(g => {
-      const conf = severityConf[g.severity];
-      const text = g.severity === 'unknown'
-        ? "We haven't confirmed this yet — we recommend verifying before renewal."
-        : (explMap[g.control] || defaultExplanation(g.key));
-      const gapLabel = g.severity === 'unknown' ? `${g.control} status unknown`
-        : g.status === 'partial' ? `${g.control} not fully deployed`
-        : `No ${g.control}`;
-      return `<tr><td style="padding:16px 20px;border-bottom:1px solid ${HEX.border};">
-        <table width="100%" cellpadding="0" cellspacing="0"><tr>
-          <td width="36" style="vertical-align:top;">
-            <span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:6px;background:${conf.bg};font-size:13px;">${conf.icon}</span>
-          </td>
-          <td style="vertical-align:top;padding-left:12px;">
-            <div style="font-family:Source Sans Pro,Arial,sans-serif;font-size:14px;font-weight:700;color:${HEX.text};margin-bottom:3px;">${esc(gapLabel)}</div>
-            <div style="font-family:Source Sans Pro,Arial,sans-serif;font-size:13px;color:${HEX.secondary};line-height:1.5;margin-bottom:6px;">${esc(text)}</div>
-            <div style="font-family:Source Sans Pro,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.03em;color:${conf.color};">${conf.label}</div>
-          </td>
-        </tr></table>
-      </td></tr>`;
-    }).join('');
-
-    return `<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:${HEX.panel};border:1px solid ${HEX.border};border-top:3px solid ${HEX.dangerText};border-radius:10px;overflow:hidden;">
-  <tr><td style="padding:22px 20px 14px 20px;">
-    <h6 style="margin:0 0 6px 0;font-family:Source Sans Pro,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.06em;color:${HEX.dangerText};text-transform:uppercase;">Critical gaps identified</h6>
-    <h5 style="margin:0;font-family:Montserrat,Arial,sans-serif;font-size:18px;font-weight:700;color:${HEX.text};">What needs to be addressed before renewal</h5>
-  </td></tr>
-  ${rows}
-  <tr><td style="padding:14px 20px;background:${HEX.soft};">
-    <div style="font-family:Source Sans Pro,Arial,sans-serif;font-size:12px;font-style:italic;color:${HEX.muted};">This assessment is based on information provided and does not constitute a formal insurance audit.</div>
-  </td></tr>
-</table>`;
-  }
-
+  // ── AI COPY (resilient — never throws, always returns usable copy) ──
   function defaultExplanation(key) {
     const map = {
       mfa: 'Most underwriters now require MFA on all email, remote access, and admin accounts.',
@@ -695,33 +532,6 @@
     };
     return map[key] || 'This control is commonly required by cyber insurance underwriters.';
   }
-
-  function buildPathWidget(gaps, pathData) {
-    const items = pathData.items || [];
-    const itemMap = {};
-    items.forEach(i => { itemMap[i.control] = i.description; });
-
-    const rows = gaps.map(g => {
-      const desc = itemMap[g.control] || defaultPathDescription(g.key);
-      return `<tr><td style="padding:14px 20px;border-bottom:1px solid ${HEX.border};">
-        <div style="font-family:Source Sans Pro,Arial,sans-serif;font-size:14px;font-weight:700;color:${HEX.text};margin-bottom:3px;">${esc(g.control)}</div>
-        <div style="font-family:Source Sans Pro,Arial,sans-serif;font-size:13px;color:${HEX.secondary};line-height:1.5;">${esc(desc)}</div>
-      </td></tr>`;
-    }).join('');
-
-    const closing = pathData.closing || 'Once these controls are in place, your environment will meet the requirements of most major cyber insurance underwriters.';
-
-    return `<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:${HEX.panel};border:1px solid ${HEX.border};border-top:3px solid ${state.theme.color};border-radius:10px;overflow:hidden;">
-  <tr><td style="padding:22px 20px 14px 20px;">
-    <h5 style="margin:0;font-family:Montserrat,Arial,sans-serif;font-size:18px;font-weight:700;color:${HEX.text};">How We Close These Gaps</h5>
-  </td></tr>
-  ${rows}
-  <tr><td style="padding:16px 20px;background:${HEX.soft};">
-    <div style="font-family:Source Sans Pro,Arial,sans-serif;font-size:13px;color:${HEX.secondary};line-height:1.5;">${esc(closing)}</div>
-  </td></tr>
-</table>`;
-  }
-
   function defaultPathDescription(key) {
     const map = {
       mfa: 'Multi-factor authentication deployment across email, remote access, and admin accounts.',
@@ -739,62 +549,334 @@
     };
     return map[key] || 'A managed service addressing this control area.';
   }
+  function buildFallbackCopy(gaps, includePath) {
+    return {
+      gapExplanations: gaps.map(g => ({ control: g.control, explanation: defaultExplanation(g.key) })),
+      pathItems: includePath ? gaps.map(g => ({ control: g.control, description: defaultPathDescription(g.key) })) : [],
+      pathClosing: includePath ? DEFAULT_CLOSING : '',
+      disclaimer: DEFAULT_DISCLAIMER
+    };
+  }
+  // Never throws. Always returns a fully-populated, usable copy object —
+  // AI text where available, deterministic fallback text everywhere else.
+  async function safeFetchAiCopy(gaps, includePath) {
+    const fallback = buildFallbackCopy(gaps, includePath);
+    if (!gaps.length) return fallback;
+    try {
+      const res = await fetch('/api/cyber-insurance-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientName: state.client.name,
+          industry: state.client.industry,
+          gaps: gaps.map(g => ({ control: g.control, status: g.status, severity: g.severity })),
+          includePathToReadiness: includePath
+        })
+      });
+      let data;
+      try { data = await res.json(); }
+      catch (e) { console.warn('[cyber-insurance] AI response was not JSON — using local copy.', e); return fallback; }
 
-  // ── PREVIEW / EDIT / REGEN / COPY ───────────────────────────
+      if (!res.ok || !data || !data.ok) {
+        console.warn('[cyber-insurance] AI call failed — using local copy.', data && data.error);
+        return fallback;
+      }
+
+      const explanations = gaps.map(g => {
+        const found = (data.gapExplanations || []).find(e => e.control === g.control && e.explanation);
+        return found || fallback.gapExplanations.find(e => e.control === g.control);
+      });
+
+      let pathItems = fallback.pathItems, pathClosing = fallback.pathClosing;
+      if (includePath) {
+        const pd = data.pathToReadiness || {};
+        pathItems = gaps.map(g => {
+          const found = (pd.items || []).find(e => e.control === g.control && e.description);
+          return found || fallback.pathItems.find(e => e.control === g.control);
+        });
+        pathClosing = pd.closing || fallback.pathClosing;
+      }
+      return { gapExplanations: explanations, pathItems, pathClosing, disclaimer: fallback.disclaimer };
+    } catch (e) {
+      console.warn('[cyber-insurance] AI call threw — using local copy.', e);
+      return fallback;
+    }
+  }
+
+  // ── GENERATE ─────────────────────────────────────────────────
+  function validate() {
+    if (!state.client.name.trim()) return 'Enter a client name before generating.';
+    if (!state.client.industry) return 'Select an industry.';
+    return null;
+  }
+  generateBtn.addEventListener('click', onGenerate);
+
+  async function onGenerate() {
+    formError.hidden = true;
+    const err = validate();
+    if (err) { formError.textContent = err; formError.hidden = false; return; }
+
+    const gaps = classifyGaps();
+    generateBtn.disabled = true;
+    const originalLabel = generateBtn.textContent;
+    generateBtn.textContent = 'Generating…';
+
+    try {
+      state.aiCopy = await safeFetchAiCopy(gaps, state.widget3);
+      renderAllWidgets(gaps);
+      emptyState.hidden = true;
+      widgetsOutput.hidden = false;
+      deliveryTitle.textContent = `${state.client.name} — Cyber Insurance Widgets`;
+      autoSave();
+    } finally {
+      generateBtn.disabled = false;
+      generateBtn.textContent = originalLabel;
+    }
+  }
+
+  // Instant, local re-render — used for theme changes, checklist edits,
+  // and the widget-3 toggle. No AI call. Uses cached aiCopy text and
+  // falls back to default copy for any gap that doesn't have cached text yet.
+  function liveRebuildIfGenerated() {
+    if (widgetsOutput.hidden) return; // nothing generated yet
+    renderAllWidgets(classifyGaps());
+    autoSave();
+  }
+
+  // ── WIDGET BUILDERS (TinyMCE-safe inline HTML) ──────────────
+  function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+  function bannerHeader(kicker, title, sub) {
+    return `<div style="background:linear-gradient(120deg, ${HEX.gradStart}, ${state.theme.color});padding:22px 26px;">
+    <div style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;color:rgba(255,255,255,0.8);text-transform:uppercase;margin-bottom:6px;">${esc(kicker)}</div>
+    <div style="font-family:Montserrat,Arial,sans-serif;font-size:19px;font-weight:700;color:#ffffff;">${esc(title)}</div>
+    ${sub ? `<div style="margin-top:4px;font-family:'Source Sans Pro',Arial,sans-serif;font-size:12.5px;color:rgba(255,255,255,0.75);">${esc(sub)}</div>` : ''}
+  </div>`;
+  }
+
+  function statusPill(status) {
+    const conf = {
+      inPlace:    { bg: HEX.successBg, text: HEX.successText, label: 'In Place' },
+      partial:    { bg: HEX.warnBg,    text: HEX.warnText,    label: 'Partial' },
+      notInPlace: { bg: HEX.dangerBg,  text: HEX.dangerText,  label: 'Not in Place' },
+      unknown:    { bg: HEX.unkBg,     text: HEX.unkText,     label: 'Unknown' }
+    }[status];
+    return `<span style="display:inline-block;padding:3px 10px;border-radius:999px;background:${conf.bg};color:${conf.text};font-family:'Source Sans Pro',Arial,sans-serif;font-size:12px;font-weight:600;">${conf.label}</span>`;
+  }
+
+  function buildScoreWidget() {
+    const score = calculateScore(state.controls);
+    const band  = scoreBand(score);
+    const period = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    const cells = CONTROLS_DEF.map(def => {
+      const c = state.controls.find(x => x.id === def.id);
+      return `<td width="50%" style="padding:12px 14px;border:1px solid ${HEX.border};background:${HEX.panel};">
+        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:13px;color:${HEX.text};font-weight:600;">${esc(def.name)}</td>
+          <td align="right">${statusPill(c.status)}</td>
+        </tr></table>
+      </td>`;
+    });
+    let rows = '';
+    for (let i = 0; i < cells.length; i += 2) {
+      rows += `<tr>${cells[i]}${cells[i + 1] || `<td width="50%" style="background:${HEX.panel};border:1px solid ${HEX.border};"></td>`}</tr>`;
+    }
+
+    return `<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:${HEX.panel};">
+  <tr><td>${bannerHeader('Cyber Insurance Readiness', state.client.name || 'Client Name', `Assessment · ${period}`)}</td></tr>
+  <tr><td style="padding:24px 26px 10px 26px;">
+    <table width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td width="30%" style="vertical-align:middle;">
+        <span style="font-family:Montserrat,Arial,sans-serif;font-size:40px;font-weight:800;color:${band.color};">${score.toFixed(1)}</span><span style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:16px;color:${HEX.muted};">/10</span>
+      </td>
+      <td width="70%" style="vertical-align:middle;">
+        <div style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.04em;color:${HEX.muted};text-transform:uppercase;margin-bottom:6px;">Readiness Level</div>
+        <div style="height:8px;border-radius:999px;background:linear-gradient(90deg,#15a05a,#b3760a,#ea580c,#d8402e);"></div>
+        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:11px;color:#15a05a;">Low risk</td>
+          <td align="center" style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:11px;color:${HEX.muted};">Medium</td>
+          <td align="right" style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:11px;color:#d8402e;">High risk</td>
+        </tr></table>
+      </td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:6px 26px 26px 26px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+      ${rows}
+    </table>
+  </td></tr>
+</table>`;
+  }
+
+  const SEVERITY_CONF = {
+    critical:    { icon: '⚠️', label: 'CRITICAL — MAY AFFECT COVERAGE',   color: HEX.dangerText, bg: HEX.dangerBg },
+    recommended: { icon: '⚡', label: 'RECOMMENDED — MAY AFFECT PREMIUM', color: HEX.warnText,   bg: HEX.warnBg },
+    unknown:     { icon: '❓', label: 'UNKNOWN — VERIFY BEFORE RENEWAL',  color: HEX.unkText,    bg: HEX.unkBg }
+  };
+
+  function buildGapWidget(gaps) {
+    const rows = gaps.map((g, idx) => {
+      const conf = SEVERITY_CONF[g.severity];
+      const found = state.aiCopy.gapExplanations.find(e => e.control === g.control);
+      const expl = (found && found.explanation) || defaultExplanation(g.key);
+      const gapLabel = g.severity === 'unknown' ? `${g.control} status unknown`
+        : g.status === 'partial' ? `${g.control} not fully deployed`
+        : `No ${g.control}`;
+      const rowBg = idx % 2 === 1 ? tintColor(state.theme.color, 0.95) : '#ffffff';
+      return `<tr><td style="padding:16px 22px;border-bottom:1px solid ${HEX.border};background:${rowBg};">
+        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td width="36" style="vertical-align:top;">
+            <span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:6px;background:${conf.bg};font-size:13px;">${conf.icon}</span>
+          </td>
+          <td style="vertical-align:top;padding-left:12px;">
+            <div style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:14px;font-weight:700;color:${HEX.text};margin-bottom:3px;">${esc(gapLabel)}</div>
+            <div data-edit="gapExpl" data-control="${esc(g.control)}" style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:13px;color:${HEX.secondary};line-height:1.5;margin-bottom:6px;">${esc(expl)}</div>
+            <div style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.03em;color:${conf.color};">${conf.label}</div>
+          </td>
+        </tr></table>
+      </td></tr>`;
+    }).join('');
+
+    const subLine = state.client.name ? `Prepared for ${state.client.name}` : '';
+
+    return `<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:${HEX.panel};">
+  <tr><td>${bannerHeader('Critical gaps identified', 'What needs to be addressed before renewal', subLine)}</td></tr>
+  ${rows}
+  <tr><td style="padding:14px 22px;background:${HEX.soft};">
+    <div data-edit="disclaimer" style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:12px;font-style:italic;color:${HEX.muted};">${esc(state.aiCopy.disclaimer || DEFAULT_DISCLAIMER)}</div>
+  </td></tr>
+</table>`;
+  }
+
+  function buildPathWidget(gaps) {
+    const rows = gaps.map((g, idx) => {
+      const found = state.aiCopy.pathItems.find(e => e.control === g.control);
+      const desc = (found && found.description) || defaultPathDescription(g.key);
+      const rowBg = idx % 2 === 1 ? tintColor(state.theme.color, 0.94) : '#ffffff';
+      return `<tr><td style="padding:15px 22px;border-bottom:1px solid ${HEX.border};background:${rowBg};">
+        <div style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:14px;font-weight:700;color:${HEX.text};margin-bottom:3px;">${esc(g.control)}</div>
+        <div data-edit="pathDesc" data-control="${esc(g.control)}" style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:13px;color:${HEX.secondary};line-height:1.5;">${esc(desc)}</div>
+      </td></tr>`;
+    }).join('');
+
+    const closing = state.aiCopy.pathClosing || DEFAULT_CLOSING;
+    const subLine = state.client.name ? `Prepared for ${state.client.name}` : '';
+
+    return `<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:${HEX.panel};">
+  <tr><td>${bannerHeader('Path to readiness', 'How We Close These Gaps', subLine)}</td></tr>
+  ${rows}
+  <tr><td style="background:${state.theme.color};padding:16px 22px;">
+    <div data-edit="closing" style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:13px;color:#ffffff;line-height:1.6;">${esc(closing)}</div>
+  </td></tr>
+</table>`;
+  }
+
+  // ── RENDER / EDIT WIRING ─────────────────────────────────────
   function renderPreview(i) {
     const el = $(`preview${i}`);
     if (el) el.innerHTML = state.widgets[i] || '';
   }
 
-  WIDGET_IDS.forEach(i => {
-    const ed = $(`widget${i}Editor`);
-    ed.addEventListener('input', function () {
-      state.widgets[i] = this.value;
-      renderPreview(i);
-      autoSave();
+  function captureHtml(i) {
+    const el = $(`preview${i}`);
+    if (!el) return '';
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll('[contenteditable]').forEach(n => { n.removeAttribute('contenteditable'); });
+    return clone.innerHTML;
+  }
+
+  function makeEditable(i) {
+    const el = $(`preview${i}`);
+    if (!el) return;
+    el.querySelectorAll('[data-edit]').forEach(node => {
+      node.setAttribute('contenteditable', 'true');
+      node.addEventListener('input', () => {
+        const key     = node.dataset.edit;
+        const control = node.dataset.control;
+        const text    = node.textContent;
+        if (key === 'gapExpl') {
+          let entry = state.aiCopy.gapExplanations.find(g => g.control === control);
+          if (entry) entry.explanation = text; else state.aiCopy.gapExplanations.push({ control, explanation: text });
+        } else if (key === 'pathDesc') {
+          let entry = state.aiCopy.pathItems.find(g => g.control === control);
+          if (entry) entry.description = text; else state.aiCopy.pathItems.push({ control, description: text });
+        } else if (key === 'disclaimer') {
+          state.aiCopy.disclaimer = text;
+        } else if (key === 'closing') {
+          state.aiCopy.pathClosing = text;
+        }
+        state.widgets[i] = captureHtml(i);
+        autoSave();
+      });
     });
-    document.querySelector(`.widget-regen[data-widget="${i}"]`).addEventListener('click', () => onRegen(i));
+  }
+
+  function renderAllWidgets(gaps) {
+    state.widgets[1] = buildScoreWidget();
+    renderPreview(1);
+
+    if (gaps.length) {
+      state.widgets[2] = buildGapWidget(gaps);
+      $('widgetBlock-2').hidden = false;
+      renderPreview(2);
+      makeEditable(2);
+    } else {
+      state.widgets[2] = '';
+      $('widgetBlock-2').hidden = true;
+    }
+
+    if (state.widget3) {
+      state.widgets[3] = buildPathWidget(gaps);
+      $('widgetBlock-3').hidden = false;
+      renderPreview(3);
+      makeEditable(3);
+    } else {
+      $('widgetBlock-3').hidden = true;
+    }
+  }
+
+  // ── REGENERATE (fetches fresh AI wording) ───────────────────
+  WIDGET_IDS.forEach(i => {
+    document.querySelector(`.widget-regen[data-widget="${i}"]`).addEventListener('click', () => onRegenOne(i));
     document.querySelector(`.widget-copy[data-widget="${i}"]`).addEventListener('click', () => onCopy(i));
-    document.querySelector(`.show-html-btn[data-widget="${i}"]`).addEventListener('click', () => onToggleHtml(i));
   });
 
-  async function onRegen(i) {
+  async function onRegenOne(i) {
+    const gaps = classifyGaps();
+    if (i === 1) { state.widgets[1] = buildScoreWidget(); renderPreview(1); autoSave(); return; }
+
     const btn = document.querySelector(`.widget-regen[data-widget="${i}"]`);
-    btn.disabled = true;
     const label = btn.textContent;
-    btn.textContent = '…';
+    btn.disabled = true; btn.textContent = '…';
     try {
-      if (i === 1) {
-        state.widgets[1] = buildScoreWidget();
-      } else {
-        const gaps = classifyGaps();
-        let aiCopy = {};
-        if (gaps.length) {
-          const res = await fetch('/api/cyber-insurance-ai', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              clientName: state.client.name,
-              industry: state.client.industry,
-              gaps: gaps.map(g => ({ control: g.control, status: g.status, severity: g.severity })),
-              includePathToReadiness: i === 3
-            })
-          });
-          const data = await res.json();
-          if (data && data.ok) aiCopy = data;
-        }
-        if (i === 2) state.widgets[2] = buildGapWidget(gaps, aiCopy.gapExplanations || []);
-        if (i === 3) state.widgets[3] = buildPathWidget(gaps, aiCopy.pathToReadiness || {});
-      }
-      $(`widget${i}Editor`).value = state.widgets[i];
-      renderPreview(i);
+      const copy = await safeFetchAiCopy(gaps, i === 3 ? true : state.widget3);
+      if (i === 2) state.aiCopy.gapExplanations = copy.gapExplanations;
+      if (i === 3) { state.aiCopy.pathItems = copy.pathItems; state.aiCopy.pathClosing = copy.pathClosing; }
+      renderAllWidgets(gaps);
       autoSave();
-    } catch (e) {
-      showToast('Regeneration failed: ' + e.message);
+      showToast('Regenerated.');
     } finally {
       btn.disabled = false; btn.textContent = label;
     }
   }
+
+  regenAllBtn.addEventListener('click', async () => {
+    const gaps = classifyGaps();
+    if (!gaps.length) { showToast('No gaps to regenerate.'); return; }
+    const label = regenAllBtn.textContent;
+    regenAllBtn.disabled = true; regenAllBtn.textContent = 'Regenerating…';
+    try {
+      const copy = await safeFetchAiCopy(gaps, state.widget3);
+      state.aiCopy.gapExplanations = copy.gapExplanations;
+      if (state.widget3) { state.aiCopy.pathItems = copy.pathItems; state.aiCopy.pathClosing = copy.pathClosing; }
+      renderAllWidgets(gaps);
+      autoSave();
+      showToast('Copy regenerated.');
+    } finally {
+      regenAllBtn.disabled = false; regenAllBtn.textContent = label;
+    }
+  });
 
   function onCopy(i) {
     const btn = document.querySelector(`.widget-copy[data-widget="${i}"]`);
@@ -803,20 +885,6 @@
       setTimeout(() => btn.textContent = 'Copy HTML', 2000);
     });
   }
-
-  function onToggleHtml(i) {
-    const ed  = $(`widget${i}Editor`);
-    const btn = document.querySelector(`.show-html-btn[data-widget="${i}"]`);
-    const shown = ed.style.display === 'block';
-    ed.style.display = shown ? 'none' : 'block';
-    btn.textContent = shown ? 'Show HTML' : 'Hide HTML';
-  }
-
-  regenAllBtn.addEventListener('click', async () => {
-    await onRegen(1);
-    if (!$('widgetBlock-2').hidden) await onRegen(2);
-    if (!$('widgetBlock-3').hidden) await onRegen(3);
-  });
 
   copyAllBtn.addEventListener('click', () => {
     const active = WIDGET_IDS.filter(i => !$(`widgetBlock-${i}`).hidden);
@@ -834,7 +902,6 @@
       .filter(i => !$(`widgetBlock-${i}`).hidden && state.widgets[i])
       .map(i => ({ id: i, title: `${state.client.name} — Cyber Insurance — ${labels[i]}`, html: state.widgets[i] }));
   }
-
   async function onPush(type) {
     const apiKey    = localStorage.getItem('sb_api_key');
     const tenantUrl = localStorage.getItem('sb_tenant_url');
@@ -845,7 +912,6 @@
     }
     await executePush(type, apiKey, tenantUrl);
   }
-
   saveAndPushBtn.addEventListener('click', async () => {
     const apiKey    = pushApiKey.value.trim();
     const tenantUrl = pushTenantUrl.value.trim();
@@ -855,7 +921,6 @@
     credsInline.hidden = true;
     await executePush('individual', apiKey, tenantUrl);
   });
-
   async function executePush(type, apiKey, tenantUrl) {
     const widgets = activeWidgetList();
     const prefix  = `${state.client.name} — Cyber Insurance`;
@@ -868,9 +933,7 @@
     pushPackBtn.textContent = pushIndividualBtn.textContent = 'Pushing…';
 
     try {
-      const res  = await fetch('/api/push-widgets', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-      });
+      const res  = await fetch('/api/push-widgets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await res.json();
       if (data.ok || data.successCount > 0) {
         showPushStatus(`Pushed successfully${data.successCount ? ` (${data.successCount} widget${data.successCount > 1 ? 's' : ''})` : ''}.`, 'ok');
@@ -884,18 +947,16 @@
       pushPackBtn.textContent = pLbl; pushIndividualBtn.textContent = iLbl;
     }
   }
-
   function showPushStatus(msg, type) {
     pushStatus.textContent = msg;
     pushStatus.className = 'push-status ' + type;
     pushStatus.hidden = false;
     if (type === 'err') setTimeout(() => { pushStatus.hidden = true; }, 8000);
   }
-
   pushIndividualBtn.addEventListener('click', () => onPush('individual'));
   pushPackBtn.addEventListener('click', () => onPush('pack'));
 
-  // ── TOAST ─────────────────────────────────────────────────────
+  // ── TOAST ────────────────────────────────────────────────────
   function showToast(msg) {
     toast.textContent = msg;
     toast.hidden = false;
@@ -913,10 +974,7 @@
     if (!loadFromLocalStorage()) {
       renderChecklist();
       refresh();
-      applyThemePreview();
     }
-    goToStep(1);
   }
-
   init();
 })();
