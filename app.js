@@ -130,6 +130,30 @@ const TOOLS = [
     icon: "compass"
   },
   {
+    title: "Copilot Proposal Widget Pack",
+    shortLabel: "Copilot Pack",
+    description:
+      "Sell Microsoft 365 Copilot with confidence. Generate plain-language customer widgets covering what it does, industry-specific use cases, data privacy facts, and getting started — without the marketing hype. Designed for the post-readiness proposal.",
+    category: "AI Tools",
+    url: "https://widgetcreator.netlify.app/copilot-proposal-pack.html",
+    badge: "new",
+    updated: "2026-07-05",
+    gradient: "aurora",
+    icon: "idea"
+  },
+  {
+    title: "AI Readiness Proposal Pack",
+    shortLabel: "AI Readiness",
+    description:
+      "Sell your AI Readiness service with confidence. Generate customer-facing widgets explaining what's included, why it matters before deploying Copilot, and what happens without it — ready to push into any Salesbuildr proposal.",
+    category: "AI Tools",
+    url: "https://widgetcreator.netlify.app/ai-readiness-pack.html",
+    badge: "new",
+    updated: "2026-07-05",
+    gradient: "electric",
+    icon: "checklist"
+  },
+  {
     title: "Proposal Evaluator",
     shortLabel: "Proposal Evaluator",
     description:
@@ -482,6 +506,8 @@ const GRADIENTS = {
   dusk:    "linear-gradient(135deg, #2e1065 0%, #6d28d9 55%, #a78bfa 100%)",
   steel:   "linear-gradient(135deg, #0f172a 0%, #334155 55%, #94a3b8 100%)",
   sapphire:"linear-gradient(135deg, #1e1b4b 0%, #1d4ed8 55%, #60a5fa 100%)",
+  electric:"linear-gradient(135deg, #0c4a6e 0%, #0ea5e9 55%, #67e8f9 100%)",
+  aurora:  "linear-gradient(135deg, #4c1d95 0%, #7c3aed 45%, #06b6d4 100%)",
   mint:    "linear-gradient(135deg, #022c22 0%, #059669 55%, #6ee7b7 100%)",
   cyan:    "linear-gradient(135deg, #164e63 0%, #0891b2 55%, #67e8f9 100%)",
   forest:  "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #86efac 100%)",
@@ -1091,6 +1117,20 @@ Your data stays with you. Files are read locally in the browser and never transm
       out:   "A branded, Salesbuildr-ready widget listing AI-generated complementary services — tagged as recommended or optional, reordered to your preference, ready to drop into your proposal.",
       when:  "You are sending a managed services or project proposal and want to open conversations about additional services. You want to present a mini-roadmap that positions you as a strategic partner.",
       not:   "Simple hardware or product-only quotes with no service component."
+    },
+    "Copilot Proposal Widget Pack": {
+      who:   "MSP sales reps proposing Microsoft 365 Copilot to SMB clients — after an AI Readiness Assessment has confirmed the environment is ready.",
+      input: "Client name, industry, company size, Copilot SKU, readiness status, MSP name, colour theme. Toggle sections: What It Does, Your Team, Data Privacy, Getting Started, Investment, Readiness Confirmed, and optional Tier Matrix.",
+      out:   "Customer-facing proposal widgets — plain-language Copilot explanation, industry-specific use cases, data privacy facts, adoption roadmap, optional ROI framing, and optional tier comparison. Push to Salesbuildr or copy HTML.",
+      when:  "Proposing Microsoft 365 Copilot after an AI Readiness Assessment. A client is asking what Copilot actually does. You need to address data privacy objections professionally. Building a Copilot proposal for an SMB client.",
+      not:   "Not a technical deployment guide. Not a licensing calculator. Second tool in the AI Tools family — use AI Readiness Proposal Pack first to sell the readiness engagement."
+    },
+    "AI Readiness Proposal Pack": {
+      who:   "MSP sales reps proposing an AI Readiness service to clients considering Microsoft 365 Copilot or any AI tooling.",
+      input: "Client name, industry, company size, Copilot SKU being considered, MSP name, colour theme. Toggle sections: Why It Matters, What\'s Covered, What You Get, What Happens Without It, Next Step, and optional Tier Matrix.",
+      out:   "Customer-facing proposal widgets explaining the AI Readiness service — what it includes, why it comes before Copilot, and what the client receives. Push to Salesbuildr or copy HTML. Add service line items in Salesbuildr separately.",
+      when:  "A client is considering Microsoft 365 Copilot or asking about AI. You want to position a readiness assessment as the essential first step. Building a proposal for an AI Readiness service engagement.",
+      not:   "Not an assessment tool — no client environment is scanned. No results are shown. This sells the readiness service before the work begins."
     },
     "Proposal Evaluator": {
       who:   "MSP sales reps or owners who have written a proposal and want an objective read before sending it to a prospect.",
