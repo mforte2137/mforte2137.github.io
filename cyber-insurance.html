@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Insurance Readiness Widget</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="cyber-insurance.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ============== HEADER ============== -->
+  <header class="app-header">
+    <div class="app-header-inner">
+      <a href="/" class="back-link">&larr; MSP Tools Hub</a>
+      <div class="app-title-block">
+        <span class="app-kicker">Security</span>
+        <h1 class="app-title">Cyber Insurance Readiness Widget</h1>
+      </div>
+      <div class="session-controls">
+        <span id="sessionIndicator" class="session-indicator" hidden></span>
+        <button id="saveSessionBtn" class="btn btn-ghost btn-sm" type="button">Save session</button>
+        <button id="loadSessionBtn" class="btn btn-ghost btn-sm" type="button">Load session</button>
+        <button id="newSessionBtn" class="btn btn-ghost btn-sm" type="button">New</button>
+        <input type="file" id="importSessionFile" accept="application/json" hidden>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============== STEP NAV ============== -->
+  <nav class="step-nav">
+    <button class="step-btn active" data-step="1" type="button"><span class="step-num">1</span> Checklist</button>
+    <button class="step-btn" data-step="2" type="button"><span class="step-num">2</span> Theme</button>
+    <button class="step-btn" data-step="3" type="button"><span class="step-num">3</span> Widgets</button>
+  </nav>
+
+  <main class="app-main">
+
+    <!-- ============== STEP 1: CLIENT + CHECKLIST ============== -->
+    <section class="step-panel active" id="panel-1">
+      <div class="two-col">
+
+        <div class="col-main">
+
+          <div class="card">
+            <h2 class="card-title">Client details</h2>
+            <div class="field-row">
+              <div class="field">
+                <label for="clientName">Client name</label>
+                <input type="text" id="clientName" placeholder="e.g. Riverside Medical Group">
+              </div>
+              <div class="field">
+                <label for="clientIndustry">Industry</label>
+                <select id="clientIndustry">
+                  <option value="">Select industry&hellip;</option>
+                  <option>Healthcare</option>
+                  <option>Legal</option>
+                  <option>Financial Services</option>
+                  <option>Manufacturing</option>
+                  <option>Professional Services</option>
+                  <option>Retail</option>
+                  <option>Construction</option>
+                  <option>Nonprofit</option>
+                  <option>Education</option>
+                  <option>Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title-row">
+              <h2 class="card-title">Underwriter requirements checklist</h2>
+              <div class="completion-pill"><span id="completionCount">0</span> / 12 assessed</div>
+            </div>
+            <p class="card-sub">Mark each control based on what you know about the client's current posture. Unknown is treated as Not in Place for scoring — verify before the proposal goes out.</p>
+
+            <div id="handoffPanel" class="handoff-panel">
+              <div class="handoff-copy">
+                <strong>Not sure about everything?</strong> Send an Excel questionnaire to a technician on-site, then import it back here.
+              </div>
+              <div class="handoff-actions">
+                <button id="downloadTechBtn" class="btn btn-secondary btn-sm" type="button">&#8681; Download for technician</button>
+                <button id="importTechBtn" class="btn btn-secondary btn-sm" type="button">&#8679; Import completed file</button>
+                <input type="file" id="importXlsxFile" accept=".xlsx,.xls,.csv" hidden>
+              </div>
+            </div>
+
+            <div id="checklistRows" class="checklist-rows"></div>
+          </div>
+
+        </div>
+
+        <aside class="col-side">
+          <div class="card score-card">
+            <h3 class="card-title-sm">Readiness score</h3>
+            <div class="score-display">
+              <div id="scoreNumber" class="score-number">0.0<span class="score-denom">/10</span></div>
+              <div id="scoreLabel" class="score-label">&mdash;</div>
+            </div>
+            <div class="score-bar-track">
+              <div class="score-bar-marker" id="scoreMarker"></div>
+            </div>
+            <div class="score-bar-scale">
+              <span>Low risk</span><span>Medium</span><span>High risk</span>
+            </div>
+            <div class="score-breakdown" id="scoreBreakdown"></div>
+          </div>
+
+          <div class="card gap-preview-card">
+            <h3 class="card-title-sm">Gap summary</h3>
+            <div id="gapSummary" class="gap-summary">
+              <div class="gap-count critical"><span id="gapCritical">0</span> critical</div>
+              <div class="gap-count recommended"><span id="gapRecommended">0</span> recommended</div>
+              <div class="gap-count unknown"><span id="gapUnknown">0</span> unknown</div>
+            </div>
+          </div>
+        </aside>
+
+      </div>
+
+      <div class="step-actions">
+        <span></span>
+        <button id="step1Next" class="btn btn-primary" type="button">Continue to theme &rarr;</button>
+      </div>
+    </section>
+
+    <!-- ============== STEP 2: THEME ============== -->
+    <section class="step-panel" id="panel-2">
+      <div class="card narrow-card">
+        <h2 class="card-title">Colour theme</h2>
+        <p class="card-sub">Applied to the gradient header and accent borders across all widgets.</p>
+
+        <div class="swatch-row" id="colourSwatches">
+          <button class="swatch active" data-hex="#2e74dc" style="background:#2e74dc" title="Blue"></button>
+          <button class="swatch" data-hex="#15a05a" style="background:#15a05a" title="Green"></button>
+          <button class="swatch" data-hex="#7c3aed" style="background:#7c3aed" title="Violet"></button>
+          <button class="swatch" data-hex="#d8402e" style="background:#d8402e" title="Red"></button>
+          <button class="swatch" data-hex="#0f172a" style="background:#0f172a" title="Navy"></button>
+          <button class="swatch" data-hex="#0891b2" style="background:#0891b2" title="Teal"></button>
+          <button class="swatch" data-hex="#b3760a" style="background:#b3760a" title="Amber"></button>
+          <button class="swatch" data-hex="#ea580c" style="background:#ea580c" title="Orange"></button>
+        </div>
+        <div class="custom-hex-row">
+          <label for="customHex">Custom hex</label>
+          <span class="hex-hash">#</span>
+          <input type="text" id="customHex" maxlength="6" placeholder="2e74dc">
+          <span id="hexPreview" class="hex-preview"></span>
+        </div>
+
+        <div class="theme-preview" id="themePreview">
+          <div class="theme-preview-header" id="themePreviewHeader">
+            <span class="theme-preview-kicker">CYBER INSURANCE READINESS</span>
+            <span class="theme-preview-name" id="themePreviewName">Client Name</span>
+          </div>
+        </div>
+
+        <div class="toggle-row">
+          <label class="switch">
+            <input type="checkbox" id="widget3Toggle">
+            <span class="switch-track"></span>
+          </label>
+          <span>Include &ldquo;How We Close These Gaps&rdquo; widget (Path to Readiness)</span>
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button id="step2Back" class="btn btn-ghost" type="button">&larr; Back</button>
+        <button id="generateBtn" class="btn btn-primary" type="button">Generate widgets &rarr;</button>
+      </div>
+      <div id="formError" class="form-error" hidden></div>
+    </section>
+
+    <!-- ============== STEP 3: WIDGETS ============== -->
+    <section class="step-panel" id="panel-3">
+
+      <div id="loadingOverlay" class="loading-overlay" hidden>
+        <div class="loading-dots"><span></span><span></span><span></span></div>
+        <div id="loadingMsg" class="loading-msg">Generating your readiness widgets&hellip;</div>
+      </div>
+
+      <div id="widgetsOutput">
+        <div class="delivery-bar">
+          <h2 id="deliveryTitle" class="delivery-title">Readiness Widgets</h2>
+          <div class="delivery-actions">
+            <button id="regenAllBtn" class="btn btn-ghost btn-sm" type="button">&#8635; Regenerate all</button>
+            <button id="copyAllBtn" class="btn btn-secondary btn-sm" type="button">Copy all HTML</button>
+            <button id="pushIndividualBtn" class="btn btn-secondary btn-sm" type="button">Push individually</button>
+            <button id="pushPackBtn" class="btn btn-primary btn-sm" type="button">Push as pack</button>
+          </div>
+        </div>
+
+        <div id="pushStatus" class="push-status" hidden></div>
+
+        <div id="credsInline" class="creds-inline" hidden>
+          <div class="field">
+            <label for="pushTenantUrl">Salesbuildr tenant URL</label>
+            <input type="text" id="pushTenantUrl" placeholder="https://acme.salesbuildr.com">
+          </div>
+          <div class="field">
+            <label for="pushApiKey">API key</label>
+            <input type="password" id="pushApiKey" placeholder="sb_live_&hellip;">
+          </div>
+          <button id="saveAndPushBtn" class="btn btn-primary btn-sm" type="button">Save &amp; push</button>
+        </div>
+
+        <!-- Widget 1 -->
+        <div class="widget-block" id="widgetBlock-1">
+          <div class="widget-block-header">
+            <h3>Widget 1 &mdash; Readiness Score</h3>
+            <div class="widget-block-actions">
+              <button class="widget-regen" data-widget="1" type="button">&#8635; Regen</button>
+              <button class="show-html-btn" data-widget="1" type="button">Show HTML</button>
+              <button class="widget-copy" data-widget="1" type="button">Copy HTML</button>
+            </div>
+          </div>
+          <div class="widget-preview" id="preview1"></div>
+          <textarea class="widget-editor" id="widget1Editor" spellcheck="false"></textarea>
+        </div>
+
+        <!-- Widget 2 -->
+        <div class="widget-block" id="widgetBlock-2">
+          <div class="widget-block-header">
+            <h3>Widget 2 &mdash; Gap Analysis</h3>
+            <div class="widget-block-actions">
+              <button class="widget-regen" data-widget="2" type="button">&#8635; Regen</button>
+              <button class="show-html-btn" data-widget="2" type="button">Show HTML</button>
+              <button class="widget-copy" data-widget="2" type="button">Copy HTML</button>
+            </div>
+          </div>
+          <div class="widget-preview" id="preview2"></div>
+          <textarea class="widget-editor" id="widget2Editor" spellcheck="false"></textarea>
+        </div>
+
+        <!-- Widget 3 -->
+        <div class="widget-block" id="widgetBlock-3" hidden>
+          <div class="widget-block-header">
+            <h3>Widget 3 &mdash; Path to Readiness</h3>
+            <div class="widget-block-actions">
+              <button class="widget-regen" data-widget="3" type="button">&#8635; Regen</button>
+              <button class="show-html-btn" data-widget="3" type="button">Show HTML</button>
+              <button class="widget-copy" data-widget="3" type="button">Copy HTML</button>
+            </div>
+          </div>
+          <div class="widget-note">Add your specific service line items in Salesbuildr from your services catalog.</div>
+          <div class="widget-preview" id="preview3"></div>
+          <textarea class="widget-editor" id="widget3Editor" spellcheck="false"></textarea>
+        </div>
+
+      </div>
+
+      <div class="step-actions">
+        <button id="step3Back" class="btn btn-ghost" type="button">&larr; Back to theme</button>
+        <span></span>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+
+</div>
+
+<script src="cyber-insurance.js"></script>
+</body>
+</html>
