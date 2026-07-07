@@ -990,11 +990,13 @@ function render(force) {
     pvText.style.fontSize   = state.textSize + 'px';
     pvText.style.color      = state.textColor;
     pvText.style.textAlign  = state.textAlign;
-    pvText.style.whiteSpace = 'pre-wrap'; // enables \n line breaks
+    pvText.style.whiteSpace = 'pre-wrap';
     pvText.style.lineHeight = '1.25';
     pvText.classList.toggle('selected', state.textSelected);
     positionText();
     pvText.textContent = state.textStr;
+  } else { pvText.style.display = 'none'; }
+
   // Sub-heading
   if (state.subOn && state.subStr) {
     pvSub.style.display    = '';
@@ -1009,6 +1011,8 @@ function render(force) {
     positionSub();
     pvSub.textContent = state.subStr;
   } else { pvSub.style.display = 'none'; }
+
+  scalePreview();
   updateDimLabel();
 }
 
