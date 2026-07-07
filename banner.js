@@ -1115,6 +1115,9 @@ async function exportToPNG(overrideMode) {
       cc.fillText(line, tx, Math.round(state.subY*sc) + i * lineH);
     });
   }
+
+  // Border
+  if (state.borderOn) {
     const bw = Math.round(state.borderW*sc);
     cc.strokeStyle = state.borderColor; cc.lineWidth = bw*2;
     if (r > 0) { cc.beginPath(); cc.roundRect(0,0,outW,outH,r); cc.stroke(); }
@@ -1167,24 +1170,40 @@ btnDownload.addEventListener('click', async () => {
     a.download = `${name}_${state.mode}_${m.dpi}dpi.png`;
     a.href = dataUrl; a.click();
     toast(`Downloaded ${Math.round(A4_W*m.scale)}\u00d7${Math.round(state.height*m.scale)}px @ ${m.dpi}dpi`);
+    // Auto-save session to localStorage after every successful download
+    autoSaveSession();
   } catch(err){ console.error(err); toast('Export failed — see console');
   } finally { btnDownload.textContent = '⬇ Download PNG'; btnDownload.disabled = false; }
 });
+
+/* Auto-save current session — uses company name or 'Untitled' as key */
+async function autoSaveSession() {
+  try {
+    const company = state.company.trim() || 'Untitled';
+    const thumb   = await exportToPNG('web');
+    const recents = getSaved().filter(r => r.company !== company);
+    recents.unshift({ company, savedAt: Date.now(), thumb,
+      mode: state.mode, state: JSON.stringify(state) });
+    if (recents.length > MAX_RECENTS) recents.length = MAX_RECENTS;
+    localStorage.setItem(LS_KEY, JSON.stringify(recents));
+    renderSidebar();
+  } catch(err) { console.warn('Auto-save failed:', err); }
+}
 
 const LS_KEY = 'bannerCreator_recents', MAX_RECENTS = 5;
 function getSaved(){try{return JSON.parse(localStorage.getItem(LS_KEY))||[];}catch{return[];}}
 
 btnSave.addEventListener('click', async () => {
-  if (!state.company.trim()) { toast('Enter a company name first'); return; }
+  const company = state.company.trim() || 'Untitled';
   btnSave.textContent = '⏳ Saving…'; btnSave.disabled = true;
   try {
     const thumb = await exportToPNG('web');
-    const recents = getSaved().filter(r => r.company !== state.company.trim());
-    recents.unshift({ company: state.company.trim(), savedAt: Date.now(), thumb,
+    const recents = getSaved().filter(r => r.company !== company);
+    recents.unshift({ company, savedAt: Date.now(), thumb,
       mode: state.mode, state: JSON.stringify(state) });
     if (recents.length > MAX_RECENTS) recents.length = MAX_RECENTS;
     localStorage.setItem(LS_KEY, JSON.stringify(recents));
-    renderSidebar(); toast(`"${state.company}" saved`);
+    renderSidebar(); toast(`"${company}" saved`);
   } catch(err){ console.error(err); toast('Save failed');
   } finally { btnSave.textContent = '💾 Save'; btnSave.disabled = false; }
 });
