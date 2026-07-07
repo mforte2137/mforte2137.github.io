@@ -807,7 +807,7 @@ initSeg(segTextAlign, val => { pushHistory(); state.textAlign = val; state.textX
 syncColor(inpTextColor, inpHexText, 'textColor', 'swatches-text');
 
 // Sub-heading controls
-inpSubOn.addEventListener('change', () => { pushHistory(); state.subOn = inpSubOn.checked; subCtrls.style.display = state.subOn ? '' : 'none'; render(); });
+inpSubOn.addEventListener('change', () => { pushHistory(); state.subOn = inpSubOn.checked; if (state.subOn) state._cleared = false; subCtrls.style.display = state.subOn ? '' : 'none'; render(); });
 inpSub.addEventListener('input', () => { pushHistory(); state.subStr = inpSub.value; render(); });
 inpSub.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) e.preventDefault(); });
 inpSubFont.addEventListener('change', () => { pushHistory(); state.subFont = inpSubFont.value; render(); });
@@ -940,7 +940,7 @@ if (btnUndo) btnUndo.addEventListener('click', doUndo);
 function render(force) {
   if (force) state._cleared = false;
   const hasImage = state.layers.some(l => l.src);
-  const isEmpty  = state._cleared && !hasImage && !state.textOn && state.accentMode === 'none' && !state.shadowOn && !state.borderOn;
+  const isEmpty  = state._cleared && !hasImage && !state.textOn && !state.subOn && state.accentMode === 'none' && !state.shadowOn && !state.borderOn;
 
   pvBanner.style.width        = A4_W + 'px';
   pvBanner.style.height       = state.height + 'px';
