@@ -67,11 +67,20 @@ const resultsEl     = document.getElementById('results');
 const fileNameEl    = document.getElementById('file-name-display');
 const typeBadgeEl   = document.getElementById('file-type-badge');
 const notesEl       = document.getElementById('conversion-notes');
-const previewFrame  = document.getElementById('preview-frame');
-const htmlOutput    = document.getElementById('html-output');
+const previewEdit   = document.getElementById('preview-edit');
+const editedBadge   = document.getElementById('preview-edit-badge');
 const copyBtn       = document.getElementById('copy-btn');
 const resetBtn      = document.getElementById('reset-btn');
 const reapplyBtn    = document.getElementById('reapply-btn');
+
+let hasEdits = false;
+
+previewEdit.addEventListener('input', () => {
+  if (!hasEdits) {
+    hasEdits = true;
+    editedBadge.classList.remove('hidden');
+  }
+});
 const accentPicker  = document.getElementById('accent-picker');
 const accentHex     = document.getElementById('accent-hex');
 const accentPreview = document.getElementById('accent-preview');
@@ -108,6 +117,11 @@ reapplyBtn.addEventListener('click', () => {
 });
 
 function reapplyStyles() {
+  if (hasEdits) {
+    if (!confirm('Re-applying styles will reset any edits you\'ve made in the preview. Continue?')) return;
+  }
+  hasEdits = false;
+  editedBadge.classList.add('hidden');
   updateCombinedOutput();
   reapplyBtn.textContent = '✓ Applied';
   setTimeout(() => { reapplyBtn.textContent = '↻ Re-apply styles'; }, 1500);
@@ -127,25 +141,20 @@ uploadZone.addEventListener('click', e => { if (e.target.tagName !== 'LABEL') fi
 fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
 
 // ─────────────────────────────────────────────────────────────────
-//  Tab switching
-// ─────────────────────────────────────────────────────────────────
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const tab = btn.dataset.tab;
-    document.getElementById('tab-preview').classList.toggle('hidden', tab !== 'preview');
-    document.getElementById('tab-code').classList.toggle('hidden',    tab !== 'code');
-  });
-});
-
 // ─────────────────────────────────────────────────────────────────
 //  Copy to clipboard
 // ─────────────────────────────────────────────────────────────────
 copyBtn.addEventListener('click', async () => {
-  const text = htmlOutput.value;
+  const text = previewEdit.innerHTML;
   try { await navigator.clipboard.writeText(text); }
-  catch { htmlOutput.select(); document.execCommand('copy'); }
+  catch { 
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
   copyBtn.textContent = '✅ Copied!';
   copyBtn.classList.add('copied');
   setTimeout(() => { copyBtn.innerHTML = '📋 Copy HTML'; copyBtn.classList.remove('copied'); }, 2500);
@@ -166,13 +175,19 @@ function resetApp() {
   document.getElementById('widget-list-section').classList.add('hidden');
   document.getElementById('widget-list').innerHTML = '';
   notesEl.innerHTML = '';
-  htmlOutput.value  = '';
-  previewFrame.srcdoc = '';
+  previewEdit.innerHTML = '';
+  hasEdits = false;
+  editedBadge.classList.add('hidden');
   copyBtn.innerHTML = '📋 Copy HTML';
   copyBtn.classList.remove('copied');
   document.getElementById('sb-result').classList.add('hidden');
-  document.getElementById('sb-push-btn').textContent = 'Save to Salesbuildr →';
-  document.getElementById('sb-push-btn').classList.remove('is-done');
+  sbPushIndividual.textContent = 'Save to Salesbuildr →';
+  sbPushIndividual.classList.remove('is-done');
+  sbPushIndividual.disabled = true;
+  sbPushPack.classList.add('hidden');
+  sbPushPack.textContent = 'Save as 1 Widget →';
+  sbPushPack.classList.remove('is-done');
+  sbPushPack.disabled = true;
   document.getElementById('sb-widget-title-row').classList.remove('hidden');
   document.getElementById('sb-widget-title').value = '';
 }
@@ -330,7 +345,6 @@ function updateCombinedOutput() {
   let combined;
 
   if (widgetList.length <= 1) {
-    // Single widget — style the full rawHtml
     combined = rawHtml ? applyInlineStyles(rawHtml) : '';
   } else {
     combined = widgetList
@@ -342,9 +356,9 @@ function updateCombinedOutput() {
       .join('\n');
   }
 
-  htmlOutput.value = combined;
-  previewFrame.srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-    <style>body{margin:0;padding:0;background:#fff;}</style></head><body>${combined}</body></html>`;
+  previewEdit.innerHTML = combined;
+  hasEdits = false;
+  editedBadge.classList.add('hidden');
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -435,25 +449,29 @@ async function convertDocx(arrayBuffer, notes) {
 }
 
 // ─────────────────────────────────────────────────────────────────
-//  PDF → HTML  (pdf.js)
+//  PDF → HTML  (pdf.js) — two-pass with header/footer detection
 // ─────────────────────────────────────────────────────────────────
 async function convertPdf(arrayBuffer, notes) {
   const typedArray = new Uint8Array(arrayBuffer);
   const pdfDoc     = await pdfjsLib.getDocument(typedArray).promise;
-  const parts      = [];
+  const Y_SNAP     = 4;
+  const ZONE       = 0.08;  // top/bottom 8% of page = header/footer zone
 
+  // ── Pass 1: collect all pages' text with y-position metadata ──
+  const pageData = [];
   for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-    const page        = await pdfDoc.getPage(pageNum);
-    const textContent = await page.getTextContent();
-    const Y_SNAP = 4;
-    const lineMap = new Map();
+    const page       = await pdfDoc.getPage(pageNum);
+    const pageHeight = page.view[3]; // native PDF height in points
+    const textContent= await page.getTextContent();
+    const lineMap    = new Map();
 
     for (const item of textContent.items) {
       if (!item.str?.trim()) continue;
-      const y    = Math.round(item.transform[5] / Y_SNAP) * Y_SNAP;
+      const yRaw = item.transform[5];
+      const y    = Math.round(yRaw / Y_SNAP) * Y_SNAP;
       const x    = item.transform[4];
       const size = Math.abs(item.transform[3]) || Math.abs(item.transform[0]) || 12;
-      if (!lineMap.has(y)) lineMap.set(y, { items: [], maxSize: 0 });
+      if (!lineMap.has(y)) lineMap.set(y, { items: [], maxSize: 0, yRaw });
       const line = lineMap.get(y);
       line.items.push({ x, text: item.str, size });
       if (size > line.maxSize) line.maxSize = size;
@@ -461,10 +479,39 @@ async function convertPdf(arrayBuffer, notes) {
 
     const lines = [...lineMap.entries()]
       .sort((a,b) => b[0]-a[0])
-      .map(([y, data]) => ({ y, text: data.items.sort((a,b)=>a.x-b.x).map(i=>i.text).join(' ').trim(), maxSize: data.maxSize }))
+      .map(([y, data]) => ({
+        y,
+        yRaw:   data.yRaw,
+        yNorm:  data.yRaw / pageHeight,
+        text:   data.items.sort((a,b)=>a.x-b.x).map(i=>i.text).join(' ').trim(),
+        maxSize: data.maxSize
+      }))
       .filter(l => l.text.length > 0);
 
-    if (lines.length === 0) continue;
+    pageData.push({ pageNum, lines, pageHeight });
+  }
+
+  // ── Detect repeating header/footer text ──
+  const zoneFreq = new Map();
+  for (const { lines } of pageData) {
+    const seen = new Set();
+    for (const line of lines) {
+      const inZone = line.yNorm > (1 - ZONE) || line.yNorm < ZONE;
+      if (inZone && !seen.has(line.text)) {
+        seen.add(line.text);
+        zoneFreq.set(line.text, (zoneFreq.get(line.text) || 0) + 1);
+      }
+    }
+  }
+  const minPages  = Math.max(2, Math.floor(pdfDoc.numPages * 0.3));
+  const skipTexts = new Set(
+    [...zoneFreq.entries()].filter(([,n]) => n >= minPages).map(([t]) => t)
+  );
+
+  // ── Pass 2: convert to HTML, skipping header/footer lines ──
+  const parts = [];
+  for (const { pageNum, lines } of pageData) {
+    if (!lines.length) continue;
 
     const sizes    = lines.map(l=>l.maxSize).sort((a,b)=>a-b);
     const bodySize = sizes[Math.floor(sizes.length/2)] || 12;
@@ -477,6 +524,8 @@ async function convertPdf(arrayBuffer, notes) {
     };
 
     for (const line of lines) {
+      if (skipTexts.has(line.text)) continue;  // skip header/footer
+
       const isH1 = line.maxSize > bodySize*1.35 || (line.text===line.text.toUpperCase() && line.text.length<80 && line.maxSize>=bodySize*1.15);
       const isH2 = !isH1 && (line.maxSize > bodySize*1.15 || (line.text.match(/^(\d+\.|ARTICLE|SECTION|SCHEDULE|EXHIBIT|APPENDIX)/i) && line.text.length<100));
       const isH3 = !isH1 && !isH2 && line.maxSize > bodySize*1.05 && line.text.length<100;
@@ -497,6 +546,9 @@ async function convertPdf(arrayBuffer, notes) {
     if (pageNum < pdfDoc.numPages) parts.push('<hr>');
   }
 
+  if (skipTexts.size > 0) {
+    notes.push({ type: 'info', text: `✔ ${skipTexts.size} repeated header/footer line${skipTexts.size!==1?'s':''} detected and removed from the output.` });
+  }
   notes.push({ type: 'warning', text: '⚠ PDF conversion extracts text only — complex formatting, columns, and embedded images cannot be fully reconstructed. For legal agreements, <strong>Word (.docx) gives significantly better results</strong>. Please review carefully before pasting into Salesbuildr.' });
   return parts.join('\n');
 }
@@ -596,12 +648,6 @@ function showResults(fileName, ext, notes) {
   // Build initial combined output
   updateCombinedOutput();
 
-  // Activate preview tab
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector('[data-tab="preview"]').classList.add('active');
-  document.getElementById('tab-preview').classList.remove('hidden');
-  document.getElementById('tab-code').classList.add('hidden');
-
   uploadZone.classList.add('hidden');
   processingEl.classList.add('hidden');
   resultsEl.classList.remove('hidden');
@@ -652,7 +698,8 @@ const sbBody     = document.getElementById('sb-body');
 const sbApiKey   = document.getElementById('sb-api-key');
 const sbTenantUrl= document.getElementById('sb-tenant-url');
 const sbRemember = document.getElementById('sb-remember');
-const sbPushBtn  = document.getElementById('sb-push-btn');
+const sbPushIndividual = document.getElementById('sb-push-individual');
+const sbPushPack       = document.getElementById('sb-push-pack');
 const sbResult   = document.getElementById('sb-result');
 
 sbToggle.addEventListener('click', () => {
@@ -663,21 +710,27 @@ sbToggle.addEventListener('click', () => {
 
 function updatePushBtn() {
   const hasCredentials = sbApiKey.value.trim() && sbTenantUrl.value.trim();
-  const checkedCount   = widgetList.length > 1
+  const isMulti = widgetList.length > 1;
+  const checkedCount = isMulti
     ? document.querySelectorAll('.widget-checkbox:checked').length
     : 1;
-  sbPushBtn.disabled = !hasCredentials || checkedCount === 0;
-  if (widgetList.length > 1 && checkedCount > 0) {
-    sbPushBtn.textContent = `Save ${checkedCount} widget${checkedCount!==1?'s':''} to Salesbuildr →`;
+
+  sbPushIndividual.disabled = !hasCredentials || checkedCount === 0;
+  sbPushPack.disabled       = !hasCredentials || checkedCount === 0;
+
+  if (isMulti && checkedCount > 0) {
+    sbPushIndividual.textContent = `Save ${checkedCount} Widget${checkedCount!==1?'s':''} →`;
+    sbPushPack.classList.remove('hidden');
   } else {
-    sbPushBtn.textContent = 'Save to Salesbuildr →';
+    sbPushIndividual.textContent = 'Save to Salesbuildr →';
+    sbPushPack.classList.add('hidden');
   }
 }
 
 sbApiKey.addEventListener('input', updatePushBtn);
 sbTenantUrl.addEventListener('input', updatePushBtn);
 
-sbPushBtn.addEventListener('click', async () => {
+async function executePush(type) {
   const apiKey    = sbApiKey.value.trim();
   const tenantUrl = sbTenantUrl.value.trim();
   if (!apiKey || !tenantUrl) return;
@@ -690,38 +743,62 @@ sbPushBtn.addEventListener('click', async () => {
     localStorage.removeItem(LS_TENANT_URL);
   }
 
-  // Build widgets array
-  let widgets;
+  // Build checked widgets array — read from live edited preview
+  let checkedWidgets;
   if (widgetList.length > 1) {
-    widgets = widgetList
-      .filter((w, i) => { const cb = document.getElementById(`widget-check-${i}`); return cb?.checked; })
-      .map((w, i) => {
+    const checked = widgetList
+      .map((w, i) => ({ w, i, cb: document.getElementById(`widget-check-${i}`) }))
+      .filter(({ cb }) => cb?.checked);
+
+    // Try to split the live preview by top-level wrapper divs (one per styled widget)
+    const parsedDoc = new DOMParser().parseFromString(previewEdit.innerHTML, 'text/html');
+    const wrappers  = Array.from(parsedDoc.body.children).filter(el => el.tagName === 'DIV');
+
+    if (wrappers.length === checked.length) {
+      checkedWidgets = checked.map(({ w, i }, j) => {
+        const titleEl = document.getElementById(`widget-title-${i}`);
+        return { id: `doc-${Date.now()}-${i}`, title: titleEl?.value.trim() || w.title || `Widget ${i+1}`, html: wrappers[j].outerHTML };
+      });
+    } else {
+      // Fallback — re-style from raw (edits not preserved for individual push)
+      checkedWidgets = checked.map(({ w, i }) => {
         const titleEl = document.getElementById(`widget-title-${i}`);
         return { id: `doc-${Date.now()}-${i}`, title: titleEl?.value.trim() || w.title || `Widget ${i+1}`, html: applyInlineStyles(w.rawHtml) };
       });
+    }
   } else {
     const title = document.getElementById('sb-widget-title')?.value.trim()
       || fileNameEl.textContent.replace(/\.[^.]+$/,'')
       || 'Converted Document';
-    const html  = htmlOutput.value;
-    if (!html) {
-      sbResult.textContent = 'No HTML to push — convert a document first.';
+    const html = previewEdit.innerHTML;
+    if (!html.trim()) {
+      sbResult.textContent = 'No content to push — convert a document first.';
       sbResult.className   = 'sb-result error';
       sbResult.classList.remove('hidden');
       return;
     }
-    widgets = [{ id: 'doc-' + Date.now(), title, html }];
+    checkedWidgets = [{ id: 'doc-' + Date.now(), title, html }];
   }
 
-  if (!widgets.length) {
+  if (!checkedWidgets.length) {
     sbResult.textContent = 'No widgets selected — check at least one section above.';
     sbResult.className   = 'sb-result error';
     sbResult.classList.remove('hidden');
     return;
   }
 
-  sbPushBtn.disabled    = true;
-  sbPushBtn.textContent = `Saving ${widgets.length} widget${widgets.length!==1?'s':''}…`;
+  // For pack mode, use the full live preview content as one widget
+  const widgets = type === 'pack'
+    ? [{ id: 'doc-pack-' + Date.now(), title: fileNameEl.textContent.replace(/\.[^.]+$/,'') || 'Converted Document', html: previewEdit.innerHTML }]
+    : checkedWidgets;
+
+  const activeBtn    = type === 'pack' ? sbPushPack : sbPushIndividual;
+  const inactiveBtn  = type === 'pack' ? sbPushIndividual : sbPushPack;
+  const origLabel    = activeBtn.textContent;
+
+  sbPushIndividual.disabled = true;
+  sbPushPack.disabled       = true;
+  activeBtn.textContent = type === 'pack' ? 'Saving…' : `Saving ${widgets.length} widget${widgets.length!==1?'s':''}…`;
   sbResult.classList.add('hidden');
 
   try {
@@ -737,19 +814,22 @@ sbPushBtn.addEventListener('click', async () => {
     if (data.successCount > 0) {
       sbResult.textContent = `✓ ${data.successCount} widget${data.successCount!==1?'s':''} saved to your Salesbuildr widget library.`;
       sbResult.className   = 'sb-result ok';
-      sbPushBtn.textContent = '✓ Saved';
-      sbPushBtn.classList.add('is-done');
+      activeBtn.textContent = '✓ Saved';
+      activeBtn.classList.add('is-done');
     } else {
       throw new Error(data.results?.[0]?.error || data.error || 'Unknown error');
     }
   } catch (e) {
     sbResult.textContent = `✕ ${e.message}`;
     sbResult.className   = 'sb-result error';
-    sbPushBtn.disabled    = false;
+    activeBtn.textContent = origLabel;
     updatePushBtn();
   }
   sbResult.classList.remove('hidden');
-});
+}
+
+sbPushIndividual.addEventListener('click', () => executePush('individual'));
+sbPushPack.addEventListener('click',       () => executePush('pack'));
 
 // ─────────────────────────────────────────────────────────────────
 //  Init — restore saved credentials
