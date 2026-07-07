@@ -83,8 +83,6 @@
   const pushTenantUrl     = $('pushTenantUrl');
   const saveAndPushBtn    = $('saveAndPushBtn');
 
-  const saveSessionBtn    = $('saveSessionBtn');
-  const loadSessionBtn    = $('loadSessionBtn');
   const newSessionBtn     = $('newSessionBtn');
   const importSessionFile = $('importSessionFile');
   const sessionIndicator  = $('sessionIndicator');
@@ -422,22 +420,85 @@
   }
 
   // ── SESSION SAVE / LOAD ──────────────────────────────────────
-  function autoSave() {
-    try { localStorage.setItem(SESSION_KEY, JSON.stringify(state)); flashSaved(); }
-    catch (e) { console.warn('Session save failed:', e); }
+  // Matches the session pattern used across the MSP tools suite
+  // (technology-roadmap.js): an array of session snapshots capped at 20,
+  // an inline card strip (not a modal) showing the latest 5 + "show archived"
+  // for the rest, click-a-card-to-resume, and auto-resume of the most
+  // recent session on page load. Autosave is continuous; there is no
+  // separate "Save" button — the card strip and the flash indicator are
+  // the only feedback needed.
+  const SESSION_KEY_LIST = 'cyber_insurance_sessions';
+  const ARCHIVE_KEY      = 'cyber_insurance_sessions_archived';
+  const SESSION_LIMIT    = 5;
+
+  let currentSessionId = null;
+  let autoSaveReady     = false; // guards against saving a blank state before restore runs on load
+  let _showingArchived  = false;
+
+  const sessionsBlock    = $('sessionsBlock');
+  const sessionCards     = $('sessionCards');
+  const showArchivedBtn  = $('showArchivedBtn');
+
+  function buildSessionSnapshot(status) {
+    const safeStatus = ['draft', 'generated', 'pushed'].includes(status) ? status : 'draft';
+    return {
+      id: currentSessionId,
+      clientName: state.client.name || 'Untitled',
+      savedAt: Date.now(),
+      status: safeStatus,
+      state: JSON.parse(JSON.stringify(state))
+    };
   }
+
+  function autoSave(status) {
+    if (!autoSaveReady) return;
+    if (!currentSessionId) currentSessionId = 'cyber_session_' + Date.now();
+    let sessions = getSessions();
+    const idx = sessions.findIndex(s => s.id === currentSessionId);
+    const storedStatus = idx >= 0 ? sessions[idx].status : undefined;
+    const safeStored = typeof storedStatus === 'string' ? storedStatus : 'draft';
+    const snap = buildSessionSnapshot(status || safeStored);
+    if (idx >= 0) sessions[idx] = snap; else sessions.unshift(snap);
+    sessions = sessions.slice(0, 20);
+    saveSessions(sessions);
+    renderSessionCards(_showingArchived);
+    flashSaved();
+  }
+
   function flashSaved() {
     sessionIndicator.hidden = false;
-    sessionIndicator.textContent = `Session saved · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    sessionIndicator.textContent = `Saved · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   }
-  function loadFromLocalStorage() {
-    try {
-      const raw = localStorage.getItem(SESSION_KEY);
-      if (!raw) return false;
-      restoreState(JSON.parse(raw));
-      return true;
-    } catch (e) { return false; }
+
+  function startNewSession() {
+    currentSessionId = 'cyber_session_' + Date.now();
+    state = {
+      client: { name: '', industry: '' },
+      controls: CONTROLS_DEF.map(c => ({ id: c.id, status: 'unknown', notes: '' })),
+      theme: { color: '#2e74dc' },
+      widget3: false,
+      aiCopy: { gapExplanations: [], pathItems: [], pathClosing: '', disclaimer: DEFAULT_DISCLAIMER },
+      widgets: {}
+    };
+    clientNameEl.value = ''; clientIndustryEl.value = '';
+    renderChecklist(); refresh();
+    colourSwatches.querySelectorAll('.swatch').forEach((s, i) => s.classList.toggle('active', i === 0));
+    customHex.value = ''; hexPreview.style.background = 'transparent';
+    widget3Toggle.checked = false;
+    emptyState.hidden = false;
+    widgetsOutput.hidden = true;
+    deliveryTitle.textContent = 'Readiness Widgets';
+    formError.hidden = true;
+    autoSave('draft');
   }
+  newSessionBtn.addEventListener('click', startNewSession);
+
+  function resumeSession(sess) {
+    currentSessionId = sess.id;
+    restoreState(JSON.parse(JSON.stringify(sess.state)));
+    renderSessionCards(_showingArchived);
+  }
+
   function restoreState(saved) {
     state.client   = saved.client   || { name: '', industry: '' };
     state.controls = saved.controls || CONTROLS_DEF.map(c => ({ id: c.id, status: 'unknown', notes: '' }));
@@ -467,34 +528,91 @@
     } else {
       emptyState.hidden = false;
       widgetsOutput.hidden = true;
+      deliveryTitle.textContent = 'Readiness Widgets';
     }
   }
 
-  saveSessionBtn.addEventListener('click', () => { autoSave(); showToast('Session saved.'); });
-  loadSessionBtn.addEventListener('click', () => {
-    if (loadFromLocalStorage()) showToast('Session loaded.');
-    else showToast('No saved session found on this device.');
-  });
-  newSessionBtn.addEventListener('click', () => {
-    if (!confirm('Start a new assessment? Unsaved changes will be lost.')) return;
-    state = {
-      client: { name: '', industry: '' },
-      controls: CONTROLS_DEF.map(c => ({ id: c.id, status: 'unknown', notes: '' })),
-      theme: { color: '#2e74dc' },
-      widget3: false,
-      aiCopy: { gapExplanations: [], pathItems: [], pathClosing: '', disclaimer: DEFAULT_DISCLAIMER },
-      widgets: {}
-    };
-    clientNameEl.value = ''; clientIndustryEl.value = '';
-    renderChecklist(); refresh();
-    colourSwatches.querySelectorAll('.swatch').forEach((s, i) => s.classList.toggle('active', i === 0));
-    customHex.value = ''; hexPreview.style.background = 'transparent';
-    widget3Toggle.checked = false;
-    emptyState.hidden = false;
-    widgetsOutput.hidden = true;
-    sessionIndicator.hidden = true;
-    formError.hidden = true;
-  });
+  function getSessions() { try { return JSON.parse(localStorage.getItem(SESSION_KEY_LIST) || '[]'); } catch (e) { return []; } }
+  function saveSessions(s) {
+    try {
+      const json = JSON.stringify(s);
+      // Widget HTML is the bulk of a session's size. If the whole list is
+      // getting close to localStorage's ~5MB ceiling, strip cached widget
+      // HTML from everything but the most recent session — it regenerates
+      // instantly from aiCopy/controls anyway, nothing is actually lost.
+      if (json.length > 3_000_000) {
+        const trimmed = s.map((sess, i) => i === 0 ? sess : { ...sess, state: { ...sess.state, widgets: {} } });
+        localStorage.setItem(SESSION_KEY_LIST, JSON.stringify(trimmed));
+      } else {
+        localStorage.setItem(SESSION_KEY_LIST, json);
+      }
+    } catch (e) { console.warn('Session save failed:', e); }
+  }
+  function getArchived()   { try { return JSON.parse(localStorage.getItem(ARCHIVE_KEY) || '[]'); } catch (e) { return []; } }
+  function saveArchived(a) { try { localStorage.setItem(ARCHIVE_KEY, JSON.stringify(a)); } catch (e) { /* noop */ } }
+
+  showArchivedBtn.addEventListener('click', () => { _showingArchived = !_showingArchived; renderSessionCards(_showingArchived); });
+
+  function renderSessionCards(showArchived) {
+    const sessions = getSessions();
+    const archived = showArchived ? getArchived() : [];
+    const toShow   = showArchived ? [...sessions, ...archived] : sessions.slice(0, SESSION_LIMIT);
+
+    if (!sessions.length) { sessionsBlock.hidden = true; return; }
+    sessionsBlock.hidden = false;
+    sessionCards.innerHTML = '';
+
+    toShow.forEach(sess => {
+      const card = document.createElement('div');
+      card.className = 'session-card';
+      const statusClass = { draft: 'status-draft', generated: 'status-generated', pushed: 'status-pushed' }[sess.status] || 'status-draft';
+      const controls = (sess.state && sess.state.controls) || [];
+      const score = controls.length ? calculateScore(controls) : 0;
+      card.innerHTML = `
+        <div class="session-card-info">
+          <div class="session-card-company">${esc(sess.clientName || 'Untitled')}</div>
+          <div class="session-card-meta">${fmtAge(sess.savedAt)} &middot; ${score.toFixed(1)}/10</div>
+        </div>
+        <div class="session-card-actions">
+          <span class="session-card-status ${statusClass}">${(sess.status || 'draft').toUpperCase()}</span>
+          <button class="session-discard" data-id="${esc(sess.id)}" title="Discard">&times;</button>
+        </div>`;
+      card.addEventListener('click', () => resumeSession(sess));
+      card.querySelector('.session-discard').addEventListener('click', e => {
+        e.stopPropagation();
+        if (!confirm('Discard this saved session? This cannot be undone.')) return;
+        discardSession(sess.id, showArchived);
+      });
+      sessionCards.appendChild(card);
+    });
+
+    const hasMore = !showArchived && sessions.length > SESSION_LIMIT;
+    if (hasMore) {
+      const more = document.createElement('div');
+      more.className = 'session-more-note';
+      more.textContent = `+ ${sessions.length - SESSION_LIMIT} more`;
+      sessionCards.appendChild(more);
+    }
+    showArchivedBtn.textContent = showArchived ? 'Hide archived' : 'Show archived';
+  }
+
+  function discardSession(id, isArchived) {
+    if (isArchived) saveArchived(getArchived().filter(s => s.id !== id));
+    else            saveSessions(getSessions().filter(s => s.id !== id));
+    renderSessionCards(isArchived);
+  }
+
+  function fmtAge(ts) {
+    const m = Math.floor((Date.now() - ts) / 60000);
+    if (m < 2)  return 'just now';
+    if (m < 60) return m + 'm ago';
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + 'h ago';
+    return Math.floor(h / 24) + 'd ago';
+  }
+
+  // Cross-device backup/restore (separate from the local session list above —
+  // this is for a rep who wants to hand a .json file to another device).
   importSessionFile.addEventListener('change', () => {
     const file = importSessionFile.files[0];
     if (!file) return;
@@ -505,7 +623,8 @@
         const s = payload.state || payload;
         if (!s.controls || !s.client) { showToast('Invalid session file.'); return; }
         restoreState(s);
-        autoSave();
+        currentSessionId = 'cyber_session_' + Date.now(); // imported file becomes its own new session, not an overwrite
+        autoSave(Object.keys(state.widgets).length ? 'generated' : 'draft');
         showToast(`Session loaded: ${s.client.name || 'Untitled'}`);
       } catch (err) {
         showToast('Could not read session file — is it a valid JSON export?');
@@ -513,6 +632,7 @@
     };
     reader.readAsText(file);
   });
+
 
   // ── AI COPY (resilient — never throws, always returns usable copy) ──
   function defaultExplanation(key) {
@@ -627,7 +747,7 @@
       emptyState.hidden = true;
       widgetsOutput.hidden = false;
       deliveryTitle.textContent = `${state.client.name} — Cyber Insurance Widgets`;
-      autoSave();
+      autoSave('generated');
     } finally {
       generateBtn.disabled = false;
       generateBtn.textContent = originalLabel;
@@ -668,6 +788,7 @@
     const score = calculateScore(state.controls);
     const band  = scoreBand(score);
     const period = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const markerLeftPct = Math.min(97, Math.max(3, Math.round(score * 10)));
 
     const cells = CONTROLS_DEF.map(def => {
       const c = state.controls.find(x => x.id === def.id);
@@ -691,9 +812,20 @@
         <span style="font-family:Montserrat,Arial,sans-serif;font-size:40px;font-weight:800;color:${band.color};">${score.toFixed(1)}</span><span style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:16px;color:${HEX.muted};">/10</span>
       </td>
       <td width="70%" style="vertical-align:middle;">
-        <div style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.04em;color:${HEX.muted};text-transform:uppercase;margin-bottom:6px;">Readiness Level</div>
-        <div style="height:8px;border-radius:999px;background:linear-gradient(90deg,#15a05a,#b3760a,#ea580c,#d8402e);"></div>
-        <table width="100%" cellpadding="0" cellspacing="0"><tr>
+        <div style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.04em;color:${HEX.muted};text-transform:uppercase;margin-bottom:8px;">Readiness Level</div>
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+          <tr><td colspan="3" style="padding:0;">
+            <div style="height:8px;border-radius:999px;background:linear-gradient(90deg,#15a05a,#b3760a,#ea580c,#d8402e);"></div>
+          </td></tr>
+          <tr>
+            <td width="${markerLeftPct}%" style="font-size:0;line-height:0;">&nbsp;</td>
+            <td style="width:1px;font-size:0;line-height:0;white-space:nowrap;">
+              <div style="width:14px;height:14px;margin:-11px 0 0 -7px;border-radius:50%;background:#ffffff;border:3px solid ${band.color};box-shadow:0 1px 3px rgba(11,18,32,0.3);"></div>
+            </td>
+            <td style="font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+        </table>
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:2px;"><tr>
           <td style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:11px;color:#15a05a;">Low risk</td>
           <td align="center" style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:11px;color:${HEX.muted};">Medium</td>
           <td align="right" style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:11px;color:#d8402e;">High risk</td>
@@ -937,6 +1069,7 @@
       const data = await res.json();
       if (data.ok || data.successCount > 0) {
         showPushStatus(`Pushed successfully${data.successCount ? ` (${data.successCount} widget${data.successCount > 1 ? 's' : ''})` : ''}.`, 'ok');
+        autoSave('pushed');
       } else {
         showPushStatus('Push failed: ' + (data.error || 'Unknown error'), 'err');
       }
@@ -965,16 +1098,70 @@
   }
 
   // ── INIT ─────────────────────────────────────────────────────
+  // Migrates data from this tool's two earlier, now-retired storage formats
+  // (a single-slot key, then a short-lived id-map + active-pointer design)
+  // into the array-based format shared with the rest of the tool suite.
+  // Runs once — if SESSION_KEY_LIST already has data, this is a no-op.
+  function migrateLegacyIfNeeded() {
+    if (getSessions().length) return;
+    let migrated = [];
+
+    try {
+      const v2Map = JSON.parse(localStorage.getItem('cyber_insurance_sessions_v2') || '{}');
+      const ids = Object.keys(v2Map);
+      if (ids.length) {
+        migrated = ids.map(id => {
+          const rec = v2Map[id];
+          const hasWidgets = rec.state && rec.state.widgets && Object.keys(rec.state.widgets).length;
+          return {
+            id: rec.id || id,
+            clientName: rec.clientName || (rec.state && rec.state.client && rec.state.client.name) || 'Untitled',
+            savedAt: rec.updatedAt || Date.now(),
+            status: hasWidgets ? 'generated' : 'draft',
+            state: rec.state
+          };
+        }).sort((a, b) => b.savedAt - a.savedAt).slice(0, 20);
+      }
+    } catch (e) { /* nothing usable to migrate from v2 */ }
+
+    if (!migrated.length) {
+      try {
+        const raw = localStorage.getItem(SESSION_KEY);
+        if (raw) {
+          const legacy = JSON.parse(raw);
+          if (legacy && legacy.client) {
+            const hasWidgets = legacy.widgets && Object.keys(legacy.widgets).length;
+            migrated = [{
+              id: 'cyber_session_' + Date.now(),
+              clientName: legacy.client.name || 'Untitled',
+              savedAt: Date.now(),
+              status: hasWidgets ? 'generated' : 'draft',
+              state: legacy
+            }];
+          }
+        }
+      } catch (e) { /* nothing usable to migrate from the original single-slot key */ }
+    }
+
+    if (migrated.length) saveSessions(migrated);
+  }
+
   function init() {
     const savedUrl = localStorage.getItem('sb_tenant_url');
     const savedKey = localStorage.getItem('sb_api_key');
     if (savedUrl) pushTenantUrl.value = savedUrl;
     if (savedKey) pushApiKey.value    = savedKey;
 
-    if (!loadFromLocalStorage()) {
+    migrateLegacyIfNeeded();
+    const sessions = getSessions();
+    if (sessions.length) {
+      resumeSession(sessions[0]); // most recently saved session, auto-resumed
+    } else {
       renderChecklist();
       refresh();
     }
+    renderSessionCards(false);
+    autoSaveReady = true;
   }
   init();
 })();
