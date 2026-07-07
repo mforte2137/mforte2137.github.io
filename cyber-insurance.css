@@ -180,3 +180,22 @@ input:focus, select:focus, textarea:focus{ outline:2px solid var(--accent); outl
 .widget-preview [data-edit]:focus{ background:rgba(46,116,220,0.09); box-shadow:0 0 0 1px rgba(46,116,220,0.35); }
 
 .toast{ position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--text); color:#fff; padding:10px 20px; border-radius:4px; font-size:13px; font-weight:600; z-index:999; }
+
+/* ---------- Recent sessions strip (technology-roadmap.js pattern) ---------- */
+.sessions-block{ padding:14px 24px 4px; max-width:1440px; margin:0 auto; }
+.sessions-block-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.sessions-block-header h3{ font-family:'Source Sans Pro',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-2); }
+.session-cards-row{ display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; }
+.session-card{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex:0 0 240px; background:var(--bg-panel); border:1px solid var(--border); border-radius:8px; padding:11px 13px; cursor:pointer; transition:border-color .15s; }
+.session-card:hover{ border-color:var(--accent-border); }
+.session-card-info{ min-width:0; }
+.session-card-company{ font-weight:700; font-size:13px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.session-card-meta{ font-size:11px; color:var(--text-3); margin-top:2px; white-space:nowrap; }
+.session-card-actions{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0; }
+.session-card-status{ font-size:9.5px; font-weight:700; letter-spacing:0.05em; padding:2px 8px; border-radius:20px; white-space:nowrap; }
+.status-draft{ background:var(--bg-row); color:var(--text-3); }
+.status-generated{ background:var(--accent-bg); color:var(--accent-2); }
+.status-pushed{ background:var(--good-bg); color:var(--good); }
+.session-discard{ background:none; border:none; font-size:16px; line-height:1; color:var(--text-3); cursor:pointer; padding:0 2px; }
+.session-discard:hover{ color:var(--danger); }
+.session-more-note{ flex:0 0 auto; font-size:11px; color:var(--text-3); display:flex; align-items:center; padding:0 12px; white-space:nowrap; }
