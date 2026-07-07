@@ -490,7 +490,14 @@ main {
   gap: 6px;
   cursor: pointer;
 }
-.sb-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.sb-actions { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.sb-push-option { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.sb-push-desc {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 0.03em;
+}
 
 .btn-push {
   background: var(--accent);
@@ -512,7 +519,7 @@ main {
 .btn-push-pack {
   background: var(--bg-panel);
   color: var(--accent);
-  border: 1px solid var(--accent-border);
+  border: 1.5px solid var(--accent);
 }
 .btn-push-pack:hover:not(:disabled) { background: var(--accent-bg); opacity: 1; }
 .btn-push-pack:disabled { background: var(--bg-panel); color: var(--text-3); border-color: var(--border); cursor: not-allowed; }
