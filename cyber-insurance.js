@@ -919,7 +919,7 @@
           <tr>
             <td width="${markerLeftPct}%" style="font-size:0;line-height:0;">&nbsp;</td>
             <td style="width:1px;font-size:0;line-height:0;white-space:nowrap;">
-              <div style="width:14px;height:14px;margin:-11px 0 0 -7px;border-radius:50%;background:#ffffff;border:3px solid ${band.color};box-shadow:0 1px 3px rgba(11,18,32,0.3);"></div>
+              <div style="width:24px;height:24px;margin:-16px 0 0 -12px;border-radius:50%;background:#ffffff;border:4px solid ${band.color};box-shadow:0 1px 4px rgba(11,18,32,0.35);"></div>
             </td>
             <td style="font-size:0;line-height:0;">&nbsp;</td>
           </tr>
