@@ -322,6 +322,18 @@ const TOOLS = [
     icon: "chart"
   },
   {
+    title: "Cyber Insurance Readiness Widget",
+    shortLabel: "Cyber Insurance",
+    description:
+      "Show clients exactly where they stand against cyber insurance underwriter requirements. Auto-calculated readiness score, gap analysis, and path to readiness — ready to push into any security or managed services proposal.",
+    category: "Security",
+    url: "https://widgetcreator.netlify.app/cyber-insurance.html",
+    badge: "new",
+    updated: "2026-07-06",
+    gradient: "graphite",
+    icon: "search"
+  },
+  {
     title: "MSP Security Assessment Tool",
     shortLabel: "Security Assessment",
     description:
@@ -508,6 +520,7 @@ const GRADIENTS = {
   sapphire:"linear-gradient(135deg, #1e1b4b 0%, #1d4ed8 55%, #60a5fa 100%)",
   electric:"linear-gradient(135deg, #0c4a6e 0%, #0ea5e9 55%, #67e8f9 100%)",
   aurora:  "linear-gradient(135deg, #4c1d95 0%, #7c3aed 45%, #06b6d4 100%)",
+  graphite:"linear-gradient(135deg, #111827 0%, #374151 55%, #6b7280 100%)",
   mint:    "linear-gradient(135deg, #022c22 0%, #059669 55%, #6ee7b7 100%)",
   cyan:    "linear-gradient(135deg, #164e63 0%, #0891b2 55%, #67e8f9 100%)",
   forest:  "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #86efac 100%)",
@@ -1208,6 +1221,13 @@ Your data stays with you. Files are read locally in the browser and never transm
       out:   "A list of flagged issues with specific suggestions, plus an AI evaluation of the proposal.",
       when:  "About to send an important quote and wanting one last review. A deal has stalled and you want to check if the quote is the problem.",
       not:   "Broader evaluation of proposal narrative — use Proposal Evaluator."
+    },
+    "Cyber Insurance Readiness Widget": {
+      who:   "MSP sales reps or account managers building a security or managed services proposal where cyber insurance is part of the conversation.",
+      input: "Client name, industry, and a 12-control checklist (MFA, EDR, Backup & DR, Patch Management, Email Security, Training, PAM, IR Plan, Vulnerability Scanning, Remote Access, Encryption, Vendor Risk) — each marked In Place / Partial / Not In Place / Unknown. Excel export/import for technician completion. Session saves locally.",
+      out:   "Two or three customer-facing widgets: a Readiness Score card (score out of 10, gradient bar, control status grid), a Gap Analysis (critical and recommended gaps with plain-language insurer implications and optional disclaimer), and an optional Path to Readiness widget. Push to Salesbuildr or copy HTML.",
+      when:  "A client is renewing cyber insurance. A prospect has had a claim denied or seen premiums increase. You want to frame IT services as insurance cost reduction rather than IT overhead. Building a security proposal with a financial justification angle.",
+      not:   "Not a formal security audit. Not a compliance framework assessment — use MSP Security Assessment Tool for NIST/CIS. The disclaimer widget row makes the assessment basis clear."
     },
     "MSP Security Assessment Tool": {
       who:   "MSP security specialists, vCISOs, or account managers presenting security assessments to clients.",
