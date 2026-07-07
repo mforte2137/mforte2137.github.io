@@ -25,13 +25,20 @@
       </div>
       <div class="session-controls">
         <span id="sessionIndicator" class="session-indicator" hidden></span>
-        <button id="saveSessionBtn" class="btn btn-ghost btn-sm" type="button">Save session</button>
-        <button id="loadSessionBtn" class="btn btn-ghost btn-sm" type="button">Load session</button>
         <button id="newSessionBtn" class="btn btn-ghost btn-sm" type="button">New</button>
         <input type="file" id="importSessionFile" accept="application/json" hidden>
       </div>
     </div>
   </header>
+
+  <!-- ============== RECENT SESSIONS (inline strip, click to resume) ============== -->
+  <div id="sessionsBlock" class="sessions-block" hidden>
+    <div class="sessions-block-header">
+      <h3>Recent sessions</h3>
+      <button id="showArchivedBtn" class="btn btn-ghost btn-sm" type="button">Show archived</button>
+    </div>
+    <div id="sessionCards" class="session-cards-row"></div>
+  </div>
 
   <!-- ============== MAIN: TWO COLUMN WORKSPACE ============== -->
   <main class="workspace">
