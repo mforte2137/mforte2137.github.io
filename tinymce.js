@@ -181,13 +181,13 @@ function resetApp() {
   copyBtn.innerHTML = '📋 Copy HTML';
   copyBtn.classList.remove('copied');
   document.getElementById('sb-result').classList.add('hidden');
-  sbPushIndividual.textContent = 'Save to Salesbuildr →';
+  sbPushIndividual.textContent = 'Push to Salesbuildr →';
   sbPushIndividual.classList.remove('is-done');
   sbPushIndividual.disabled = true;
-  sbPushPack.classList.add('hidden');
-  sbPushPack.textContent = 'Save as 1 Widget →';
+  sbPushPack.textContent = 'Push as 1 Widget →';
   sbPushPack.classList.remove('is-done');
   sbPushPack.disabled = true;
+  document.getElementById('sb-push-pack-wrap').style.display = 'none';
   document.getElementById('sb-widget-title-row').classList.remove('hidden');
   document.getElementById('sb-widget-title').value = '';
 }
@@ -706,24 +706,31 @@ sbToggle.addEventListener('click', () => {
   const open = !sbBody.classList.contains('hidden');
   sbBody.classList.toggle('hidden', open);
   sbArrow.classList.toggle('open', !open);
+  if (!open) updatePushBtn(); // refresh button state when panel opens
 });
 
 function updatePushBtn() {
   const hasCredentials = sbApiKey.value.trim() && sbTenantUrl.value.trim();
-  const isMulti = widgetList.length > 1;
-  const checkedCount = isMulti
+  const isMulti        = widgetList.length > 1;
+  const checkedCount   = isMulti
     ? document.querySelectorAll('.widget-checkbox:checked').length
     : 1;
+  const hasContent = checkedCount > 0;
 
-  sbPushIndividual.disabled = !hasCredentials || checkedCount === 0;
-  sbPushPack.disabled       = !hasCredentials || checkedCount === 0;
+  sbPushIndividual.disabled = !hasCredentials || !hasContent;
+  sbPushPack.disabled       = !hasCredentials || !hasContent;
 
+  // Update individual button label
   if (isMulti && checkedCount > 0) {
-    sbPushIndividual.textContent = `Save ${checkedCount} Widget${checkedCount!==1?'s':''} →`;
-    sbPushPack.classList.remove('hidden');
+    sbPushIndividual.textContent = `Push All (${checkedCount} Widgets) →`;
+    document.getElementById('sb-push-individual-desc').textContent = 'One widget per section';
+    document.getElementById('sb-push-pack-wrap').style.display = '';
+  } else if (!isMulti) {
+    sbPushIndividual.textContent = 'Push to Salesbuildr →';
+    document.getElementById('sb-push-pack-wrap').style.display = 'none';
   } else {
-    sbPushIndividual.textContent = 'Save to Salesbuildr →';
-    sbPushPack.classList.add('hidden');
+    sbPushIndividual.textContent = 'Push All →';
+    document.getElementById('sb-push-pack-wrap').style.display = '';
   }
 }
 
