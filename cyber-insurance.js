@@ -45,7 +45,7 @@
     controls: CONTROLS_DEF.map(c => ({ id: c.id, status: 'unknown', notes: '' })),
     theme:   { color: '#2e74dc' },
     widget3: false,
-    aiCopy:  { gapExplanations: [], pathItems: [], pathClosing: '', disclaimer: DEFAULT_DISCLAIMER },
+    aiCopy:  { coverLetter: { opening: '', summaryFraming: '', closing: '' }, gapExplanations: [], pathItems: [], pathClosing: '', disclaimer: DEFAULT_DISCLAIMER },
     widgets: {}
   };
 
@@ -88,7 +88,7 @@
   const sessionIndicator  = $('sessionIndicator');
 
   const toast = $('toast');
-  const WIDGET_IDS = [1, 2, 3];
+  const WIDGET_IDS = [1, 2, 3, 4];
 
   // ── CHECKLIST RENDER ─────────────────────────────────────────
   function renderChecklist() {
@@ -477,7 +477,7 @@
       controls: CONTROLS_DEF.map(c => ({ id: c.id, status: 'unknown', notes: '' })),
       theme: { color: '#2e74dc' },
       widget3: false,
-      aiCopy: { gapExplanations: [], pathItems: [], pathClosing: '', disclaimer: DEFAULT_DISCLAIMER },
+      aiCopy: { coverLetter: { opening: '', summaryFraming: '', closing: '' }, gapExplanations: [], pathItems: [], pathClosing: '', disclaimer: DEFAULT_DISCLAIMER },
       widgets: {}
     };
     clientNameEl.value = ''; clientIndustryEl.value = '';
@@ -504,8 +504,17 @@
     state.controls = saved.controls || CONTROLS_DEF.map(c => ({ id: c.id, status: 'unknown', notes: '' }));
     state.theme    = saved.theme    || { color: '#2e74dc' };
     state.widget3  = !!saved.widget3;
-    state.aiCopy   = saved.aiCopy   || { gapExplanations: [], pathItems: [], pathClosing: '', disclaimer: DEFAULT_DISCLAIMER };
+    state.aiCopy   = saved.aiCopy   || { coverLetter: { opening: '', summaryFraming: '', closing: '' }, gapExplanations: [], pathItems: [], pathClosing: '', disclaimer: DEFAULT_DISCLAIMER };
+    if (!state.aiCopy.coverLetter) state.aiCopy.coverLetter = { opening: '', summaryFraming: '', closing: '' };
     state.widgets  = saved.widgets  || {};
+
+    // Migration: sessions saved before the cover letter existed used
+    // 1=Score, 2=Gap Analysis, 3=Path to Readiness. Shift them into the
+    // current 2/3/4 slots — widget 1 (cover letter) is left for
+    // renderAllWidgets to fill in via its normal fallback-copy lookup.
+    if (state.widgets['3'] && !state.widgets['4']) {
+      state.widgets = { 2: state.widgets['1'], 3: state.widgets['2'], 4: state.widgets['3'] };
+    }
 
     clientNameEl.value = state.client.name || '';
     clientIndustryEl.value = state.client.industry || '';
@@ -519,7 +528,7 @@
 
     widget3Toggle.checked = state.widget3;
 
-    if (Object.keys(state.widgets).length && state.widgets[1]) {
+    if (Object.keys(state.widgets).length && state.widgets[2]) {
       const gaps = classifyGaps();
       renderAllWidgets(gaps);
       emptyState.hidden = true;
@@ -669,8 +678,25 @@
     };
     return map[key] || 'A managed service addressing this control area.';
   }
-  function buildFallbackCopy(gaps, includePath) {
+  function defaultCoverLetterCopy(industry, bandLabel) {
+    const industryPhrase = industry ? ` in the ${industry.toLowerCase()} sector` : '';
+    let summaryFraming;
+    if (bandLabel && bandLabel.indexOf('Low') === 0) {
+      summaryFraming = 'Overall, your organization is well positioned heading into renewal, with a few refinements that will further strengthen your position.';
+    } else if (bandLabel && bandLabel.indexOf('High') === 0) {
+      summaryFraming = 'These findings represent meaningful exposure that could affect both your coverage and your premium if left unaddressed before renewal.';
+    } else {
+      summaryFraming = 'These findings represent a mix of strengths and gaps that are worth addressing ahead of your next renewal.';
+    }
     return {
+      opening: `Thank you for the opportunity to review your organization's current approach to cyber security and cyber insurance readiness${industryPhrase}. This assessment reflects our findings against the controls most commonly required by underwriters today.`,
+      summaryFraming,
+      closing: 'The following pages detail our specific findings and the recommended path to close any gaps identified. We welcome the opportunity to discuss these results and how we can support you going forward.'
+    };
+  }
+  function buildFallbackCopy(gaps, includePath, industry, bandLabel) {
+    return {
+      coverLetter: defaultCoverLetterCopy(industry, bandLabel),
       gapExplanations: gaps.map(g => ({ control: g.control, explanation: defaultExplanation(g.key) })),
       pathItems: includePath ? gaps.map(g => ({ control: g.control, description: defaultPathDescription(g.key) })) : [],
       pathClosing: includePath ? DEFAULT_CLOSING : '',
@@ -679,9 +705,10 @@
   }
   // Never throws. Always returns a fully-populated, usable copy object —
   // AI text where available, deterministic fallback text everywhere else.
-  async function safeFetchAiCopy(gaps, includePath) {
-    const fallback = buildFallbackCopy(gaps, includePath);
-    if (!gaps.length) return fallback;
+  // Always calls the AI (even with zero gaps) since the cover letter is
+  // needed regardless of whether any gaps exist.
+  async function safeFetchAiCopy(gaps, includePath, score, bandLabel) {
+    const fallback = buildFallbackCopy(gaps, includePath, state.client.industry, bandLabel);
     try {
       const res = await fetch('/api/cyber-insurance-ai', {
         method: 'POST',
@@ -689,6 +716,8 @@
         body: JSON.stringify({
           clientName: state.client.name,
           industry: state.client.industry,
+          score,
+          scoreBandLabel: bandLabel,
           gaps: gaps.map(g => ({ control: g.control, status: g.status, severity: g.severity })),
           includePathToReadiness: includePath
         })
@@ -701,6 +730,12 @@
         console.warn('[cyber-insurance] AI call failed — using local copy.', data && data.error);
         return fallback;
       }
+
+      const coverLetter = {
+        opening: (data.coverLetter && data.coverLetter.opening) || fallback.coverLetter.opening,
+        summaryFraming: (data.coverLetter && data.coverLetter.summaryFraming) || fallback.coverLetter.summaryFraming,
+        closing: (data.coverLetter && data.coverLetter.closing) || fallback.coverLetter.closing
+      };
 
       const explanations = gaps.map(g => {
         const found = (data.gapExplanations || []).find(e => e.control === g.control && e.explanation);
@@ -716,7 +751,7 @@
         });
         pathClosing = pd.closing || fallback.pathClosing;
       }
-      return { gapExplanations: explanations, pathItems, pathClosing, disclaimer: fallback.disclaimer };
+      return { coverLetter, gapExplanations: explanations, pathItems, pathClosing, disclaimer: fallback.disclaimer };
     } catch (e) {
       console.warn('[cyber-insurance] AI call threw — using local copy.', e);
       return fallback;
@@ -737,12 +772,14 @@
     if (err) { formError.textContent = err; formError.hidden = false; return; }
 
     const gaps = classifyGaps();
+    const score = calculateScore(state.controls);
+    const band  = scoreBand(score);
     generateBtn.disabled = true;
     const originalLabel = generateBtn.textContent;
     generateBtn.textContent = 'Generating…';
 
     try {
-      state.aiCopy = await safeFetchAiCopy(gaps, state.widget3);
+      state.aiCopy = await safeFetchAiCopy(gaps, state.widget3, score, band.label);
       renderAllWidgets(gaps);
       emptyState.hidden = true;
       widgetsOutput.hidden = false;
@@ -782,6 +819,68 @@
       unknown:    { bg: HEX.unkBg,     text: HEX.unkText,     label: 'Unknown' }
     }[status];
     return `<span style="display:inline-block;padding:3px 10px;border-radius:999px;background:${conf.bg};color:${conf.text};font-family:'Source Sans Pro',Arial,sans-serif;font-size:12px;font-weight:600;">${conf.label}</span>`;
+  }
+
+  // No gradient banner, by design — this widget reads as a letter, not a
+  // dashboard card. {{merge fields}} are left as literal text for
+  // Salesbuildr to substitute at render time; only the surrounding prose
+  // and the score/gap numbers (from our own data, not merge fields) are
+  // filled in here.
+  function buildCoverLetterWidget(gaps) {
+    const score = calculateScore(state.controls);
+    const band  = scoreBand(score);
+    const copy  = state.aiCopy.coverLetter || {};
+    const opening = copy.opening || defaultCoverLetterCopy(state.client.industry, band.label).opening;
+    const framing = copy.summaryFraming || defaultCoverLetterCopy(state.client.industry, band.label).summaryFraming;
+    const closing = copy.closing || defaultCoverLetterCopy(state.client.industry, band.label).closing;
+
+    const critical    = gaps.filter(g => g.severity === 'critical').length;
+    const recommended = gaps.filter(g => g.severity === 'recommended').length;
+    const unknown      = gaps.filter(g => g.severity === 'unknown').length;
+
+    let summaryLead;
+    if (gaps.length === 0) {
+      summaryLead = `{{company.name}}'s current cyber insurance readiness score is <strong>${score.toFixed(1)}/10</strong> — all 12 controls reviewed are fully in place.`;
+    } else {
+      const parts = [];
+      if (critical > 0)    parts.push(`<strong>${critical} critical</strong>`);
+      if (recommended > 0) parts.push(`<strong>${recommended} recommended</strong>`);
+      if (unknown > 0)      parts.push(`<strong>${unknown} unverified</strong>`);
+      const clause = parts.length > 1 ? parts.slice(0, -1).join(', ') + ', and ' + parts[parts.length - 1] : parts[0];
+      summaryLead = `{{company.name}}'s current cyber insurance readiness score is <strong>${score.toFixed(1)}/10</strong>, with ${clause} item${gaps.length > 1 ? 's' : ''} identified across the 12 controls reviewed.`;
+    }
+
+    const tint = tintColor(state.theme.color, 0.9);
+
+    return `<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:${HEX.panel};border-top:3px solid ${state.theme.color};">
+  <tr><td style="padding:30px 34px 4px 34px;">
+    <table width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:12px;color:${HEX.muted};">{{date quote.createdAt}}</td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:18px 34px 0 34px;">
+    <div style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:14px;color:${HEX.text};margin-bottom:16px;">Dear {{contact.firstName}},</div>
+    <div data-edit="letterOpening" style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:13.5px;color:${HEX.secondary};line-height:1.7;margin-bottom:20px;">${esc(opening)}</div>
+  </td></tr>
+  <tr><td style="padding:0 34px 20px 34px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:${tint};border-left:3px solid ${state.theme.color};">
+      <tr><td style="padding:16px 20px;">
+        <div style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:${state.theme.color};margin-bottom:8px;">Executive Summary</div>
+        <div style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:13.5px;color:${HEX.text};line-height:1.65;">
+          ${summaryLead} <span data-edit="letterSummary">${esc(framing)}</span>
+        </div>
+      </td></tr>
+    </table>
+  </td></tr>
+  <tr><td style="padding:0 34px 26px 34px;">
+    <div data-edit="letterClosing" style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:13.5px;color:${HEX.secondary};line-height:1.7;">${esc(closing)}</div>
+  </td></tr>
+  <tr><td style="padding:18px 34px 32px 34px;border-top:1px solid ${HEX.border};">
+    <div style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:13px;color:${HEX.secondary};margin-bottom:12px;">On behalf of {{servicingBranch.name}},</div>
+    <div style="font-family:Montserrat,Arial,sans-serif;font-size:14px;font-weight:700;color:${HEX.text};">{{company.accountManager.fullName}}</div>
+    <div style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:12px;color:${HEX.muted};">{{company.accountManager.role}}</div>
+  </td></tr>
+</table>`;
   }
 
   function buildScoreWidget() {
@@ -927,7 +1026,13 @@
         const key     = node.dataset.edit;
         const control = node.dataset.control;
         const text    = node.textContent;
-        if (key === 'gapExpl') {
+        if (key === 'letterOpening') {
+          state.aiCopy.coverLetter.opening = text;
+        } else if (key === 'letterSummary') {
+          state.aiCopy.coverLetter.summaryFraming = text;
+        } else if (key === 'letterClosing') {
+          state.aiCopy.coverLetter.closing = text;
+        } else if (key === 'gapExpl') {
           let entry = state.aiCopy.gapExplanations.find(g => g.control === control);
           if (entry) entry.explanation = text; else state.aiCopy.gapExplanations.push({ control, explanation: text });
         } else if (key === 'pathDesc') {
@@ -945,26 +1050,30 @@
   }
 
   function renderAllWidgets(gaps) {
-    state.widgets[1] = buildScoreWidget();
+    state.widgets[1] = buildCoverLetterWidget(gaps);
     renderPreview(1);
+    makeEditable(1);
+
+    state.widgets[2] = buildScoreWidget();
+    renderPreview(2);
 
     if (gaps.length) {
-      state.widgets[2] = buildGapWidget(gaps);
-      $('widgetBlock-2').hidden = false;
-      renderPreview(2);
-      makeEditable(2);
-    } else {
-      state.widgets[2] = '';
-      $('widgetBlock-2').hidden = true;
-    }
-
-    if (state.widget3) {
-      state.widgets[3] = buildPathWidget(gaps);
+      state.widgets[3] = buildGapWidget(gaps);
       $('widgetBlock-3').hidden = false;
       renderPreview(3);
       makeEditable(3);
     } else {
+      state.widgets[3] = '';
       $('widgetBlock-3').hidden = true;
+    }
+
+    if (state.widget3) {
+      state.widgets[4] = buildPathWidget(gaps);
+      $('widgetBlock-4').hidden = false;
+      renderPreview(4);
+      makeEditable(4);
+    } else {
+      $('widgetBlock-4').hidden = true;
     }
   }
 
@@ -976,15 +1085,19 @@
 
   async function onRegenOne(i) {
     const gaps = classifyGaps();
-    if (i === 1) { state.widgets[1] = buildScoreWidget(); renderPreview(1); autoSave(); return; }
+    const score = calculateScore(state.controls);
+    const band  = scoreBand(score);
+
+    if (i === 2) { state.widgets[2] = buildScoreWidget(); renderPreview(2); autoSave(); return; }
 
     const btn = document.querySelector(`.widget-regen[data-widget="${i}"]`);
     const label = btn.textContent;
     btn.disabled = true; btn.textContent = '…';
     try {
-      const copy = await safeFetchAiCopy(gaps, i === 3 ? true : state.widget3);
-      if (i === 2) state.aiCopy.gapExplanations = copy.gapExplanations;
-      if (i === 3) { state.aiCopy.pathItems = copy.pathItems; state.aiCopy.pathClosing = copy.pathClosing; }
+      const copy = await safeFetchAiCopy(gaps, i === 4 ? true : state.widget3, score, band.label);
+      if (i === 1) state.aiCopy.coverLetter = copy.coverLetter;
+      if (i === 3) state.aiCopy.gapExplanations = copy.gapExplanations;
+      if (i === 4) { state.aiCopy.pathItems = copy.pathItems; state.aiCopy.pathClosing = copy.pathClosing; }
       renderAllWidgets(gaps);
       autoSave();
       showToast('Regenerated.');
@@ -995,11 +1108,13 @@
 
   regenAllBtn.addEventListener('click', async () => {
     const gaps = classifyGaps();
-    if (!gaps.length) { showToast('No gaps to regenerate.'); return; }
+    const score = calculateScore(state.controls);
+    const band  = scoreBand(score);
     const label = regenAllBtn.textContent;
     regenAllBtn.disabled = true; regenAllBtn.textContent = 'Regenerating…';
     try {
-      const copy = await safeFetchAiCopy(gaps, state.widget3);
+      const copy = await safeFetchAiCopy(gaps, state.widget3, score, band.label);
+      state.aiCopy.coverLetter = copy.coverLetter;
       state.aiCopy.gapExplanations = copy.gapExplanations;
       if (state.widget3) { state.aiCopy.pathItems = copy.pathItems; state.aiCopy.pathClosing = copy.pathClosing; }
       renderAllWidgets(gaps);
@@ -1029,7 +1144,7 @@
 
   // ── PUSH TO SALESBUILDR ──────────────────────────────────────
   function activeWidgetList() {
-    const labels = { 1: 'Readiness Score', 2: 'Gap Analysis', 3: 'Path to Readiness' };
+    const labels = { 1: 'Cover Letter', 2: 'Readiness Score', 3: 'Gap Analysis', 4: 'Path to Readiness' };
     return WIDGET_IDS
       .filter(i => !$(`widgetBlock-${i}`).hidden && state.widgets[i])
       .map(i => ({ id: i, title: `${state.client.name} — Cyber Insurance — ${labels[i]}`, html: state.widgets[i] }));
