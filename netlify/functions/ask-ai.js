@@ -182,6 +182,15 @@ USE WHEN: About to send an important quote and wanting one last review. A deal h
 NOT FOR: Broader evaluation of proposal narrative — use Proposal Evaluator.
 URL: https://widgetcreator.netlify.app/preflight.html
 
+TOOL: Cyber Insurance Readiness Widget
+WHAT: Generates customer-facing proposal widgets showing a client's readiness against common cyber insurance underwriter requirements. 12-control checklist (MFA, EDR, Backup & DR, Patch Management, Email Security, Staff Training, Privileged Access Management, Incident Response Plan, Vulnerability Scanning, Remote Access Security, Data Encryption, Vendor Risk). Auto-calculates a readiness score (X.X / 10) with a colour-coded gradient bar. Produces two or three widgets: Readiness Score card, Gap Analysis (critical gaps that may affect coverage + recommended gaps that may affect premium), and optional Path to Readiness. Supports Excel export for technician completion and import back. Session saves to localStorage.
+WHO: MSP sales reps building security or managed services proposals where cyber insurance is part of the conversation.
+INPUT: Client name, industry, 12-control checklist with In Place / Partial / Not In Place / Unknown status per control. Optional Excel import from technician. Colour theme.
+OUTPUT: Two or three customer-facing widgets pushed to Salesbuildr or copied as HTML.
+USE WHEN: A client is renewing cyber insurance. A prospect has had a claim denied or premiums have increased. You want to frame IT services as insurance cost reduction. Building a security proposal with a financial justification angle.
+NOT FOR: Formal security audits. Compliance framework assessments — use MSP Security Assessment Tool for NIST/CIS. The widgets are proposal tools, not audit reports.
+URL: https://widgetcreator.netlify.app/cyber-insurance.html
+
 TOOL: MSP Security Assessment Tool
 WHAT: Generates proposal widgets for major security framework assessments (NIST, CIS, and similar), including technician checklists and current-state vs. ideal-state comparison matrices.
 WHO: MSP security specialists, vCISOs, or account managers presenting security assessments to clients.
