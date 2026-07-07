@@ -37,7 +37,7 @@ function buildStyles(accent) {
   const thBorderColor= darkenHex(accent, 0.15);
   const blockquoteBg = lightenHex(accent, 0.90);
   return {
-    WRAPPER:    `max-width:860px;margin:0 auto;padding:32px;background-color:#ffffff;font-family:${FONT};`,
+    WRAPPER:    `width:100%;padding:24px;background-color:#ffffff;font-family:${FONT};box-sizing:border-box;`,
     H1:         `font-family:${FONT};font-size:20px;font-weight:700;color:${accent};margin:28px 0 12px 0;line-height:1.3;padding:0;border:none;background:none;`,
     H2:         `font-family:${FONT};font-size:17px;font-weight:700;color:${accent};margin:22px 0 10px 0;line-height:1.3;padding:0;border:none;background:none;`,
     H3:         `font-family:${FONT};font-size:15px;font-weight:600;color:${subHeadColor};margin:18px 0 8px 0;line-height:1.3;padding:0;border:none;background:none;`,
