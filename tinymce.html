@@ -166,8 +166,14 @@
         </div>
 
         <div class="sb-actions">
-          <button type="button" id="sb-push-individual" class="btn-push" disabled>Save to Salesbuildr →</button>
-          <button type="button" id="sb-push-pack" class="btn-push btn-push-pack hidden" disabled>Save as 1 Widget →</button>
+          <div class="sb-push-option" id="sb-push-individual-wrap">
+            <button type="button" id="sb-push-individual" class="btn-push" disabled>Push All to Salesbuildr →</button>
+            <span class="sb-push-desc" id="sb-push-individual-desc">One widget per section</span>
+          </div>
+          <div class="sb-push-option" id="sb-push-pack-wrap">
+            <button type="button" id="sb-push-pack" class="btn-push btn-push-pack" disabled>Push as 1 Widget →</button>
+            <span class="sb-push-desc">Everything in one widget</span>
+          </div>
           <div id="sb-result" class="sb-result hidden"></div>
         </div>
       </div>
