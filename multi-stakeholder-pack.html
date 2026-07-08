@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Multi-Stakeholder Proposal Pack — Salesbuildr Innovation Suite</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="multi-stakeholder-pack.css" />
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ===================== HEADER ===================== -->
+  <header class="app-header">
+    <div class="app-header-inner">
+      <a href="/" class="back-link">← Hub</a>
+      <div class="app-title-block">
+        <h1 class="app-title">Multi-Stakeholder Proposal Pack</h1>
+        <p class="app-subtitle">One proposal, three audiences — CEO, CFO, and IT &amp; Operations, each written for what they actually care about.</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-body">
+
+    <!-- ===================== FORM COLUMN ===================== -->
+    <section class="form-col">
+
+      <!-- Client type toggle — first input, prominent -->
+      <div class="panel client-type-panel">
+        <div class="client-type-toggle" id="clientTypeToggle">
+          <button type="button" class="ct-btn active" data-val="prospect">
+            <span class="ct-label">Prospect</span>
+            <span class="ct-desc">New relationship — build credibility</span>
+          </button>
+          <button type="button" class="ct-btn" data-val="existing">
+            <span class="ct-label">Existing Client</span>
+            <span class="ct-desc">Warmer tone — evolution, not replacement</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Common fields -->
+      <div class="panel">
+        <div class="field-row">
+          <div class="field">
+            <label for="clientName">Client name</label>
+            <input type="text" id="clientName" placeholder="Riverside Legal Group" />
+          </div>
+          <div class="field">
+            <label for="mspName">Your (MSP) name</label>
+            <input type="text" id="mspName" placeholder="Acme IT Solutions" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="industry">Industry</label>
+            <select id="industry">
+              <option value="">Select industry…</option>
+              <option>Legal</option>
+              <option>Healthcare</option>
+              <option>Financial Services</option>
+              <option>Manufacturing</option>
+              <option>Construction</option>
+              <option>Real Estate</option>
+              <option>Non-Profit</option>
+              <option>Retail</option>
+              <option>Professional Services</option>
+              <option>Education</option>
+              <option>Government</option>
+              <option>Technology</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="companySize">Company size</label>
+            <select id="companySize">
+              <option value="">Select size…</option>
+              <option value="1-10">1–10</option>
+              <option value="11-50">11–50</option>
+              <option value="51-200">51–200</option>
+              <option value="201-500">201–500</option>
+              <option value="500+">500+</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Engagement description -->
+      <div class="panel">
+        <h3 class="panel-heading">What are you proposing?</h3>
+        <p class="panel-note">Quick selection — this is context for the AI, not a full service catalogue.</p>
+
+        <div class="service-groups" id="serviceGroups"></div>
+
+        <div class="field" style="margin-top:12px;">
+          <label for="customEngagement">Anything else we should know about this engagement? <span class="char-limit">(max 200 chars)</span></label>
+          <textarea id="customEngagement" maxlength="200" rows="2" placeholder="e.g. This replaces an outgoing MSP after a rocky transition"></textarea>
+          <div class="char-count"><span id="customEngagementCount">0</span>/200</div>
+        </div>
+      </div>
+
+      <!-- Stakeholder selection -->
+      <div class="panel">
+        <h3 class="panel-heading">Stakeholders</h3>
+        <p class="panel-note">All three are on by default. Turn off any you don't need.</p>
+
+        <div class="stakeholder-cards" id="stakeholderCards">
+
+          <div class="stakeholder-card active" data-key="ceo">
+            <div class="stakeholder-card-top">
+              <label class="switch">
+                <input type="checkbox" checked data-key="ceo" class="stakeholder-toggle" />
+                <span class="switch-track"></span>
+              </label>
+              <div>
+                <div class="stakeholder-name">CEO / Business Owner</div>
+                <div class="stakeholder-desc">Risk, continuity, strategic partnership</div>
+              </div>
+            </div>
+            <div class="stakeholder-context">
+              <label for="ctx-ceo">Any specific risk, event, or concern to address? <span class="optional-tag">optional</span></label>
+              <input type="text" id="ctx-ceo" placeholder="e.g. They had a ransomware scare last year" />
+            </div>
+          </div>
+
+          <div class="stakeholder-card active" data-key="cfo">
+            <div class="stakeholder-card-top">
+              <label class="switch">
+                <input type="checkbox" checked data-key="cfo" class="stakeholder-toggle" />
+                <span class="switch-track"></span>
+              </label>
+              <div>
+                <div class="stakeholder-name">CFO / Finance</div>
+                <div class="stakeholder-desc">Cost justification, ROI, cost of inaction</div>
+              </div>
+            </div>
+            <div class="stakeholder-context">
+              <label for="ctx-cfo">Any pricing sensitivity or comparison to address? <span class="optional-tag">optional</span></label>
+              <input type="text" id="ctx-cfo" placeholder="e.g. They're comparing us to a cheaper competitor" />
+            </div>
+          </div>
+
+          <div class="stakeholder-card active" data-key="itops">
+            <div class="stakeholder-card-top">
+              <label class="switch">
+                <input type="checkbox" checked data-key="itops" class="stakeholder-toggle" />
+                <span class="switch-track"></span>
+              </label>
+              <div>
+                <div class="stakeholder-name">IT &amp; Operations</div>
+                <div class="stakeholder-desc">Methodology, transition, day-to-day impact</div>
+              </div>
+            </div>
+            <div class="stakeholder-context">
+              <label for="ctx-itops">Any specific technical concern or transition worry? <span class="optional-tag">optional</span></label>
+              <input type="text" id="ctx-itops" placeholder="e.g. They have an internal IT person who feels threatened" />
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Colour theme -->
+      <div class="panel">
+        <h3 class="panel-heading">Colour theme</h3>
+        <div class="swatch-row" id="colourSwatches">
+          <button class="swatch active" data-hex="#0f1f3d" style="background:#0f1f3d" title="Navy"></button>
+          <button class="swatch" data-hex="#2E74DC" style="background:#2E74DC" title="Blue"></button>
+          <button class="swatch" data-hex="#475569" style="background:#475569" title="Slate"></button>
+          <button class="swatch" data-hex="#065f46" style="background:#065f46" title="Emerald"></button>
+          <button class="swatch" data-hex="#0f766e" style="background:#0f766e" title="Teal"></button>
+          <button class="swatch" data-hex="#991B1B" style="background:#991B1B" title="Crimson"></button>
+          <button class="swatch" data-hex="#92400e" style="background:#92400e" title="Amber"></button>
+          <button class="swatch" data-hex="#1a1a1a" style="background:#1a1a1a" title="Charcoal"></button>
+          <div class="custom-hex-wrap">
+            <span class="hex-hash">#</span>
+            <input type="text" id="customHex" maxlength="6" placeholder="custom" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-error" id="formError" hidden></div>
+
+      <button class="btn-generate" id="generateBtn">Generate Stakeholder Proposals</button>
+
+    </section>
+
+    <!-- ===================== OUTPUT COLUMN ===================== -->
+    <section class="output-col">
+
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">✎</div>
+        <p>Fill in the details on the left, then generate. Each active stakeholder gets its own widget, written specifically for them.</p>
+      </div>
+
+      <div class="loading-state" id="loadingState" hidden>
+        <div class="loading-dots"><span></span><span></span><span></span></div>
+        <p id="loadingMsg">Writing your stakeholder proposals…</p>
+      </div>
+
+      <div class="output-area" id="outputArea" hidden>
+
+        <div class="output-header">
+          <h2 id="outputTitle">Stakeholder Proposals</h2>
+          <button class="btn-secondary" id="regenerateAllBtn">↺ Regenerate All</button>
+        </div>
+
+        <div class="widget-panels" id="widgetPanels"></div>
+
+        <!-- Delivery -->
+        <div class="delivery-panel">
+          <h3 class="panel-heading">Deliver</h3>
+
+          <label class="combine-toggle">
+            <input type="checkbox" id="combineToggle" />
+            <span class="switch-track small"></span>
+            <span>Combine into one widget</span>
+          </label>
+
+          <div class="delivery-buttons">
+            <button class="btn-accent" id="pushBtn">Push to Salesbuildr</button>
+            <button class="btn-secondary" id="copyAllBtn">Copy HTML</button>
+          </div>
+
+          <div class="sb-creds-inline" id="credsInline" hidden>
+            <p class="creds-note">Enter your Salesbuildr credentials to push widgets.</p>
+            <div class="field-row">
+              <div class="field">
+                <label for="pushApiKey">API key</label>
+                <input type="text" id="pushApiKey" placeholder="sb_live_..." />
+              </div>
+              <div class="field">
+                <label for="pushTenantUrl">Tenant URL</label>
+                <input type="text" id="pushTenantUrl" placeholder="https://acme.salesbuildr.com" />
+              </div>
+            </div>
+            <button class="btn-primary" id="saveAndPushBtn">Save &amp; Push</button>
+          </div>
+
+          <div class="push-status" id="pushStatus" hidden></div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </div>
+</div>
+
+<script src="multi-stakeholder-pack.js"></script>
+</body>
+</html>
