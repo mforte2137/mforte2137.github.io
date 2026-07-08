@@ -211,6 +211,7 @@
     loadingState.hidden = false;
     generateBtn.disabled = true;
     regenerateAllBtn.disabled = true;
+    loadingState.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     try {
       const res = await fetch('/api/multi-stakeholder-pack', {
@@ -302,7 +303,6 @@
     header.innerHTML = `
       <span class="widget-panel-name">${escHtml(def.fullLabel)}</span>
       <div class="widget-panel-actions">
-        <button class="widget-html-toggle" data-key="${def.key}">Show HTML</button>
         <button class="widget-copy" data-key="${def.key}">Copy HTML</button>
         <button class="widget-regen" data-key="${def.key}">Regenerate</button>
       </div>`;
@@ -317,12 +317,6 @@
     previewWrap.appendChild(preview);
     panel.appendChild(previewWrap);
 
-    const htmlEditor = document.createElement('textarea');
-    htmlEditor.className = 'widget-html-editor';
-    htmlEditor.id = 'html-' + def.key;
-    htmlEditor.value = widgetsHtml[def.key];
-    panel.appendChild(htmlEditor);
-
     // Wire up actions
     panel.querySelector('.widget-regen').addEventListener('click', () => onRegenerateOne(def.key));
     panel.querySelector('.widget-copy').addEventListener('click', (e) => {
@@ -332,17 +326,6 @@
         b.textContent = 'Copied ✓';
         setTimeout(() => b.textContent = 'Copy HTML', 2000);
       });
-    });
-    panel.querySelector('.widget-html-toggle').addEventListener('click', (e) => {
-      const shown = htmlEditor.style.display === 'block';
-      htmlEditor.style.display = shown ? 'none' : 'block';
-      if (!shown) htmlEditor.value = getWidgetHtmlFromDom(def.key);
-      e.currentTarget.textContent = shown ? 'Show HTML' : 'Hide HTML';
-    });
-    htmlEditor.addEventListener('input', () => {
-      widgetsHtml[def.key] = htmlEditor.value;
-      preview.innerHTML = htmlEditor.value;
-      makeEditable(preview, def.key);
     });
 
     makeEditable(preview, def.key);
@@ -356,8 +339,6 @@
       el.title = 'Click to edit';
       el.addEventListener('input', () => {
         widgetsHtml[key] = getWidgetHtmlFromDom(key);
-        const htmlEditor = $('html-' + key);
-        if (htmlEditor) htmlEditor.value = widgetsHtml[key];
       });
     });
   }
@@ -384,10 +365,45 @@
   </div>`;
   }
 
-  function footerStrip(mspName) {
-    return `<div style="background:#f4f7fb;border-top:1px solid #e3e7ee;padding:8px 16px;">
-    <span style="font-size:11px;color:#9ca3af;">Prepared by ${esc(mspName || 'your MSP')}</span>
-  </div>`;
+  function hexToRgba(hex, alpha) {
+    const clean = String(hex || '#2e74dc').replace('#', '');
+    const full = clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean;
+    const r = parseInt(full.substring(0, 2), 16) || 0;
+    const g = parseInt(full.substring(2, 4), 16) || 0;
+    const b = parseInt(full.substring(4, 6), 16) || 0;
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  // 3-column benefit/outcome badge row — used on the CEO widget
+  function badgeRow(badges, hex) {
+    const list = (badges && badges.length ? badges : ['Predictable Operations', '24/7 Coverage', 'Reduced Risk']).slice(0, 3);
+    const tint = hexToRgba(hex, 0.1);
+    const cells = list.map((b, i) => `
+    <td style="padding:16px 10px;text-align:center;vertical-align:top;${i < list.length - 1 ? 'border-right:1px solid #e3e7ee;' : ''}width:${Math.floor(100 / list.length)}%;">
+      <div style="width:30px;height:30px;line-height:30px;border-radius:50%;background:${tint};color:${esc(hex)};font-size:15px;font-weight:700;margin:0 auto 8px;">&#10003;</div>
+      <div style="font-size:12px;font-weight:700;color:#0b1220;line-height:1.35;">${esc(b)}</div>
+    </td>`).join('');
+    return `<table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #e3e7ee;">
+      <tr>${cells}</tr>
+    </table>`;
+  }
+
+  // 3-step numbered timeline row — used on the IT & Operations widget
+  function timelineRow(timeline, hex) {
+    const list = (timeline && timeline.length ? timeline : [
+      { stage: 'Day 1-30', label: 'Onboarding & baselining' },
+      { stage: 'Day 30+',  label: 'Steady-state support' },
+      { stage: 'Monthly',  label: 'Reviews & priorities' }
+    ]).slice(0, 3);
+    const cells = list.map((step, i) => `
+    <td style="padding:16px 10px;text-align:center;vertical-align:top;${i < list.length - 1 ? 'border-right:1px solid #e3e7ee;' : ''}width:${Math.floor(100 / list.length)}%;">
+      <div style="width:22px;height:22px;line-height:22px;border-radius:50%;background:${esc(hex)};color:#ffffff;font-size:11px;font-weight:700;margin:0 auto 8px;">${i + 1}</div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:${esc(hex)};margin-bottom:3px;">${esc(step.stage || `Step ${i + 1}`)}</div>
+      <div style="font-size:12px;color:#586273;line-height:1.35;">${esc(step.label || '')}</div>
+    </td>`).join('');
+    return `<table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #e3e7ee;">
+      <tr>${cells}</tr>
+    </table>`;
   }
 
   function bodyParagraphs(body) {
@@ -405,16 +421,16 @@
   function buildCeoWidget(data, hex, payload) {
     return `<div style="width:100%;background:#ffffff;border:1px solid #e3e7ee;border-top:3px solid ${esc(hex)};overflow:hidden;">
   ${gradientHeader(hex, 'For the Business Owner', data.headline || 'Your IT. Your Risk. Your Partnership.')}
+  ${badgeRow(data.badges, hex)}
   <div style="padding:16px 20px;" data-editable-id="body">${bodyParagraphs(data.body)}</div>
-  ${footerStrip(payload && payload.mspName)}
 </div>`;
   }
 
   function buildItopsWidget(data, hex, payload) {
     return `<div style="width:100%;background:#ffffff;border:1px solid #e3e7ee;border-top:3px solid ${esc(hex)};overflow:hidden;">
   ${gradientHeader(hex, 'For IT & Operations', data.headline || 'How We Work — What to Expect From Day One')}
+  ${timelineRow(data.timeline, hex)}
   <div style="padding:16px 20px;" data-editable-id="body">${bodyParagraphs(data.body)}</div>
-  ${footerStrip(payload && payload.mspName)}
 </div>`;
   }
 
@@ -445,7 +461,6 @@
     </table>
   </div>
   <div style="padding:14px 20px 16px;" data-editable-id="body">${bodyParagraphs(data.body)}</div>
-  ${footerStrip(payload && payload.mspName)}
 </div>`;
   }
 
