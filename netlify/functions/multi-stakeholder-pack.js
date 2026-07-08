@@ -70,9 +70,15 @@ exports.handler = async (event) => {
 
   const jsonShape = {};
   targets.forEach(key => {
-    jsonShape[key] = key === 'cfo'
-      ? { headline: 'string', comparisonTable: { headers: ['array of 4 short strings'], rows: ['array of 4 rows, each an array of 4 short strings'] }, body: 'string' }
-      : { headline: 'string', body: 'string' };
+    if (key === 'cfo') {
+      jsonShape[key] = { headline: 'string', comparisonTable: { headers: ['array of 4 short strings'], rows: ['array of 4 rows, each an array of 4 short strings'] }, body: 'string' };
+    } else if (key === 'ceo') {
+      jsonShape[key] = { headline: 'string', badges: ['array of exactly 3 short business-outcome phrases, 2-4 words each, no technology names'], body: 'string' };
+    } else if (key === 'itops') {
+      jsonShape[key] = { headline: 'string', timeline: [{ stage: 'string, e.g. "Day 1-30"', label: 'string, 2-5 words' }], body: 'string' };
+    } else {
+      jsonShape[key] = { headline: 'string', body: 'string' };
+    }
   });
 
   const systemPrompt = `You are an expert MSP (Managed Service Provider) sales copywriter. You write short, sharp, stakeholder-specific sections of a sales proposal.
@@ -87,9 +93,9 @@ Rules for every version:
 - Return JSON only. No preamble, no markdown, no backticks, no commentary.
 
 Reader-specific rules:
-- CEO / Business Owner: never mention technology by name. Talk about business outcomes, continuity, risk, and strategic partnership. Headline should be a risk-reframe or partnership statement.
+- CEO / Business Owner: never mention technology by name. Talk about business outcomes, continuity, risk, and strategic partnership. Headline should be a risk-reframe or partnership statement. Also return "badges" — exactly 3 short business-outcome phrases (2-4 words, no tech names, e.g. "Predictable Operations", "24/7 Coverage", "Audit-Ready Compliance") that visually summarise the partnership's key benefits for this client.
 - CFO / Finance: lead with numbers and comparisons. The comparisonTable must compare "Managed IT" (this proposal) vs "In-House IT" vs "Break-Fix" across 4 short rows (e.g. Monthly cost, Coverage, Risk exposure, Scalability). Every table cell must be qualitative only — 4-6 words maximum, NO specific pricing figures or invented numbers. Include one real, sourced statistic about the cost of a breach or downtime, and one real MSP productivity/cost-reduction benchmark, both used only as general framing, not as fabricated exact figures for this specific client.
-- IT & Operations: be specific and practical about methodology — escalation, monitoring, change communication, what the first 30 days look like, and day-to-day staff impact. If the provided context mentions an internal IT person, acknowledge co-managed IT respectfully — the MSP as an extension, not a replacement.
+- IT & Operations: be specific and practical about methodology — escalation, monitoring, change communication, what the first 30 days look like, and day-to-day staff impact. If the provided context mentions an internal IT person, acknowledge co-managed IT respectfully — the MSP as an extension, not a replacement. Also return "timeline" — exactly 3 stages that map to the transition process described in the body (e.g. stage "Day 1-30" / label "Onboarding & baselining", stage "Day 30+" / label "Steady-state support", stage "Monthly" / label "Reviews & priorities"), each label 2-5 words.
 
 Return a JSON object with exactly this shape (only include the keys requested below):
 ${JSON.stringify(jsonShape, null, 2)}`;
