@@ -362,6 +362,7 @@ textarea { resize: vertical; font-family: 'Source Sans Pro', sans-serif; }
   padding: 40px;
   font-size: 13px;
 }
+.empty-state[hidden] { display: none; }
 .empty-icon { font-size: 30px; color: var(--text-3); }
 
 .loading-state {
@@ -435,18 +436,6 @@ textarea { resize: vertical; font-family: 'Source Sans Pro', sans-serif; }
 .widget-panel-actions button:hover { background: var(--bg-row); }
 
 .widget-preview-wrap { padding: 16px; }
-.widget-html-editor {
-  display: none;
-  width: 100%;
-  min-height: 160px;
-  font-family: 'Menlo', monospace;
-  font-size: 11px;
-  padding: 12px 16px;
-  border: none;
-  border-top: 1px solid var(--border);
-  background: var(--bg-row);
-  color: var(--text-2);
-}
 
 /* ── Delivery panel ───────────────────────── */
 .delivery-panel {
