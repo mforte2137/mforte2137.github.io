@@ -334,6 +334,18 @@ const TOOLS = [
     icon: "chart"
   },
   {
+    title: "Compliance Sales Pack",
+    shortLabel: "Compliance Pack",
+    description:
+      "Sell compliance engagements with confidence. Select a framework and industry — AI generates customer-facing widgets explaining why it matters, where businesses like theirs typically fall short, and how you get them there.",
+    category: "Security",
+    url: "https://widgetcreator.netlify.app/compliance-sales-pack.html",
+    badge: "new",
+    updated: "2026-07-09",
+    gradient: "violet",
+    icon: "checklist"
+  },
+  {
     title: "Cyber Insurance Readiness Widget",
     shortLabel: "Cyber Insurance",
     description:
@@ -1234,6 +1246,13 @@ Your data stays with you. Files are read locally in the browser and never transm
       out:   "A clean, professional PDF status report in plain English suitable for sending to a business owner or stakeholder.",
       when:  "A project is in flight and you need to update the client on progress. Professionalising client communications.",
       not:   "Scoping or pricing the project — use SOW Widget Generator or Project Tasks → Calculator."
+    },
+    "Compliance Sales Pack": {
+      who:   "MSP sales reps building a proposal for a compliance-related engagement — managed compliance, certification support, gap assessment, or any security proposal where a specific framework is the business driver.",
+      input: "Compliance framework (Cyber Essentials / HIPAA / GDPR / NIST CSF / SOC 2 / ISO 27001), client industry, engagement type, optional Widget 4 toggle, colour theme.",
+      out:   "Three or four customer-facing widgets: Why This Framework Matters (penalties, consequences, industry context), Where Most Businesses Fall Short (typical gaps for that industry — no client data needed), How We Get You There (engagement scope and timeline), and optional What Compliance Unlocks (business benefits). Push to Salesbuildr or copy HTML.",
+      when:  "Building a proposal for a compliance engagement. A client is facing an audit, renewing cyber insurance, or needs certification to win contracts. You want to explain compliance in plain language a business owner will act on.",
+      not:   "Not a compliance assessment tool — does not collect the client\'s actual control data. Not a replacement for the Security Assessment Tool, which generates technical artefacts after the engagement is sold."
     },
     "Cyber Insurance Readiness Widget": {
       who:   "MSP sales reps or account managers building a security or managed services proposal where cyber insurance is part of the conversation.",
