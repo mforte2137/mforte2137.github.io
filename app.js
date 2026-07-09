@@ -46,6 +46,18 @@ const TOOLS = [
     icon: "checklist"
   },
   {
+    title: "Multi-Stakeholder Proposal Pack",
+    shortLabel: "Stakeholder Pack",
+    description:
+      "One proposal, three audiences. Generate CEO, CFO, and IT & Operations versions of your proposal from a single input — each written for that reader's concerns. Separate widgets or a combined pack, pushed straight to Salesbuildr.",
+    category: "Proposal",
+    url: "https://widgetcreator.netlify.app/multi-stakeholder-pack.html",
+    badge: "new",
+    updated: "2026-07-07",
+    gradient: "copper",
+    icon: "idea"
+  },
+  {
     title: "Business Review Builder",
     shortLabel: "Review Builder",
     description:
@@ -521,6 +533,7 @@ const GRADIENTS = {
   electric:"linear-gradient(135deg, #0c4a6e 0%, #0ea5e9 55%, #67e8f9 100%)",
   aurora:  "linear-gradient(135deg, #4c1d95 0%, #7c3aed 45%, #06b6d4 100%)",
   graphite:"linear-gradient(135deg, #111827 0%, #374151 55%, #6b7280 100%)",
+  copper:  "linear-gradient(135deg, #7c2d12 0%, #c2410c 45%, #fb923c 100%)",
   mint:    "linear-gradient(135deg, #022c22 0%, #059669 55%, #6ee7b7 100%)",
   cyan:    "linear-gradient(135deg, #164e63 0%, #0891b2 55%, #67e8f9 100%)",
   forest:  "linear-gradient(135deg, #14532d 0%, #16a34a 55%, #86efac 100%)",
@@ -1082,6 +1095,13 @@ Your data stays with you. Files are read locally in the browser and never transm
 
   // KB lookup — maps tool title to structured detail
   const KB_DETAIL = {
+    "Multi-Stakeholder Proposal Pack": {
+      who:   "MSP sales reps sending proposals to companies with more than one decision-maker — where the CEO, CFO, and IT or Operations lead each have different concerns.",
+      input: "Client type (Prospect / Existing Client), client name, industry, company size, MSP name, services being proposed (quick checkbox selection), optional one-line context per stakeholder, colour theme.",
+      out:   "Three stakeholder-specific widgets — CEO (risk and partnership), CFO (cost comparison table, ROI, cost of inaction), IT & Operations (methodology, transition, day-to-day impact). Push separately, as a combined pack, or copy HTML.",
+      when:  "Sending a proposal to a company with multiple decision-makers. A deal has stalled because someone on the committee isn\'t convinced. You want each reader to find content written specifically for their concerns.",
+      not:   "Not a full proposal builder — these are supporting widgets alongside line items and pricing in Salesbuildr. Not a pricing tool — the CFO comparison is qualitative only. Complements the Proposal Widget Builder, which tells the overall sales narrative."
+    },
     "Business Review Builder": {
       who:   "MSP account managers, vCIOs, or owners preparing for a client business review — quarterly, annual, or any structured client conversation.",
       input: "Client name, review period, logo upload, colour theme, industry, and guided fields for each active section: support stats, security posture, key wins, technology health, roadmap priorities, investment summary, and recommended services. Eight toggleable sections.",
