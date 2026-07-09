@@ -183,7 +183,7 @@ textarea { resize: vertical; font-family: inherit; }
 .toggle[data-state="on"] { background: var(--accent); }
 .toggle[data-state="on"]::after { transform: translateX(16px); }
 
-/* ── Colour swatches ──────────────────────────────────── */
+/* ── Color swatches ──────────────────────────────────── */
 .swatch-row {
   display: flex;
   flex-wrap: wrap;
