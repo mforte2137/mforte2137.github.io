@@ -15,44 +15,43 @@
 
 <header class="app-header">
   <div class="app-header-inner">
+    <div class="app-kicker">WIDGET CREATOR</div>
     <div class="app-title">Product &amp; Service Explainer</div>
-    <div class="app-subtitle">Turn any quote line item into a polished, benefit-led widget — in seconds.</div>
   </div>
 </header>
 
-<main class="app-main">
+<main class="app-shell">
 
-  <!-- ============================= FORM ============================= -->
+  <!-- ============================= FORM (left column) ============================= -->
   <section class="panel form-panel">
 
     <div class="field-row">
       <label for="productName">Product / service name</label>
-      <input type="text" id="productName" placeholder="e.g. Meraki MX68 Firewall, Microsoft 365 Business Premium, Phishing Awareness Training" />
+      <input type="text" id="productName" placeholder="e.g. Meraki MX68 Firewall" />
     </div>
 
-    <div class="field-row-split">
-      <div class="field-col">
-        <label for="category">Category</label>
-        <select id="category">
-          <option value="">Select a category…</option>
-          <option value="Hardware">Hardware</option>
-          <option value="Software">Software</option>
-          <option value="Security Service">Security Service</option>
-          <option value="Cloud Service">Cloud Service</option>
-          <option value="Support Service">Support Service</option>
-          <option value="Connectivity">Connectivity</option>
-          <option value="Compliance">Compliance</option>
-        </select>
-        <div id="categorySuggestNote" class="hint-note" hidden></div>
-      </div>
-      <div class="field-col">
-        <label for="customContext">Custom context <span class="label-optional">(optional, max 150 chars)</span></label>
-        <input type="text" id="customContext" maxlength="150" placeholder="One sentence for unusual or proprietary items" />
-        <div class="char-counter"><span id="contextCharCount">0</span>/150</div>
-      </div>
+    <div class="field-row">
+      <label for="category">Category</label>
+      <select id="category">
+        <option value="">Select a category…</option>
+        <option value="Hardware">Hardware</option>
+        <option value="Software">Software</option>
+        <option value="Security Service">Security Service</option>
+        <option value="Cloud Service">Cloud Service</option>
+        <option value="Support Service">Support Service</option>
+        <option value="Connectivity">Connectivity</option>
+        <option value="Compliance">Compliance</option>
+      </select>
+      <div id="categorySuggestNote" class="hint-note" hidden></div>
     </div>
 
-    <!-- ===================== STYLE PICKER ===================== -->
+    <div class="field-row">
+      <label for="customContext">Custom context <span class="label-optional">(optional, max 150 chars)</span></label>
+      <input type="text" id="customContext" maxlength="150" placeholder="One sentence for unusual or proprietary items" />
+      <div class="char-counter"><span id="contextCharCount">0</span>/150</div>
+    </div>
+
+    <!-- ===================== STYLE PICKER (vertical stack) ===================== -->
     <div class="field-row">
       <label class="style-picker-label">Widget style</label>
       <div class="style-picker" id="stylePicker">
@@ -172,16 +171,19 @@
       <input type="text" id="imageOverrideSlug" placeholder="e.g. meraki-mx68-firewall" hidden />
     </div>
 
-    <button type="button" class="btn-accent generate-btn" id="generateBtn">Generate Widget</button>
+    <div class="form-actions">
+      <button type="button" class="btn-secondary" id="clearBtn">Clear</button>
+      <button type="button" class="btn-accent" id="generateBtn">Generate Widget</button>
+    </div>
     <div class="form-error" id="formError" hidden></div>
   </section>
 
-  <!-- ============================= OUTPUT ============================= -->
+  <!-- ============================= OUTPUT (right column) ============================= -->
   <section class="panel output-panel">
 
     <div class="empty-state" id="emptyState">
       <div class="empty-state-icon">💡</div>
-      <div class="empty-state-text">Enter a product or service above and click <strong>Generate Widget</strong> to see a preview here.</div>
+      <div class="empty-state-text">Enter a product or service on the left and click <strong>Generate Widget</strong> to see a preview here.</div>
     </div>
 
     <div class="loading-state" id="loadingState" hidden>
@@ -196,11 +198,9 @@
       </div>
 
       <div class="widget-preview-frame" id="widgetPreview"></div>
-
-      <textarea class="widget-html-editor" id="widgetEditor" spellcheck="false" hidden></textarea>
+      <div class="edit-hint">Click any text in the widget above to edit it directly.</div>
 
       <div class="widget-actions">
-        <button type="button" class="btn-secondary" id="showHtmlBtn">Show HTML</button>
         <button type="button" class="btn-secondary" id="regenerateBtn">↺ Regenerate</button>
         <span class="actions-spacer"></span>
         <button type="button" class="btn-secondary" id="copyBtn">Copy HTML</button>
@@ -227,8 +227,6 @@
       </div>
 
       <div class="push-feedback" id="pushFeedback" hidden></div>
-
-      <button type="button" class="btn-primary generate-another-btn" id="generateAnotherBtn">Generate another →</button>
     </div>
 
     <!-- ===================== GENERATED THIS SESSION ===================== -->
