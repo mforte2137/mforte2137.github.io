@@ -2,6 +2,15 @@
 // Receives a user question and returns tool recommendations using the KB
 
 const TOOL_KB = `
+TOOL: Product & Service Explainer
+WHAT: Generates a single polished, benefit-led explainer widget for any product or service an MSP is quoting. Three visual styles: Layered Rows (icon + label + description rows, alternating tints), Numbered Blocks (numbered items with colour bar left and badge right, best for software bundles), Benefit Grid (2x2 grid of icon + title + description, best for hardware and multi-feature products). AI knows common MSP products (Meraki, Dell, Microsoft 365 SKUs, Yealink, SentinelOne, Huntress, Datto, Acronis etc.) and writes accurate benefit content. Designed for fast batch use — MSP generates one widget per line item in sequence.
+WHO: MSP sales reps building any Salesbuildr quote who want professional explainer widgets for their products and services.
+INPUT: Product/service name, category, optional one-line context, visual style choice, colour theme.
+OUTPUT: One TinyMCE-ready explainer widget — push to Salesbuildr or copy HTML.
+USE WHEN: Adding products or services to a Salesbuildr quote and wanting to explain what they do in plain language the buyer can understand. Replacing plain line items with visual, benefit-oriented explainers.
+NOT FOR: Full proposal narrative — use Proposal Widget Builder. Pricing or cost information. Multiple products in one widget — generate one per product.
+URL: https://widgetcreator.netlify.app/product-explainer.html
+
 TOOL: Multi-Stakeholder Proposal Pack
 WHAT: Generates three versions of the same proposal story — one for each key stakeholder — from a single input describing the engagement. CEO version: risk, business continuity, strategic partnership. CFO version: cost comparison table (Managed IT vs In-House vs Break-Fix), ROI framing using real benchmarks, cost of inaction. IT & Operations version: technical credibility, methodology, transition process, day-to-day staff impact, co-managed framing if relevant. Prospect or Existing Client toggle shapes tone throughout. MSP chooses separate widgets or a combined pack.
 WHO: MSP sales reps sending proposals to companies with more than one decision-maker.
@@ -181,15 +190,6 @@ OUTPUT: A clean, professional PDF status report in plain English suitable for se
 USE WHEN: A project is in flight and you need to update the client on progress. Professionalising client communications.
 NOT FOR: Scoping or pricing the project — use SOW Widget Generator or Project Tasks Calculator.
 URL: https://widgetcreator.netlify.app/progress.html
-
-TOOL: MSP Quote Preflight
-WHAT: Reviews a quote for common issues — missing information, unclear pricing, weak justification — before the buyer sees it. Requires Salesbuildr Public API connection.
-WHO: MSP sales reps who want a final check on a quote before sending it out.
-INPUT: A draft quote ID from Salesbuildr (requires Public API) or quote details for review.
-OUTPUT: A list of flagged issues with specific suggestions, plus an AI evaluation of the proposal.
-USE WHEN: About to send an important quote and wanting one last review. A deal has stalled and you want to check if the quote is the problem.
-NOT FOR: Broader evaluation of proposal narrative — use Proposal Evaluator.
-URL: https://widgetcreator.netlify.app/preflight.html
 
 TOOL: Cyber Insurance Readiness Widget
 WHAT: Generates customer-facing proposal widgets showing a client's readiness against common cyber insurance underwriter requirements. 12-control checklist (MFA, EDR, Backup & DR, Patch Management, Email Security, Staff Training, Privileged Access Management, Incident Response Plan, Vulnerability Scanning, Remote Access Security, Data Encryption, Vendor Risk). Auto-calculates a readiness score (X.X / 10) with a colour-coded gradient bar. Produces two or three widgets: Readiness Score card, Gap Analysis (critical gaps that may affect coverage + recommended gaps that may affect premium), and optional Path to Readiness. Supports Excel export for technician completion and import back. Session saves to localStorage.
