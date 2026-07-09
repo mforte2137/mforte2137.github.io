@@ -152,14 +152,37 @@
       .replace(/"/g, '&quot;');
   }
 
-  // ── Product image (Phase 2 — live testing) ──
-  // Auto-matches an exact slug derived from the product name against the
-  // GitHub image library. Real image filenames in the library so far
-  // (e.g. "laptop-lat-5450.png") don't follow the same naming pattern as
-  // AI-facing product names (e.g. "Dell Latitude 5450"), so exact-match
-  // will mostly miss until a naming convention / fuzzy fallback is agreed
-  // — the manual override field covers that gap in the meantime.
-  const IMAGE_REPO_BASE = 'https://raw.githubusercontent.com/mforte2137/mforte2137.github.io/main/images/store/';
+  // ── Product image (Phase 2 — fuzzy brand/model matching) ──
+  // Checks /portfolio/ first (new convention: brand-model.png, e.g.
+  // "dell-5450.png"), then falls back to the legacy /images/store/
+  // library for backward compatibility with images already there.
+  const IMAGE_BASES = [
+    'https://raw.githubusercontent.com/mforte2137/mforte2137.github.io/main/portfolio/',
+    'https://raw.githubusercontent.com/mforte2137/mforte2137.github.io/main/images/store/'
+  ];
+
+  // Known MSP hardware/software brands — used to split "Dell Latitude
+  // 5450" into brand="dell" + model tokens, regardless of which family
+  // word (or none) the rep typed.
+  const KNOWN_BRANDS = [
+    'dell', 'hp', 'lenovo', 'apple', 'asus', 'acer', 'microsoft',
+    'meraki', 'cisco', 'ubiquiti', 'unifi', 'sonicwall', 'fortinet', 'watchguard', 'aruba',
+    'yealink', 'poly', 'polycom', 'grandstream', 'ringcentral',
+    'synology', 'qnap', 'netgear', 'tp-link',
+    'apc', 'eaton', 'tripplite',
+    'datto', 'veeam', 'acronis', 'sentinelone', 'huntress', 'crowdstrike', 'sophos', 'bitdefender'
+  ];
+
+  // Family/line/category filler words to ignore when isolating the model
+  // number — these are exactly the words reps are inconsistent about
+  // typing ("Latitude" vs "Lat" vs nothing).
+  const SLUG_STOPWORDS = [
+    'latitude', 'lat', 'optiplex', 'elitebook', 'probook', 'thinkpad', 'inspiron', 'precision',
+    'laptop', 'notebook', 'desktop', 'tower', 'workstation',
+    'monitor', 'display', 'firewall', 'switch', 'router', 'access', 'point', 'ap',
+    'docking', 'dock', 'station', 'series', 'business', 'premium', 'wireless',
+    'phone', 'headset', 'server', 'appliance', 'gateway'
+  ];
 
   function toSlug(name) {
     return String(name || '').toLowerCase()
@@ -167,10 +190,32 @@
       .replace(/^-|-$/g, '');
   }
 
-  async function imageExists(slug) {
+  // Builds ordered candidate slugs: exact full name -> brand+model -> brand only.
+  function buildImageCandidates(name) {
+    const raw = String(name || '').toLowerCase();
+    const tokens = raw.replace(/[^a-z0-9\s-]/g, ' ').split(/\s+/).filter(Boolean);
+
+    const brand = tokens.find(t => KNOWN_BRANDS.includes(t)) || null;
+    const modelTokens = tokens.filter(t =>
+      !KNOWN_BRANDS.includes(t) && !SLUG_STOPWORDS.includes(t) && /\d/.test(t)
+    );
+
+    const candidates = [toSlug(name)]; // 1. exact full slug
+    if (brand && modelTokens.length) {
+      candidates.push(toSlug(`${brand}-${modelTokens[0]}`));        // 2. brand + primary model token
+      if (modelTokens.length > 1) {
+        candidates.push(toSlug(`${brand}-${modelTokens.join('-')}`)); // 2b. brand + all model tokens
+      }
+    }
+    if (brand) candidates.push(toSlug(brand)); // 3. brand only (last resort)
+
+    return [...new Set(candidates.filter(Boolean))];
+  }
+
+  async function imageExists(base, slug) {
     if (!slug) return false;
     try {
-      const res = await fetch(`${IMAGE_REPO_BASE}${slug}.png`, { method: 'HEAD' });
+      const res = await fetch(`${base}${slug}.png`, { method: 'HEAD' });
       return res.ok;
     } catch {
       return false;
@@ -179,11 +224,20 @@
 
   // Runs BEFORE the widget HTML is built (not after) so the image
   // decision is baked into the first render rather than patched in.
+  // Manual override skips the fuzzy candidate list and checks that exact
+  // slug only (still across both image bases).
   async function resolveImage(name, overrideRaw) {
     const override = (overrideRaw || '').trim();
-    const slug = override ? toSlug(override) : toSlug(name);
-    const found = await imageExists(slug);
-    return { slug, found, url: found ? `${IMAGE_REPO_BASE}${slug}.png` : null };
+    const candidates = override ? [toSlug(override)] : buildImageCandidates(name);
+
+    for (const slug of candidates) {
+      for (const base of IMAGE_BASES) {
+        if (await imageExists(base, slug)) {
+          return { slug, found: true, url: `${base}${slug}.png` };
+        }
+      }
+    }
+    return { slug: candidates[0] || toSlug(name), found: false, url: null };
   }
 
   function updateImageNote(imageInfo) {
