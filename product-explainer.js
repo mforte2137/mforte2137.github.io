@@ -367,6 +367,14 @@
   }
   function hideError() { formError.hidden = true; }
 
+  // Scrolls so the output panel's top is comfortably in view — used the
+  // moment Generate/Regenerate is clicked so the loader and result both
+  // land where the rep is already looking, instead of below the fold.
+  function scrollToOutput() {
+    const panel = widgetOutput.closest('.output-panel') || widgetOutput.parentElement;
+    if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   // ── Generate ──────────────────────────────────
   async function generate() {
     hideError();
@@ -386,6 +394,11 @@
     loadingState.hidden = false;
     generateBtn.disabled = true;
     regenerateBtn.disabled = true;
+
+    // Scroll to the output panel right away so the loader — and then the
+    // widget — is in view. On narrow / stacked layouts the right column
+    // can otherwise sit well below the fold when Generate is clicked.
+    scrollToOutput();
 
     try {
       const res = await fetch('/api/product-explainer', {
@@ -431,6 +444,7 @@
     hideError();
     regenerateBtn.disabled = true;
     regenerateBtn.textContent = '…';
+    scrollToOutput();
     try {
       const res = await fetch('/api/product-explainer', {
         method: 'POST',
