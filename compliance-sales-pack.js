@@ -65,7 +65,7 @@
     widget4Toggle.setAttribute('aria-checked', String(includeWidget4));
   });
 
-  // ─── Colour theme ───────────────────────────────────────────
+  // ─── Color theme ───────────────────────────────────────────
   function setTheme(hex) {
     currentTheme = hex;
     hexPreview.style.background = hex;
@@ -257,23 +257,46 @@
   }
 
   // ─── Editable regions ───────────────────────────────────────
+  // Every field the AI generates is directly editable in place — click and type.
+  // Three shapes are supported:
+  //   1. Plain field on the widget object      (data-editable-id="headline")
+  //   2. One item in an array of strings         (data-editable-id="benefits" data-editable-idx="1")
+  //   3. One property of one item in an array     (data-editable-id="gaps" data-editable-idx="1" data-editable-sub="why")
+  // Multi-paragraph fields (like "body") are made contenteditable as a single block
+  // so paragraph breaks are preserved and edits don't clobber the rest of the field.
   function bindEditable(wrap, key) {
     wrap.querySelectorAll('[data-editable-id]').forEach(el => {
       el.setAttribute('contenteditable', 'true');
       el.title = 'Click to edit';
       el.addEventListener('input', () => {
+        if (!generatedWidgets || !generatedWidgets[key]) return;
         const field = el.dataset.editableId;
         const idx = el.dataset.editableIdx;
-        if (!generatedWidgets || !generatedWidgets[key]) return;
-        if (idx !== undefined && Array.isArray(generatedWidgets[key][field])) {
-          generatedWidgets[key][field][Number(idx)] = el.dataset.editableSub
-            ? { ...generatedWidgets[key][field][Number(idx)], [el.dataset.editableSub]: el.textContent }
-            : el.textContent;
+        const sub = el.dataset.editableSub;
+
+        if (idx !== undefined) {
+          const arr = generatedWidgets[key][field];
+          if (!Array.isArray(arr)) return;
+          if (sub) {
+            arr[Number(idx)] = { ...arr[Number(idx)], [sub]: el.textContent };
+          } else {
+            arr[Number(idx)] = el.textContent;
+          }
+        } else if (el.dataset.editableMulti === 'true') {
+          generatedWidgets[key][field] = extractMultilineText(el);
         } else {
           generatedWidgets[key][field] = el.textContent;
         }
       });
     });
+  }
+
+  // Reconstruct a "\n"-joined string from a contenteditable block made of <p> children,
+  // falling back to plain textContent if the browser has collapsed the paragraphs.
+  function extractMultilineText(el) {
+    const paras = el.querySelectorAll('p');
+    if (paras.length) return Array.from(paras).map(p => p.textContent).join('\n');
+    return el.textContent;
   }
 
   function getLiveHtml(key) {
@@ -327,12 +350,10 @@
 
   function bodyParagraphs(text, editId) {
     const lines = (text || '').split('\n').filter(l => l.trim());
-    if (lines.length <= 1) {
-      return `<p data-editable-id="${editId}" style="margin:0;font-size:13px;color:#586273;line-height:1.65;">${escHtml(text || '')}</p>`;
-    }
-    return lines.map((l, i) =>
-      `<p data-editable-id="${editId}" data-editable-idx="${i}" style="margin:0 0 8px 0;font-size:13px;color:#586273;line-height:1.65;">${escHtml(l.trim())}</p>`
+    const paras = (lines.length ? lines : ['']).map(l =>
+      `<p style="margin:0 0 8px 0;font-size:13px;color:#586273;line-height:1.65;">${escHtml(l.trim())}</p>`
     ).join('');
+    return `<div data-editable-id="${editId}" data-editable-multi="true">${paras}</div>`;
   }
 
   function buildWhyMatters(w, hex) {
@@ -350,8 +371,8 @@ ${buildFooter('Understanding the requirement — and what non-compliance really 
     const rows = gaps.map((gap, i) => `
     <div style="padding:12px 0;${i > 0 ? 'border-top:1px solid #e3e7ee;' : ''}">
       <span style="display:inline-block;background:#fef3c7;color:#b3760a;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:6px;" data-editable-id="gaps" data-editable-idx="${i}" data-editable-sub="name">${escHtml(gap.name || '')}</span>
-      <p style="margin:2px 0 0;font-size:12px;color:#586273;line-height:1.6;"><strong style="color:#0b1220;">Why it's typical:</strong> ${escHtml(gap.why || '')}</p>
-      <p style="margin:2px 0 0;font-size:12px;color:#586273;line-height:1.6;"><strong style="color:#0b1220;">The consequence:</strong> ${escHtml(gap.consequence || '')}</p>
+      <p style="margin:2px 0 0;font-size:12px;color:#586273;line-height:1.6;"><strong style="color:#0b1220;">Why it's typical:</strong> <span data-editable-id="gaps" data-editable-idx="${i}" data-editable-sub="why">${escHtml(gap.why || '')}</span></p>
+      <p style="margin:2px 0 0;font-size:12px;color:#586273;line-height:1.6;"><strong style="color:#0b1220;">The consequence:</strong> <span data-editable-id="gaps" data-editable-idx="${i}" data-editable-sub="consequence">${escHtml(gap.consequence || '')}</span></p>
     </div>`).join('');
 
     return `<div style="font-family:'Source Sans Pro',Arial,sans-serif;background:#ffffff;border:1px solid #e3e7ee;border-top:3px solid ${hex};width:100%;max-width:100%;overflow:hidden;">
