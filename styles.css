@@ -380,6 +380,7 @@ p, .body-text, .description {
 .icon-electric{ background: rgba(14,165,233,0.08);    color: #0ea5e9; }
 .icon-aurora  { background: rgba(124,58,237,0.08);    color: #7c3aed; }
 .icon-graphite{ background: rgba(55,65,81,0.08);      color: #374151; }
+.icon-fern    { background: rgba(34,197,94,0.08);     color: #16a34a; }
 .icon-copper  { background: rgba(194,65,12,0.08);     color: #c2410c; }
 .icon-gold    { background: rgba(120,53,15,0.08);    color: #b45309; }
 .icon-sky     { background: rgba(12,74,110,0.08);    color: #0369a1; }
