@@ -163,12 +163,14 @@
       </div>
     </div>
 
-    <!-- ===================== PHASE 2 (dormant) — manual image slug override =====================
-         Hidden until the GitHub image library is populated. See product-explainer.js
-         for the toSlug() / imageExists() infrastructure, which is wired but inactive. -->
-    <div class="field-row" id="imageOverrideRow" hidden>
-      <button type="button" class="link-btn" id="imageOverrideToggle">📷 Use specific image</button>
-      <input type="text" id="imageOverrideSlug" placeholder="e.g. meraki-mx68-firewall" hidden />
+    <!-- ===================== PHASE 2 — product image (testing) =====================
+         Auto-matches an exact product-name slug against the GitHub image
+         library; use the override below when the naming doesn't line up
+         yet (fuzzy brand/model matching comes once the library is bigger). -->
+    <div class="field-row" id="imageOverrideRow">
+      <label>Product image <span class="label-optional">(optional)</span></label>
+      <button type="button" class="link-btn" id="imageOverrideToggle">📷 Override image filename</button>
+      <input type="text" id="imageOverrideSlug" placeholder="e.g. laptop-lat-5450" hidden />
     </div>
 
     <div class="form-actions">
