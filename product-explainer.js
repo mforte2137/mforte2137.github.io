@@ -357,6 +357,7 @@
     ${kickerHtml(data.category || '')}
     ${headlineHtml(data.headline || '')}
   </div>
+  ${imageStripHtml(data._image)}
   ${introHtml(data.intro || '')}
   ${rows}
 </div>`;
