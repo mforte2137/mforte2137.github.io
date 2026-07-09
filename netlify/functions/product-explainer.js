@@ -3,12 +3,19 @@
 // Path: /api/product-explainer
 //
 // Accepts POST { name, category, context, style }
-//   style: 'layered' | 'numbered' | 'grid'
+//   style is used only to steer tone/emphasis in the prompt — the
+//   RESPONSE SHAPE IS ALWAYS THE SAME regardless of style. This lets
+//   the frontend switch between Style 1 / 2 / 3 instantly, client-side,
+//   without another AI call (same idea as the colour-theme swap).
 //
-// Returns AI-generated benefit-led copy for the Product & Service
-// Explainer widget. Response shape depends on style:
-//   layered / numbered -> { category, headline, intro, items: [...] }
-//   grid               -> { category, headline, intro, benefits: [...], footerText, footerBadge }
+// Response shape (always):
+// {
+//   category, headline, intro,
+//   points: [ {icon, title, description, badge} x4 ],
+//   footerText, footerBadge
+// }
+// Layered Rows / Numbered Blocks use points[0..2] (first 3).
+// Benefit Grid uses all 4 points, plus footerText/footerBadge.
 // =========================================================
 
 exports.handler = async (event) => {
@@ -36,8 +43,8 @@ exports.handler = async (event) => {
 
   const name     = (body.name || '').trim();
   const category = (body.category || '').trim();
-  const context   = (body.context || '').trim();
-  const style     = (body.style || 'layered').trim(); // 'layered' | 'numbered' | 'grid'
+  const context  = (body.context || '').trim();
+  const style    = (body.style || 'layered').trim(); // 'layered' | 'numbered' | 'grid' — tone hint only
 
   // 4. Validate
   if (!name) {
@@ -49,8 +56,6 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: 'AI API key not configured.' }) };
   }
 
-  const isGrid = style === 'grid';
-
   const systemPrompt = `You write short, benefit-led explainer copy for MSP (Managed Service Provider) sales quotes. The reader is a business owner, not a technician — never use jargon or acronyms without explaining them in plain terms.
 
 You have strong knowledge of common MSP products and services (Meraki, Dell, Yealink, Microsoft 365 SKUs, Datto, SentinelOne, Huntress, Acronis, Veeam, and similar). For recognised products, write accurate benefit content from that knowledge without needing a description. If custom context is provided, use it to shape the content — it likely describes something proprietary or unusual.
@@ -58,17 +63,12 @@ You have strong knowledge of common MSP products and services (Meraki, Dell, Yea
 Rules:
 - Headline: benefit-led, not product-name-led. E.g. "Stop Phishing Before It Reaches Your Team" not "Phishing Awareness Training Service".
 - Intro: 1–2 sentences maximum, plain language — what it does and why it matters.
-- ${isGrid ? 'Exactly 4 benefits' : 'Exactly 3 items'}, each with a short label/title and a one-line description.
-- Emoji selection should suit the category — security gets shields/locks, cloud gets cloud/lightning bolt, hardware gets device-appropriate emoji, etc.
-${isGrid
-    ? `- Also write a short one-line footerText (a reassurance, e.g. "Managed & supported by your IT team") and a short footerBadge (e.g. "✓ Fully managed").`
-    : `- Also choose a short badge for each item from: Included, Recommended, Essential, Standard, Premium — pick whichever fits that item best.`}
+- Always write exactly 4 points, each with: a short icon (single emoji, category-appropriate — security gets shields/locks, cloud gets cloud/lightning, hardware gets device-appropriate emoji), a short title/label, a one-line description, and a badge chosen from: Included, Recommended, Essential, Standard, Premium (pick whichever fits that point best). The first 3 points should stand alone as the most important; the 4th is used only in some layouts, so make sure all 4 are genuinely useful, not filler.
+- Also write a short one-line footerText (a reassurance, e.g. "Managed & supported by your IT team") and a short footerBadge (e.g. "✓ Fully managed").
+- The requested layout style is "${style}" — this only affects tone/emphasis slightly, not the response structure, which is always the same.
 
 Return JSON only — no preamble, no markdown, no backticks. Use exactly this shape:
-${isGrid
-    ? `{"category":"...","headline":"...","intro":"...","benefits":[{"icon":"emoji","title":"...","description":"..."},{"icon":"emoji","title":"...","description":"..."},{"icon":"emoji","title":"...","description":"..."},{"icon":"emoji","title":"...","description":"..."}],"footerText":"...","footerBadge":"..."}`
-    : `{"category":"...","headline":"...","intro":"...","items":[{"icon":"emoji","label":"...","description":"...","badge":"..."},{"icon":"emoji","label":"...","description":"...","badge":"..."},{"icon":"emoji","label":"...","description":"...","badge":"..."}]}`
-}`;
+{"category":"...","headline":"...","intro":"...","points":[{"icon":"emoji","title":"...","description":"...","badge":"..."},{"icon":"emoji","title":"...","description":"...","badge":"..."},{"icon":"emoji","title":"...","description":"...","badge":"..."},{"icon":"emoji","title":"...","description":"...","badge":"..."}],"footerText":"...","footerBadge":"..."}`;
 
   const userMessage = JSON.stringify({ name, category, context, style });
 
@@ -103,6 +103,13 @@ ${isGrid
     } catch (e) {
       return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: 'AI returned invalid JSON.' }) };
     }
+
+    // Defensive: make sure points is always an array of 4
+    if (!Array.isArray(parsed.points)) parsed.points = [];
+    while (parsed.points.length < 4) {
+      parsed.points.push({ icon: '•', title: '', description: '', badge: 'Included' });
+    }
+    parsed.points = parsed.points.slice(0, 4);
 
     return { statusCode: 200, headers, body: JSON.stringify({ ok: true, style, data: parsed }) };
 
