@@ -2,6 +2,15 @@
 // Receives a user question and returns tool recommendations using the KB
 
 const TOOL_KB = `
+TOOL: Multi-Stakeholder Proposal Pack
+WHAT: Generates three versions of the same proposal story — one for each key stakeholder — from a single input describing the engagement. CEO version: risk, business continuity, strategic partnership. CFO version: cost comparison table (Managed IT vs In-House vs Break-Fix), ROI framing using real benchmarks, cost of inaction. IT & Operations version: technical credibility, methodology, transition process, day-to-day staff impact, co-managed framing if relevant. Prospect or Existing Client toggle shapes tone throughout. MSP chooses separate widgets or a combined pack.
+WHO: MSP sales reps sending proposals to companies with more than one decision-maker.
+INPUT: Client type (Prospect / Existing Client), client name, industry, company size, services being proposed (quick checkboxes), optional one-line context per stakeholder, colour theme.
+OUTPUT: Up to three stakeholder widgets — push separately, as a combined pack, or copy HTML. MSP adds pricing and line items in Salesbuildr separately.
+USE WHEN: A proposal is going to multiple decision-makers with different priorities. A deal has stalled because someone on the committee isn't convinced. You want each reader to find content written for their specific concerns.
+NOT FOR: Single decision-maker proposals. Detailed pricing — the CFO widget is qualitative only. Use with the Proposal Widget Builder for the complete sales narrative.
+URL: https://widgetcreator.netlify.app/multi-stakeholder-pack.html
+
 TOOL: Business Review Builder
 WHAT: Builds a professional client business review with three distinct outputs — (1) a full-screen web-based slideshow for in-person meetings (open in browser, present full-screen, arrow key navigation), (2) a PDF via browser print for emailing as a follow-up or to smaller clients, and (3) Salesbuildr widgets pushed individually or as a pack for a combined QBR + proposal ideal for accounts where face-to-face meetings aren't possible. Eight toggleable sections: Title/Cover, Period in Review, Security Posture Update, What We Delivered, Technology Health, Looking Ahead, Investment Summary, and Recommended Services. Logo upload (PNG/SVG/JPG), colour theme selector, auto-save sessions via Netlify Blobs.
 WHO: MSP account managers, vCIOs, or owners preparing for quarterly reviews, annual reviews, or any structured client conversation — in person or remote.
