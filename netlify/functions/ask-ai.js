@@ -191,6 +191,15 @@ USE WHEN: A project is in flight and you need to update the client on progress. 
 NOT FOR: Scoping or pricing the project — use SOW Widget Generator or Project Tasks Calculator.
 URL: https://widgetcreator.netlify.app/progress.html
 
+TOOL: Compliance Sales Pack
+WHAT: Generates customer-facing proposal widgets for selling compliance engagements. The MSP selects a framework and industry — no client assessment data required. Three or four widgets: Why This Framework Matters (real penalty figures, audit consequences, insurance implications), Where Most Businesses Fall Short (typical gaps for that industry against that framework — AI uses its knowledge base, no client data needed), How We Get You There (engagement scope, timeline, what the MSP handles vs the client), and optional What Compliance Unlocks (contracts won, premiums reduced, audit confidence). Frameworks: Cyber Essentials, HIPAA, GDPR, NIST CSF, SOC 2, ISO 27001. 12 industry verticals.
+WHO: MSP sales reps building proposals for compliance-related engagements.
+INPUT: Compliance framework, client industry, engagement type (dropdown + optional custom), Widget 4 toggle, colour theme.
+OUTPUT: Three or four customer-facing widgets — push individually or as a pack, or copy HTML.
+USE WHEN: Proposing a compliance engagement to a client. A client is facing an audit or needs certification. You want to make the business case for compliance in plain language without a pre-assessment.
+NOT FOR: Generating technical compliance artefacts — use the Security Assessment Tool. Showing a specific client's actual gap data — this tool uses typical industry gaps, not client-specific assessment results.
+URL: https://widgetcreator.netlify.app/compliance-sales-pack.html
+
 TOOL: Cyber Insurance Readiness Widget
 WHAT: Generates customer-facing proposal widgets showing a client's readiness against common cyber insurance underwriter requirements. 12-control checklist (MFA, EDR, Backup & DR, Patch Management, Email Security, Staff Training, Privileged Access Management, Incident Response Plan, Vulnerability Scanning, Remote Access Security, Data Encryption, Vendor Risk). Auto-calculates a readiness score (X.X / 10) with a colour-coded gradient bar. Produces two or three widgets: Readiness Score card, Gap Analysis (critical gaps that may affect coverage + recommended gaps that may affect premium), and optional Path to Readiness. Supports Excel export for technician completion and import back. Session saves to localStorage.
 WHO: MSP sales reps building security or managed services proposals where cyber insurance is part of the conversation.
