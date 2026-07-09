@@ -153,11 +153,11 @@
   }
 
   // ── Product image (Phase 2 — fuzzy brand/model matching) ──
-  // Checks /portfolio/ first (new convention: brand-model.png, e.g.
-  // "dell-5450.png"), then falls back to the legacy /images/store/
+  // Checks /images/portfolio/ first (new convention: brand-model.png,
+  // e.g. "dell-5450.png"), then falls back to the legacy /images/store/
   // library for backward compatibility with images already there.
   const IMAGE_BASES = [
-    'https://raw.githubusercontent.com/mforte2137/mforte2137.github.io/main/portfolio/',
+    'https://raw.githubusercontent.com/mforte2137/mforte2137.github.io/main/images/portfolio/',
     'https://raw.githubusercontent.com/mforte2137/mforte2137.github.io/main/images/store/'
   ];
 
