@@ -152,36 +152,77 @@
       .replace(/"/g, '&quot;');
   }
 
-  // ── PHASE 2 (dormant) — product image infrastructure ──
-  // Not called anywhere yet. Enable once images exist in the GitHub
-  // repo's /images/ folder. See project notes for the fuzzy-fallback
-  // plan (exact slug -> brand+model -> brand only) and the manual
-  // override field already present (hidden) in product-explainer.html.
-  //
-  // const IMAGE_REPO_BASE = 'https://raw.githubusercontent.com/[owner]/[repo]/main/images/';
-  //
-  // function toSlug(name) {
-  //   return name.toLowerCase()
-  //     .replace(/[^a-z0-9]+/g, '-')
-  //     .replace(/^-|-$/g, '');
-  // }
-  //
-  // async function imageExists(slug) {
-  //   const url = `${IMAGE_REPO_BASE}${slug}.png`;
-  //   try {
-  //     const res = await fetch(url, { method: 'HEAD' });
-  //     return res.ok;
-  //   } catch {
-  //     return false;
-  //   }
-  // }
-  //
-  // IMPORTANT: this check must run client-side BEFORE the widget HTML is
-  // built (not after), so the header/image-strip decision is baked into
-  // the first render rather than patched in afterwards. When Phase 2 is
-  // enabled, call imageExists(toSlug(name)) right after the AI response
-  // comes back and pass the result into renderWidgetHtml() so it can
-  // include the <img> strip for Style 1 / Style 3.
+  // ── Product image (Phase 2 — live testing) ──
+  // Auto-matches an exact slug derived from the product name against the
+  // GitHub image library. Real image filenames in the library so far
+  // (e.g. "laptop-lat-5450.png") don't follow the same naming pattern as
+  // AI-facing product names (e.g. "Dell Latitude 5450"), so exact-match
+  // will mostly miss until a naming convention / fuzzy fallback is agreed
+  // — the manual override field covers that gap in the meantime.
+  const IMAGE_REPO_BASE = 'https://raw.githubusercontent.com/mforte2137/mforte2137.github.io/main/images/store/';
+
+  function toSlug(name) {
+    return String(name || '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+
+  async function imageExists(slug) {
+    if (!slug) return false;
+    try {
+      const res = await fetch(`${IMAGE_REPO_BASE}${slug}.png`, { method: 'HEAD' });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  // Runs BEFORE the widget HTML is built (not after) so the image
+  // decision is baked into the first render rather than patched in.
+  async function resolveImage(name, overrideRaw) {
+    const override = (overrideRaw || '').trim();
+    const slug = override ? toSlug(override) : toSlug(name);
+    const found = await imageExists(slug);
+    return { slug, found, url: found ? `${IMAGE_REPO_BASE}${slug}.png` : null };
+  }
+
+  function updateImageNote(imageInfo) {
+    if (!imageInfo) { imageSlugNote.hidden = true; return; }
+    imageSlugNote.hidden = false;
+    imageSlugNote.textContent = imageInfo.found
+      ? `📷 Using image: ${imageInfo.slug}.png`
+      : `📷 No image found for "${imageInfo.slug}.png" — using graphic style.`;
+  }
+
+  // Image strip markup — inserted between the gradient header and the
+  // intro. object-fit:contain on a white background (not the originally
+  // spec'd cover/140px) because the real product photos are angled hero
+  // shots with headroom; cover cropped straight through the laptop.
+  function imageStripHtml(imageInfo) {
+    if (!imageInfo || !imageInfo.found || !imageInfo.url) return '';
+    return `<div style="background:#ffffff;padding:14px 18px;text-align:center;border-bottom:1px solid #e3e7ee;"><img src="${imageInfo.url}" alt="" style="max-width:100%;max-height:170px;object-fit:contain;display:inline-block;"></div>`;
+  }
+
+  const imageOverrideToggle = $('imageOverrideToggle');
+  const imageOverrideSlugEl = $('imageOverrideSlug');
+
+  imageOverrideToggle.addEventListener('click', () => {
+    const willShow = imageOverrideSlugEl.hidden;
+    imageOverrideSlugEl.hidden = !willShow;
+    if (willShow) imageOverrideSlugEl.focus();
+  });
+
+  async function recheckImageOverride() {
+    if (!currentData) return; // nothing generated yet to attach an image to
+    const info = await resolveImage(productNameEl.value.trim(), imageOverrideSlugEl.value);
+    currentData._image = info;
+    updateImageNote(info);
+    renderPreview();
+  }
+  imageOverrideSlugEl.addEventListener('change', recheckImageOverride);
+  imageOverrideSlugEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); recheckImageOverride(); }
+  });
 
   // ── Widget HTML builders (inline styles, no Flexbox, h5/h6 only) ──
   // All three styles read from the SAME unified data shape:
@@ -232,6 +273,7 @@
     ${kickerHtml(data.category || '')}
     ${headlineHtml(data.headline || '')}
   </div>
+  ${imageStripHtml(data._image)}
   ${introHtml(data.intro || '')}
   ${rows}
 </div>`;
@@ -299,6 +341,7 @@
     ${kickerHtml(data.category || '')}
     ${headlineHtml(data.headline || '')}
   </div>
+  ${imageStripHtml(data._image)}
   ${introHtml(data.intro || '')}
   ${grid}
   ${footer}
@@ -401,16 +444,20 @@
     scrollToOutput();
 
     try {
-      const res = await fetch('/api/product-explainer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestPayload)
-      });
-      const json = await res.json();
+      const [json, imageInfo] = await Promise.all([
+        fetch('/api/product-explainer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestPayload)
+        }).then(r => r.json()),
+        resolveImage(requestPayload.name, imageOverrideSlugEl.value)
+      ]);
       if (!json.ok) throw new Error(json.error || 'Generation failed.');
 
       currentData  = json.data;
+      currentData._image = imageInfo;
       currentTitle = `${requestPayload.name} — Explainer`;
+      updateImageNote(imageInfo);
       renderOutput();
 
     } catch (e) {
@@ -428,9 +475,6 @@
     renderPreview();
     widgetTitleEl.textContent = currentTitle;
 
-    // Phase 2 image note is dormant — no image check runs yet.
-    imageSlugNote.hidden = true;
-
     widgetOutput.hidden = false;
     pushFeedback.hidden = true;
     credsInline.hidden = true;
@@ -446,14 +490,18 @@
     regenerateBtn.textContent = '…';
     scrollToOutput();
     try {
-      const res = await fetch('/api/product-explainer', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(lastRequest)
-      });
-      const json = await res.json();
+      const [json, imageInfo] = await Promise.all([
+        fetch('/api/product-explainer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(lastRequest)
+        }).then(r => r.json()),
+        resolveImage(lastRequest.name, imageOverrideSlugEl.value)
+      ]);
       if (!json.ok) throw new Error(json.error || 'Regeneration failed.');
       currentData = json.data;
+      currentData._image = imageInfo;
+      updateImageNote(imageInfo);
       renderOutput();
     } catch (e) {
       showError('Regeneration failed: ' + e.message);
@@ -550,6 +598,10 @@
     currentTitle = '';
     lastRequest  = null;
 
+    imageOverrideSlugEl.value = '';
+    imageOverrideSlugEl.hidden = true;
+    imageSlugNote.hidden = true;
+
     widgetOutput.hidden = true;
     emptyState.hidden = false;
     hideError();
@@ -566,7 +618,10 @@
   }
 
   function renderSessionList() {
-    if (!sessionWidgets.length) { sessionListBlock.hidden = true; return; }
+    // Only earns its keep once there's more than one widget to choose
+    // from — with just one, it's a redundant duplicate of the Copy HTML
+    // button right above it in the main preview.
+    if (sessionWidgets.length < 2) { sessionListBlock.hidden = true; return; }
     sessionListBlock.hidden = false;
     sessionList.innerHTML = '';
     sessionWidgets.forEach((item) => {
