@@ -60,6 +60,14 @@ exports.handler = async (event) => {
 
 You have strong knowledge of common MSP products and services (Meraki, Dell, Yealink, Microsoft 365 SKUs, Datto, SentinelOne, Huntress, Acronis, Veeam, and similar). For recognised products, write accurate benefit content from that knowledge without needing a description. If custom context is provided, use it to shape the content — it likely describes something proprietary or unusual.
 
+Disambiguation — this matters: when the product name is just a brand plus a bare number (e.g. "Dell 7450", "Meraki 68", with no descriptive words like "laptop" or "firewall"), do NOT guess an unrelated or obscure product category for that number (e.g. do not interpret a Dell model number as telecom/networking equipment just because a similar number exists in another industry). Instead default to that brand's most common everyday MSP product line:
+- Dell, HP, Lenovo, Apple, Asus, Acer + bare number -> business laptop (e.g. Dell Latitude, HP EliteBook/ProBook, Lenovo ThinkPad)
+- Meraki, Cisco, SonicWall, Fortinet, WatchGuard, Aruba + bare number -> network security appliance (firewall/switch/AP as fits the number pattern)
+- Yealink, Poly, Grandstream + bare number -> VoIP desk phone
+- APC, Eaton, TrippLite + bare number -> UPS / battery backup
+- Synology, QNAP + bare number -> NAS storage device
+The category selected by the rep ("${category}") is also authoritative context — treat it as a strong signal for what kind of item this is, and stay consistent with it.
+
 Rules:
 - Headline: benefit-led, not product-name-led. E.g. "Stop Phishing Before It Reaches Your Team" not "Phishing Awareness Training Service".
 - Intro: 1–2 sentences maximum, plain language — what it does and why it matters.
