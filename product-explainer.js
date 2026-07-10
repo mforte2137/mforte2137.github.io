@@ -206,7 +206,8 @@
     'laptop', 'notebook', 'desktop', 'tower', 'workstation',
     'monitor', 'display', 'firewall', 'switch', 'router', 'access', 'point', 'ap', 'gateway',
     'docking', 'dock', 'station', 'series', 'business', 'premium', 'wireless',
-    'phone', 'headset', 'server', 'appliance', 'port', 'ports', 'inch', 'inches', 'screen', 'screens'
+    'phone', 'headset', 'server', 'appliance', 'port', 'ports', 'inch', 'inches', 'screen', 'screens',
+    'usb-c', 'usb', 'universal'
   ];
 
   function toSlug(name) {
@@ -323,6 +324,13 @@
     // dell-dock, etc.) as more get added; only monitor is wired for now.
     if (brand && /\b(monitor|display|screen)s?\b/.test(raw)) {
       candidates.push(toSlug(`${brand}-monitor`));
+    }
+    // Docks especially need this: Lenovo's naming ("ThinkPad Universal
+    // USB-C Dock") has no distinctive model code once generic words are
+    // stripped, so without this fallback a plain "Lenovo dock" request
+    // has nothing to land on except the wrong-category brand photo.
+    if (brand && /\b(docks?|docking|stations?)\b/.test(raw)) {
+      candidates.push(toSlug(`${brand}-dock`));
     }
 
     if (brand) candidates.push(toSlug(brand));                               // 6. brand only
