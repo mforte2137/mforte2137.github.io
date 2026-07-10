@@ -375,14 +375,24 @@
     return null;
   }
 
+  // Checked in this order per candidate slug — png first since it's the
+  // documented convention, but jpg/jpeg work too.
+  const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg'];
+
+  // Returns the matched extension (e.g. 'jpg') if found, otherwise null —
+  // rather than a bare boolean, since the caller needs to know which
+  // extension actually hit to build the right URL.
   async function imageExists(base, slug) {
-    if (!slug) return false;
-    try {
-      const res = await fetch(`${base}${slug}.png`, { method: 'HEAD' });
-      return res.ok;
-    } catch {
-      return false;
+    if (!slug) return null;
+    for (const ext of IMAGE_EXTENSIONS) {
+      try {
+        const res = await fetch(`${base}${slug}.${ext}`, { method: 'HEAD' });
+        if (res.ok) return ext;
+      } catch {
+        // try the next extension
+      }
     }
+    return null;
   }
 
   // Runs BEFORE the widget HTML is built (not after) so the image
@@ -395,8 +405,9 @@
 
     for (const slug of candidates) {
       for (const base of IMAGE_BASES) {
-        if (await imageExists(base, slug)) {
-          return { slug, found: true, url: `${base}${slug}.png` };
+        const ext = await imageExists(base, slug);
+        if (ext) {
+          return { slug, found: true, url: `${base}${slug}.${ext}`, ext };
         }
       }
     }
@@ -407,8 +418,8 @@
     if (!imageInfo) { imageSlugNote.hidden = true; return; }
     imageSlugNote.hidden = false;
     imageSlugNote.textContent = imageInfo.found
-      ? `📷 Using image: ${imageInfo.slug}.png`
-      : `📷 No image found for "${imageInfo.slug}.png" — using graphic style.`;
+      ? `📷 Using image: ${imageInfo.slug}.${imageInfo.ext}`
+      : `📷 No image found for "${imageInfo.slug}.*" — using graphic style.`;
   }
 
   // Image strip markup — inserted between the gradient header and the
