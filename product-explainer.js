@@ -165,7 +165,7 @@
   // 5450" into brand="dell" + model tokens, regardless of which family
   // word (or none) the rep typed.
   const KNOWN_BRANDS = [
-    'dell', 'hp', 'lenovo', 'apple', 'asus', 'acer', 'microsoft',
+    'dell', 'hp', 'lenovo', 'apple', 'asus', 'acer', 'microsoft', 'viewsonic',
     'meraki', 'cisco', 'ubiquiti', 'unifi', 'sonicwall', 'fortinet', 'fortigate', 'watchguard', 'aruba',
     'yealink', 'poly', 'polycom', 'grandstream', 'ringcentral',
     'synology', 'qnap', 'netgear', 'tp-link',
