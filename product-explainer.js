@@ -166,7 +166,7 @@
   // word (or none) the rep typed.
   const KNOWN_BRANDS = [
     'dell', 'hp', 'lenovo', 'apple', 'asus', 'acer', 'microsoft',
-    'meraki', 'cisco', 'ubiquiti', 'unifi', 'sonicwall', 'fortinet', 'watchguard', 'aruba',
+    'meraki', 'cisco', 'ubiquiti', 'unifi', 'sonicwall', 'fortinet', 'fortigate', 'watchguard', 'aruba',
     'yealink', 'poly', 'polycom', 'grandstream', 'ringcentral',
     'synology', 'qnap', 'netgear', 'tp-link',
     'apc', 'eaton', 'tripplite',
@@ -174,10 +174,12 @@
   ];
 
   // Same company, different name reps use interchangeably — canonicalise
-  // to one form so "Ubiquiti U6 Pro" and "Unifi U6 Pro" produce the same
-  // candidate slug. (Ubiquiti is the company; UniFi is the product line
-  // — MSPs say both. "unifi" is the canonical form here.)
-  const BRAND_ALIASES = { 'ubiquiti': 'unifi' };
+  // to one form so both variants produce the same candidate slug.
+  // Ubiquiti is the company; UniFi is the product line. Fortinet is the
+  // company; FortiGate is the actual firewall product line — reps say
+  // "FortiGate 60F" far more often than "Fortinet 60F", so that's the
+  // canonical form here (same reasoning as unifi over ubiquiti).
+  const BRAND_ALIASES = { 'ubiquiti': 'unifi', 'fortinet': 'fortigate' };
 
   // Consumer-facing marketing nicknames that map to a real model code —
   // reps repeat whatever Ubiquiti's own marketing calls the product, not
@@ -204,13 +206,24 @@
     'laptop', 'notebook', 'desktop', 'tower', 'workstation',
     'monitor', 'display', 'firewall', 'switch', 'router', 'access', 'point', 'ap', 'gateway',
     'docking', 'dock', 'station', 'series', 'business', 'premium', 'wireless',
-    'phone', 'headset', 'server', 'appliance'
+    'phone', 'headset', 'server', 'appliance', 'port', 'ports'
   ];
 
   function toSlug(name) {
     return String(name || '').toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '');
+  }
+
+  // Strips a single letter-suffix GLUED directly to a trailing digit
+  // (no hyphen) — e.g. "24p" -> "24", "mx68w" -> "mx68". These compact
+  // codes (PoE tier P/FP/LP, wireless W, cellular C) are almost always
+  // invisible in a product photo, so falling back to the base shot is
+  // usually right. Hyphenated named variants ("u6-pro", "udm-se") are
+  // untouched, since the hyphen means it's a real, visually distinct
+  // sub-model, not a compact suffix code.
+  function stripGluedSuffix(token) {
+    return token.replace(/([0-9])[a-z]+$/i, '$1');
   }
 
   // Builds ordered candidate slugs, most-specific first:
@@ -221,8 +234,11 @@
   //  3. bare model code with brand AND stopwords stripped entirely —
   //     covers products reps rarely prefix with a brand at all (e.g.
   //     "UDM Pro" rather than "Ubiquiti UDM Pro")
-  //  4. brand + primary numeric token only (loosest fallback)
-  //  5. brand only (last resort — a generic brand hero shot)
+  //  4. brand + suffix-stripped model code, and bare suffix-stripped —
+  //     only added if stripping actually changed something (e.g. a
+  //     PoE/wireless suffix), so "MS120-24P" falls back to "ms120-24"
+  //  5. brand + primary numeric token only (loosest fallback)
+  //  6. brand only (last resort — a generic brand hero shot)
   function buildImageCandidates(name) {
     const raw = applyModelNicknames(String(name || '').toLowerCase());
     const rawTokens = raw.replace(/[^a-z0-9\s-]/g, ' ').split(/\s+/).filter(Boolean);
@@ -235,6 +251,8 @@
     const nonBrandTokens   = rawTokens.filter(t => !KNOWN_BRANDS.includes(t));
     const meaningfulTokens = nonBrandTokens.filter(t => !SLUG_STOPWORDS.includes(t));
     const digitTokens      = meaningfulTokens.filter(t => /\d/.test(t));
+    const strippedTokens   = meaningfulTokens.map(stripGluedSuffix);
+    const wasStripped      = strippedTokens.join('-') !== meaningfulTokens.join('-');
 
     const candidates = [];
     candidates.push(toSlug(rawTokens.map(canonicalize).join(' ')));           // 1. full slug, brand-canonicalised
@@ -244,12 +262,117 @@
     if (meaningfulTokens.length) {
       candidates.push(toSlug(meaningfulTokens.join('-')));                   // 3. bare model code, no brand prefix
     }
-    if (brand && digitTokens.length) {
-      candidates.push(toSlug(`${brand}-${digitTokens[0]}`));                 // 4. brand + primary numeric token
+    if (wasStripped) {
+      if (brand) candidates.push(toSlug(`${brand}-${strippedTokens.join('-')}`)); // 4a. brand + suffix stripped
+      candidates.push(toSlug(strippedTokens.join('-')));                          // 4b. bare, suffix stripped
     }
-    if (brand) candidates.push(toSlug(brand));                               // 5. brand only
+    if (brand && digitTokens.length) {
+      candidates.push(toSlug(`${brand}-${digitTokens[0]}`));                 // 5. brand + primary numeric token
+    }
+
+    // UniFi's switch line uses the "USW" model prefix, but reps often just
+    // say "switch" generically ("Unifi 8 port switch") without ever typing
+    // "USW" — and "switch" naturally lands at the END of that sentence, so
+    // a simple word substitution would produce "unifi-8-switch" (wrong
+    // order) instead of the real "usw-8" convention. Reconstruct it
+    // explicitly in canonical order instead. Scoped to unifi/ubiquiti only
+    // so Meraki/Cisco's own generic use of "switch" is untouched.
+    if (brand === 'unifi' && /\bswitch(es)?\b/.test(raw) && digitTokens.length) {
+      candidates.push(toSlug(`usw-${digitTokens.join('-')}`));
+      candidates.push(toSlug(`unifi-usw-${digitTokens.join('-')}`));
+    }
+
+    if (brand) candidates.push(toSlug(brand));                               // 6. brand only
 
     return [...new Set(candidates.filter(Boolean))];
+  }
+
+  // ── Known-spec reference table ──────────────
+  // For tiered product families where the tiers are easy to mix up and
+  // getting it wrong actually matters (not the whole catalog — most
+  // products are fine on general AI knowledge alone). Keyed by the same
+  // slugs the image matcher produces, so one lookup pass covers both.
+  // Facts here are short and translate into plain benefit language on
+  // the backend — reps never see raw specs, but the copy is grounded in
+  // real numbers instead of the model guessing.
+  const UDM_SPECS = [
+    'All-in-one gateway with a built-in WiFi 5 access point and a 4-port Gigabit switch — one box handles router, firewall, and WiFi for a single small office.',
+    'No PoE output and no video storage — best for simple, single-location setups without IP cameras or extra switches.'
+  ];
+  const UDM_PRO_SPECS = [
+    'Rack-mountable with 8 Gigabit LAN ports plus a 10G SFP+ uplink — built to sit in a rack alongside separate access points and switches, not replace them.',
+    'Includes a drive bay for network video recording (UniFi Protect) storage; no built-in WiFi and no PoE output on its ports.'
+  ];
+  const UDM_SE_SPECS = [
+    'Rack-mountable with 8 PoE+ LAN ports — can power access points, cameras, or phones directly without a separate PoE switch.',
+    'Steps up the WAN port to 2.5GbE (vs 1GbE on the Pro) and adds built-in storage for video/logs — the pick when PoE and multi-gig WAN both matter.'
+  ];
+  const MX68_SPECS = [
+    'Desktop appliance recommended for up to 50 users — the right size for a small single-location office.',
+    '10 Gigabit LAN ports including 2 with PoE+, plus 2 Gigabit WAN ports for dual internet/failover.'
+  ];
+  const MX75_SPECS = [
+    'Desktop appliance recommended for up to 200 users — a step up for a growing office without needing a rack.',
+    '1 Gbps stateful firewall throughput with 3 WAN uplinks for more failover flexibility than the MX68.'
+  ];
+  const MX85_SPECS = [
+    'Rack-mountable appliance recommended for up to 250 users — for offices already using rack-mounted networking gear.',
+    '1 Gbps stateful firewall throughput with 4 WAN uplinks and fiber SFP options for higher-speed uplinks.'
+  ];
+  const T46U_SPECS = [
+    'Wired Gigabit desk phone with a 4.3" color display — no built-in WiFi or Bluetooth, so it needs a wired network drop at the desk.',
+    'Best for a fixed desk phone location where a wired connection is already available.'
+  ];
+  const T54W_SPECS = [
+    'Same 4.3" color display as the T46U, but adds built-in WiFi and Bluetooth — no wired drop needed at the desk.',
+    'Best when phone placement needs flexibility or a wired connection isn\'t available at the desk.'
+  ];
+  const T57W_SPECS = [
+    'Steps up to a 7" touchscreen display (versus the smaller non-touch screen on the T46U/T54W) — a tablet-like interface.',
+    'Also includes built-in WiFi and Bluetooth like the T54W — aimed at executives or heavy phone users who want the larger interface.'
+  ];
+  const R350_SPECS = [
+    '1U rack server, single-processor — built for small-to-medium workloads like file/print serving, a small number of virtual machines, or a domain controller.',
+    'Supports up to 128GB RAM — the right fit when the business doesn\'t need to run many resource-heavy applications on one box.'
+  ];
+  const R450_SPECS = [
+    '1U rack server, dual-processor capable — a step up for handling more simultaneous virtual machines or a bigger user base than the R350.',
+    'Supports up to 1TB RAM, no GPU support — built for general business workloads rather than graphics or AI-heavy tasks.'
+  ];
+  const R650_SPECS = [
+    '1U rack server, dual-processor, supports up to 4TB RAM — built for demanding virtualization or database workloads that would strain the R350/R450.',
+    'Supports GPU add-in cards — the pick when the business needs graphics acceleration or heavier compute, not just standard virtualization.'
+  ];
+
+  // Keyed by the same slugs the image matcher produces. UDM entries are
+  // already bare (no "unifi-" prefix) matching our established naming
+  // convention there. Meraki/Yealink/Dell get BOTH the brand-prefixed
+  // and bare-model key, since reps often drop the brand word entirely
+  // ("MX68" without "Meraki", "T54W" without "Yealink") — the bare form
+  // is what actually shows up in the candidate list in that case.
+  const PRODUCT_SPECS = {
+    'udm':    UDM_SPECS,
+    'udm-pro': UDM_PRO_SPECS,
+    'udm-se':  UDM_SE_SPECS,
+    'meraki-mx68': MX68_SPECS, 'mx68': MX68_SPECS,
+    'meraki-mx75': MX75_SPECS, 'mx75': MX75_SPECS,
+    'meraki-mx85': MX85_SPECS, 'mx85': MX85_SPECS,
+    'yealink-t46u': T46U_SPECS, 't46u': T46U_SPECS,
+    'yealink-t54w': T54W_SPECS, 't54w': T54W_SPECS,
+    'yealink-t57w': T57W_SPECS, 't57w': T57W_SPECS,
+    'dell-r350': R350_SPECS, 'r350': R350_SPECS,
+    'dell-r450': R450_SPECS, 'r450': R450_SPECS,
+    'dell-r650': R650_SPECS, 'r650': R650_SPECS
+  };
+
+  // Reuses the same fuzzy candidate list as the image matcher — one
+  // slug-generation pass now serves two lookups (image + specs).
+  function findProductSpecs(name) {
+    const candidates = buildImageCandidates(name);
+    for (const slug of candidates) {
+      if (PRODUCT_SPECS[slug]) return PRODUCT_SPECS[slug];
+    }
+    return null;
   }
 
   async function imageExists(base, slug) {
@@ -520,10 +643,11 @@
     if (err) { showError(err); return; }
 
     const requestPayload = {
-      name:     productNameEl.value.trim(),
-      category: categoryEl.value,
-      context:  customContextEl.value.trim(),
-      style:    selectedStyle
+      name:       productNameEl.value.trim(),
+      category:   categoryEl.value,
+      context:    customContextEl.value.trim(),
+      style:      selectedStyle,
+      knownSpecs: findProductSpecs(productNameEl.value.trim())
     };
     lastRequest = requestPayload;
 
