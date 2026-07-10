@@ -206,7 +206,7 @@
     'laptop', 'notebook', 'desktop', 'tower', 'workstation',
     'monitor', 'display', 'firewall', 'switch', 'router', 'access', 'point', 'ap', 'gateway',
     'docking', 'dock', 'station', 'series', 'business', 'premium', 'wireless',
-    'phone', 'headset', 'server', 'appliance', 'port', 'ports'
+    'phone', 'headset', 'server', 'appliance', 'port', 'ports', 'inch', 'inches', 'screen', 'screens'
   ];
 
   function toSlug(name) {
@@ -224,6 +224,28 @@
   // sub-model, not a compact suffix code.
   function stripGluedSuffix(token) {
     return token.replace(/([0-9])[a-z]+$/i, '$1');
+  }
+
+  // UniFi access points that are NOT the round "puck" shape — explicit
+  // exclusion list so these never get force-matched to the puck photo.
+  // U6-Mesh is cylindrical; U6-IW/U6-Enterprise-IW are flat in-wall
+  // panels; U6-Extender is a small plug-in block; U7-Outdoor/U7-Pro-Wall
+  // are different outdoor/wall enclosures.
+  const AP_NON_PUCK_SLUGS = [
+    'u6-mesh', 'u6-mesh-pro', 'u6-iw', 'u6-enterprise-iw', 'u6-extender',
+    'u7-mesh', 'u7-outdoor', 'u7-pro-wall', 'u7-pro-outdoor',
+    'uap-ac-m', 'uap-ac-m-pro', 'uap-ac-iw', 'uap-iw-hd'
+  ];
+
+  // Recognizes the round-disc "puck" family (U6-*, U7-*, and the legacy
+  // AC-Pro/AC-Lite/AC-LR line) so an unphotographed specific model still
+  // gets a visually-correct fallback rather than no image (or worse, a
+  // wrongly-shaped one). Checked against the already-normalized bare
+  // model slug, so it works regardless of hyphen/space phrasing.
+  function looksLikePuckAP(bareSlug) {
+    if (!bareSlug) return false;
+    if (AP_NON_PUCK_SLUGS.some(x => bareSlug === x || bareSlug.startsWith(x + '-'))) return false;
+    return /^u[67](-|$)/.test(bareSlug) || /^(uap-)?ac-(pro|lite|lr)(-|$)/.test(bareSlug);
   }
 
   // Builds ordered candidate slugs, most-specific first:
@@ -282,6 +304,27 @@
       candidates.push(toSlug(`unifi-usw-${digitTokens.join('-')}`));
     }
 
+    // Round "puck" AP fallback — only reached if no specific model photo
+    // (u6-pro.png, u7-pro.png, etc.) matched above. Shared across the
+    // whole puck-shaped family so newly-released models (U6-Plus,
+    // U7-Pro-Max, whatever comes next) still get a visually correct
+    // photo without needing their own upload.
+    const bareModelSlug = meaningfulTokens.length ? toSlug(meaningfulTokens.join('-')) : '';
+    if (looksLikePuckAP(bareModelSlug)) {
+      candidates.push(toSlug('ap-puck'));
+    }
+
+    // Brand + category fallback (e.g. "dell-monitor") — reached only if
+    // no specific size/model photo matched. Without this, a generic
+    // "Dell 24 inch monitor" with no exact match falls straight through
+    // to the plain brand photo, which is likely a LAPTOP shot for a
+    // brand like Dell/HP/Lenovo — visibly the wrong product entirely.
+    // Same brand can have multiple category fallbacks (dell-monitor,
+    // dell-dock, etc.) as more get added; only monitor is wired for now.
+    if (brand && /\b(monitor|display|screen)s?\b/.test(raw)) {
+      candidates.push(toSlug(`${brand}-monitor`));
+    }
+
     if (brand) candidates.push(toSlug(brand));                               // 6. brand only
 
     return [...new Set(candidates.filter(Boolean))];
@@ -306,6 +349,10 @@
   const UDM_SE_SPECS = [
     'Rack-mountable with 8 PoE+ LAN ports — can power access points, cameras, or phones directly without a separate PoE switch.',
     'Steps up the WAN port to 2.5GbE (vs 1GbE on the Pro) and adds built-in storage for video/logs — the pick when PoE and multi-gig WAN both matter.'
+  ];
+  const UCG_ULTRA_SPECS = [
+    'Compact desktop gateway with no built-in WiFi — pairs with separate access points and switches rather than replacing them.',
+    'Entry-level performance (around 1 Gbps routing) supporting up to 30 additional UniFi devices — runs core network management only, not the full Protect/Talk/Access app suite.'
   ];
   const MX68_SPECS = [
     'Desktop appliance recommended for up to 50 users — the right size for a small single-location office.',
@@ -354,6 +401,7 @@
     'udm':    UDM_SPECS,
     'udm-pro': UDM_PRO_SPECS,
     'udm-se':  UDM_SE_SPECS,
+    'ucg-ultra': UCG_ULTRA_SPECS,
     'meraki-mx68': MX68_SPECS, 'mx68': MX68_SPECS,
     'meraki-mx75': MX75_SPECS, 'mx75': MX75_SPECS,
     'meraki-mx85': MX85_SPECS, 'mx85': MX85_SPECS,
@@ -399,6 +447,12 @@
   // decision is baked into the first render rather than patched in.
   // Manual override skips the fuzzy candidate list and checks that exact
   // slug only (still across both image bases).
+  // Absolute last resort — used only when nothing else matched at all
+  // (no specific model, no puck fallback, no brand-level photo). Keeps
+  // every widget clickable in Salesbuildr rather than an empty image
+  // slot, which is fiddlier for reps to fill in from scratch.
+  const PLACEHOLDER_SLUG = 'placeholder';
+
   async function resolveImage(name, overrideRaw) {
     const override = (overrideRaw || '').trim();
     const candidates = override ? [toSlug(override)] : buildImageCandidates(name);
@@ -411,12 +465,26 @@
         }
       }
     }
+
+    // Nothing matched at all — try the universal placeholder before
+    // giving up entirely.
+    for (const base of IMAGE_BASES) {
+      const ext = await imageExists(base, PLACEHOLDER_SLUG);
+      if (ext) {
+        return { slug: PLACEHOLDER_SLUG, found: true, url: `${base}${PLACEHOLDER_SLUG}.${ext}`, ext, isPlaceholder: true };
+      }
+    }
+
     return { slug: candidates[0] || toSlug(name), found: false, url: null };
   }
 
   function updateImageNote(imageInfo) {
     if (!imageInfo) { imageSlugNote.hidden = true; return; }
     imageSlugNote.hidden = false;
+    if (imageInfo.isPlaceholder) {
+      imageSlugNote.textContent = '📷 No specific match — using the placeholder image. Click it in Salesbuildr to drop in your own.';
+      return;
+    }
     imageSlugNote.textContent = imageInfo.found
       ? `📷 Using image: ${imageInfo.slug}.${imageInfo.ext}`
       : `📷 No image found for "${imageInfo.slug}.*" — using graphic style.`;
