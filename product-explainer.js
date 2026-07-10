@@ -462,9 +462,14 @@
   // (no specific model, no puck fallback, no brand-level photo). Keeps
   // every widget clickable in Salesbuildr rather than an empty image
   // slot, which is fiddlier for reps to fill in from scratch.
+  //
+  // Gated to category === 'Hardware' — a placeholder product photo makes
+  // no sense on a pure licensing/service line item (Microsoft 365,
+  // consulting hours, compliance work), which should keep the original
+  // clean, photo-free graphic style when nothing matches.
   const PLACEHOLDER_SLUG = 'placeholder';
 
-  async function resolveImage(name, overrideRaw) {
+  async function resolveImage(name, overrideRaw, category) {
     const override = (overrideRaw || '').trim();
     const candidates = override ? [toSlug(override)] : buildImageCandidates(name);
 
@@ -477,12 +482,14 @@
       }
     }
 
-    // Nothing matched at all — try the universal placeholder before
-    // giving up entirely.
-    for (const base of IMAGE_BASES) {
-      const ext = await imageExists(base, PLACEHOLDER_SLUG);
-      if (ext) {
-        return { slug: PLACEHOLDER_SLUG, found: true, url: `${base}${PLACEHOLDER_SLUG}.${ext}`, ext, isPlaceholder: true };
+    // Nothing matched at all — try the universal placeholder, but only
+    // for Hardware line items.
+    if (category === 'Hardware') {
+      for (const base of IMAGE_BASES) {
+        const ext = await imageExists(base, PLACEHOLDER_SLUG);
+        if (ext) {
+          return { slug: PLACEHOLDER_SLUG, found: true, url: `${base}${PLACEHOLDER_SLUG}.${ext}`, ext, isPlaceholder: true };
+        }
       }
     }
 
@@ -521,7 +528,7 @@
 
   async function recheckImageOverride() {
     if (!currentData) return; // nothing generated yet to attach an image to
-    const info = await resolveImage(productNameEl.value.trim(), imageOverrideSlugEl.value);
+    const info = await resolveImage(productNameEl.value.trim(), imageOverrideSlugEl.value, categoryEl.value);
     currentData._image = info;
     updateImageNote(info);
     renderPreview();
@@ -759,7 +766,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestPayload)
         }).then(r => r.json()),
-        resolveImage(requestPayload.name, imageOverrideSlugEl.value)
+        resolveImage(requestPayload.name, imageOverrideSlugEl.value, requestPayload.category)
       ]);
       if (!json.ok) throw new Error(json.error || 'Generation failed.');
 
@@ -805,7 +812,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(lastRequest)
         }).then(r => r.json()),
-        resolveImage(lastRequest.name, imageOverrideSlugEl.value)
+        resolveImage(lastRequest.name, imageOverrideSlugEl.value, lastRequest.category)
       ]);
       if (!json.ok) throw new Error(json.error || 'Regeneration failed.');
       currentData = json.data;
