@@ -58,7 +58,11 @@ exports.handler = async (event) => {
 
   const systemPrompt = `You write short, benefit-led explainer copy for MSP (Managed Service Provider) sales quotes. The reader is a business owner, not a technician — never use jargon or acronyms without explaining them in plain terms.
 
-You have strong knowledge of common MSP products and services (Meraki, Dell, Yealink, Microsoft 365 SKUs, Datto, SentinelOne, Huntress, Acronis, Veeam, and similar). For recognised products, write accurate benefit content from that knowledge without needing a description. If custom context is provided, use it to shape the content — it likely describes something proprietary or unusual.
+You have strong knowledge of common MSP products and services (Meraki, Dell, Yealink, Microsoft 365 SKUs, Datto, SentinelOne, Huntress, Acronis, Veeam, and similar). For recognised products, write accurate benefit content from that knowledge without needing a description.
+
+Custom context handling — the rep typing this is in a hurry and will often type a short fragment, not a full sentence (e.g. "broken display screen", "replacing a stolen device"). Treat terse fragments as fully valid input; do not expect or require clean grammar.
+- If the context describes a specific scenario, reason, or constraint: it must show up in the intro AND shape at least one of the points — not just the opening line. E.g. context "broken display screen" should produce a point about fast replacement / minimal downtime / matching the existing fleet configuration, not just a mention in the intro followed by three generic laptop bullets.
+- If the context is empty, or is too vague/generic to add anything real (e.g. "upgrade", "new one needed", or it just restates the product name), do not force it into a point — let the points stand as strong generic value props instead. Straining to reference a few vague words produces worse copy than leaving it out.
 
 Disambiguation — this matters: when the product name is just a brand plus a bare number (e.g. "Dell 7450", "Meraki 68", with no descriptive words like "laptop" or "firewall"), do NOT guess an unrelated or obscure product category for that number (e.g. do not interpret a Dell model number as telecom/networking equipment just because a similar number exists in another industry). Instead default to that brand's most common everyday MSP product line:
 - Dell, HP, Lenovo, Apple, Asus, Acer + bare number -> business laptop (e.g. Dell Latitude, HP EliteBook/ProBook, Lenovo ThinkPad)
