@@ -43,6 +43,7 @@
   const imageSlugNote = $('imageSlugNote');
 
   const regenerateBtn = $('regenerateBtn');
+  const removeImageBtn = $('removeImageBtn');
   const copyBtn       = $('copyBtn');
   const pushBtn       = $('pushBtn');
 
@@ -497,8 +498,12 @@
   }
 
   function updateImageNote(imageInfo) {
-    if (!imageInfo) { imageSlugNote.hidden = true; return; }
+    if (!imageInfo) { imageSlugNote.hidden = true; removeImageBtn.hidden = true; return; }
     imageSlugNote.hidden = false;
+    // Manual removal always wins, regardless of whether the auto-match
+    // was correct, a fallback, or the placeholder — the rep just wants
+    // the widget clean, no image, full stop.
+    removeImageBtn.hidden = !imageInfo.found;
     if (imageInfo.isPlaceholder) {
       imageSlugNote.textContent = '📷 No specific match — using the placeholder image. Click it in Salesbuildr to drop in your own.';
       return;
@@ -507,6 +512,18 @@
       ? `📷 Using image: ${imageInfo.slug}.${imageInfo.ext}`
       : `📷 No image found for "${imageInfo.slug}.*" — using graphic style.`;
   }
+
+  // Strips the image from the current widget entirely — right or wrong,
+  // fallback or placeholder, doesn't matter. Rest of the widget (text,
+  // style, theme) stays untouched. Regenerating afterward re-resolves
+  // the image from scratch, same as any fresh generation.
+  removeImageBtn.addEventListener('click', () => {
+    if (!currentData) return;
+    currentData._image = null;
+    imageOverrideSlugEl.value = '';
+    updateImageNote(null);
+    renderPreview();
+  });
 
   // Image strip markup — inserted between the gradient header and the
   // intro. object-fit:contain on a white background (not the originally
