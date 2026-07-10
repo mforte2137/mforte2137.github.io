@@ -173,15 +173,38 @@
     'datto', 'veeam', 'acronis', 'sentinelone', 'huntress', 'crowdstrike', 'sophos', 'bitdefender'
   ];
 
+  // Same company, different name reps use interchangeably — canonicalise
+  // to one form so "Ubiquiti U6 Pro" and "Unifi U6 Pro" produce the same
+  // candidate slug. (Ubiquiti is the company; UniFi is the product line
+  // — MSPs say both. "unifi" is the canonical form here.)
+  const BRAND_ALIASES = { 'ubiquiti': 'unifi' };
+
+  // Consumer-facing marketing nicknames that map to a real model code —
+  // reps repeat whatever Ubiquiti's own marketing calls the product, not
+  // just the technical SKU. Ordered most-specific first so e.g. "Dream
+  // Machine Pro" matches its own rule before the bare "Dream Machine"
+  // rule can eat it.
+  const MODEL_NICKNAMES = [
+    [/dream\s*machine\s*pro/g, 'udm pro'],
+    [/dream\s*machine\s*se/g,  'udm se'],
+    [/dream\s*machine/g,       'udm'],
+    [/dream\s*router/g,        'udr'],
+    [/dream\s*wall/g,          'udw']
+  ];
+
+  function applyModelNicknames(raw) {
+    return MODEL_NICKNAMES.reduce((s, [pattern, replacement]) => s.replace(pattern, replacement), raw);
+  }
+
   // Family/line/category filler words to ignore when isolating the model
-  // number — these are exactly the words reps are inconsistent about
+  // code — these are exactly the words reps are inconsistent about
   // typing ("Latitude" vs "Lat" vs nothing).
   const SLUG_STOPWORDS = [
     'latitude', 'lat', 'optiplex', 'elitebook', 'probook', 'thinkpad', 'inspiron', 'precision',
     'laptop', 'notebook', 'desktop', 'tower', 'workstation',
-    'monitor', 'display', 'firewall', 'switch', 'router', 'access', 'point', 'ap',
+    'monitor', 'display', 'firewall', 'switch', 'router', 'access', 'point', 'ap', 'gateway',
     'docking', 'dock', 'station', 'series', 'business', 'premium', 'wireless',
-    'phone', 'headset', 'server', 'appliance', 'gateway'
+    'phone', 'headset', 'server', 'appliance'
   ];
 
   function toSlug(name) {
@@ -190,24 +213,41 @@
       .replace(/^-|-$/g, '');
   }
 
-  // Builds ordered candidate slugs: exact full name -> brand+model -> brand only.
+  // Builds ordered candidate slugs, most-specific first:
+  //  1. full name, brand canonicalised (handles literal typed names)
+  //  2. brand + all non-stopword tokens (keeps suffixes like "pro"/"lr"/
+  //     "se" that don't contain digits — needed for UniFi-style codes
+  //     where the digit-only rule below would lose the variant)
+  //  3. bare model code with brand AND stopwords stripped entirely —
+  //     covers products reps rarely prefix with a brand at all (e.g.
+  //     "UDM Pro" rather than "Ubiquiti UDM Pro")
+  //  4. brand + primary numeric token only (loosest fallback)
+  //  5. brand only (last resort — a generic brand hero shot)
   function buildImageCandidates(name) {
-    const raw = String(name || '').toLowerCase();
-    const tokens = raw.replace(/[^a-z0-9\s-]/g, ' ').split(/\s+/).filter(Boolean);
+    const raw = applyModelNicknames(String(name || '').toLowerCase());
+    const rawTokens = raw.replace(/[^a-z0-9\s-]/g, ' ').split(/\s+/).filter(Boolean);
 
-    const brand = tokens.find(t => KNOWN_BRANDS.includes(t)) || null;
-    const modelTokens = tokens.filter(t =>
-      !KNOWN_BRANDS.includes(t) && !SLUG_STOPWORDS.includes(t) && /\d/.test(t)
-    );
+    const canonicalize = t => (KNOWN_BRANDS.includes(t) ? (BRAND_ALIASES[t] || t) : t);
 
-    const candidates = [toSlug(name)]; // 1. exact full slug
-    if (brand && modelTokens.length) {
-      candidates.push(toSlug(`${brand}-${modelTokens[0]}`));        // 2. brand + primary model token
-      if (modelTokens.length > 1) {
-        candidates.push(toSlug(`${brand}-${modelTokens.join('-')}`)); // 2b. brand + all model tokens
-      }
+    const brandToken = rawTokens.find(t => KNOWN_BRANDS.includes(t)) || null;
+    const brand = brandToken ? canonicalize(brandToken) : null;
+
+    const nonBrandTokens   = rawTokens.filter(t => !KNOWN_BRANDS.includes(t));
+    const meaningfulTokens = nonBrandTokens.filter(t => !SLUG_STOPWORDS.includes(t));
+    const digitTokens      = meaningfulTokens.filter(t => /\d/.test(t));
+
+    const candidates = [];
+    candidates.push(toSlug(rawTokens.map(canonicalize).join(' ')));           // 1. full slug, brand-canonicalised
+    if (brand && meaningfulTokens.length) {
+      candidates.push(toSlug(`${brand}-${meaningfulTokens.join('-')}`));      // 2. brand + full model code (suffixes kept)
     }
-    if (brand) candidates.push(toSlug(brand)); // 3. brand only (last resort)
+    if (meaningfulTokens.length) {
+      candidates.push(toSlug(meaningfulTokens.join('-')));                   // 3. bare model code, no brand prefix
+    }
+    if (brand && digitTokens.length) {
+      candidates.push(toSlug(`${brand}-${digitTokens[0]}`));                 // 4. brand + primary numeric token
+    }
+    if (brand) candidates.push(toSlug(brand));                               // 5. brand only
 
     return [...new Set(candidates.filter(Boolean))];
   }
