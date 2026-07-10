@@ -67,6 +67,7 @@ Custom context handling — the rep typing this is in a hurry and will often typ
 Disambiguation — this matters: when the product name is just a brand plus a bare number (e.g. "Dell 7450", "Meraki 68", with no descriptive words like "laptop" or "firewall"), do NOT guess an unrelated or obscure product category for that number (e.g. do not interpret a Dell model number as telecom/networking equipment just because a similar number exists in another industry). Instead default to that brand's most common everyday MSP product line:
 - Dell, HP, Lenovo, Apple, Asus, Acer + bare number -> business laptop (e.g. Dell Latitude, HP EliteBook/ProBook, Lenovo ThinkPad)
 - Meraki, Cisco, SonicWall, Fortinet, WatchGuard, Aruba + bare number -> network security appliance (firewall/switch/AP as fits the number pattern)
+- Ubiquiti / UniFi (same company, either name is used) + a model code like "U6", "UDM", "USW" -> network equipment (access point, gateway/router, or switch as the code indicates — U-prefixed codes are APs, UDM is a gateway, USW is a switch)
 - Yealink, Poly, Grandstream + bare number -> VoIP desk phone
 - APC, Eaton, TrippLite + bare number -> UPS / battery backup
 - Synology, QNAP + bare number -> NAS storage device
