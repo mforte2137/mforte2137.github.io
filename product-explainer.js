@@ -309,9 +309,12 @@
     // (u6-pro.png, u7-pro.png, etc.) matched above. Shared across the
     // whole puck-shaped family so newly-released models (U6-Plus,
     // U7-Pro-Max, whatever comes next) still get a visually correct
-    // photo without needing their own upload.
+    // photo without needing their own upload. Guarded to brand===unifi
+    // or no brand at all (bare "U6 Pro") — never a DIFFERENT known brand,
+    // so a hypothetical "Dell U6" typo can't accidentally borrow the
+    // UniFi puck photo just because the model code happens to match.
     const bareModelSlug = meaningfulTokens.length ? toSlug(meaningfulTokens.join('-')) : '';
-    if (looksLikePuckAP(bareModelSlug)) {
+    if ((brand === 'unifi' || !brand) && looksLikePuckAP(bareModelSlug)) {
       candidates.push(toSlug('ap-puck'));
     }
 
