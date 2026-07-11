@@ -10,15 +10,25 @@
   // item in a batch quoting session.
   let selectedStyle   = 'layered';   // 'layered' | 'numbered' | 'grid'
   let currentThemeHex = '#0f1f3d';
-  let currentData     = null;        // unified AI response: { category, headline, intro, points[4], footerText, footerBadge }
+  let currentData     = null;        // unified AI response: { category, headline, intro, points[4], footerText, footerBadge } OR bundle shape: { headline, intro, items:[{name,blurb,_image}] }
   let currentHtml     = '';          // last rendered widget HTML (synced from live edits)
   let currentTitle    = '';          // last widget title
-  let lastRequest     = null;        // { name, category, context, style } for regenerate
+  let lastRequest     = null;        // { name, category, context, style } for regenerate (single mode only)
+  let currentMode     = 'single';    // 'single' | 'bundle'
+  let bundleItems      = [{ name: '', category: '', context: '' }, { name: '', category: '', context: '' }];
 
   const sessionWidgets = [];         // [{ title, html }] — "Generated this session"
 
   // ── DOM refs ───────────────────────────────
   const $ = id => document.getElementById(id);
+
+  const modeToggle          = $('modeToggle');
+  const singleProductFields = $('singleProductFields');
+  const bundleFields        = $('bundleFields');
+  const bundleItemsList     = $('bundleItemsList');
+  const addBundleItemBtn    = $('addBundleItemBtn');
+  const stylePickerFieldRow = $('stylePickerFieldRow');
+  const imageOverrideRow    = $('imageOverrideRow');
 
   const productNameEl    = $('productName');
   const categoryEl       = $('category');
@@ -96,6 +106,87 @@
   // ── Custom context char counter ──────────────
   customContextEl.addEventListener('input', () => {
     contextCharCount.textContent = customContextEl.value.length;
+  });
+
+  // ── Mode toggle (Single Product / Bundle) ─────
+  modeToggle.querySelectorAll('.mode-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      if (mode === currentMode) return;
+      currentMode = mode;
+      modeToggle.querySelectorAll('.mode-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
+      singleProductFields.hidden = mode === 'bundle';
+      bundleFields.hidden = mode !== 'bundle';
+      // Bundle has one fixed layout (no style variations) — hide the
+      // style picker in that mode; colour theme still applies to both.
+      stylePickerFieldRow.hidden = mode === 'bundle';
+      // Manual image override only makes sense for a single item.
+      imageOverrideRow.hidden = mode === 'bundle';
+      clearForm();
+    });
+  });
+
+  // ── Bundle item slots ─────────────────────────
+  function renderBundleItemsList() {
+    bundleItemsList.innerHTML = '';
+    bundleItems.forEach((item, idx) => {
+      const card = document.createElement('div');
+      card.className = 'bundle-item-card';
+      card.innerHTML = `
+        <div class="bundle-item-card-header">
+          <span class="bundle-item-number">Item ${idx + 1}</span>
+          <button type="button" class="bundle-item-remove" title="Remove item" ${bundleItems.length <= 1 ? 'disabled' : ''}>✕</button>
+        </div>
+        <input type="text" class="bundle-item-name-input" placeholder="Item name (e.g. Dell Latitude 5450)" value="${esc(item.name)}">
+        <div class="bundle-item-row-2">
+          <select class="bundle-item-category-select">
+            <option value="">Category…</option>
+            <option value="Hardware">Hardware</option>
+            <option value="Software">Software</option>
+            <option value="Security Service">Security Service</option>
+            <option value="Cloud Service">Cloud Service</option>
+            <option value="Support Service">Support Service</option>
+            <option value="Connectivity">Connectivity</option>
+            <option value="Compliance">Compliance</option>
+          </select>
+          <input type="text" class="bundle-item-context-input" placeholder="Context (optional)" value="${esc(item.context)}">
+        </div>
+      `;
+      const nameInput = card.querySelector('.bundle-item-name-input');
+      const categorySelect = card.querySelector('.bundle-item-category-select');
+      const contextInput = card.querySelector('.bundle-item-context-input');
+      const removeBtn = card.querySelector('.bundle-item-remove');
+
+      categorySelect.value = item.category;
+
+      nameInput.addEventListener('input', () => {
+        bundleItems[idx].name = nameInput.value;
+        const suggestion = suggestCategory(nameInput.value);
+        if (suggestion && !categorySelect.value) {
+          categorySelect.value = suggestion;
+          bundleItems[idx].category = suggestion;
+        }
+      });
+      categorySelect.addEventListener('change', () => {
+        bundleItems[idx].category = categorySelect.value;
+      });
+      contextInput.addEventListener('input', () => {
+        bundleItems[idx].context = contextInput.value;
+      });
+      removeBtn.addEventListener('click', () => {
+        if (bundleItems.length <= 1) return;
+        bundleItems.splice(idx, 1);
+        renderBundleItemsList();
+      });
+
+      bundleItemsList.appendChild(card);
+    });
+  }
+  renderBundleItemsList();
+
+  addBundleItemBtn.addEventListener('click', () => {
+    bundleItems.push({ name: '', category: '', context: '' });
+    renderBundleItemsList();
   });
 
   // ── Style picker — instant re-render, like the colour swatches ──
@@ -680,6 +771,71 @@
 </div>`;
   }
 
+  // Bundle widget — shared header/intro, then a hero row (up to 3 across,
+  // wrapping to additional rows past that) for items with a real photo,
+  // followed by a compact list for everything else (accessories,
+  // licensing, service fees). Hero-vs-compact placement is decided by
+  // whether image-matching found something, not by category alone.
+  function buildBundleHtml(data, hex) {
+    const items = data.items || [];
+    const heroItems = [];
+    const compactItems = [];
+    items.forEach((item, idx) => {
+      if (item._image && item._image.found) {
+        heroItems.push({ ...item, _idx: idx });
+      } else {
+        compactItems.push({ ...item, _idx: idx });
+      }
+    });
+
+    const heroCell = (item) => `<td style="width:33.33%;padding:16px;vertical-align:top;border-right:1px solid #e3e7ee;border-bottom:1px solid #e3e7ee;">
+      <img src="${item._image.url}" alt="" style="width:100%;max-height:110px;object-fit:contain;display:block;margin-bottom:10px;">
+      <div data-field="bundleItem${item._idx}-name" style="font-size:13px;font-weight:700;color:#0b1220;margin-bottom:3px;">${esc(item.name)}</div>
+      <div data-field="bundleItem${item._idx}-blurb" style="font-size:11.5px;color:#586273;line-height:1.45;">${esc(item.blurb)}</div>
+    </td>`;
+
+    // Chunk hero items into rows of up to 3; last cell in an incomplete
+    // row gets its right border removed so it doesn't dead-end visually.
+    let heroRowsHtml = '';
+    for (let i = 0; i < heroItems.length; i += 3) {
+      const rowItems = heroItems.slice(i, i + 3);
+      const cellsHtml = rowItems.map((item, j) => {
+        const cell = heroCell(item);
+        return (j === rowItems.length - 1) ? cell.replace('border-right:1px solid #e3e7ee;', '') : cell;
+      }).join('');
+      heroRowsHtml += `<tr>${cellsHtml}</tr>`;
+    }
+    const heroHtml = heroItems.length
+      ? `<table width="100%" style="border-collapse:collapse;table-layout:fixed;">${heroRowsHtml}</table>`
+      : '';
+
+    const compactRow = (item, idx) => {
+      const tint = idx % 2 !== 0 ? 'background:#f4f7fb;' : '';
+      return `<tr style="${tint}">
+        <td style="padding:10px 18px;width:26px;"><span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:#eaf1fc;"></span></td>
+        <td style="padding:10px 0;">
+          <span data-field="bundleItem${item._idx}-name" style="font-size:12.5px;font-weight:700;color:#0b1220;">${esc(item.name)}</span>
+          <span data-field="bundleItem${item._idx}-blurb" style="font-size:12px;color:#586273;">— ${esc(item.blurb)}</span>
+        </td>
+      </tr>`;
+    };
+    const compactHtml = compactItems.length
+      ? `<table width="100%" style="border-collapse:collapse;">${compactItems.map(compactRow).join('')}</table>`
+      : '';
+
+    return `<div style="width:100%;background:#ffffff;border:1px solid #e3e7ee;overflow:hidden;">
+  <div style="${gradientHeaderStyle(hex)}">
+    ${kickerHtml('Bundle')}
+    <h5 data-field="headline" style="margin:0;font-family:Arial,sans-serif;font-size:16px;font-weight:700;color:#ffffff;line-height:1.28;letter-spacing:-0.01em;">${esc(data.headline || '')}</h5>
+  </div>
+  <div style="padding:14px 18px;border-bottom:1px solid #e3e7ee;">
+    <p data-field="intro" style="margin:0;font-size:13px;color:#586273;line-height:1.6;">${esc(data.intro || '')}</p>
+  </div>
+  ${heroHtml}
+  ${compactHtml}
+</div>`;
+  }
+
   function renderWidgetHtml(style, data, hex) {
     if (!data) return '';
     if (style === 'numbered') return buildNumberedHtml(data, hex);
@@ -698,11 +854,18 @@
         const field = el.dataset.field;
         const text = el.textContent;
         const pointMatch = field.match(/^point(\d)-(title|description|badge)$/);
+        const bundleItemMatch = field.match(/^bundleItem(\d+)-(name|blurb)$/);
         if (pointMatch) {
           const idx = parseInt(pointMatch[1], 10);
           const sub = pointMatch[2];
           if (currentData.points && currentData.points[idx]) {
             currentData.points[idx][sub] = text;
+          }
+        } else if (bundleItemMatch) {
+          const idx = parseInt(bundleItemMatch[1], 10);
+          const sub = bundleItemMatch[2];
+          if (currentData.items && currentData.items[idx]) {
+            currentData.items[idx][sub] = text;
           }
         } else {
           currentData[field] = text;
@@ -722,7 +885,9 @@
 
   // ── Single render entry point used by generate / regenerate / style / theme ──
   function renderPreview() {
-    const html = renderWidgetHtml(selectedStyle, currentData, currentThemeHex);
+    const html = currentMode === 'bundle'
+      ? buildBundleHtml(currentData, currentThemeHex)
+      : renderWidgetHtml(selectedStyle, currentData, currentThemeHex);
     widgetPreview.innerHTML = html;
     makeEditable(widgetPreview);
     currentHtml = getWidgetHtmlFromFrame(widgetPreview);
@@ -815,8 +980,105 @@
     addToSessionList(currentTitle, currentHtml);
   }
 
-  generateBtn.addEventListener('click', generate);
+  // ── Bundle generation ─────────────────────────
+  // One AI call for the whole bundle (see backend), plus one resolveImage
+  // call per item in parallel — same image-matching logic used everywhere
+  // else in the tool, just run N times instead of once.
+  let lastBundleItems = null; // validated items used for the last generate, for regenerate
+
+  async function generateBundle() {
+    hideError();
+    const validItems = bundleItems
+      .map(i => ({ name: i.name.trim(), category: i.category, context: i.context.trim() }))
+      .filter(i => i.name);
+
+    if (validItems.length < 2) {
+      showError('Add at least 2 items with a name to build a bundle.');
+      return;
+    }
+
+    lastBundleItems = validItems;
+
+    emptyState.hidden = true;
+    widgetOutput.hidden = true;
+    loadingState.hidden = false;
+    generateBtn.disabled = true;
+    regenerateBtn.disabled = true;
+    scrollToOutput();
+
+    try {
+      const [json, imageResults] = await Promise.all([
+        fetch('/api/product-explainer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: validItems })
+        }).then(r => r.json()),
+        Promise.all(validItems.map(i => resolveImage(i.name, '', i.category)))
+      ]);
+      if (!json.ok) throw new Error(json.error || 'Bundle generation failed.');
+
+      const items = json.data.items.map((aiItem, idx) => ({
+        name: aiItem.name,
+        blurb: aiItem.blurb,
+        _image: imageResults[idx]
+      }));
+
+      currentData  = { headline: json.data.headline, intro: json.data.intro, items };
+      currentTitle = `${json.data.headline || 'Bundle'} — Explainer`;
+      imageSlugNote.hidden = true; // no single unified image note in bundle mode
+      removeImageBtn.hidden = true;
+      renderOutput();
+
+    } catch (e) {
+      loadingState.hidden = true;
+      emptyState.hidden = false;
+      showError('Error: ' + (e.message || 'Something went wrong. Please try again.'));
+    } finally {
+      generateBtn.disabled = false;
+      regenerateBtn.disabled = false;
+    }
+  }
+
+  async function regenerateBundle() {
+    if (!lastBundleItems) return generateBundle();
+    hideError();
+    regenerateBtn.disabled = true;
+    regenerateBtn.textContent = '…';
+    scrollToOutput();
+    try {
+      const [json, imageResults] = await Promise.all([
+        fetch('/api/product-explainer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: lastBundleItems })
+        }).then(r => r.json()),
+        Promise.all(lastBundleItems.map(i => resolveImage(i.name, '', i.category)))
+      ]);
+      if (!json.ok) throw new Error(json.error || 'Regeneration failed.');
+      const items = json.data.items.map((aiItem, idx) => ({
+        name: aiItem.name,
+        blurb: aiItem.blurb,
+        _image: imageResults[idx]
+      }));
+      currentData = { headline: json.data.headline, intro: json.data.intro, items };
+      currentTitle = `${json.data.headline || 'Bundle'} — Explainer`;
+      imageSlugNote.hidden = true;
+      removeImageBtn.hidden = true;
+      renderOutput();
+    } catch (e) {
+      showError('Regeneration failed: ' + e.message);
+    } finally {
+      regenerateBtn.disabled = false;
+      regenerateBtn.textContent = '↺ Regenerate';
+    }
+  }
+
+  generateBtn.addEventListener('click', () => {
+    if (currentMode === 'bundle') generateBundle();
+    else generate();
+  });
   regenerateBtn.addEventListener('click', async () => {
+    if (currentMode === 'bundle') { regenerateBundle(); return; }
     if (!lastRequest) return generate();
     hideError();
     regenerateBtn.disabled = true;
@@ -925,6 +1187,9 @@
     categoryEl.value = '';
     categoryEl.dataset.autoset = '0';
     categorySuggest.hidden = true;
+
+    bundleItems = [{ name: '', category: '', context: '' }, { name: '', category: '', context: '' }];
+    renderBundleItemsList();
 
     currentData  = null;
     currentHtml  = '';
