@@ -178,6 +178,18 @@
         if (bundleItems.length <= 1) return;
         bundleItems.splice(idx, 1);
         renderBundleItemsList();
+
+        // If a widget is already showing, reflect the removal instantly —
+        // otherwise it looks broken ("I clicked X and it's still there").
+        // Match by _sourceIndex (which bundleItems slot each widget item
+        // came from at generate time), then shift down any indices past
+        // the removed one so they stay aligned with the now-shorter array.
+        if (currentMode === 'bundle' && currentData && Array.isArray(currentData.items)) {
+          currentData.items = currentData.items
+            .filter(it => it._sourceIndex !== idx)
+            .map(it => it._sourceIndex > idx ? { ...it, _sourceIndex: it._sourceIndex - 1 } : it);
+          renderPreview();
+        }
       });
 
       bundleItemsList.appendChild(card);
@@ -1010,8 +1022,12 @@
   // One AI call for the whole bundle (see backend), plus one resolveImage
   // call per item in parallel — same image-matching logic used everywhere
   // else in the tool, just run N times instead of once.
-  let lastBundleItems = null; // validated items used for the last generate, for regenerate
-
+  //
+  // Both Generate and Regenerate call this directly (no separate stale
+  // snapshot) — it always reads the LIVE bundleItems array, so if a rep
+  // adds/removes an item after the first generate, clicking Regenerate
+  // correctly reflects that change rather than reusing whatever was on
+  // screen at the last Generate click.
   async function generateBundle() {
     hideError();
     const validItems = bundleItems
@@ -1022,8 +1038,6 @@
       showError('Add at least 2 items with a name to build a bundle.');
       return;
     }
-
-    lastBundleItems = validItems;
 
     emptyState.hidden = true;
     widgetOutput.hidden = true;
@@ -1046,7 +1060,8 @@
       const items = json.data.items.map((aiItem, idx) => ({
         name: aiItem.name,
         blurb: aiItem.blurb,
-        _image: imageResults[idx]
+        _image: imageResults[idx],
+        _sourceIndex: idx // tracks which bundleItems slot this came from, so removing that slot later can find and remove the matching widget item
       }));
 
       currentData  = { headline: json.data.headline, intro: json.data.intro, items };
@@ -1063,44 +1078,12 @@
     }
   }
 
-  async function regenerateBundle() {
-    if (!lastBundleItems) return generateBundle();
-    hideError();
-    regenerateBtn.disabled = true;
-    regenerateBtn.textContent = '…';
-    scrollToOutput();
-    try {
-      const [json, imageResults] = await Promise.all([
-        fetch('/api/product-explainer', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ items: lastBundleItems })
-        }).then(r => r.json()),
-        Promise.all(lastBundleItems.map(i => resolveImage(i.name, '', i.category)))
-      ]);
-      if (!json.ok) throw new Error(json.error || 'Regeneration failed.');
-      const items = json.data.items.map((aiItem, idx) => ({
-        name: aiItem.name,
-        blurb: aiItem.blurb,
-        _image: imageResults[idx]
-      }));
-      currentData = { headline: json.data.headline, intro: json.data.intro, items };
-      currentTitle = `${json.data.headline || 'Bundle'} — Explainer`;
-      renderOutput();
-    } catch (e) {
-      showError('Regeneration failed: ' + e.message);
-    } finally {
-      regenerateBtn.disabled = false;
-      regenerateBtn.textContent = '↺ Regenerate';
-    }
-  }
-
   generateBtn.addEventListener('click', () => {
     if (currentMode === 'bundle') generateBundle();
     else generate();
   });
   regenerateBtn.addEventListener('click', async () => {
-    if (currentMode === 'bundle') { regenerateBundle(); return; }
+    if (currentMode === 'bundle') { generateBundle(); return; }
     if (!lastRequest) return generate();
     hideError();
     regenerateBtn.disabled = true;
