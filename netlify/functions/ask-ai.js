@@ -3,12 +3,12 @@
 
 const TOOL_KB = `
 TOOL: Product & Service Explainer
-WHAT: Generates a single polished, benefit-led explainer widget for any product or service an MSP is quoting. Three visual styles: Layered Rows (icon + label + description rows, alternating tints), Numbered Blocks (numbered items with colour bar left and badge right, best for software bundles), Benefit Grid (2x2 grid of icon + title + description, best for hardware and multi-feature products). AI knows common MSP products (Meraki, Dell, Microsoft 365 SKUs, Yealink, SentinelOne, Huntress, Datto, Acronis etc.) and writes accurate benefit content. Designed for fast batch use — MSP generates one widget per line item in sequence.
-WHO: MSP sales reps building any Salesbuildr quote who want professional explainer widgets for their products and services.
-INPUT: Product/service name, category, optional one-line context, visual style choice, colour theme.
-OUTPUT: One TinyMCE-ready explainer widget — push to Salesbuildr or copy HTML.
-USE WHEN: Adding products or services to a Salesbuildr quote and wanting to explain what they do in plain language the buyer can understand. Replacing plain line items with visual, benefit-oriented explainers.
-NOT FOR: Full proposal narrative — use Proposal Widget Builder. Pricing or cost information. Multiple products in one widget — generate one per product.
+WHAT: Generates polished, benefit-led explainer widgets for individual products/services or multi-item bundles. Single mode: three visual styles (Layered Rows, Numbered Blocks, Benefit Grid), automatic product photo matching from image library with fuzzy brand/model recognition and graceful fallbacks, inline editing on the rendered widget — reps never see raw HTML. Bundle mode: MSP adds multiple items, tool generates one combined widget with shared header/intro, photo-led hero row for hardware items, compact list for accessories/licensing/services. AI knows common MSP products (Meraki, Dell, Microsoft 365 SKUs, Yealink, SentinelOne, Huntress, Datto, Acronis, UniFi etc.) and writes accurate benefit content — copy accuracy actively guarded against misidentifying ambiguous model numbers. Designed for fast batch use — style and theme remembered between generations, resets cleanly for next line item.
+WHO: MSP sales reps building any Salesbuildr quote who want professional, benefit-led explainer widgets for single line items or assembled multi-product bundles.
+INPUT: Single mode: product/service name, category (auto-suggested), optional one-line context, visual style choice, colour theme. Bundle mode: multiple items with name/category/context per item, colour theme.
+OUTPUT: Single: one TinyMCE-ready explainer widget with automatic photo matching. Bundle: one combined widget covering all items. Inline editing throughout. Push to Salesbuildr or copy HTML.
+USE WHEN: Adding any product, service, or bundle to a Salesbuildr quote and wanting to explain what it does in plain language the buyer can understand. Replacing plain line items with visual, benefit-oriented explainers.
+NOT FOR: Full proposal narrative — use Proposal Widget Builder. Pricing or cost information.
 URL: https://widgetcreator.netlify.app/product-explainer.html
 
 TOOL: Multi-Stakeholder Proposal Pack
