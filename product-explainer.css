@@ -169,6 +169,15 @@ input:focus, select:focus, textarea:focus {
   padding: 0;
 }
 .link-btn:hover { text-decoration: underline; }
+.image-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.image-controls-sep { color: var(--text-3); font-size: 12px; }
+.link-btn-danger { color: var(--danger); }
+.link-btn-danger:hover { text-decoration: underline; }
 
 /* ── Mode toggle ──────────────────────────── */
 .mode-toggle {
@@ -494,6 +503,25 @@ input:focus, select:focus, textarea:focus {
   font-size: 15px;
 }
 .image-slug-note { font-size: 11px; color: var(--text-3); }
+
+.image-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background: var(--bg-row);
+  border-radius: 6px;
+}
+.image-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.image-action-buttons .link-btn { font-size: 11.5px; white-space: nowrap; }
 
 .widget-preview-frame {
   border: 1px solid var(--border);
