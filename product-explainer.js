@@ -355,7 +355,7 @@
     'monitor', 'display', 'firewall', 'switch', 'router', 'access', 'point', 'ap', 'gateway',
     'docking', 'dock', 'station', 'series', 'business', 'premium', 'wireless',
     'phone', 'headset', 'server', 'appliance', 'port', 'ports', 'inch', 'inches', 'screen', 'screens',
-    'usb-c', 'usb', 'universal'
+    'usb-c', 'usb', 'universal', 'ideapad'
   ];
 
   function toSlug(name) {
@@ -410,6 +410,19 @@
   //     PoE/wireless suffix), so "MS120-24P" falls back to "ms120-24"
   //  5. brand + primary numeric token only (loosest fallback)
   //  6. brand only (last resort — a generic brand hero shot)
+  // Product lines reps say without the brand word — "I'll just say
+  // EliteBook, everyone knows that's HP." Same idea as the Dream
+  // Machine -> UDM nickname, but inferring the BRAND rather than a
+  // specific model. Only kicks in when no other brand is already
+  // stated, so it never overrides an explicit brand elsewhere in the
+  // name. Extend this as more lines come up (e.g. a Lenovo IdeaPad,
+  // an Acer Predator) — one new entry covers every model in that line
+  // automatically, no per-model work needed.
+  const BRAND_LINE_HINTS = {
+    hp:     ['elitebook', 'probook', 'zbook', 'omnibook', 'dragonfly'],
+    lenovo: ['thinkpad', 'ideapad']
+  };
+
   function buildImageCandidates(name) {
     const raw = applyModelNicknames(String(name || '').toLowerCase());
     const rawTokens = raw.replace(/[^a-z0-9\s-]/g, ' ').split(/\s+/).filter(Boolean);
@@ -417,7 +430,13 @@
     const canonicalize = t => (KNOWN_BRANDS.includes(t) ? (BRAND_ALIASES[t] || t) : t);
 
     const brandToken = rawTokens.find(t => KNOWN_BRANDS.includes(t)) || null;
-    const brand = brandToken ? canonicalize(brandToken) : null;
+    let brand = brandToken ? canonicalize(brandToken) : null;
+    let brandWasInferred = false;
+    if (!brand) {
+      for (const [impliedBrand, hints] of Object.entries(BRAND_LINE_HINTS)) {
+        if (rawTokens.some(t => hints.includes(t))) { brand = impliedBrand; brandWasInferred = true; break; }
+      }
+    }
 
     const nonBrandTokens   = rawTokens.filter(t => !KNOWN_BRANDS.includes(t));
     const meaningfulTokens = nonBrandTokens.filter(t => !SLUG_STOPWORDS.includes(t));
@@ -427,6 +446,15 @@
 
     const candidates = [];
     candidates.push(toSlug(rawTokens.map(canonicalize).join(' ')));           // 1. full slug, brand-canonicalised
+    if (brandWasInferred) {
+      // Brand was inferred from a line name (EliteBook -> HP), not typed —
+      // the literal full-slug candidate above never gets an "hp-" prefix
+      // since there's no literal "hp" token to canonicalise. Add that
+      // version explicitly, since some product names (e.g. "EliteBook X")
+      // need the line-name word KEPT, not stripped, to match a filename
+      // like "hp-elitebook-x.png".
+      candidates.push(toSlug(`${brand}-${nonBrandTokens.join('-')}`));         // 1b. inferred brand + full literal sequence
+    }
     if (brand && meaningfulTokens.length) {
       candidates.push(toSlug(`${brand}-${meaningfulTokens.join('-')}`));      // 2. brand + full model code (suffixes kept)
     }
