@@ -138,6 +138,7 @@ input:focus, select:focus, textarea:focus {
   color: var(--accent);
   margin-top: 5px;
 }
+.hint-note-warn { color: var(--warn); }
 
 /* ── Buttons ──────────────────────────────── */
 .btn-primary, .btn-secondary, .btn-accent {
