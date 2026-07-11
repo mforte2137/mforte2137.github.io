@@ -28,7 +28,6 @@
   const bundleItemsList     = $('bundleItemsList');
   const addBundleItemBtn    = $('addBundleItemBtn');
   const stylePickerFieldRow = $('stylePickerFieldRow');
-  const imageOverrideRow    = $('imageOverrideRow');
 
   const productNameEl    = $('productName');
   const categoryEl       = $('category');
@@ -50,7 +49,9 @@
   const widgetOutput  = $('widgetOutput');
   const widgetTitleEl = $('widgetTitle');
   const widgetPreview = $('widgetPreview');
-  const imageSlugNote = $('imageSlugNote');
+  const imageActionRow  = $('imageActionRow');
+  const imageSlugNote   = $('imageSlugNote');
+  const usePlaceholderBtn = $('usePlaceholderBtn');
 
   const regenerateBtn = $('regenerateBtn');
   const removeImageBtn = $('removeImageBtn');
@@ -120,8 +121,6 @@
       // Bundle has one fixed layout (no style variations) — hide the
       // style picker in that mode; colour theme still applies to both.
       stylePickerFieldRow.hidden = mode === 'bundle';
-      // Manual image override only makes sense for a single item.
-      imageOverrideRow.hidden = mode === 'bundle';
       clearForm();
     });
   });
@@ -589,32 +588,48 @@
   }
 
   function updateImageNote(imageInfo) {
-    if (!imageInfo) { imageSlugNote.hidden = true; removeImageBtn.hidden = true; return; }
-    imageSlugNote.hidden = false;
-    // Manual removal always wins, regardless of whether the auto-match
-    // was correct, a fallback, or the placeholder — the rep just wants
-    // the widget clean, no image, full stop.
-    removeImageBtn.hidden = !imageInfo.found;
-    if (imageInfo.isPlaceholder) {
-      imageSlugNote.textContent = '📷 No specific match — using the placeholder image. Click it in Salesbuildr to drop in your own.';
+    if (!imageInfo || !imageInfo.found) {
+      imageSlugNote.textContent = 'No image — text-only widget.';
       return;
     }
-    imageSlugNote.textContent = imageInfo.found
-      ? `📷 Using image: ${imageInfo.slug}.${imageInfo.ext}`
-      : `📷 No image found for "${imageInfo.slug}.*" — using graphic style.`;
+    if (imageInfo.isPlaceholder) {
+      imageSlugNote.textContent = 'Showing a placeholder — swap it for your own image directly in Salesbuildr.';
+      return;
+    }
+    imageSlugNote.textContent = `Using image: ${imageInfo.slug}.${imageInfo.ext}`;
   }
 
-  // Strips the image from the current widget entirely — right or wrong,
-  // fallback or placeholder, doesn't matter. Rest of the widget (text,
-  // style, theme) stays untouched. Regenerating afterward re-resolves
-  // the image from scratch, same as any fresh generation.
-  removeImageBtn.addEventListener('click', () => {
+  // Two deliberate choices, both sitting right above the preview (where
+  // attention already is): swap in the universal placeholder, or drop
+  // the image entirely. Together with "leave the auto-matched image
+  // alone", that's the full set of outcomes a rep can land on — right
+  // image, placeholder, or none.
+  function removeCurrentImage() {
     if (!currentData) return;
     currentData._image = null;
-    imageOverrideSlugEl.value = '';
     updateImageNote(null);
     renderPreview();
-  });
+  }
+  removeImageBtn.addEventListener('click', removeCurrentImage);
+
+  // Explicit rep action — bypasses the Hardware-category gate that
+  // controls the AUTOMATIC placeholder fallback, since this is a
+  // deliberate opt-in regardless of category.
+  async function usePlaceholderImage() {
+    if (!currentData) return;
+    for (const base of IMAGE_BASES) {
+      const ext = await imageExists(base, PLACEHOLDER_SLUG);
+      if (ext) {
+        const info = { slug: PLACEHOLDER_SLUG, found: true, url: `${base}${PLACEHOLDER_SLUG}.${ext}`, ext, isPlaceholder: true };
+        currentData._image = info;
+        updateImageNote(info);
+        renderPreview();
+        return;
+      }
+    }
+    showError('No placeholder image found — upload images/portfolio/placeholder.png first.');
+  }
+  usePlaceholderBtn.addEventListener('click', usePlaceholderImage);
 
   // Image strip markup — inserted between the gradient header and the
   // intro. object-fit:contain on a white background (not the originally
@@ -624,27 +639,6 @@
     if (!imageInfo || !imageInfo.found || !imageInfo.url) return '';
     return `<div style="background:#ffffff;padding:14px 18px;text-align:center;border-bottom:1px solid #e3e7ee;"><img src="${imageInfo.url}" alt="" style="max-width:100%;max-height:170px;object-fit:contain;display:inline-block;"></div>`;
   }
-
-  const imageOverrideToggle = $('imageOverrideToggle');
-  const imageOverrideSlugEl = $('imageOverrideSlug');
-
-  imageOverrideToggle.addEventListener('click', () => {
-    const willShow = imageOverrideSlugEl.hidden;
-    imageOverrideSlugEl.hidden = !willShow;
-    if (willShow) imageOverrideSlugEl.focus();
-  });
-
-  async function recheckImageOverride() {
-    if (!currentData) return; // nothing generated yet to attach an image to
-    const info = await resolveImage(productNameEl.value.trim(), imageOverrideSlugEl.value, categoryEl.value);
-    currentData._image = info;
-    updateImageNote(info);
-    renderPreview();
-  }
-  imageOverrideSlugEl.addEventListener('change', recheckImageOverride);
-  imageOverrideSlugEl.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); recheckImageOverride(); }
-  });
 
   // ── Widget HTML builders (inline styles, no Flexbox, h5/h6 only) ──
   // All three styles read from the SAME unified data shape:
@@ -948,7 +942,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestPayload)
         }).then(r => r.json()),
-        resolveImage(requestPayload.name, imageOverrideSlugEl.value, requestPayload.category)
+        resolveImage(requestPayload.name, '', requestPayload.category)
       ]);
       if (!json.ok) throw new Error(json.error || 'Generation failed.');
 
@@ -972,6 +966,11 @@
     loadingState.hidden = true;
     renderPreview();
     widgetTitleEl.textContent = currentTitle;
+
+    // Bundle mode doesn't have a single per-widget image to act on (each
+    // item resolves its own independently) — the row only applies to
+    // single-product widgets.
+    imageActionRow.hidden = currentMode === 'bundle';
 
     widgetOutput.hidden = false;
     pushFeedback.hidden = true;
@@ -1025,8 +1024,6 @@
 
       currentData  = { headline: json.data.headline, intro: json.data.intro, items };
       currentTitle = `${json.data.headline || 'Bundle'} — Explainer`;
-      imageSlugNote.hidden = true; // no single unified image note in bundle mode
-      removeImageBtn.hidden = true;
       renderOutput();
 
     } catch (e) {
@@ -1062,8 +1059,6 @@
       }));
       currentData = { headline: json.data.headline, intro: json.data.intro, items };
       currentTitle = `${json.data.headline || 'Bundle'} — Explainer`;
-      imageSlugNote.hidden = true;
-      removeImageBtn.hidden = true;
       renderOutput();
     } catch (e) {
       showError('Regeneration failed: ' + e.message);
@@ -1091,7 +1086,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(lastRequest)
         }).then(r => r.json()),
-        resolveImage(lastRequest.name, imageOverrideSlugEl.value, lastRequest.category)
+        resolveImage(lastRequest.name, '', lastRequest.category)
       ]);
       if (!json.ok) throw new Error(json.error || 'Regeneration failed.');
       currentData = json.data;
@@ -1196,9 +1191,7 @@
     currentTitle = '';
     lastRequest  = null;
 
-    imageOverrideSlugEl.value = '';
-    imageOverrideSlugEl.hidden = true;
-    imageSlugNote.hidden = true;
+    imageActionRow.hidden = true;
 
     widgetOutput.hidden = true;
     emptyState.hidden = false;
