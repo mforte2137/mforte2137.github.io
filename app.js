@@ -49,7 +49,7 @@ const TOOLS = [
     title: "Product & Service Explainer",
     shortLabel: "Explainer Widget",
     description:
-      "Turn any product or service line item into a polished, benefit-led explainer widget. Three visual styles, colour theme selector, and AI that knows common MSP products — generated in seconds and pushed straight to Salesbuildr.",
+      "Generate polished, benefit-led explainer widgets for any product, service, or multi-item bundle — AI-written copy, automatic product photo matching, and full inline editing, ready to push straight to Salesbuildr.",
     category: "Proposal",
     url: "https://widgetcreator.netlify.app/product-explainer.html",
     badge: "new",
@@ -1101,11 +1101,11 @@ Your data stays with you. Files are read locally in the browser and never transm
   // KB lookup — maps tool title to structured detail
   const KB_DETAIL = {
     "Product & Service Explainer": {
-      who:   "MSP sales reps who want to add professional, benefit-led explainer widgets to any quote — for products, services, hardware, or software line items.",
-      input: "Product or service name, category (Hardware / Software / Security Service / Cloud Service / Support Service / Connectivity / Compliance), optional one-line context, style choice (3 visual styles), colour theme.",
-      out:   "A single TinyMCE-ready explainer widget — benefit-led headline, 1–2 sentence summary, and 3–4 benefit bullets or benefit grid. Push to Salesbuildr or copy HTML. Designed for fast batch use — generate one per product in sequence.",
-      when:  "Building any Salesbuildr quote and wanting to explain what each product or service actually does for the business owner reading it. Replacing plain line-item lists with visual, benefit-oriented explainers.",
-      not:   "Not a full proposal builder. Not a pricing tool — no costs in the output. One widget per product — not a pack or bundle tool."
+      who:   "MSP sales reps building any Salesbuildr quote who want professional, benefit-led explainer widgets — for a single line item or an assembled multi-product bundle — without writing copy from scratch.",
+      input: "Single mode: product or service name, category (auto-suggested), optional one-line context, visual style choice (3 thumbnails), colour theme. Bundle mode: add each item individually, colour theme — one combined widget generated covering all items.",
+      out:   "Single: one TinyMCE-ready widget with benefit-led headline, plain-language intro, and 3–4 benefit bullets. Product photos matched automatically from image library with fuzzy brand/model recognition and graceful fallbacks. Bundle: one combined widget with shared header/intro, photo-led hero row for hardware, compact list for accessories/licensing/services. Inline editing throughout — no raw HTML. Push to Salesbuildr or copy HTML.",
+      when:  "Adding any product, service, or bundle to a Salesbuildr quote and wanting to explain what it does in plain language the buyer can understand. Replacing plain line items with visual, benefit-oriented explainers.",
+      not:   "Not a full proposal builder. Not a pricing tool — no costs in the output."
     },
     "Multi-Stakeholder Proposal Pack": {
       who:   "MSP sales reps sending proposals to companies with more than one decision-maker — where the CEO, CFO, and IT or Operations lead each have different concerns.",
