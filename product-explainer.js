@@ -38,9 +38,10 @@
   const stylePicker    = $('stylePicker');
   const colourSwatches = $('colourSwatches');
   const customHexEl    = $('customHex');
-  const hexPreviewEl   = $('hexPreview');
+  const hexColorPickerEl = $('hexColorPicker');
 
   const clearBtn    = $('clearBtn');
+  const newWidgetBtn = $('newWidgetBtn');
   const generateBtn = $('generateBtn');
   const formError   = $('formError');
 
@@ -51,6 +52,7 @@
   const widgetPreview = $('widgetPreview');
   const imageActionRow  = $('imageActionRow');
   const imageSlugNote   = $('imageSlugNote');
+  const restoreImageBtn = $('restoreImageBtn');
   const usePlaceholderBtn = $('usePlaceholderBtn');
 
   const regenerateBtn = $('regenerateBtn');
@@ -207,7 +209,7 @@
       swatch.classList.add('active');
       currentThemeHex = swatch.dataset.hex;
       customHexEl.value = '';
-      hexPreviewEl.style.background = 'transparent';
+      hexColorPickerEl.value = currentThemeHex;
       if (currentData) renderPreview();
     });
   });
@@ -216,10 +218,20 @@
     const val = customHexEl.value.trim().replace('#', '');
     if (/^[0-9a-fA-F]{6}$/.test(val)) {
       currentThemeHex = '#' + val;
-      hexPreviewEl.style.background = currentThemeHex;
+      hexColorPickerEl.value = currentThemeHex;
       colourSwatches.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
       if (currentData) renderPreview();
     }
+  });
+
+  // Native colour picker — click the swatch to get a full rainbow/slider
+  // picker (browser-native, no hex knowledge needed), same pattern as
+  // the other tools. Keeps the hex text field and swatches in sync.
+  hexColorPickerEl.addEventListener('input', () => {
+    currentThemeHex = hexColorPickerEl.value;
+    customHexEl.value = currentThemeHex.replace('#', '');
+    colourSwatches.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+    if (currentData) renderPreview();
   });
 
   // ── Colour helpers ───────────────────────────
@@ -599,11 +611,11 @@
     imageSlugNote.textContent = `Using image: ${imageInfo.slug}.${imageInfo.ext}`;
   }
 
-  // Two deliberate choices, both sitting right above the preview (where
-  // attention already is): swap in the universal placeholder, or drop
-  // the image entirely. Together with "leave the auto-matched image
-  // alone", that's the full set of outcomes a rep can land on — right
-  // image, placeholder, or none.
+  // Three deliberate choices, all sitting right above the preview (where
+  // attention already is): restore the original auto-match, swap in the
+  // universal placeholder, or drop the image entirely. A rep can move
+  // freely between all three at any time — none of them touch the
+  // widget's text content.
   function removeCurrentImage() {
     if (!currentData) return;
     currentData._image = null;
@@ -611,6 +623,21 @@
     renderPreview();
   }
   removeImageBtn.addEventListener('click', removeCurrentImage);
+
+  // Re-runs the same name/category match used at generate time — no
+  // filename needed. Exists because after Remove or Use Placeholder,
+  // there was previously no way back to the original auto-matched image
+  // without knowing its exact filename.
+  async function restoreAutoImage() {
+    if (!currentData) return;
+    const source = currentMode === 'bundle' ? null : lastRequest; // bundle items don't use lastRequest
+    if (!source) return;
+    const info = await resolveImage(source.name, '', source.category);
+    currentData._image = info;
+    updateImageNote(info);
+    renderPreview();
+  }
+  restoreImageBtn.addEventListener('click', restoreAutoImage);
 
   // Explicit rep action — bypasses the Hardware-category gate that
   // controls the AUTOMATIC placeholder fallback, since this is a
@@ -1201,6 +1228,10 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   clearBtn.addEventListener('click', clearForm);
+  // Second entry point to the same reset — sits right by the widget
+  // title, since that's where attention already is once a widget exists,
+  // rather than requiring a scroll back to the bottom of the sidebar.
+  newWidgetBtn.addEventListener('click', clearForm);
 
   // ── Generated this session list ───────────────
   function addToSessionList(title, html) {
