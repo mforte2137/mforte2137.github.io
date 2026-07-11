@@ -184,16 +184,6 @@
       </div>
     </div>
 
-    <!-- ===================== PHASE 2 — product image (testing) =====================
-         Auto-matches an exact product-name slug against the GitHub image
-         library; use the override below when the naming doesn't line up
-         yet (fuzzy brand/model matching comes once the library is bigger). -->
-    <div class="field-row" id="imageOverrideRow">
-      <label>Product image <span class="label-optional">(optional)</span></label>
-      <button type="button" class="link-btn" id="imageOverrideToggle">📷 Override image filename</button>
-      <input type="text" id="imageOverrideSlug" placeholder="e.g. laptop-lat-5450" hidden />
-    </div>
-
     <div class="form-actions">
       <button type="button" class="btn-secondary" id="clearBtn">Clear</button>
       <button type="button" class="btn-accent" id="generateBtn">Generate Widget</button>
@@ -217,7 +207,18 @@
     <div class="widget-output" id="widgetOutput" hidden>
       <div class="widget-output-head">
         <div class="widget-title" id="widgetTitle"></div>
-        <div class="image-slug-note" id="imageSlugNote" hidden></div>
+      </div>
+
+      <!-- Image state + actions — sits right above the preview, since
+           that's where attention already is when a rep needs to react
+           to the image (right, wrong, or missing). -->
+      <div class="image-action-row" id="imageActionRow" hidden>
+        <span class="image-slug-note" id="imageSlugNote"></span>
+        <span class="image-action-buttons">
+          <button type="button" class="link-btn" id="usePlaceholderBtn" title="Swap in a generic placeholder you can easily replace with your own image in Salesbuildr">🖼 Use placeholder</button>
+          <span class="image-controls-sep">·</span>
+          <button type="button" class="link-btn link-btn-danger" id="removeImageBtn" title="Remove the image entirely — text-only widget">✕ Remove image</button>
+        </span>
       </div>
 
       <div class="widget-preview-frame" id="widgetPreview"></div>
@@ -225,7 +226,6 @@
 
       <div class="widget-actions">
         <button type="button" class="btn-secondary" id="regenerateBtn">↺ Regenerate</button>
-        <button type="button" class="btn-secondary" id="removeImageBtn" hidden>✕ Remove Image</button>
         <span class="actions-spacer"></span>
         <button type="button" class="btn-secondary" id="copyBtn">Copy HTML</button>
         <button type="button" class="btn-accent" id="pushBtn">Push to Salesbuildr</button>
