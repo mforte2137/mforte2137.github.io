@@ -32,6 +32,7 @@
   const productNameEl    = $('productName');
   const categoryEl       = $('category');
   const categorySuggest  = $('categorySuggestNote');
+  const modelTypoHint    = $('modelTypoHint');
   const customContextEl  = $('customContext');
   const contextCharCount = $('contextCharCount');
 
@@ -81,6 +82,29 @@
     { category: 'Compliance',       words: ['cyber essentials', 'hipaa', 'iso 27001', 'gdpr', 'soc 2', 'compliance'] }
   ];
 
+  // "Did you mean" typo check — deliberately narrow scope. Only safe to
+  // flag a value as wrong when we're CERTAIN we know the complete real
+  // range for that family. Dell's current business laptop tiers (Pro 3,
+  // 5, 7, Premium) are a small, verified, closed set — nothing else
+  // exists right now. Other families we work with (Meraki MX, UniFi
+  // U6/U7, etc.) have more real models than we've specifically
+  // catalogued, so a strict check there would risk false-flagging a
+  // real product we just haven't photographed yet — worse than no
+  // check at all. Extend this list only when a family's full valid
+  // range has been specifically researched and confirmed complete.
+  const DELL_PRO_VALID_TIERS = ['3', '5', '7', 'premium'];
+
+  function checkModelTypo(name) {
+    const m = String(name || '').match(/\bdell\s+pro\s+(\d+|premium)\b/i);
+    if (m) {
+      const tier = m[1].toLowerCase();
+      if (!DELL_PRO_VALID_TIERS.includes(tier)) {
+        return `Dell's current business lineup is Pro 3, 5, 7, or Premium — "${m[0]}" isn't a current tier. Did you mean one of those?`;
+      }
+    }
+    return null;
+  }
+
   function suggestCategory(name) {
     const lower = name.toLowerCase();
     for (const entry of CATEGORY_KEYWORDS) {
@@ -99,6 +123,10 @@
       categoryEl.value = suggestion;
     }
     if (suggestion) categoryEl.dataset.autoset = '1';
+
+    const typoHint = checkModelTypo(productNameEl.value);
+    modelTypoHint.textContent = typoHint || '';
+    modelTypoHint.hidden = !typoHint;
   });
 
   categoryEl.addEventListener('change', () => {
@@ -139,6 +167,7 @@
           <button type="button" class="bundle-item-remove" title="Remove item" ${bundleItems.length <= 1 ? 'disabled' : ''}>✕</button>
         </div>
         <input type="text" class="bundle-item-name-input" placeholder="Item name (e.g. Dell Latitude 5450)" value="${esc(item.name)}">
+        <div class="bundle-item-typo-hint hint-note hint-note-warn" hidden></div>
         <div class="bundle-item-row-2">
           <select class="bundle-item-category-select">
             <option value="">Category…</option>
@@ -154,6 +183,7 @@
         </div>
       `;
       const nameInput = card.querySelector('.bundle-item-name-input');
+      const typoHintEl = card.querySelector('.bundle-item-typo-hint');
       const categorySelect = card.querySelector('.bundle-item-category-select');
       const contextInput = card.querySelector('.bundle-item-context-input');
       const removeBtn = card.querySelector('.bundle-item-remove');
@@ -167,6 +197,9 @@
           categorySelect.value = suggestion;
           bundleItems[idx].category = suggestion;
         }
+        const typoHint = checkModelTypo(nameInput.value);
+        typoHintEl.textContent = typoHint || '';
+        typoHintEl.hidden = !typoHint;
       });
       categorySelect.addEventListener('change', () => {
         bundleItems[idx].category = categorySelect.value;
@@ -1192,6 +1225,7 @@
     categoryEl.value = '';
     categoryEl.dataset.autoset = '0';
     categorySuggest.hidden = true;
+    modelTypoHint.hidden = true;
 
     bundleItems = [{ name: '', category: '', context: '' }, { name: '', category: '', context: '' }];
     renderBundleItemsList();
