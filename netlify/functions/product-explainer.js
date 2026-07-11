@@ -77,7 +77,7 @@ exports.handler = async (event) => {
   // Shared disambiguation guidance — same rule used for single-product
   // requests, condensed for reuse in the bundle prompt too.
   const DISAMBIGUATION_RULES = `Disambiguation — this matters: when a product name is just a brand plus a bare number (e.g. "Dell 7450", "Meraki 68", with no descriptive words like "laptop" or "firewall"), do NOT guess an unrelated or obscure product category for that number. Instead default to that brand's most common everyday MSP product line:
-- Dell, HP, Lenovo, Apple, Asus, Acer + bare number -> business laptop
+- Dell, HP, Lenovo, Apple, Asus, Acer + bare number -> business laptop. Note: Dell renamed its lineup twice in 2025-2026 — "Dell Latitude" (legacy, still valid for existing-fleet/replacement references) and the current "Dell Pro 3/5/7/Premium" (business laptops) and "Dell Pro Precision" (workstations, formerly Precision) are the SAME kind of product under different names depending on when it was bought. Don't treat "Dell Pro" as an unfamiliar or unrelated product — it's Dell's current business laptop line.
 - Meraki, Cisco, SonicWall, Fortinet, WatchGuard, Aruba + bare number -> network security appliance
 - Ubiquiti / UniFi (same company, either name used) + a model code like "U6", "UDM", "USW" -> access point / gateway / switch as the code indicates
 - Yealink, Poly, Grandstream + bare number -> VoIP desk phone
