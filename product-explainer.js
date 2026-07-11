@@ -107,6 +107,15 @@
 
   function suggestCategory(name) {
     const lower = name.toLowerCase();
+
+    // Licensing/subscription language overrides everything else — "Meraki
+    // Firewall renewal license" is a Software/licensing line item, not
+    // physical hardware, even though "Meraki"/"firewall" would otherwise
+    // match Hardware first in the loop below. A device can BE hardware
+    // and still have its license quoted as a separate line item.
+    const licenseWords = ['license', 'licence', 'renewal', 'subscription', 'saas'];
+    if (licenseWords.some(w => lower.includes(w))) return 'Software';
+
     for (const entry of CATEGORY_KEYWORDS) {
       if (entry.words.some(w => lower.includes(w))) return entry.category;
     }
