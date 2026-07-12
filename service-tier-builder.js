@@ -35,6 +35,7 @@
       'Quarterly Business Reviews', 'Compliance Support (specify framework)', 'Cyber Insurance Readiness Support', 'Annual Risk Assessment'
     ]}
   ];
+  const CATEGORY_ORDER_SEQUENCE = SERVICE_LIBRARY.map(g => g.category).concat(['Custom']);
 
   const TIER_PRESETS = {
     metal:   ['Bronze', 'Silver', 'Gold'],
@@ -52,7 +53,9 @@
     tierNames: TIER_PRESETS.level.slice(),
     themeHex: '#2E74DC',
     headerTagline: 'Choose the level of protection that fits your business',
-    generatedTiers: null,   // [{name, tagline, recommended, services:[{name, included, description}]}]
+    generatedTiers: null,   // [{name, tagline, recommended, services:[{id, value}]}]
+    serviceNames: {},       // id -> current display name (renameable)
+    categoryOrder: {},      // category label -> [id, id, ...] in display order (drag-reorderable within category)
     widgetHtml: ''
   };
 
@@ -67,7 +70,9 @@
   const clearBtn           = $('clearBtn');
   const formError          = $('formError');
 
-  const emptyState      = $('emptyState');
+  const outputCol        = $('outputCol');
+  const previewToolbar   = $('previewToolbar');
+  const emptyState       = $('emptyState');
   const loadingState     = $('loadingState');
   const widgetFrameWrap  = $('widgetFrameWrap');
   const widgetFrame      = $('widgetFrame');
@@ -110,8 +115,8 @@
 
     serviceLibraryEl.querySelectorAll('.select-all-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const gi = btn.dataset.group;
-        const group = serviceLibraryEl.querySelectorAll(`#serviceLibrary .service-group`)[gi];
+        const gi = Number(btn.dataset.group);
+        const group = serviceLibraryEl.querySelectorAll('.service-group')[gi];
         const boxes = group.querySelectorAll('input[type="checkbox"]');
         const allChecked = Array.from(boxes).every(cb => cb.checked);
         boxes.forEach(cb => { cb.checked = !allChecked; });
@@ -154,7 +159,6 @@
         btn.classList.add('active');
         state.tierCount = Number(btn.dataset.val);
         const preset = TIER_PRESETS[state.tierPreset];
-        // Keep any custom names already typed where possible, else fall back to preset
         const newNames = [];
         for (let i = 0; i < state.tierCount; i++) {
           newNames.push(state.tierNames[i] || preset[i] || '');
@@ -200,11 +204,15 @@
 
     emptyState.hidden = true;
     widgetFrameWrap.hidden = true;
+    previewToolbar.hidden = true;
     loadingState.hidden = false;
     generateBtn.disabled = true;
     regenerateBtn.disabled = true;
 
-    widgetFrameWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Two-column layout: Generate lives at the bottom of the left sidebar,
+    // so on click we scroll the RIGHT column into view — otherwise the
+    // widget builds out of sight below the fold.
+    outputCol.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     try {
       const res = await fetch('/api/service-tier-builder', {
@@ -219,12 +227,11 @@
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || 'Generation failed.');
 
-      state.generatedTiers = data.tiers;
+      state.generatedTiers = normalizeTiersResponse(data.tiers, services);
+      initCategoryOrder();
       renderWidget();
 
-      regenerateBtn.hidden = false;
-      copyBtn.hidden = false;
-      pushBtn.hidden = false;
+      previewToolbar.hidden = false;
     } catch (e) {
       loadingState.hidden = true;
       emptyState.hidden = false;
@@ -237,9 +244,59 @@
 
   function onRegenerate() { generate(); }
 
+  // Assign a stable id to every requested service (by original checkbox/library
+  // order) and normalize each tier's services into that same order — defensive
+  // against the AI returning services in a different order than requested.
+  function normalizeTiersResponse(rawTiers, requestedServiceNames) {
+    const idsByName = {};
+    const usedIds = new Set();
+    requestedServiceNames.forEach(name => {
+      const base = slug(name) || 'svc';
+      let id = base, n = 2;
+      while (usedIds.has(id)) { id = base + '-' + n; n++; }
+      usedIds.add(id);
+      idsByName[name] = id;
+    });
+
+    state.serviceNames = {};
+    requestedServiceNames.forEach(name => { state.serviceNames[idsByName[name]] = name; });
+
+    return rawTiers.map(t => {
+      const svcByName = {};
+      (t.services || []).forEach(s => { svcByName[s.name] = s; });
+      return {
+        name: t.name,
+        tagline: t.tagline,
+        recommended: !!t.recommended,
+        services: requestedServiceNames.map(name => ({
+          id: idsByName[name],
+          value: (svcByName[name] && svcByName[name].value) || 'no'
+        }))
+      };
+    });
+  }
+
+  // Build category -> [id, ...] display order from the library + custom names.
+  // Drag-to-reorder mutates these arrays directly; they persist until the next
+  // Generate/Regenerate (which rebuilds them fresh, same as Matrix Creator's
+  // own AI-replace behaviour resetting manual edits).
+  function initCategoryOrder() {
+    state.categoryOrder = {};
+    const allIds = state.generatedTiers[0].services.map(s => s.id);
+    const libraryNames = new Set(SERVICE_LIBRARY.flatMap(g => g.services));
+
+    SERVICE_LIBRARY.forEach(group => {
+      const ids = allIds.filter(id => group.services.includes(state.serviceNames[id]));
+      if (ids.length) state.categoryOrder[group.category] = ids;
+    });
+
+    const customIds = allIds.filter(id => !libraryNames.has(state.serviceNames[id]));
+    if (customIds.length) state.categoryOrder['Custom'] = customIds;
+  }
+
   // ── Build widget HTML ────────────────────────────────
   // Matrix-style: symbol-only cells (✓ / ✗ / ◐), single-line feature column,
-  // compact padding throughout — see build notes re: widget length in Salesbuildr.
+  // compact padding, drag-to-reorder within a category, add/delete rows.
   function esc(s) { return escapeHtml(s); }
 
   const CELL_COLORS = {
@@ -253,13 +310,11 @@
     const hex = state.themeHex;
     const n = tiers.length;
 
-    // Header — gradient bar (tightened padding)
     const headerBar = `
   <div style="width:100%;background:linear-gradient(135deg, ${hex} 0%, ${shade(hex, -18)} 100%);padding:12px 18px;">
     <h5 data-editable-id="header-tagline" style="margin:0;font-family:'Source Sans Pro',Arial,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF;line-height:1.3;">${esc(state.headerTagline)}</h5>
   </div>`;
 
-    // Tier headers — compact, with a small colour-matched triangle indicator (Matrix style)
     const headerCells = tiers.map((t, i) => {
       const isRec = !!t.recommended;
       const bg = isRec ? hex : '#F5F5F2';
@@ -276,23 +331,14 @@
       </th>`;
     }).join('');
 
-    // Category + service rows
     let bodyRows = '';
-    SERVICE_LIBRARY.forEach(group => {
-      const rowsForGroup = group.services.filter(name => tiers[0].services.some(s => s.name === name));
-      if (rowsForGroup.length === 0) return;
-      bodyRows += categoryHeaderRow(group.category, n);
-      rowsForGroup.forEach(name => { bodyRows += serviceRow(name, tiers); });
+    CATEGORY_ORDER_SEQUENCE.forEach(category => {
+      const ids = state.categoryOrder[category];
+      if (!ids || !ids.length) return;
+      bodyRows += categoryHeaderRow(category, n);
+      ids.forEach(id => { bodyRows += serviceRow(id, category, tiers); });
     });
-    // Custom services (anything not found in the library at all)
-    const libraryNames = new Set(SERVICE_LIBRARY.flatMap(g => g.services));
-    const customNames = tiers[0].services.map(s => s.name).filter(name => !libraryNames.has(name));
-    if (customNames.length) {
-      bodyRows += categoryHeaderRow('Custom', n);
-      customNames.forEach(name => { bodyRows += serviceRow(name, tiers); });
-    }
 
-    // Footer strip — compact
     const footerCells = tiers.map(t => {
       if (t.recommended) {
         return `<td style="background:${hex};color:#FFFFFF;padding:7px 10px;text-align:center;font-family:'Source Sans Pro',Arial,sans-serif;font-size:10px;font-weight:600;border-left:1px solid rgba(255,255,255,0.15);">Most businesses your size choose this option</td>`;
@@ -311,6 +357,11 @@ ${headerBar}
     </thead>
     <tbody>
       ${bodyRows}
+      <tr>
+        <td colspan="${n + 1}" style="padding:8px 12px;text-align:left;border-top:1px solid #E5E7EB;">
+          <button type="button" class="add-row-btn" style="background:none;border:none;padding:0;font-family:'Source Sans Pro',Arial,sans-serif;font-size:11px;color:#9CA3AF;cursor:pointer;">+ Add custom row</button>
+        </td>
+      </tr>
     </tbody>
     <tfoot>
       <tr>
@@ -326,28 +377,33 @@ ${headerBar}
     return `<tr><td colspan="${n + 1}" style="background:#FAFAF7;padding:5px 12px;font-family:'Montserrat',Arial,sans-serif;font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#9CA3AF;border-top:1px solid #E5E7EB;border-bottom:1px solid #E5E7EB;">${esc(label)}</td></tr>`;
   }
 
-  // Each cell is either a symbol (yes/no/partial, click to cycle) or, if the
-  // MSP has switched it to custom text ("T"), an editable short text value —
-  // e.g. "8×5" / "24×7" for a support-hours row. Toggling never calls the AI.
-  function serviceRow(name, tiers) {
+  // Each cell is either a symbol (yes/no/partial, click to cycle) or, once the
+  // MSP switches it to custom text ("T"), an editable short value — e.g.
+  // "8×5" / "24×7" — with an AI "rewrite as benefit" option alongside it.
+  function serviceRow(id, category, tiers) {
+    const name = state.serviceNames[id] || '';
     const cells = tiers.map((t, i) => {
-      const svc = t.services.find(s => s.name === name) || { value: 'no' };
+      const svc = t.services.find(s => s.id === id) || { value: 'no' };
       const isSymbol = svc.value === 'yes' || svc.value === 'no' || svc.value === 'partial';
 
       if (isSymbol) {
         const c = CELL_COLORS[svc.value];
         return `<td style="padding:6px 10px;border-top:1px solid #F0F0EE;text-align:center;vertical-align:middle;border-left:1px solid #E5E7EB;">
-          <span class="cell-icon" data-tier="${i}" data-service="${escAttr(name)}" title="Click to change" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:${c.bg};color:${c.fg};font-weight:700;font-size:12px;line-height:1;cursor:pointer;">${c.glyph}</span>
-          <button type="button" class="cell-text-btn" data-tier="${i}" data-service="${escAttr(name)}" title="Enter custom text instead" style="display:inline-block;margin-left:4px;background:none;border:none;padding:0;font-family:'Source Sans Pro',Arial,sans-serif;font-size:9px;color:#D1D5DB;cursor:pointer;vertical-align:middle;">T</button>
+          <span class="cell-icon" data-tier="${i}" data-id="${escAttr(id)}" title="Click to change" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:${c.bg};color:${c.fg};font-weight:700;font-size:12px;line-height:1;cursor:pointer;">${c.glyph}</span>
+          <button type="button" class="cell-text-btn" data-tier="${i}" data-id="${escAttr(id)}" title="Enter custom text instead" style="display:inline-block;margin-left:4px;background:none;border:none;padding:0;font-family:'Source Sans Pro',Arial,sans-serif;font-size:9px;color:#D1D5DB;cursor:pointer;vertical-align:middle;">T</button>
         </td>`;
       }
       return `<td style="padding:6px 10px;border-top:1px solid #F0F0EE;text-align:center;vertical-align:middle;border-left:1px solid #E5E7EB;">
-        <span data-editable-id="cell-${i}-${slug(name)}" style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:12px;font-weight:600;color:#0B1220;">${esc(svc.value || '')}</span>
-        <button type="button" class="cell-icon-btn" data-tier="${i}" data-service="${escAttr(name)}" title="Switch back to symbol" style="display:inline-block;margin-left:4px;background:none;border:none;padding:0;font-family:'Source Sans Pro',Arial,sans-serif;font-size:9px;color:#D1D5DB;cursor:pointer;vertical-align:middle;">&#8635;</button>
+        <span data-editable-id="cell-${i}-${id}" style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:12px;font-weight:600;color:#0B1220;">${esc(svc.value || '')}</span>
+        <button type="button" class="cell-rewrite-btn" data-tier="${i}" data-id="${escAttr(id)}" title="Rewrite as a client benefit" style="display:inline-block;margin-left:3px;background:none;border:none;padding:0;font-size:10px;cursor:pointer;vertical-align:middle;">&#10024;</button>
+        <button type="button" class="cell-icon-btn" data-tier="${i}" data-id="${escAttr(id)}" title="Switch back to symbol" style="display:inline-block;margin-left:3px;background:none;border:none;padding:0;font-family:'Source Sans Pro',Arial,sans-serif;font-size:9px;color:#D1D5DB;cursor:pointer;vertical-align:middle;">&#8635;</button>
       </td>`;
     }).join('');
-    return `<tr>
-      <td style="padding:6px 12px;border-top:1px solid #F0F0EE;font-family:'Source Sans Pro',Arial,sans-serif;font-size:12.5px;color:#0B1220;font-weight:600;white-space:nowrap;vertical-align:middle;">${esc(name)}</td>
+
+    return `<tr data-draggable-row data-id="${escAttr(id)}" data-category="${escAttr(category)}" draggable="true">
+      <td style="padding:6px 12px;border-top:1px solid #F0F0EE;font-family:'Source Sans Pro',Arial,sans-serif;font-size:12.5px;color:#0B1220;font-weight:600;white-space:nowrap;vertical-align:middle;">
+        <span class="row-drag-handle" title="Drag to reorder within this category" style="cursor:grab;color:#D1D5DB;margin-right:6px;font-size:12px;">&#10241;</span><span data-editable-id="rowname-${id}">${esc(name)}</span><button type="button" class="row-delete-btn" data-id="${escAttr(id)}" data-category="${escAttr(category)}" title="Delete row" style="margin-left:6px;background:none;border:none;color:#D1D5DB;cursor:pointer;font-size:11px;">&#10005;</button>
+      </td>
       ${cells}
     </tr>`;
   }
@@ -368,12 +424,14 @@ ${headerBar}
   }
 
   const CELL_CYCLE = ['yes', 'no', 'partial'];
+  let dragSrcId = null;
+  let dragSrcCategory = null;
 
   function wireWidgetInteractions() {
     // Text edits — update in-memory state, do not force a full rebuild (preserves cursor)
     widgetFrame.querySelectorAll('[data-editable-id]').forEach(el => {
       el.setAttribute('contenteditable', 'true');
-      el.title = 'Click to edit';
+      el.title = el.title || 'Click to edit';
       el.addEventListener('input', () => {
         const id = el.getAttribute('data-editable-id');
         if (id === 'header-tagline') { state.headerTagline = el.textContent; return; }
@@ -381,11 +439,13 @@ ${headerBar}
         if (m) { state.generatedTiers[Number(m[1])].name = el.textContent; return; }
         m = id.match(/^tier-(\d+)-tagline$/);
         if (m) { state.generatedTiers[Number(m[1])].tagline = el.textContent; return; }
+        m = id.match(/^rowname-(.+)$/);
+        if (m) { state.serviceNames[m[1]] = el.textContent; state.widgetHtml = getWidgetHtmlFromFrame(); return; }
         m = id.match(/^cell-(\d+)-(.+)$/);
         if (m) {
           const tierIdx = Number(m[1]);
-          const svcSlug = m[2];
-          const svc = state.generatedTiers[tierIdx].services.find(s => slug(s.name) === svcSlug);
+          const svcId = m[2];
+          const svc = state.generatedTiers[tierIdx].services.find(s => s.id === svcId);
           if (svc) svc.value = el.textContent;
         }
         state.widgetHtml = getWidgetHtmlFromFrame();
@@ -396,8 +456,8 @@ ${headerBar}
     widgetFrame.querySelectorAll('.cell-icon').forEach(el => {
       el.addEventListener('click', () => {
         const tierIdx = Number(el.dataset.tier);
-        const name = el.dataset.service;
-        const svc = state.generatedTiers[tierIdx].services.find(s => s.name === name);
+        const id = el.dataset.id;
+        const svc = state.generatedTiers[tierIdx].services.find(s => s.id === id);
         if (svc) {
           const idx = CELL_CYCLE.indexOf(svc.value);
           svc.value = CELL_CYCLE[(idx + 1) % CELL_CYCLE.length];
@@ -410,12 +470,12 @@ ${headerBar}
     widgetFrame.querySelectorAll('.cell-text-btn').forEach(el => {
       el.addEventListener('click', () => {
         const tierIdx = Number(el.dataset.tier);
-        const name = el.dataset.service;
-        const svc = state.generatedTiers[tierIdx].services.find(s => s.name === name);
+        const id = el.dataset.id;
+        const svc = state.generatedTiers[tierIdx].services.find(s => s.id === id);
         if (svc) svc.value = '';
         rerenderWidget();
-        const target = widgetFrame.querySelector(`[data-editable-id="cell-${tierIdx}-${slug(name)}"]`);
-        if (target) { target.focus(); }
+        const target = widgetFrame.querySelector(`[data-editable-id="cell-${tierIdx}-${id}"]`);
+        if (target) target.focus();
       });
     });
 
@@ -423,11 +483,16 @@ ${headerBar}
     widgetFrame.querySelectorAll('.cell-icon-btn').forEach(el => {
       el.addEventListener('click', () => {
         const tierIdx = Number(el.dataset.tier);
-        const name = el.dataset.service;
-        const svc = state.generatedTiers[tierIdx].services.find(s => s.name === name);
+        const id = el.dataset.id;
+        const svc = state.generatedTiers[tierIdx].services.find(s => s.id === id);
         if (svc) svc.value = 'yes';
         rerenderWidget();
       });
+    });
+
+    // AI: rewrite a custom-text cell as a client benefit
+    widgetFrame.querySelectorAll('.cell-rewrite-btn').forEach(el => {
+      el.addEventListener('click', () => onRewriteCell(el));
     });
 
     // Recommended tier change — structural change, full rebuild, instant, no AI call
@@ -438,21 +503,122 @@ ${headerBar}
         rerenderWidget();
       });
     });
+
+    // Delete row
+    widgetFrame.querySelectorAll('.row-delete-btn').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.dataset.id;
+        const category = el.dataset.category;
+        if (state.categoryOrder[category]) {
+          state.categoryOrder[category] = state.categoryOrder[category].filter(x => x !== id);
+          if (!state.categoryOrder[category].length) delete state.categoryOrder[category];
+        }
+        state.generatedTiers.forEach(t => { t.services = t.services.filter(s => s.id !== id); });
+        delete state.serviceNames[id];
+        rerenderWidget();
+      });
+    });
+
+    // Add custom row
+    const addBtn = widgetFrame.querySelector('.add-row-btn');
+    if (addBtn) addBtn.addEventListener('click', addCustomRow);
+
+    // Drag-to-reorder — restricted to rows within the same category
+    widgetFrame.querySelectorAll('tr[data-draggable-row]').forEach(row => {
+      row.addEventListener('dragstart', () => {
+        dragSrcId = row.dataset.id;
+        dragSrcCategory = row.dataset.category;
+      });
+      row.addEventListener('dragover', e => {
+        if (row.dataset.category !== dragSrcCategory) return;
+        e.preventDefault();
+      });
+      row.addEventListener('drop', e => {
+        e.preventDefault();
+        if (row.dataset.category !== dragSrcCategory) return;
+        const targetId = row.dataset.id;
+        if (targetId === dragSrcId) return;
+        const arr = state.categoryOrder[dragSrcCategory];
+        if (!arr) return;
+        const from = arr.indexOf(dragSrcId);
+        const to = arr.indexOf(targetId);
+        if (from === -1 || to === -1) return;
+        arr.splice(from, 1);
+        arr.splice(to, 0, dragSrcId);
+        rerenderWidget();
+      });
+    });
+  }
+
+  function addCustomRow() {
+    const id = 'custom-' + Date.now();
+    state.serviceNames[id] = 'New service';
+    state.generatedTiers.forEach(t => { t.services.push({ id, value: 'no' }); });
+    if (!state.categoryOrder['Custom']) state.categoryOrder['Custom'] = [];
+    state.categoryOrder['Custom'].push(id);
+    rerenderWidget();
+    const el = widgetFrame.querySelector(`[data-editable-id="rowname-${id}"]`);
+    if (el) {
+      el.focus();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  }
+
+  async function onRewriteCell(btn) {
+    const tierIdx = Number(btn.dataset.tier);
+    const id = btn.dataset.id;
+    const tier = state.generatedTiers[tierIdx];
+    const svc = tier.services.find(s => s.id === id);
+    if (!svc) return;
+
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '…';
+    try {
+      const res = await fetch('/api/service-tier-builder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'rewriteCell',
+          featureName: state.serviceNames[id],
+          tierName: tier.name,
+          currentText: svc.value
+        })
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Rewrite failed.');
+      svc.value = data.text;
+      rerenderWidget();
+    } catch (e) {
+      alert('Rewrite failed: ' + (e.message || 'Please try again.'));
+      btn.disabled = false;
+      btn.innerHTML = original;
+    }
   }
 
   function getWidgetHtmlFromFrame() {
     const clone = widgetFrame.cloneNode(true);
     // Remove controls that only exist for in-tool editing — never part of the exported widget
-    clone.querySelectorAll('.recommend-btn, .cell-text-btn, .cell-icon-btn').forEach(el => el.remove());
+    clone.querySelectorAll('.recommend-btn, .cell-text-btn, .cell-icon-btn, .cell-rewrite-btn, .row-delete-btn, .row-drag-handle, .add-row-btn').forEach(el => el.remove());
     clone.querySelectorAll('[contenteditable]').forEach(el => {
       el.removeAttribute('contenteditable');
       el.removeAttribute('title');
     });
     clone.querySelectorAll('[class]').forEach(el => el.removeAttribute('class'));
-    clone.querySelectorAll('[data-tier], [data-service], [data-editable-id]').forEach(el => {
+    clone.querySelectorAll('[data-tier], [data-id], [data-category], [data-editable-id], [draggable]').forEach(el => {
       el.removeAttribute('data-tier');
-      el.removeAttribute('data-service');
+      el.removeAttribute('data-id');
+      el.removeAttribute('data-category');
       el.removeAttribute('data-editable-id');
+      el.removeAttribute('draggable');
+    });
+    // The trailing "+ Add custom row" row has nothing left in it — drop the empty row
+    clone.querySelectorAll('tr').forEach(tr => {
+      if (!tr.textContent.trim() && !tr.querySelector('span,div')) tr.remove();
     });
     return clone.innerHTML;
   }
@@ -499,7 +665,6 @@ ${headerBar}
   }
 
   function getWidgetTitle() {
-    const primary = state.generatedTiers?.find(t => t.recommended) ? '' : '';
     return 'Service Tiers — ' + state.tierNames.slice(0, state.tierCount).join(' / ');
   }
 
@@ -568,6 +733,7 @@ ${headerBar}
   // ── Clear / start over ────────────────────────────────
   function clearAll() {
     serviceLibraryEl.querySelectorAll('input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+    serviceLibraryEl.querySelectorAll('.select-all-btn').forEach(btn => { btn.textContent = 'Select all'; });
     customInputs.forEach(inp => { inp.value = ''; });
     tierPresetEl.value = 'level';
     state.tierPreset = 'level';
@@ -579,13 +745,13 @@ ${headerBar}
     headerTaglineEl.value = state.headerTagline;
 
     state.generatedTiers = null;
+    state.serviceNames = {};
+    state.categoryOrder = {};
     state.widgetHtml = '';
     widgetFrame.innerHTML = '';
     widgetFrameWrap.hidden = true;
+    previewToolbar.hidden = true;
     emptyState.hidden = false;
-    regenerateBtn.hidden = true;
-    copyBtn.hidden = true;
-    pushBtn.hidden = true;
     pushFeedback.hidden = true;
     hideError();
     window.scrollTo({ top: 0, behavior: 'smooth' });
