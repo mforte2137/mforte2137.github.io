@@ -72,7 +72,7 @@
   const widgetFrameWrap  = $('widgetFrameWrap');
   const widgetFrame      = $('widgetFrame');
   const colourSwatches   = $('colourSwatches');
-  const customHexEl      = $('customHex');
+  const customColorPickerEl = $('customColorPicker');
   const regenerateBtn    = $('regenerateBtn');
   const copyBtn          = $('copyBtn');
   const pushBtn          = $('pushBtn');
@@ -93,10 +93,11 @@
     SERVICE_LIBRARY.forEach((group, gi) => {
       const wrap = document.createElement('div');
       wrap.className = 'service-group';
-      const title = document.createElement('p');
-      title.className = 'service-group-title';
-      title.textContent = group.category;
-      wrap.appendChild(title);
+
+      const header = document.createElement('div');
+      header.className = 'service-group-header';
+      header.innerHTML = `<p class="service-group-title">${escapeHtml(group.category)}</p><button type="button" class="select-all-btn" data-group="${gi}">Select all</button>`;
+      wrap.appendChild(header);
 
       group.services.forEach((name, si) => {
         const label = document.createElement('label');
@@ -105,6 +106,17 @@
         wrap.appendChild(label);
       });
       serviceLibraryEl.appendChild(wrap);
+    });
+
+    serviceLibraryEl.querySelectorAll('.select-all-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const gi = btn.dataset.group;
+        const group = serviceLibraryEl.querySelectorAll(`#serviceLibrary .service-group`)[gi];
+        const boxes = group.querySelectorAll('input[type="checkbox"]');
+        const allChecked = Array.from(boxes).every(cb => cb.checked);
+        boxes.forEach(cb => { cb.checked = !allChecked; });
+        btn.textContent = allChecked ? 'Select all' : 'Clear all';
+      });
     });
   }
 
@@ -226,34 +238,41 @@
   function onRegenerate() { generate(); }
 
   // ── Build widget HTML ────────────────────────────────
+  // Matrix-style: symbol-only cells (✓ / ✗ / ◐), single-line feature column,
+  // compact padding throughout — see build notes re: widget length in Salesbuildr.
   function esc(s) { return escapeHtml(s); }
+
+  const CELL_COLORS = {
+    yes:     { bg: '#10b981', fg: '#ffffff', glyph: '&#10003;' },
+    no:      { bg: '#fee2e2', fg: '#ef4444', glyph: '&#10005;' },
+    partial: { bg: '#fef3c7', fg: '#d97706', glyph: '&#9680;' }
+  };
 
   function buildWidgetHtml() {
     const tiers = state.generatedTiers;
     const hex = state.themeHex;
     const n = tiers.length;
-    const featColPct = n === 2 ? 34 : 28;
-    const dataColPct = ((100 - featColPct) / n).toFixed(1);
 
-    // Header — gradient bar
+    // Header — gradient bar (tightened padding)
     const headerBar = `
-  <div style="width:100%;background:linear-gradient(135deg, ${hex} 0%, ${shade(hex, -18)} 100%);padding:18px 22px;">
-    <h5 data-editable-id="header-tagline" style="margin:0;font-family:'Source Sans Pro',Arial,sans-serif;font-size:16px;font-weight:700;color:#FFFFFF;line-height:1.3;">${esc(state.headerTagline)}</h5>
+  <div style="width:100%;background:linear-gradient(135deg, ${hex} 0%, ${shade(hex, -18)} 100%);padding:12px 18px;">
+    <h5 data-editable-id="header-tagline" style="margin:0;font-family:'Source Sans Pro',Arial,sans-serif;font-size:14px;font-weight:700;color:#FFFFFF;line-height:1.3;">${esc(state.headerTagline)}</h5>
   </div>`;
 
-    // Tier headers
+    // Tier headers — compact, with a small colour-matched triangle indicator (Matrix style)
     const headerCells = tiers.map((t, i) => {
       const isRec = !!t.recommended;
       const bg = isRec ? hex : '#F5F5F2';
       const nameColor = isRec ? '#FFFFFF' : '#0B1220';
       const taglineColor = isRec ? 'rgba(255,255,255,0.85)' : '#586273';
       const badge = isRec
-        ? `<div style="display:inline-block;background:rgba(255,255,255,0.22);color:#FFFFFF;font-family:'Montserrat',Arial,sans-serif;font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-bottom:6px;">★ Recommended</div><br/>`
-        : `<button type="button" class="recommend-btn" data-tier="${i}" style="background:none;border:none;padding:0;margin-bottom:6px;font-family:'Source Sans Pro',Arial,sans-serif;font-size:10px;color:#9CA3AF;cursor:pointer;text-decoration:underline;">☆ Make recommended</button><br/>`;
-      return `<th style="width:${dataColPct}%;background:${bg};padding:16px 14px;text-align:center;vertical-align:top;border-left:1px solid #E5E7EB;">
+        ? `<div style="display:inline-block;background:rgba(255,255,255,0.22);color:#FFFFFF;font-family:'Montserrat',Arial,sans-serif;font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:2px 9px;border-radius:20px;margin-bottom:4px;">★ Recommended</div><br/>`
+        : `<button type="button" class="recommend-btn" data-tier="${i}" style="background:none;border:none;padding:0;margin-bottom:4px;font-family:'Source Sans Pro',Arial,sans-serif;font-size:10px;color:#9CA3AF;cursor:pointer;text-decoration:underline;">☆ Make recommended</button><br/>`;
+      return `<th style="background:${bg};padding:10px 10px 6px;text-align:center;vertical-align:top;border-left:1px solid #E5E7EB;">
         ${badge}
-        <div data-editable-id="tier-${i}-name" style="font-family:'Montserrat',Arial,sans-serif;font-size:14px;font-weight:700;color:${nameColor};letter-spacing:0.02em;text-transform:uppercase;margin-bottom:4px;">${esc(t.name)}</div>
-        <div data-editable-id="tier-${i}-tagline" style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:11px;font-weight:400;color:${taglineColor};line-height:1.4;">${esc(t.tagline || '')}</div>
+        <div data-editable-id="tier-${i}-name" style="font-family:'Montserrat',Arial,sans-serif;font-size:13px;font-weight:700;color:${nameColor};letter-spacing:0.02em;text-transform:uppercase;white-space:nowrap;">${esc(t.name)}</div>
+        <div data-editable-id="tier-${i}-tagline" style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:10px;font-weight:400;color:${taglineColor};line-height:1.3;margin-top:2px;">${esc(t.tagline || '')}</div>
+        <div style="width:0;height:0;margin:5px auto 0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:5px solid ${isRec ? hex : '#D1D5DB'};"></div>
       </th>`;
     }).join('');
 
@@ -263,22 +282,22 @@
       const rowsForGroup = group.services.filter(name => tiers[0].services.some(s => s.name === name));
       if (rowsForGroup.length === 0) return;
       bodyRows += categoryHeaderRow(group.category, n);
-      rowsForGroup.forEach(name => { bodyRows += serviceRow(name, tiers, hex, dataColPct); });
+      rowsForGroup.forEach(name => { bodyRows += serviceRow(name, tiers); });
     });
     // Custom services (anything not found in the library at all)
     const libraryNames = new Set(SERVICE_LIBRARY.flatMap(g => g.services));
     const customNames = tiers[0].services.map(s => s.name).filter(name => !libraryNames.has(name));
     if (customNames.length) {
       bodyRows += categoryHeaderRow('Custom', n);
-      customNames.forEach(name => { bodyRows += serviceRow(name, tiers, hex, dataColPct); });
+      customNames.forEach(name => { bodyRows += serviceRow(name, tiers); });
     }
 
-    // Footer strip
+    // Footer strip — compact
     const footerCells = tiers.map(t => {
       if (t.recommended) {
-        return `<td style="background:${hex};color:#FFFFFF;padding:10px 14px;text-align:center;font-family:'Source Sans Pro',Arial,sans-serif;font-size:11px;font-weight:600;border-left:1px solid rgba(255,255,255,0.15);">Most businesses your size choose this option</td>`;
+        return `<td style="background:${hex};color:#FFFFFF;padding:7px 10px;text-align:center;font-family:'Source Sans Pro',Arial,sans-serif;font-size:10px;font-weight:600;border-left:1px solid rgba(255,255,255,0.15);">Most businesses your size choose this option</td>`;
       }
-      return `<td style="background:#F5F5F2;padding:10px 14px;border-left:1px solid #E5E7EB;">&nbsp;</td>`;
+      return `<td style="background:#F5F5F2;padding:7px 10px;border-left:1px solid #E5E7EB;">&nbsp;</td>`;
     }).join('');
 
     return `<div style="font-family:'Source Sans Pro',Arial,sans-serif;background:#FFFFFF;border:1px solid #E5E7EB;width:100%;max-width:100%;overflow:hidden;">
@@ -286,7 +305,7 @@ ${headerBar}
   <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
     <thead>
       <tr>
-        <th style="width:${featColPct}%;background:#FFFFFF;padding:16px 14px;"></th>
+        <th style="width:1%;white-space:nowrap;background:#FFFFFF;padding:10px 12px;"></th>
         ${headerCells}
       </tr>
     </thead>
@@ -295,7 +314,7 @@ ${headerBar}
     </tbody>
     <tfoot>
       <tr>
-        <td style="padding:10px 14px;">&nbsp;</td>
+        <td style="padding:7px 12px;">&nbsp;</td>
         ${footerCells}
       </tr>
     </tfoot>
@@ -304,22 +323,31 @@ ${headerBar}
   }
 
   function categoryHeaderRow(label, n) {
-    return `<tr><td colspan="${n + 1}" style="background:#FAFAF7;padding:8px 14px;font-family:'Montserrat',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#9CA3AF;border-top:1px solid #E5E7EB;border-bottom:1px solid #E5E7EB;">${esc(label)}</td></tr>`;
+    return `<tr><td colspan="${n + 1}" style="background:#FAFAF7;padding:5px 12px;font-family:'Montserrat',Arial,sans-serif;font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#9CA3AF;border-top:1px solid #E5E7EB;border-bottom:1px solid #E5E7EB;">${esc(label)}</td></tr>`;
   }
 
-  function serviceRow(name, tiers, hex, dataColPct) {
+  // Each cell is either a symbol (yes/no/partial, click to cycle) or, if the
+  // MSP has switched it to custom text ("T"), an editable short text value —
+  // e.g. "8×5" / "24×7" for a support-hours row. Toggling never calls the AI.
+  function serviceRow(name, tiers) {
     const cells = tiers.map((t, i) => {
-      const svc = t.services.find(s => s.name === name) || { included: false, description: '' };
-      const icon = svc.included
-        ? `<span class="cell-toggle" data-tier="${i}" data-service="${escAttr(name)}" style="display:inline-block;color:${hex};font-weight:700;font-size:13px;cursor:pointer;margin-right:6px;">&#10003;</span>`
-        : `<span class="cell-toggle" data-tier="${i}" data-service="${escAttr(name)}" style="display:inline-block;color:#D1D5DB;font-weight:700;font-size:13px;cursor:pointer;margin-right:6px;">&#8212;</span>`;
-      const desc = svc.included
-        ? `<span data-editable-id="svc-${i}-${slug(name)}" style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:12px;color:#4B5563;">${esc(svc.description || '')}</span>`
-        : '';
-      return `<td style="padding:10px 14px;border-top:1px solid #F0F0EE;vertical-align:top;border-left:1px solid #E5E7EB;">${icon}${desc}</td>`;
+      const svc = t.services.find(s => s.name === name) || { value: 'no' };
+      const isSymbol = svc.value === 'yes' || svc.value === 'no' || svc.value === 'partial';
+
+      if (isSymbol) {
+        const c = CELL_COLORS[svc.value];
+        return `<td style="padding:6px 10px;border-top:1px solid #F0F0EE;text-align:center;vertical-align:middle;border-left:1px solid #E5E7EB;">
+          <span class="cell-icon" data-tier="${i}" data-service="${escAttr(name)}" title="Click to change" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:${c.bg};color:${c.fg};font-weight:700;font-size:12px;line-height:1;cursor:pointer;">${c.glyph}</span>
+          <button type="button" class="cell-text-btn" data-tier="${i}" data-service="${escAttr(name)}" title="Enter custom text instead" style="display:inline-block;margin-left:4px;background:none;border:none;padding:0;font-family:'Source Sans Pro',Arial,sans-serif;font-size:9px;color:#D1D5DB;cursor:pointer;vertical-align:middle;">T</button>
+        </td>`;
+      }
+      return `<td style="padding:6px 10px;border-top:1px solid #F0F0EE;text-align:center;vertical-align:middle;border-left:1px solid #E5E7EB;">
+        <span data-editable-id="cell-${i}-${slug(name)}" style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:12px;font-weight:600;color:#0B1220;">${esc(svc.value || '')}</span>
+        <button type="button" class="cell-icon-btn" data-tier="${i}" data-service="${escAttr(name)}" title="Switch back to symbol" style="display:inline-block;margin-left:4px;background:none;border:none;padding:0;font-family:'Source Sans Pro',Arial,sans-serif;font-size:9px;color:#D1D5DB;cursor:pointer;vertical-align:middle;">&#8635;</button>
+      </td>`;
     }).join('');
     return `<tr>
-      <td style="padding:10px 14px;border-top:1px solid #F0F0EE;font-family:'Source Sans Pro',Arial,sans-serif;font-size:13px;color:#0B1220;font-weight:600;vertical-align:top;">${esc(name)}</td>
+      <td style="padding:6px 12px;border-top:1px solid #F0F0EE;font-family:'Source Sans Pro',Arial,sans-serif;font-size:12.5px;color:#0B1220;font-weight:600;white-space:nowrap;vertical-align:middle;">${esc(name)}</td>
       ${cells}
     </tr>`;
   }
@@ -339,6 +367,8 @@ ${headerBar}
     wireWidgetInteractions();
   }
 
+  const CELL_CYCLE = ['yes', 'no', 'partial'];
+
   function wireWidgetInteractions() {
     // Text edits — update in-memory state, do not force a full rebuild (preserves cursor)
     widgetFrame.querySelectorAll('[data-editable-id]').forEach(el => {
@@ -351,24 +381,51 @@ ${headerBar}
         if (m) { state.generatedTiers[Number(m[1])].name = el.textContent; return; }
         m = id.match(/^tier-(\d+)-tagline$/);
         if (m) { state.generatedTiers[Number(m[1])].tagline = el.textContent; return; }
-        m = id.match(/^svc-(\d+)-(.+)$/);
+        m = id.match(/^cell-(\d+)-(.+)$/);
         if (m) {
           const tierIdx = Number(m[1]);
           const svcSlug = m[2];
           const svc = state.generatedTiers[tierIdx].services.find(s => slug(s.name) === svcSlug);
-          if (svc) svc.description = el.textContent;
+          if (svc) svc.value = el.textContent;
         }
         state.widgetHtml = getWidgetHtmlFromFrame();
       });
     });
 
-    // Cell toggle (included / excluded) — structural change, full rebuild
-    widgetFrame.querySelectorAll('.cell-toggle').forEach(el => {
+    // Cell icon click — cycles yes → no → partial → yes. Structural change, full rebuild.
+    widgetFrame.querySelectorAll('.cell-icon').forEach(el => {
       el.addEventListener('click', () => {
         const tierIdx = Number(el.dataset.tier);
         const name = el.dataset.service;
         const svc = state.generatedTiers[tierIdx].services.find(s => s.name === name);
-        if (svc) svc.included = !svc.included;
+        if (svc) {
+          const idx = CELL_CYCLE.indexOf(svc.value);
+          svc.value = CELL_CYCLE[(idx + 1) % CELL_CYCLE.length];
+        }
+        rerenderWidget();
+      });
+    });
+
+    // "T" — switch a cell to free custom text (e.g. "8×5"), full rebuild then focus it
+    widgetFrame.querySelectorAll('.cell-text-btn').forEach(el => {
+      el.addEventListener('click', () => {
+        const tierIdx = Number(el.dataset.tier);
+        const name = el.dataset.service;
+        const svc = state.generatedTiers[tierIdx].services.find(s => s.name === name);
+        if (svc) svc.value = '';
+        rerenderWidget();
+        const target = widgetFrame.querySelector(`[data-editable-id="cell-${tierIdx}-${slug(name)}"]`);
+        if (target) { target.focus(); }
+      });
+    });
+
+    // Revert a custom-text cell back to symbol mode (defaults to "yes")
+    widgetFrame.querySelectorAll('.cell-icon-btn').forEach(el => {
+      el.addEventListener('click', () => {
+        const tierIdx = Number(el.dataset.tier);
+        const name = el.dataset.service;
+        const svc = state.generatedTiers[tierIdx].services.find(s => s.name === name);
+        if (svc) svc.value = 'yes';
         rerenderWidget();
       });
     });
@@ -385,11 +442,18 @@ ${headerBar}
 
   function getWidgetHtmlFromFrame() {
     const clone = widgetFrame.cloneNode(true);
+    // Remove controls that only exist for in-tool editing — never part of the exported widget
+    clone.querySelectorAll('.recommend-btn, .cell-text-btn, .cell-icon-btn').forEach(el => el.remove());
     clone.querySelectorAll('[contenteditable]').forEach(el => {
       el.removeAttribute('contenteditable');
       el.removeAttribute('title');
     });
-    clone.querySelectorAll('.recommend-btn').forEach(el => el.remove());
+    clone.querySelectorAll('[class]').forEach(el => el.removeAttribute('class'));
+    clone.querySelectorAll('[data-tier], [data-service], [data-editable-id]').forEach(el => {
+      el.removeAttribute('data-tier');
+      el.removeAttribute('data-service');
+      el.removeAttribute('data-editable-id');
+    });
     return clone.innerHTML;
   }
 
@@ -400,18 +464,15 @@ ${headerBar}
         colourSwatches.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
         sw.classList.add('active');
         state.themeHex = sw.dataset.hex;
-        customHexEl.value = '';
+        customColorPickerEl.value = sw.dataset.hex;
         if (state.generatedTiers) rerenderWidget();
       });
     });
 
-    customHexEl.addEventListener('input', () => {
-      const val = customHexEl.value.trim().replace('#', '');
-      if (/^[0-9a-fA-F]{6}$/.test(val)) {
-        state.themeHex = '#' + val;
-        colourSwatches.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
-        if (state.generatedTiers) rerenderWidget();
-      }
+    customColorPickerEl.addEventListener('input', () => {
+      state.themeHex = customColorPickerEl.value.toUpperCase();
+      colourSwatches.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+      if (state.generatedTiers) rerenderWidget();
     });
 
     regenerateBtn.addEventListener('click', onRegenerate);
