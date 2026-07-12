@@ -13,85 +13,78 @@
 </head>
 <body>
 
-<header class="app-header">
-  <div class="app-header-inner">
-    <div class="app-title-group">
-      <h1 class="app-title">Service Tier Widget Builder</h1>
-      <p class="app-subtitle">Build a service tier comparison widget your prospects can actually compare — not a price list.</p>
-    </div>
-  </div>
-</header>
+<div class="page">
 
-<main class="app-main">
-
-  <!-- ============ CONFIGURATION ============ -->
-  <section class="panel" id="configPanel">
-
-    <div class="config-row">
-      <div class="config-col">
-        <label class="field-label">Tier naming convention</label>
-        <select id="tierPreset" class="field-select">
-          <option value="metal">Metal — Bronze / Silver / Gold</option>
-          <option value="quality">Quality — Good / Better / Best</option>
-          <option value="level" selected>Level — Essential / Professional / Premium</option>
-          <option value="scale">Scale — Starter / Growth / Business</option>
-          <option value="simple">Simple — Basic / Standard / Advanced</option>
-          <option value="custom">Custom — write your own</option>
-        </select>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <div class="app-title-block">
+        <h1 class="app-title">Service Tier Widget Builder</h1>
+        <p class="app-subtitle">Build a service tier comparison widget your prospects can actually compare — not a price list.</p>
       </div>
+    </div>
+  </header>
 
-      <div class="config-col">
-        <label class="field-label">Number of tiers</label>
-        <div class="toggle-group" id="tierCountToggle">
-          <button type="button" class="toggle-btn" data-val="2">2 Tiers</button>
-          <button type="button" class="toggle-btn active" data-val="3">3 Tiers</button>
+  <div class="app-body">
+
+    <!-- ============ FORM COLUMN ============ -->
+    <section class="form-col">
+
+      <div class="panel">
+        <div class="config-row">
+          <div class="config-col">
+            <label class="field-label">Tier naming convention</label>
+            <select id="tierPreset" class="field-select">
+              <option value="metal">Metal — Bronze / Silver / Gold</option>
+              <option value="quality">Quality — Good / Better / Best</option>
+              <option value="level" selected>Level — Essential / Professional / Premium</option>
+              <option value="scale">Scale — Starter / Growth / Business</option>
+              <option value="simple">Simple — Basic / Standard / Advanced</option>
+              <option value="custom">Custom — write your own</option>
+            </select>
+          </div>
+
+          <div class="config-col">
+            <label class="field-label">Number of tiers</label>
+            <div class="toggle-group" id="tierCountToggle">
+              <button type="button" class="toggle-btn" data-val="2">2 Tiers</button>
+              <button type="button" class="toggle-btn active" data-val="3">3 Tiers</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="config-row" id="tierNameInputsRow">
+          <!-- populated by JS: one text input per tier -->
+        </div>
+
+        <div class="config-row">
+          <div class="config-col config-col-wide">
+            <label class="field-label">Header tagline <span class="field-hint">shown above the comparison table</span></label>
+            <input type="text" id="headerTagline" class="field-input" value="Choose the level of protection that fits your business" />
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="config-row" id="tierNameInputsRow">
-      <!-- populated by JS: one text input per tier -->
-    </div>
+      <div class="panel">
+        <div class="library-header">
+          <label class="field-label">Select the services you offer</label>
+          <span class="field-hint">AI will assign each to the right tier(s)</span>
+        </div>
 
-    <div class="config-row">
-      <div class="config-col config-col-wide">
-        <label class="field-label">Header tagline <span class="field-hint">shown above the comparison table</span></label>
-        <input type="text" id="headerTagline" class="field-input" value="Choose the level of protection that fits your business" />
+        <div id="serviceLibrary" class="service-library">
+          <!-- populated by JS: category groups of checkboxes, each with a Select all link -->
+        </div>
+
+        <div class="custom-services">
+          <label class="field-label">Custom services <span class="field-hint">up to 3 — not in the library above</span></label>
+          <div class="custom-services-inputs" id="customServiceInputs">
+            <input type="text" class="field-input custom-service-input" placeholder="Custom service 1" data-idx="0" />
+            <input type="text" class="field-input custom-service-input" placeholder="Custom service 2" data-idx="1" />
+            <input type="text" class="field-input custom-service-input" placeholder="Custom service 3" data-idx="2" />
+          </div>
+        </div>
       </div>
-    </div>
 
-    <hr class="divider" />
-
-    <div class="library-header">
-      <label class="field-label">Select the services you offer</label>
-      <span class="field-hint">AI will assign each to the right tier(s) and write the benefit description</span>
-    </div>
-
-    <div id="serviceLibrary" class="service-library">
-      <!-- populated by JS: category groups of checkboxes -->
-    </div>
-
-    <div class="custom-services">
-      <label class="field-label">Custom services <span class="field-hint">up to 3 — not in the library above</span></label>
-      <div class="custom-services-inputs" id="customServiceInputs">
-        <input type="text" class="field-input custom-service-input" placeholder="Custom service 1" data-idx="0" />
-        <input type="text" class="field-input custom-service-input" placeholder="Custom service 2" data-idx="1" />
-        <input type="text" class="field-input custom-service-input" placeholder="Custom service 3" data-idx="2" />
-      </div>
-    </div>
-
-    <div class="config-actions">
-      <button type="button" class="btn-secondary" id="clearBtn">Clear / Start Over</button>
-      <button type="button" class="btn-accent" id="generateBtn">Generate Widget</button>
-    </div>
-    <p class="form-error" id="formError" hidden></p>
-  </section>
-
-  <!-- ============ PREVIEW ============ -->
-  <section class="panel panel-preview" id="previewPanel">
-
-    <div class="preview-toolbar">
-      <div class="preview-toolbar-left">
+      <div class="panel">
         <label class="field-label">Colour theme</label>
         <div class="swatch-row" id="colourSwatches">
           <button type="button" class="swatch active" data-hex="#2E74DC" style="background:#2E74DC" title="Accent Blue"></button>
@@ -102,51 +95,63 @@
           <button type="button" class="swatch" data-hex="#BE123C" style="background:#BE123C" title="Rose"></button>
           <button type="button" class="swatch" data-hex="#166534" style="background:#166534" title="Green"></button>
           <button type="button" class="swatch" data-hex="#1C1C1E" style="background:#1C1C1E" title="Charcoal"></button>
+          <div class="custom-color-wrap">
+            <input type="color" id="customColorPicker" class="custom-color-input" value="#2E74DC" title="Pick a custom colour" />
+            <span class="custom-color-label">Custom</span>
+          </div>
         </div>
-        <div class="custom-color-wrap">
-          <input type="color" id="customColorPicker" class="custom-color-input" value="#2E74DC" title="Pick a custom colour" />
-          <span class="custom-color-label">Custom</span>
+      </div>
+
+      <p class="form-error" id="formError" hidden></p>
+
+      <div class="config-actions">
+        <button type="button" class="btn-secondary" id="clearBtn">Clear / Start Over</button>
+        <button type="button" class="btn-accent" id="generateBtn">Generate Widget</button>
+      </div>
+
+    </section>
+
+    <!-- ============ OUTPUT COLUMN ============ -->
+    <section class="output-col" id="outputCol">
+
+      <div class="preview-toolbar" id="previewToolbar" hidden>
+        <button type="button" class="btn-secondary" id="regenerateBtn">↺ Regenerate</button>
+        <button type="button" class="btn-secondary" id="copyBtn">Copy HTML</button>
+        <button type="button" class="btn-accent" id="pushBtn">Push to Salesbuildr</button>
+      </div>
+
+      <div class="empty-state" id="emptyState">
+        Select your services on the left and click <strong>Generate Widget</strong> to build your tier comparison table.
+      </div>
+
+      <div class="loading-state" id="loadingState" hidden>
+        <div class="loading-dots"><span></span><span></span><span></span></div>
+        <p id="loadingMsg">Building your service tier widget…</p>
+      </div>
+
+      <div class="widget-frame-wrap" id="widgetFrameWrap" hidden>
+        <div id="widgetFrame"></div>
+      </div>
+
+      <!-- Salesbuildr credentials (shown only if missing from localStorage) -->
+      <div class="sb-creds-panel" id="sbCredsPanel" hidden>
+        <p class="sb-creds-title">Connect to Salesbuildr</p>
+        <div class="sb-creds-fields">
+          <input type="text" id="sbTenantUrl" class="field-input" placeholder="https://yourcompany.salesbuildr.com" />
+          <input type="password" id="sbApiKey" class="field-input" placeholder="API key (Admin → Integrations → API Key)" />
+        </div>
+        <div class="sb-creds-actions">
+          <button type="button" class="btn-secondary" id="cancelCredsBtn">Cancel</button>
+          <button type="button" class="btn-accent" id="saveCredsBtn">Save &amp; Push</button>
         </div>
       </div>
 
-      <div class="preview-toolbar-right">
-        <button type="button" class="btn-secondary" id="regenerateBtn" hidden>↺ Regenerate</button>
-        <button type="button" class="btn-secondary" id="copyBtn" hidden>Copy HTML</button>
-        <button type="button" class="btn-accent" id="pushBtn" hidden>Push to Salesbuildr</button>
-      </div>
-    </div>
+      <p class="push-feedback" id="pushFeedback" hidden></p>
 
-    <div class="empty-state" id="emptyState">
-      Select your services above and click <strong>Generate Widget</strong> to build your tier comparison table.
-    </div>
+    </section>
 
-    <div class="loading-state" id="loadingState" hidden>
-      <div class="loading-dots"><span></span><span></span><span></span></div>
-      <p id="loadingMsg">Building your service tier widget…</p>
-    </div>
-
-    <div class="widget-frame-wrap" id="widgetFrameWrap" hidden>
-      <div id="widgetFrame"></div>
-    </div>
-
-    <!-- Salesbuildr credentials (shown only if missing from localStorage) -->
-    <div class="sb-creds-panel" id="sbCredsPanel" hidden>
-      <p class="sb-creds-title">Connect to Salesbuildr</p>
-      <div class="sb-creds-fields">
-        <input type="text" id="sbTenantUrl" class="field-input" placeholder="https://yourcompany.salesbuildr.com" />
-        <input type="password" id="sbApiKey" class="field-input" placeholder="API key (Admin → Integrations → API Key)" />
-      </div>
-      <div class="sb-creds-actions">
-        <button type="button" class="btn-secondary" id="cancelCredsBtn">Cancel</button>
-        <button type="button" class="btn-accent" id="saveCredsBtn">Save &amp; Push</button>
-      </div>
-    </div>
-
-    <p class="push-feedback" id="pushFeedback" hidden></p>
-
-  </section>
-
-</main>
+  </div>
+</div>
 
 <script src="service-tier-builder.js"></script>
 </body>
