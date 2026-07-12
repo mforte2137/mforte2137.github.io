@@ -8,12 +8,15 @@
 //   services:  flat array of service name strings the MSP offers
 //              (across their whole stack — not yet assigned to tiers)
 //
-// Returns { ok, tiers: [{ name, tagline, recommended, services: [{name, included, description}] }] }
+// Returns { ok, tiers: [{ name, tagline, recommended, services: [{name, value}] }] }
+//   value is "yes" | "no" | "partial" — the widget renders a symbol only,
+//   no per-cell description text (matches the Matrix Creator cell style).
+//   The MSP can still override any cell to custom text in the UI ("T" option)
+//   after generation — that's a frontend-only edit, not part of the AI contract.
 //
-// One AI call per Generate / Regenerate. Category grouping is NOT
-// handled here — the frontend already knows which category each
-// service belongs to (from its own SERVICE_LIBRARY) and groups rows
-// itself when it builds the widget HTML.
+// Category grouping is NOT handled here — the frontend already knows which
+// category each service belongs to (from its own SERVICE_LIBRARY) and groups
+// rows itself when it builds the widget HTML.
 // =========================================================
 
 exports.handler = async (event) => {
@@ -66,16 +69,17 @@ Tier definitions (in order, lowest to highest):
 ${tierGuidance}
 
 Rules:
-- A service that appears in a lower tier must also be marked included in every higher tier (cumulative — nothing is removed going up).
-- Every tier's "services" array must contain exactly one entry for every service in the input list, in the same order as given, each with "included": true or false.
-- Write one short, benefit-oriented description (business outcome, not technical spec, 4-8 words) for each service in each tier where it is included. Leave description as an empty string when included is false.
+- For every service in every tier, output a "value" of exactly "yes" (fully included), "no" (not included), or "partial" (a limited or partial version is included).
+- A service marked "yes" in a lower tier must also be "yes" in every higher tier (cumulative — nothing is removed going up). A "partial" in a lower tier may become "yes" in a higher tier.
+- Every tier's "services" array must contain exactly one entry for every service in the input list, in the same order as given.
 - Mark exactly one tier as "recommended": true (all others omit this field or set it false) — default to the middle tier for 3 tiers, or the higher tier for 2 tiers, unless the service mix clearly suggests otherwise.
 - Write a short tagline (5-9 words) per tier describing who it's for or what it delivers.
 - Do not invent services that were not in the input list.
+- Do not write any descriptions — the widget shows only a symbol per cell, no text.
 
 CRITICAL: Return raw JSON only. No prose, no markdown, no code fences, no explanation before or after.
 Exactly this structure:
-{"tiers":[{"name":"...","tagline":"...","recommended":true,"services":[{"name":"...","included":true,"description":"..."}]}]}`;
+{"tiers":[{"name":"...","tagline":"...","recommended":true,"services":[{"name":"...","value":"yes"}]}]}`;
 
   const userMessage = `Tier names in order: ${tierNames.join(', ')}\nServices to assign:\n${services.map(s => `- ${s}`).join('\n')}`;
 
