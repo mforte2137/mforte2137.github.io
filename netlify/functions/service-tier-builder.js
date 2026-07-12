@@ -39,6 +39,51 @@ exports.handler = async (event) => {
   try { body = JSON.parse(event.body); }
   catch { return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: 'Invalid JSON.' }) }; }
 
+  const claudeApiKey = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY;
+  if (!claudeApiKey) {
+    return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: 'AI is not configured on the server.' }) };
+  }
+
+  // ── Action: rewrite a single custom-text cell as a client benefit ────────
+  // Only applies to cells the MSP has switched to free text via "T" — symbol
+  // cells (yes/no/partial) never call this.
+  if (body.action === 'rewriteCell') {
+    const { featureName, tierName, currentText } = body;
+    if (!featureName || !tierName) {
+      return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: 'featureName and tierName are required.' }) };
+    }
+
+    const systemPrompt = `You are an MSP marketing expert. Rewrite a short feature note as a compelling, client-facing benefit — business outcome, not technical spec. Maximum 6 words. Return only the rewritten text, no quotes, no explanation, no punctuation at the end.`;
+    const userMessage = `Feature: "${featureName}"\nTier: "${tierName}"\nCurrent text: "${currentText || ''}"\nRewrite as a short client benefit.`;
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': claudeApiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 60,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userMessage }]
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        const errMsg = data?.error?.message || `Anthropic API error (HTTP ${response.status})`;
+        return { statusCode: 502, headers, body: JSON.stringify({ ok: false, error: errMsg }) };
+      }
+      const text = (data.content?.[0]?.text || '').trim().replace(/^["']|["']$/g, '');
+      return { statusCode: 200, headers, body: JSON.stringify({ ok: true, text }) };
+    } catch (err) {
+      return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: err.message || 'Unexpected server error.' }) };
+    }
+  }
+
+  // ── Action (default): assign services to tiers ────────────────────────
   const { tierCount, tierNames, services } = body;
 
   if (!tierCount || (tierCount !== 2 && tierCount !== 3)) {
@@ -49,11 +94,6 @@ exports.handler = async (event) => {
   }
   if (!Array.isArray(services) || services.length === 0) {
     return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: 'Select at least one service.' }) };
-  }
-
-  const claudeApiKey = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY;
-  if (!claudeApiKey) {
-    return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: 'AI is not configured on the server.' }) };
   }
 
   const tierGuidance = tierCount === 3
