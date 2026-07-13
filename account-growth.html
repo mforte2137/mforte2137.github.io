@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Account Growth Widget — Salesbuildr Innovation Suite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="account-growth.css" />
+</head>
+<body>
+
+<header class="hub-header">
+  <div class="hub-header-label">STRATEGIC · GROWTH</div>
+  <h1 class="hub-header-title">Account Growth Widget</h1>
+  <p class="hub-header-desc">Turn your next upsell conversation into a professional, advisory-tone widget — five fields, under 3 minutes.</p>
+  <a href="/" class="back-link">&larr; Back to Hub</a>
+</header>
+
+<main class="layout">
+
+  <!-- ============== LEFT: FORM ============== -->
+  <section class="sidebar">
+
+    <!-- Session cards -->
+    <div class="panel" id="sessionsBlock" hidden>
+      <div class="panel-row-header">
+        <span class="panel-label">Recent Sessions</span>
+        <button type="button" class="link-btn" id="showArchivedBtn">Show archived</button>
+      </div>
+      <div id="sessionCards" class="session-cards"></div>
+      <button type="button" class="btn-secondary btn-block" id="newSessionBtn">+ New Session</button>
+    </div>
+
+    <div class="panel">
+      <h2 class="panel-title">Build Your Recommendation</h2>
+
+      <div class="field">
+        <label class="field-label" for="clientName">Client Name <span class="optional">(optional)</span></label>
+        <input type="text" id="clientName" placeholder="e.g. Riverside Medical Group" />
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="industry">Industry</label>
+        <select id="industry">
+          <option value="">Select industry…</option>
+          <option>Healthcare</option>
+          <option>Legal</option>
+          <option>Financial Services</option>
+          <option>Manufacturing</option>
+          <option>Construction</option>
+          <option>Retail</option>
+          <option>Professional Services</option>
+          <option>Nonprofit</option>
+          <option>Education</option>
+          <option>Real Estate</option>
+          <option>Government / Public Sector</option>
+          <option>Technology</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Current Coverage <span class="hint">— what the client has today</span></label>
+        <div class="chip-list" id="currentCoverageChips"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Recommended Addition <span class="hint">— what you're proposing to add</span></label>
+        <div class="chip-list" id="recommendedChips"></div>
+        <p class="field-note">Chips already in Current Coverage are greyed out here — the delta is the upgrade story.</p>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="triggerSelect">Trigger</label>
+        <select id="triggerSelect">
+          <option value="">Select trigger…</option>
+          <option>Renewal coming up</option>
+          <option>Client had an incident or near-miss</option>
+          <option>Audit or compliance requirement</option>
+          <option>Business is growing — new staff, new sites, acquisition</option>
+          <option>Sector-wide threat or attack in the news</option>
+          <option>Cyber insurance renewal</option>
+          <option>Post-QBR recommendation</option>
+          <option>Client raised it themselves</option>
+          <option>Proactive — no specific trigger</option>
+        </select>
+        <input type="text" id="triggerDetail" class="trigger-detail" placeholder="Any specific context? (optional — one line)" maxlength="140" />
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="toggle-row">
+        <div class="toggle-row-text">
+          <h3 class="toggle-row-title">Executive Summary</h3>
+          <p class="toggle-row-desc">Optional second widget — a C-suite snapshot for whoever isn't in the room.</p>
+        </div>
+        <button type="button" class="toggle-switch" id="execSummaryToggle" role="switch" aria-checked="false" data-state="off">
+          <span class="toggle-knob"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <label class="field-label">Colour Theme</label>
+      <div class="swatch-row" id="colourSwatches">
+        <button type="button" class="swatch active" data-hex="#2e74dc" style="background:#2e74dc" title="Accent blue"></button>
+        <button type="button" class="swatch" data-hex="#1a3a6e" style="background:#1a3a6e" title="Navy"></button>
+        <button type="button" class="swatch" data-hex="#0f766e" style="background:#0f766e" title="Teal"></button>
+        <button type="button" class="swatch" data-hex="#166534" style="background:#166534" title="Green"></button>
+        <button type="button" class="swatch" data-hex="#6d28d9" style="background:#6d28d9" title="Violet"></button>
+        <button type="button" class="swatch" data-hex="#be123c" style="background:#be123c" title="Rose"></button>
+        <button type="button" class="swatch" data-hex="#c2410c" style="background:#c2410c" title="Orange"></button>
+        <button type="button" class="swatch" data-hex="#1c1c1e" style="background:#1c1c1e" title="Charcoal"></button>
+      </div>
+      <div class="hex-input-row">
+        <span class="hex-prefix">#</span>
+        <input type="text" id="customHex" maxlength="6" placeholder="2e74dc" />
+        <span class="hex-preview" id="hexPreview" style="background:#2e74dc"></span>
+      </div>
+    </div>
+
+    <div class="sticky-actions">
+      <button type="button" class="btn-accent btn-block" id="generateBtn">Generate Recommendation</button>
+      <button type="button" class="btn-secondary btn-block" id="clearBtn">Clear / Start Over</button>
+      <p class="form-error" id="formError" hidden></p>
+      <p class="autosave-label" id="autoSaveLabel">Saved ✓</p>
+    </div>
+
+  </section>
+
+  <!-- ============== RIGHT: PREVIEW ============== -->
+  <section class="preview-col" id="previewCol">
+
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">📈</div>
+      <h3>Nothing generated yet</h3>
+      <p>Fill in the client's current coverage, what you're recommending, and why now — then generate the widget.</p>
+    </div>
+
+    <div class="loading-state" id="loadingState" hidden>
+      <div class="spinner"></div>
+      <p id="loadingMsg">Writing your account growth recommendation…</p>
+    </div>
+
+    <div class="output-area" id="outputArea" hidden>
+
+      <div class="delivery-header">
+        <h2 id="deliveryTitle">Account Growth Recommendation</h2>
+      </div>
+
+      <!-- Widget 1 -->
+      <div class="widget-block">
+        <div class="widget-block-header">
+          <span class="widget-block-label">Widget 1 — Account Growth Recommendation</span>
+          <div class="widget-block-actions">
+            <button type="button" class="btn-tiny" id="regenBtn1">↺ Regen</button>
+            <button type="button" class="btn-tiny" id="copyBtn1">Copy HTML</button>
+            <button type="button" class="btn-tiny btn-tiny-accent" id="pushBtn1">Push to Salesbuildr</button>
+          </div>
+        </div>
+        <div class="widget-frame-wrap">
+          <div class="widget-frame" id="preview1"></div>
+        </div>
+      </div>
+
+      <!-- Widget 2 -->
+      <div class="widget-block" id="widget2Block" hidden>
+        <div class="widget-block-header">
+          <span class="widget-block-label">Widget 2 — Executive Summary</span>
+          <div class="widget-block-actions">
+            <button type="button" class="btn-tiny" id="regenBtn2">↺ Regen</button>
+            <button type="button" class="btn-tiny" id="copyBtn2">Copy HTML</button>
+            <button type="button" class="btn-tiny btn-tiny-accent" id="pushBtn2">Push to Salesbuildr</button>
+          </div>
+        </div>
+        <div class="widget-frame-wrap">
+          <div class="widget-frame" id="preview2"></div>
+        </div>
+      </div>
+
+      <!-- Combined actions -->
+      <div class="combined-actions">
+        <button type="button" class="btn-secondary" id="copyAllBtn">Copy All HTML</button>
+        <button type="button" class="btn-accent" id="pushPackBtn">Push as Pack</button>
+      </div>
+
+      <!-- Salesbuildr credentials inline form -->
+      <div class="creds-inline" id="credsInline" hidden>
+        <p class="creds-inline-title">Connect to Salesbuildr</p>
+        <div class="field">
+          <label class="field-label" for="pushApiKey">API Key</label>
+          <input type="text" id="pushApiKey" placeholder="Salesbuildr API key" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="pushTenantUrl">Tenant URL</label>
+          <input type="text" id="pushTenantUrl" placeholder="https://yourcompany.salesbuildr.com" />
+        </div>
+        <div class="creds-inline-actions">
+          <button type="button" class="btn-secondary" id="cancelCredsBtn">Cancel</button>
+          <button type="button" class="btn-accent" id="saveAndPushBtn">Save &amp; Push</button>
+        </div>
+      </div>
+
+      <p class="push-status" id="pushStatus" hidden></p>
+
+    </div>
+
+  </section>
+
+</main>
+
+<script src="account-growth.js"></script>
+</body>
+</html>
