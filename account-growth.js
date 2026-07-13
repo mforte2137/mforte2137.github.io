@@ -54,8 +54,17 @@
   const widget2Block   = $('widget2Block');
 
   const colourSwatches = $('colourSwatches');
-  const customHex      = $('customHex');
-  const hexPreview     = $('hexPreview');
+  const hexTriggerBtn   = $('hexTriggerBtn');
+  const hexPreview      = $('hexPreview');
+  const hexTriggerValue = $('hexTriggerValue');
+
+  const hexModalOverlay = $('hexModalOverlay');
+  const hexModalClose   = $('hexModalClose');
+  const hexModalApply   = $('hexModalApply');
+  const hexModalInput   = $('hexModalInput');
+  const hexModalPreview = $('hexModalPreview');
+  const hueBar          = $('hueBar');
+  const hueDot          = $('hueDot');
 
   const generateBtn = $('generateBtn');
   const clearBtn     = $('clearBtn');
@@ -86,7 +95,12 @@
     refreshRecChipsDisabled();
 
     colourSwatches.querySelectorAll('.swatch').forEach(s => s.addEventListener('click', () => selectSwatch(s)));
-    customHex.addEventListener('input', onCustomHex);
+    hexTriggerBtn.addEventListener('click', openHexModal);
+    hexModalClose.addEventListener('click', closeHexModal);
+    hexModalOverlay.addEventListener('click', e => { if (e.target === hexModalOverlay) closeHexModal(); });
+    hexModalApply.addEventListener('click', applyHexModal);
+    hexModalInput.addEventListener('input', onHexModalInputChange);
+    initHueBarDrag();
 
     [clientNameEl, industryEl, triggerSelectEl, triggerDetailEl].forEach(el => {
       el.addEventListener('input', () => autoSave());
@@ -193,22 +207,100 @@
   function selectSwatch(el) {
     colourSwatches.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
     el.classList.add('active');
-    currentTheme = el.dataset.hex;
-    customHex.value = currentTheme.replace('#', '');
-    hexPreview.style.background = currentTheme;
+    setTheme(el.dataset.hex);
+  }
+
+  function setTheme(hex) {
+    currentTheme = hex;
+    hexPreview.style.background = hex;
+    hexTriggerValue.textContent = hex;
     refreshPreviews();
     autoSave();
   }
 
-  function onCustomHex() {
-    const val = customHex.value.trim().replace('#', '');
+  // ── Custom colour picker modal (rainbow hue bar + drag dot) ──
+  function openHexModal() {
+    hexModalInput.value = currentTheme.replace('#', '');
+    hexModalPreview.style.background = currentTheme;
+    positionHueDot(currentTheme);
+    hexModalOverlay.hidden = false;
+  }
+
+  function closeHexModal() { hexModalOverlay.hidden = true; }
+
+  function applyHexModal() {
+    const val = hexModalInput.value.trim().replace('#', '');
     if (/^[0-9a-fA-F]{6}$/.test(val)) {
-      currentTheme = '#' + val;
-      hexPreview.style.background = currentTheme;
       colourSwatches.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
-      refreshPreviews();
-      autoSave();
+      setTheme('#' + val);
     }
+    closeHexModal();
+  }
+
+  function onHexModalInputChange() {
+    const val = hexModalInput.value.trim().replace('#', '');
+    if (/^[0-9a-fA-F]{6}$/.test(val)) {
+      const hex = '#' + val;
+      hexModalPreview.style.background = hex;
+      positionHueDot(hex);
+    }
+  }
+
+  function positionHueDot(hex) {
+    const { h } = hexToHsl(hex);
+    hueDot.style.left = (h / 360 * 100) + '%';
+  }
+
+  function initHueBarDrag() {
+    let dragging = false;
+
+    function setFromClientX(clientX) {
+      const rect = hueBar.getBoundingClientRect();
+      let frac = (clientX - rect.left) / rect.width;
+      frac = Math.min(1, Math.max(0, frac));
+      const hue = frac * 360;
+      const hex = hslToHex(hue, 70, 45);
+      hueDot.style.left = (frac * 100) + '%';
+      hexModalInput.value = hex.replace('#', '');
+      hexModalPreview.style.background = hex;
+    }
+
+    hueBar.addEventListener('pointerdown', e => {
+      dragging = true;
+      hueBar.setPointerCapture(e.pointerId);
+      setFromClientX(e.clientX);
+    });
+    hueBar.addEventListener('pointermove', e => { if (dragging) setFromClientX(e.clientX); });
+    hueBar.addEventListener('pointerup', () => { dragging = false; });
+    hueBar.addEventListener('pointercancel', () => { dragging = false; });
+  }
+
+  // ── Hex <-> HSL helpers ──────────────────────────────
+  function hslToHex(h, s, l) {
+    s /= 100; l /= 100;
+    const k = n => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    const toHex = x => Math.round(x * 255).toString(16).padStart(2, '0');
+    return '#' + toHex(f(0)) + toHex(f(8)) + toHex(f(4));
+  }
+
+  function hexToHsl(hex) {
+    const h = hex.replace('#', '');
+    let r = parseInt(h.substr(0, 2), 16) / 255;
+    let g = parseInt(h.substr(2, 2), 16) / 255;
+    let b = parseInt(h.substr(4, 2), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let hue = 0, l = (max + min) / 2;
+    const d = max - min;
+    if (d !== 0) {
+      if (max === r) hue = ((g - b) / d) % 6;
+      else if (max === g) hue = (b - r) / d + 2;
+      else hue = (r - g) / d + 4;
+      hue *= 60;
+      if (hue < 0) hue += 360;
+    }
+    return { h: hue, l };
   }
 
   function refreshPreviews() {
@@ -648,7 +740,8 @@
       s.classList.toggle('active', m);
       if (m) matched = true;
     });
-    if (!matched) { customHex.value = currentTheme.replace('#',''); hexPreview.style.background = currentTheme; }
+    hexPreview.style.background = currentTheme;
+    hexTriggerValue.textContent = currentTheme;
 
     if (generatedData) {
       populateWidgetsFromSession(fd);
@@ -693,8 +786,8 @@
     execToggle.setAttribute('aria-checked', 'false');
 
     colourSwatches.querySelectorAll('.swatch').forEach(s => s.classList.toggle('active', s.dataset.hex === '#2e74dc'));
-    customHex.value = '';
     hexPreview.style.background = '#2e74dc';
+    hexTriggerValue.textContent = '#2e74dc';
 
     outputArea.hidden = true;
     emptyState.hidden = false;
