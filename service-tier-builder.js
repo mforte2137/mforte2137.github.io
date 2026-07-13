@@ -305,6 +305,11 @@
     partial: { bg: '#fef3c7', fg: '#d97706', glyph: '&#9680;' }
   };
 
+  // Solid-fill SVG instead of the ✨ emoji — emoji glyphs are baked-in multicolor
+  // and ignore CSS color entirely, which is why the AI-rewrite button read as
+  // washed-out light orange on the lavender chip. Dark navy fill fixes contrast.
+  const SPARKLE_SVG = '<svg width="11" height="11" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M8 0 L9.5 6.5 L16 8 L9.5 9.5 L8 16 L6.5 9.5 L0 8 L6.5 6.5 Z" fill="#1E1B4B"/></svg>';
+
   function buildWidgetHtml() {
     const tiers = state.generatedTiers;
     const hex = state.themeHex;
@@ -395,7 +400,7 @@ ${headerBar}
       }
       return `<td style="padding:6px 10px;border-top:1px solid #F0F0EE;text-align:center;vertical-align:middle;border-left:1px solid #E5E7EB;">
         <span data-editable-id="cell-${i}-${id}" style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:12px;font-weight:600;color:#0B1220;">${esc(svc.value || '')}</span>
-        <button type="button" class="cell-rewrite-btn" data-tier="${i}" data-id="${escAttr(id)}" title="Rewrite as a client benefit (AI)" style="display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;margin-left:5px;padding:0 5px;background:#EDE9FE;border:1px solid #C4B5FD;border-radius:4px;font-size:12px;cursor:pointer;vertical-align:middle;line-height:1;">&#10024;</button>
+        <button type="button" class="cell-rewrite-btn" data-tier="${i}" data-id="${escAttr(id)}" title="Rewrite as a client benefit (AI)" style="display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;margin-left:5px;padding:0 5px;background:#EDE9FE;border:1px solid #C4B5FD;border-radius:4px;cursor:pointer;vertical-align:middle;line-height:1;">${SPARKLE_SVG}</button>
         <button type="button" class="cell-icon-btn" data-tier="${i}" data-id="${escAttr(id)}" title="Switch back to symbol" style="display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;margin-left:5px;padding:0 4px;background:#F3F4F6;border:1px solid #D1D5DB;border-radius:4px;font-family:'Source Sans Pro',Arial,sans-serif;font-size:12px;color:#4B5563;cursor:pointer;vertical-align:middle;line-height:1;">&#8635;</button>
       </td>`;
     }).join('');
