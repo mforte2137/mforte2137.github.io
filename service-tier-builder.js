@@ -390,19 +390,19 @@ ${headerBar}
         const c = CELL_COLORS[svc.value];
         return `<td style="padding:6px 10px;border-top:1px solid #F0F0EE;text-align:center;vertical-align:middle;border-left:1px solid #E5E7EB;">
           <span class="cell-icon" data-tier="${i}" data-id="${escAttr(id)}" title="Click to change" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:${c.bg};color:${c.fg};font-weight:700;font-size:12px;line-height:1;cursor:pointer;">${c.glyph}</span>
-          <button type="button" class="cell-text-btn" data-tier="${i}" data-id="${escAttr(id)}" title="Enter custom text instead" style="display:inline-block;margin-left:4px;background:none;border:none;padding:0;font-family:'Source Sans Pro',Arial,sans-serif;font-size:9px;color:#D1D5DB;cursor:pointer;vertical-align:middle;">T</button>
+          <button type="button" class="cell-text-btn" data-tier="${i}" data-id="${escAttr(id)}" title="Enter custom text instead" style="display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;margin-left:6px;padding:0 4px;background:#F3F4F6;border:1px solid #D1D5DB;border-radius:4px;font-family:'Source Sans Pro',Arial,sans-serif;font-size:11px;font-weight:700;color:#4B5563;cursor:pointer;vertical-align:middle;line-height:1;">T</button>
         </td>`;
       }
       return `<td style="padding:6px 10px;border-top:1px solid #F0F0EE;text-align:center;vertical-align:middle;border-left:1px solid #E5E7EB;">
         <span data-editable-id="cell-${i}-${id}" style="font-family:'Source Sans Pro',Arial,sans-serif;font-size:12px;font-weight:600;color:#0B1220;">${esc(svc.value || '')}</span>
-        <button type="button" class="cell-rewrite-btn" data-tier="${i}" data-id="${escAttr(id)}" title="Rewrite as a client benefit" style="display:inline-block;margin-left:3px;background:none;border:none;padding:0;font-size:10px;cursor:pointer;vertical-align:middle;">&#10024;</button>
-        <button type="button" class="cell-icon-btn" data-tier="${i}" data-id="${escAttr(id)}" title="Switch back to symbol" style="display:inline-block;margin-left:3px;background:none;border:none;padding:0;font-family:'Source Sans Pro',Arial,sans-serif;font-size:9px;color:#D1D5DB;cursor:pointer;vertical-align:middle;">&#8635;</button>
+        <button type="button" class="cell-rewrite-btn" data-tier="${i}" data-id="${escAttr(id)}" title="Rewrite as a client benefit (AI)" style="display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;margin-left:5px;padding:0 5px;background:#EDE9FE;border:1px solid #C4B5FD;border-radius:4px;font-size:12px;cursor:pointer;vertical-align:middle;line-height:1;">&#10024;</button>
+        <button type="button" class="cell-icon-btn" data-tier="${i}" data-id="${escAttr(id)}" title="Switch back to symbol" style="display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;margin-left:5px;padding:0 4px;background:#F3F4F6;border:1px solid #D1D5DB;border-radius:4px;font-family:'Source Sans Pro',Arial,sans-serif;font-size:12px;color:#4B5563;cursor:pointer;vertical-align:middle;line-height:1;">&#8635;</button>
       </td>`;
     }).join('');
 
     return `<tr data-draggable-row data-id="${escAttr(id)}" data-category="${escAttr(category)}" draggable="true">
       <td style="padding:6px 12px;border-top:1px solid #F0F0EE;font-family:'Source Sans Pro',Arial,sans-serif;font-size:12.5px;color:#0B1220;font-weight:600;white-space:nowrap;vertical-align:middle;">
-        <span class="row-drag-handle" title="Drag to reorder within this category" style="cursor:grab;color:#D1D5DB;margin-right:6px;font-size:12px;">&#10241;</span><span data-editable-id="rowname-${id}">${esc(name)}</span><button type="button" class="row-delete-btn" data-id="${escAttr(id)}" data-category="${escAttr(category)}" title="Delete row" style="margin-left:6px;background:none;border:none;color:#D1D5DB;cursor:pointer;font-size:11px;">&#10005;</button>
+        <span class="row-drag-handle" title="Drag to reorder within this category" style="display:inline-flex;align-items:center;justify-content:center;cursor:grab;color:#9CA3AF;margin-right:8px;font-size:14px;">&#10241;</span><span data-editable-id="rowname-${id}">${esc(name)}</span><button type="button" class="row-delete-btn" data-id="${escAttr(id)}" data-category="${escAttr(category)}" title="Delete row" style="display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;margin-left:8px;padding:0 4px;background:#FEF2F2;border:1px solid #FECACA;border-radius:4px;color:#DC2626;cursor:pointer;font-size:11px;font-weight:700;vertical-align:middle;line-height:1;">&#10005;</button>
       </td>
       ${cells}
     </tr>`;
