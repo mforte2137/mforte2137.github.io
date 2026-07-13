@@ -11,6 +11,15 @@ USE WHEN: Adding any product, service, or bundle to a Salesbuildr quote and want
 NOT FOR: Full proposal narrative — use Proposal Widget Builder. Pricing or cost information.
 URL: https://widgetcreator.netlify.app/product-explainer.html
 
+TOOL: Service Tier Widget Builder
+WHAT: Generates a visual service tier comparison widget for MSP proposals. The MSP selects services from a categorised checkbox library (Helpdesk & Support, Monitoring & Management, Security, Backup & Continuity, Cloud & Productivity, Strategic & Compliance), AI assigns services to appropriate tiers based on standard MSP packaging patterns and writes short benefit-oriented descriptions per service. MSP selects 2–4 tiers (default 3), chooses a tier naming convention (Metal / Quality / Level / Scale / Simple / Custom — all names editable after selection), and selects which tier is recommended (default: middle). One comparison table widget output — gradient header, tier columns, included/not-included indicators, category grouping, recommended tier highlighted with badge and theme colour. Full inline editing. No pricing in the widget.
+WHO: MSP sales reps building proposals where they want to show service options rather than a single price.
+INPUT: Tier naming convention, number of tiers (2–4), service checkboxes from categorised library, recommended tier selection, colour theme.
+OUTPUT: One service tier comparison table widget — push to Salesbuildr or copy HTML.
+USE WHEN: Presenting service options in a proposal. Showing an upgrade path on a renewal. Competing on value rather than price. Buyer is price-shopping and needs to see what they are comparing.
+NOT FOR: Pricing tables — no pricing in widget output. Salesbuildr bundle creation. Full proposal narrative.
+URL: https://widgetcreator.netlify.app/service-tier-builder.html
+
 TOOL: Multi-Stakeholder Proposal Pack
 WHAT: Generates three versions of the same proposal story — one for each key stakeholder — from a single input describing the engagement. CEO version: risk, business continuity, strategic partnership. CFO version: cost comparison table (Managed IT vs In-House vs Break-Fix), ROI framing using real benchmarks, cost of inaction. IT & Operations version: technical credibility, methodology, transition process, day-to-day staff impact, co-managed framing if relevant. Prospect or Existing Client toggle shapes tone throughout. MSP chooses separate widgets or a combined pack.
 WHO: MSP sales reps sending proposals to companies with more than one decision-maker.
