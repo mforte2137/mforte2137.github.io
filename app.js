@@ -38,7 +38,7 @@ const TOOLS = [
     shortLabel: "Case Study Builder",
     description:
       "Turn a customer win into a persuasive proposal widget in minutes. Describe the challenge, solution, and outcome — AI writes the case study. Use the client\'s name or anonymise it automatically.",
-    category: "Proposal",
+    category: "Strategic",
     url: "https://widgetcreator.netlify.app/case-study-widget.html",
     badge: "new",
     updated: "2026-06-27",
@@ -86,7 +86,7 @@ const TOOLS = [
     shortLabel: "Review Builder",
     description:
       "Build a professional client business review in minutes. Produces three outputs: a full-screen web presentation for in-person meetings, a PDF for email follow-up, and Salesbuildr widgets for a combined QBR + proposal — ideal for smaller accounts where face-to-face isn't possible.",
-    category: "Proposal",
+    category: "Strategic",
     url: "https://widgetcreator.netlify.app/business-review.html",
     badge: "new",
     updated: "2026-07-05",
@@ -110,7 +110,7 @@ const TOOLS = [
     shortLabel: "Roadmap Builder",
     description:
       "Build a 12–24 month technology roadmap in minutes using guided dropdowns and preselects. AI generates four executive-facing widgets — current state, phased roadmap, business outcomes, and investment summary — ready to push into any Salesbuildr quote.",
-    category: "Proposal",
+    category: "Strategic",
     url: "https://widgetcreator.netlify.app/technology-roadmap.html",
     badge: "new",
     updated: "2026-06-27",
@@ -158,7 +158,7 @@ const TOOLS = [
     shortLabel: "Growth OS",
     description:
       "The opportunity isn't the product — it's the change. Change creates conversations. Conversations create opportunities.",
-    category: "Proposal",
+    category: "Strategic",
     url: "https://widgetcreator.netlify.app/cgos.html",
     badge: "new",
     updated: "2026-06-07",
