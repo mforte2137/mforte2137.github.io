@@ -113,11 +113,10 @@
         <button type="button" class="swatch" data-hex="#c2410c" style="background:#c2410c" title="Orange"></button>
         <button type="button" class="swatch" data-hex="#1c1c1e" style="background:#1c1c1e" title="Charcoal"></button>
       </div>
-      <div class="hex-input-row">
-        <span class="hex-prefix">#</span>
-        <input type="text" id="customHex" maxlength="6" placeholder="2e74dc" />
-        <span class="hex-preview" id="hexPreview" style="background:#2e74dc"></span>
-      </div>
+      <button type="button" class="hex-trigger" id="hexTriggerBtn">
+        <span class="hex-trigger-swatch" id="hexPreview" style="background:#2e74dc"></span>
+        <span class="hex-trigger-label">Custom colour — <span id="hexTriggerValue">#2e74dc</span></span>
+      </button>
     </div>
 
     <div class="sticky-actions">
@@ -209,6 +208,27 @@
   </section>
 
 </main>
+
+<!-- Custom colour picker modal -->
+<div class="hex-modal-overlay" id="hexModalOverlay" hidden>
+  <div class="hex-modal">
+    <div class="hex-modal-header">
+      <span>Choose a colour</span>
+      <button type="button" class="hex-modal-close" id="hexModalClose">&times;</button>
+    </div>
+    <div class="hue-bar" id="hueBar">
+      <div class="hue-dot" id="hueDot"></div>
+    </div>
+    <div class="hex-modal-row">
+      <span class="hex-swatch-preview" id="hexModalPreview" style="background:#2e74dc"></span>
+      <div class="hex-modal-input-wrap">
+        <span class="hex-prefix">#</span>
+        <input type="text" id="hexModalInput" maxlength="6" value="2e74dc" />
+      </div>
+    </div>
+    <button type="button" class="btn-accent btn-block" id="hexModalApply">Apply Colour</button>
+  </div>
+</div>
 
 <script src="account-growth.js"></script>
 </body>
