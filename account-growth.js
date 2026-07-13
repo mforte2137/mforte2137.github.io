@@ -1,0 +1,719 @@
+/* =====================================================
+   account-growth.js — Frontend logic
+   ===================================================== */
+(function () {
+  'use strict';
+
+  // ── Constants ──────────────────────────────────────
+  const SESSION_KEY   = 'account_growth_sessions';
+  const ARCHIVE_KEY   = 'account_growth_sessions_archived';
+  const SESSION_LIMIT = 5;
+
+  const COVERAGE_CHIPS = [
+    'Helpdesk & Support',
+    'Remote Monitoring & Management',
+    'Patch Management',
+    'Backup & Disaster Recovery',
+    'Microsoft 365 Management',
+    'Network Monitoring & Management',
+    'Basic Security (antivirus only)',
+    'Endpoint Detection & Response (EDR)',
+    'Email Security & Anti-Phishing',
+    'Multi-Factor Authentication (MFA)',
+    'Security Awareness Training',
+    'vCIO / Strategic Advisory'
+  ];
+
+  // ── State ──────────────────────────────────────────
+  let currentTheme     = '#2e74dc';
+  let currentCoverage  = new Set();
+  let recommendedAdd   = new Set();
+  let includeExecSummary = false;
+  let generatedData    = null;      // { growthWidget, executiveSummary }
+  let widgets          = {};        // { 1: html, 2: html }
+  let currentSessionId = null;
+  let lastPayload       = null;
+  let autoSaveReady     = false;
+
+  // ── DOM refs ───────────────────────────────────────
+  const $ = id => document.getElementById(id);
+
+  const sessionsBlock   = $('sessionsBlock');
+  const sessionCards    = $('sessionCards');
+  const showArchivedBtn = $('showArchivedBtn');
+  const newSessionBtn   = $('newSessionBtn');
+
+  const clientNameEl    = $('clientName');
+  const industryEl      = $('industry');
+  const currentChipsEl  = $('currentCoverageChips');
+  const recChipsEl      = $('recommendedChips');
+  const triggerSelectEl = $('triggerSelect');
+  const triggerDetailEl = $('triggerDetail');
+
+  const execToggle    = $('execSummaryToggle');
+  const widget2Block   = $('widget2Block');
+
+  const colourSwatches = $('colourSwatches');
+  const customHex      = $('customHex');
+  const hexPreview     = $('hexPreview');
+
+  const generateBtn = $('generateBtn');
+  const clearBtn     = $('clearBtn');
+  const formError    = $('formError');
+  const autoSaveLabel = $('autoSaveLabel');
+
+  const emptyState   = $('emptyState');
+  const loadingState = $('loadingState');
+  const loadingMsg   = $('loadingMsg');
+  const outputArea   = $('outputArea');
+  const deliveryTitle = $('deliveryTitle');
+  const previewCol    = $('previewCol');
+
+  const preview1 = $('preview1');
+  const preview2 = $('preview2');
+
+  const copyAllBtn  = $('copyAllBtn');
+  const pushPackBtn = $('pushPackBtn');
+  const credsInline = $('credsInline');
+  const pushApiKey    = $('pushApiKey');
+  const pushTenantUrl = $('pushTenantUrl');
+  const pushStatus    = $('pushStatus');
+
+  // ── Init ───────────────────────────────────────────
+  function init() {
+    renderChipList(currentChipsEl, COVERAGE_CHIPS, currentCoverage, onCurrentChipClick);
+    renderChipList(recChipsEl, COVERAGE_CHIPS, recommendedAdd, onRecChipClick);
+    refreshRecChipsDisabled();
+
+    colourSwatches.querySelectorAll('.swatch').forEach(s => s.addEventListener('click', () => selectSwatch(s)));
+    customHex.addEventListener('input', onCustomHex);
+
+    [clientNameEl, industryEl, triggerSelectEl, triggerDetailEl].forEach(el => {
+      el.addEventListener('input', () => autoSave());
+      el.addEventListener('change', () => autoSave());
+    });
+
+    execToggle.addEventListener('click', onToggleExecSummary);
+
+    generateBtn.addEventListener('click', onGenerate);
+    clearBtn.addEventListener('click', startNewSession);
+    newSessionBtn.addEventListener('click', startNewSession);
+    showArchivedBtn.addEventListener('click', onShowArchived);
+
+    ['1', '2'].forEach(i => {
+      $(`regenBtn${i}`).addEventListener('click', () => onRegenWidget(Number(i)));
+      $(`copyBtn${i}`).addEventListener('click', () => onCopyWidget(Number(i)));
+      $(`pushBtn${i}`).addEventListener('click', () => onPushSingle(Number(i)));
+    });
+
+    copyAllBtn.addEventListener('click', onCopyAll);
+    pushPackBtn.addEventListener('click', () => onPush('pack'));
+    $('saveAndPushBtn').addEventListener('click', onSaveAndPush);
+    $('cancelCredsBtn').addEventListener('click', () => { credsInline.hidden = true; });
+
+    renderSessionCards();
+    const sessions = getSessions();
+    if (sessions.length) {
+      sessionsBlock.hidden = false;
+      resumeSession(sessions[0]);
+    }
+    autoSaveReady = true;
+  }
+
+  // ── Chip rendering / delta logic ────────────────────
+  function renderChipList(container, list, activeSet, onClick) {
+    container.innerHTML = '';
+    list.forEach(val => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip';
+      chip.dataset.val = val;
+      chip.textContent = val;
+      chip.addEventListener('click', () => onClick(chip));
+      container.appendChild(chip);
+    });
+  }
+
+  function onCurrentChipClick(chip) {
+    const val = chip.dataset.val;
+    if (currentCoverage.has(val)) {
+      currentCoverage.delete(val);
+      chip.classList.remove('active');
+    } else {
+      currentCoverage.add(val);
+      chip.classList.add('active');
+      // Can't recommend something the client already has — clear it from the addition side
+      if (recommendedAdd.has(val)) recommendedAdd.delete(val);
+    }
+    refreshRecChipsDisabled();
+    autoSave();
+  }
+
+  function onRecChipClick(chip) {
+    const val = chip.dataset.val;
+    if (chip.classList.contains('chip-disabled')) return; // already in current coverage
+    if (recommendedAdd.has(val)) {
+      recommendedAdd.delete(val);
+      chip.classList.remove('active', 'chip-new');
+    } else {
+      recommendedAdd.add(val);
+      chip.classList.add('active', 'chip-new');
+    }
+    autoSave();
+  }
+
+  // Grey out / disable any Recommended Addition chip already present in Current Coverage
+  function refreshRecChipsDisabled() {
+    recChipsEl.querySelectorAll('.chip').forEach(chip => {
+      const val = chip.dataset.val;
+      const inCurrent = currentCoverage.has(val);
+      chip.classList.toggle('chip-disabled', inCurrent);
+      chip.classList.toggle('active', !inCurrent && recommendedAdd.has(val));
+      chip.classList.toggle('chip-new', !inCurrent && recommendedAdd.has(val));
+      chip.disabled = false; // keep clickable target but click handler no-ops when disabled class present
+    });
+    currentChipsEl.querySelectorAll('.chip').forEach(chip => {
+      chip.classList.toggle('active', currentCoverage.has(chip.dataset.val));
+    });
+  }
+
+  // ── Executive Summary toggle ────────────────────────
+  function onToggleExecSummary() {
+    includeExecSummary = !includeExecSummary;
+    execToggle.dataset.state = includeExecSummary ? 'on' : 'off';
+    execToggle.setAttribute('aria-checked', String(includeExecSummary));
+    // Show/hide immediately — no regeneration. Both widgets are always generated.
+    if (widgets[2]) {
+      widget2Block.hidden = !includeExecSummary;
+    }
+    autoSave();
+  }
+
+  // ── Colour theme ─────────────────────────────────────
+  function selectSwatch(el) {
+    colourSwatches.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    currentTheme = el.dataset.hex;
+    customHex.value = currentTheme.replace('#', '');
+    hexPreview.style.background = currentTheme;
+    refreshPreviews();
+    autoSave();
+  }
+
+  function onCustomHex() {
+    const val = customHex.value.trim().replace('#', '');
+    if (/^[0-9a-fA-F]{6}$/.test(val)) {
+      currentTheme = '#' + val;
+      hexPreview.style.background = currentTheme;
+      colourSwatches.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+      refreshPreviews();
+      autoSave();
+    }
+  }
+
+  function refreshPreviews() {
+    if (generatedData && generatedData.growthWidget) {
+      widgets[1] = buildGrowthWidgetHtml(generatedData.growthWidget, currentTheme);
+      preview1.innerHTML = widgets[1];
+      makeEditable(preview1, 'growth');
+    }
+    if (generatedData && generatedData.executiveSummary) {
+      widgets[2] = buildExecSummaryHtml(generatedData.executiveSummary, currentTheme);
+      preview2.innerHTML = widgets[2];
+      makeEditable(preview2, 'exec');
+    }
+  }
+
+  // ── Build payload ───────────────────────────────────
+  function buildPayload() {
+    return {
+      clientName: clientNameEl.value.trim(),
+      industry: industryEl.value,
+      currentCoverage: [...currentCoverage],
+      recommendedAddition: [...recommendedAdd],
+      trigger: triggerSelectEl.value,
+      triggerDetail: triggerDetailEl.value.trim(),
+      includeExecutiveSummary: includeExecSummary
+    };
+  }
+
+  function validate(payload) {
+    if (!payload.industry) return 'Please select an industry.';
+    if (!payload.currentCoverage.length) return 'Select at least one item under Current Coverage.';
+    if (!payload.recommendedAddition.length) return "Select at least one new item under Recommended Addition — it can't overlap with Current Coverage.";
+    if (!payload.trigger) return 'Please select a trigger.';
+    return null;
+  }
+
+  // ── Generate ─────────────────────────────────────────
+  async function onGenerate() {
+    hideError();
+    const payload = buildPayload();
+    const err = validate(payload);
+    if (err) { showError(err); return; }
+
+    lastPayload = payload;
+
+    // Show loading state at the target location, then scroll it into view
+    emptyState.hidden = true;
+    outputArea.hidden = true;
+    loadingState.hidden = false;
+    loadingMsg.textContent = 'Writing your account growth recommendation…';
+    previewCol.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    generateBtn.disabled = true;
+
+    try {
+      const res = await fetch('/api/account-growth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Generation failed.');
+      generatedData = { growthWidget: data.growthWidget, executiveSummary: data.executiveSummary };
+      populateWidgets(payload);
+    } catch (e) {
+      loadingState.hidden = true;
+      emptyState.hidden = false;
+      showError('Something went wrong: ' + e.message);
+    } finally {
+      generateBtn.disabled = false;
+    }
+  }
+
+  function populateWidgets(payload) {
+    widgets[1] = buildGrowthWidgetHtml(generatedData.growthWidget, currentTheme);
+    widgets[2] = buildExecSummaryHtml(generatedData.executiveSummary, currentTheme);
+
+    preview1.innerHTML = widgets[1];
+    makeEditable(preview1, 'growth');
+    preview2.innerHTML = widgets[2];
+    makeEditable(preview2, 'exec');
+
+    widget2Block.hidden = !includeExecSummary;
+
+    deliveryTitle.textContent = payload.clientName
+      ? `${payload.clientName} — Account Growth`
+      : `Account Growth Recommendation — ${payload.industry}`;
+
+    loadingState.hidden = true;
+    emptyState.hidden = true;
+    outputArea.hidden = false;
+
+    autoSave('generated');
+  }
+
+  // ── Widget HTML builders ────────────────────────────
+  function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+  function gradientHeader(hex, kicker, title, subtitle) {
+    return `<div style="background:linear-gradient(135deg, ${esc(darken(hex))} 0%, ${esc(hex)} 100%); background-image:linear-gradient(135deg, ${esc(darken(hex))} 0%, ${esc(hex)} 100%), radial-gradient(circle, rgba(255,255,255,0.10) 1px, transparent 1px); background-size:auto, 14px 14px; padding:16px 20px 14px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.65);margin-bottom:5px;">${esc(kicker)}</div>
+      <div data-editable-id="headline" style="font-size:16px;font-weight:700;color:#ffffff;letter-spacing:-0.01em;line-height:1.3;">${esc(title)}</div>
+      ${subtitle ? `<div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:3px;">${esc(subtitle)}</div>` : ''}
+    </div>`;
+  }
+
+  function darken(hex) {
+    const h = hex.replace('#', '');
+    const r = Math.max(0, parseInt(h.substr(0,2),16) - 40);
+    const g = Math.max(0, parseInt(h.substr(2,2),16) - 40);
+    const b = Math.max(0, parseInt(h.substr(4,2),16) - 40);
+    return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+  }
+
+  function sectionLabel(text, hex) {
+    return `<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${esc(hex)};margin-bottom:6px;">${esc(text)}</div>`;
+  }
+
+  function buildGrowthWidgetHtml(d, hex) {
+    const clientLine = d.clientName ? esc(d.clientName) : '';
+    return `<div style="background:#ffffff;border:1px solid #e3e7ee;border-top:3px solid ${esc(hex)};overflow:hidden;width:100%;font-family:Arial,Helvetica,sans-serif;">
+  ${gradientHeader(hex, 'Account Growth Recommendation', d.headline || 'Your Next Step', clientLine)}
+  <div style="padding:16px 20px;">
+    <div style="margin-bottom:16px;">
+      ${sectionLabel('Where You Are Today', hex)}
+      <p data-editable-id="currentState" style="margin:0;font-size:13px;color:#586273;line-height:1.6;">${esc(d.currentState)}</p>
+    </div>
+    <div style="margin-bottom:16px;">
+      ${sectionLabel('Why Now', hex)}
+      <p data-editable-id="triggerContext" style="margin:0;font-size:13px;color:#586273;line-height:1.6;">${esc(d.triggerContext)}</p>
+    </div>
+    <div style="margin-bottom:16px;">
+      ${sectionLabel('The Recommendation', hex)}
+      <p data-editable-id="recommendation" style="margin:0;font-size:13px;color:#0b1220;line-height:1.6;">${esc(d.recommendation)}</p>
+    </div>
+    <div>
+      ${sectionLabel('What This Means for Your Business', hex)}
+      <p data-editable-id="businessOutcome" style="margin:0;font-size:13px;color:#0b1220;line-height:1.6;font-weight:600;">${esc(d.businessOutcome)}</p>
+    </div>
+  </div>
+  <div style="background:#f4f7fb;border-top:1px solid #e3e7ee;padding:8px 20px;">
+    <span style="font-size:11px;color:#9ca3af;">Prepared for your review</span>
+  </div>
+</div>`;
+  }
+
+  function buildExecSummaryHtml(d, hex) {
+    const clientLine = d.clientName ? esc(d.clientName) : '';
+    return `<div style="background:#ffffff;border:1px solid #e3e7ee;border-top:3px solid ${esc(hex)};overflow:hidden;width:100%;font-family:Arial,Helvetica,sans-serif;">
+  ${gradientHeader(hex, 'IT Advisory Summary', d.headline || 'Executive Summary', clientLine)}
+  <div style="padding:18px 20px;">
+    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #e3e7ee;">
+      ${sectionLabel('What We Manage Today', hex)}
+      <p data-editable-id="snapshot" style="margin:0;font-size:13px;color:#586273;line-height:1.6;">${esc(d.snapshot)}</p>
+    </div>
+    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #e3e7ee;">
+      ${sectionLabel('What We Recommend', hex)}
+      <p data-editable-id="recommendation" style="margin:0;font-size:13px;color:#0b1220;line-height:1.6;font-weight:600;">${esc(d.recommendation)}</p>
+    </div>
+    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #e3e7ee;">
+      ${sectionLabel('Risk if Delayed', hex)}
+      <p data-editable-id="riskIfDelayed" style="margin:0;font-size:13px;color:#b3760a;line-height:1.6;">${esc(d.riskIfDelayed)}</p>
+    </div>
+    <div>
+      ${sectionLabel('Next Step', hex)}
+      <p data-editable-id="nextStep" style="margin:0;font-size:13px;color:#0b1220;line-height:1.6;">${esc(d.nextStep)}</p>
+    </div>
+  </div>
+</div>`;
+  }
+
+  // ── Contenteditable-in-place ─────────────────────────
+  function makeEditable(frame, kind) {
+    frame.querySelectorAll('[data-editable-id]').forEach(el => {
+      el.setAttribute('contenteditable', 'true');
+      el.title = 'Click to edit';
+      el.addEventListener('input', () => {
+        const id = el.dataset.editableId;
+        if (kind === 'growth' && generatedData.growthWidget) generatedData.growthWidget[id] = el.textContent;
+        if (kind === 'exec' && generatedData.executiveSummary) generatedData.executiveSummary[id] = el.textContent;
+        widgets[kind === 'growth' ? 1 : 2] = getCleanHtml(frame);
+        autoSave();
+      });
+    });
+  }
+
+  function getCleanHtml(frame) {
+    const clone = frame.cloneNode(true);
+    clone.querySelectorAll('[contenteditable]').forEach(el => {
+      el.removeAttribute('contenteditable');
+      el.removeAttribute('title');
+    });
+    return clone.innerHTML;
+  }
+
+  // ── Regen / Copy / Push per widget ───────────────────
+  async function onRegenWidget(i) {
+    if (!lastPayload) return;
+    const btn = $(`regenBtn${i}`);
+    btn.disabled = true; btn.textContent = '…';
+    try {
+      const res = await fetch('/api/account-growth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...lastPayload, regenWidget: i === 1 ? 'growth' : 'exec' })
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Regeneration failed.');
+      if (i === 1) generatedData.growthWidget = data.growthWidget;
+      if (i === 2) generatedData.executiveSummary = data.executiveSummary;
+      refreshPreviews();
+      autoSave();
+    } catch (e) {
+      alert('Regeneration failed: ' + e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = '↺ Regen';
+    }
+  }
+
+  function onCopyWidget(i) {
+    const btn = $(`copyBtn${i}`);
+    navigator.clipboard.writeText(widgets[i] || '').then(() => {
+      btn.textContent = 'Copied ✓';
+      setTimeout(() => btn.textContent = 'Copy HTML', 2000);
+    });
+  }
+
+  function getWidgetTitle(which) {
+    const name = lastPayload?.clientName;
+    if (which === 'growth') return name ? `${name} — Account Growth` : `Account Growth Recommendation — ${lastPayload?.industry || ''}`;
+    return name ? `${name} — Executive Summary` : `Executive Summary — ${lastPayload?.industry || ''}`;
+  }
+
+  async function onPushSingle(i) {
+    const apiKey = localStorage.getItem('sb_api_key');
+    const tenantUrl = localStorage.getItem('sb_tenant_url');
+    if (!apiKey || !tenantUrl) { credsInline.hidden = false; credsInline.scrollIntoView({ behavior: 'smooth' }); return; }
+    const which = i === 1 ? 'growth' : 'exec';
+    await executePush([{ title: getWidgetTitle(which), html: widgets[i] }], apiKey, tenantUrl, $(`pushBtn${i}`));
+  }
+
+  async function onPush(type) {
+    const apiKey = localStorage.getItem('sb_api_key');
+    const tenantUrl = localStorage.getItem('sb_tenant_url');
+    if (!apiKey || !tenantUrl) { credsInline.hidden = false; credsInline.scrollIntoView({ behavior: 'smooth' }); return; }
+    const list = [{ title: getWidgetTitle('growth'), html: widgets[1] }];
+    if (includeExecSummary && widgets[2]) list.push({ title: getWidgetTitle('exec'), html: widgets[2] });
+    if (type === 'pack') {
+      const combined = list.map(w => w.html).join('\n\n');
+      await executePush([{ title: getWidgetTitle('growth') + ' — Pack', html: combined }], apiKey, tenantUrl, pushPackBtn);
+    } else {
+      await executePush(list, apiKey, tenantUrl, pushPackBtn);
+    }
+  }
+
+  async function onSaveAndPush() {
+    const apiKey = pushApiKey.value.trim();
+    const tenantUrl = pushTenantUrl.value.trim();
+    if (!apiKey || !tenantUrl) { showPushStatus('Enter API key and tenant URL.', 'err'); return; }
+    localStorage.setItem('sb_api_key', apiKey);
+    localStorage.setItem('sb_tenant_url', tenantUrl);
+    credsInline.hidden = true;
+    const list = [{ title: getWidgetTitle('growth'), html: widgets[1] }];
+    if (includeExecSummary && widgets[2]) list.push({ title: getWidgetTitle('exec'), html: widgets[2] });
+    await executePush(list, apiKey, tenantUrl, pushPackBtn);
+  }
+
+  async function executePush(widgetList, apiKey, tenantUrl, triggerBtn) {
+    const prevLabel = triggerBtn ? triggerBtn.textContent : null;
+    if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = 'Pushing…'; }
+
+    const prefix = lastPayload?.clientName ? `${lastPayload.clientName} — Account Growth` : 'Account Growth Recommendation';
+
+    try {
+      const res = await fetch('/api/push-widgets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          widgets: widgetList.map(w => ({ type: 'html', content: w.html, title: w.title })),
+          prefix,
+          apiKey,
+          tenantUrl
+        })
+      });
+      const data = await res.json();
+      if (data.ok || (data.successCount && data.successCount > 0)) {
+        showPushStatus(`✓ Pushed successfully${data.successCount ? ` (${data.successCount} widget${data.successCount > 1 ? 's' : ''})` : ''}.`, 'ok');
+        autoSave('pushed');
+      } else {
+        showPushStatus('Push failed: ' + (data.error || 'Unknown error. Check your credentials.'), 'err');
+      }
+    } catch (e) {
+      showPushStatus('Push failed: ' + (e.message || 'Network error.'), 'err');
+    } finally {
+      if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = prevLabel; }
+    }
+  }
+
+  function onCopyAll() {
+    const parts = [widgets[1] || ''];
+    if (includeExecSummary && widgets[2]) parts.push(widgets[2]);
+    navigator.clipboard.writeText(parts.join('\n\n')).then(() => {
+      copyAllBtn.textContent = 'Copied ✓';
+      setTimeout(() => copyAllBtn.textContent = 'Copy All HTML', 2000);
+    });
+  }
+
+  // ── UI helpers ───────────────────────────────────────
+  function showError(msg) { formError.textContent = msg; formError.hidden = false; }
+  function hideError() { formError.hidden = true; }
+  function showPushStatus(msg, type) {
+    pushStatus.textContent = msg;
+    pushStatus.className = 'push-status ' + type;
+    pushStatus.hidden = false;
+    pushStatus.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (type === 'err') setTimeout(() => { pushStatus.hidden = true; }, 8000);
+  }
+
+  // ── Sessions ─────────────────────────────────────────
+  function getSessions()   { try { return JSON.parse(localStorage.getItem(SESSION_KEY)  || '[]'); } catch { return []; } }
+  function saveSessions(s) { try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch (e) { console.warn('Session save failed:', e); } }
+  function getArchived()   { try { return JSON.parse(localStorage.getItem(ARCHIVE_KEY) || '[]'); } catch { return []; } }
+  function saveArchived(a) { localStorage.setItem(ARCHIVE_KEY, JSON.stringify(a)); }
+
+  let showingArchived = false;
+  function onShowArchived() { showingArchived = !showingArchived; renderSessionCards(showingArchived); }
+
+  function buildSessionSnapshot(status) {
+    const payload = buildPayload();
+    const safeStatus = ['draft', 'generated', 'pushed'].includes(status) ? status : 'draft';
+    return {
+      id: currentSessionId,
+      clientName: payload.clientName || 'Unnamed client',
+      industry: payload.industry,
+      trigger: payload.trigger,
+      savedAt: Date.now(),
+      status: safeStatus,
+      theme: currentTheme,
+      includeExecSummary,
+      formData: payload,
+      widgets: JSON.parse(JSON.stringify(widgets)),
+      generatedData: generatedData ? JSON.parse(JSON.stringify(generatedData)) : null,
+      lastPayload
+    };
+  }
+
+  function autoSave(status) {
+    if (!autoSaveReady) return;
+    if (!currentSessionId) currentSessionId = 'growth_session_' + Date.now();
+    let sessions = getSessions();
+    const idx = sessions.findIndex(s => s.id === currentSessionId);
+    const storedStatus = sessions[idx]?.status;
+    const snap = buildSessionSnapshot(status || storedStatus || 'draft');
+    if (idx >= 0) sessions[idx] = snap; else sessions.unshift(snap);
+    sessions = sessions.slice(0, 20);
+    saveSessions(sessions);
+    renderSessionCards();
+    flashSaved();
+  }
+
+  function flashSaved() {
+    autoSaveLabel.classList.add('visible');
+    clearTimeout(flashSaved._t);
+    flashSaved._t = setTimeout(() => autoSaveLabel.classList.remove('visible'), 1800);
+  }
+
+  function renderSessionCards(showArchived) {
+    const sessions = getSessions();
+    const archived = showArchived ? getArchived() : [];
+    const toShow = showArchived ? [...sessions, ...archived] : sessions.slice(0, SESSION_LIMIT);
+    if (!toShow.length && !sessions.length) { sessionsBlock.hidden = true; return; }
+    sessionsBlock.hidden = false;
+    sessionCards.innerHTML = '';
+    toShow.forEach(sess => {
+      const card = document.createElement('div');
+      card.className = 'session-card';
+      const statusClass = { draft: 'status-draft', generated: 'status-generated', pushed: 'status-pushed' }[sess.status] || 'status-draft';
+      card.innerHTML = `
+        <div class="session-card-info">
+          <div class="session-card-company">${escHtml(sess.clientName)} <span style="color:var(--text-3);font-weight:400;">· ${escHtml(sess.industry || '')}</span></div>
+          <div class="session-card-meta">${fmtAge(sess.savedAt)}</div>
+        </div>
+        <div class="session-card-actions">
+          <span class="session-card-status ${statusClass}">${(sess.status || 'draft').toUpperCase()}</span>
+          <button class="session-discard" data-id="${escHtml(sess.id)}" title="Archive">×</button>
+        </div>`;
+      card.addEventListener('click', () => resumeSession(sess));
+      card.querySelector('.session-discard').addEventListener('click', e => { e.stopPropagation(); discardSession(sess.id, showArchived); });
+      sessionCards.appendChild(card);
+    });
+    const hasMore = !showArchived && sessions.length > SESSION_LIMIT;
+    if (hasMore) {
+      const more = document.createElement('div');
+      more.style.cssText = 'font-size:11px;color:var(--text-3);text-align:center;padding:4px;';
+      more.textContent = `+ ${sessions.length - SESSION_LIMIT} more`;
+      sessionCards.appendChild(more);
+    }
+    showArchivedBtn.textContent = showArchived ? 'Hide archived' : 'Show archived';
+  }
+
+  function discardSession(id, isArchived) {
+    if (isArchived) {
+      saveArchived(getArchived().filter(s => s.id !== id));
+    } else {
+      const sessions = getSessions();
+      const target = sessions.find(s => s.id === id);
+      saveSessions(sessions.filter(s => s.id !== id));
+      if (target) saveArchived([target, ...getArchived()]);
+    }
+    renderSessionCards(isArchived);
+  }
+
+  function resumeSession(sess) {
+    currentSessionId = sess.id;
+    currentTheme = sess.theme || '#2e74dc';
+    includeExecSummary = !!sess.includeExecSummary;
+    widgets = sess.widgets || {};
+    generatedData = sess.generatedData || null;
+    lastPayload = sess.lastPayload || null;
+
+    const fd = sess.formData || {};
+    clientNameEl.value = fd.clientName || '';
+    industryEl.value = fd.industry || '';
+    triggerSelectEl.value = fd.trigger || '';
+    triggerDetailEl.value = fd.triggerDetail || '';
+
+    currentCoverage = new Set(fd.currentCoverage || []);
+    recommendedAdd  = new Set(fd.recommendedAddition || []);
+    refreshRecChipsDisabled();
+
+    execToggle.dataset.state = includeExecSummary ? 'on' : 'off';
+    execToggle.setAttribute('aria-checked', String(includeExecSummary));
+
+    let matched = false;
+    colourSwatches.querySelectorAll('.swatch').forEach(s => {
+      const m = s.dataset.hex === currentTheme;
+      s.classList.toggle('active', m);
+      if (m) matched = true;
+    });
+    if (!matched) { customHex.value = currentTheme.replace('#',''); hexPreview.style.background = currentTheme; }
+
+    if (generatedData) {
+      populateWidgetsFromSession(fd);
+    } else {
+      outputArea.hidden = true;
+      emptyState.hidden = false;
+    }
+    renderSessionCards();
+  }
+
+  function populateWidgetsFromSession(fd) {
+    widgets[1] = buildGrowthWidgetHtml(generatedData.growthWidget, currentTheme);
+    widgets[2] = buildExecSummaryHtml(generatedData.executiveSummary, currentTheme);
+    preview1.innerHTML = widgets[1];
+    makeEditable(preview1, 'growth');
+    preview2.innerHTML = widgets[2];
+    makeEditable(preview2, 'exec');
+    widget2Block.hidden = !includeExecSummary;
+    deliveryTitle.textContent = fd.clientName ? `${fd.clientName} — Account Growth` : `Account Growth Recommendation — ${fd.industry || ''}`;
+    emptyState.hidden = true;
+    outputArea.hidden = false;
+  }
+
+  function startNewSession() {
+    currentSessionId = 'growth_session_' + Date.now();
+    autoSaveReady = true;
+    currentTheme = '#2e74dc';
+    currentCoverage = new Set();
+    recommendedAdd = new Set();
+    includeExecSummary = false;
+    generatedData = null;
+    widgets = {};
+    lastPayload = null;
+
+    clientNameEl.value = '';
+    industryEl.value = '';
+    triggerSelectEl.value = '';
+    triggerDetailEl.value = '';
+    refreshRecChipsDisabled();
+
+    execToggle.dataset.state = 'off';
+    execToggle.setAttribute('aria-checked', 'false');
+
+    colourSwatches.querySelectorAll('.swatch').forEach(s => s.classList.toggle('active', s.dataset.hex === '#2e74dc'));
+    customHex.value = '';
+    hexPreview.style.background = '#2e74dc';
+
+    outputArea.hidden = true;
+    emptyState.hidden = false;
+    loadingState.hidden = true;
+    widget2Block.hidden = true;
+    hideError();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    autoSave('draft');
+  }
+
+  function fmtAge(ts) {
+    const m = Math.floor((Date.now() - ts) / 60000);
+    if (m < 2) return 'just now';
+    if (m < 60) return m + 'm ago';
+    const h = Math.floor(m / 60);
+    if (h < 24) return h + 'h ago';
+    return Math.floor(h / 24) + 'd ago';
+  }
+  function escHtml(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  init();
+})();
