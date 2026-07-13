@@ -50,31 +50,6 @@ const TEMPLATES = [
     ]
   },
   {
-    id: 'tpl-managed-tiers',
-    category: 'Managed Services',
-    title: 'Managed IT Tiers',
-    desc: 'Silver / Gold / Platinum — Good/Better/Best',
-    cols: 3,
-    rows: 10,
-    cols_data: [
-      { label: 'Silver', sublabel: '', color: '#64748b' },
-      { label: 'Gold', sublabel: '', color: '#d97706' },
-      { label: 'Platinum', sublabel: '', color: '#7c3aed' }
-    ],
-    features: [
-      { label: 'Remote Monitoring (RMM)', cells: ['yes','yes','yes'] },
-      { label: 'Help Desk Support', cells: ['8×5','8×5','24×7'] },
-      { label: 'Patch Management', cells: ['yes','yes','yes'] },
-      { label: 'Endpoint Security (EDR)', cells: ['partial','yes','yes'] },
-      { label: 'Backup & Recovery', cells: ['partial','yes','yes'] },
-      { label: 'vCISO / Security Review', cells: ['no','partial','yes'] },
-      { label: 'Quarterly Business Review', cells: ['no','yes','yes'] },
-      { label: 'M365 Management', cells: ['partial','yes','yes'] },
-      { label: 'Vendor Management', cells: ['no','partial','yes'] },
-      { label: 'Dedicated Account Manager', cells: ['no','no','yes'] }
-    ]
-  },
-  {
     id: 'tpl-security',
     category: 'Security',
     title: 'Managed Security (MDR)',
@@ -141,28 +116,6 @@ const TEMPLATES = [
     ]
   },
   {
-    id: 'tpl-endpoint',
-    category: 'Managed Services',
-    title: 'Endpoint Management',
-    desc: 'RMM + Intune + Patch — Basic vs Managed',
-    cols: 3,
-    rows: 7,
-    cols_data: [
-      { label: 'Basic RMM', sublabel: '', color: '#64748b' },
-      { label: 'Managed Endpoints', sublabel: '', color: '#059669' },
-      { label: 'Full UEM', sublabel: '', color: '#2563eb' }
-    ],
-    features: [
-      { label: 'Monitoring & Alerting', cells: ['yes','yes','yes'] },
-      { label: 'Automated Patch Management', cells: ['partial','yes','yes'] },
-      { label: 'Remote Support Tools', cells: ['yes','yes','yes'] },
-      { label: 'Intune / MDM Enrollment', cells: ['no','partial','yes'] },
-      { label: 'Conditional Access Policy', cells: ['no','no','yes'] },
-      { label: 'Asset Inventory & Reporting', cells: ['partial','yes','yes'] },
-      { label: 'Scripting & Automation', cells: ['no','yes','yes'] }
-    ]
-  },
-  {
     id: 'tpl-voip',
     category: 'Telecom',
     title: 'VoIP / Teams Voice',
@@ -225,6 +178,52 @@ const TEMPLATES = [
       { label: 'User Onboarding / Off', cells: ['billed','billed','yes'] },
       { label: 'Monthly Reporting', cells: ['no','yes','yes'] },
       { label: 'Dedicated Team', cells: ['no','no','yes'] }
+    ]
+  },
+  {
+    id: 'tpl-email-security',
+    category: 'Security',
+    title: 'Email Security Platforms',
+    desc: 'Microsoft Defender vs Proofpoint vs Abnormal Security',
+    cols: 3,
+    rows: 8,
+    cols_data: [
+      { label: 'Microsoft Defender', sublabel: '', color: '#0078d4' },
+      { label: 'Proofpoint Essentials', sublabel: '', color: '#d97706' },
+      { label: 'Abnormal Security', sublabel: '', color: '#059669' }
+    ],
+    features: [
+      { label: 'Anti-Phishing / BEC Protection', cells: ['partial','yes','yes'] },
+      { label: 'AI-Based Threat Detection', cells: ['partial','partial','yes'] },
+      { label: 'Impersonation Protection', cells: ['partial','yes','yes'] },
+      { label: 'Safe Links / URL Rewriting', cells: ['yes','yes','partial'] },
+      { label: 'Email Quarantine & Review', cells: ['yes','yes','yes'] },
+      { label: 'DMARC / DKIM Enforcement', cells: ['yes','yes','yes'] },
+      { label: 'Account Takeover Detection', cells: ['no','partial','yes'] },
+      { label: 'Requires M365 / Google WS', cells: ['yes','no','yes'] }
+    ]
+  },
+  {
+    id: 'tpl-compliance',
+    category: 'Security',
+    title: 'Compliance Frameworks',
+    desc: 'CIS Controls vs NIST CSF vs SOC 2 readiness',
+    cols: 3,
+    rows: 8,
+    cols_data: [
+      { label: 'CIS Controls', sublabel: '', color: '#0891b2' },
+      { label: 'NIST CSF', sublabel: '', color: '#2563eb' },
+      { label: 'SOC 2 Type II', sublabel: '', color: '#7c3aed' }
+    ],
+    features: [
+      { label: 'Best For', cells: ['SMB baseline','Mid-market','Audit/enterprise'] },
+      { label: 'Prescriptive Controls', cells: ['yes','partial','no'] },
+      { label: 'Risk-Based Framework', cells: ['partial','yes','yes'] },
+      { label: 'Third-Party Audit Required', cells: ['no','no','yes'] },
+      { label: 'Covers Cloud & SaaS', cells: ['yes','yes','yes'] },
+      { label: 'Maps to Insurance Requirements', cells: ['yes','yes','partial'] },
+      { label: 'Annual Review Cycle', cells: ['yes','yes','yes'] },
+      { label: 'Customer-Facing Certification', cells: ['no','no','yes'] }
     ]
   },
   {
