@@ -58,6 +58,18 @@ const TOOLS = [
     icon: "idea"
   },
   {
+    title: "Service Tier Widget Builder",
+    shortLabel: "Tier Builder",
+    description:
+      "Build a professional service tier comparison widget in minutes. Select your services, let AI assign them to tiers and write the benefit descriptions, pick your recommended tier — one polished comparison widget pushed straight to Salesbuildr.",
+    category: "Proposal",
+    url: "https://widgetcreator.netlify.app/service-tier-builder.html",
+    badge: "new",
+    updated: "2026-07-10",
+    gradient: "iron",
+    icon: "layers"
+  },
+  {
     title: "Multi-Stakeholder Proposal Pack",
     shortLabel: "Stakeholder Pack",
     description:
@@ -545,6 +557,7 @@ const GRADIENTS = {
   electric:"linear-gradient(135deg, #0c4a6e 0%, #0ea5e9 55%, #67e8f9 100%)",
   aurora:  "linear-gradient(135deg, #4c1d95 0%, #7c3aed 45%, #06b6d4 100%)",
   graphite:"linear-gradient(135deg, #111827 0%, #374151 55%, #6b7280 100%)",
+  iron:    "linear-gradient(135deg, #1c1c1e 0%, #48484a 55%, #98989d 100%)",
   fern:    "linear-gradient(135deg, #14532d 0%, #22c55e 55%, #86efac 100%)",
   copper:  "linear-gradient(135deg, #7c2d12 0%, #c2410c 45%, #fb923c 100%)",
   mint:    "linear-gradient(135deg, #022c22 0%, #059669 55%, #6ee7b7 100%)",
@@ -1106,6 +1119,13 @@ Your data stays with you. Files are read locally in the browser and never transm
       out:   "Single: one TinyMCE-ready widget with benefit-led headline, plain-language intro, and 3–4 benefit bullets. Product photos matched automatically from image library with fuzzy brand/model recognition and graceful fallbacks. Bundle: one combined widget with shared header/intro, photo-led hero row for hardware, compact list for accessories/licensing/services. Inline editing throughout — no raw HTML. Push to Salesbuildr or copy HTML.",
       when:  "Adding any product, service, or bundle to a Salesbuildr quote and wanting to explain what it does in plain language the buyer can understand. Replacing plain line items with visual, benefit-oriented explainers.",
       not:   "Not a full proposal builder. Not a pricing tool — no costs in the output."
+    },
+    "Service Tier Widget Builder": {
+      who:   "MSP sales reps building proposals where they want to show service options rather than a single price — new business, renewals, or any situation where the prospect is price-shopping.",
+      input: "Tier naming convention (preset: Metal / Quality / Level / Scale / Simple / Custom — all tier names editable), number of tiers (2–4, default 3), service checkbox library (Helpdesk, Monitoring, Security, Backup, Cloud, Strategic), recommended tier selection, colour theme.",
+      out:   "One polished service tier comparison table widget — gradient header, tier columns with included/not-included indicators, category grouping rows, recommended tier highlighted with badge and theme colour. Inline editing throughout. Push to Salesbuildr or copy HTML.",
+      when:  "Presenting service options rather than a single price. Renewal proposals where you want to show an upgrade path. Competing on value rather than price. Any proposal where the buyer needs to see what they get at each level.",
+      not:   "Not a pricing tool — no pricing in the widget. Not a Salesbuildr bundle tool. Actual service line items and pricing are added in Salesbuildr separately."
     },
     "Multi-Stakeholder Proposal Pack": {
       who:   "MSP sales reps sending proposals to companies with more than one decision-maker — where the CEO, CFO, and IT or Operations lead each have different concerns.",
