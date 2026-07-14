@@ -34,6 +34,18 @@ const TOOLS = [
     icon: "calc"
   },
   {
+    title: "Account Growth Widget",
+    shortLabel: "Account Growth",
+    description:
+      "Turn your next upsell conversation into a professional, advisory-tone widget. Five fields, under 3 minutes — AI writes the upgrade story from where the client is now to where they should be, ready to push into a renewal quote, QBR pack, or standalone email proposal.",
+    category: "Strategic",
+    url: "https://widgetcreator.netlify.app/account-growth.html",
+    badge: "new",
+    updated: "2026-07-11",
+    gradient: "jade",
+    icon: "trending-up"
+  },
+  {
     title: "Case Study Widget Builder",
     shortLabel: "Case Study Builder",
     description:
@@ -558,6 +570,7 @@ const GRADIENTS = {
   aurora:  "linear-gradient(135deg, #4c1d95 0%, #7c3aed 45%, #06b6d4 100%)",
   graphite:"linear-gradient(135deg, #111827 0%, #374151 55%, #6b7280 100%)",
   iron:    "linear-gradient(135deg, #1c1c1e 0%, #48484a 55%, #98989d 100%)",
+  jade:    "linear-gradient(135deg, #064e3b 0%, #0d9488 55%, #5eead4 100%)",
   fern:    "linear-gradient(135deg, #14532d 0%, #22c55e 55%, #86efac 100%)",
   copper:  "linear-gradient(135deg, #7c2d12 0%, #c2410c 45%, #fb923c 100%)",
   mint:    "linear-gradient(135deg, #022c22 0%, #059669 55%, #6ee7b7 100%)",
@@ -1168,6 +1181,13 @@ Your data stays with you. Files are read locally in the browser and never transm
       out:   "Five short, coordinated Salesbuildr widgets tailored to the selected vertical — Industry Pain Points, Why IT Matters, Compliance & Risk, Our Approach, and What\'s Included. Push as a pack or individually.",
       when:  "You are pitching to a prospect in healthcare, legal, education, government, manufacturing, or another specific vertical and want the proposal to demonstrate genuine sector knowledge.",
       not:   "Not a substitute for the Proposal Widget Builder — these widgets prove industry knowledge, not the sales narrative. Not suitable for generic or multi-vertical prospects."
+    },
+    "Account Growth Widget": {
+      who:   "MSP account managers, sales reps, or vCIOs proposing a service upgrade to an existing client — at renewal, after a QBR, following an incident, or whenever a strategic moment opens the conversation.",
+      input: "Client name (optional), industry, current coverage chips (what the client has today), recommended addition chips (what the upgrade adds), trigger (renewal / incident / audit / growth / insurance / post-QBR / proactive + optional detail), Executive Summary toggle, colour theme.",
+      out:   "One or two widgets: Account Growth Recommendation (advisory-tone upgrade story — current state, trigger context, recommendation, business outcome) and optional Executive Summary (C-suite snapshot — what we manage, what we recommend, risk if delayed, next step). Sessions auto-save locally — up to 5 active sessions. Push to Salesbuildr or copy HTML. Prints to PDF for leave-behind.",
+      when:  "Proposing a meaningful service upgrade to an existing client. Renewal coming up and you want to present an upgrade path. Post-QBR follow-up recommendation. Client had an incident and the window is open. Moving a client from one service level to the next.",
+      not:   "Not a full proposal builder. Not a pricing tool. Not a replacement for the Business Review Builder. MSP adds actual service line items in Salesbuildr separately."
     },
     "Case Study Widget Builder": {
       who:   "MSP sales reps or owners who want to include social proof in proposals without the pain of writing case studies from scratch.",
