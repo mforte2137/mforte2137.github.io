@@ -65,6 +65,12 @@
   const hexModalPreview = $('hexModalPreview');
   const hueBar          = $('hueBar');
   const hueDot          = $('hueDot');
+  const svBox           = $('svBox');
+  const svDot           = $('svDot');
+  const eyedropperBtn   = $('eyedropperBtn');
+  const rInput = $('rInput'), gInput = $('gInput'), bInput = $('bInput');
+  const valueRowRgb = $('valueRowRgb'), valueRowHex = $('valueRowHex');
+  const modeToggleBtn = $('modeToggleBtn'), modeToggleBtnHex = $('modeToggleBtnHex');
 
   const generateBtn = $('generateBtn');
   const clearBtn     = $('clearBtn');
@@ -99,8 +105,13 @@
     hexModalClose.addEventListener('click', closeHexModal);
     hexModalOverlay.addEventListener('click', e => { if (e.target === hexModalOverlay) closeHexModal(); });
     hexModalApply.addEventListener('click', applyHexModal);
-    hexModalInput.addEventListener('input', onHexModalInputChange);
+    hexModalInput.addEventListener('input', onHexInputChange);
+    [rInput, gInput, bInput].forEach(el => el.addEventListener('input', onRgbInputChange));
+    modeToggleBtn.addEventListener('click', toggleValueMode);
+    modeToggleBtnHex.addEventListener('click', toggleValueMode);
     initHueBarDrag();
+    initSvBoxDrag();
+    initEyedropper();
 
     [clientNameEl, industryEl, triggerSelectEl, triggerDetailEl].forEach(el => {
       el.addEventListener('input', () => autoSave());
@@ -218,53 +229,72 @@
     autoSave();
   }
 
-  // ── Custom colour picker modal (rainbow hue bar + drag dot) ──
+  // ── Custom colour picker modal (SV box + hue bar + RGB/HEX + eyedropper) ──
+  let pickerHsv = { h: 217, s: 79, v: 86 }; // updated whenever the modal opens or values change
+  let valueMode = 'rgb'; // 'rgb' | 'hex'
+
   function openHexModal() {
-    hexModalInput.value = currentTheme.replace('#', '');
-    hexModalPreview.style.background = currentTheme;
-    positionHueDot(currentTheme);
+    pickerHsv = hexToHsv(currentTheme);
+    renderPicker();
     hexModalOverlay.hidden = false;
   }
 
   function closeHexModal() { hexModalOverlay.hidden = true; }
 
   function applyHexModal() {
-    const val = hexModalInput.value.trim().replace('#', '');
-    if (/^[0-9a-fA-F]{6}$/.test(val)) {
-      colourSwatches.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
-      setTheme('#' + val);
-    }
+    const { r, g, b } = hsvToRgb(pickerHsv.h, pickerHsv.s, pickerHsv.v);
+    colourSwatches.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+    setTheme(rgbToHex(r, g, b));
     closeHexModal();
   }
 
-  function onHexModalInputChange() {
-    const val = hexModalInput.value.trim().replace('#', '');
-    if (/^[0-9a-fA-F]{6}$/.test(val)) {
-      const hex = '#' + val;
-      hexModalPreview.style.background = hex;
-      positionHueDot(hex);
-    }
+  // Redraw every part of the picker from pickerHsv
+  function renderPicker() {
+    const { h, s, v } = pickerHsv;
+    const { r, g, b } = hsvToRgb(h, s, v);
+    const hex = rgbToHex(r, g, b);
+
+    svBox.style.backgroundColor = `hsl(${h}, 100%, 50%)`;
+    svDot.style.left = s + '%';
+    svDot.style.top = (100 - v) + '%';
+    hueDot.style.left = (h / 360 * 100) + '%';
+
+    hexModalPreview.style.background = hex;
+    rInput.value = r; gInput.value = g; bInput.value = b;
+    hexModalInput.value = hex;
   }
 
-  function positionHueDot(hex) {
-    const { h } = hexToHsl(hex);
-    hueDot.style.left = (h / 360 * 100) + '%';
+  function initSvBoxDrag() {
+    let dragging = false;
+    function setFromPoint(clientX, clientY) {
+      const rect = svBox.getBoundingClientRect();
+      let fx = (clientX - rect.left) / rect.width;
+      let fy = (clientY - rect.top) / rect.height;
+      fx = Math.min(1, Math.max(0, fx));
+      fy = Math.min(1, Math.max(0, fy));
+      pickerHsv.s = fx * 100;
+      pickerHsv.v = (1 - fy) * 100;
+      renderPicker();
+    }
+    svBox.addEventListener('pointerdown', e => {
+      dragging = true;
+      svBox.setPointerCapture(e.pointerId);
+      setFromPoint(e.clientX, e.clientY);
+    });
+    svBox.addEventListener('pointermove', e => { if (dragging) setFromPoint(e.clientX, e.clientY); });
+    svBox.addEventListener('pointerup', () => { dragging = false; });
+    svBox.addEventListener('pointercancel', () => { dragging = false; });
   }
 
   function initHueBarDrag() {
     let dragging = false;
-
     function setFromClientX(clientX) {
       const rect = hueBar.getBoundingClientRect();
       let frac = (clientX - rect.left) / rect.width;
       frac = Math.min(1, Math.max(0, frac));
-      const hue = frac * 360;
-      const hex = hslToHex(hue, 70, 45);
-      hueDot.style.left = (frac * 100) + '%';
-      hexModalInput.value = hex.replace('#', '');
-      hexModalPreview.style.background = hex;
+      pickerHsv.h = frac * 360;
+      renderPicker();
     }
-
     hueBar.addEventListener('pointerdown', e => {
       dragging = true;
       hueBar.setPointerCapture(e.pointerId);
@@ -275,32 +305,115 @@
     hueBar.addEventListener('pointercancel', () => { dragging = false; });
   }
 
-  // ── Hex <-> HSL helpers ──────────────────────────────
-  function hslToHex(h, s, l) {
-    s /= 100; l /= 100;
-    const k = n => (n + h / 30) % 12;
-    const a = s * Math.min(l, 1 - l);
-    const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-    const toHex = x => Math.round(x * 255).toString(16).padStart(2, '0');
-    return '#' + toHex(f(0)) + toHex(f(8)) + toHex(f(4));
+  function onRgbInputChange() {
+    const r = clamp255(rInput.value);
+    const g = clamp255(gInput.value);
+    const b = clamp255(bInput.value);
+    pickerHsv = rgbToHsv(r, g, b);
+    // Update everything except the RGB fields themselves, so the rep's cursor isn't disturbed mid-type
+    const hex = rgbToHex(r, g, b);
+    svBox.style.backgroundColor = `hsl(${pickerHsv.h}, 100%, 50%)`;
+    svDot.style.left = pickerHsv.s + '%';
+    svDot.style.top = (100 - pickerHsv.v) + '%';
+    hueDot.style.left = (pickerHsv.h / 360 * 100) + '%';
+    hexModalPreview.style.background = hex;
+    hexModalInput.value = hex;
   }
 
-  function hexToHsl(hex) {
-    const h = hex.replace('#', '');
-    let r = parseInt(h.substr(0, 2), 16) / 255;
-    let g = parseInt(h.substr(2, 2), 16) / 255;
-    let b = parseInt(h.substr(4, 2), 16) / 255;
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    let hue = 0, l = (max + min) / 2;
-    const d = max - min;
-    if (d !== 0) {
-      if (max === r) hue = ((g - b) / d) % 6;
-      else if (max === g) hue = (b - r) / d + 2;
-      else hue = (r - g) / d + 4;
-      hue *= 60;
-      if (hue < 0) hue += 360;
+  function onHexInputChange() {
+    const val = hexModalInput.value.trim().replace('#', '');
+    if (/^[0-9a-fA-F]{6}$/.test(val)) {
+      pickerHsv = hexToHsv('#' + val);
+      const { r, g, b } = hsvToRgb(pickerHsv.h, pickerHsv.s, pickerHsv.v);
+      svBox.style.backgroundColor = `hsl(${pickerHsv.h}, 100%, 50%)`;
+      svDot.style.left = pickerHsv.s + '%';
+      svDot.style.top = (100 - pickerHsv.v) + '%';
+      hueDot.style.left = (pickerHsv.h / 360 * 100) + '%';
+      hexModalPreview.style.background = '#' + val;
+      rInput.value = r; gInput.value = g; bInput.value = b;
     }
-    return { h: hue, l };
+  }
+
+  function toggleValueMode() {
+    valueMode = valueMode === 'rgb' ? 'hex' : 'rgb';
+    valueRowRgb.hidden = valueMode !== 'rgb';
+    valueRowHex.hidden = valueMode !== 'hex';
+  }
+
+  function initEyedropper() {
+    if (!('EyeDropper' in window)) { eyedropperBtn.hidden = true; return; }
+    eyedropperBtn.addEventListener('click', async () => {
+      try {
+        const dropper = new window.EyeDropper();
+        const result = await dropper.open();
+        pickerHsv = hexToHsv(result.sRGBHex);
+        renderPicker();
+      } catch (e) {
+        // Cancelled — no-op
+      }
+    });
+  }
+
+  function clamp255(val) {
+    const n = parseInt(val, 10);
+    if (isNaN(n)) return 0;
+    return Math.min(255, Math.max(0, n));
+  }
+
+  // ── Colour conversions: HEX <-> RGB <-> HSV ──────────
+  function hexToRgb(hex) {
+    const h = hex.replace('#', '');
+    return {
+      r: parseInt(h.substr(0, 2), 16),
+      g: parseInt(h.substr(2, 2), 16),
+      b: parseInt(h.substr(4, 2), 16)
+    };
+  }
+
+  function rgbToHex(r, g, b) {
+    const toHex = x => Math.round(x).toString(16).padStart(2, '0');
+    return '#' + toHex(r) + toHex(g) + toHex(b);
+  }
+
+  function rgbToHsv(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const d = max - min;
+    let h = 0;
+    if (d !== 0) {
+      if (max === r) h = ((g - b) / d) % 6;
+      else if (max === g) h = (b - r) / d + 2;
+      else h = (r - g) / d + 4;
+      h *= 60;
+      if (h < 0) h += 360;
+    }
+    const s = max === 0 ? 0 : (d / max) * 100;
+    const v = max * 100;
+    return { h, s, v };
+  }
+
+  function hsvToRgb(h, s, v) {
+    s /= 100; v /= 100;
+    const c = v * s;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = v - c;
+    let r1, g1, b1;
+    if (h < 60)       { r1 = c; g1 = x; b1 = 0; }
+    else if (h < 120) { r1 = x; g1 = c; b1 = 0; }
+    else if (h < 180) { r1 = 0; g1 = c; b1 = x; }
+    else if (h < 240) { r1 = 0; g1 = x; b1 = c; }
+    else if (h < 300) { r1 = x; g1 = 0; b1 = c; }
+    else              { r1 = c; g1 = 0; b1 = x; }
+    return {
+      r: Math.round((r1 + m) * 255),
+      g: Math.round((g1 + m) * 255),
+      b: Math.round((b1 + m) * 255)
+    };
+  }
+
+  function hexToHsv(hex) {
+    const { r, g, b } = hexToRgb(hex);
+    return rgbToHsv(r, g, b);
   }
 
   function refreshPreviews() {
