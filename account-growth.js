@@ -549,16 +549,16 @@
 
     return `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">
   <tr>
-    <td width="45%" style="vertical-align:top;padding:0 8px 0 0;">
+    <td width="43%" style="vertical-align:top;padding:0 8px 0 0;">
       <div style="background:#f4f7fb;border:1px solid #e3e7ee;border-radius:8px;padding:14px 16px;">
         <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#9ca3af;margin-bottom:6px;">Today</div>
         <div style="font-size:12px;color:#586273;line-height:1.7;">${left}</div>
       </div>
     </td>
-    <td width="10%" style="text-align:center;vertical-align:middle;">
-      <span style="font-size:20px;line-height:1;color:${esc(hex)};">&#8594;</span>
+    <td width="14%" style="text-align:center;vertical-align:middle;padding:0;">
+      <div style="display:inline-block;vertical-align:middle;width:26px;height:5px;background:${esc(hex)};border-radius:3px 0 0 3px;"></div><div style="display:inline-block;vertical-align:middle;width:0;height:0;border-top:9px solid transparent;border-bottom:9px solid transparent;border-left:15px solid ${esc(hex)};"></div>
     </td>
-    <td width="45%" style="vertical-align:top;padding:0 0 0 8px;">
+    <td width="43%" style="vertical-align:top;padding:0 0 0 8px;">
       <div style="background:${accentBg};border:1px solid ${esc(hex)};border-radius:8px;padding:14px 16px;">
         <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${esc(hex)};margin-bottom:6px;">Recommended</div>
         <div style="font-size:12px;color:${esc(hex)};line-height:1.7;font-weight:600;">${right}</div>
@@ -568,25 +568,27 @@
 </table>`;
   }
 
-  // Widget 2 visual — a simple two-segment bar, "Today" vs "Recommended", no bullet detail.
+  // Widget 2 visual — rounded pill track with two circular markers ("Today" / "Recommended"),
+  // labels centered directly under each dot. Uses position:relative/absolute (safe inside the
+  // TinyMCE contenteditable canvas), not tables — this one needs precise dot-to-label alignment.
   function buildJourneyBar(hex) {
-    return `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
-  <tr>
-    <td width="42%" style="height:8px;font-size:0;line-height:0;background:#9ca3af;border-radius:6px 0 0 6px;">&nbsp;</td>
-    <td width="43%" style="height:8px;font-size:0;line-height:0;background:${esc(hex)};">&nbsp;</td>
-    <td width="15%" style="height:8px;font-size:0;line-height:0;background:#e3e7ee;border-radius:0 6px 6px 0;">&nbsp;</td>
-  </tr>
-</table>
-<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">
-  <tr>
-    <td width="42%" style="text-align:left;font-size:11px;color:#586273;">
-      <strong style="color:#0b1220;">Today</strong><br>Foundational coverage
-    </td>
-    <td width="58%" style="text-align:right;font-size:11px;color:${esc(hex)};">
-      <strong>Recommended</strong><br>Full-layer protection
-    </td>
-  </tr>
-</table>`;
+    const trackBg = hexToRgba(hex, 0.18);
+    return `<div style="position:relative;height:6px;border-radius:6px;background:#eef1f6;margin:28px 0 6px;">
+  <div style="position:absolute;left:0;top:0;bottom:0;width:78%;background:${trackBg};border-radius:6px;"></div>
+  <div style="position:absolute;left:0;top:0;bottom:0;width:38%;background:#9ca3af;border-radius:6px 0 0 6px;"></div>
+  <div style="position:absolute;left:38%;top:50%;width:13px;height:13px;margin-left:-6px;margin-top:-6px;border-radius:50%;background:#9ca3af;border:2px solid #ffffff;"></div>
+  <div style="position:absolute;left:78%;top:50%;width:13px;height:13px;margin-left:-6px;margin-top:-6px;border-radius:50%;background:${esc(hex)};border:2px solid #ffffff;"></div>
+</div>
+<div style="position:relative;height:38px;margin-bottom:14px;">
+  <div style="position:absolute;left:38%;top:0;margin-left:-45px;width:90px;text-align:center;">
+    <div style="font-size:12px;font-weight:700;color:#0b1220;">Today</div>
+    <div style="font-size:11px;color:#9ca3af;">Foundational</div>
+  </div>
+  <div style="position:absolute;left:78%;top:0;margin-left:-45px;width:90px;text-align:center;">
+    <div style="font-size:12px;font-weight:700;color:${esc(hex)};">Recommended</div>
+    <div style="font-size:11px;color:${esc(hex)};">Full-layer</div>
+  </div>
+</div>`;
   }
 
   function buildGrowthWidgetHtml(d, hex, currentList, recommendedList) {
