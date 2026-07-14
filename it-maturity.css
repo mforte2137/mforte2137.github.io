@@ -42,9 +42,27 @@ h1, h2, h3, h4, h5, h6 {
 a { color: var(--accent); }
 
 .wrap {
-  max-width: 880px;
+  max-width: 1320px;
   margin: 0 auto;
   padding: 28px 20px 80px;
+}
+
+/* ── Two-column layout ──────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) 1fr;
+  gap: 22px;
+  align-items: start;
+}
+.col-left { min-width: 0; }
+.col-right {
+  min-width: 0;
+  position: sticky;
+  top: 20px;
+}
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .col-right { position: static; }
 }
 
 /* ── Top bar ─────────────────────────────────────── */
@@ -258,10 +276,13 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 30px 0;
+  padding: 60px 0;
   justify-content: center;
   color: var(--text-2);
   font-size: 13px;
+  border: 1px dashed var(--border-2);
+  border-radius: 8px;
+  background: var(--bg-panel);
 }
 .loading-state[hidden] { display: none; }
 .dots span {
@@ -354,9 +375,12 @@ input:focus, select:focus, textarea:focus {
 
 .output-empty {
   text-align: center;
-  padding: 40px 20px;
+  padding: 60px 24px;
   color: var(--text-3);
   font-size: 13px;
+  border: 1px dashed var(--border-2);
+  border-radius: 8px;
+  background: var(--bg-panel);
 }
 
 /* ── Push status / credentials modal ─────────────── */
