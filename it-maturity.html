@@ -33,98 +33,106 @@
     <div class="session-cards" id="sessionCards"></div>
   </div>
 
-  <!-- ── Client details ───────────────────────────── -->
-  <div class="panel">
-    <div class="panel-title">Client Details</div>
-    <div class="field-row">
-      <div class="field">
-        <label for="clientName">Client name</label>
-        <input type="text" id="clientName" placeholder="Riverside Medical Group" />
-      </div>
-      <div class="field">
-        <label for="industry">Industry</label>
-        <select id="industry">
-          <option value="">Select…</option>
-          <option>Healthcare</option>
-          <option>Legal</option>
-          <option>Finance</option>
-          <option>Manufacturing</option>
-          <option>Professional Services</option>
-          <option>Retail</option>
-          <option>Construction</option>
-          <option>Non-profit</option>
-          <option>Education</option>
-          <option>Other</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="companySize">Company size</label>
-        <select id="companySize">
-          <option value="">Select…</option>
-          <option value="1-50">1–50 employees</option>
-          <option value="51-200">51–200 employees</option>
-          <option value="201-500">201–500 employees</option>
-          <option value="500+">500+ employees</option>
-        </select>
-      </div>
-    </div>
-  </div>
+  <!-- ── Two-column layout: config (left) / preview (right, larger) ── -->
+  <div class="layout">
 
-  <!-- ── Dimensions ────────────────────────────────── -->
-  <div class="panel">
-    <div class="panel-title">Rate Current Maturity</div>
-    <div id="dimensionsHost"></div>
-  </div>
+    <!-- ══ LEFT — configuration ══ -->
+    <div class="col-left">
 
-  <div class="error-box" id="errorBox" hidden></div>
-
-  <div class="btn-row">
-    <button class="btn-accent" id="generateBtn" type="button">Generate Assessment</button>
-  </div>
-
-  <div class="loading-state" id="loadingState" hidden>
-    <div class="dots"><span></span><span></span><span></span></div>
-    <span>Assessing your maturity profile…</span>
-  </div>
-
-  <!-- ── Output ────────────────────────────────────── -->
-  <div id="outputArea" hidden>
-
-    <div class="panel">
-      <div class="panel-title">Colour Theme</div>
-      <div class="theme-row">
-        <div class="swatches" id="colourSwatches"></div>
-        <div class="theme-input-group">
-          <input type="color" id="nativeColorPicker" value="#2e74dc" title="Custom colour" />
-          <input type="text" id="hexInput" value="#2e74dc" maxlength="7" title="Hex value" />
+      <div class="panel">
+        <div class="panel-title">Client Details</div>
+        <div class="field" style="margin-bottom:12px;">
+          <label for="clientName">Client name</label>
+          <input type="text" id="clientName" placeholder="Riverside Medical Group" />
+        </div>
+        <div class="field" style="margin-bottom:12px;">
+          <label for="industry">Industry</label>
+          <select id="industry">
+            <option value="">Select…</option>
+            <option>Healthcare</option>
+            <option>Legal</option>
+            <option>Finance</option>
+            <option>Manufacturing</option>
+            <option>Professional Services</option>
+            <option>Retail</option>
+            <option>Construction</option>
+            <option>Non-profit</option>
+            <option>Education</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="companySize">Company size</label>
+          <select id="companySize">
+            <option value="">Select…</option>
+            <option value="1-50">1–50 employees</option>
+            <option value="51-200">51–200 employees</option>
+            <option value="201-500">201–500 employees</option>
+            <option value="500+">500+ employees</option>
+          </select>
         </div>
       </div>
-    </div>
 
-    <div class="panel">
-      <div class="panel-title">Override Target Levels</div>
-      <div class="override-grid" id="overrideGrid"></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-title">Widget Preview</div>
-      <div class="preview-shell">
-        <div class="preview-canvas" id="widgetCanvas"></div>
+      <div class="panel">
+        <div class="panel-title">Rate Current Maturity</div>
+        <div id="dimensionsHost"></div>
       </div>
+
+      <div class="error-box" id="errorBox" hidden></div>
+
       <div class="btn-row">
-        <button class="btn-secondary" id="regenBtn" type="button">↺ Regenerate Narrative</button>
-        <button class="btn-secondary" id="copyBtn" type="button">Copy HTML</button>
-        <button class="btn-accent" id="pushBtn" type="button">Push to Salesbuildr</button>
+        <button class="btn-accent" id="generateBtn" type="button">Generate Assessment</button>
       </div>
-      <div class="push-status" id="pushStatus" hidden></div>
+    </div>
+
+    <!-- ══ RIGHT — live widget preview (larger) ══ -->
+    <div class="col-right">
+      <div id="previewAnchor"></div>
+
+      <div class="loading-state" id="loadingState" hidden>
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span>Assessing your maturity profile…</span>
+      </div>
+
+      <div class="output-empty" id="emptyState">
+        Rate the five dimensions on the left and click Generate Assessment — your widget will appear here.
+      </div>
+
+      <div id="outputArea" hidden>
+
+        <div class="panel">
+          <div class="panel-title">Colour Theme</div>
+          <div class="theme-row">
+            <div class="swatches" id="colourSwatches"></div>
+            <div class="theme-input-group">
+              <input type="color" id="nativeColorPicker" value="#2e74dc" title="Custom colour" />
+              <input type="text" id="hexInput" value="#2e74dc" maxlength="7" title="Hex value" />
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Override Target Levels</div>
+          <div class="override-grid" id="overrideGrid"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Widget Preview</div>
+          <div class="preview-shell">
+            <div class="preview-canvas" id="widgetCanvas"></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn-secondary" id="regenBtn" type="button">↺ Regenerate Narrative</button>
+            <button class="btn-secondary" id="copyBtn" type="button">Copy HTML</button>
+            <button class="btn-accent" id="pushBtn" type="button">Push to Salesbuildr</button>
+          </div>
+          <div class="push-status" id="pushStatus" hidden></div>
+        </div>
+
+      </div>
     </div>
 
   </div>
-
-  <div class="output-empty" id="emptyState">
-    Rate the five dimensions above and click Generate Assessment to build the widget.
-  </div>
-
 </div>
 
 <!-- ── Salesbuildr credentials modal ──────────────── -->
