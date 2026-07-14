@@ -224,7 +224,7 @@
     outputArea.hidden = true;
     emptyState.hidden = true;
     loadingState.hidden = false;
-    loadingState.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    $('previewAnchor').scrollIntoView({ behavior: 'smooth', block: 'start' });
     generateBtn.disabled = true;
 
     try {
@@ -253,7 +253,6 @@
       emptyState.hidden = true;
       outputArea.hidden = false;
       autoSave('generated');
-      outputArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (e) {
       showError(e.message);
       emptyState.hidden = false;
@@ -382,11 +381,7 @@
     const filledPct    = (current / 4) * 100;
     const targetPct    = gap > 0 ? (gap / 4) * 100 : 0;
     const remainderPct = 100 - filledPct - targetPct;
-    return {
-      filledPct, targetPct, remainderPct,
-      filledColor: color,
-      targetColor: hexToRgba(color, 0.3)
-    };
+    return { filledPct, targetPct, remainderPct, color, gap };
   }
 
   function hexToRgba(hex, alpha) {
@@ -397,31 +392,81 @@
     return `rgba(${r},${g},${b},${alpha})`;
   }
 
+  function pillBadge(text, color, outline) {
+    return outline
+      ? `<span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;border:1.5px solid ${color};color:${color};background:#ffffff;white-space:nowrap;">${esc(text)}</span>`
+      : `<span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:${hexToRgba(color, 0.14)};color:${color};white-space:nowrap;">${esc(text)}</span>`;
+  }
+
+  // Small text-based "you are here / target" scale — one cell, so it never
+  // trips the "max 3 columns" TinyMCE stacking rule, and it's what actually
+  // tells the reader what the bar length *means* on the 4-point ladder.
+  function buildRungLine(current, target, color) {
+    const parts = [1, 2, 3, 4].map(l => {
+      const label = LEVEL_LABELS[l];
+      if (l === current) return `<span style="font-size:9.5px;font-weight:700;color:${color};">&#9679; ${esc(label)}</span>`;
+      if (l === target && target !== current) return `<span style="font-size:9.5px;font-weight:700;color:${color};">&#9650; ${esc(label)}</span>`;
+      return `<span style="font-size:9.5px;color:#c2c8d1;">${esc(label)}</span>`;
+    });
+    return parts.join('<span style="font-size:9.5px;color:#dde1e8;"> &middot; </span>');
+  }
+
   function buildBarRow(label, current, target) {
     const seg = computeSegments(current, target);
-    const gapLabel = current === target
-      ? LEVEL_LABELS[current]
-      : `${LEVEL_LABELS[current]} → ${LEVEL_LABELS[target]}`;
+    const { color, gap, filledPct, targetPct, remainderPct } = seg;
+    const toTargetPct = filledPct + targetPct;
 
+    // Header: dimension name + current-level badge (severity colour) +
+    // either an outlined target badge, or an on-track tag if gap <= 0.
+    const currentBadge = pillBadge(LEVEL_LABELS[current], color, false);
+    const targetBadgeOrTag = gap > 0
+      ? `<span style="font-size:11px;color:#9ca3af;margin:0 5px;">&rarr;</span>${pillBadge(LEVEL_LABELS[target], color, true)}`
+      : `<span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:#dcfce7;color:#15a05a;margin-left:6px;white-space:nowrap;">&#10003; On target</span>`;
+
+    // Ruler row — a small down-caret sitting exactly at the target boundary,
+    // directly above the bar, so the goal position is marked, not implied.
+    const rulerRow = gap > 0 ? `
+  <tr>
+    <td width="${toTargetPct}%" style="text-align:right;padding:0 3px 2px 0;">
+      <span style="font-size:9px;font-weight:700;color:${color};white-space:nowrap;">&#9660; Target</span>
+    </td>
+    <td width="${remainderPct}%"></td>
+  </tr>` : '';
+
+    // Bar — current fill is solid severity colour; the path-to-target segment
+    // is the same colour at low opacity AND closed off with a solid border in
+    // that colour, so the target boundary is a visible line, not a guess.
     const cells = [];
-    if (seg.filledPct > 0) cells.push(`<td width="${seg.filledPct}%" style="background:${seg.filledColor};height:14px;"></td>`);
-    if (seg.targetPct > 0) cells.push(`<td width="${seg.targetPct}%" style="background:${seg.targetColor};height:14px;border-left:2px solid #fff;"></td>`);
-    if (seg.remainderPct > 0) cells.push(`<td width="${seg.remainderPct}%" style="background:#e5e7eb;height:14px;border-left:2px solid #fff;"></td>`);
+    if (filledPct > 0) {
+      cells.push(`<td width="${filledPct}%" style="background:${color};height:14px;"></td>`);
+    }
+    if (targetPct > 0) {
+      cells.push(`<td width="${targetPct}%" style="background:${hexToRgba(color, 0.38)};height:14px;border-left:2px solid #fff;border-right:3px solid ${color};"></td>`);
+    }
+    if (remainderPct > 0) {
+      const needsDivider = targetPct === 0 && filledPct > 0;
+      cells.push(`<td width="${remainderPct}%" style="background:#e5e7eb;height:14px;${needsDivider ? 'border-left:2px solid #fff;' : ''}"></td>`);
+    }
+
+    const rungLine = buildRungLine(current, target, color);
 
     return `
-<table width="100%" style="border-collapse:collapse;margin-bottom:12px;">
+<table width="100%" style="border-collapse:collapse;margin-bottom:18px;">
   <tr>
-    <td style="padding:0 0 4px 0;">
+    <td style="padding:0 0 5px 0;">
       <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#0b1220;">${esc(label)}</span>
-      <span style="font-size:10px;color:#9ca3af;float:right;">${esc(gapLabel)}</span>
+      <span style="float:right;">${currentBadge}${targetBadgeOrTag}</span>
     </td>
-  </tr>
+  </tr>${rulerRow}
   <tr>
     <td style="padding:0;">
       <table width="100%" style="border-collapse:collapse;border-radius:6px;overflow:hidden;height:14px;">
         <tr>${cells.join('')}</tr>
       </table>
     </td>
+  </tr>
+  <tr>
+    <td style="padding:5px 0 0;">${rungLine}</td>
   </tr>
 </table>`;
   }
