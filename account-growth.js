@@ -418,7 +418,7 @@
 
   function refreshPreviews() {
     if (generatedData && generatedData.growthWidget) {
-      widgets[1] = buildGrowthWidgetHtml(generatedData.growthWidget, currentTheme);
+      widgets[1] = buildGrowthWidgetHtml(generatedData.growthWidget, currentTheme, lastPayload?.currentCoverage, lastPayload?.recommendedAddition);
       preview1.innerHTML = widgets[1];
       makeEditable(preview1, 'growth');
     }
@@ -488,7 +488,7 @@
   }
 
   function populateWidgets(payload) {
-    widgets[1] = buildGrowthWidgetHtml(generatedData.growthWidget, currentTheme);
+    widgets[1] = buildGrowthWidgetHtml(generatedData.growthWidget, currentTheme, payload.currentCoverage, payload.recommendedAddition);
     widgets[2] = buildExecSummaryHtml(generatedData.executiveSummary, currentTheme);
 
     preview1.innerHTML = widgets[1];
@@ -532,11 +532,69 @@
     return `<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${esc(hex)};margin-bottom:6px;">${esc(text)}</div>`;
   }
 
-  function buildGrowthWidgetHtml(d, hex) {
+  function hexToRgba(hex, alpha) {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.substr(0, 2), 16);
+    const g = parseInt(h.substr(2, 2), 16);
+    const b = parseInt(h.substr(4, 2), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  // Widget 1 visual — two cards (current vs recommended) joined by an arrow.
+  // Table-based, inline-styled, no icon fonts — safe for TinyMCE/Salesbuildr.
+  function buildJourneyCards(hex, currentList, recommendedList) {
+    const left = (currentList || []).slice(0, 4).map(esc).join('<br>') || 'No current coverage selected';
+    const right = (recommendedList || []).slice(0, 4).map(esc).join('<br>') || 'No additions selected';
+    const accentBg = hexToRgba(hex, 0.08);
+
+    return `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">
+  <tr>
+    <td width="45%" style="vertical-align:top;padding:0 8px 0 0;">
+      <div style="background:#f4f7fb;border:1px solid #e3e7ee;border-radius:8px;padding:14px 16px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#9ca3af;margin-bottom:6px;">Today</div>
+        <div style="font-size:12px;color:#586273;line-height:1.7;">${left}</div>
+      </div>
+    </td>
+    <td width="10%" style="text-align:center;vertical-align:middle;">
+      <span style="font-size:20px;line-height:1;color:${esc(hex)};">&#8594;</span>
+    </td>
+    <td width="45%" style="vertical-align:top;padding:0 0 0 8px;">
+      <div style="background:${accentBg};border:1px solid ${esc(hex)};border-radius:8px;padding:14px 16px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${esc(hex)};margin-bottom:6px;">Recommended</div>
+        <div style="font-size:12px;color:${esc(hex)};line-height:1.7;font-weight:600;">${right}</div>
+      </div>
+    </td>
+  </tr>
+</table>`;
+  }
+
+  // Widget 2 visual — a simple two-segment bar, "Today" vs "Recommended", no bullet detail.
+  function buildJourneyBar(hex) {
+    return `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
+  <tr>
+    <td width="42%" style="height:8px;font-size:0;line-height:0;background:#9ca3af;border-radius:6px 0 0 6px;">&nbsp;</td>
+    <td width="43%" style="height:8px;font-size:0;line-height:0;background:${esc(hex)};">&nbsp;</td>
+    <td width="15%" style="height:8px;font-size:0;line-height:0;background:#e3e7ee;border-radius:0 6px 6px 0;">&nbsp;</td>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:18px;">
+  <tr>
+    <td width="42%" style="text-align:left;font-size:11px;color:#586273;">
+      <strong style="color:#0b1220;">Today</strong><br>Foundational coverage
+    </td>
+    <td width="58%" style="text-align:right;font-size:11px;color:${esc(hex)};">
+      <strong>Recommended</strong><br>Full-layer protection
+    </td>
+  </tr>
+</table>`;
+  }
+
+  function buildGrowthWidgetHtml(d, hex, currentList, recommendedList) {
     const clientLine = d.clientName ? esc(d.clientName) : '';
     return `<div style="background:#ffffff;border:1px solid #e3e7ee;border-top:3px solid ${esc(hex)};overflow:hidden;width:100%;font-family:Arial,Helvetica,sans-serif;">
   ${gradientHeader(hex, 'Account Growth Recommendation', d.headline || 'Your Next Step', clientLine)}
   <div style="padding:16px 20px;">
+    ${buildJourneyCards(hex, currentList, recommendedList)}
     <div style="margin-bottom:16px;">
       ${sectionLabel('Where You Are Today', hex)}
       <p data-editable-id="currentState" style="margin:0;font-size:13px;color:#586273;line-height:1.6;">${esc(d.currentState)}</p>
@@ -565,6 +623,7 @@
     return `<div style="background:#ffffff;border:1px solid #e3e7ee;border-top:3px solid ${esc(hex)};overflow:hidden;width:100%;font-family:Arial,Helvetica,sans-serif;">
   ${gradientHeader(hex, 'IT Advisory Summary', d.headline || 'Executive Summary', clientLine)}
   <div style="padding:18px 20px;">
+    ${buildJourneyBar(hex)}
     <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #e3e7ee;">
       ${sectionLabel('What We Manage Today', hex)}
       <p data-editable-id="snapshot" style="margin:0;font-size:13px;color:#586273;line-height:1.6;">${esc(d.snapshot)}</p>
@@ -866,7 +925,7 @@
   }
 
   function populateWidgetsFromSession(fd) {
-    widgets[1] = buildGrowthWidgetHtml(generatedData.growthWidget, currentTheme);
+    widgets[1] = buildGrowthWidgetHtml(generatedData.growthWidget, currentTheme, fd.currentCoverage, fd.recommendedAddition);
     widgets[2] = buildExecSummaryHtml(generatedData.executiveSummary, currentTheme);
     preview1.innerHTML = widgets[1];
     makeEditable(preview1, 'growth');
