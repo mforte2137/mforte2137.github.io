@@ -471,6 +471,48 @@
 </table>`;
   }
 
+  // ── Overall maturity score (headline circle) ─────────
+  function computeOverallScore() {
+    const currents = DIMENSIONS.map(d => state.ratings[d.key]);
+    const targets  = DIMENSIONS.map(d => state.targets[d.key] != null ? state.targets[d.key] : state.ratings[d.key]);
+    const avgCurrent = currents.reduce((a, b) => a + b, 0) / currents.length;
+    const avgTarget  = targets.reduce((a, b) => a + b, 0) / targets.length;
+    const scoreOf10  = Math.max(0, Math.min(10, (avgCurrent / 4) * 10));
+    const targetOf10 = Math.max(0, Math.min(10, (avgTarget / 4) * 10));
+    const gapRounded = Math.round(avgTarget - avgCurrent);
+    const color = severityColor(gapRounded);
+    return {
+      scoreDisplay: scoreOf10.toFixed(1),
+      targetDisplay: targetOf10.toFixed(1),
+      color
+    };
+  }
+
+  function buildScoreBand() {
+    const { scoreDisplay, targetDisplay, color } = computeOverallScore();
+    return `
+<table width="100%" style="border-collapse:collapse;background:#f4f7fb;margin-bottom:16px;">
+  <tr>
+    <td style="padding:16px 18px;vertical-align:middle;width:64%;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#586273;margin-bottom:4px;">Your Maturity Score</div>
+      <div style="font-size:12px;color:#9ca3af;line-height:1.5;">Average across all five dimensions &middot; target ${targetDisplay} / 10</div>
+    </td>
+    <td style="padding:14px 18px;text-align:center;width:36%;">
+      <div style="width:92px;height:92px;border-radius:50%;border:6px solid ${color};background:#ffffff;margin:0 auto;">
+        <table style="width:100%;height:100%;border-collapse:collapse;">
+          <tr>
+            <td style="text-align:center;vertical-align:middle;">
+              <div style="font-size:24px;font-weight:800;color:#0b1220;line-height:1;">${esc(scoreDisplay)}</div>
+              <div style="font-size:9px;color:#9ca3af;margin-top:2px;">out of 10</div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </td>
+  </tr>
+</table>`;
+  }
+
   // ── Full widget HTML ─────────────────────────────────
   function buildWidgetHtml() {
     const dateStr = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -482,7 +524,10 @@
     <div style="font-size:16px;font-weight:700;color:#ffffff;letter-spacing:-0.01em;">${esc(state.clientName)}</div>
     <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:2px;">${esc(state.industry)} &middot; ${dateStr}</div>
   </div>
-  <div style="padding:16px 18px 4px;">
+  <div style="padding:16px 18px 0;">
+    ${buildScoreBand()}
+  </div>
+  <div style="padding:0 18px 4px;">
     ${bars}
   </div>
   <div style="padding:6px 18px 18px;">
