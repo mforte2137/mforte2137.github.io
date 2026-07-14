@@ -74,6 +74,15 @@ USE WHEN: Pitching to a prospect in a specific industry and wanting the proposal
 NOT FOR: Generic proposals without a clear vertical. Use the Proposal Widget Builder for the core sales narrative.
 URL: https://widgetcreator.netlify.app/industry-proposal-pack.html
 
+TOOL: Account Growth Widget
+WHAT: Generates one or two advisory-tone widgets that make the business case for a service upgrade to an existing MSP client. Input is five fields completed in under 3 minutes: client industry, current service coverage (broad chip selection — Helpdesk, RMM, Patch Management, Backup, M365, Network, Basic Security, EDR, Email Security, MFA, Security Training, vCIO), recommended addition (same chip list — delta is the upgrade story), trigger for the recommendation (renewal / incident / audit / growth / insurance / post-QBR / proactive + optional one-line detail), and an Executive Summary toggle. Widget 1 — Account Growth Recommendation: four sections (current state, trigger context, recommendation, business outcome), advisory tone, written for the decision-maker in the conversation. Widget 2 — Executive Summary (optional): C-suite snapshot, four short statements, no technical language, written for someone not in the room. Sessions auto-save to localStorage — up to 5 active sessions with resume and archive.
+WHO: MSP account managers, sales reps, or vCIOs proposing a service upgrade to an existing client.
+INPUT: Client name (optional), industry, current coverage chips, recommended addition chips, trigger dropdown + optional detail, Executive Summary toggle, colour theme.
+OUTPUT: One or two widgets — push to Salesbuildr individually or as a pack, or copy HTML. Prints to PDF for leave-behind.
+USE WHEN: Proposing a service upgrade at renewal. Post-QBR follow-up recommendation. Client had an incident and the window is open. Moving a client from one service level to the next.
+NOT FOR: New prospect proposals — use Proposal Widget Builder or Multi-Stakeholder Pack. Pricing — MSP adds line items in Salesbuildr separately. Full QBR — use Business Review Builder.
+URL: https://widgetcreator.netlify.app/account-growth.html
+
 TOOL: Case Study Widget Builder
 WHAT: Generates a polished case study widget from a customer win. The MSP enters the industry, challenge, solution, and outcome — AI writes the narrative. Toggle between using the real company name or anonymising to a descriptor like "a mid-sized healthcare provider". Includes a colour theme selector with 8 presets and custom hex.
 WHO: MSP sales reps or owners who want to include social proof in proposals without writing case studies from scratch.
