@@ -716,12 +716,19 @@
     await executePush([{ title: getWidgetTitle(which), html: widgets[i] }], apiKey, tenantUrl, $(`pushBtn${i}`));
   }
 
+  // Delivery order: Executive Summary leads (cover-page convention), Growth Recommendation follows.
+  function getOrderedWidgetList() {
+    const list = [];
+    if (includeExecSummary && widgets[2]) list.push({ title: getWidgetTitle('exec'), html: widgets[2] || '' });
+    list.push({ title: getWidgetTitle('growth'), html: widgets[1] || '' });
+    return list;
+  }
+
   async function onPush(type) {
     const apiKey = localStorage.getItem('sb_api_key');
     const tenantUrl = localStorage.getItem('sb_tenant_url');
     if (!apiKey || !tenantUrl) { credsInline.hidden = false; credsInline.scrollIntoView({ behavior: 'smooth' }); return; }
-    const list = [{ title: getWidgetTitle('growth'), html: widgets[1] }];
-    if (includeExecSummary && widgets[2]) list.push({ title: getWidgetTitle('exec'), html: widgets[2] });
+    const list = getOrderedWidgetList();
     if (type === 'pack') {
       const combined = list.map(w => w.html).join('\n\n');
       await executePush([{ title: getWidgetTitle('growth') + ' — Pack', html: combined }], apiKey, tenantUrl, pushPackBtn);
@@ -737,9 +744,7 @@
     localStorage.setItem('sb_api_key', apiKey);
     localStorage.setItem('sb_tenant_url', tenantUrl);
     credsInline.hidden = true;
-    const list = [{ title: getWidgetTitle('growth'), html: widgets[1] }];
-    if (includeExecSummary && widgets[2]) list.push({ title: getWidgetTitle('exec'), html: widgets[2] });
-    await executePush(list, apiKey, tenantUrl, pushPackBtn);
+    await executePush(getOrderedWidgetList(), apiKey, tenantUrl, pushPackBtn);
   }
 
   async function executePush(widgetList, apiKey, tenantUrl, triggerBtn) {
@@ -774,8 +779,7 @@
   }
 
   function onCopyAll() {
-    const parts = [widgets[1] || ''];
-    if (includeExecSummary && widgets[2]) parts.push(widgets[2]);
+    const parts = getOrderedWidgetList().map(w => w.html);
     navigator.clipboard.writeText(parts.join('\n\n')).then(() => {
       copyAllBtn.textContent = 'Copied ✓';
       setTimeout(() => copyAllBtn.textContent = 'Copy All HTML', 2000);
