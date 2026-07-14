@@ -216,16 +216,51 @@
       <span>Choose a colour</span>
       <button type="button" class="hex-modal-close" id="hexModalClose">&times;</button>
     </div>
-    <div class="hue-bar" id="hueBar">
-      <div class="hue-dot" id="hueDot"></div>
+
+    <div class="sv-box" id="svBox">
+      <div class="sv-box-white"></div>
+      <div class="sv-box-black"></div>
+      <div class="sv-dot" id="svDot"></div>
     </div>
-    <div class="hex-modal-row">
+
+    <div class="hex-modal-controls-row">
+      <button type="button" class="eyedropper-btn" id="eyedropperBtn" title="Pick colour from screen">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 5l4 4" />
+          <path d="M11.5 8.5l4 4" />
+          <path d="M4 20l3-3 1-4 8-8 3 3-8 8-4 1-3 3z" />
+        </svg>
+      </button>
       <span class="hex-swatch-preview" id="hexModalPreview" style="background:#2e74dc"></span>
-      <div class="hex-modal-input-wrap">
-        <span class="hex-prefix">#</span>
-        <input type="text" id="hexModalInput" maxlength="6" value="2e74dc" />
+      <div class="hue-bar" id="hueBar">
+        <div class="hue-dot" id="hueDot"></div>
       </div>
     </div>
+
+    <div class="value-row" id="valueRowRgb">
+      <div class="value-field">
+        <input type="text" id="rInput" inputmode="numeric" maxlength="3" value="46" />
+        <label>R</label>
+      </div>
+      <div class="value-field">
+        <input type="text" id="gInput" inputmode="numeric" maxlength="3" value="116" />
+        <label>G</label>
+      </div>
+      <div class="value-field">
+        <input type="text" id="bInput" inputmode="numeric" maxlength="3" value="220" />
+        <label>B</label>
+      </div>
+      <button type="button" class="mode-toggle-btn" id="modeToggleBtn" title="Switch to HEX">&#8645;</button>
+    </div>
+
+    <div class="value-row" id="valueRowHex" hidden>
+      <div class="value-field value-field-wide">
+        <input type="text" id="hexModalInput" maxlength="7" value="#2e74dc" />
+        <label>HEX</label>
+      </div>
+      <button type="button" class="mode-toggle-btn" id="modeToggleBtnHex" title="Switch to RGB">&#8645;</button>
+    </div>
+
     <button type="button" class="btn-accent btn-block" id="hexModalApply">Apply Colour</button>
   </div>
 </div>
