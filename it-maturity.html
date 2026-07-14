@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IT Maturity Assessment — Widget Builder</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="it-maturity.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div>
+      <h1>IT Maturity Assessment</h1>
+      <p>Show a client where their IT environment stands today — and where it should be.</p>
+    </div>
+  </div>
+
+  <!-- ── Sessions ─────────────────────────────────── -->
+  <div class="sessions-block" id="sessionsBlock" hidden>
+    <div class="sessions-header">
+      <span class="label">Sessions</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="autosave-label" id="autoSaveLabel">Saved ✓</span>
+        <button class="btn-secondary" id="showArchivedBtn" type="button">Show archived</button>
+        <button class="btn-secondary" id="newSessionBtn" type="button">New Assessment</button>
+      </div>
+    </div>
+    <div class="session-cards" id="sessionCards"></div>
+  </div>
+
+  <!-- ── Client details ───────────────────────────── -->
+  <div class="panel">
+    <div class="panel-title">Client Details</div>
+    <div class="field-row">
+      <div class="field">
+        <label for="clientName">Client name</label>
+        <input type="text" id="clientName" placeholder="Riverside Medical Group" />
+      </div>
+      <div class="field">
+        <label for="industry">Industry</label>
+        <select id="industry">
+          <option value="">Select…</option>
+          <option>Healthcare</option>
+          <option>Legal</option>
+          <option>Finance</option>
+          <option>Manufacturing</option>
+          <option>Professional Services</option>
+          <option>Retail</option>
+          <option>Construction</option>
+          <option>Non-profit</option>
+          <option>Education</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="companySize">Company size</label>
+        <select id="companySize">
+          <option value="">Select…</option>
+          <option value="1-50">1–50 employees</option>
+          <option value="51-200">51–200 employees</option>
+          <option value="201-500">201–500 employees</option>
+          <option value="500+">500+ employees</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Dimensions ────────────────────────────────── -->
+  <div class="panel">
+    <div class="panel-title">Rate Current Maturity</div>
+    <div id="dimensionsHost"></div>
+  </div>
+
+  <div class="error-box" id="errorBox" hidden></div>
+
+  <div class="btn-row">
+    <button class="btn-accent" id="generateBtn" type="button">Generate Assessment</button>
+  </div>
+
+  <div class="loading-state" id="loadingState" hidden>
+    <div class="dots"><span></span><span></span><span></span></div>
+    <span>Assessing your maturity profile…</span>
+  </div>
+
+  <!-- ── Output ────────────────────────────────────── -->
+  <div id="outputArea" hidden>
+
+    <div class="panel">
+      <div class="panel-title">Colour Theme</div>
+      <div class="theme-row">
+        <div class="swatches" id="colourSwatches"></div>
+        <div class="theme-input-group">
+          <input type="color" id="nativeColorPicker" value="#2e74dc" title="Custom colour" />
+          <input type="text" id="hexInput" value="#2e74dc" maxlength="7" title="Hex value" />
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Override Target Levels</div>
+      <div class="override-grid" id="overrideGrid"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Widget Preview</div>
+      <div class="preview-shell">
+        <div class="preview-canvas" id="widgetCanvas"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-secondary" id="regenBtn" type="button">↺ Regenerate Narrative</button>
+        <button class="btn-secondary" id="copyBtn" type="button">Copy HTML</button>
+        <button class="btn-accent" id="pushBtn" type="button">Push to Salesbuildr</button>
+      </div>
+      <div class="push-status" id="pushStatus" hidden></div>
+    </div>
+
+  </div>
+
+  <div class="output-empty" id="emptyState">
+    Rate the five dimensions above and click Generate Assessment to build the widget.
+  </div>
+
+</div>
+
+<!-- ── Salesbuildr credentials modal ──────────────── -->
+<div class="modal-overlay" id="credsModal" hidden>
+  <div class="modal-box">
+    <h3>Connect to Salesbuildr</h3>
+    <div class="field">
+      <label for="credApiKey">API key</label>
+      <input type="text" id="credApiKey" placeholder="Admin → Integrations → API Key" />
+    </div>
+    <div class="field">
+      <label for="credTenantUrl">Tenant URL</label>
+      <input type="text" id="credTenantUrl" placeholder="https://acme.salesbuildr.com" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="credsCancelBtn" type="button">Cancel</button>
+      <button class="btn-accent" id="credsSaveBtn" type="button">Save & Push</button>
+    </div>
+  </div>
+</div>
+
+<script src="it-maturity.js"></script>
+</body>
+</html>
