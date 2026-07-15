@@ -74,6 +74,15 @@ USE WHEN: Pitching to a prospect in a specific industry and wanting the proposal
 NOT FOR: Generic proposals without a clear vertical. Use the Proposal Widget Builder for the core sales narrative.
 URL: https://widgetcreator.netlify.app/industry-proposal-pack.html
 
+TOOL: IT Maturity Assessment Widget
+WHAT: Generates a visual IT maturity assessment widget showing a client's current vs target maturity across five dimensions: Security, Business Continuity, Productivity & Cloud, Compliance & Risk, and Strategic Alignment. Each dimension is rated on a four-point scale (Reactive / Managed / Optimised / Strategic) with helper text for calibration. AI sets target levels based on industry and company size — MSP can override. Output: five colour-coded progress bars (filled in theme colour for current, lighter tint for target segment, grey for beyond-target) plus an AI-written 3–5 sentence narrative identifying the priority gap. Sessions auto-save to localStorage. Part of the vCIO toolkit — the diagnostic before the Technology Roadmap Builder.
+WHO: MSP account managers, sales reps, or vCIOs making a client's IT maturity visible in a proposal, QBR, or strategic review.
+INPUT: Client name, industry, company size, five dimension ratings (dropdown with helper text per level), colour theme.
+OUTPUT: One widget — progress bar visual + AI narrative. Push to Salesbuildr or copy HTML.
+USE WHEN: Adding a diagnostic to a prospect proposal. Tracking client progress in a QBR pack. Opening a strategic conversation about where the client needs to be.
+NOT FOR: Technical audits or system scans. Compliance gap analysis — use Compliance Sales Pack. Replacement for the Technology Roadmap Builder — this is the diagnostic, the Roadmap is the prescription.
+URL: https://widgetcreator.netlify.app/it-maturity.html
+
 TOOL: Account Growth Widget
 WHAT: Generates one or two advisory-tone widgets that make the business case for a service upgrade to an existing MSP client. Input is five fields completed in under 3 minutes: client industry, current service coverage (broad chip selection — Helpdesk, RMM, Patch Management, Backup, M365, Network, Basic Security, EDR, Email Security, MFA, Security Training, vCIO), recommended addition (same chip list — delta is the upgrade story), trigger for the recommendation (renewal / incident / audit / growth / insurance / post-QBR / proactive + optional one-line detail), and an Executive Summary toggle. Widget 1 — Account Growth Recommendation: four sections (current state, trigger context, recommendation, business outcome), advisory tone, written for the decision-maker in the conversation. Widget 2 — Executive Summary (optional): C-suite snapshot, four short statements, no technical language, written for someone not in the room. Sessions auto-save to localStorage — up to 5 active sessions with resume and archive.
 WHO: MSP account managers, sales reps, or vCIOs proposing a service upgrade to an existing client.
