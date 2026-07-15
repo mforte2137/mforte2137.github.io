@@ -26,10 +26,17 @@ function roundDisp(n) { return Number.isInteger(n) ? String(n) : n.toFixed(1); }
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 function fmtBytes(b) { if (b < 1024) return b + ' B'; if (b < 1048576) return (b/1024).toFixed(1) + ' KB'; return (b/1048576).toFixed(1) + ' MB'; }
 
-function showToast(msg) {
+function showToast(msg, duration = 2200) {
   const el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2200);
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+function showError(msg) {
+  showToast(msg, 5000); // errors stay 5 seconds
+  console.error(msg);
 }
 
 function durationStr(hours, hpd) {
@@ -199,23 +206,28 @@ async function renderTemplateSelect(preserveSelection = true) {
 function defaultRow() { return { task:'', role:'', hours:'', notes:'' }; }
 
 function captureCurrentState() {
-  return {
-    projectTitle:          document.getElementById('projectTitle').value,
-    customerName:          document.getElementById('customerName').value,
-    hoursPerDay:           document.getElementById('hoursPerDay').value,
-    overview:              document.getElementById('overview').value,
-    exclusions:            document.getElementById('exclusions').value,
-    showRole:              document.getElementById('showRole').checked,
-    showHours:             document.getElementById('showHours').checked,
-    showTotalHours:        document.getElementById('showTotalHours').checked,
-    showNotes:             document.getElementById('showNotes').checked,
-    projectNotes:          (() => { try { return projectNotesEditor ? projectNotesEditor.root.innerHTML : ''; } catch { return ''; } })(),
-    internalNotes:         (() => { try { return internalNotesEditor ? internalNotesEditor.root.innerHTML : ''; } catch { return ''; } })(),
-    internalLinks:         [...internalLinks],
-    internalSectionOrder:  getSectionOrder(),
-    internalFiles:         internalFiles.map(f => ({ id:f.id, name:f.name, type:f.type, size:f.size, addedAt:f.addedAt, idbKey:f.idbKey, caption:f.caption||'' })),
-    rows:                  rows.map(r => ({ ...r }))
-  };
+  try {
+    return {
+      projectTitle:          document.getElementById('projectTitle').value,
+      customerName:          document.getElementById('customerName').value,
+      hoursPerDay:           document.getElementById('hoursPerDay').value,
+      overview:              document.getElementById('overview').value,
+      exclusions:            document.getElementById('exclusions').value,
+      showRole:              document.getElementById('showRole').checked,
+      showHours:             document.getElementById('showHours').checked,
+      showTotalHours:        document.getElementById('showTotalHours').checked,
+      showNotes:             document.getElementById('showNotes').checked,
+      projectNotes:          (() => { try { return projectNotesEditor ? projectNotesEditor.root.innerHTML : ''; } catch { return ''; } })(),
+      internalNotes:         (() => { try { return internalNotesEditor ? internalNotesEditor.root.innerHTML : ''; } catch { return ''; } })(),
+      internalLinks:         [...(internalLinks || [])],
+      internalSectionOrder:  (() => { try { return getSectionOrder(); } catch { return ['text','links','images','files']; } })(),
+      internalFiles:         (internalFiles || []).map(f => ({ id:f.id, name:f.name, type:f.type, size:f.size, addedAt:f.addedAt, idbKey:f.idbKey, caption:f.caption||'' })),
+      rows:                  rows.map(r => ({ ...r }))
+    };
+  } catch (err) {
+    console.error('captureCurrentState failed:', err);
+    return { projectTitle:'', customerName:'', hoursPerDay:8, overview:'', exclusions:'', showRole:true, showHours:false, showTotalHours:true, showNotes:true, projectNotes:'', internalNotes:'', internalLinks:[], internalSectionOrder:['text','links','images','files'], internalFiles:[], rows: rows.map(r => ({ ...r })) };
+  }
 }
 
 function applyState(s) {
@@ -934,7 +946,7 @@ document.getElementById('importInput').addEventListener('change', e => {
       showToast(`Imported: ${s.projectTitle||file.name}`);
       saveCurrentAsProject(s.projectTitle); renderProjects();
     } catch (err) {
-      showToast(`⚠️ Import failed: ${err.message}`);
+      showError(`⚠️ Import failed: ${err.message}`);
       console.error('Import error:', err);
     }
   };
@@ -1307,14 +1319,8 @@ document.getElementById('aiFormatBtn').addEventListener('click', async () => {
   projectNotesEditor.on('text-change', () => saveState());
   internalNotesEditor.on('text-change', () => saveState());
 
-  // Load saved state
+  // Load saved state - try to restore, don't wipe unless truly empty
   const urlPreset = new URLSearchParams(window.location.search).get('preset');
-  if (!urlPreset) {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (raw) { const s = JSON.parse(raw); if (!(s.projectTitle||'').trim() && !(s.rows||[]).some(r => num(r.hours)>0)) localStorage.removeItem(LS_KEY); }
-    } catch { localStorage.removeItem(LS_KEY); }
-  }
 
   if (urlPreset && PRESETS[urlPreset]) {
     rows = PRESETS[urlPreset].tasks.map(t => ({ ...t }));
