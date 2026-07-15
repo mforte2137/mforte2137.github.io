@@ -494,7 +494,7 @@
 <table width="100%" style="border-collapse:collapse;background:#f4f7fb;margin-bottom:16px;">
   <tr>
     <td style="padding:16px 18px;vertical-align:middle;width:64%;">
-      <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#586273;margin-bottom:4px;">Your Maturity Score</div>
+      <div style="font-size:16px;font-weight:800;letter-spacing:0.01em;color:#0b1220;margin-bottom:4px;">Your Maturity Score</div>
       <div style="font-size:12px;color:#9ca3af;line-height:1.5;">Average across all five dimensions &middot; target ${targetDisplay} / 10</div>
     </td>
     <td style="padding:14px 18px;text-align:center;width:36%;">
