@@ -263,10 +263,14 @@ function loadState() {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return false;
     const s = JSON.parse(raw);
-    if (!s || !Array.isArray(s.rows)) return false;
+    if (!s || typeof s !== 'object') return false;
+    if (!Array.isArray(s.rows)) s.rows = [];
     applyState(s);
     return true;
-  } catch { return false; }
+  } catch (err) {
+    console.warn('loadState failed:', err);
+    return false;
+  }
 }
 
 // ── Projects ──────────────────────────────────────────────
@@ -920,12 +924,21 @@ document.getElementById('importInput').addEventListener('change', e => {
   reader.onload = ev => {
     try {
       const s = JSON.parse(ev.target.result);
-      if (!Array.isArray(s.rows)) throw new Error('Not a valid scope file');
+      // Accept files from original Scope Builder (no rows key = empty project)
+      // and Deluxe exports — rows is optional, we default to []
+      if (typeof s !== 'object' || s === null) throw new Error('File is not a valid JSON object');
       if (rows.length && !confirm(`Import "${s.projectTitle||file.name}"? Current scope will be replaced.`)) return;
-      applyState(s); showToast(`Imported: ${s.projectTitle||file.name}`);
+      // Ensure rows exists even if missing from old export
+      if (!Array.isArray(s.rows)) s.rows = [];
+      applyState(s);
+      showToast(`Imported: ${s.projectTitle||file.name}`);
       saveCurrentAsProject(s.projectTitle); renderProjects();
-    } catch { showToast('⚠️ Could not read this file'); }
+    } catch (err) {
+      showToast(`⚠️ Import failed: ${err.message}`);
+      console.error('Import error:', err);
+    }
   };
+  reader.onerror = () => showToast('⚠️ Could not read file — try again');
   reader.readAsText(file); e.target.value = '';
 });
 document.getElementById('clearBtn').addEventListener('click', () => {
