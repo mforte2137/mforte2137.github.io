@@ -259,9 +259,9 @@ td textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; borde
 
 /* Output panels */
 .output-panels[hidden] { display: none !important; }
-.output-panels { display: grid; grid-template-columns: 1fr 2fr; border-top: 1px solid var(--border); height: 320px; flex-shrink: 0; }
-.output-panel { display: flex; flex-direction: column; padding: 12px 18px; overflow: hidden; border-right: 1px solid var(--border); background: var(--bg); }
-.output-panel:last-child { border-right: none; }
+.output-panels { border-top: 1px solid var(--border); height: 280px; flex-shrink: 0; display: flex; }
+.output-panel { display: flex; flex-direction: column; padding: 12px 18px; overflow: hidden; background: var(--bg); flex: 1; }
+.output-panel-full { flex: 1; }
 .output-panel-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
 .output-panel-title { font-family: var(--display); font-size: 13px; font-weight: 700; }
 .output-panel-hint  { font-family: var(--mono); font-size: 10px; color: var(--text-3); line-height: 1.4; margin-bottom: 8px; }
