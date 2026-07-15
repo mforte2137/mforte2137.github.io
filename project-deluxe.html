@@ -193,56 +193,62 @@
     <!-- ══ TAB 1: SCOPE ══ -->
     <div class="tab-content active" id="tab-scope">
 
-      <div class="center-section">
-        <div class="center-sec-label">Project Overview <span class="center-sec-hint">2–3 sentences, customer-facing</span></div>
-        <textarea id="overview" class="center-textarea" rows="3" placeholder="e.g. This project covers the migration of your on-premises server infrastructure to Microsoft Azure..."></textarea>
-      </div>
-
-      <div class="center-section center-section-grow">
-        <div class="center-sec-label">Scope of Work <span class="center-sec-hint">Rows with 0 hours are excluded from output</span></div>
-        <div class="grid-wrap">
-          <table class="task-table">
-            <thead>
-              <tr>
-                <th class="col-drag"></th>
-                <th class="col-task">Task</th>
-                <th class="col-role">Role</th>
-                <th class="col-hours">Hours</th>
-                <th class="col-dur">Duration</th>
-                <th class="col-notes">Notes</th>
-                <th class="col-del"></th>
-              </tr>
-            </thead>
-            <tbody id="tbody"></tbody>
-          </table>
+      <!-- Top editing area — shrinks when preview is open -->
+      <div class="scope-editor" id="scopeEditor">
+        <div class="center-section">
+          <div class="center-sec-label">Project Overview <span class="center-sec-hint">2–3 sentences, customer-facing</span></div>
+          <textarea id="overview" class="center-textarea" rows="3" placeholder="e.g. This project covers the migration of your on-premises server infrastructure to Microsoft Azure..."></textarea>
         </div>
-        <div class="grid-footer">
-          <button class="gf-btn" id="addRowBtn"><i class="ti ti-plus"></i> Add row</button>
-          <div class="gf-pills">
-            <div class="gf-pill"><span>Total</span><strong id="totalHours">0</strong><span>hrs</span></div>
-            <div class="gf-pill"><span>Duration</span><strong id="totalDuration">—</strong></div>
-            <div class="gf-pill"><span>In scope</span><strong id="includedCount">0</strong></div>
+
+        <div class="center-section center-section-grow">
+          <div class="center-sec-label">Scope of Work <span class="center-sec-hint">Rows with 0 hours are excluded from output</span></div>
+          <div class="grid-wrap">
+            <table class="task-table">
+              <thead>
+                <tr>
+                  <th class="col-drag"></th>
+                  <th class="col-task">Task</th>
+                  <th class="col-role">Role</th>
+                  <th class="col-hours">Hours</th>
+                  <th class="col-dur">Duration</th>
+                  <th class="col-notes">Notes</th>
+                  <th class="col-del"></th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
           </div>
-        </div>
-      </div>
-
-      <div class="center-section">
-        <div class="center-sec-label">What's Not Included <span class="center-sec-hint">— one per line</span></div>
-        <textarea id="exclusions" class="center-textarea" rows="3"></textarea>
-      </div>
-
-      <!-- Scope output panels -->
-      <div class="output-panels" id="outputPanels" hidden>
-        <div class="output-panel output-panel-full">
-          <div class="output-panel-header">
-            <div>
-              <div class="output-panel-title">Scope Widget Preview</div>
-              <div class="output-panel-hint">Approximate preview — Salesbuildr may apply its own typography</div>
+          <div class="grid-footer">
+            <button class="gf-btn" id="addRowBtn"><i class="ti ti-plus"></i> Add row</button>
+            <div class="gf-pills">
+              <div class="gf-pill"><span>Total</span><strong id="totalHours">0</strong><span>hrs</span></div>
+              <div class="gf-pill"><span>Duration</span><strong id="totalDuration">—</strong></div>
+              <div class="gf-pill"><span>In scope</span><strong id="includedCount">0</strong></div>
             </div>
-            <button class="op-close-btn" id="closeOutputBtn"><i class="ti ti-x"></i></button>
           </div>
-          <div class="preview-box" id="preview"></div>
         </div>
+
+        <div class="center-section">
+          <div class="center-sec-label">What's Not Included <span class="center-sec-hint">— one per line</span></div>
+          <textarea id="exclusions" class="center-textarea" rows="3"></textarea>
+        </div>
+      </div>
+
+      <!-- Scope preview strip — shown below editor when generated -->
+      <div class="scope-preview-strip" id="scopePreviewStrip" hidden>
+        <div class="scope-preview-bar">
+          <div class="scope-preview-bar-left">
+            <i class="ti ti-eye" style="color:var(--accent-2);font-size:14px;"></i>
+            <span class="scope-preview-bar-title">Scope Widget Preview</span>
+            <span class="scope-preview-bar-hint">Updates live as you edit — approximate preview</span>
+          </div>
+          <div class="scope-preview-bar-actions">
+            <button class="scope-preview-action" id="copyBtnStrip"><i class="ti ti-copy"></i> Copy HTML</button>
+            <button class="scope-preview-action scope-preview-action-push" id="sbPushBtnStrip"><i class="ti ti-send"></i> Push to Salesbuildr</button>
+            <button class="scope-preview-close" id="closeOutputBtn" title="Close preview"><i class="ti ti-x"></i></button>
+          </div>
+        </div>
+        <div class="scope-preview-canvas" id="preview"></div>
       </div>
 
     </div><!-- /tab-scope -->
@@ -281,19 +287,7 @@
         </div>
       </div>
 
-      <!-- Notes output panels -->
-      <div class="output-panels" id="notesOutputPanels" hidden>
-        <div class="output-panel output-panel-full">
-          <div class="output-panel-header">
-            <div>
-              <div class="output-panel-title">Notes Widget Preview</div>
-              <div class="output-panel-hint">Approximate preview — Salesbuildr may apply its own typography</div>
-            </div>
-            <button class="op-close-btn" id="closeNotesOutputBtn"><i class="ti ti-x"></i></button>
-          </div>
-          <div class="preview-box" id="notesPreview"></div>
-        </div>
-      </div>
+      <!-- Notes output is shown in the notes modal (see bottom of file) -->
 
     </div><!-- /tab-notes -->
 
@@ -442,6 +436,27 @@
       <button class="viewer-close" id="viewerClose"><i class="ti ti-x"></i></button>
     </div>
     <div class="viewer-body" id="viewerBody"></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL — Notes widget preview ═══ -->
+<div class="modal-overlay" id="notesModalOverlay" hidden>
+  <div class="notes-modal">
+    <div class="notes-modal-header">
+      <div class="notes-modal-title-row">
+        <i class="ti ti-notes" style="color:var(--accent-2);font-size:16px;"></i>
+        <span class="notes-modal-title">Notes Widget Preview</span>
+        <span class="notes-modal-hint">Approximate preview — Salesbuildr may apply its own typography</span>
+      </div>
+      <div class="notes-modal-actions">
+        <button class="scope-preview-action" id="copyNotesBtn"><i class="ti ti-copy"></i> Copy HTML</button>
+        <button class="scope-preview-action scope-preview-action-push" id="sbNotesPushBtn"><i class="ti ti-send"></i> Push to Salesbuildr</button>
+        <button class="viewer-close" id="closeNotesModal"><i class="ti ti-x"></i></button>
+      </div>
+    </div>
+    <div class="notes-modal-body">
+      <div class="preview-box" id="notesPreview" style="min-height:300px;"></div>
+    </div>
   </div>
 </div>
 
