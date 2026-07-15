@@ -519,7 +519,6 @@ function autoRefresh() {
   if (!panels || panels.hidden) return;
   const html = generateScopeWidget();
   document.getElementById('htmlOut').textContent = html;
-  document.getElementById('preview').innerHTML   = html;
 }
 
 // ── Widget generation — Notes ─────────────────────────────
@@ -753,27 +752,32 @@ document.getElementById('viewerOverlay').addEventListener('click', e => {
 
 // ── File upload handlers ──────────────────────────────────
 document.getElementById('imageUploadInput').addEventListener('change', async e => {
-  const files = Array.from(e.target.files);
+  const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
+  if (!files.length) { showToast('No image files selected'); e.target.value = ''; return; }
   for (const file of files) {
-    if (!file.type.startsWith('image/')) continue;
     const idbKey = genId();
     await idbPut({ idbKey, blob: file, name: file.name, type: file.type });
     internalFiles.push({ id: genId(), name: file.name, type: file.type, size: file.size, addedAt: new Date().toISOString(), idbKey, caption: '' });
   }
   renderImages(); saveState();
+  // Switch to Internal tab so user sees the result
+  document.querySelector('.tab-btn[data-tab="internal"]').click();
   showToast(`${files.length} image${files.length > 1 ? 's' : ''} added`);
   e.target.value = '';
 });
 
 document.getElementById('fileUploadInput').addEventListener('change', async e => {
   const files = Array.from(e.target.files);
+  if (!files.length) { e.target.value = ''; return; }
   for (const file of files) {
     const idbKey = genId();
     await idbPut({ idbKey, blob: file, name: file.name, type: file.type });
     internalFiles.push({ id: genId(), name: file.name, type: file.type, size: file.size, addedAt: new Date().toISOString(), idbKey, caption: '' });
   }
-  if (files.some(f => f.type.startsWith('image/'))) renderImages();
-  renderFiles(); saveState();
+  // Render both since mixed uploads are possible
+  renderImages(); renderFiles(); saveState();
+  // Switch to Internal tab so user sees the result
+  document.querySelector('.tab-btn[data-tab="internal"]').click();
   showToast(`${files.length} file${files.length > 1 ? 's' : ''} added`);
   e.target.value = '';
 });
@@ -850,7 +854,11 @@ document.getElementById('exportBtn').addEventListener('click', () => {
   const state = captureCurrentState();
   const slug  = (state.projectTitle || 'project').toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const blob  = new Blob([JSON.stringify({ version:2, exportedAt: new Date().toISOString(), ...state }, null, 2)], { type:'application/json' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${slug}.json`; a.click(); URL.revokeObjectURL(a.href);
+  const url   = URL.createObjectURL(blob);
+  const a     = document.createElement('a');
+  a.href = url; a.download = `${slug}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
   showToast('Exported');
 });
 document.getElementById('importInput').addEventListener('change', e => {
@@ -931,7 +939,6 @@ document.getElementById('hoursPerDay').addEventListener('input', () => { updateS
 document.getElementById('generateBtn').addEventListener('click', () => {
   const html = generateScopeWidget();
   document.getElementById('htmlOut').textContent = html;
-  document.getElementById('preview').innerHTML   = html;
   document.getElementById('outputPanels').hidden = false;
   document.getElementById('copyBtn').disabled    = false;
   document.getElementById('sbPushBtn').disabled  = false;
@@ -949,7 +956,6 @@ document.getElementById('generateNotesWidgetBtn').addEventListener('click', () =
   const html = generateNotesWidgetHtml();
   if (!html) { showToast('Add some project notes first'); return; }
   document.getElementById('notesHtmlOut').textContent = html;
-  document.getElementById('notesPreview').innerHTML   = html;
   document.getElementById('notesOutputPanels').hidden = false;
   document.getElementById('copyNotesBtn').disabled    = false;
   document.getElementById('sbNotesPushBtn').disabled  = false;
