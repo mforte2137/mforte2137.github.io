@@ -209,8 +209,8 @@ function captureCurrentState() {
     showHours:             document.getElementById('showHours').checked,
     showTotalHours:        document.getElementById('showTotalHours').checked,
     showNotes:             document.getElementById('showNotes').checked,
-    projectNotes:          projectNotesEditor ? projectNotesEditor.root.innerHTML : '',
-    internalNotes:         internalNotesEditor ? internalNotesEditor.root.innerHTML : '',
+    projectNotes:          (() => { try { return projectNotesEditor ? projectNotesEditor.root.innerHTML : ''; } catch { return ''; } })(),
+    internalNotes:         (() => { try { return internalNotesEditor ? internalNotesEditor.root.innerHTML : ''; } catch { return ''; } })(),
     internalLinks:         [...internalLinks],
     internalSectionOrder:  getSectionOrder(),
     internalFiles:         internalFiles.map(f => ({ id:f.id, name:f.name, type:f.type, size:f.size, addedAt:f.addedAt, idbKey:f.idbKey, caption:f.caption||'' })),
@@ -592,6 +592,7 @@ function initInternalSortable() {
 
 // ── Internal links ────────────────────────────────────────
 let internalLinks = [];
+let internalFiles = [];
 function renderLinks() {
   const list = document.getElementById('linksList');
   list.innerHTML = '';
@@ -622,39 +623,56 @@ document.getElementById('linkUrl').addEventListener('keydown', e => {
 });
 
 // ── Internal images ───────────────────────────────────────
+// ── File helpers ──────────────────────────────────────────
+function fileIcon(type) {
+  if (type.includes('pdf'))  return 'ti-file-type-pdf';
+  if (type.includes('word') || type.includes('document')) return 'ti-file-type-doc';
+  if (type.includes('sheet') || type.includes('excel') || type.includes('csv')) return 'ti-file-type-xls';
+  if (type.includes('text')) return 'ti-file-type-txt';
+  return 'ti-file';
+}
+
+// ── Internal images ───────────────────────────────────────
 function renderImages() {
   const grid = document.getElementById('imageGrid');
   grid.innerHTML = '';
   internalFiles.filter(f => f.type.startsWith('image/')).forEach(f => {
     const thumb = document.createElement('div'); thumb.className = 'image-thumb';
-    thumb.innerHTML = `
-      <img src="" alt="${esc(f.name)}" data-idbkey="${esc(f.idbKey)}">
-      <div class="image-thumb-overlay"><i class="ti ti-zoom-in"></i></div>
-      ${f.caption ? `<div class="image-caption">${esc(f.caption)}</div>` : ''}
-      <button class="image-del-btn" data-id="${esc(f.id)}" title="Delete"><i class="ti ti-x"></i></button>`;
-    // Load image from IDB
+    // Build the thumb — img src filled in after IDB fetch
+    const img = document.createElement('img'); img.alt = f.name; img.src = '';
+    const overlay = document.createElement('div'); overlay.className = 'image-thumb-overlay'; overlay.innerHTML = '<i class="ti ti-zoom-in"></i>';
+    const delBtn  = document.createElement('button'); delBtn.className = 'image-del-btn'; delBtn.title = 'Delete'; delBtn.innerHTML = '<i class="ti ti-x"></i>';
+    if (f.caption) { const cap = document.createElement('div'); cap.className = 'image-caption'; cap.textContent = f.caption; thumb.appendChild(cap); }
+    thumb.appendChild(img); thumb.appendChild(overlay); thumb.appendChild(delBtn);
+
+    // Load blob from IDB and set src
     idbGet(f.idbKey).then(record => {
-      if (record?.blob) {
+      if (record && record.blob) {
         const url = URL.createObjectURL(record.blob);
-        thumb.querySelector('img').src = url;
+        img.src = url;
+        img.onload = () => {}; // blob URL stays valid while page is open
+      } else {
+        img.alt = '(not found)';
       }
-    });
-    thumb.querySelector('.image-thumb-overlay').addEventListener('click', () => openImageViewer(f));
-    thumb.querySelector('img').addEventListener('click', () => openImageViewer(f));
-    thumb.querySelector('.image-del-btn').addEventListener('click', e => {
+    }).catch(() => { img.alt = '(error)'; });
+
+    overlay.addEventListener('click', () => openImageViewer(f));
+    img.addEventListener('click', () => openImageViewer(f));
+    delBtn.addEventListener('click', e => {
       e.stopPropagation();
       if (!confirm(`Delete image "${f.name}"?`)) return;
       idbDelete(f.idbKey).catch(() => {});
       internalFiles = internalFiles.filter(x => x.id !== f.id);
-      renderImages(); renderFiles(); saveState(); showToast('Image deleted');
+      renderImages(); saveState(); showToast('Image deleted');
     });
     grid.appendChild(thumb);
   });
 }
 
 async function openImageViewer(f) {
-  const record = await idbGet(f.idbKey);
-  if (!record?.blob) { showToast('Image not found in local storage'); return; }
+  let record;
+  try { record = await idbGet(f.idbKey); } catch {}
+  if (!record || !record.blob) { showToast('Image not found — try re-uploading'); return; }
   const url = URL.createObjectURL(record.blob);
   openViewer(f.name, `<img src="${url}" alt="${esc(f.name)}" style="max-width:100%;max-height:75vh;object-fit:contain;">`);
 }
@@ -684,17 +702,10 @@ function renderFiles() {
   });
 }
 
-function fileIcon(type) {
-  if (type.includes('pdf'))  return 'ti-file-type-pdf';
-  if (type.includes('word') || type.includes('document')) return 'ti-file-type-doc';
-  if (type.includes('sheet') || type.includes('excel') || type.includes('csv')) return 'ti-file-type-xls';
-  if (type.includes('text')) return 'ti-file-type-txt';
-  return 'ti-file';
-}
-
 async function openFileViewer(f) {
-  const record = await idbGet(f.idbKey);
-  if (!record?.blob) { showToast('File not found in local storage'); return; }
+  let record;
+  try { record = await idbGet(f.idbKey); } catch {}
+  if (!record || !record.blob) { showToast('File not found — try re-uploading'); return; }
   const blob = record.blob;
 
   if (f.type.startsWith('image/')) { openImageViewer(f); return; }
@@ -706,18 +717,22 @@ async function openFileViewer(f) {
   }
 
   if (f.type.includes('sheet') || f.type.includes('excel') || f.name.match(/\.xlsx?$/i)) {
-    const ab = await blob.arrayBuffer();
-    const wb = XLSX.read(ab, { type: 'array' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const html = XLSX.utils.sheet_to_html(ws, { editable: false });
-    openViewer(f.name, `<div class="xlsx-preview">${html}</div>`);
+    try {
+      const ab   = await blob.arrayBuffer();
+      const wb   = XLSX.read(ab, { type: 'array' });
+      const ws   = wb.Sheets[wb.SheetNames[0]];
+      const html = XLSX.utils.sheet_to_html(ws, { editable: false });
+      openViewer(f.name, `<div class="xlsx-preview">${html}</div>`);
+    } catch { showToast('Could not open Excel file'); }
     return;
   }
 
   if (f.type.includes('word') || f.name.match(/\.docx?$/i)) {
-    const ab = await blob.arrayBuffer();
-    const result = await mammoth.convertToHtml({ arrayBuffer: ab });
-    openViewer(f.name, `<div class="docx-preview">${result.value}</div>`);
+    try {
+      const ab     = await blob.arrayBuffer();
+      const result = await mammoth.convertToHtml({ arrayBuffer: ab });
+      openViewer(f.name, `<div class="docx-preview">${result.value}</div>`);
+    } catch { showToast('Could not open Word file'); }
     return;
   }
 
@@ -727,10 +742,11 @@ async function openFileViewer(f) {
     return;
   }
 
-  // Fallback — offer download
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a'); a.href = url; a.download = f.name; a.click();
-  URL.revokeObjectURL(url);
+  // Fallback — download
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a'); a.href = url; a.download = f.name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function openViewer(title, bodyHtml) {
@@ -754,31 +770,44 @@ document.getElementById('viewerOverlay').addEventListener('click', e => {
 document.getElementById('imageUploadInput').addEventListener('change', async e => {
   const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
   if (!files.length) { showToast('No image files selected'); e.target.value = ''; return; }
+  let added = 0;
   for (const file of files) {
     const idbKey = genId();
-    await idbPut({ idbKey, blob: file, name: file.name, type: file.type });
-    internalFiles.push({ id: genId(), name: file.name, type: file.type, size: file.size, addedAt: new Date().toISOString(), idbKey, caption: '' });
+    try {
+      await idbPut({ idbKey, blob: file, name: file.name, type: file.type });
+      internalFiles.push({ id: genId(), name: file.name, type: file.type, size: file.size, addedAt: new Date().toISOString(), idbKey, caption: '' });
+      added++;
+    } catch (err) {
+      showToast(`Could not store ${file.name}: ${err.message}`);
+    }
   }
-  renderImages(); saveState();
-  // Switch to Internal tab so user sees the result
-  document.querySelector('.tab-btn[data-tab="internal"]').click();
-  showToast(`${files.length} image${files.length > 1 ? 's' : ''} added`);
+  if (added) {
+    renderImages(); saveState();
+    document.querySelector('.tab-btn[data-tab="internal"]').click();
+    showToast(`${added} image${added > 1 ? 's' : ''} added`);
+  }
   e.target.value = '';
 });
 
 document.getElementById('fileUploadInput').addEventListener('change', async e => {
   const files = Array.from(e.target.files);
   if (!files.length) { e.target.value = ''; return; }
+  let added = 0;
   for (const file of files) {
     const idbKey = genId();
-    await idbPut({ idbKey, blob: file, name: file.name, type: file.type });
-    internalFiles.push({ id: genId(), name: file.name, type: file.type, size: file.size, addedAt: new Date().toISOString(), idbKey, caption: '' });
+    try {
+      await idbPut({ idbKey, blob: file, name: file.name, type: file.type });
+      internalFiles.push({ id: genId(), name: file.name, type: file.type, size: file.size, addedAt: new Date().toISOString(), idbKey, caption: '' });
+      added++;
+    } catch (err) {
+      showToast(`Could not store ${file.name}: ${err.message}`);
+    }
   }
-  // Render both since mixed uploads are possible
-  renderImages(); renderFiles(); saveState();
-  // Switch to Internal tab so user sees the result
-  document.querySelector('.tab-btn[data-tab="internal"]').click();
-  showToast(`${files.length} file${files.length > 1 ? 's' : ''} added`);
+  if (added) {
+    renderImages(); renderFiles(); saveState();
+    document.querySelector('.tab-btn[data-tab="internal"]').click();
+    showToast(`${added} file${added > 1 ? 's' : ''} added`);
+  }
   e.target.value = '';
 });
 
