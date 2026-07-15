@@ -515,10 +515,9 @@ ${overview ? `  <h3 style="margin:0 0 6px;font-size:13px;font-weight:700;color:$
 }
 
 function autoRefresh() {
-  const panels = document.getElementById('outputPanels');
-  if (!panels || panels.hidden) return;
-  const html = generateScopeWidget();
-  document.getElementById('preview').innerHTML = html;
+  const strip = document.getElementById('scopePreviewStrip');
+  if (!strip || strip.hidden) return;
+  document.getElementById('preview').innerHTML = generateScopeWidget();
 }
 
 // ── Widget generation — Notes ─────────────────────────────
@@ -766,6 +765,31 @@ document.getElementById('viewerOverlay').addEventListener('click', e => {
   }
 });
 
+// Notes modal close
+document.getElementById('closeNotesModal').addEventListener('click', () => {
+  document.getElementById('notesModalOverlay').hidden = true;
+});
+document.getElementById('notesModalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('notesModalOverlay')) {
+    document.getElementById('notesModalOverlay').hidden = true;
+  }
+});
+
+// Strip copy button
+document.getElementById('copyBtnStrip').addEventListener('click', async () => {
+  const html = generateScopeWidget();
+  try { await navigator.clipboard.writeText(html); showToast('HTML copied'); }
+  catch { const ta = document.createElement('textarea'); ta.value = html; ta.style.cssText = 'position:fixed;left:-9999px;'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('HTML copied'); }
+});
+
+// Strip push button
+document.getElementById('sbPushBtnStrip').addEventListener('click', () => {
+  const html   = generateScopeWidget();
+  const title  = (document.getElementById('projectTitle').value||'Project Scope').trim();
+  const prefix = document.getElementById('sbPrefix').value.trim();
+  pushWidget(html, prefix, title, 'sbResult', 'sbPushBtnStrip');
+});
+
 // ── File upload handlers ──────────────────────────────────
 document.getElementById('imageUploadInput').addEventListener('change', async e => {
   const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
@@ -967,14 +991,17 @@ document.getElementById('hoursPerDay').addEventListener('input', () => { updateS
 // ── Generate & copy scope widget ─────────────────────────
 document.getElementById('generateBtn').addEventListener('click', () => {
   const html = generateScopeWidget();
-  document.getElementById('preview').innerHTML   = html;
-  document.getElementById('htmlOut') && (document.getElementById('htmlOut').textContent = html);
-  document.getElementById('outputPanels').hidden = false;
-  document.getElementById('copyBtn').disabled    = false;
-  document.getElementById('sbPushBtn').disabled  = false;
+  document.getElementById('preview').innerHTML = html;
+  document.getElementById('scopePreviewStrip').hidden = false;
+  document.getElementById('scopeEditor').classList.add('preview-open');
+  document.getElementById('copyBtn').disabled   = false;
+  document.getElementById('sbPushBtn').disabled = false;
   showToast('Scope widget generated'); saveState();
 });
-document.getElementById('closeOutputBtn').addEventListener('click', () => { document.getElementById('outputPanels').hidden = true; });
+document.getElementById('closeOutputBtn').addEventListener('click', () => {
+  document.getElementById('scopePreviewStrip').hidden = true;
+  document.getElementById('scopeEditor').classList.remove('preview-open');
+});
 document.getElementById('copyBtn').addEventListener('click', async () => {
   const html = generateScopeWidget();
   if (!html.trim()) return;
@@ -986,9 +1013,8 @@ document.getElementById('copyBtn').addEventListener('click', async () => {
 document.getElementById('generateNotesWidgetBtn').addEventListener('click', () => {
   const html = generateNotesWidgetHtml();
   if (!html) { showToast('Add some project notes first'); return; }
-  document.getElementById('notesPreview').innerHTML  = html;
-  document.getElementById('notesHtmlOut') && (document.getElementById('notesHtmlOut').textContent = html);
-  document.getElementById('notesOutputPanels').hidden = false;
+  document.getElementById('notesPreview').innerHTML = html;
+  document.getElementById('notesModalOverlay').hidden = false;
   document.getElementById('copyNotesBtn').disabled    = false;
   document.getElementById('sbNotesPushBtn').disabled  = false;
   showToast('Notes widget generated');
@@ -1298,10 +1324,11 @@ document.getElementById('aiFormatBtn').addEventListener('click', async () => {
   initInternalSortable();
   await renderTemplateSelect();
 
-  document.getElementById('outputPanels').hidden      = true;
-  document.getElementById('notesOutputPanels').hidden = true;
-  document.getElementById('copyBtn').disabled         = true;
-  document.getElementById('copyNotesBtn').disabled    = true;
-  document.getElementById('sbPushBtn').disabled       = true;
-  document.getElementById('sbNotesPushBtn').disabled  = true;
+  document.getElementById('scopePreviewStrip').hidden     = true;
+  document.getElementById('notesModalOverlay').hidden     = true;
+  document.getElementById('scopeEditor').classList.remove('preview-open');
+  document.getElementById('copyBtn').disabled             = true;
+  document.getElementById('copyNotesBtn').disabled        = true;
+  document.getElementById('sbPushBtn').disabled           = true;
+  document.getElementById('sbNotesPushBtn').disabled      = true;
 })();
