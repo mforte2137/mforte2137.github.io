@@ -34,6 +34,18 @@ const TOOLS = [
     icon: "calc"
   },
   {
+    title: "IT Maturity Assessment Widget",
+    shortLabel: "Maturity Assessment",
+    description:
+      "Show clients exactly where their IT environment stands today — and where it should be. Five dimensions, a four-point scale, colour-coded progress bars, and an AI-written narrative. Drops into a proposal, QBR pack, or strategic review in minutes.",
+    category: "Strategic",
+    url: "https://widgetcreator.netlify.app/it-maturity.html",
+    badge: "new",
+    updated: "2026-07-11",
+    gradient: "cobalt",
+    icon: "chart"
+  },
+  {
     title: "Account Growth Widget",
     shortLabel: "Account Growth",
     description:
@@ -571,6 +583,7 @@ const GRADIENTS = {
   graphite:"linear-gradient(135deg, #111827 0%, #374151 55%, #6b7280 100%)",
   iron:    "linear-gradient(135deg, #1c1c1e 0%, #48484a 55%, #98989d 100%)",
   jade:    "linear-gradient(135deg, #064e3b 0%, #0d9488 55%, #5eead4 100%)",
+  cobalt:  "linear-gradient(135deg, #172554 0%, #1d4ed8 55%, #3b82f6 100%)",
   fern:    "linear-gradient(135deg, #14532d 0%, #22c55e 55%, #86efac 100%)",
   copper:  "linear-gradient(135deg, #7c2d12 0%, #c2410c 45%, #fb923c 100%)",
   mint:    "linear-gradient(135deg, #022c22 0%, #059669 55%, #6ee7b7 100%)",
@@ -1181,6 +1194,13 @@ Your data stays with you. Files are read locally in the browser and never transm
       out:   "Five short, coordinated Salesbuildr widgets tailored to the selected vertical — Industry Pain Points, Why IT Matters, Compliance & Risk, Our Approach, and What\'s Included. Push as a pack or individually.",
       when:  "You are pitching to a prospect in healthcare, legal, education, government, manufacturing, or another specific vertical and want the proposal to demonstrate genuine sector knowledge.",
       not:   "Not a substitute for the Proposal Widget Builder — these widgets prove industry knowledge, not the sales narrative. Not suitable for generic or multi-vertical prospects."
+    },
+    "IT Maturity Assessment Widget": {
+      who:   "MSP account managers, sales reps, or vCIOs who want to make a client\'s IT maturity visible — in a prospect proposal, a QBR pack, or a strategic review conversation.",
+      input: "Client name, industry, company size, and a rating for each of five dimensions (Security / Business Continuity / Productivity & Cloud / Compliance & Risk / Strategic Alignment) on a four-point scale (Reactive / Managed / Optimised / Strategic) with helper text per level. AI sets target levels by industry and size — MSP can override.",
+      out:   "One widget: five colour-coded progress bars (current level filled in theme colour, target segment in lighter tint, gap in grey) plus an AI-written 3–5 sentence narrative summarising the maturity picture and priority gap. Push to Salesbuildr or copy HTML.",
+      when:  "In a prospect proposal to show a diagnostic before the roadmap. In a QBR pack to track progress over time. In a strategic review to open the conversation about where the client should be going.",
+      not:   "Not a technical audit or system scan — ratings based on MSP knowledge. Not a compliance assessment — use Compliance Sales Pack. The diagnostic before the Technology Roadmap Builder, not a replacement for it."
     },
     "Account Growth Widget": {
       who:   "MSP account managers, sales reps, or vCIOs proposing a service upgrade to an existing client — at renewal, after a QBR, following an incident, or whenever a strategic moment opens the conversation.",
