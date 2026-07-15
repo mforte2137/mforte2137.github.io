@@ -518,7 +518,7 @@ function autoRefresh() {
   const panels = document.getElementById('outputPanels');
   if (!panels || panels.hidden) return;
   const html = generateScopeWidget();
-  document.getElementById('htmlOut').textContent = html;
+  document.getElementById('preview').innerHTML = html;
 }
 
 // ── Widget generation — Notes ─────────────────────────────
@@ -938,7 +938,8 @@ document.getElementById('hoursPerDay').addEventListener('input', () => { updateS
 // ── Generate & copy scope widget ─────────────────────────
 document.getElementById('generateBtn').addEventListener('click', () => {
   const html = generateScopeWidget();
-  document.getElementById('htmlOut').textContent = html;
+  document.getElementById('preview').innerHTML   = html;
+  document.getElementById('htmlOut') && (document.getElementById('htmlOut').textContent = html);
   document.getElementById('outputPanels').hidden = false;
   document.getElementById('copyBtn').disabled    = false;
   document.getElementById('sbPushBtn').disabled  = false;
@@ -946,16 +947,18 @@ document.getElementById('generateBtn').addEventListener('click', () => {
 });
 document.getElementById('closeOutputBtn').addEventListener('click', () => { document.getElementById('outputPanels').hidden = true; });
 document.getElementById('copyBtn').addEventListener('click', async () => {
-  const html = document.getElementById('htmlOut').textContent; if (!html.trim()) return;
-  try { await navigator.clipboard.writeText(html); showToast('Copied'); }
-  catch { const ta = document.createElement('textarea'); ta.value = html; ta.style.cssText = 'position:fixed;left:-9999px;'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('Copied (fallback)'); }
+  const html = generateScopeWidget();
+  if (!html.trim()) return;
+  try { await navigator.clipboard.writeText(html); showToast('HTML copied'); }
+  catch { const ta = document.createElement('textarea'); ta.value = html; ta.style.cssText = 'position:fixed;left:-9999px;'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('HTML copied (fallback)'); }
 });
 
 // ── Generate & copy notes widget ─────────────────────────
 document.getElementById('generateNotesWidgetBtn').addEventListener('click', () => {
   const html = generateNotesWidgetHtml();
   if (!html) { showToast('Add some project notes first'); return; }
-  document.getElementById('notesHtmlOut').textContent = html;
+  document.getElementById('notesPreview').innerHTML  = html;
+  document.getElementById('notesHtmlOut') && (document.getElementById('notesHtmlOut').textContent = html);
   document.getElementById('notesOutputPanels').hidden = false;
   document.getElementById('copyNotesBtn').disabled    = false;
   document.getElementById('sbNotesPushBtn').disabled  = false;
@@ -963,9 +966,10 @@ document.getElementById('generateNotesWidgetBtn').addEventListener('click', () =
 });
 document.getElementById('closeNotesOutputBtn').addEventListener('click', () => { document.getElementById('notesOutputPanels').hidden = true; });
 document.getElementById('copyNotesBtn').addEventListener('click', async () => {
-  const html = document.getElementById('notesHtmlOut').textContent; if (!html.trim()) return;
-  try { await navigator.clipboard.writeText(html); showToast('Copied'); }
-  catch { const ta = document.createElement('textarea'); ta.value = html; ta.style.cssText = 'position:fixed;left:-9999px;'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('Copied (fallback)'); }
+  const html = generateNotesWidgetHtml();
+  if (!html.trim()) return;
+  try { await navigator.clipboard.writeText(html); showToast('HTML copied'); }
+  catch { const ta = document.createElement('textarea'); ta.value = html; ta.style.cssText = 'position:fixed;left:-9999px;'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('HTML copied (fallback)'); }
 });
 
 // ── Salesbuildr push ──────────────────────────────────────
@@ -1013,14 +1017,14 @@ async function pushWidget(html, prefix, title, resultId, pushBtnId) {
 }
 
 document.getElementById('sbPushBtn').addEventListener('click', () => {
-  const html   = document.getElementById('htmlOut').textContent.trim();
+  const html   = generateScopeWidget();
   const title  = (document.getElementById('projectTitle').value||'Project Scope').trim();
   const prefix = document.getElementById('sbPrefix').value.trim();
   if (!html) { showToast('Generate the scope widget first'); return; }
   pushWidget(html, prefix, title, 'sbResult', 'sbPushBtn');
 });
 document.getElementById('sbNotesPushBtn').addEventListener('click', () => {
-  const html   = document.getElementById('notesHtmlOut').textContent.trim();
+  const html   = generateNotesWidgetHtml();
   const title  = (document.getElementById('projectTitle').value||'Project Notes').trim() + ' — Notes';
   const prefix = document.getElementById('sbNotesPrefix').value.trim();
   if (!html) { showToast('Generate the notes widget first'); return; }
