@@ -398,17 +398,27 @@
       : `<span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:${hexToRgba(color, 0.14)};color:${color};white-space:nowrap;">${esc(text)}</span>`;
   }
 
-  // Small text-based "you are here / target" scale — one cell, so it never
-  // trips the "max 3 columns" TinyMCE stacking rule, and it's what actually
-  // tells the reader what the bar length *means* on the 4-point ladder.
+  // "You are here / target" scale, pinned to the bar's own quarter-marks.
+  // Each label is a 25%-wide inline-block inside ONE <td> — that keeps it to
+  // a single table cell (so it never trips TinyMCE's "max 3 columns" stacking
+  // rule) while still lining each level up under the matching bar segment.
   function buildRungLine(current, target, color) {
-    const parts = [1, 2, 3, 4].map(l => {
-      const label = LEVEL_LABELS[l];
-      if (l === current) return `<span style="font-size:9.5px;font-weight:700;color:${color};">&#9679; ${esc(label)}</span>`;
-      if (l === target && target !== current) return `<span style="font-size:9.5px;font-weight:700;color:${color};">&#9650; ${esc(label)}</span>`;
-      return `<span style="font-size:9.5px;color:#c2c8d1;">${esc(label)}</span>`;
+    const spans = [1, 2, 3, 4].map(l => {
+      const label = esc(LEVEL_LABELS[l]);
+      let inner = label;
+      let style = 'display:inline-block;width:25%;box-sizing:border-box;text-align:center;font-size:9.5px;color:#c2c8d1;';
+      if (l === current) {
+        inner = `&#9679; ${label}`;
+        style = `display:inline-block;width:25%;box-sizing:border-box;text-align:center;font-size:9.5px;font-weight:700;color:${color};`;
+      } else if (l === target && target !== current) {
+        inner = `&#9650; ${label}`;
+        style = `display:inline-block;width:25%;box-sizing:border-box;text-align:center;font-size:9.5px;font-weight:700;color:${color};`;
+      }
+      return `<span style="${style}">${inner}</span>`;
     });
-    return parts.join('<span style="font-size:9.5px;color:#dde1e8;"> &middot; </span>');
+    // No whitespace between spans — inline-block elements respect source
+    // whitespace as a rendered gap, which would push the 4×25% row past 100%.
+    return spans.join('');
   }
 
   function buildBarRow(label, current, target) {
