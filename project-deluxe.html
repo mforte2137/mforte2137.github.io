@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Scope Builder — Deluxe</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <!-- Quill rich text editor -->
+  <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+  <link rel="stylesheet" href="project-deluxe.css">
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ═══════════════════════════════════════════════════════
+       LEFT PANEL
+  ════════════════════════════════════════════════════════ -->
+  <aside class="left-panel" id="leftPanel">
+
+    <div class="lp-header">
+      <div class="lp-header-row">
+        <div>
+          <div class="lp-logo">Project Scope <span class="lp-logo-deluxe">Deluxe</span></div>
+          <div class="lp-sub">MSP Tools Hub</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ZONE 1: SETTINGS (collapsible) ── -->
+    <div class="lp-zone" id="settingsZone">
+      <button class="lp-zone-toggle" id="settingsToggle">
+        <span class="lp-zone-toggle-left"><i class="ti ti-settings"></i> Settings</span>
+        <span class="lp-zone-toggle-badges">
+          <span class="lp-color-badge" id="colorBadge"></span>
+        </span>
+        <i class="ti ti-chevron-down lp-chevron" id="settingsChevron"></i>
+      </button>
+      <div class="lp-zone-body" id="settingsBody" hidden>
+        <div class="sb-field">
+          <label class="sb-label">Tenant URL <span class="sb-where">e.g. https://acme.salesbuildr.com</span></label>
+          <input type="text" id="sbTenantUrl" class="lp-input" placeholder="https://yourcompany.salesbuildr.com" autocomplete="off">
+        </div>
+        <div class="sb-field">
+          <label class="sb-label">API Key <span class="sb-where">Admin → Integrations → API Key</span></label>
+          <input type="password" id="sbApiKey" class="lp-input" placeholder="Your API key" autocomplete="new-password">
+        </div>
+        <div class="sb-row">
+          <label class="sb-remember"><input type="checkbox" id="sbRemember"> Remember credentials</label>
+        </div>
+        <div id="sbResult" class="sb-result" hidden></div>
+        <div class="lp-divider"></div>
+        <div class="lp-sec-label">Brand color</div>
+        <div class="brand-swatches" id="brandSwatches">
+          <div class="brand-swatch active" data-color="#2563eb" style="background:#2563eb;" title="Blue"></div>
+          <div class="brand-swatch" data-color="#059669" style="background:#059669;" title="Green"></div>
+          <div class="brand-swatch" data-color="#7c3aed" style="background:#7c3aed;" title="Purple"></div>
+          <div class="brand-swatch" data-color="#dc2626" style="background:#dc2626;" title="Red"></div>
+          <div class="brand-swatch" data-color="#d97706" style="background:#d97706;" title="Amber"></div>
+          <div class="brand-swatch" data-color="#0891b2" style="background:#0891b2;" title="Teal"></div>
+          <div class="brand-swatch" data-color="#374151" style="background:#374151;" title="Slate"></div>
+          <div class="brand-swatch brand-swatch-custom" id="brandCustomSwatch" data-color="" title="Custom color" style="background:conic-gradient(red,yellow,lime,aqua,blue,magenta,red);"></div>
+        </div>
+        <div class="brand-hex-row" id="brandHexRow" style="display:none;">
+          <span style="font-size:11px;color:var(--text-3);">Hex</span>
+          <input type="text" id="brandHexInput" class="lp-input" placeholder="#2563eb" maxlength="7" style="font-family:var(--mono);font-size:11px;">
+          <button class="lp-icon-btn" id="brandHexApply" title="Apply"><i class="ti ti-check"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ZONE 2: PROJECT ── -->
+    <div class="lp-zone-project">
+      <div class="lp-proj-slim" id="projectList"></div>
+      <button class="lp-new-proj" id="newProjectBtn"><i class="ti ti-plus"></i> New project</button>
+      <div class="lp-field" style="margin-top:8px;">
+        <div class="lp-field-label">Title</div>
+        <input type="text" id="projectTitle" class="lp-input" placeholder="e.g. Azure Cloud Migration">
+      </div>
+      <div class="lp-field-row">
+        <div class="lp-field">
+          <div class="lp-field-label">Customer <span class="lp-opt">(optional)</span></div>
+          <input type="text" id="customerName" class="lp-input" placeholder="e.g. Acme Corp">
+        </div>
+        <div class="lp-field lp-field-sm">
+          <div class="lp-field-label">Hrs/day</div>
+          <input type="number" id="hoursPerDay" class="lp-input" min="1" step="1" value="8">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ZONE 2.5: SAVE / TEAM toolbar ── -->
+    <div class="lp-zone-save">
+      <div class="lp-save-toolbar">
+        <button class="lp-save-btn" id="saveTemplateBtn" title="Save as template"><i class="ti ti-device-floppy"></i></button>
+        <button class="lp-save-btn" id="loadTemplateBtn" title="Load template"><i class="ti ti-folder-open"></i></button>
+        <button class="lp-save-btn" id="exportBtn" title="Export JSON"><i class="ti ti-download"></i></button>
+        <label class="lp-save-btn" for="importInput" title="Import JSON" style="cursor:pointer;"><i class="ti ti-upload"></i></label>
+        <input type="file" id="importInput" accept=".json" style="display:none">
+        <button class="lp-save-btn" id="teamToggleBtn" title="Team passphrase"><i class="ti ti-users"></i></button>
+        <button class="lp-save-btn lp-save-btn-danger" id="clearBtn" title="Clear project"><i class="ti ti-trash"></i></button>
+      </div>
+      <div class="lp-team-body" id="teamBody" hidden>
+        <div class="lp-passrow">
+          <input type="password" id="tmplPassphrase" class="lp-input" placeholder="Team passphrase" autocomplete="off">
+          <span id="tmplPassphraseBadge" class="lp-badge lp-badge-local">💾 Local</span>
+        </div>
+      </div>
+      <div class="lp-team-body" id="templateSelectBody" hidden>
+        <div class="lp-row">
+          <select id="templateSelect" class="lp-select"><option value="">— No saved templates yet —</option></select>
+          <button class="lp-icon-btn" id="applyTemplateBtn" title="Load template"><i class="ti ti-arrow-right"></i></button>
+          <button class="lp-icon-btn lp-icon-btn-danger" id="deleteTemplateBtn" title="Delete template"><i class="ti ti-trash"></i></button>
+        </div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text-3);" id="tmplModeLabel">(local)</div>
+      </div>
+    </div>
+
+    <!-- ── ZONE 3: PUBLISH ── -->
+    <div class="lp-zone-publish">
+      <button class="lp-publish-toggle" id="scopePublishToggle">
+        <span><i class="ti ti-sparkles"></i> Generate scope widget</span>
+        <i class="ti ti-chevron-down lp-chevron" id="scopePublishChevron"></i>
+      </button>
+      <div class="lp-publish-body" id="scopePublishBody" hidden>
+        <div class="lp-publish-inner">
+          <div class="lp-color-preview">
+            <span style="font-family:var(--mono);font-size:10px;color:var(--text-3);">Widget color</span>
+            <div class="lp-color-dot" id="colorDot"></div>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--text-3);" id="colorHexLabel"></span>
+          </div>
+          <div class="lp-sec-label">Show in widget</div>
+          <div class="lp-toggles">
+            <div class="lp-toggle-row"><span>Role</span><label class="lp-switch"><input type="checkbox" id="showRole" checked><span class="lp-track"></span></label></div>
+            <div class="lp-toggle-row"><span>Hours per task</span><label class="lp-switch"><input type="checkbox" id="showHours"><span class="lp-track"></span></label></div>
+            <div class="lp-toggle-row"><span>Total hours</span><label class="lp-switch"><input type="checkbox" id="showTotalHours" checked><span class="lp-track"></span></label></div>
+            <div class="lp-toggle-row"><span>Notes</span><label class="lp-switch"><input type="checkbox" id="showNotes" checked><span class="lp-track"></span></label></div>
+          </div>
+          <div class="lp-divider"></div>
+          <button class="lp-btn-good" id="generateBtn"><i class="ti ti-sparkles"></i> Generate &amp; preview</button>
+          <button class="lp-btn-secondary" id="copyBtn" disabled><i class="ti ti-copy"></i> Copy HTML</button>
+          <div class="lp-divider"></div>
+          <input type="text" id="sbPrefix" class="lp-input" placeholder="Widget label e.g. Acme Corp" maxlength="40">
+          <button type="button" id="sbPushBtn" class="lp-btn-good" disabled><i class="ti ti-send"></i> Push to Salesbuildr</button>
+        </div>
+      </div>
+
+      <button class="lp-publish-toggle" id="notesPublishToggle">
+        <span><i class="ti ti-notes"></i> Generate notes widget</span>
+        <i class="ti ti-chevron-down lp-chevron" id="notesPublishChevron"></i>
+      </button>
+      <div class="lp-publish-body" id="notesPublishBody" hidden>
+        <div class="lp-publish-inner">
+          <div class="lp-color-preview">
+            <span style="font-family:var(--mono);font-size:10px;color:var(--text-3);">Widget color</span>
+            <div class="lp-color-dot" id="notesColorDot"></div>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--text-3);" id="notesColorHexLabel"></span>
+          </div>
+          <button class="lp-btn-good" id="generateNotesWidgetBtn"><i class="ti ti-sparkles"></i> Generate &amp; preview</button>
+          <button class="lp-btn-secondary" id="copyNotesBtn" disabled><i class="ti ti-copy"></i> Copy HTML</button>
+          <div class="lp-divider"></div>
+          <input type="text" id="sbNotesPrefix" class="lp-input" placeholder="Widget label e.g. Acme Corp" maxlength="40">
+          <button type="button" id="sbNotesPushBtn" class="lp-btn-good" disabled><i class="ti ti-send"></i> Push to Salesbuildr</button>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ═══════════════════════════════════════════════════════
+       CENTER — TABBED MAIN AREA
+  ════════════════════════════════════════════════════════ -->
+  <main class="center-panel">
+
+    <div class="center-header">
+      <div class="center-header-top">
+        <div>
+          <div class="center-title" id="centerTitle">Project Scope Deluxe</div>
+          <div class="center-sub" id="centerSub">Load a preset or describe your project to the AI</div>
+        </div>
+      </div>
+      <!-- Tab bar -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="scope"><i class="ti ti-clipboard-list"></i> Scope</button>
+        <button class="tab-btn" data-tab="notes"><i class="ti ti-notes"></i> Project Notes</button>
+        <button class="tab-btn" data-tab="internal"><i class="ti ti-lock"></i> Internal</button>
+      </div>
+    </div>
+
+    <!-- ══ TAB 1: SCOPE ══ -->
+    <div class="tab-content active" id="tab-scope">
+
+      <div class="center-section">
+        <div class="center-sec-label">Project Overview <span class="center-sec-hint">2–3 sentences, customer-facing</span></div>
+        <textarea id="overview" class="center-textarea" rows="3" placeholder="e.g. This project covers the migration of your on-premises server infrastructure to Microsoft Azure..."></textarea>
+      </div>
+
+      <div class="center-section center-section-grow">
+        <div class="center-sec-label">Scope of Work <span class="center-sec-hint">Rows with 0 hours are excluded from output</span></div>
+        <div class="grid-wrap">
+          <table class="task-table">
+            <thead>
+              <tr>
+                <th class="col-drag"></th>
+                <th class="col-task">Task</th>
+                <th class="col-role">Role</th>
+                <th class="col-hours">Hours</th>
+                <th class="col-dur">Duration</th>
+                <th class="col-notes">Notes</th>
+                <th class="col-del"></th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div class="grid-footer">
+          <button class="gf-btn" id="addRowBtn"><i class="ti ti-plus"></i> Add row</button>
+          <div class="gf-pills">
+            <div class="gf-pill"><span>Total</span><strong id="totalHours">0</strong><span>hrs</span></div>
+            <div class="gf-pill"><span>Duration</span><strong id="totalDuration">—</strong></div>
+            <div class="gf-pill"><span>In scope</span><strong id="includedCount">0</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="center-section">
+        <div class="center-sec-label">What's Not Included <span class="center-sec-hint">— one per line</span></div>
+        <textarea id="exclusions" class="center-textarea" rows="3"></textarea>
+      </div>
+
+      <!-- Scope output panels -->
+      <div class="output-panels" id="outputPanels" hidden>
+        <div class="output-panel">
+          <div class="output-panel-header">
+            <div>
+              <div class="output-panel-title">Generated HTML</div>
+              <div class="output-panel-hint">Paste into Salesbuildr via the <strong>&lt;&nbsp;&gt;</strong> Source Code button</div>
+            </div>
+            <button class="op-close-btn" id="closeOutputBtn"><i class="ti ti-x"></i></button>
+          </div>
+          <pre id="htmlOut"></pre>
+        </div>
+        <div class="output-panel">
+          <div class="output-panel-title">Preview</div>
+          <div class="output-panel-hint">Approximate preview</div>
+          <div class="preview-box" id="preview"></div>
+        </div>
+      </div>
+
+    </div><!-- /tab-scope -->
+
+    <!-- ══ TAB 2: PROJECT NOTES ══ -->
+    <div class="tab-content" id="tab-notes">
+
+      <div class="notes-layout">
+        <!-- Editor side -->
+        <div class="notes-editor-pane" id="notesEditorPane">
+          <div class="notes-toolbar-row">
+            <div class="notes-label">Additional Project Notes <span class="notes-hint">customer-facing — will become a widget</span></div>
+            <button class="notes-ai-btn" id="aiFormatBtn" title="AI reformat for customer">
+              <i class="ti ti-wand"></i> AI Format
+            </button>
+          </div>
+          <div id="projectNotesEditor" class="quill-editor quill-notes"></div>
+        </div>
+
+        <!-- Before/After preview — hidden until AI Format clicked -->
+        <div class="notes-compare" id="notesCompare" hidden>
+          <div class="notes-compare-pane">
+            <div class="notes-compare-label">Your notes</div>
+            <div class="notes-compare-content" id="notesBeforePane"></div>
+          </div>
+          <div class="notes-compare-pane">
+            <div class="notes-compare-label notes-compare-label-ai">AI formatted</div>
+            <div class="notes-compare-content" id="notesAfterPane">
+              <div class="notes-ai-loading" id="notesAiLoading"><span></span><span></span><span></span></div>
+            </div>
+          </div>
+          <div class="notes-compare-actions">
+            <button class="lp-btn-secondary" id="notesDiscardBtn"><i class="ti ti-x"></i> Discard</button>
+            <button class="lp-btn-good" id="notesApplyBtn" disabled><i class="ti ti-check"></i> Apply AI version</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes output panels -->
+      <div class="output-panels" id="notesOutputPanels" hidden>
+        <div class="output-panel">
+          <div class="output-panel-header">
+            <div>
+              <div class="output-panel-title">Notes Widget HTML</div>
+              <div class="output-panel-hint">Paste into Salesbuildr via the <strong>&lt;&nbsp;&gt;</strong> Source Code button</div>
+            </div>
+            <button class="op-close-btn" id="closeNotesOutputBtn"><i class="ti ti-x"></i></button>
+          </div>
+          <pre id="notesHtmlOut"></pre>
+        </div>
+        <div class="output-panel">
+          <div class="output-panel-title">Preview</div>
+          <div class="output-panel-hint">Approximate preview</div>
+          <div class="preview-box" id="notesPreview"></div>
+        </div>
+      </div>
+
+    </div><!-- /tab-notes -->
+
+    <!-- ══ TAB 3: INTERNAL NOTES ══ -->
+    <div class="tab-content" id="tab-internal">
+
+      <div class="internal-header">
+        <div class="internal-title"><i class="ti ti-lock"></i> Internal Notes <span class="internal-hint">never leaves this app — drag sections to reorder</span></div>
+      </div>
+
+      <div class="internal-sections" id="internalSections">
+
+        <!-- Text notes section -->
+        <div class="int-section" data-section="text" id="intSection-text">
+          <div class="int-section-header">
+            <div class="int-section-drag" title="Drag to reorder">⠿</div>
+            <div class="int-section-title"><i class="ti ti-pencil"></i> Text Notes</div>
+            <button class="int-section-collapse" data-target="intBody-text" title="Collapse"><i class="ti ti-chevron-up"></i></button>
+          </div>
+          <div class="int-section-body" id="intBody-text">
+            <div id="internalNotesEditor" class="quill-editor quill-internal"></div>
+          </div>
+        </div>
+
+        <!-- Links section -->
+        <div class="int-section" data-section="links" id="intSection-links">
+          <div class="int-section-header">
+            <div class="int-section-drag" title="Drag to reorder">⠿</div>
+            <div class="int-section-title"><i class="ti ti-link"></i> Links</div>
+            <button class="int-section-collapse" data-target="intBody-links" title="Collapse"><i class="ti ti-chevron-up"></i></button>
+          </div>
+          <div class="int-section-body" id="intBody-links">
+            <div class="links-add-row">
+              <input type="text" id="linkTitle" class="lp-input" placeholder="Label e.g. Customer site survey" style="flex:1;">
+              <input type="text" id="linkUrl" class="lp-input" placeholder="https://..." style="flex:2;">
+              <button class="lp-icon-btn" id="addLinkBtn" title="Add link"><i class="ti ti-plus"></i></button>
+            </div>
+            <div class="links-list" id="linksList"></div>
+          </div>
+        </div>
+
+        <!-- Images section -->
+        <div class="int-section" data-section="images" id="intSection-images">
+          <div class="int-section-header">
+            <div class="int-section-drag" title="Drag to reorder">⠿</div>
+            <div class="int-section-title"><i class="ti ti-photo"></i> Images</div>
+            <button class="int-section-collapse" data-target="intBody-images" title="Collapse"><i class="ti ti-chevron-up"></i></button>
+          </div>
+          <div class="int-section-body" id="intBody-images">
+            <div class="file-upload-row">
+              <label class="file-upload-btn" for="imageUploadInput"><i class="ti ti-upload"></i> Upload images</label>
+              <input type="file" id="imageUploadInput" accept="image/*" multiple style="display:none">
+              <span class="file-upload-hint">JPG, PNG, GIF, WebP — stored locally in your browser</span>
+            </div>
+            <div class="image-grid" id="imageGrid"></div>
+          </div>
+        </div>
+
+        <!-- Files section -->
+        <div class="int-section" data-section="files" id="intSection-files">
+          <div class="int-section-header">
+            <div class="int-section-drag" title="Drag to reorder">⠿</div>
+            <div class="int-section-title"><i class="ti ti-paperclip"></i> Files</div>
+            <button class="int-section-collapse" data-target="intBody-files" title="Collapse"><i class="ti ti-chevron-up"></i></button>
+          </div>
+          <div class="int-section-body" id="intBody-files">
+            <div class="file-upload-row">
+              <label class="file-upload-btn" for="fileUploadInput"><i class="ti ti-upload"></i> Upload files</label>
+              <input type="file" id="fileUploadInput" accept=".pdf,.xlsx,.xls,.docx,.doc,.csv,.txt,.png,.jpg,.jpeg,.gif,.webp" multiple style="display:none">
+              <span class="file-upload-hint">PDF, Excel, Word, CSV — stored locally in your browser</span>
+            </div>
+            <div class="files-list" id="filesList"></div>
+          </div>
+        </div>
+
+      </div><!-- /internalSections -->
+    </div><!-- /tab-internal -->
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════
+       RIGHT PANEL — PRESETS + AI
+  ════════════════════════════════════════════════════════ -->
+  <aside class="ai-panel" id="aiPanel">
+
+    <div class="ai-header">
+      <div class="ai-title-row">
+        <div class="ai-dot"></div>
+        <div class="ai-title">AI Assistant</div>
+      </div>
+      <div class="ai-sub">Generate, review or format</div>
+    </div>
+
+    <div class="ai-body">
+
+      <!-- Preset grid -->
+      <div class="preset-section" id="presetSection">
+        <button class="preset-header" id="presetToggle">
+          <span class="preset-header-label">Quick Start</span>
+          <span class="preset-header-hint" id="presetHint">Load a preset to jumpstart your project</span>
+          <i class="ti ti-chevron-up preset-chevron" id="presetChevron"></i>
+        </button>
+        <div class="preset-grid" id="presetGrid">
+          <button class="preset-tile" data-preset="azure">☁️<span>Azure</span></button>
+          <button class="preset-tile" data-preset="m365">📧<span>M365</span></button>
+          <button class="preset-tile" data-preset="network">🔌<span>Network</span></button>
+          <button class="preset-tile" data-preset="endpoint">💻<span>Endpoint</span></button>
+          <button class="preset-tile" data-preset="server">🖥️<span>Server</span></button>
+          <button class="preset-tile" data-preset="voip">📞<span>VoIP</span></button>
+          <button class="preset-tile" data-preset="onboarding">🤝<span>Onboard</span></button>
+          <button class="preset-tile" data-preset="security">🛡️<span>Security</span></button>
+          <button class="preset-tile" data-preset="backup">💾<span>Backup</span></button>
+          <button class="preset-tile" data-preset="copilot">🤖<span>Copilot</span></button>
+        </div>
+      </div>
+
+      <!-- AI messages -->
+      <div class="ai-messages" id="aiMessages">
+        <div class="ai-msg ai-msg-assistant">
+          <div class="ai-msg-label">Assistant</div>
+          Hi — I can generate a full scope, review your tasks, adjust for your team, or reformat your project notes into a professional customer document.
+          <div class="ai-chips">
+            <div class="ai-chip" data-action="generate">✨ Generate scope from description</div>
+            <div class="ai-chip" data-action="review">🔍 Review &amp; validate my scope</div>
+            <div class="ai-chip" data-action="adjust">⏱ Adjust for team / deadline</div>
+            <div class="ai-chip" data-action="format">✍️ Format project notes</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-input-wrap">
+        <textarea class="ai-textarea" id="aiInput" placeholder="Describe a project or ask me to review…" rows="2"></textarea>
+        <button class="ai-send-btn" id="aiSendBtn" title="Send"><i class="ti ti-arrow-up"></i></button>
+      </div>
+
+    </div>
+  </aside>
+
+</div><!-- /app-layout -->
+
+<!-- ═══ MODAL — Image / File viewer ═══ -->
+<div class="modal-overlay" id="viewerOverlay" hidden>
+  <div class="viewer-modal" id="viewerModal">
+    <div class="viewer-header">
+      <span class="viewer-title" id="viewerTitle"></span>
+      <button class="viewer-close" id="viewerClose"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="viewer-body" id="viewerBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<script src="project-deluxe.js"></script>
+</body>
+</html>
