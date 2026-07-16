@@ -183,7 +183,16 @@ function renderDataSections() {
   panelData.classList.toggle('hidden', !type);
   document.querySelectorAll('.data-section').forEach(sec => {
     const types = (sec.dataset.types || '').split(',');
-    sec.classList.toggle('hidden', !types.includes(type));
+    const applicable = types.includes(type);
+    const wasHidden = sec.classList.contains('hidden');
+    sec.classList.toggle('hidden', !applicable);
+    // Clear values for sections that just became inapplicable, so stale
+    // data from a previous report type never reaches the AI payload or
+    // any output builder (email / PDF / widget).
+    if (!applicable && !wasHidden) {
+      sec.querySelectorAll('input, textarea').forEach(el => { el.value = ''; });
+      sec.querySelectorAll('select').forEach(el => { el.selectedIndex = 0; });
+    }
   });
 }
 
@@ -600,6 +609,32 @@ function buildEmailHtml(fd, nar, hex) {
       statCell(d.infrastructure.alertsResolved, 'Resolved'),
     ]), nar.infrastructureNarrative);
   }
+  const textLineBand = (title, lines) => {
+    const valid = lines.filter(l => l.text);
+    if (!valid.length) return '';
+    return `
+  <tr>
+    <td style="padding:20px 24px;" bgcolor="#ffffff" style="background-color:#ffffff;">
+      <p style="margin:0 0 10px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;color:${hex};text-transform:uppercase;letter-spacing:1px;">${esc(title)}</p>
+      ${valid.map(l => `<p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.6;color:#333333;"><strong>${esc(l.label)}:</strong> ${esc(l.text)}</p>`).join('')}
+    </td>
+  </tr>
+  <tr><td style="border-bottom:1px solid #e3e7ee;line-height:1px;font-size:1px;">&nbsp;</td></tr>`;
+  };
+
+  if (SECTION_TYPES.projects.includes(fd.reportType)) {
+    sections += textLineBand('Projects & Changes', [
+      { label: 'Completed', text: d.projects.completed },
+      { label: 'In progress', text: d.projects.inProgress },
+      { label: 'Key changes', text: d.projects.keyChanges },
+    ]);
+  }
+  if (SECTION_TYPES.upcoming.includes(fd.reportType)) {
+    sections += textLineBand('Upcoming & Renewals', [
+      { label: 'Renewals', text: d.upcoming.renewals },
+      { label: 'Planned work', text: d.upcoming.plannedWork },
+    ]);
+  }
   if (SECTION_TYPES.recommendations.includes(fd.reportType) && (nar.recommendationsNarrative || d.recommendations.text)) {
     const prioColor = d.recommendations.priority === 'Action required' ? '#d8402e'
                      : d.recommendations.priority === 'Recommended' ? '#b3760a' : '#586273';
@@ -731,11 +766,11 @@ function buildWidgetHtml(fd, nar, hex) {
   const d = fd.data;
   const typeLabel = REPORT_TYPE_LABEL[fd.reportType] || '';
 
-  const stats = [
-    statCell(d.helpdesk.ticketsResolved, 'Tickets Resolved'),
-    statCell(d.security.threatsBlocked, 'Threats Blocked'),
-    statCell(d.infrastructure.uptime, 'Uptime'),
-  ].filter(c => c).slice(0, 3);
+  const statCandidates = [];
+  if (SECTION_TYPES.helpdesk.includes(fd.reportType)) statCandidates.push(statCell(d.helpdesk.ticketsResolved, 'Tickets Resolved'));
+  statCandidates.push(statCell(d.security.threatsBlocked, 'Threats Blocked'));
+  statCandidates.push(statCell(d.infrastructure.uptime, 'Uptime'));
+  const stats = statCandidates.filter(c => c).slice(0, 3);
 
   const statRow = stats.length ? `
     <table width="100%" style="border-collapse:collapse;border-bottom:1px solid #e3e7ee;">
