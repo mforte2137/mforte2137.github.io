@@ -25,6 +25,36 @@ const REPORT_TYPE_LABEL = {
   snapshot:  'IT Health Snapshot'
 };
 
+// Excel template sample values — single source of truth for both the
+// download (populates every VALUE cell with a hint) and the import
+// (recognizes an unedited hint and treats it as blank, so a placeholder
+// left untouched never gets imported as literal report data).
+const EXCEL_HINTS = {
+  'HELPDESK & SUPPORT|Tickets opened':          '(e.g. 47)',
+  'HELPDESK & SUPPORT|Tickets resolved':        '(e.g. 51)',
+  'HELPDESK & SUPPORT|Avg response time':       '(e.g. 14 minutes)',
+  'HELPDESK & SUPPORT|Avg resolution time':     '(e.g. 2.4 hours)',
+  'HELPDESK & SUPPORT|SLA compliance':          '(e.g. 98.2%)',
+  'HELPDESK & SUPPORT|Highlight':                '(e.g. Resolved a critical server issue within 90 minutes on a Saturday evening)',
+  'SECURITY|Threats blocked':                    '(e.g. 312)',
+  'SECURITY|Security incidents':                 '(e.g. 0)',
+  'SECURITY|Patches applied':                    '(e.g. 284)',
+  'SECURITY|Devices patched':                    '(e.g. 94%)',
+  'SECURITY|Training completion':                '(e.g. 87%)',
+  'SECURITY|Security highlight':                 '(e.g. Launched a new phishing-simulation training campaign)',
+  'INFRASTRUCTURE|Uptime / availability':        '(e.g. 99.97%)',
+  'INFRASTRUCTURE|Alerts triggered':             '(e.g. 14)',
+  'INFRASTRUCTURE|Alerts resolved':              '(e.g. 14)',
+  'INFRASTRUCTURE|Infrastructure highlight':     '(e.g. Migrated file server storage to new SAN)',
+  'PROJECTS & CHANGES|Projects completed':       '(e.g. Migrated mailboxes to Microsoft 365)',
+  'PROJECTS & CHANGES|Projects in progress':     '(e.g. Firewall replacement — phase 2 of 3)',
+  'PROJECTS & CHANGES|Key changes':              '(e.g. Upgraded core switch firmware to latest stable release)',
+  'UPCOMING|Renewals':                           '(e.g. Meraki firewall renewal — due August 2026)',
+  'UPCOMING|Planned work':                       '(e.g. Replace aging UPS units in server room)',
+  'RECOMMENDATIONS|Recommendations':             '(e.g. Begin planning cloud migration for the SQL server ahead of its 2027 end-of-life)',
+  'RECOMMENDATIONS|Priority':                    '(For your consideration / Recommended / Action required)',
+};
+
 // ---- State ----
 let currentSessionId = null;
 let currentTheme     = '#0f1f3d';
@@ -386,38 +416,41 @@ function downloadExcelTemplate() {
   }
 
   const wb = XLSX.utils.book_new();
+  const H = (section, field) => EXCEL_HINTS[`${section}|${field}`] || '';
   const rows = [
     ['CLIENT:', fd.clientName],
     ['PERIOD:', fd.period || ''],
     ['REPORT TYPE:', REPORT_TYPE_LABEL[fd.reportType] || fd.reportType],
     [''],
+    ['Every VALUE cell below shows a sample in the format "(e.g. ...)" — replace it with real data. Leave a cell exactly as-is (or blank) if that item does not apply this period.'],
+    [''],
     ['SECTION', 'FIELD', 'VALUE'],
-    ['HELPDESK & SUPPORT', 'Tickets opened', ''],
-    ['HELPDESK & SUPPORT', 'Tickets resolved', ''],
-    ['HELPDESK & SUPPORT', 'Avg response time', '(e.g. 14 minutes)'],
-    ['HELPDESK & SUPPORT', 'Avg resolution time', '(e.g. 2.4 hours)'],
-    ['HELPDESK & SUPPORT', 'SLA compliance', '(e.g. 98.2%)'],
-    ['HELPDESK & SUPPORT', 'Highlight', ''],
-    ['SECURITY', 'Threats blocked', ''],
-    ['SECURITY', 'Security incidents', ''],
-    ['SECURITY', 'Patches applied', ''],
-    ['SECURITY', 'Devices patched', '(e.g. 94%)'],
-    ['SECURITY', 'Training completion', '(e.g. 87%)'],
-    ['SECURITY', 'Security highlight', ''],
-    ['INFRASTRUCTURE', 'Uptime / availability', '(e.g. 99.97%)'],
-    ['INFRASTRUCTURE', 'Alerts triggered', ''],
-    ['INFRASTRUCTURE', 'Alerts resolved', ''],
-    ['INFRASTRUCTURE', 'Infrastructure highlight', ''],
-    ['PROJECTS & CHANGES', 'Projects completed', ''],
-    ['PROJECTS & CHANGES', 'Projects in progress', ''],
-    ['PROJECTS & CHANGES', 'Key changes', ''],
-    ['UPCOMING', 'Renewals', ''],
-    ['UPCOMING', 'Planned work', ''],
-    ['RECOMMENDATIONS', 'Recommendations', ''],
-    ['RECOMMENDATIONS', 'Priority', '(For your consideration / Recommended / Action required)'],
+    ['HELPDESK & SUPPORT', 'Tickets opened', H('HELPDESK & SUPPORT', 'Tickets opened')],
+    ['HELPDESK & SUPPORT', 'Tickets resolved', H('HELPDESK & SUPPORT', 'Tickets resolved')],
+    ['HELPDESK & SUPPORT', 'Avg response time', H('HELPDESK & SUPPORT', 'Avg response time')],
+    ['HELPDESK & SUPPORT', 'Avg resolution time', H('HELPDESK & SUPPORT', 'Avg resolution time')],
+    ['HELPDESK & SUPPORT', 'SLA compliance', H('HELPDESK & SUPPORT', 'SLA compliance')],
+    ['HELPDESK & SUPPORT', 'Highlight', H('HELPDESK & SUPPORT', 'Highlight')],
+    ['SECURITY', 'Threats blocked', H('SECURITY', 'Threats blocked')],
+    ['SECURITY', 'Security incidents', H('SECURITY', 'Security incidents')],
+    ['SECURITY', 'Patches applied', H('SECURITY', 'Patches applied')],
+    ['SECURITY', 'Devices patched', H('SECURITY', 'Devices patched')],
+    ['SECURITY', 'Training completion', H('SECURITY', 'Training completion')],
+    ['SECURITY', 'Security highlight', H('SECURITY', 'Security highlight')],
+    ['INFRASTRUCTURE', 'Uptime / availability', H('INFRASTRUCTURE', 'Uptime / availability')],
+    ['INFRASTRUCTURE', 'Alerts triggered', H('INFRASTRUCTURE', 'Alerts triggered')],
+    ['INFRASTRUCTURE', 'Alerts resolved', H('INFRASTRUCTURE', 'Alerts resolved')],
+    ['INFRASTRUCTURE', 'Infrastructure highlight', H('INFRASTRUCTURE', 'Infrastructure highlight')],
+    ['PROJECTS & CHANGES', 'Projects completed', H('PROJECTS & CHANGES', 'Projects completed')],
+    ['PROJECTS & CHANGES', 'Projects in progress', H('PROJECTS & CHANGES', 'Projects in progress')],
+    ['PROJECTS & CHANGES', 'Key changes', H('PROJECTS & CHANGES', 'Key changes')],
+    ['UPCOMING', 'Renewals', H('UPCOMING', 'Renewals')],
+    ['UPCOMING', 'Planned work', H('UPCOMING', 'Planned work')],
+    ['RECOMMENDATIONS', 'Recommendations', H('RECOMMENDATIONS', 'Recommendations')],
+    ['RECOMMENDATIONS', 'Priority', H('RECOMMENDATIONS', 'Priority')],
   ];
   const sheet = XLSX.utils.aoa_to_sheet(rows);
-  sheet['!cols'] = [{ wch: 22 }, { wch: 26 }, { wch: 40 }];
+  sheet['!cols'] = [{ wch: 22 }, { wch: 26 }, { wch: 55 }];
   XLSX.utils.book_append_sheet(wb, sheet, 'Report Data');
 
   const safeName = fd.clientName.replace(/[^a-z0-9 _\-]/gi, '').trim().replace(/\s+/g, '-');
@@ -443,7 +476,12 @@ function onImportExcel() {
 
       const valueFor = (section, field) => {
         const row = rows.find(r => String(r[0] || '').trim() === section && String(r[1] || '').trim() === field);
-        return row ? String(row[2] || '').trim() : '';
+        const raw = row ? String(row[2] || '').trim() : '';
+        const hint = EXCEL_HINTS[`${section}|${field}`];
+        // If the tech left the sample value untouched, treat it as blank
+        // rather than importing the placeholder text as real report data.
+        if (hint && raw === hint) return '';
+        return raw;
       };
 
       $('ticketsOpened').value     = valueFor('HELPDESK & SUPPORT', 'Tickets opened');
