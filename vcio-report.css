@@ -274,6 +274,47 @@ input:focus, select:focus, textarea:focus {
 .push-feedback.success { background: var(--good-bg); color: var(--good); }
 .push-feedback.error   { background: var(--danger-bg); color: var(--danger); }
 
+/* ---- History panel (Tier 1) ---- */
+.history-panel {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--accent-bg); border: 1px solid var(--accent-border);
+  border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; gap: 12px;
+}
+.history-panel-text { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+.history-panel-label { font-weight: 700; color: var(--accent-2); text-transform: uppercase; font-size: 10px; letter-spacing: 0.06em; }
+#historyPanelSummary { color: var(--text-2); }
+
+/* ---- Stat delta badges (Tier 2) ---- */
+.delta-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 20px;
+  margin-left: 6px; vertical-align: middle;
+}
+.delta-up      { background: var(--good-bg); color: var(--good); }
+.delta-down    { background: var(--danger-bg); color: var(--danger); }
+.delta-flat    { background: var(--bg-row); color: var(--text-3); }
+.delta-context { font-size: 11px; color: var(--text-3); margin-left: 6px; font-weight: 400; }
+
+/* ---- Modal (history viewer) ---- */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(11,18,32,0.5);
+  display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px;
+}
+.modal-overlay[hidden] { display: none; }
+.modal-box {
+  background: var(--bg-panel); border-radius: 8px; max-width: 700px; width: 100%;
+  max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 14px;
+}
+.modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-3); line-height: 1; }
+.modal-close:hover { color: var(--text); }
+.modal-body { padding: 20px; }
+.modal-body .email-preview-frame { padding: 20px 0; }
+
 /* =====================================================
    Print stylesheet — PDF output (Format 2)
    ===================================================== */
