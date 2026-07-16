@@ -64,6 +64,23 @@ let generatedNarrative = null;
 let lastFormSnapshot   = null;
 let currentOutputFormat = 'email';
 let _showingArchived = false;
+let previousReportSession = null; // the matched prior session, if any (Tier 1 + source for Tiers 2/3)
+let previousReportData    = null; // shortcut to previousReportSession.formData.data
+
+// Fields eligible for stat-delta comparison (Tier 2) — id must match the input's
+// element id, path locates the value inside formData.data.
+const DELTA_FIELDS = [
+  { id: 'ticketsOpened',     path: ['helpdesk', 'ticketsOpened'] },
+  { id: 'ticketsResolved',   path: ['helpdesk', 'ticketsResolved'] },
+  { id: 'slaCompliance',     path: ['helpdesk', 'slaCompliance'],      percent: true },
+  { id: 'threatsBlocked',    path: ['security', 'threatsBlocked'] },
+  { id: 'securityIncidents', path: ['security', 'incidents'] },
+  { id: 'patchesApplied',    path: ['security', 'patchesApplied'] },
+  { id: 'devicesPatched',    path: ['security', 'devicesPatched'],     percent: true },
+  { id: 'uptime',            path: ['infrastructure', 'uptime'],       percent: true },
+  { id: 'alertsTriggered',   path: ['infrastructure', 'alertsTriggered'] },
+  { id: 'alertsResolved',    path: ['infrastructure', 'alertsResolved'] },
+];
 
 // ---- DOM refs ----
 const newReportBtn      = $('newReportBtn');
@@ -75,6 +92,13 @@ const companyNameEl     = $('companyName');
 const companySearchBtn  = $('companySearchBtn');
 const companyResultsEl  = $('companyResults');
 const companySelectedEl = $('companySelected');
+const historyPanel      = $('historyPanel');
+const historyPanelSummary = $('historyPanelSummary');
+const viewHistoryBtn    = $('viewHistoryBtn');
+const historyModal      = $('historyModal');
+const historyModalTitle = $('historyModalTitle');
+const historyModalContent = $('historyModalContent');
+const historyModalClose = $('historyModalClose');
 const mspNameEl         = $('mspName');
 const reportTypeEl      = $('reportType');
 const reportPeriodEl    = $('reportPeriod');
@@ -126,9 +150,9 @@ function wireEvents() {
   newReportBtn.addEventListener('click', startNewSession);
   showArchivedBtn.addEventListener('click', onShowArchived);
 
-  reportTypeEl.addEventListener('change', () => { renderDataSections(); autoSave(); });
+  reportTypeEl.addEventListener('change', () => { renderDataSections(); renderDeltaBadges(); autoSave(); });
   reportPeriodEl.addEventListener('change', autoSave);
-  companyNameEl.addEventListener('input', autoSave);
+  companyNameEl.addEventListener('input', () => { autoSave(); checkClientHistory(); });
   mspNameEl.addEventListener('input', () => {
     localStorage.setItem('vcio_msp_name', mspNameEl.value.trim());
     autoSave();
@@ -137,8 +161,12 @@ function wireEvents() {
   companySearchBtn.addEventListener('click', doCompanySearch);
   companyNameEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doCompanySearch(); } });
 
+  viewHistoryBtn.addEventListener('click', openHistoryModal);
+  historyModalClose.addEventListener('click', () => historyModal.classList.add('hidden'));
+  historyModal.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.classList.add('hidden'); });
+
   document.querySelectorAll('.data-section input, .data-section textarea, .data-section select')
-    .forEach(el => el.addEventListener('input', autoSave));
+    .forEach(el => el.addEventListener('input', () => { autoSave(); renderDeltaBadges(); }));
 
   downloadExcelBtn.addEventListener('click', downloadExcelTemplate);
   importExcelBtn.addEventListener('click', () => { importExcelFile.value = ''; importExcelFile.click(); });
@@ -308,6 +336,70 @@ function selectCompany(company) {
     companySelectedEl.classList.add('hidden');
   });
   autoSave();
+  checkClientHistory();
+}
+
+// =====================================================
+// "Look back" tiers — Tier 1 (quick link), Tier 2 (stat deltas)
+// =====================================================
+function checkClientHistory() {
+  const name = companyNameEl.value.trim();
+  const prev = findPreviousReport(name);
+  previousReportSession = prev;
+  previousReportData = prev ? (prev.formData && prev.formData.data) : null;
+
+  if (prev) {
+    const typeLabel = REPORT_TYPE_LABEL[prev.reportType] || prev.reportType;
+    historyPanelSummary.textContent = `${typeLabel} — ${prev.period}`;
+    historyPanel.classList.remove('hidden');
+  } else {
+    historyPanel.classList.add('hidden');
+  }
+  renderDeltaBadges();
+}
+
+function openHistoryModal() {
+  if (!previousReportSession) return;
+  const sess = previousReportSession;
+  const typeLabel = REPORT_TYPE_LABEL[sess.reportType] || sess.reportType;
+  historyModalTitle.textContent = `${sess.clientName} — ${typeLabel} — ${sess.period}`;
+  historyModalContent.innerHTML = buildEmailHtml(sess.formData, sess.generatedNarrative || {}, sess.theme || '#0f1f3d');
+  historyModal.classList.remove('hidden');
+}
+
+function parseNumeric(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const m = String(v).match(/-?[\d.]+/);
+  return m ? parseFloat(m[0]) : null;
+}
+
+function renderDeltaBadges() {
+  DELTA_FIELDS.forEach(f => {
+    const slot = $('delta_' + f.id);
+    if (!slot) return;
+    if (!previousReportData) { slot.innerHTML = ''; return; }
+
+    const prevRaw = f.path.reduce((o, k) => (o ? o[k] : undefined), previousReportData);
+    const prevNum = parseNumeric(prevRaw);
+    if (prevNum === null) { slot.innerHTML = ''; return; }
+
+    const curEl = $(f.id);
+    const curNum = curEl ? parseNumeric(curEl.value) : null;
+
+    if (curNum === null) {
+      // Nothing typed yet this period — just show what it was last time, for reference.
+      slot.innerHTML = `<span class="delta-context">last: ${esc(String(prevRaw))}</span>`;
+      return;
+    }
+
+    const diff = curNum - prevNum;
+    const dir = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat';
+    const arrow = dir === 'up' ? '▲' : dir === 'down' ? '▼' : '▬';
+    const diffMagnitude = Number.isInteger(diff) ? Math.abs(diff) : Math.abs(diff).toFixed(1);
+    const sign = diff > 0 ? '+' : diff < 0 ? '−' : '';
+    const suffix = f.percent ? 'pp' : '';
+    slot.innerHTML = `<span class="delta-badge delta-${dir}" title="Last period: ${esc(String(prevRaw))}">${arrow} ${sign}${diffMagnitude}${suffix}</span>`;
+  });
 }
 
 // =====================================================
@@ -556,11 +648,21 @@ async function generateReport() {
   generateBtn.disabled = true;
   regenerateBtn.disabled = true;
 
+  // Tier 3 — if a previous report exists for this client, hand its data to the
+  // AI so the narrative can reference trends and follow up on prior recommendations.
+  const payload = { ...fd };
+  if (previousReportSession && previousReportSession.formData) {
+    payload.previousPeriod = {
+      period: previousReportSession.period,
+      data: previousReportSession.formData.data,
+    };
+  }
+
   try {
     const res = await fetch('/api/vcio-report', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(fd)
+      body: JSON.stringify(payload)
     });
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || 'Generation failed.');
@@ -967,6 +1069,26 @@ function saveSessions(s) { try { localStorage.setItem(SESSION_KEY, JSON.stringif
 function getArchived()   { try { return JSON.parse(localStorage.getItem(ARCHIVE_KEY) || '[]'); } catch { return []; } }
 function saveArchived(a) { localStorage.setItem(ARCHIVE_KEY, JSON.stringify(a)); }
 
+// =====================================================
+// Client history lookup — shared by all three "look back" tiers
+// =====================================================
+function findPreviousReport(clientName) {
+  if (!clientName || !clientName.trim()) return null;
+  const target = clientName.trim().toLowerCase();
+  const all = [...getSessions(), ...getArchived()];
+  const matches = all.filter(s =>
+    s.id !== currentSessionId &&
+    s.clientName && s.clientName.trim().toLowerCase() === target &&
+    s.generatedNarrative // only reports that were actually generated — a blank draft isn't "what they saw last time"
+  );
+  if (!matches.length) return null;
+  // Most recently generated match — lastEdited is the best proxy we have for
+  // generation order, since period is a free-text label ("Jun 2026", "Q2 2026")
+  // and can't be reliably sorted chronologically.
+  matches.sort((a, b) => b.lastEdited - a.lastEdited);
+  return matches[0];
+}
+
 function startNewSession() {
   currentSessionId = null;
   selectedCompany = null;
@@ -974,16 +1096,27 @@ function startNewSession() {
   generatedNarrative = null;
   lastFormSnapshot = null;
   currentTheme = '#0f1f3d';
-  sectionStash = {};
+  previousReportSession = null;
+  previousReportData = null;
 
   companyNameEl.value = '';
   companySelectedEl.classList.add('hidden');
+  historyPanel.classList.add('hidden');
+
+  // Clear every field BEFORE resetting sectionStash and touching report type.
+  // renderDataSections() below captures whatever is currently in the DOM when
+  // a section goes inapplicable — if that ran first, it would re-capture the
+  // previous session's leftover values into this "fresh" stash.
+  document.querySelectorAll('.data-section input, .data-section textarea').forEach(el => el.value = '');
+  document.querySelectorAll('.data-section select').forEach(el => el.selectedIndex = 0);
+  sectionStash = {};
+
   reportTypeEl.value = '';
   reportPeriodEl.value = '';
   renderDataSections();
-  document.querySelectorAll('.data-section input, .data-section textarea').forEach(el => el.value = '');
   $('recommendationsPriority').value = 'For your consideration';
   updateDataPendingBadge();
+  renderDeltaBadges();
 
   panelOutput.classList.add('hidden');
   regenerateBtn.classList.add('hidden');
@@ -1003,6 +1136,7 @@ function resumeSession(sess) {
   colourPicker.value = currentTheme;
   customHex.value = currentTheme.replace('#', '');
   colourSwatches.querySelectorAll('.swatch').forEach(s => s.classList.toggle('active', s.dataset.hex.toLowerCase() === currentTheme.toLowerCase()));
+  checkClientHistory(); // refresh "last report" panel + deltas for the resumed client, excluding this session itself
 
   if (generatedNarrative) {
     lastFormSnapshot = sess.formData;
