@@ -19,7 +19,10 @@
       <h1>vCIO Report Builder</h1>
       <p>Turn operational data into a polished client report in minutes.</p>
     </div>
-    <button class="btn-secondary" id="newReportBtn">+ New Report</button>
+    <div class="header-actions">
+      <button class="btn-secondary" id="clientHistoryBtn">Client History</button>
+      <button class="btn-secondary" id="newReportBtn">+ New Report</button>
+    </div>
   </header>
 
   <!-- ============ SESSION CARDS ============ -->
@@ -249,6 +252,23 @@
     </div>
   </section>
 
+</div>
+
+<!-- ============ CLIENT HISTORY BROWSER (standalone, independent of report-building flow) ============ -->
+<div class="modal-overlay hidden" id="clientHistoryListModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>Client History</span>
+      <button class="modal-close" id="clientHistoryListClose">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-group">
+        <label>Client Company</label>
+        <input type="text" id="clientHistorySearchInput" placeholder="Type a client name…">
+      </div>
+      <div id="clientHistoryResults"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ============ HISTORY VIEWER MODAL (Tier 1) ============ -->
