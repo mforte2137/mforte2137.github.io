@@ -99,6 +99,11 @@ const historyModal      = $('historyModal');
 const historyModalTitle = $('historyModalTitle');
 const historyModalContent = $('historyModalContent');
 const historyModalClose = $('historyModalClose');
+const clientHistoryBtn         = $('clientHistoryBtn');
+const clientHistoryListModal   = $('clientHistoryListModal');
+const clientHistoryListClose   = $('clientHistoryListClose');
+const clientHistorySearchInput = $('clientHistorySearchInput');
+const clientHistoryResults     = $('clientHistoryResults');
 const mspNameEl         = $('mspName');
 const reportTypeEl      = $('reportType');
 const reportPeriodEl    = $('reportPeriod');
@@ -164,6 +169,11 @@ function wireEvents() {
   viewHistoryBtn.addEventListener('click', openHistoryModal);
   historyModalClose.addEventListener('click', () => historyModal.classList.add('hidden'));
   historyModal.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.classList.add('hidden'); });
+
+  clientHistoryBtn.addEventListener('click', openClientHistoryBrowser);
+  clientHistoryListClose.addEventListener('click', () => clientHistoryListModal.classList.add('hidden'));
+  clientHistoryListModal.addEventListener('click', (e) => { if (e.target === clientHistoryListModal) clientHistoryListModal.classList.add('hidden'); });
+  clientHistorySearchInput.addEventListener('input', () => renderClientHistoryResults(clientHistorySearchInput.value));
 
   document.querySelectorAll('.data-section input, .data-section textarea, .data-section select')
     .forEach(el => el.addEventListener('input', () => { autoSave(); renderDeltaBadges(); }));
@@ -360,13 +370,61 @@ function checkClientHistory() {
   renderDeltaBadges();
 }
 
-function openHistoryModal() {
-  if (!previousReportSession) return;
-  const sess = previousReportSession;
+function openReportModal(sess) {
+  if (!sess) return;
   const typeLabel = REPORT_TYPE_LABEL[sess.reportType] || sess.reportType;
   historyModalTitle.textContent = `${sess.clientName} — ${typeLabel} — ${sess.period}`;
   historyModalContent.innerHTML = buildEmailHtml(sess.formData, sess.generatedNarrative || {}, sess.theme || '#0f1f3d');
   historyModal.classList.remove('hidden');
+}
+
+function openHistoryModal() {
+  openReportModal(previousReportSession);
+}
+
+// =====================================================
+// Client History browser — standalone, independent of the report-building
+// flow. Lists every generated report for a client (all types, all periods),
+// so a rep can review past reports or reference an old recommendation
+// without needing to start a new draft first.
+// =====================================================
+function findAllReportsForClient(clientName) {
+  if (!clientName || !clientName.trim()) return [];
+  const target = clientName.trim().toLowerCase();
+  const all = [...getSessions(), ...getArchived()];
+  return all
+    .filter(s => s.clientName && s.clientName.trim().toLowerCase() === target && s.generatedNarrative)
+    .sort((a, b) => b.lastEdited - a.lastEdited);
+}
+
+function openClientHistoryBrowser() {
+  clientHistorySearchInput.value = companyNameEl.value.trim(); // convenience: prefill with whatever's in Step 1, if anything
+  renderClientHistoryResults(clientHistorySearchInput.value);
+  clientHistoryListModal.classList.remove('hidden');
+  clientHistorySearchInput.focus();
+}
+
+function renderClientHistoryResults(name) {
+  if (!name || !name.trim()) {
+    clientHistoryResults.innerHTML = '<p class="history-empty-hint">Type a client name to see their past reports.</p>';
+    return;
+  }
+  const list = findAllReportsForClient(name);
+  if (!list.length) {
+    clientHistoryResults.innerHTML = `<p class="history-empty-hint">No generated reports found for "${esc(name.trim())}".</p>`;
+    return;
+  }
+  clientHistoryResults.innerHTML = list.map((s, i) => `
+    <div class="history-list-row">
+      <div class="history-list-main">
+        <strong>${esc(REPORT_TYPE_LABEL[s.reportType] || s.reportType)}</strong> — ${esc(s.period)}
+        <div class="history-list-meta">Generated ${fmtAge(s.lastEdited)}</div>
+      </div>
+      <button class="btn-secondary history-view-btn" data-idx="${i}">View</button>
+    </div>`).join('');
+  clientHistoryResults.querySelectorAll('.history-view-btn').forEach(btn => {
+    btn.addEventListener('click', () => openReportModal(list[parseInt(btn.dataset.idx, 10)]));
+  });
 }
 
 function parseNumeric(v) {
