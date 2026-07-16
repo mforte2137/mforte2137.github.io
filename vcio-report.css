@@ -57,6 +57,7 @@ h1, h2, h3, h4 {
 }
 .app-header-title h1 { font-size: 24px; margin-bottom: 4px; }
 .app-header-title p { color: var(--text-2); font-size: 13px; margin: 0; }
+.header-actions { display: flex; gap: 10px; flex-shrink: 0; }
 
 /* ---- Buttons ---- */
 .btn-primary, .btn-secondary, .btn-accent {
@@ -283,6 +284,17 @@ input:focus, select:focus, textarea:focus {
 .history-panel-text { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
 .history-panel-label { font-weight: 700; color: var(--accent-2); text-transform: uppercase; font-size: 10px; letter-spacing: 0.06em; }
 #historyPanelSummary { color: var(--text-2); }
+
+/* ---- Client History browser (standalone) ---- */
+.history-list-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border: 1px solid var(--border); border-radius: 6px;
+  margin-bottom: 8px;
+}
+.history-list-row:hover { border-color: var(--accent-border); }
+.history-list-main { font-size: 13px; }
+.history-list-meta { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.history-empty-hint { font-size: 13px; color: var(--text-3); padding: 16px 0; text-align: center; }
 
 /* ---- Stat delta badges (Tier 2) ---- */
 .delta-badge {
