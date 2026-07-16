@@ -150,7 +150,7 @@ function wireEvents() {
   newReportBtn.addEventListener('click', startNewSession);
   showArchivedBtn.addEventListener('click', onShowArchived);
 
-  reportTypeEl.addEventListener('change', () => { renderDataSections(); renderDeltaBadges(); autoSave(); });
+  reportTypeEl.addEventListener('change', () => { renderDataSections(); checkClientHistory(); autoSave(); });
   reportPeriodEl.addEventListener('change', autoSave);
   companyNameEl.addEventListener('input', () => { autoSave(); checkClientHistory(); });
   mspNameEl.addEventListener('input', () => {
@@ -344,13 +344,15 @@ function selectCompany(company) {
 // =====================================================
 function checkClientHistory() {
   const name = companyNameEl.value.trim();
-  const prev = findPreviousReport(name);
+  const prev = findPreviousReport(name, reportTypeEl.value);
   previousReportSession = prev;
   previousReportData = prev ? (prev.formData && prev.formData.data) : null;
 
   if (prev) {
     const typeLabel = REPORT_TYPE_LABEL[prev.reportType] || prev.reportType;
-    historyPanelSummary.textContent = `${typeLabel} — ${prev.period}`;
+    historyPanelSummary.textContent = prev._matchedSameType
+      ? `${typeLabel} — ${prev.period}`
+      : `${typeLabel} — ${prev.period} (no prior ${REPORT_TYPE_LABEL[reportTypeEl.value] || 'report of this type'} yet — showing most recent)`;
     historyPanel.classList.remove('hidden');
   } else {
     historyPanel.classList.add('hidden');
@@ -1073,21 +1075,29 @@ function saveArchived(a) { localStorage.setItem(ARCHIVE_KEY, JSON.stringify(a));
 // =====================================================
 // Client history lookup — shared by all three "look back" tiers
 // =====================================================
-function findPreviousReport(clientName) {
+function findPreviousReport(clientName, reportType) {
   if (!clientName || !clientName.trim()) return null;
   const target = clientName.trim().toLowerCase();
   const all = [...getSessions(), ...getArchived()];
-  const matches = all.filter(s =>
+  const candidates = all.filter(s =>
     s.id !== currentSessionId &&
     s.clientName && s.clientName.trim().toLowerCase() === target &&
     s.generatedNarrative // only reports that were actually generated — a blank draft isn't "what they saw last time"
   );
-  if (!matches.length) return null;
-  // Most recently generated match — lastEdited is the best proxy we have for
-  // generation order, since period is a free-text label ("Jun 2026", "Q2 2026")
-  // and can't be reliably sorted chronologically.
-  matches.sort((a, b) => b.lastEdited - a.lastEdited);
-  return matches[0];
+  if (!candidates.length) return null;
+  // lastEdited is the best proxy we have for generation order, since period is
+  // a free-text label ("Jun 2026", "Q2 2026") and can't be reliably sorted chronologically.
+  candidates.sort((a, b) => b.lastEdited - a.lastEdited);
+
+  // Prefer the most recent report of the SAME type — that's the meaningful
+  // comparison when building a Quarterly summary, for instance, a prior
+  // Monthly report isn't "last time" in any useful sense.
+  const sameType = candidates.find(s => s.reportType === reportType);
+  if (sameType) return { ...sameType, _matchedSameType: true };
+
+  // No same-type history yet — fall back to the most recent of any type,
+  // but the caller must label this clearly since it's a different report kind.
+  return { ...candidates[0], _matchedSameType: false };
 }
 
 function startNewSession() {
