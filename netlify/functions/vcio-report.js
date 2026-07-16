@@ -50,13 +50,15 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: 'AI API key not configured.' }) };
   }
 
-  const systemPrompt = buildSystemPrompt(reportType);
+  const hasPreviousPeriod = !!(body.previousPeriod && body.previousPeriod.data);
+  const systemPrompt = buildSystemPrompt(reportType, hasPreviousPeriod);
   const userMessage = JSON.stringify({
     clientName,
     mspName: body.mspName || '',
     reportType,
     period,
-    data: body.data || {}
+    data: body.data || {},
+    ...(hasPreviousPeriod ? { previousPeriod: body.previousPeriod } : {})
   });
 
   try {
@@ -100,12 +102,21 @@ exports.handler = async (event) => {
   }
 };
 
-function buildSystemPrompt(reportType) {
+function buildSystemPrompt(reportType, hasPreviousPeriod) {
   const depthGuidance = {
     monthly: 'Operational and specific — use the numbers prominently, write for an IT contact or operations lead. 2-3 sentences per section.',
     quarterly: 'Reflective and strategic — step back from individual metrics, write for a business owner or CFO. Business language, not technical jargon. 2-4 sentences per section.',
     snapshot: 'Brief and visual — 1-2 sentences per section maximum, designed to be scanned not read.'
   }[reportType] || 'Professional and clear.';
+
+  const previousPeriodGuidance = hasPreviousPeriod ? `
+
+Previous period data:
+The user message includes a "previousPeriod" object with that client's data and period label from their last generated report. Use it as follows:
+- You may reference clear numeric changes between the two periods (e.g. "up from 98.2% last month" or "threats blocked nearly doubled from 180 to 312"), but only when both the current and previous values for that specific metric are present.
+- You may follow up on the previous period's recommendation (previousPeriod.data.recommendations) by name — e.g. "last month we flagged the SQL Server 2016 end-of-life; following up on that" — but do NOT assume it was resolved, ignored, or acted upon. Only the current period's own data and recommendation determine what's true now. If the current data doesn't say whether it was addressed, ask rather than assert (e.g. "has a migration meeting been scheduled?") rather than stating it as fact.
+- If a metric has no equivalent in the previous period, or the current value is null, do not force a comparison — write it as you normally would.
+- This should read as continuity in an ongoing relationship, not a data-diff report. Comparisons belong in at most one sentence per section, woven into the narrative — not a mechanical "previously X, now Y" every time.` : '';
 
   return `You are writing narrative sections for an MSP client report. Return JSON only — no preamble, no markdown, no backticks.
 
@@ -117,7 +128,7 @@ Rules:
 - Highlight fields: always incorporate them naturally — these are the moments that matter most to the client relationship.
 - Tone: professional, warm, partner-like. This is a relationship communication, not a technical report.
 - The MSP name should appear naturally in at least one place (e.g. "the Acme IT Solutions team resolved...").
-- Use industry context where relevant if it can be inferred from the client name or data (e.g. healthcare gets patient-data/uptime language) — but do not force it if there's no signal.
+- Use industry context where relevant if it can be inferred from the client name or data (e.g. healthcare gets patient-data/uptime language) — but do not force it if there's no signal.${previousPeriodGuidance}
 
 Return a JSON object with exactly these keys:
 {
