@@ -18,6 +18,9 @@ const PROJ_COLORS     = ['#3b82f6','#f97316','#8b5cf6','#ec4899','#14b8a6','#f59
 let brandColor = localStorage.getItem(LS_BRAND_COLOR) || '#2563eb';
 let rows = [];
 let currentProjectId = null;
+let aiPendingMode = null;
+let projectNotesEditor  = null;
+let internalNotesEditor = null;
 
 // ── Utility ───────────────────────────────────────────────
 function esc(s) { return (s ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
@@ -242,13 +245,13 @@ function applyState(s) {
   document.getElementById('showNotes').checked    = s.showNotes      !== false;
   rows = (s.rows || []).map(r => ({ task:'', role:'', hours:'', notes:'', ...r }));
 
-  // Project notes
+  // Project notes — only write if Quill is ready
   if (projectNotesEditor && s.projectNotes !== undefined) {
-    projectNotesEditor.root.innerHTML = s.projectNotes || '';
+    try { projectNotesEditor.root.innerHTML = s.projectNotes || ''; } catch {}
   }
-  // Internal notes text
+  // Internal notes
   if (internalNotesEditor && s.internalNotes !== undefined) {
-    internalNotesEditor.root.innerHTML = s.internalNotes || '';
+    try { internalNotesEditor.root.innerHTML = s.internalNotes || ''; } catch {}
   }
   // Links
   internalLinks = Array.isArray(s.internalLinks) ? [...s.internalLinks] : [];
@@ -388,8 +391,9 @@ function newProject(skipConfirm = false) {
   if (internalNotesEditor) internalNotesEditor.root.innerHTML = '';
   internalLinks = []; renderLinks();
   internalFiles = []; renderFiles(); renderImages();
-  document.getElementById('outputPanels').hidden = true;
-  document.getElementById('notesOutputPanels').hidden = true;
+  document.getElementById('scopePreviewStrip').hidden = true;
+  document.getElementById('notesModalOverlay').hidden = true;
+  document.getElementById('scopeEditor').classList.remove('preview-open');
   document.getElementById('copyBtn').disabled = true;
   document.getElementById('copyNotesBtn').disabled = true;
   document.getElementById('sbPushBtn').disabled = true;
@@ -576,7 +580,8 @@ function loadPreset(key) {
   document.getElementById('projectTitle').value = p.title;
   document.getElementById('overview').value     = p.overview;
   document.getElementById('exclusions').value   = p.exclusions;
-  document.getElementById('outputPanels').hidden = true;
+  document.getElementById('scopePreviewStrip').hidden = true;
+  document.getElementById('scopeEditor').classList.remove('preview-open');
   document.getElementById('copyBtn').disabled    = true;
   render(); saveState(); updateCenterHeader();
   showToast(`Loaded: ${p.title}`);
@@ -1044,7 +1049,7 @@ document.getElementById('generateNotesWidgetBtn').addEventListener('click', () =
   document.getElementById('sbNotesPushBtn').disabled  = false;
   showToast('Notes widget generated');
 });
-document.getElementById('closeNotesOutputBtn').addEventListener('click', () => { document.getElementById('notesOutputPanels').hidden = true; });
+// Notes modal close is handled by closeNotesModal button
 document.getElementById('copyNotesBtn').addEventListener('click', async () => {
   const html = generateNotesWidgetHtml();
   if (!html.trim()) return;
@@ -1123,9 +1128,6 @@ document.getElementById('presetToggle').addEventListener('click', () => {
 });
 
 // ── AI Assistant ──────────────────────────────────────────
-let aiPendingMode = null;
-let projectNotesEditor  = null;
-let internalNotesEditor = null;
 
 function addAiMessage(role, html) {
   const container = document.getElementById('aiMessages');
@@ -1318,6 +1320,16 @@ document.getElementById('aiFormatBtn').addEventListener('click', async () => {
   // Save state on Quill changes
   projectNotesEditor.on('text-change', () => saveState());
   internalNotesEditor.on('text-change', () => saveState());
+
+  // Re-apply any notes content that was loaded before Quill was ready
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s.projectNotes)  projectNotesEditor.root.innerHTML  = s.projectNotes;
+      if (s.internalNotes) internalNotesEditor.root.innerHTML = s.internalNotes;
+    }
+  } catch {}
 
   // Load saved state - try to restore, don't wipe unless truly empty
   const urlPreset = new URLSearchParams(window.location.search).get('preset');
