@@ -178,20 +178,44 @@ function populatePeriods() {
 // =====================================================
 // Data section visibility by report type
 // =====================================================
-function renderDataSections() {
+let sectionStash = {}; // { sectionName: { fieldId: value, ... } } — holds values for the currently-hidden sections
+
+function captureSectionValues(sec) {
+  const values = {};
+  sec.querySelectorAll('input, textarea, select').forEach(el => { if (el.id) values[el.id] = el.value; });
+  return values;
+}
+function restoreSectionValues(sec, values) {
+  if (!values) return;
+  sec.querySelectorAll('input, textarea, select').forEach(el => { if (el.id && values[el.id] !== undefined) el.value = values[el.id]; });
+}
+function clearSectionValues(sec) {
+  sec.querySelectorAll('input, textarea').forEach(el => { el.value = ''; });
+  sec.querySelectorAll('select').forEach(el => { el.selectedIndex = 0; });
+}
+
+function renderDataSections(opts) {
+  const skipStash = !!(opts && opts.skipStash);
   const type = reportTypeEl.value;
   panelData.classList.toggle('hidden', !type);
   document.querySelectorAll('.data-section').forEach(sec => {
+    const name = sec.dataset.section;
     const types = (sec.dataset.types || '').split(',');
     const applicable = types.includes(type);
     const wasHidden = sec.classList.contains('hidden');
     sec.classList.toggle('hidden', !applicable);
-    // Clear values for sections that just became inapplicable, so stale
-    // data from a previous report type never reaches the AI payload or
-    // any output builder (email / PDF / widget).
+    if (skipStash) return; // caller (session resume) manages sectionStash directly
+
     if (!applicable && !wasHidden) {
-      sec.querySelectorAll('input, textarea').forEach(el => { el.value = ''; });
-      sec.querySelectorAll('select').forEach(el => { el.selectedIndex = 0; });
+      // Section just became inapplicable for this report type — stash its values
+      // (so switching back later restores them) and clear the DOM so stale data
+      // can never leak into the AI payload or any output builder for this type.
+      sectionStash[name] = captureSectionValues(sec);
+      clearSectionValues(sec);
+    } else if (applicable && wasHidden) {
+      // Section just became applicable again — restore whatever was stashed
+      // the last time this report type (or another type sharing the section) was active.
+      restoreSectionValues(sec, sectionStash[name]);
     }
   });
 }
@@ -305,12 +329,12 @@ function getFormData() {
   };
 }
 
-function applyFormData(fd) {
+function applyFormData(fd, skipStash) {
   companyNameEl.value = fd.clientName || '';
   mspNameEl.value     = fd.mspName || '';
   reportTypeEl.value  = fd.reportType || '';
   reportPeriodEl.value = fd.period || '';
-  renderDataSections();
+  renderDataSections(skipStash ? { skipStash: true } : undefined);
 
   const d = fd.data || {};
   const hd = d.helpdesk || {};
@@ -885,6 +909,7 @@ function buildSessionSnapshot() {
     selectedCompany,
     formData: fd,
     generatedNarrative,
+    sectionStash,
   };
 }
 
@@ -911,6 +936,7 @@ function startNewSession() {
   generatedNarrative = null;
   lastFormSnapshot = null;
   currentTheme = '#0f1f3d';
+  sectionStash = {};
 
   companyNameEl.value = '';
   companySelectedEl.classList.add('hidden');
@@ -932,8 +958,9 @@ function resumeSession(sess) {
   dataStatus = sess.status || 'draft';
   generatedNarrative = sess.generatedNarrative || null;
   currentTheme = sess.theme || '#0f1f3d';
+  sectionStash = sess.sectionStash ? JSON.parse(JSON.stringify(sess.sectionStash)) : {};
 
-  applyFormData(sess.formData || {});
+  applyFormData(sess.formData || {}, true);
   updateDataPendingBadge();
   colourPicker.value = currentTheme;
   customHex.value = currentTheme.replace('#', '');
