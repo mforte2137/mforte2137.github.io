@@ -609,6 +609,7 @@ function onImportExcel() {
       dataStatus = 'ready';
       updateDataPendingBadge();
       autoSave();
+      renderDeltaBadges();
       showToast('✓ Data imported — ready to generate.');
     } catch (err) {
       alert('Could not read spreadsheet — is it the correct file?');
