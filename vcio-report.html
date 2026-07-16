@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>vCIO Report Builder — Salesbuildr Innovation Suite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="vcio-report.css">
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ============ HEADER ============ -->
+  <header class="app-header">
+    <div class="app-header-title">
+      <h1>vCIO Report Builder</h1>
+      <p>Turn operational data into a polished client report in minutes.</p>
+    </div>
+    <button class="btn-secondary" id="newReportBtn">+ New Report</button>
+  </header>
+
+  <!-- ============ SESSION CARDS ============ -->
+  <section class="sessions-block hidden" id="sessionsBlock">
+    <div class="sessions-header">
+      <span class="sessions-label">Active Sessions</span>
+      <button class="link-btn" id="showArchivedBtn">Show archived</button>
+    </div>
+    <div class="session-cards" id="sessionCards"></div>
+  </section>
+
+  <!-- ============ STEP 1: CLIENT & REPORT TYPE ============ -->
+  <section class="panel" id="panelClient">
+    <h2 class="panel-title">1. Client &amp; Report Type</h2>
+
+    <div class="field-group">
+      <label>Client Company</label>
+      <div class="company-search-row">
+        <input type="text" id="companyName" placeholder="Type client name, or search Salesbuildr…">
+        <button class="btn-secondary" id="companySearchBtn">Search →</button>
+      </div>
+      <div class="company-results hidden" id="companyResults"></div>
+      <div class="company-selected hidden" id="companySelected"></div>
+      <p class="field-hint">No API credentials? Just type the client name manually — search is optional.</p>
+    </div>
+
+    <div class="field-row">
+      <div class="field-group">
+        <label>MSP Name</label>
+        <input type="text" id="mspName" placeholder="Your company name">
+      </div>
+      <div class="field-group">
+        <label>Report Type</label>
+        <select id="reportType">
+          <option value="">Select report type…</option>
+          <option value="monthly">Monthly Operational Report</option>
+          <option value="quarterly">Quarterly Executive Summary</option>
+          <option value="snapshot">IT Health Snapshot</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Report Period</label>
+        <select id="reportPeriod">
+          <option value="">Select period…</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STEP 2: DATA ENTRY ============ -->
+  <section class="panel hidden" id="panelData">
+    <div class="panel-title-row">
+      <h2 class="panel-title">2. Report Data</h2>
+      <div class="excel-actions">
+        <span class="data-pending-badge hidden" id="dataPendingBadge">⏳ Data Pending</span>
+        <button class="btn-secondary" id="downloadExcelBtn">Download Excel Template</button>
+        <button class="btn-secondary" id="importExcelBtn">Import Completed Excel</button>
+        <input type="file" id="importExcelFile" accept=".xlsx,.xls,.csv" hidden>
+      </div>
+    </div>
+    <p class="field-hint">Enter data directly below, or download the Excel template, send it to a tech, and import it when it comes back.</p>
+
+    <!-- Section 1: Helpdesk -->
+    <div class="data-section" data-section="helpdesk" data-types="monthly,quarterly">
+      <h3 class="section-label">Helpdesk &amp; Support</h3>
+      <div class="field-row four">
+        <div class="field-group"><label>Tickets opened</label><input type="number" id="ticketsOpened"></div>
+        <div class="field-group"><label>Tickets resolved</label><input type="number" id="ticketsResolved"></div>
+        <div class="field-group"><label>Avg response time</label><input type="text" id="avgResponseTime" placeholder="e.g. 14 minutes"></div>
+        <div class="field-group"><label>Avg resolution time</label><input type="text" id="avgResolutionTime" placeholder="e.g. 2.4 hours"></div>
+      </div>
+      <div class="field-row">
+        <div class="field-group"><label>SLA compliance</label><input type="text" id="slaCompliance" placeholder="e.g. 98.2%"></div>
+        <div class="field-group wide"><label>Highlight <span class="optional">optional</span></label><input type="text" id="helpdeskHighlight" placeholder="One standout moment this period"></div>
+      </div>
+    </div>
+
+    <!-- Section 2: Security -->
+    <div class="data-section" data-section="security" data-types="monthly,quarterly,snapshot">
+      <h3 class="section-label">Security</h3>
+      <div class="field-row four">
+        <div class="field-group"><label>Threats blocked <span class="optional">optional</span></label><input type="number" id="threatsBlocked"></div>
+        <div class="field-group"><label>Security incidents <span class="optional">optional</span></label><input type="number" id="securityIncidents"></div>
+        <div class="field-group"><label>Patches applied <span class="optional">optional</span></label><input type="number" id="patchesApplied"></div>
+        <div class="field-group"><label>Devices fully patched</label><input type="text" id="devicesPatched" placeholder="e.g. 94%"></div>
+      </div>
+      <div class="field-row">
+        <div class="field-group"><label>Training completion <span class="optional">optional</span></label><input type="text" id="trainingCompletion" placeholder="e.g. 87% of staff"></div>
+        <div class="field-group wide"><label>Security highlight <span class="optional">optional</span></label><input type="text" id="securityHighlight"></div>
+      </div>
+    </div>
+
+    <!-- Section 3: Infrastructure -->
+    <div class="data-section" data-section="infrastructure" data-types="monthly,quarterly,snapshot">
+      <h3 class="section-label">Infrastructure &amp; Uptime</h3>
+      <div class="field-row four">
+        <div class="field-group"><label>Uptime / availability</label><input type="text" id="uptime" placeholder="e.g. 99.97%"></div>
+        <div class="field-group"><label>Alerts triggered <span class="optional">optional</span></label><input type="number" id="alertsTriggered"></div>
+        <div class="field-group"><label>Alerts resolved <span class="optional">optional</span></label><input type="number" id="alertsResolved"></div>
+        <div class="field-group wide"><label>Infrastructure highlight <span class="optional">optional</span></label><input type="text" id="infraHighlight"></div>
+      </div>
+    </div>
+
+    <!-- Section 4: Projects (Quarterly only) -->
+    <div class="data-section" data-section="projects" data-types="quarterly">
+      <h3 class="section-label">Projects &amp; Changes</h3>
+      <div class="field-row">
+        <div class="field-group"><label>Projects completed</label><textarea id="projectsCompleted" rows="2" placeholder="One per line"></textarea></div>
+        <div class="field-group"><label>Projects in progress</label><textarea id="projectsInProgress" rows="2" placeholder="One per line"></textarea></div>
+      </div>
+      <div class="field-group"><label>Key changes made</label><textarea id="keyChanges" rows="2" placeholder="Notable environment changes"></textarea></div>
+    </div>
+
+    <!-- Section 5: Upcoming (Quarterly + Snapshot) -->
+    <div class="data-section" data-section="upcoming" data-types="quarterly,snapshot">
+      <h3 class="section-label">Upcoming &amp; Renewals</h3>
+      <div class="field-row">
+        <div class="field-group"><label>Upcoming renewals</label><textarea id="upcomingRenewals" rows="2" placeholder="What's expiring and when"></textarea></div>
+        <div class="field-group"><label>Planned work</label><textarea id="plannedWork" rows="2" placeholder="What's coming next period"></textarea></div>
+      </div>
+    </div>
+
+    <!-- Section 6: Recommendations (all) -->
+    <div class="data-section" data-section="recommendations" data-types="monthly,quarterly,snapshot">
+      <h3 class="section-label">Recommendations</h3>
+      <div class="field-row">
+        <div class="field-group wide"><label>Recommendations</label><textarea id="recommendationsText" rows="2" placeholder="What you recommend — free text"></textarea></div>
+        <div class="field-group"><label>Priority level</label>
+          <select id="recommendationsPriority">
+            <option value="For your consideration">For your consideration</option>
+            <option value="Recommended">Recommended</option>
+            <option value="Action required">Action required</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="generate-row">
+      <button class="btn-primary" id="generateBtn">Generate Report</button>
+      <button class="btn-secondary hidden" id="regenerateBtn">Regenerate</button>
+    </div>
+  </section>
+
+  <!-- ============ LOADING ============ -->
+  <section class="loading-state hidden" id="loadingState">
+    <div class="spinner"></div>
+    <p id="loadingMsg">Building your client report…</p>
+  </section>
+
+  <!-- ============ OUTPUT ============ -->
+  <section class="panel hidden" id="panelOutput">
+    <div class="panel-title-row">
+      <h2 class="panel-title">3. Output</h2>
+      <div class="output-tabs" id="outputTabs">
+        <button class="output-tab active" data-format="email">HTML Email</button>
+        <button class="output-tab" data-format="pdf">PDF</button>
+        <button class="output-tab" data-format="widget">Salesbuildr Widget</button>
+      </div>
+    </div>
+
+    <!-- Colour theme (applies to email + widget) -->
+    <div class="theme-row" id="themeRow">
+      <span class="theme-label">Colour theme</span>
+      <div class="swatches" id="colourSwatches">
+        <button class="swatch active" data-hex="#0f1f3d" style="background:#0f1f3d" title="Navy"></button>
+        <button class="swatch" data-hex="#2E74DC" style="background:#2E74DC" title="Blue"></button>
+        <button class="swatch" data-hex="#475569" style="background:#475569" title="Slate"></button>
+        <button class="swatch" data-hex="#065f46" style="background:#065f46" title="Emerald"></button>
+        <button class="swatch" data-hex="#0f766e" style="background:#0f766e" title="Teal"></button>
+        <button class="swatch" data-hex="#991B1B" style="background:#991B1B" title="Crimson"></button>
+        <button class="swatch" data-hex="#92400e" style="background:#92400e" title="Amber"></button>
+        <button class="swatch" data-hex="#1a1a1a" style="background:#1a1a1a" title="Charcoal"></button>
+      </div>
+      <div class="hex-input-row">
+        <input type="color" id="colourPicker" value="#0f1f3d">
+        <input type="text" id="customHex" value="0F1F3D" maxlength="7">
+      </div>
+    </div>
+
+    <!-- Email preview -->
+    <div class="output-view" id="viewEmail">
+      <div class="preview-note">Preview shown at 600px — this is how it will render once pasted into Outlook.</div>
+      <div class="email-preview-frame">
+        <div class="email-preview-inner" id="emailPreview"></div>
+      </div>
+      <div class="output-actions">
+        <button class="btn-accent" id="copyEmailBtn">Copy Email HTML</button>
+      </div>
+    </div>
+
+    <!-- PDF view -->
+    <div class="output-view hidden" id="viewPdf">
+      <div class="preview-note">Full-width preview — this is what will print. Click "Download PDF" to open your browser's print dialog and choose "Save as PDF."</div>
+      <div class="pdf-preview-frame" id="pdfPreview"></div>
+      <div class="output-actions">
+        <button class="btn-accent" id="downloadPdfBtn">Download PDF</button>
+      </div>
+    </div>
+
+    <!-- Widget view -->
+    <div class="output-view hidden" id="viewWidget">
+      <div class="preview-note">Condensed version — key stats and recommendations only, for embedding in a proposal or QBR pack.</div>
+      <div class="widget-preview-frame" id="widgetPreview"></div>
+      <div class="output-actions">
+        <button class="btn-accent" id="copyWidgetBtn">Copy HTML</button>
+        <button class="btn-accent" id="pushWidgetBtn">Push to Salesbuildr</button>
+      </div>
+      <div class="sb-creds-panel hidden" id="sbCredsPanel">
+        <div class="field-row">
+          <div class="field-group"><label>Salesbuildr API Key</label><input type="text" id="sbApiKey"></div>
+          <div class="field-group"><label>Tenant URL</label><input type="text" id="sbTenantUrl" placeholder="https://acme.salesbuildr.com"></div>
+        </div>
+        <div class="generate-row">
+          <button class="btn-primary" id="saveCredsBtn">Save &amp; Push</button>
+          <button class="btn-secondary" id="cancelCredsBtn">Cancel</button>
+        </div>
+      </div>
+      <div class="push-feedback hidden" id="pushFeedback"></div>
+    </div>
+  </section>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="vcio-report.js"></script>
+</body>
+</html>
