@@ -579,7 +579,7 @@ function buildEmailHtml(fd, nar, hex) {
   let sections = '';
 
   if (SECTION_TYPES.helpdesk.includes(fd.reportType)) {
-    sections += sectionBand('Helpdesk &amp; Support', statsRow([
+    sections += sectionBand('Helpdesk & Support', statsRow([
       statCell(d.helpdesk.ticketsOpened, 'Opened'),
       statCell(d.helpdesk.ticketsResolved, 'Resolved'),
       statCell(d.helpdesk.avgResponseTime, 'Response'),
