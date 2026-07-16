@@ -46,6 +46,14 @@
       <p class="field-hint">No API credentials? Just type the client name manually — search is optional.</p>
     </div>
 
+    <div class="history-panel hidden" id="historyPanel">
+      <div class="history-panel-text">
+        <span class="history-panel-label">Last report for this client</span>
+        <span id="historyPanelSummary"></span>
+      </div>
+      <button class="btn-secondary" id="viewHistoryBtn">View</button>
+    </div>
+
     <div class="field-row">
       <div class="field-group">
         <label>MSP Name</label>
@@ -86,13 +94,13 @@
     <div class="data-section" data-section="helpdesk" data-types="monthly,quarterly">
       <h3 class="section-label">Helpdesk &amp; Support</h3>
       <div class="field-row four">
-        <div class="field-group"><label>Tickets opened</label><input type="number" id="ticketsOpened"></div>
-        <div class="field-group"><label>Tickets resolved</label><input type="number" id="ticketsResolved"></div>
+        <div class="field-group"><label>Tickets opened</label><span class="delta-slot" id="delta_ticketsOpened"></span><input type="number" id="ticketsOpened"></div>
+        <div class="field-group"><label>Tickets resolved</label><span class="delta-slot" id="delta_ticketsResolved"></span><input type="number" id="ticketsResolved"></div>
         <div class="field-group"><label>Avg response time</label><input type="text" id="avgResponseTime" placeholder="e.g. 14 minutes"></div>
         <div class="field-group"><label>Avg resolution time</label><input type="text" id="avgResolutionTime" placeholder="e.g. 2.4 hours"></div>
       </div>
       <div class="field-row">
-        <div class="field-group"><label>SLA compliance</label><input type="text" id="slaCompliance" placeholder="e.g. 98.2%"></div>
+        <div class="field-group"><label>SLA compliance</label><span class="delta-slot" id="delta_slaCompliance"></span><input type="text" id="slaCompliance" placeholder="e.g. 98.2%"></div>
         <div class="field-group wide"><label>Highlight <span class="optional">optional</span></label><input type="text" id="helpdeskHighlight" placeholder="One standout moment this period"></div>
       </div>
     </div>
@@ -101,10 +109,10 @@
     <div class="data-section" data-section="security" data-types="monthly,quarterly,snapshot">
       <h3 class="section-label">Security</h3>
       <div class="field-row four">
-        <div class="field-group"><label>Threats blocked <span class="optional">optional</span></label><input type="number" id="threatsBlocked"></div>
-        <div class="field-group"><label>Security incidents <span class="optional">optional</span></label><input type="number" id="securityIncidents"></div>
-        <div class="field-group"><label>Patches applied <span class="optional">optional</span></label><input type="number" id="patchesApplied"></div>
-        <div class="field-group"><label>Devices fully patched</label><input type="text" id="devicesPatched" placeholder="e.g. 94%"></div>
+        <div class="field-group"><label>Threats blocked <span class="optional">optional</span></label><span class="delta-slot" id="delta_threatsBlocked"></span><input type="number" id="threatsBlocked"></div>
+        <div class="field-group"><label>Security incidents <span class="optional">optional</span></label><span class="delta-slot" id="delta_securityIncidents"></span><input type="number" id="securityIncidents"></div>
+        <div class="field-group"><label>Patches applied <span class="optional">optional</span></label><span class="delta-slot" id="delta_patchesApplied"></span><input type="number" id="patchesApplied"></div>
+        <div class="field-group"><label>Devices fully patched</label><span class="delta-slot" id="delta_devicesPatched"></span><input type="text" id="devicesPatched" placeholder="e.g. 94%"></div>
       </div>
       <div class="field-row">
         <div class="field-group"><label>Training completion <span class="optional">optional</span></label><input type="text" id="trainingCompletion" placeholder="e.g. 87% of staff"></div>
@@ -116,9 +124,9 @@
     <div class="data-section" data-section="infrastructure" data-types="monthly,quarterly,snapshot">
       <h3 class="section-label">Infrastructure &amp; Uptime</h3>
       <div class="field-row four">
-        <div class="field-group"><label>Uptime / availability</label><input type="text" id="uptime" placeholder="e.g. 99.97%"></div>
-        <div class="field-group"><label>Alerts triggered <span class="optional">optional</span></label><input type="number" id="alertsTriggered"></div>
-        <div class="field-group"><label>Alerts resolved <span class="optional">optional</span></label><input type="number" id="alertsResolved"></div>
+        <div class="field-group"><label>Uptime / availability</label><span class="delta-slot" id="delta_uptime"></span><input type="text" id="uptime" placeholder="e.g. 99.97%"></div>
+        <div class="field-group"><label>Alerts triggered <span class="optional">optional</span></label><span class="delta-slot" id="delta_alertsTriggered"></span><input type="number" id="alertsTriggered"></div>
+        <div class="field-group"><label>Alerts resolved <span class="optional">optional</span></label><span class="delta-slot" id="delta_alertsResolved"></span><input type="number" id="alertsResolved"></div>
         <div class="field-group wide"><label>Infrastructure highlight <span class="optional">optional</span></label><input type="text" id="infraHighlight"></div>
       </div>
     </div>
@@ -241,6 +249,21 @@
     </div>
   </section>
 
+</div>
+
+<!-- ============ HISTORY VIEWER MODAL (Tier 1) ============ -->
+<div class="modal-overlay hidden" id="historyModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span id="historyModalTitle">Last Report</span>
+      <button class="modal-close" id="historyModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="email-preview-frame">
+        <div class="email-preview-inner" id="historyModalContent"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
