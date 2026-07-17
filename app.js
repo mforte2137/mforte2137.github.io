@@ -34,6 +34,18 @@ const TOOLS = [
     icon: "calc"
   },
   {
+    title: "vCIO Report Builder",
+    shortLabel: "vCIO Reports",
+    description:
+      "Generate professional client reports in minutes — monthly operational updates, quarterly executive summaries, or IT health snapshots. Enter data or import from Excel, AI writes the narrative, output as an Outlook-ready HTML email, PDF, or Salesbuildr widget.",
+    category: "Strategic",
+    url: "https://widgetcreator.netlify.app/vcio-report.html",
+    badge: "new",
+    updated: "2026-07-12",
+    gradient: "azure",
+    icon: "report"
+  },
+  {
     title: "IT Maturity Assessment Widget",
     shortLabel: "Maturity Assessment",
     description:
@@ -584,6 +596,7 @@ const GRADIENTS = {
   iron:    "linear-gradient(135deg, #1c1c1e 0%, #48484a 55%, #98989d 100%)",
   jade:    "linear-gradient(135deg, #064e3b 0%, #0d9488 55%, #5eead4 100%)",
   cobalt:  "linear-gradient(135deg, #172554 0%, #1d4ed8 55%, #3b82f6 100%)",
+  azure:   "linear-gradient(135deg, #0c3a6e 0%, #0284c7 55%, #38bdf8 100%)",
   fern:    "linear-gradient(135deg, #14532d 0%, #22c55e 55%, #86efac 100%)",
   copper:  "linear-gradient(135deg, #7c2d12 0%, #c2410c 45%, #fb923c 100%)",
   mint:    "linear-gradient(135deg, #022c22 0%, #059669 55%, #6ee7b7 100%)",
@@ -1194,6 +1207,13 @@ Your data stays with you. Files are read locally in the browser and never transm
       out:   "Five short, coordinated Salesbuildr widgets tailored to the selected vertical — Industry Pain Points, Why IT Matters, Compliance & Risk, Our Approach, and What\'s Included. Push as a pack or individually.",
       when:  "You are pitching to a prospect in healthcare, legal, education, government, manufacturing, or another specific vertical and want the proposal to demonstrate genuine sector knowledge.",
       not:   "Not a substitute for the Proposal Widget Builder — these widgets prove industry knowledge, not the sales narrative. Not suitable for generic or multi-vertical prospects."
+    },
+    "vCIO Report Builder": {
+      who:   "MSP vCIOs or senior engineers producing regular client reports — monthly operational updates, quarterly executive summaries, or IT health snapshots across multiple client accounts.",
+      input: "Client company (search via Salesbuildr API or type manually), report type (Monthly / Quarterly / IT Health Snapshot), report period, operational data via quick web form or Excel import (Helpdesk stats, Security events, Infrastructure uptime, Projects, Recommendations). Sessions auto-save to localStorage — up to 5 active client sessions. Export/import session as JSON for cross-device workflow.",
+      out:   "Three output options: Outlook-optimised HTML email (600px table layout, copy to clipboard for pasting into Outlook), PDF (browser print), and optional Salesbuildr widget. AI writes all narrative sections from the data provided.",
+      when:  "Producing monthly operational reports for managed services clients. Sending quarterly executive summaries to business owners or boards. Generating an IT health snapshot for a client meeting or renewal conversation.",
+      not:   "Not a PSA or RMM integration — data entered manually or via Excel import. Not a replacement for the Business Review Builder, which is the formal in-person QBR presentation."
     },
     "IT Maturity Assessment Widget": {
       who:   "MSP account managers, sales reps, or vCIOs who want to make a client\'s IT maturity visible — in a prospect proposal, a QBR pack, or a strategic review conversation.",
