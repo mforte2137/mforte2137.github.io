@@ -1,0 +1,190 @@
+// =========================================================
+// netlify/functions/new-business-kit.js
+// Path: /api/new-business-kit
+//
+// Accepts POST { path, company, industry, size, contact, role,
+//                trigger, triggerDetail, mspName, includeFirstImpression }
+//
+// One function, three prompts, distinguished by `path`:
+//   'cold'    -> plain text email + PDF leave-behind content
+//   'warm'    -> HTML follow-up email content + optional First Impression widget content
+//   'quoting' -> proposal plan (3-5 recommended hub tools, sequenced)
+// =========================================================
+
+const TRIGGER_TEXT = {
+  referral: 'a mutual contact referred them',
+  event: 'they attended an event the MSP was also at',
+  news: 'the rep saw something specific about their business (news, LinkedIn, a job posting)',
+  proactive: 'the MSP is proactively reaching out because this industry is a specialty',
+  renewal: "their IT contract is likely coming up for renewal",
+  incident: 'there has been a recent cybersecurity incident in their sector',
+  inbound: 'they reached out to the MSP first (inbound)',
+  reactivation: 'the MSP has worked with them before and this is a reactivation',
+  general: 'there is no specific trigger — this is general outreach'
+};
+
+const TOOL_LIST = [
+  'IT Maturity Assessment Widget',
+  'Industry Proposal Pack',
+  'Cyber Insurance Readiness Widget',
+  'Service Tier Widget Builder',
+  'Multi-Stakeholder Pack',
+  'Case Study Widget',
+  'Cover Page Creator',
+  'Compliance Sales Pack'
+];
+
+exports.handler = async (event) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  };
+
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 204, headers, body: '' };
+  }
+
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers, body: JSON.stringify({ ok: false, error: 'POST required.' }) };
+  }
+
+  let body;
+  try { body = JSON.parse(event.body); }
+  catch { return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: 'Invalid JSON.' }) }; }
+
+  const {
+    path, company, industry, size, contact, role,
+    trigger, triggerDetail, mspName, includeFirstImpression
+  } = body;
+
+  if (!path || !['cold', 'warm', 'quoting'].includes(path)) {
+    return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: 'A valid path (cold, warm, quoting) is required.' }) };
+  }
+  if (!industry || !size) {
+    return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: 'Industry and company size are required.' }) };
+  }
+
+  const claudeApiKey = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY;
+  const triggerContext = TRIGGER_TEXT[trigger] || 'no specific trigger was given';
+
+  const contextBlock = `
+Company: ${company || '(not provided)'}
+Industry: ${industry}
+Company size: ${size} employees
+Contact: ${contact || '(not provided)'}${role ? `, role: ${role}` : ''}
+Trigger context: ${triggerContext}${triggerDetail ? ` — specific detail: "${triggerDetail}"` : ''}
+MSP name: ${mspName || 'Your MSP'}
+`.trim();
+
+  let systemPrompt, userMessage;
+
+  if (path === 'cold') {
+    systemPrompt = `You write cold B2B outreach for MSPs (managed service providers) reaching out to prospective clients.
+Industry knowledge must be genuine — healthcare gets HIPAA and patient data language, legal gets client privilege, finance gets regulatory language, etc.
+Company size calibrates everything — a 10-person firm and a 200-person firm in the same industry have different problems.
+The trigger is the most important personalisation signal — use it specifically, not generically.
+Tone: peer-to-peer, confident, brief — not salesy, not desperate.
+Never mention specific product names or vendors. Never invent statistics — use known benchmarks (IBM Cost of a Data Breach, Kaseya MSP statistics) or write qualitatively.
+Return JSON only — no preamble, no markdown, no backticks. Match this exact shape:
+{
+  "email": { "subject": "short, specific, references trigger or industry — never 'Managed IT Services for X'", "body": "5-7 sentences max, plain text, no bullet points, no bold. Opening references the trigger specifically. Middle: one specific relevant problem for that industry/size. One credibility sentence. One low-friction ask (20-minute call). Signature placeholder: '\\n\\n[Your name]\\n[Title]\\n' + mspName + '\\n[Phone]'." },
+  "leaveBehind": {
+    "risks": ["3 genuine, current IT risks for this industry — not generic 'cybersecurity is important'"],
+    "benchmark": "1-2 sentences: what a well-run business this size actually has in place, specific enough to be useful",
+    "questions": ["3 questions a business owner probably can't answer about their own IT — create awareness of gaps without being threatening"]
+  }
+}`;
+    userMessage = `Write the cold outreach email and leave-behind content for this prospect:\n\n${contextBlock}`;
+
+  } else if (path === 'warm') {
+    systemPrompt = `You write warm B2B follow-up communications for MSPs after a first meeting with a prospect.
+Industry knowledge must be genuine and specific to size and sector.
+The trigger detail (if given) should shape the "what I heard" summary; if no trigger detail was given, write clearly generic placeholder-style bullets the rep must edit before sending, and make that obvious by keeping them short and templated.
+Tone: warm, professional, confident.
+Next step must be concrete with a timeframe — never vague "let me know if you have questions."
+Never mention specific product names or vendors. Never invent statistics.
+Return JSON only — no preamble, no markdown, no backticks. Match this exact shape:
+{
+  "followUpEmail": {
+    "subject": "short, references the meeting or a specific point discussed",
+    "opening": "1 sentence referencing something specific from the conversation, not 'it was great meeting you'",
+    "summaryBullets": ["2-3 short bullets — what the MSP heard/understood about their situation"],
+    "recommendation": "1-2 sentences, one clear next step recommended and why it fits what was discussed — not a list of services",
+    "nextStep": "1 concrete sentence with a timeframe, e.g. 'I'll send a proposal by Friday' or a specific day/time for a call"
+  }${includeFirstImpression ? `,
+  "firstImpressionWidget": {
+    "whyIndustry": "1-2 sentences on why the MSP works well with this industry specifically",
+    "engagementExpectations": "1-2 sentences on what the prospect can expect in the first 30/60/90 days",
+    "credibilityStatement": "1 sentence, a specific credibility statement relevant to that industry"
+  }` : ''}
+}`;
+    userMessage = `Write the warm follow-up email content${includeFirstImpression ? ' and First Impression widget content' : ''} for this prospect:\n\n${contextBlock}`;
+
+  } else {
+    systemPrompt = `You are an advisory proposal planner for MSPs preparing a Salesbuildr quote for a prospect.
+Recommend 3-5 hub tools MAXIMUM, chosen only from this exact list (use these exact strings for "tool"): ${TOOL_LIST.join(', ')}.
+Sequence matters: diagnostic tools first, value tools second, differentiation tools third.
+Rules to follow:
+- Price-sensitive or budget-conscious signals: lead with IT Maturity Assessment Widget (value/risk before price).
+- If context suggests multiple decision-makers (e.g. CEO and CFO both involved): always include Multi-Stakeholder Pack.
+- If the trigger is a cybersecurity incident, or industry has strong compliance needs (healthcare, finance, legal): always include Cyber Insurance Readiness Widget or Compliance Sales Pack.
+- If this is a new relationship (cold/first proposal, no prior work together): always include Case Study Widget or Cover Page Creator for credibility.
+- Include Service Tier Widget Builder when tiered options would help avoid single-price anchoring.
+- Include Industry Proposal Pack when it fits the sector.
+Each recommendation needs a one-line "why this, why now" tied to the specific prospect context — advisory, confident tone.
+Return JSON only — no preamble, no markdown, no backticks. Match this exact shape:
+{
+  "proposalPlan": [
+    { "tool": "exact tool name from the list", "why": "one line, specific to this prospect's context" }
+  ]
+}`;
+    userMessage = `Recommend a sequenced proposal plan (3-5 tools) for this prospect:\n\n${contextBlock}`;
+  }
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': claudeApiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1500,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMessage }]
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { statusCode: 502, headers, body: JSON.stringify({ ok: false, error: (data && data.error && data.error.message) || 'AI request failed.' }) };
+    }
+
+    const text = data.content && data.content[0] && data.content[0].text;
+    if (!text) {
+      return { statusCode: 502, headers, body: JSON.stringify({ ok: false, error: 'AI returned an empty response.' }) };
+    }
+
+    let parsed;
+    try {
+      const clean = text.replace(/```json|```/g, '').trim();
+      parsed = JSON.parse(clean);
+    } catch (e) {
+      return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: 'AI returned invalid JSON.' }) };
+    }
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ ok: true, ...parsed })
+    };
+
+  } catch (err) {
+    return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: err.message || 'Unexpected server error.' }) };
+  }
+};
