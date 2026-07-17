@@ -74,6 +74,15 @@ USE WHEN: Pitching to a prospect in a specific industry and wanting the proposal
 NOT FOR: Generic proposals without a clear vertical. Use the Proposal Widget Builder for the core sales narrative.
 URL: https://widgetcreator.netlify.app/industry-proposal-pack.html
 
+TOOL: vCIO Report Builder
+WHAT: Generates professional client-facing reports in three formats: Outlook-optimised HTML email (600px table layout, inline styles, Arial/Georgia fonts — ready to paste into Outlook), PDF (browser print), and optional Salesbuildr widget. Three report types: Monthly Operational Report (metrics-heavy, for IT contact or operations lead), Quarterly Executive Summary (narrative-heavy, for CEO/CFO/board), IT Health Snapshot (one-pager, ad-hoc). Data entry via quick web form or Excel import (SheetJS). Sections: Helpdesk & Support, Security, Infrastructure & Uptime, Projects & Changes (quarterly only), Upcoming & Renewals, Recommendations. Company search via Salesbuildr API. Sessions auto-save to localStorage — up to 5 active client sessions with status badges (Draft / Data Pending / Ready / Generated). JSON export/import for cross-device workflow.
+WHO: MSP vCIOs or senior engineers producing regular client reports across multiple accounts.
+INPUT: Client name (API search or manual), report type, period, operational data (web form or Excel import), colour theme.
+OUTPUT: Outlook-ready HTML email / PDF / optional Salesbuildr widget.
+USE WHEN: Producing monthly or quarterly client reports. Sending an IT health snapshot before a renewal or review meeting. Replacing Word-doc or plain-text vCIO reports with a professional branded template.
+NOT FOR: Formal QBR presentations — use Business Review Builder. Real-time dashboards. PSA/RMM data pull — all data is manually entered or Excel-imported.
+URL: https://widgetcreator.netlify.app/vcio-report.html
+
 TOOL: IT Maturity Assessment Widget
 WHAT: Generates a visual IT maturity assessment widget showing a client's current vs target maturity across five dimensions: Security, Business Continuity, Productivity & Cloud, Compliance & Risk, and Strategic Alignment. Each dimension is rated on a four-point scale (Reactive / Managed / Optimised / Strategic) with helper text for calibration. AI sets target levels based on industry and company size — MSP can override. Output: five colour-coded progress bars (filled in theme colour for current, lighter tint for target segment, grey for beyond-target) plus an AI-written 3–5 sentence narrative identifying the priority gap. Sessions auto-save to localStorage. Part of the vCIO toolkit — the diagnostic before the Technology Roadmap Builder.
 WHO: MSP account managers, sales reps, or vCIOs making a client's IT maturity visible in a proposal, QBR, or strategic review.
