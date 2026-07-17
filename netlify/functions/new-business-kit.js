@@ -56,7 +56,7 @@ exports.handler = async (event) => {
 
   const {
     path, company, industry, size, contact, role,
-    trigger, triggerDetail, mspName, includeFirstImpression
+    trigger, triggerDetail, meetingNotes, mspName, includeFirstImpression
   } = body;
 
   if (!path || !['cold', 'warm', 'quoting'].includes(path)) {
@@ -75,6 +75,16 @@ Industry: ${industry}
 Company size: ${size} employees
 Contact: ${contact || '(not provided)'}${role ? `, role: ${role}` : ''}
 Trigger context: ${triggerContext}${triggerDetail ? ` — specific detail: "${triggerDetail}"` : ''}
+MSP name: ${mspName || 'Your MSP'}
+`.trim();
+
+  const warmContextBlock = `
+Company: ${company || '(not provided)'}
+Industry: ${industry}
+Company size: ${size} employees
+Contact: ${contact || '(not provided)'}${role ? `, role: ${role}` : ''}
+How this relationship originally started (background only — do not lead with this, it was likely already referenced in an earlier email): ${triggerContext}${triggerDetail ? ` — "${triggerDetail}"` : ''}
+What was actually discussed in the first conversation (THIS is the main source of content for the follow-up): ${meetingNotes || '(not provided — write short placeholder-style bullets the rep must fill in before sending)'}
 MSP name: ${mspName || 'Your MSP'}
 `.trim();
 
@@ -99,19 +109,20 @@ Return JSON only — no preamble, no markdown, no backticks. Match this exact sh
     userMessage = `Write the cold outreach email and leave-behind content for this prospect:\n\n${contextBlock}`;
 
   } else if (path === 'warm') {
-    systemPrompt = `You write warm B2B follow-up communications for MSPs after a first meeting with a prospect.
-Industry knowledge must be genuine and specific to size and sector.
-The trigger detail (if given) should shape the "what I heard" summary; if no trigger detail was given, write clearly generic placeholder-style bullets the rep must edit before sending, and make that obvious by keeping them short and templated.
+    systemPrompt = `You write warm B2B follow-up communications for MSPs after a first meeting or conversation with a prospect.
+CRITICAL: This prospect has already received a cold outreach message that referenced the industry generically and the original reason for contact. This follow-up must NOT repeat that framing — it must sound like it comes from an actual conversation that happened, using specific details the rep captured about that conversation (company size, current tools, concerns raised, what the prospect said mattered to them). If those details are thin or absent, keep the summary bullets short and clearly templated/placeholder so the rep knows to edit them — never fall back on generic industry-risk language, since that would just repeat the cold email in nicer formatting.
+The original outreach trigger (referral, event, etc.) is background only — mention it briefly if at all (e.g. "great meeting you at X"), never as the substance of the email.
+Industry knowledge must be genuine and specific to size and sector, but should feel like it's drawing on what was actually said, not a generic industry primer.
 Tone: warm, professional, confident.
 Next step must be concrete with a timeframe — never vague "let me know if you have questions."
 Never mention specific product names or vendors. Never invent statistics.
 Return JSON only — no preamble, no markdown, no backticks. Match this exact shape:
 {
   "followUpEmail": {
-    "subject": "short, references the meeting or a specific point discussed",
-    "opening": "1 sentence referencing something specific from the conversation, not 'it was great meeting you'",
-    "summaryBullets": ["2-3 short bullets — what the MSP heard/understood about their situation"],
-    "recommendation": "1-2 sentences, one clear next step recommended and why it fits what was discussed — not a list of services",
+    "subject": "short, references the meeting or a specific point discussed — not a repeat of the cold email subject",
+    "opening": "1 sentence referencing something specific from the actual conversation notes provided, not 'it was great meeting you'",
+    "summaryBullets": ["2-3 short bullets — what the MSP heard/understood about their situation, drawn from the conversation notes provided, not generic industry language"],
+    "recommendation": "1-2 sentences, one clear next step recommended and why it fits what was specifically discussed — not a list of services, not a repeat of the cold email's problem framing",
     "nextStep": "1 concrete sentence with a timeframe, e.g. 'I'll send a proposal by Friday' or a specific day/time for a call"
   }${includeFirstImpression ? `,
   "firstImpressionWidget": {
@@ -120,7 +131,7 @@ Return JSON only — no preamble, no markdown, no backticks. Match this exact sh
     "credibilityStatement": "1 sentence, a specific credibility statement relevant to that industry"
   }` : ''}
 }`;
-    userMessage = `Write the warm follow-up email content${includeFirstImpression ? ' and First Impression widget content' : ''} for this prospect:\n\n${contextBlock}`;
+    userMessage = `Write the warm follow-up email content${includeFirstImpression ? ' and First Impression widget content' : ''} for this prospect:\n\n${warmContextBlock}`;
 
   } else {
     systemPrompt = `You are an advisory proposal planner for MSPs preparing a Salesbuildr quote for a prospect.
