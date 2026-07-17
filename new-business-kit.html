@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>New Business Kit — Salesbuildr</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="new-business-kit.css" />
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ============ HEADER ============ -->
+  <header class="app-header">
+    <div class="app-header-inner">
+      <div>
+        <h1>New Business Kit</h1>
+        <p class="app-subtitle">Turn new-logo prospecting into a guided, repeatable process — cold outreach, warm follow-up, or a proposal plan.</p>
+      </div>
+      <div class="msp-name-field">
+        <label for="mspName">Your MSP name</label>
+        <input type="text" id="mspName" placeholder="Acme IT Solutions" />
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+
+    <!-- ============ SESSION CARDS ============ -->
+    <section class="sessions-block" id="sessionsBlock" hidden>
+      <div class="sessions-head">
+        <h2>Active Prospects</h2>
+        <div class="sessions-head-actions">
+          <button class="btn-secondary" id="importBtn">Import session</button>
+          <input type="file" id="importFile" accept="application/json" hidden />
+          <button class="btn-secondary" id="showArchivedBtn">Show archived</button>
+          <button class="btn-accent" id="newSessionBtn">+ New Prospect</button>
+        </div>
+      </div>
+      <div class="session-cards" id="sessionCards"></div>
+      <div class="limit-msg" id="limitMsg" hidden>You have 5 active prospects. Archive one to start a new session.</div>
+    </section>
+
+    <div class="sessions-block-empty" id="sessionsEmptyRow" hidden>
+      <button class="btn-accent" id="newSessionBtnEmpty">+ New Prospect</button>
+      <button class="btn-secondary" id="importBtnEmpty">Import session</button>
+    </div>
+
+    <!-- ============ STEP PROGRESS ============ -->
+    <div class="step-progress" id="stepProgress">
+      <div class="step-node active" data-step="1"><span class="step-num">1</span><span class="step-label">Who</span></div>
+      <div class="step-line"></div>
+      <div class="step-node" data-step="2"><span class="step-num">2</span><span class="step-label">Trigger</span></div>
+      <div class="step-line"></div>
+      <div class="step-node" data-step="3"><span class="step-num">3</span><span class="step-label">Relationship</span></div>
+      <div class="step-line"></div>
+      <div class="step-node" data-step="4"><span class="step-num">4</span><span class="step-label">Outputs</span></div>
+    </div>
+
+    <div class="save-indicator" id="autoSaveLabel">Saved ✓</div>
+
+    <!-- ============ STEP 1 ============ -->
+    <section class="step-panel panel" id="step1" data-step-panel="1">
+      <h3>Step 1 — Who are you reaching out to?</h3>
+      <div class="form-grid">
+        <div class="field">
+          <label for="company">Company name <span class="optional">(optional)</span></label>
+          <input type="text" id="company" placeholder="Riverside Medical Group" />
+        </div>
+        <div class="field">
+          <label for="industry">Industry</label>
+          <select id="industry">
+            <option value="">Select…</option>
+            <option>Healthcare</option>
+            <option>Legal</option>
+            <option>Financial Services</option>
+            <option>Manufacturing</option>
+            <option>Construction</option>
+            <option>Professional Services</option>
+            <option>Retail</option>
+            <option>Real Estate</option>
+            <option>Nonprofit</option>
+            <option>Education</option>
+            <option>Hospitality</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="size">Company size</label>
+          <select id="size">
+            <option value="">Select…</option>
+            <option value="1-10">1–10</option>
+            <option value="11-50">11–50</option>
+            <option value="51-200">51–200</option>
+            <option value="201-500">201–500</option>
+            <option value="500+">500+</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="contact">Contact name <span class="optional">(optional)</span></label>
+          <input type="text" id="contact" placeholder="Sarah Chen" />
+        </div>
+        <div class="field">
+          <label for="role">Contact role</label>
+          <select id="role">
+            <option value="">Unknown</option>
+            <option>Business Owner</option>
+            <option>CEO</option>
+            <option>CFO</option>
+            <option>IT Manager</option>
+            <option>Operations Manager</option>
+            <option>Office Manager</option>
+          </select>
+        </div>
+      </div>
+      <div class="step-actions">
+        <span></span>
+        <button class="btn-primary" id="toStep2">Next →</button>
+      </div>
+    </section>
+
+    <!-- ============ STEP 2 ============ -->
+    <section class="step-panel panel" id="step2" data-step-panel="2" hidden>
+      <h3>Step 2 — What's the trigger?</h3>
+      <p class="hint">This is the single most important input — it's what makes the output feel specific rather than generic.</p>
+      <div class="form-grid">
+        <div class="field field-wide">
+          <label for="trigger">Trigger</label>
+          <select id="trigger">
+            <option value="">Select…</option>
+            <option value="referral">We share a mutual contact / referral</option>
+            <option value="event">They attended an event we were at</option>
+            <option value="news">I saw something about their business (news, LinkedIn, job posting)</option>
+            <option value="proactive">They're in an industry we specialise in — proactive outreach</option>
+            <option value="renewal">Their IT contract is likely coming up for renewal</option>
+            <option value="incident">A recent cybersecurity incident in their sector</option>
+            <option value="inbound">They reached out to us first (inbound)</option>
+            <option value="reactivation">We've worked together before — reactivation</option>
+            <option value="general">No specific trigger — general outreach</option>
+          </select>
+        </div>
+        <div class="field field-wide">
+          <label for="triggerDetail">Trigger detail <span class="optional">(optional, but strongly recommended)</span></label>
+          <input type="text" id="triggerDetail" placeholder="John Smith at Acme suggested I reach out" />
+        </div>
+      </div>
+      <div class="step-actions">
+        <button class="btn-secondary" id="backTo1">← Back</button>
+        <button class="btn-primary" id="toStep3">Next →</button>
+      </div>
+    </section>
+
+    <!-- ============ STEP 3 ============ -->
+    <section class="step-panel panel" id="step3" data-step-panel="3" hidden>
+      <h3>Step 3 — Where are you in the relationship?</h3>
+      <div class="path-cards">
+        <button class="path-card" data-path="cold">
+          <span class="path-dot">🔵</span>
+          <span class="path-title">Cold</span>
+          <span class="path-desc">I haven't contacted them yet</span>
+          <span class="path-out">→ Plain text email + PDF leave-behind</span>
+        </button>
+        <button class="path-card" data-path="warm">
+          <span class="path-dot">🟡</span>
+          <span class="path-title">Warm</span>
+          <span class="path-desc">We've had an initial conversation</span>
+          <span class="path-out">→ HTML follow-up email + Salesbuildr widget</span>
+        </button>
+        <button class="path-card" data-path="quoting">
+          <span class="path-dot">🟢</span>
+          <span class="path-title">Quoting</span>
+          <span class="path-desc">I'm ready to build a proposal</span>
+          <span class="path-out">→ Guided widget selection for Salesbuildr</span>
+        </button>
+      </div>
+
+      <div class="warm-extra field" id="warmExtra" hidden>
+        <label class="checkbox-label">
+          <input type="checkbox" id="includeFirstImpression" />
+          Also generate a First Impression widget (if sending a quote alongside)
+        </label>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn-secondary" id="backTo2">← Back</button>
+        <button class="btn-primary" id="toStep4" disabled>Next →</button>
+      </div>
+    </section>
+
+    <!-- ============ STEP 4 ============ -->
+    <section class="step-panel panel" id="step4" data-step-panel="4" hidden>
+      <h3>Step 4 — Preview your outputs</h3>
+      <div class="summary-card" id="summaryCard"></div>
+
+      <div class="field theme-field" id="themeField" hidden>
+        <label>Colour theme</label>
+        <div class="colour-picker">
+          <div class="swatches" id="colourSwatches">
+            <button class="swatch active" data-hex="#0f1f3d" style="background:#0f1f3d" title="Navy"></button>
+            <button class="swatch" data-hex="#2E74DC" style="background:#2E74DC" title="Blue"></button>
+            <button class="swatch" data-hex="#475569" style="background:#475569" title="Slate"></button>
+            <button class="swatch" data-hex="#065f46" style="background:#065f46" title="Emerald"></button>
+            <button class="swatch" data-hex="#0f766e" style="background:#0f766e" title="Teal"></button>
+            <button class="swatch" data-hex="#991B1B" style="background:#991B1B" title="Crimson"></button>
+            <button class="swatch" data-hex="#92400e" style="background:#92400e" title="Amber"></button>
+            <button class="swatch" data-hex="#1a1a1a" style="background:#1a1a1a" title="Charcoal"></button>
+          </div>
+          <div class="hex-row">
+            <input type="color" id="colourPicker" value="#0f1f3d" />
+            <input type="text" id="customHex" value="0F1F3D" maxlength="7" />
+          </div>
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn-secondary" id="backTo3">← Go back</button>
+        <button class="btn-primary" id="generateBtn">Generate</button>
+      </div>
+      <div class="form-error" id="formError" hidden></div>
+    </section>
+
+    <!-- ============ LOADING ============ -->
+    <div class="loading-state" id="loadingState" hidden>
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+      <p id="loadingMsg">Building your outreach kit…</p>
+    </div>
+
+    <!-- ============ OUTPUT AREA ============ -->
+    <section class="output-area" id="outputArea" hidden>
+
+      <div class="output-head">
+        <h3 id="outputTitle">Your Outputs</h3>
+        <div class="output-head-actions">
+          <button class="btn-secondary" id="markSentBtn">Mark as sent</button>
+          <button class="btn-secondary" id="moveToWarmBtn" hidden>Move to Warm →</button>
+          <button class="btn-secondary" id="regenerateBtn">Regenerate</button>
+          <button class="btn-secondary" id="startOverBtn">Start Over</button>
+        </div>
+      </div>
+      <div class="sent-badge" id="sentBadge" hidden></div>
+
+      <!-- COLD OUTPUTS -->
+      <div class="output-block" id="coldOutputs" hidden>
+        <div class="panel">
+          <div class="panel-head">
+            <h4>Plain Text Cold Outreach Email</h4>
+            <button class="btn-secondary" id="copyEmailBtn">Copy</button>
+          </div>
+          <div class="subject-line" id="emailSubject"></div>
+          <pre class="mono-output" id="emailBody"></pre>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h4>Industry Risk Snapshot (PDF Leave-Behind)</h4>
+            <div class="panel-head-actions">
+              <button class="btn-secondary" id="printLeaveBehindBtn">Save as PDF (Print)</button>
+            </div>
+          </div>
+          <p class="hint">Use your browser's print dialog and choose "Save as PDF."</p>
+          <div class="leave-behind-frame" id="leaveBehindFrame"></div>
+        </div>
+      </div>
+
+      <!-- WARM OUTPUTS -->
+      <div class="output-block" id="warmOutputs" hidden>
+        <div class="panel">
+          <div class="panel-head">
+            <h4>HTML Follow-Up Email</h4>
+            <div class="panel-head-actions">
+              <button class="btn-secondary" id="copyFollowUpBtn">Copy HTML</button>
+            </div>
+          </div>
+          <div class="subject-line" id="followUpSubject"></div>
+          <div class="email-preview-frame" id="followUpFrame"></div>
+        </div>
+
+        <div class="panel" id="firstImpressionPanel" hidden>
+          <div class="panel-head">
+            <h4>First Impression Widget</h4>
+            <div class="panel-head-actions">
+              <button class="btn-secondary" id="copyWidgetBtn">Copy HTML</button>
+              <button class="btn-accent" id="pushWidgetBtn">Push to Salesbuildr</button>
+            </div>
+          </div>
+          <div class="widget-preview-frame" id="widgetFrame"></div>
+        </div>
+      </div>
+
+      <!-- QUOTING OUTPUTS -->
+      <div class="output-block" id="quotingOutputs" hidden>
+        <div class="panel proposal-plan-panel">
+          <div class="proposal-plan-head" id="proposalPlanHead"></div>
+          <ol class="proposal-plan-list" id="proposalPlanList"></ol>
+        </div>
+      </div>
+
+      <!-- Salesbuildr credentials inline panel -->
+      <div class="creds-inline" id="credsInline" hidden>
+        <p>Enter your Salesbuildr credentials to push this widget.</p>
+        <div class="form-grid">
+          <div class="field">
+            <label for="pushApiKey">API Key</label>
+            <input type="text" id="pushApiKey" />
+          </div>
+          <div class="field">
+            <label for="pushTenantUrl">Tenant URL</label>
+            <input type="text" id="pushTenantUrl" placeholder="https://acme.salesbuildr.com" />
+          </div>
+        </div>
+        <div class="step-actions">
+          <button class="btn-secondary" id="cancelCredsBtn">Cancel</button>
+          <button class="btn-primary" id="saveAndPushBtn">Save &amp; Push</button>
+        </div>
+      </div>
+      <div class="push-status" id="pushStatus" hidden></div>
+
+    </section>
+
+  </main>
+
+  <!-- Archived sessions panel -->
+  <div class="archived-panel" id="archivedPanel" hidden>
+    <h3>Archived Prospects</h3>
+    <div class="session-cards" id="archivedCards"></div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+</div>
+
+<script src="new-business-kit.js"></script>
+</body>
+</html>
