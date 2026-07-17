@@ -155,6 +155,7 @@ input:focus, select:focus, textarea:focus {
 .output-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 8px; }
 .output-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .output-block { display: flex; flex-direction: column; gap: 18px; margin-top: 12px; }
+.output-block[hidden] { display: none; }
 .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
 .panel-head h4 { font-size: 14px; }
 .panel-head-actions { display: flex; gap: 8px; }
@@ -179,6 +180,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .sent-badge { display: inline-block; font-size: 11px; font-weight: 700; color: var(--good); background: var(--good-bg); border-radius: 20px; padding: 3px 12px; margin-bottom: 10px; }
+.sent-badge[hidden] { display: none; }
 
 /* ── Proposal plan (Path 3) ── */
 .proposal-plan-head { margin-bottom: 14px; }
@@ -199,6 +201,7 @@ input:focus, select:focus, textarea:focus {
 .sessions-head h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-2); }
 .sessions-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .sessions-block-empty { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 18px; }
+.sessions-block-empty[hidden] { display: none; }
 
 .session-cards { display: flex; gap: 12px; flex-wrap: wrap; }
 .session-card {
