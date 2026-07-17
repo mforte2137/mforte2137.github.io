@@ -46,6 +46,7 @@
   let lastPayload         = null;
   let sessionStatus       = 'in_progress';
   let sentAt              = null;
+  let stageHistory        = []; // [{ path, sentAt }] — breadcrumb of prior stages when transforming in place
   let autoSaveReady       = false;
   let showingArchived     = false;
 
@@ -90,6 +91,7 @@
   const outputTitle  = $('outputTitle');
   const markSentBtn  = $('markSentBtn');
   const moveToWarmBtn = $('moveToWarmBtn');
+  const moveToQuotingBtn = $('moveToQuotingBtn');
   const regenerateBtn = $('regenerateBtn');
   const startOverBtn = $('startOverBtn');
   const sentBadge    = $('sentBadge');
@@ -180,6 +182,7 @@
 
     markSentBtn.addEventListener('click', onMarkSent);
     moveToWarmBtn.addEventListener('click', onMoveToWarm);
+    moveToQuotingBtn.addEventListener('click', onMoveToQuoting);
 
     copyEmailBtn.addEventListener('click', () => copyToClipboard(
       (emailSubject.textContent ? 'Subject: ' + emailSubject.textContent + '\n\n' : '') + emailBody.textContent, copyEmailBtn));
@@ -353,6 +356,7 @@
     warmOutputs.hidden = selectedPath !== 'warm';
     quotingOutputs.hidden = selectedPath !== 'quoting';
     moveToWarmBtn.hidden = !(selectedPath === 'cold' && sessionStatus === 'sent');
+    moveToQuotingBtn.hidden = !(selectedPath === 'warm' && sessionStatus === 'sent');
     outputTitle.textContent = `Outputs — ${PATH_LABELS[selectedPath] || ''}`;
     updateSentBadge();
 
@@ -558,7 +562,8 @@
     sessionStatus = 'sent';
     sentAt = Date.now();
     updateSentBadge();
-    moveToWarmBtn.hidden = selectedPath !== 'cold';
+    moveToWarmBtn.hidden = !(selectedPath === 'cold');
+    moveToQuotingBtn.hidden = !(selectedPath === 'warm');
     autoSave('sent');
     showToast('Marked as sent.');
   }
@@ -573,14 +578,13 @@
   }
 
   function onMoveToWarm() {
-    // Carry prospect details into a fresh Warm session
-    currentSessionId = 'nbk_' + Date.now();
+    // Transform this session in place — same card, same id, no duplicate.
+    stageHistory.push({ path: selectedPath, sentAt });
     selectedPath = 'warm';
     sessionStatus = 'in_progress';
     sentAt = null;
     generatedOutputs = null;
     lastPayload = null;
-    triggerDetailEl.value = triggerDetailEl.value || '';
     document.querySelectorAll('.path-card').forEach(c => c.classList.toggle('active', c.dataset.path === 'warm'));
     warmExtra.hidden = false;
     outputArea.hidden = true;
@@ -588,6 +592,23 @@
     goToStep(4);
     autoSave('in_progress');
     showToast('Moved to Warm — review Step 4 and generate the follow-up email.');
+  }
+
+  function onMoveToQuoting() {
+    // Transform this session in place — same card, same id, no duplicate.
+    stageHistory.push({ path: selectedPath, sentAt });
+    selectedPath = 'quoting';
+    sessionStatus = 'in_progress';
+    sentAt = null;
+    generatedOutputs = null;
+    lastPayload = null;
+    document.querySelectorAll('.path-card').forEach(c => c.classList.toggle('active', c.dataset.path === 'quoting'));
+    warmExtra.hidden = true;
+    outputArea.hidden = true;
+    document.getElementById('step4').hidden = false;
+    goToStep(4);
+    autoSave('in_progress');
+    showToast('Moved to Quoting — review Step 4 and generate the proposal plan.');
   }
 
   // ── Sessions ───────────────────────────────────────
@@ -614,6 +635,7 @@
       includeFirstImpression,
       currentStep,
       sentAt,
+      stageHistory,
       outputs: generatedOutputs,
       lastPayload,
       themeColor: currentTheme
@@ -674,6 +696,7 @@
     lastPayload = null;
     sessionStatus = 'in_progress';
     sentAt = null;
+    stageHistory = [];
 
     outputArea.hidden = true;
     document.getElementById('step4').hidden = false;
@@ -715,6 +738,7 @@
     lastPayload = sess.lastPayload || null;
     sessionStatus = sess.status || 'in_progress';
     sentAt = sess.sentAt || null;
+    stageHistory = sess.stageHistory || [];
 
     if (generatedOutputs) {
       document.getElementById('step4').hidden = true;
@@ -762,6 +786,9 @@
     const pathLabel = { cold: '🔵 Cold', warm: '🟡 Warm', quoting: '🟢 Quoting' }[sess.path] || 'No path yet';
     const stageBadgeClass = sess.status === 'sent' ? 'badge-sent' : (sess.status === 'generated' ? 'badge-generated' : 'badge-progress');
     const stageLabel = sess.status === 'sent' ? 'Sent' : (sess.status === 'generated' ? 'Generated' : `Step ${sess.currentStep || 1} of 4`);
+    const historyLine = (sess.stageHistory && sess.stageHistory.length)
+      ? `<div class="sc-history">Was ${sess.stageHistory.map(h => PATH_LABELS[h.path] || h.path).join(' → ')}${sess.stageHistory[sess.stageHistory.length - 1].sentAt ? ' · sent ' + fmtDate(sess.stageHistory[sess.stageHistory.length - 1].sentAt) : ''}</div>`
+      : '';
 
     card.innerHTML = `
       <div class="sc-company">${escHtml(sess.company || 'Unnamed prospect')}</div>
@@ -770,6 +797,7 @@
         <span class="badge ${pathBadgeClass}">${pathLabel}</span>
         <span class="badge ${stageBadgeClass}">${stageLabel}</span>
       </div>
+      ${historyLine}
       <div class="sc-date">${fmtAge(sess.updatedAt)}</div>
       <div class="sc-actions">
         ${isArchived ? '<button data-act="restore">Restore</button><button data-act="delete">Delete</button>'
@@ -807,7 +835,7 @@
   function duplicateSession(sess) {
     const sessions = getSessions();
     if (sessions.length >= SESSION_LIMIT) { limitMsg.hidden = false; return; }
-    const copy = { ...sess, id: 'nbk_' + Date.now(), company: (sess.company || 'Unnamed prospect') + ' (copy)', status: 'in_progress', sentAt: null, outputs: null, lastPayload: null, updatedAt: new Date().toISOString(), createdAt: new Date().toISOString() };
+    const copy = { ...sess, id: 'nbk_' + Date.now(), company: (sess.company || 'Unnamed prospect') + ' (copy)', status: 'in_progress', sentAt: null, stageHistory: [], outputs: null, lastPayload: null, updatedAt: new Date().toISOString(), createdAt: new Date().toISOString() };
     sessions.unshift(copy);
     saveSessions(sessions.slice(0, SESSION_LIMIT));
     renderSessionCards();
