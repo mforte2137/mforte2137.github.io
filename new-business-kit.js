@@ -75,6 +75,7 @@
         triggerEl = $('trigger'), triggerDetailEl = $('triggerDetail');
 
   const warmExtra = $('warmExtra');
+  const meetingNotesEl = $('meetingNotes');
   const includeFirstImpressionEl = $('includeFirstImpression');
 
   const summaryCard  = $('summaryCard');
@@ -153,6 +154,7 @@
       includeFirstImpression = includeFirstImpressionEl.checked;
       autoSave();
     });
+    meetingNotesEl.addEventListener('input', () => autoSave());
 
     colourSwatches.querySelectorAll('.swatch').forEach(s => s.addEventListener('click', () => selectSwatch(s)));
     colourPicker.addEventListener('input', () => {
@@ -244,6 +246,7 @@
     }
     if (step === 3) {
       if (!selectedPath) return 'Choose where you are in the relationship.';
+      if (selectedPath === 'warm' && !meetingNotesEl.value.trim()) return 'Add a note on what you actually discussed — this is what makes the follow-up specific.';
     }
     return null;
   }
@@ -307,6 +310,7 @@
       role: roleEl.value || 'Unknown',
       trigger: triggerEl.value,
       triggerDetail: triggerDetailEl.value.trim(),
+      meetingNotes: meetingNotesEl.value.trim(),
       mspName: mspNameEl.value.trim() || 'Your MSP',
       includeFirstImpression
     };
@@ -585,6 +589,7 @@
     sentAt = null;
     generatedOutputs = null;
     lastPayload = null;
+    meetingNotesEl.value = '';
     document.querySelectorAll('.path-card').forEach(c => c.classList.toggle('active', c.dataset.path === 'warm'));
     warmExtra.hidden = false;
     outputArea.hidden = true;
@@ -631,6 +636,7 @@
       role: fd.role,
       trigger: fd.trigger,
       triggerDetail: fd.triggerDetail,
+      meetingNotes: fd.meetingNotes,
       path: selectedPath,
       includeFirstImpression,
       currentStep,
@@ -681,6 +687,7 @@
     companyEl.value = ''; industryEl.value = ''; sizeEl.value = '';
     contactEl.value = ''; roleEl.value = '';
     triggerEl.value = ''; triggerDetailEl.value = '';
+    meetingNotesEl.value = '';
     selectedPath = null;
     includeFirstImpression = false;
     includeFirstImpressionEl.checked = false;
@@ -716,6 +723,7 @@
     roleEl.value = sess.role || '';
     triggerEl.value = sess.trigger || '';
     triggerDetailEl.value = sess.triggerDetail || '';
+    meetingNotesEl.value = sess.meetingNotes || '';
 
     selectedPath = sess.path || null;
     includeFirstImpression = !!sess.includeFirstImpression;
