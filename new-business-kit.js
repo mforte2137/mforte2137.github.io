@@ -43,13 +43,12 @@
 
   // Known hub tools the Quoting path can recommend, and their URLs
   const TOOL_URLS = {
-    'IT Maturity Assessment Widget': 'https://widgetcreator.netlify.app/it-maturity-assessment.html',
+    'IT Maturity Assessment Widget': 'https://widgetcreator.netlify.app/it-maturity.html',
     'Industry Proposal Pack': 'https://widgetcreator.netlify.app/industry-proposal-pack.html',
-    'Cyber Insurance Readiness Widget': 'https://widgetcreator.netlify.app/cyber-insurance-readiness.html',
-    'Service Tier Widget Builder': 'https://widgetcreator.netlify.app/service-tier-widget-builder.html',
+    'Cyber Insurance Readiness Widget': 'https://widgetcreator.netlify.app/cyber-insurance.html',
+    'Service Tier Widget Builder': 'https://widgetcreator.netlify.app/service-tier-builder.html',
     'Multi-Stakeholder Pack': 'https://widgetcreator.netlify.app/multi-stakeholder-pack.html',
     'Case Study Widget': 'https://widgetcreator.netlify.app/case-study-widget.html',
-    'Cover Page Creator': 'https://widgetcreator.netlify.app/cover-page-creator.html',
     'Compliance Sales Pack': 'https://widgetcreator.netlify.app/compliance-sales-pack.html'
   };
 
