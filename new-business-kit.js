@@ -9,6 +9,7 @@
   const ARCHIVE_KEY   = 'nbk_archived';
   const MSP_NAME_KEY  = 'nbk_msp_name';
   const SESSION_LIMIT = 5;
+  const STALE_DAYS = 3; // digest threshold — no activity in this many days surfaces as "needs attention"
 
   const TRIGGER_LABELS = {
     referral: 'Referral from mutual contact',
@@ -75,6 +76,8 @@
   const sessionsBlock    = $('sessionsBlock');
   const sessionsEmptyRow = $('sessionsEmptyRow');
   const sessionCards     = $('sessionCards');
+  const digestPanel      = $('digestPanel');
+  const digestList       = $('digestList');
   const archivedPanel    = $('archivedPanel');
   const archivedCards    = $('archivedCards');
   const showArchivedBtn  = $('showArchivedBtn');
@@ -108,6 +111,7 @@
   const loadingMsg   = $('loadingMsg');
 
   const outputArea   = $('outputArea');
+  const outputEmptyState = $('outputEmptyState');
   const outputTitle  = $('outputTitle');
   const markSentBtn  = $('markSentBtn');
   const moveToWarmBtn = $('moveToWarmBtn');
@@ -150,6 +154,10 @@
   const pushStatus   = $('pushStatus');
 
   const toast = $('toast');
+
+  function updateEmptyState() {
+    outputEmptyState.hidden = !(loadingState.hidden && outputArea.hidden);
+  }
 
   // ── Init ───────────────────────────────────────────
   function init() {
@@ -253,6 +261,7 @@
     }
     autoSaveReady = true;
     updateStepProgress();
+    updateEmptyState();
   }
 
   // ── Step navigation ────────────────────────────────
@@ -403,6 +412,7 @@
     document.getElementById('step4').hidden = true;
     outputArea.hidden = true;
     loadingState.hidden = false;
+    updateEmptyState();
     loadingMsg.textContent = 'Building your outreach kit…';
     $('generateBtn').disabled = true;
 
@@ -426,6 +436,7 @@
     } finally {
       loadingState.hidden = true;
       $('generateBtn').disabled = false;
+      updateEmptyState();
     }
   }
 
@@ -444,6 +455,7 @@
     if (selectedPath === 'quoting') renderQuotingOutputs(generatedOutputs);
 
     outputArea.hidden = false;
+    updateEmptyState();
   }
 
   function reapplyTheme() {
@@ -776,6 +788,7 @@
     renderConcernChip();
     outputArea.hidden = true;
     document.getElementById('step4').hidden = false;
+    updateEmptyState();
     goToStep(4);
     autoSave('in_progress');
     showToast('Moved to Warm — review Step 4 and generate the follow-up email.');
@@ -795,6 +808,7 @@
     engagementNotesBlock.hidden = false;
     outputArea.hidden = true;
     document.getElementById('step4').hidden = false;
+    updateEmptyState();
     goToStep(4);
     autoSave('in_progress');
     showToast('Moved to Quoting — your engagement notes carried over. Review Step 4 and generate the proposal pack.');
@@ -893,6 +907,7 @@
 
     outputArea.hidden = true;
     document.getElementById('step4').hidden = false;
+    updateEmptyState();
     hideError();
     autoSaveReady = true;
     goToStep(1);
@@ -949,6 +964,7 @@
     } else {
       outputArea.hidden = true;
       document.getElementById('step4').hidden = false;
+      updateEmptyState();
     }
 
     currentStep = sess.currentStep || (generatedOutputs ? 4 : 1);
@@ -972,6 +988,63 @@
     sessionsEmptyRow.hidden = sessions.length !== 0;
     sessionCards.innerHTML = '';
     sessions.forEach(sess => sessionCards.appendChild(buildSessionCardEl(sess, false)));
+    renderDigest(sessions);
+  }
+
+  // ── Digest — rule-based, deterministic, no AI call ─────────────────
+  // Flags sessions that have gone quiet: sent-but-no-follow-up, generated-but-not-sent,
+  // or left mid-wizard. Threshold is STALE_DAYS. Sorted most-stale first.
+  function daysSince(ts) {
+    const ms = typeof ts === 'number' ? ts : new Date(ts).getTime();
+    if (isNaN(ms)) return 0;
+    return (Date.now() - ms) / 86400000;
+  }
+
+  function computeDigest(sessions) {
+    const items = [];
+    sessions.forEach(sess => {
+      if (sess.status === 'sent') {
+        const d = sess.sentAt ? daysSince(sess.sentAt) : daysSince(sess.updatedAt);
+        if (d >= STALE_DAYS) {
+          const nextPath = sess.path === 'cold' ? 'Warm' : sess.path === 'warm' ? 'Quoting' : null;
+          items.push({
+            id: sess.id,
+            company: sess.company || 'Unnamed prospect',
+            detail: `Sent ${Math.floor(d)}d ago as ${PATH_LABELS[sess.path] || sess.path}${nextPath ? ` — ready to move to ${nextPath}?` : ' — no update since.'}`,
+            days: d
+          });
+        }
+      } else if (sess.status === 'generated') {
+        const d = daysSince(sess.updatedAt);
+        if (d >= STALE_DAYS) {
+          items.push({ id: sess.id, company: sess.company || 'Unnamed prospect', detail: `Outputs ready ${Math.floor(d)}d ago — not yet marked sent.`, days: d });
+        }
+      } else if (sess.status === 'in_progress') {
+        const d = daysSince(sess.updatedAt);
+        if (d >= STALE_DAYS && (sess.currentStep || 1) < 4) {
+          items.push({ id: sess.id, company: sess.company || 'Unnamed prospect', detail: `Left at Step ${sess.currentStep || 1} of 4, ${Math.floor(d)}d ago.`, days: d });
+        }
+      }
+    });
+    items.sort((a, b) => b.days - a.days);
+    return items;
+  }
+
+  function renderDigest(sessions) {
+    const items = computeDigest(sessions);
+    digestPanel.hidden = items.length === 0;
+    digestList.innerHTML = items.map(item => `
+      <li class="digest-item" data-id="${escHtml(item.id)}">
+        <span class="di-company">${escHtml(item.company)}</span><br/>
+        <span class="di-detail">${escHtml(item.detail)}</span>
+      </li>
+    `).join('');
+    digestList.querySelectorAll('.digest-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const sess = getSessions().find(s => s.id === el.dataset.id);
+        if (sess) resumeSession(sess);
+      });
+    });
   }
 
   function renderArchivedCards() {
