@@ -37,15 +37,47 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0;
 }
 
-.page { max-width: 960px; margin: 0 auto; padding: 0 20px 80px; }
+.page { padding: 0 0 40px; }
 
 /* ── Header ── */
-.app-header { padding: 28px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
-.app-header-inner { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; }
+.app-header { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+.app-header-inner { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; }
 .app-header h1 { font-size: 26px; margin-bottom: 6px; }
 .app-subtitle { color: var(--text-2); font-size: 14px; max-width: 560px; }
 .msp-name-field label { display:block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); margin-bottom: 4px; }
 .msp-name-field input { width: 220px; }
+
+/* ── Two-column layout: form/sessions sidebar (left) + generated output (right, the star) ── */
+.app-main {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 0;
+  max-width: 1400px;
+  margin: 0 auto;
+  align-items: start;
+}
+.col-form {
+  border-right: 1px solid var(--border);
+  padding: 20px 20px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 20px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+.col-output {
+  padding: 20px 28px 60px;
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .app-main { grid-template-columns: 1fr; }
+  .col-form { position: static; max-height: none; border-right: none; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
+}
+@media (max-width: 640px) {
+  .col-form, .col-output { padding-left: 14px; padding-right: 14px; }
+}
 
 /* ── Layout helpers ── */
 .panel, .card {
@@ -170,6 +202,13 @@ input:focus, select:focus, textarea:focus {
 
 .form-error { background: var(--danger-bg); color: var(--danger); border-radius: 4px; padding: 8px 12px; font-size: 13px; margin-top: 10px; }
 
+/* ── Output panel empty state (shown before first generate) ── */
+.output-empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; text-align: center; color: var(--text-3); }
+.output-empty-state[hidden] { display: none; }
+.output-empty-state .empty-icon { font-size: 40px; margin-bottom: 16px; opacity: 0.3; }
+.output-empty-state .empty-title { font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: 700; color: var(--text-2); margin-bottom: 6px; }
+.output-empty-state .empty-sub { font-size: 13px; max-width: 280px; line-height: 1.6; }
+
 /* ── Output area ── */
 .output-area { margin-top: 10px; }
 .output-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 8px; }
@@ -215,18 +254,19 @@ input:focus, select:focus, textarea:focus {
 .pp-item-link { font-size: 12px; font-weight: 600; color: var(--accent-2); text-decoration: none; margin-left: 30px; }
 .pp-item-link:hover { text-decoration: underline; }
 
-/* ── Sessions ── */
-.sessions-block { margin-bottom: 22px; }
+/* ── Sessions (now living in the narrow sticky sidebar) ── */
+.sessions-block { margin-bottom: 4px; }
 .sessions-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
-.sessions-head h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-2); }
-.sessions-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.sessions-block-empty { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 18px; }
+.sessions-head h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-2); }
+.sessions-head-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.sessions-head-actions button { font-size: 11px; padding: 5px 10px; }
+.sessions-block-empty { display: flex; flex-direction: column; gap: 8px; margin-bottom: 4px; }
 .sessions-block-empty[hidden] { display: none; }
 
-.session-cards { display: flex; gap: 12px; flex-wrap: wrap; }
+.session-cards { display: flex; flex-direction: column; gap: 8px; }
 .session-card {
-  background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px;
-  width: 200px; cursor: pointer; position: relative; transition: border-color 0.15s;
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;
+  width: 100%; cursor: pointer; position: relative; transition: border-color 0.15s;
 }
 .session-card:hover { border-color: var(--accent-border); }
 .session-card.current { border: 2px solid var(--accent); }
@@ -235,7 +275,7 @@ input:focus, select:focus, textarea:focus {
 .session-card .sc-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 6px; }
 .session-card .sc-date { font-size: 10.5px; color: var(--text-3); }
 .session-card .sc-history { font-size: 10.5px; color: var(--text-3); font-style: italic; margin-bottom: 4px; }
-.session-card .sc-actions { display: flex; gap: 6px; margin-top: 8px; }
+.session-card .sc-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
 .session-card .sc-actions button { font-size: 10px; padding: 2px 6px; border: 1px solid var(--border-2); background: var(--bg); cursor: pointer; }
 .sc-delete-icon {
   position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; border-radius: 50%;
@@ -244,6 +284,22 @@ input:focus, select:focus, textarea:focus {
   padding: 0; transition: all 0.12s;
 }
 .sc-delete-icon:hover { background: var(--danger-bg); color: var(--danger); border-color: var(--danger-bg); }
+
+/* ── Digest — rule-based "needs attention" summary, only shown when non-empty ── */
+.digest-panel { border-left: 3px solid var(--warn); background: var(--warn-bg); border-radius: 4px; padding: 10px 12px; margin-bottom: 4px; }
+.digest-panel[hidden] { display: none; }
+.digest-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--warn); margin-bottom: 6px; }
+.digest-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.digest-item { font-size: 12px; color: var(--text); line-height: 1.4; cursor: pointer; padding: 4px 6px; border-radius: 4px; }
+.digest-item:hover { background: rgba(255,255,255,0.5); }
+.digest-item .di-company { font-weight: 700; }
+.digest-item .di-detail { color: var(--text-2); }
+
+/* Narrow sidebar overrides — the 400px column is too tight for grids designed for full width */
+.col-form .form-grid { grid-template-columns: 1fr; }
+.col-form .path-cards { grid-template-columns: 1fr; }
+.col-form .swatches { flex-wrap: wrap; }
+.col-form .step-progress { flex-wrap: wrap; }
 .badge { font-family: 'Source Sans Pro', sans-serif; font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
 .badge-cold  { background: var(--info-bg); color: var(--info); }
 .badge-warm  { background: var(--warn-bg); color: var(--warn); }
