@@ -237,6 +237,8 @@ input:focus, select:focus, textarea:focus {
 .session-card .sc-history { font-size: 10.5px; color: var(--text-3); font-style: italic; margin-bottom: 4px; }
 .session-card .sc-actions { display: flex; gap: 6px; margin-top: 8px; }
 .session-card .sc-actions button { font-size: 10px; padding: 2px 6px; border: 1px solid var(--border-2); background: var(--bg); cursor: pointer; }
+.session-card .sc-actions button.sc-delete { color: var(--danger); border-color: var(--danger-bg); }
+.session-card .sc-actions button.sc-delete:hover { background: var(--danger-bg); }
 .badge { font-family: 'Source Sans Pro', sans-serif; font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
 .badge-cold  { background: var(--info-bg); color: var(--info); }
 .badge-warm  { background: var(--warn-bg); color: var(--warn); }
