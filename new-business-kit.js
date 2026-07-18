@@ -1004,7 +1004,7 @@
       <div class="sc-date">${fmtAge(sess.updatedAt)}</div>
       <div class="sc-actions">
         ${isArchived ? '<button data-act="restore">Restore</button><button data-act="delete">Delete</button>'
-                     : '<button data-act="archive">Archive</button><button data-act="duplicate">Duplicate</button><button data-act="export">Export</button>'}
+                     : '<button data-act="archive">Archive</button><button data-act="duplicate">Duplicate</button><button data-act="export">Export</button><button data-act="delete-active" class="sc-delete">Delete</button>'}
       </div>
     `;
     card.addEventListener('click', (e) => { if (e.target.tagName !== 'BUTTON') resumeSession(sess); });
@@ -1017,9 +1017,23 @@
         if (act === 'export') exportSession(sess);
         if (act === 'restore') restoreSession(sess.id);
         if (act === 'delete') deleteArchivedSession(sess.id);
+        if (act === 'delete-active') deleteActiveSession(sess.id);
       });
     });
     return card;
+  }
+
+  function deleteActiveSession(id) {
+    const sessions = getSessions();
+    const target = sessions.find(s => s.id === id);
+    if (!confirm(`Permanently delete ${target ? (target.company || 'this prospect') : 'this prospect'}? This cannot be undone — it will not go to Archived.`)) return;
+    saveSessions(sessions.filter(s => s.id !== id));
+    if (id === currentSessionId) {
+      const remaining = getSessions();
+      if (remaining.length) resumeSession(remaining[0]); else startNewSession();
+    }
+    renderSessionCards();
+    showToast('Prospect deleted.');
   }
 
   function archiveSession(id) {
