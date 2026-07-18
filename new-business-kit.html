@@ -179,11 +179,62 @@
         </button>
       </div>
 
+      <div class="engagement-notes field" id="engagementNotesBlock" hidden>
+        <label>What have you learned about this prospect so far?</label>
+        <p class="hint">Tap what applies — this is what makes your outputs feel specific instead of generic. Add a line or two below only if there's something worth quoting directly.</p>
+
+        <div class="pill-group" data-group="currentState">
+          <div class="pill-group-label">Current state</div>
+          <div class="pills" data-pill-group="currentState">
+            <button type="button" class="pill" data-label="No dedicated MSP today">No dedicated MSP today</button>
+            <button type="button" class="pill" data-label="Has an internal IT person">Has an internal IT person</button>
+            <button type="button" class="pill" data-label="Currently with another MSP">Currently with another MSP</button>
+            <button type="button" class="pill" data-label="Using consumer-grade tools (personal Dropbox, Gmail, etc.)">Using consumer-grade tools</button>
+            <button type="button" class="pill" data-label="No documented backup or disaster recovery plan">No documented backup/DR</button>
+            <button type="button" class="pill" data-label="Tools and data scattered across departments">Tools scattered across departments</button>
+          </div>
+        </div>
+
+        <div class="pill-group" data-group="concerns">
+          <div class="pill-group-label">Concerns raised</div>
+          <div class="pills" data-pill-group="concerns" id="concernPills">
+            <button type="button" class="pill" data-label="Security / data breach worry">Security / data breach worry</button>
+            <button type="button" class="pill" data-label="Cost unpredictability">Cost unpredictability</button>
+            <button type="button" class="pill" data-label="Past bad experience with an MSP">Past bad experience with an MSP</button>
+            <button type="button" class="pill" data-label="IT keeps pulling focus from the core business">IT pulls focus from the core business</button>
+            <button type="button" class="pill" data-label="Recent incident or near-miss">Recent incident or near-miss</button>
+            <!-- industry-specific concern chip injected here by JS -->
+          </div>
+        </div>
+
+        <div class="pill-group" data-group="decisionDynamics">
+          <div class="pill-group-label">Decision dynamics</div>
+          <div class="pills" data-pill-group="decisionDynamics">
+            <button type="button" class="pill" data-label="Single decision-maker">Single decision-maker</button>
+            <button type="button" class="pill" data-label="Multiple stakeholders involved">Multiple stakeholders involved</button>
+            <button type="button" class="pill" data-label="Budget-conscious">Budget-conscious</button>
+            <button type="button" class="pill" data-label="Comparing more than one provider">Comparing more than one provider</button>
+            <button type="button" class="pill" data-label="Time pressure — needs to move fast">Time pressure — needs to move fast</button>
+          </div>
+        </div>
+
+        <div class="pill-group" data-group="whatTheyWant">
+          <div class="pill-group-label">What they want</div>
+          <div class="pills" data-pill-group="whatTheyWant">
+            <button type="button" class="pill" data-label="Predictable costs">Predictable costs</button>
+            <button type="button" class="pill" data-label="Better security posture">Better security posture</button>
+            <button type="button" class="pill" data-label="Compliance readiness">Compliance readiness</button>
+            <button type="button" class="pill" data-label="Room to grow without re-architecting">Room to grow without re-architecting</button>
+            <button type="button" class="pill" data-label="Fewer IT headaches">Fewer IT headaches</button>
+            <button type="button" class="pill" data-label="A strategic partner, not just a help desk">A strategic partner, not a help desk</button>
+          </div>
+        </div>
+
+        <textarea id="engagementFreeText" rows="3" placeholder="Anything specific worth referencing directly — e.g. 'Miguel mentioned a recent bar association notice on encryption requirements.'"></textarea>
+      </div>
+
       <div class="warm-extra field" id="warmExtra" hidden>
-        <label for="meetingNotes">What did you actually discuss in that first conversation?</label>
-        <p class="hint">This is what makes the follow-up feel specific — not a repeat of your cold email. Mention what they told you about their situation, any concerns they raised, what seemed to matter to them.</p>
-        <textarea id="meetingNotes" rows="3" placeholder="e.g. Miguel mentioned they're a 6-person firm, currently using a mix of personal Dropbox for case files, worried about a recent bar association notice on encryption requirements. Budget-conscious but open to a phased approach."></textarea>
-        <label class="checkbox-label" style="margin-top:12px;">
+        <label class="checkbox-label">
           <input type="checkbox" id="includeFirstImpression" />
           Also generate a First Impression widget (if sending a quote alongside)
         </label>
@@ -298,6 +349,36 @@
 
       <!-- QUOTING OUTPUTS -->
       <div class="output-block" id="quotingOutputs" hidden>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h4>Proposal Opener Pack</h4>
+            <div class="panel-head-actions">
+              <button class="btn-accent" id="pushPackBtn">Push all 4 to Salesbuildr</button>
+            </div>
+          </div>
+          <p class="hint">These sit at the front of the proposal, ahead of the specs and pricing from your design desk. Names, company, and signature fields use live Salesbuildr merge tags — they'll resolve automatically per quote.</p>
+
+          <div class="proposal-pack-widgets" id="proposalPackWidgets">
+            <div class="pack-widget">
+              <div class="pack-widget-head"><h5>1. Welcome Letter</h5><button class="btn-secondary pack-copy-btn" data-widget="welcomeLetter">Copy HTML</button></div>
+              <div class="widget-preview-frame" id="welcomeLetterFrame"></div>
+            </div>
+            <div class="pack-widget">
+              <div class="pack-widget-head"><h5>2. We Understand the Problem</h5><button class="btn-secondary pack-copy-btn" data-widget="problemStatement">Copy HTML</button></div>
+              <div class="widget-preview-frame" id="problemStatementFrame"></div>
+            </div>
+            <div class="pack-widget">
+              <div class="pack-widget-head"><h5>3. Why It's Important</h5><button class="btn-secondary pack-copy-btn" data-widget="whyItMatters">Copy HTML</button></div>
+              <div class="widget-preview-frame" id="whyItMattersFrame"></div>
+            </div>
+            <div class="pack-widget">
+              <div class="pack-widget-head"><h5>4. What Our Solution Is</h5><button class="btn-secondary pack-copy-btn" data-widget="solutionApproach">Copy HTML</button></div>
+              <div class="widget-preview-frame" id="solutionApproachFrame"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="panel proposal-plan-panel">
           <div class="proposal-plan-head" id="proposalPlanHead"></div>
           <ol class="proposal-plan-list" id="proposalPlanList"></ol>
