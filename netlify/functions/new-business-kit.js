@@ -38,7 +38,6 @@ const TOOL_LIST = [
   'Service Tier Widget Builder',
   'Multi-Stakeholder Pack',
   'Case Study Widget',
-  'Cover Page Creator',
   'Compliance Sales Pack'
 ];
 
@@ -72,6 +71,19 @@ function sanitizeMergeTags(pack, company, contact) {
     out[key] = text;
   }
   return out;
+}
+
+// Reverse direction — for content that stays inside the app (never pushed to Salesbuildr,
+// e.g. the proposalPlan "why" lines), swap any merge-tag literal the model wrote back to
+// the real value so the rep never sees raw {{...}} text in the tool's own UI.
+function unsanitizeMergeTags(text, company, contact, mspName) {
+  if (typeof text !== 'string') return text;
+  const companyName = (company || '').trim() || 'this prospect';
+  const contactFirst = (contact || '').trim().split(/\s+/)[0] || 'the contact';
+  return text
+    .replace(/\{\{\s*company\.name\s*\}\}/gi, companyName)
+    .replace(/\{\{\s*contact\.firstName\s*\}\}/gi, contactFirst)
+    .replace(/\{\{\s*servicingBranch\.name\s*\}\}/gi, mspName || 'your MSP');
 }
 
 exports.handler = async (event) => {
@@ -198,13 +210,14 @@ The 4 pieces:
 4. solutionApproach — "What our solution is" (1-2 short paragraphs). The DIRECTION and APPROACH the MSP recommends (e.g. phased rollout, right-sized for their size, addressing their top priorities first) — never specific services, products, or line items, since those come from the MSP's own catalog in the sections that follow.
 
 === PART 2: PROPOSAL PLAN ===
+IMPORTANT: this part is displayed only inside the MSP's own tool as advisory text for the rep to read — it is never pushed to Salesbuildr. Do NOT use merge tag placeholders like {{company.name}} here; write the actual company name (or "this prospect" / "they" if no name was given) and refer to the contact normally if needed. The merge-tag rule from Part 1 does not apply here.
 Recommend 3-5 hub tools MAXIMUM, chosen only from this exact list (use these exact strings for "tool"): ${TOOL_LIST.join(', ')}.
 Sequence matters: diagnostic tools first, value tools second, differentiation tools third.
 Rules to follow, using the engagement signals as your primary evidence:
 - Budget-conscious or price-sensitive signals: lead with IT Maturity Assessment Widget (value/risk before price).
 - Multiple stakeholders involved: always include Multi-Stakeholder Pack.
 - A compliance-related concern was raised, or the industry has strong compliance needs (healthcare, finance, legal): always include Cyber Insurance Readiness Widget or Compliance Sales Pack.
-- No dedicated MSP today, or this is a new relationship with no prior work together: always include Case Study Widget or Cover Page Creator for credibility.
+- No dedicated MSP today, or this is a new relationship with no prior work together: always include Case Study Widget for credibility.
 - Comparing more than one provider, or tiered options would help avoid single-price anchoring: include Service Tier Widget Builder.
 - Include Industry Proposal Pack when it fits the sector.
 Each recommendation needs a one-line "why this, why now" tied to the specific prospect context — advisory, confident tone.
@@ -261,6 +274,12 @@ Return JSON only — no preamble, no markdown, no backticks. Match this exact sh
 
     if (path === 'quoting' && parsed.proposalPack) {
       parsed.proposalPack = sanitizeMergeTags(parsed.proposalPack, company, contact);
+    }
+    if (path === 'quoting' && Array.isArray(parsed.proposalPlan)) {
+      parsed.proposalPlan = parsed.proposalPlan.map(item => ({
+        ...item,
+        why: unsanitizeMergeTags(item.why, company, contact, mspName)
+      }));
     }
     if (path === 'warm' && parsed.firstImpressionWidget) {
       parsed.firstImpressionWidget = sanitizeMergeTags(parsed.firstImpressionWidget, company, contact);
