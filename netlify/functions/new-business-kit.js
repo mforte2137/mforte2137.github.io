@@ -52,6 +52,28 @@ function formatEngagementNotes(engagementNotes) {
   return lines.join('\n');
 }
 
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Safety net: if the model writes the literal company/contact name despite instructions,
+// swap it back to the live merge tag so a pushed widget never displays stale text.
+function sanitizeMergeTags(pack, company, contact) {
+  if (!pack) return pack;
+  const companyName = (company || '').trim();
+  const contactFirst = (contact || '').trim().split(/\s+/)[0] || '';
+  const out = {};
+  for (const key of Object.keys(pack)) {
+    let text = pack[key];
+    if (typeof text === 'string') {
+      if (companyName) text = text.replace(new RegExp(escapeRegex(companyName), 'gi'), '{{company.name}}');
+      if (contactFirst) text = text.replace(new RegExp('\\b' + escapeRegex(contactFirst) + '\\b', 'g'), '{{contact.firstName}}');
+    }
+    out[key] = text;
+  }
+  return out;
+}
+
 exports.handler = async (event) => {
   const headers = {
     'Content-Type': 'application/json',
@@ -148,9 +170,9 @@ Return JSON only — no preamble, no markdown, no backticks. Match this exact sh
     "nextStep": "1 concrete sentence with a timeframe, e.g. 'I'll send a proposal by Friday' or a specific day/time for a call"
   }${includeFirstImpression ? `,
   "firstImpressionWidget": {
-    "whyIndustry": "1-2 sentences on why the MSP works well with this industry specifically",
-    "engagementExpectations": "1-2 sentences on what the prospect can expect in the first 30/60/90 days",
-    "credibilityStatement": "1 sentence, a specific credibility statement relevant to that industry"
+    "whyIndustry": "1-2 sentences on why the MSP works well with this industry specifically. This is pushed to Salesbuildr as a widget — if you refer to the prospect's company by name, write the literal placeholder {{company.name}} instead of the actual name, and never address the contact by first name.",
+    "engagementExpectations": "1-2 sentences on what the prospect can expect in the first 30/60/90 days. Same rule: use {{company.name}} instead of the actual company name if referring to them; no first-name address.",
+    "credibilityStatement": "1 sentence, a specific credibility statement relevant to that industry. Same rule: use {{company.name}} instead of the actual company name if referring to them; no first-name address."
   }` : ''}
 }`;
     userMessage = `Write the warm follow-up email content${includeFirstImpression ? ' and First Impression widget content' : ''} for this prospect:\n\n${engagementContextBlock}`;
@@ -167,6 +189,7 @@ CRITICAL CONSTRAINTS for all 4 pieces:
 - Tone: peer-to-peer consultative — confident and warm, like a trusted advisor, not corporate or salesy.
 - Vertical fluency should show through one specific, genuine detail about the industry — not a vague "we understand your industry" claim.
 - Never invent statistics.
+- MERGE TAGS — IMPORTANT: whenever you refer to the prospect's company by name, write the literal placeholder text {{company.name}} — do NOT write the actual company name. Never address the contact by their first name anywhere in the body (the app already inserts "Dear {{contact.firstName}}," as a separate salutation line before welcomeLetter's body, so opening with their name again would be redundant) — use "you" / "your team" / "your practice" instead of a name. Do not write {{contact.firstName}} anywhere except naturally as flowing prose would use "you."
 
 The 4 pieces:
 1. welcomeLetter — A short, warm note (2-3 short paragraphs). Reinforce that being proactive/careful about this decision puts them ahead of peers in their industry who only address IT reactively — this should feel like validation of a smart decision, not a defensive purchase. Reference the engagement specifics naturally. End by briefly framing that what follows is built around their specific situation, not a generic package.
@@ -234,6 +257,13 @@ Return JSON only — no preamble, no markdown, no backticks. Match this exact sh
       parsed = JSON.parse(clean);
     } catch (e) {
       return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: 'AI returned invalid JSON.' }) };
+    }
+
+    if (path === 'quoting' && parsed.proposalPack) {
+      parsed.proposalPack = sanitizeMergeTags(parsed.proposalPack, company, contact);
+    }
+    if (path === 'warm' && parsed.firstImpressionWidget) {
+      parsed.firstImpressionWidget = sanitizeMergeTags(parsed.firstImpressionWidget, company, contact);
     }
 
     return {
