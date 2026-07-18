@@ -994,6 +994,7 @@
       : '';
 
     card.innerHTML = `
+      ${isArchived ? '' : '<button type="button" class="sc-delete-icon" data-act="delete-active" title="Delete permanently">✕</button>'}
       <div class="sc-company">${escHtml(sess.company || 'Unnamed prospect')}</div>
       <div class="sc-industry">${escHtml(sess.industry || '')}${sess.size ? ' · ' + escHtml(sess.size) : ''}</div>
       <div class="sc-badges">
@@ -1004,7 +1005,7 @@
       <div class="sc-date">${fmtAge(sess.updatedAt)}</div>
       <div class="sc-actions">
         ${isArchived ? '<button data-act="restore">Restore</button><button data-act="delete">Delete</button>'
-                     : '<button data-act="archive">Archive</button><button data-act="duplicate">Duplicate</button><button data-act="export">Export</button><button data-act="delete-active" class="sc-delete">Delete</button>'}
+                     : '<button data-act="archive">Archive</button><button data-act="duplicate">Duplicate</button><button data-act="export">Export</button>'}
       </div>
     `;
     card.addEventListener('click', (e) => { if (e.target.tagName !== 'BUTTON') resumeSession(sess); });
