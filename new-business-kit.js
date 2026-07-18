@@ -24,6 +24,22 @@
 
   const PATH_LABELS = { cold: 'Cold Prospect', warm: 'Warm Prospect', quoting: 'Ready to Quote' };
 
+  // Industry-specific "concern" pill — one dynamic chip added to the Concerns Raised group
+  const INDUSTRY_CONCERN_CHIPS = {
+    'Healthcare': 'HIPAA audit or risk assessment coming up',
+    'Legal': 'Bar complaint / client confidentiality risk',
+    'Financial Services': 'SEC/FINRA compliance requirement',
+    'Manufacturing': 'Downtime risk to production line',
+    'Construction': 'Jobsite data / mobile device security',
+    'Professional Services': 'Client data confidentiality expectations',
+    'Retail': 'PCI compliance / payment data security',
+    'Real Estate': 'Wire fraud / transaction security concerns',
+    'Nonprofit': 'Donor data privacy / grant compliance',
+    'Education': 'FERPA / student data privacy',
+    'Hospitality': 'PCI compliance / guest data security',
+    'Other': 'Industry-specific compliance requirement'
+  };
+
   // Known hub tools the Quoting path can recommend, and their URLs
   const TOOL_URLS = {
     'IT Maturity Assessment Widget': 'https://widgetcreator.netlify.app/it-maturity-assessment.html',
@@ -47,6 +63,7 @@
   let sessionStatus       = 'in_progress';
   let sentAt              = null;
   let stageHistory        = []; // [{ path, sentAt }] — breadcrumb of prior stages when transforming in place
+  let pendingPush         = null; // { widgets, titlePrefix, buttonEl } — awaiting Salesbuildr creds
   let autoSaveReady       = false;
   let showingArchived     = false;
 
@@ -75,7 +92,9 @@
         triggerEl = $('trigger'), triggerDetailEl = $('triggerDetail');
 
   const warmExtra = $('warmExtra');
-  const meetingNotesEl = $('meetingNotes');
+  const engagementNotesBlock = $('engagementNotesBlock');
+  const engagementFreeTextEl = $('engagementFreeText');
+  const concernPillsEl = $('concernPills');
   const includeFirstImpressionEl = $('includeFirstImpression');
 
   const summaryCard  = $('summaryCard');
@@ -116,6 +135,12 @@
   const quotingOutputs = $('quotingOutputs');
   const proposalPlanHead = $('proposalPlanHead');
   const proposalPlanList = $('proposalPlanList');
+  const proposalPackWidgets = $('proposalPackWidgets');
+  const welcomeLetterFrame = $('welcomeLetterFrame');
+  const problemStatementFrame = $('problemStatementFrame');
+  const whyItMattersFrame = $('whyItMattersFrame');
+  const solutionApproachFrame = $('solutionApproachFrame');
+  const pushPackBtn = $('pushPackBtn');
 
   const credsInline = $('credsInline');
   const pushApiKey   = $('pushApiKey');
@@ -154,7 +179,16 @@
       includeFirstImpression = includeFirstImpressionEl.checked;
       autoSave();
     });
-    meetingNotesEl.addEventListener('input', () => autoSave());
+    engagementFreeTextEl.addEventListener('input', () => autoSave());
+    engagementNotesBlock.addEventListener('click', (e) => {
+      const btn = e.target.closest('.pill');
+      if (!btn) return;
+      btn.classList.toggle('active');
+      autoSave();
+    });
+    industryEl.addEventListener('change', () => {
+      if (!engagementNotesBlock.hidden) renderConcernChip();
+    });
 
     colourSwatches.querySelectorAll('.swatch').forEach(s => s.addEventListener('click', () => selectSwatch(s)));
     colourPicker.addEventListener('input', () => {
@@ -192,8 +226,15 @@
     copyFollowUpBtn.addEventListener('click', () => copyToClipboard(followUpFrame.innerHTML, copyFollowUpBtn));
     copyWidgetBtn.addEventListener('click', () => copyToClipboard(widgetFrame.innerHTML, copyWidgetBtn));
     pushWidgetBtn.addEventListener('click', onPushWidgetClick);
+    proposalPackWidgets.addEventListener('click', (e) => {
+      const btn = e.target.closest('.pack-copy-btn');
+      if (!btn) return;
+      const frame = $(btn.dataset.widget + 'Frame');
+      if (frame) copyToClipboard(frame.innerHTML, btn);
+    });
+    pushPackBtn.addEventListener('click', onPushPackClick);
 
-    cancelCredsBtn.addEventListener('click', () => { credsInline.hidden = true; });
+    cancelCredsBtn.addEventListener('click', () => { credsInline.hidden = true; pendingPush = null; });
     saveAndPushBtn.addEventListener('click', onSaveAndPush);
 
     importBtn.addEventListener('click', () => importFile.click());
@@ -246,7 +287,11 @@
     }
     if (step === 3) {
       if (!selectedPath) return 'Choose where you are in the relationship.';
-      if (selectedPath === 'warm' && !meetingNotesEl.value.trim()) return 'Add a note on what you actually discussed — this is what makes the follow-up specific.';
+      if (selectedPath === 'warm' || selectedPath === 'quoting') {
+        const hasPill = engagementNotesBlock.querySelectorAll('.pill.active').length > 0;
+        const hasText = engagementFreeTextEl.value.trim().length > 0;
+        if (!hasPill && !hasText) return 'Add at least one engagement note — tap a pill or add a line of detail. This is what keeps the output specific.';
+      }
     }
     return null;
   }
@@ -254,10 +299,37 @@
   function selectPath(path) {
     selectedPath = path;
     document.querySelectorAll('.path-card').forEach(c => c.classList.toggle('active', c.dataset.path === path));
+    const needsEngagement = path === 'warm' || path === 'quoting';
+    engagementNotesBlock.hidden = !needsEngagement;
+    if (needsEngagement) renderConcernChip();
     warmExtra.hidden = path !== 'warm';
-    $('toStep3') && ($('toStep3'));
     $('toStep4').disabled = false;
     autoSave();
+  }
+
+  // ── Engagement notes pills ─────────────────────────
+  function renderConcernChip() {
+    const existing = concernPillsEl.querySelector('[data-dynamic="true"]');
+    if (existing) existing.remove();
+    const label = INDUSTRY_CONCERN_CHIPS[industryEl.value];
+    if (label) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pill';
+      btn.dataset.label = label;
+      btn.dataset.dynamic = 'true';
+      btn.textContent = label;
+      concernPillsEl.appendChild(btn);
+    }
+  }
+
+  function getSelectedPillLabels() {
+    return Array.from(engagementNotesBlock.querySelectorAll('.pill.active')).map(p => p.dataset.label);
+  }
+
+  function setSelectedPills(labels) {
+    const set = new Set(labels || []);
+    engagementNotesBlock.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', set.has(p.dataset.label)));
   }
 
   // ── Colour theme ───────────────────────────────────
@@ -287,7 +359,7 @@
       outs = ['Outlook-ready HTML follow-up email'];
       if (includeFirstImpression) outs.push('First Impression widget for Salesbuildr');
     } else if (selectedPath === 'quoting') {
-      outs = ['Personalised proposal plan — 3–5 recommended hub tools in sequence'];
+      outs = ['Proposal opener pack — welcome letter, problem, why it matters, solution approach (ready to push to Salesbuildr)', 'Personalised proposal plan — 3–5 recommended hub tools in sequence'];
     }
 
     summaryCard.innerHTML = `
@@ -310,7 +382,10 @@
       role: roleEl.value || 'Unknown',
       trigger: triggerEl.value,
       triggerDetail: triggerDetailEl.value.trim(),
-      meetingNotes: meetingNotesEl.value.trim(),
+      engagementNotes: {
+        pills: getSelectedPillLabels(),
+        text: engagementFreeTextEl.value.trim()
+      },
       mspName: mspNameEl.value.trim() || 'Your MSP',
       includeFirstImpression
     };
@@ -374,6 +449,7 @@
   function reapplyTheme() {
     if (selectedPath === 'cold') renderColdOutputs(generatedOutputs);
     if (selectedPath === 'warm') renderWarmOutputs(generatedOutputs);
+    if (selectedPath === 'quoting') renderProposalPack(generatedOutputs.proposalPack);
     autoSave();
   }
 
@@ -479,6 +555,8 @@
 
   // -- Quoting --
   function renderQuotingOutputs(data) {
+    renderProposalPack(data.proposalPack || {});
+
     const fd = buildPayload();
     proposalPlanHead.innerHTML = `
       <div class="pp-title">Recommended proposal structure for:</div>
@@ -495,6 +573,84 @@
     }).join('');
   }
 
+  const PACK_PARA_STYLE = 'margin:0 0 12px 0;font-size:13px;color:#4B5563;line-height:1.7;';
+
+  function wrapParagraphs(text, style) {
+    return String(text || '')
+      .split(/\n+/)
+      .map(p => p.trim())
+      .filter(Boolean)
+      .map(p => `<p style="${style}">${escHtml(p)}</p>`)
+      .join('');
+  }
+
+  function renderProposalPack(pack) {
+    pack = pack || {};
+    welcomeLetterFrame.innerHTML = buildWelcomeLetterHtml(pack.welcomeLetter || '', currentTheme);
+    problemStatementFrame.innerHTML = buildProblemStatementHtml(pack.problemStatement || '', currentTheme);
+    whyItMattersFrame.innerHTML = buildWhyItMattersHtml(pack.whyItMatters || '', currentTheme);
+    solutionApproachFrame.innerHTML = buildSolutionApproachHtml(pack.solutionApproach || '', currentTheme);
+  }
+
+  // These four widgets are pushed to Salesbuildr — names/company/signature use live merge
+  // tags ({{contact.firstName}}, {{company.name}}, {{servicingBranch.name}}, {{creator.*}})
+  // that Salesbuildr resolves per-quote. Do not substitute local values for these.
+  function buildWelcomeLetterHtml(body, hex) {
+    return `<div style="background:#ffffff;border:1px solid #e3e7ee;border-top:3px solid ${hex};padding:26px 28px;width:100%;">
+  <p style="margin:0 0 4px 0;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#9CA3AF;">{{servicingBranch.name}}</p>
+  <h5 style="margin:0 0 16px 0;font-size:16px;font-weight:700;color:${hex};">A Note Before We Get Into the Details</h5>
+  <p style="margin:0 0 12px 0;font-size:13px;color:#4B5563;line-height:1.7;">Dear {{contact.firstName}},</p>
+  ${wrapParagraphs(body, PACK_PARA_STYLE)}
+  <p style="margin:20px 0 0 0;font-size:13px;color:#0B0E14;line-height:1.7;">
+    Warm regards,<br/>
+    <strong>{{creator.fullName}}</strong><br/>
+    {{creator.role}}<br/>
+    {{servicingBranch.name}}<br/>
+    {{creator.phone}} · {{creator.email}}
+  </p>
+</div>`;
+  }
+
+  function buildProblemStatementHtml(body, hex) {
+    return `<div style="background:#ffffff;border:1px solid #e3e7ee;border-top:3px solid ${hex};overflow:hidden;width:100%;">
+  <div style="background:linear-gradient(135deg,${hex} 0%,${hex} 100%);padding:16px 20px;">
+    <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.65);margin-bottom:4px;">Understanding Your Situation</div>
+    <h5 style="margin:0;font-size:15px;font-weight:700;color:#ffffff;">We Understand the Problem</h5>
+  </div>
+  <div style="padding:18px 20px;">
+    ${wrapParagraphs(body, PACK_PARA_STYLE)}
+  </div>
+  <div style="background:#f4f7fb;border-top:1px solid #e3e7ee;padding:8px 20px;font-size:11px;color:#9CA3AF;">Prepared for {{company.name}}</div>
+</div>`;
+  }
+
+  function buildWhyItMattersHtml(body, hex) {
+    return `<div style="background:#ffffff;border:1px solid #e3e7ee;border-top:3px solid ${hex};overflow:hidden;width:100%;">
+  <div style="background:linear-gradient(135deg,${hex} 0%,${hex} 100%);padding:16px 20px;">
+    <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.65);margin-bottom:4px;">The Stakes</div>
+    <h5 style="margin:0;font-size:15px;font-weight:700;color:#ffffff;">Why It's Important</h5>
+  </div>
+  <div style="padding:18px 20px;">
+    ${wrapParagraphs(body, PACK_PARA_STYLE)}
+  </div>
+  <div style="background:#f4f7fb;border-top:1px solid #e3e7ee;padding:8px 20px;font-size:11px;color:#9CA3AF;">Prepared for {{company.name}}</div>
+</div>`;
+  }
+
+  function buildSolutionApproachHtml(body, hex) {
+    return `<div style="background:#ffffff;border:1px solid #e3e7ee;border-top:3px solid ${hex};overflow:hidden;width:100%;">
+  <div style="background:linear-gradient(135deg,${hex} 0%,${hex} 100%);padding:16px 20px;">
+    <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.65);margin-bottom:4px;">Our Recommended Approach</div>
+    <h5 style="margin:0;font-size:15px;font-weight:700;color:#ffffff;">What Our Solution Is</h5>
+  </div>
+  <div style="padding:18px 20px;">
+    ${wrapParagraphs(body, PACK_PARA_STYLE)}
+    <p style="margin:14px 0 0 0;font-size:11.5px;color:#9CA3AF;font-style:italic;">Specific services, licensing, and investment are detailed in the sections that follow.</p>
+  </div>
+  <div style="background:#f4f7fb;border-top:1px solid #e3e7ee;padding:8px 20px;font-size:11px;color:#9CA3AF;">Prepared for {{company.name}} · {{servicingBranch.name}}</div>
+</div>`;
+  }
+
   // ── Copy / Push ────────────────────────────────────
   function copyToClipboard(text, btn) {
     navigator.clipboard.writeText(text).then(() => {
@@ -504,15 +660,34 @@
     }).catch(() => alert('Could not copy to clipboard.'));
   }
 
-  function onPushWidgetClick() {
+  function requestPush(widgets, titlePrefix, buttonEl) {
     const apiKey = localStorage.getItem('sb_api_key');
     const tenantUrl = localStorage.getItem('sb_tenant_url');
     if (!apiKey || !tenantUrl) {
+      pendingPush = { widgets, titlePrefix, buttonEl };
       credsInline.hidden = false;
       credsInline.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       return;
     }
-    doPush(apiKey, tenantUrl);
+    doPush(widgets, titlePrefix, buttonEl, apiKey, tenantUrl);
+  }
+
+  function onPushWidgetClick() {
+    const fd = buildPayload();
+    const title = `First Impression — ${fd.industry}${fd.company ? ' — ' + fd.company : ''}`;
+    requestPush([{ type: 'html', content: widgetFrame.innerHTML, title: 'First Impression Widget' }], title, pushWidgetBtn);
+  }
+
+  function onPushPackClick() {
+    const fd = buildPayload();
+    const widgets = [
+      { type: 'html', content: welcomeLetterFrame.innerHTML, title: 'Welcome Letter' },
+      { type: 'html', content: problemStatementFrame.innerHTML, title: 'We Understand the Problem' },
+      { type: 'html', content: whyItMattersFrame.innerHTML, title: "Why It's Important" },
+      { type: 'html', content: solutionApproachFrame.innerHTML, title: 'What Our Solution Is' }
+    ];
+    const prefix = `Proposal Opener — ${fd.industry}${fd.company ? ' — ' + fd.company : ''}`;
+    requestPush(widgets, prefix, pushPackBtn);
   }
 
   function onSaveAndPush() {
@@ -522,35 +697,37 @@
     localStorage.setItem('sb_api_key', apiKey);
     localStorage.setItem('sb_tenant_url', tenantUrl);
     credsInline.hidden = true;
-    doPush(apiKey, tenantUrl);
+    if (pendingPush) {
+      const { widgets, titlePrefix, buttonEl } = pendingPush;
+      pendingPush = null;
+      doPush(widgets, titlePrefix, buttonEl, apiKey, tenantUrl);
+    }
   }
 
-  async function doPush(apiKey, tenantUrl) {
+  async function doPush(widgets, titlePrefix, buttonEl, apiKey, tenantUrl) {
     pushStatus.hidden = true;
-    pushWidgetBtn.disabled = true;
-    pushWidgetBtn.textContent = 'Pushing…';
-
-    const html = widgetFrame.innerHTML;
-    const fd = buildPayload();
-    const title = `First Impression — ${fd.industry}${fd.company ? ' — ' + fd.company : ''}`;
+    const origLabel = buttonEl.textContent;
+    buttonEl.disabled = true;
+    buttonEl.textContent = 'Pushing…';
 
     try {
       const res = await fetch('/api/push-widgets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ widgets: [{ type: 'html', content: html, title }], prefix: title, apiKey, tenantUrl })
+        body: JSON.stringify({ widgets, prefix: titlePrefix, apiKey, tenantUrl })
       });
       const data = await res.json();
       if (data.ok || (data.successCount && data.successCount > 0)) {
-        showPushStatus('✓ Widget pushed to Salesbuildr successfully.', 'success');
+        const count = data.successCount || widgets.length;
+        showPushStatus(`✓ ${count} widget${count === 1 ? '' : 's'} pushed to Salesbuildr successfully.`, 'success');
       } else {
         showPushStatus('Push failed: ' + (data.error || 'Unknown error. Check your credentials.'), 'error');
       }
     } catch (e) {
       showPushStatus('Push failed: ' + (e.message || 'Network error.'), 'error');
     } finally {
-      pushWidgetBtn.disabled = false;
-      pushWidgetBtn.textContent = 'Push to Salesbuildr';
+      buttonEl.disabled = false;
+      buttonEl.textContent = origLabel;
     }
   }
 
@@ -589,9 +766,12 @@
     sentAt = null;
     generatedOutputs = null;
     lastPayload = null;
-    meetingNotesEl.value = '';
+    setSelectedPills([]);
+    engagementFreeTextEl.value = '';
     document.querySelectorAll('.path-card').forEach(c => c.classList.toggle('active', c.dataset.path === 'warm'));
     warmExtra.hidden = false;
+    engagementNotesBlock.hidden = false;
+    renderConcernChip();
     outputArea.hidden = true;
     document.getElementById('step4').hidden = false;
     goToStep(4);
@@ -601,6 +781,7 @@
 
   function onMoveToQuoting() {
     // Transform this session in place — same card, same id, no duplicate.
+    // Engagement notes carry forward unchanged — same conversation, same signal.
     stageHistory.push({ path: selectedPath, sentAt });
     selectedPath = 'quoting';
     sessionStatus = 'in_progress';
@@ -609,11 +790,12 @@
     lastPayload = null;
     document.querySelectorAll('.path-card').forEach(c => c.classList.toggle('active', c.dataset.path === 'quoting'));
     warmExtra.hidden = true;
+    engagementNotesBlock.hidden = false;
     outputArea.hidden = true;
     document.getElementById('step4').hidden = false;
     goToStep(4);
     autoSave('in_progress');
-    showToast('Moved to Quoting — review Step 4 and generate the proposal plan.');
+    showToast('Moved to Quoting — your engagement notes carried over. Review Step 4 and generate the proposal pack.');
   }
 
   // ── Sessions ───────────────────────────────────────
@@ -636,7 +818,7 @@
       role: fd.role,
       trigger: fd.trigger,
       triggerDetail: fd.triggerDetail,
-      meetingNotes: fd.meetingNotes,
+      engagementNotes: fd.engagementNotes,
       path: selectedPath,
       includeFirstImpression,
       currentStep,
@@ -687,7 +869,9 @@
     companyEl.value = ''; industryEl.value = ''; sizeEl.value = '';
     contactEl.value = ''; roleEl.value = '';
     triggerEl.value = ''; triggerDetailEl.value = '';
-    meetingNotesEl.value = '';
+    setSelectedPills([]);
+    engagementFreeTextEl.value = '';
+    engagementNotesBlock.hidden = true;
     selectedPath = null;
     includeFirstImpression = false;
     includeFirstImpressionEl.checked = false;
@@ -723,12 +907,21 @@
     roleEl.value = sess.role || '';
     triggerEl.value = sess.trigger || '';
     triggerDetailEl.value = sess.triggerDetail || '';
-    meetingNotesEl.value = sess.meetingNotes || '';
 
     selectedPath = sess.path || null;
     includeFirstImpression = !!sess.includeFirstImpression;
     includeFirstImpressionEl.checked = includeFirstImpression;
     warmExtra.hidden = selectedPath !== 'warm';
+    const needsEngagement = selectedPath === 'warm' || selectedPath === 'quoting';
+    engagementNotesBlock.hidden = !needsEngagement;
+    if (needsEngagement) {
+      renderConcernChip();
+      setSelectedPills(sess.engagementNotes && sess.engagementNotes.pills);
+      engagementFreeTextEl.value = (sess.engagementNotes && sess.engagementNotes.text) || '';
+    } else {
+      setSelectedPills([]);
+      engagementFreeTextEl.value = '';
+    }
     document.querySelectorAll('.path-card').forEach(c => c.classList.toggle('active', c.dataset.path === selectedPath));
     $('toStep4').disabled = !selectedPath;
 
