@@ -277,6 +277,16 @@
     autoSave();
   }
 
+  // Jumps straight to a step, skipping the validation gate — used by generate() so that
+  // Step 4 (and its #formError) is always the visible panel when Generate/Regenerate runs,
+  // regardless of which step the person was actually looking at when they clicked it.
+  function goToStepUnchecked(n) {
+    currentStep = n;
+    document.querySelectorAll('[data-step-panel]').forEach(p => { p.hidden = Number(p.dataset.stepPanel) !== n; });
+    if (n === 4) buildSummaryCard();
+    updateStepProgress();
+  }
+
   function updateStepProgress() {
     document.querySelectorAll('.step-node').forEach(node => {
       const s = Number(node.dataset.step);
@@ -403,12 +413,18 @@
   async function generate() {
     hideError();
     const stepErr = validateStep(3) || validateStep(2) || validateStep(1);
-    if (stepErr) { showError(stepErr); return; }
+    if (stepErr) {
+      // Surface the error where it's visible — jump to Step 4 first if we're not already there,
+      // since #formError lives inside the Step 4 panel and is invisible from any other step.
+      goToStepUnchecked(4);
+      showError(stepErr);
+      return;
+    }
 
     const payload = buildPayload();
     lastPayload = payload;
 
-    document.getElementById('step4').hidden = true;
+    goToStepUnchecked(4);
     outputArea.hidden = true;
     loadingState.hidden = false;
     updateEmptyState();
