@@ -536,11 +536,12 @@
 </table>`;
   }
 
+  // Pushed to Salesbuildr — use live merge tags for name/company, not local literal values.
   function buildFirstImpressionWidgetHtml(w, hex, fd) {
     return `<div style="background:#ffffff;border:1px solid #e3e7ee;border-top:3px solid ${hex};overflow:hidden;width:100%;">
   <div style="background:linear-gradient(135deg,${hex} 0%,${hex} 100%);padding:16px 20px;">
     <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.65);margin-bottom:4px;">First Impression</div>
-    <h5 style="margin:0;font-size:15px;font-weight:700;color:#ffffff;">${escHtml(fd.mspName)} for ${escHtml(fd.industry)} Businesses</h5>
+    <h5 style="margin:0;font-size:15px;font-weight:700;color:#ffffff;">{{servicingBranch.name}} for ${escHtml(fd.industry)} Businesses</h5>
   </div>
   <div style="padding:16px 20px;">
     <h6 style="margin:0 0 6px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:${hex};">Why we work with ${escHtml(fd.industry)} businesses</h6>
@@ -550,6 +551,7 @@
     <h6 style="margin:0 0 6px 0;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:${hex};">Why us</h6>
     <p style="margin:0;font-size:13px;color:#4B5563;line-height:1.6;">${escHtml(w.credibilityStatement || '')}</p>
   </div>
+  <div style="background:#f4f7fb;border-top:1px solid #e3e7ee;padding:8px 20px;font-size:11px;color:#9CA3AF;">Prepared for {{company.name}}</div>
 </div>`;
   }
 
