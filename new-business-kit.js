@@ -802,11 +802,10 @@
     engagementNotesBlock.hidden = false;
     renderConcernChip();
     outputArea.hidden = true;
-    document.getElementById('step4').hidden = false;
     updateEmptyState();
-    goToStep(4);
+    goToStepUnchecked(3);
     autoSave('in_progress');
-    showToast('Moved to Warm — review Step 4 and generate the follow-up email.');
+    showToast('Moved to Warm — add a quick engagement note below, then continue to generate.');
   }
 
   function onMoveToQuoting() {
@@ -822,9 +821,8 @@
     warmExtra.hidden = true;
     engagementNotesBlock.hidden = false;
     outputArea.hidden = true;
-    document.getElementById('step4').hidden = false;
     updateEmptyState();
-    goToStep(4);
+    goToStepUnchecked(4);
     autoSave('in_progress');
     showToast('Moved to Quoting — your engagement notes carried over. Review Step 4 and generate the proposal pack.');
   }
