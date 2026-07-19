@@ -1110,12 +1110,14 @@
           : '<button data-act="archive">Archive</button><button data-act="duplicate">Duplicate</button><button data-act="export">Export</button>'}
       </div>
       <div class="sc-company">${escHtml(sess.company || 'Unnamed prospect')}</div>
-      <div class="sc-industry">${escHtml(sess.industry || '')}${sess.size ? ' · ' + escHtml(sess.size) : ''}</div>
+      <div class="sc-meta-row">
+        <span class="sc-industry">${escHtml(sess.industry || '')}${sess.size ? ' · ' + escHtml(sess.size) : ''}</span>
+        <span class="sc-date">${fmtAge(sess.updatedAt)}</span>
+      </div>
       <div class="sc-badges">
         <span class="badge ${pathBadgeClass}">${pathLabel}</span>
         <span class="badge ${stageBadgeClass}">${stageLabel}</span>
       </div>
-      <div class="sc-date">${fmtAge(sess.updatedAt)}</div>
     `;
     card.addEventListener('click', (e) => { if (e.target.tagName !== 'BUTTON') resumeSession(sess); });
     card.querySelectorAll('button').forEach(btn => {
