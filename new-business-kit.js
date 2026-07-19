@@ -202,6 +202,9 @@
     industryEl.addEventListener('change', () => {
       if (!engagementNotesBlock.hidden) renderConcernChip();
     });
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.sc-menu').forEach(m => m.hidden = true);
+    });
 
     colourSwatches.querySelectorAll('.swatch').forEach(s => s.addEventListener('click', () => selectSwatch(s)));
     colourPicker.addEventListener('input', () => {
@@ -1091,30 +1094,44 @@
     const pathLabel = { cold: '🔵 Cold', warm: '🟡 Warm', quoting: '🟢 Quoting' }[sess.path] || 'No path yet';
     const stageBadgeClass = sess.status === 'sent' ? 'badge-sent' : (sess.status === 'generated' ? 'badge-generated' : 'badge-progress');
     const stageLabel = sess.status === 'sent' ? 'Sent' : (sess.status === 'generated' ? 'Generated' : `Step ${sess.currentStep || 1} of 4`);
-    const historyLine = (sess.stageHistory && sess.stageHistory.length)
-      ? `<div class="sc-history">Was ${sess.stageHistory.map(h => PATH_LABELS[h.path] || h.path).join(' → ')}${sess.stageHistory[sess.stageHistory.length - 1].sentAt ? ' · sent ' + fmtDate(sess.stageHistory[sess.stageHistory.length - 1].sentAt) : ''}</div>`
+    const historyTitle = (sess.stageHistory && sess.stageHistory.length)
+      ? `Was ${sess.stageHistory.map(h => PATH_LABELS[h.path] || h.path).join(' → ')}${sess.stageHistory[sess.stageHistory.length - 1].sentAt ? ' · sent ' + fmtDate(sess.stageHistory[sess.stageHistory.length - 1].sentAt) : ''}`
       : '';
+    if (historyTitle) card.title = historyTitle;
 
     card.innerHTML = `
-      ${isArchived ? '' : '<button type="button" class="sc-delete-icon" data-act="delete-active" title="Delete permanently">✕</button>'}
+      <div class="sc-icon-row">
+        <button type="button" class="sc-menu-btn" data-act="menu" title="More actions">⋯</button>
+        ${isArchived ? '' : '<button type="button" class="sc-delete-icon" data-act="delete-active" title="Delete permanently">✕</button>'}
+      </div>
+      <div class="sc-menu" hidden>
+        ${isArchived
+          ? '<button data-act="restore">Restore</button><button data-act="delete">Delete permanently</button>'
+          : '<button data-act="archive">Archive</button><button data-act="duplicate">Duplicate</button><button data-act="export">Export</button>'}
+      </div>
       <div class="sc-company">${escHtml(sess.company || 'Unnamed prospect')}</div>
       <div class="sc-industry">${escHtml(sess.industry || '')}${sess.size ? ' · ' + escHtml(sess.size) : ''}</div>
       <div class="sc-badges">
         <span class="badge ${pathBadgeClass}">${pathLabel}</span>
         <span class="badge ${stageBadgeClass}">${stageLabel}</span>
       </div>
-      ${historyLine}
       <div class="sc-date">${fmtAge(sess.updatedAt)}</div>
-      <div class="sc-actions">
-        ${isArchived ? '<button data-act="restore">Restore</button><button data-act="delete">Delete</button>'
-                     : '<button data-act="archive">Archive</button><button data-act="duplicate">Duplicate</button><button data-act="export">Export</button>'}
-      </div>
     `;
     card.addEventListener('click', (e) => { if (e.target.tagName !== 'BUTTON') resumeSession(sess); });
     card.querySelectorAll('button').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const act = btn.dataset.act;
+        const menuEl = card.querySelector('.sc-menu');
+
+        if (act === 'menu') {
+          const wasHidden = menuEl.hidden;
+          document.querySelectorAll('.sc-menu').forEach(m => m.hidden = true);
+          menuEl.hidden = !wasHidden;
+          return;
+        }
+        if (menuEl) menuEl.hidden = true;
+
         if (act === 'archive') archiveSession(sess.id);
         if (act === 'duplicate') duplicateSession(sess);
         if (act === 'export') exportSession(sess);
