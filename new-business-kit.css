@@ -121,14 +121,14 @@ input:focus, select:focus, textarea:focus {
 .btn-primary:disabled, .btn-accent:disabled, .btn-secondary:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ── Step progress ── */
-.step-progress { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 8px 0 22px; }
-.step-node { display: flex; flex-direction: column; align-items: center; gap: 4px; opacity: 0.4; }
+.step-progress { display: flex; align-items: center; justify-content: center; gap: 4px; margin: 8px 0 18px; flex-wrap: nowrap; }
+.step-node { display: flex; flex-direction: column; align-items: center; gap: 3px; opacity: 0.4; }
 .step-node.active, .step-node.done { opacity: 1; }
-.step-num { width: 26px; height: 26px; border-radius: 50%; background: var(--bg-row); border: 1px solid var(--border-2); display: flex; align-items: center; justify-content: center; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 12px; }
+.step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--bg-row); border: 1px solid var(--border-2); display: flex; align-items: center; justify-content: center; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 11px; flex-shrink: 0; }
 .step-node.active .step-num { background: var(--accent); border-color: var(--accent); color: #fff; }
 .step-node.done .step-num { background: var(--good); border-color: var(--good); color: #fff; }
-.step-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-2); }
-.step-line { width: 40px; height: 1px; background: var(--border-2); margin-top: -14px; }
+.step-label { font-size: 9px; text-transform: none; letter-spacing: 0; color: var(--text-2); max-width: 46px; text-align: center; line-height: 1.15; }
+.step-line { width: 18px; height: 1px; background: var(--border-2); margin-top: -13px; flex-shrink: 0; }
 
 .save-indicator { position: fixed; top: 14px; right: 20px; font-size: 12px; font-weight: 600; color: var(--good); background: var(--good-bg); padding: 4px 12px; border-radius: 20px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 50; }
 .save-indicator.visible { opacity: 1; }
@@ -310,7 +310,6 @@ input:focus, select:focus, textarea:focus {
 /* Narrow sidebar overrides — the 400px column is too tight for grids designed for full width */
 .col-form .form-grid { grid-template-columns: 1fr; }
 .col-form .swatches { flex-wrap: wrap; }
-.col-form .step-progress { flex-wrap: wrap; }
 .badge { font-family: 'Source Sans Pro', sans-serif; font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
 .badge-cold  { background: var(--info-bg); color: var(--info); }
 .badge-warm  { background: var(--warn-bg); color: var(--warn); }
