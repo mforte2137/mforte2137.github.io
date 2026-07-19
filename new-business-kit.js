@@ -24,6 +24,11 @@
   };
 
   const PATH_LABELS = { cold: 'Cold Prospect', warm: 'Warm Prospect', quoting: 'Ready to Quote' };
+  const PATH_DETAILS = {
+    cold: { desc: "I haven't contacted them yet", out: 'Plain text email + PDF leave-behind' },
+    warm: { desc: "We've had an initial conversation", out: 'HTML follow-up email + Salesbuildr widget' },
+    quoting: { desc: "I'm ready to build a proposal", out: 'Guided widget selection for Salesbuildr' }
+  };
 
   // Industry-specific "concern" pill — one dynamic chip added to the Concerns Raised group
   const INDUSTRY_CONCERN_CHIPS = {
@@ -94,6 +99,7 @@
         triggerEl = $('trigger'), triggerDetailEl = $('triggerDetail');
 
   const warmExtra = $('warmExtra');
+  const pathCaption = $('pathCaption');
   const engagementNotesBlock = $('engagementNotesBlock');
   const engagementFreeTextEl = $('engagementFreeText');
   const concernPillsEl = $('concernPills');
@@ -314,9 +320,15 @@
     return null;
   }
 
+  function updatePathCaption(path) {
+    const d = PATH_DETAILS[path];
+    pathCaption.innerHTML = d ? `${escHtml(d.desc)} — <span class="pc-out">${escHtml(d.out)}</span>` : '';
+  }
+
   function selectPath(path) {
     selectedPath = path;
     document.querySelectorAll('.path-card').forEach(c => c.classList.toggle('active', c.dataset.path === path));
+    updatePathCaption(path);
     const needsEngagement = path === 'warm' || path === 'quoting';
     engagementNotesBlock.hidden = !needsEngagement;
     if (needsEngagement) renderConcernChip();
@@ -798,6 +810,7 @@
     setSelectedPills([]);
     engagementFreeTextEl.value = '';
     document.querySelectorAll('.path-card').forEach(c => c.classList.toggle('active', c.dataset.path === 'warm'));
+    updatePathCaption('warm');
     warmExtra.hidden = false;
     engagementNotesBlock.hidden = false;
     renderConcernChip();
@@ -818,6 +831,7 @@
     generatedOutputs = null;
     lastPayload = null;
     document.querySelectorAll('.path-card').forEach(c => c.classList.toggle('active', c.dataset.path === 'quoting'));
+    updatePathCaption('quoting');
     warmExtra.hidden = true;
     engagementNotesBlock.hidden = false;
     outputArea.hidden = true;
@@ -902,6 +916,7 @@
     engagementFreeTextEl.value = '';
     engagementNotesBlock.hidden = true;
     selectedPath = null;
+    pathCaption.innerHTML = '';
     includeFirstImpression = false;
     includeFirstImpressionEl.checked = false;
     warmExtra.hidden = true;
@@ -939,6 +954,7 @@
     triggerDetailEl.value = sess.triggerDetail || '';
 
     selectedPath = sess.path || null;
+    updatePathCaption(selectedPath);
     includeFirstImpression = !!sess.includeFirstImpression;
     includeFirstImpressionEl.checked = includeFirstImpression;
     warmExtra.hidden = selectedPath !== 'warm';
