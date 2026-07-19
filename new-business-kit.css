@@ -270,20 +270,31 @@ input:focus, select:focus, textarea:focus {
 }
 .session-card:hover { border-color: var(--accent-border); }
 .session-card.current { border: 2px solid var(--accent); }
-.session-card .sc-company { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 13px; margin-bottom: 2px; padding-right: 20px; }
+.session-card .sc-company { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 13px; margin-bottom: 2px; padding-right: 46px; }
 .session-card .sc-industry { font-size: 11px; color: var(--text-3); margin-bottom: 6px; }
 .session-card .sc-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 6px; }
 .session-card .sc-date { font-size: 10.5px; color: var(--text-3); }
-.session-card .sc-history { font-size: 10.5px; color: var(--text-3); font-style: italic; margin-bottom: 4px; }
-.session-card .sc-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-.session-card .sc-actions button { font-size: 10px; padding: 2px 6px; border: 1px solid var(--border-2); background: var(--bg); cursor: pointer; }
-.sc-delete-icon {
-  position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; border-radius: 50%;
-  border: 1px solid var(--border-2); background: var(--bg-panel); color: var(--text-3);
+
+.sc-icon-row { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; }
+.sc-menu-btn, .sc-delete-icon {
+  width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--border-2); background: var(--bg-panel); color: var(--text-3);
   font-size: 11px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center;
   padding: 0; transition: all 0.12s;
 }
+.sc-menu-btn:hover { background: var(--bg-row); color: var(--text); }
 .sc-delete-icon:hover { background: var(--danger-bg); color: var(--danger); border-color: var(--danger-bg); }
+
+.sc-menu {
+  position: absolute; top: 32px; right: 8px; z-index: 10; min-width: 120px;
+  background: var(--bg-panel); border: 1px solid var(--border-2); border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(11,18,32,0.14); overflow: hidden;
+}
+.sc-menu[hidden] { display: none; }
+.sc-menu button {
+  display: block; width: 100%; text-align: left; padding: 7px 10px; font-size: 11.5px;
+  border: none; background: var(--bg-panel); color: var(--text); cursor: pointer;
+}
+.sc-menu button:hover { background: var(--bg-row); }
 
 /* ── Digest — rule-based "needs attention" summary, only shown when non-empty ── */
 .digest-panel { border-left: 3px solid var(--warn); background: var(--warn-bg); border-radius: 4px; padding: 10px 12px; margin-bottom: 4px; }
