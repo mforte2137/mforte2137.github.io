@@ -291,6 +291,12 @@
 
     <div class="col-output">
 
+    <!-- ============ RECAP BANNER (rule-based, shows whenever this prospect has stage history) ============ -->
+    <div class="recap-banner" id="recapBanner" hidden></div>
+
+    <!-- ============ STAGE TABS (view past stages read-only) ============ -->
+    <div class="stage-tabs" id="stageTabs" hidden></div>
+
     <!-- ============ EMPTY STATE ============ -->
     <div class="output-empty-state" id="outputEmptyState">
       <div class="empty-icon">📄</div>
@@ -309,12 +315,16 @@
 
       <div class="output-head">
         <h3 id="outputTitle">Your Outputs</h3>
-        <div class="output-head-actions">
+        <div class="output-head-actions" id="outputHeadActionsLive">
           <button class="btn-secondary" id="markSentBtn">Mark as sent</button>
           <button class="btn-secondary" id="moveToWarmBtn" hidden>Move to Warm →</button>
           <button class="btn-secondary" id="moveToQuotingBtn" hidden>Move to Quoting →</button>
           <button class="btn-secondary" id="regenerateBtn">Regenerate</button>
           <button class="btn-secondary" id="startOverBtn">Start Over</button>
+        </div>
+        <div class="output-head-actions" id="outputHeadActionsHistory" hidden>
+          <span class="history-note">📜 Read-only — viewing a past stage</span>
+          <button class="btn-primary" id="backToCurrentBtn">← Back to current</button>
         </div>
       </div>
       <div class="sent-badge" id="sentBadge" hidden></div>
