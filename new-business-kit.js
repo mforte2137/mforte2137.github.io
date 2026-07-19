@@ -67,7 +67,8 @@
   let lastPayload         = null;
   let sessionStatus       = 'in_progress';
   let sentAt              = null;
-  let stageHistory        = []; // [{ path, sentAt }] — breadcrumb of prior stages when transforming in place
+  let stageHistory        = []; // [{ path, sentAt, outputs, payload, includeFirstImpression, themeColor }] — full snapshots, not just breadcrumbs
+  let viewingHistoryIndex = null; // null = viewing live/current stage; number = viewing a read-only past stage
   let pendingPush         = null; // { widgets, titlePrefix, buttonEl } — awaiting Salesbuildr creds
   let autoSaveReady       = false;
   let showingArchived     = false;
@@ -117,6 +118,11 @@
 
   const outputArea   = $('outputArea');
   const outputEmptyState = $('outputEmptyState');
+  const recapBanner  = $('recapBanner');
+  const stageTabs    = $('stageTabs');
+  const outputHeadActionsLive = $('outputHeadActionsLive');
+  const outputHeadActionsHistory = $('outputHeadActionsHistory');
+  const backToCurrentBtn = $('backToCurrentBtn');
   const outputTitle  = $('outputTitle');
   const markSentBtn  = $('markSentBtn');
   const moveToWarmBtn = $('moveToWarmBtn');
@@ -205,6 +211,7 @@
     document.addEventListener('click', () => {
       document.querySelectorAll('.sc-menu').forEach(m => m.hidden = true);
     });
+    backToCurrentBtn.addEventListener('click', exitHistoryView);
 
     colourSwatches.querySelectorAll('.swatch').forEach(s => s.addEventListener('click', () => selectSwatch(s)));
     colourPicker.addEventListener('input', () => {
@@ -472,6 +479,12 @@
 
   // ── Render outputs ─────────────────────────────────
   function renderOutputs() {
+    viewingHistoryIndex = null;
+    outputHeadActionsHistory.hidden = true;
+    outputHeadActionsLive.hidden = false;
+    pushWidgetBtn.hidden = false;
+    pushPackBtn.hidden = false;
+
     coldOutputs.hidden = selectedPath !== 'cold';
     warmOutputs.hidden = selectedPath !== 'warm';
     quotingOutputs.hidden = selectedPath !== 'quoting';
@@ -486,6 +499,98 @@
 
     outputArea.hidden = false;
     updateEmptyState();
+    renderRecapBanner();
+    renderStageTabs();
+  }
+
+  // ── Recap banner — always shown when this prospect has stage history, rule-based only ──
+  function renderRecapBanner() {
+    recapBanner.hidden = stageHistory.length === 0;
+    if (recapBanner.hidden) return;
+    const snap = buildSessionSnapshot();
+    // Staleness must be judged against the last time this session was actually saved,
+    // not the moment this function runs (buildSessionSnapshot stamps "now") — otherwise
+    // reopening a prospect after two weeks away would always read as "just touched."
+    const persisted = getSessions().find(s => s.id === currentSessionId);
+    if (persisted && persisted.updatedAt) snap.updatedAt = persisted.updatedAt;
+
+    const parts = stageHistory.map(h => `${PATH_LABELS[h.path] || h.path}${h.sentAt ? ' (sent ' + fmtDate(h.sentAt) + ')' : ''}`);
+    const currentLabel = PATH_LABELS[selectedPath] || selectedPath || '—';
+    const currentSuffix = sessionStatus === 'sent' && sentAt ? ` (sent ${fmtDate(sentAt)})`
+      : sessionStatus === 'generated' ? ' (generated, not yet sent)'
+      : ' (in progress)';
+    parts.push(`${currentLabel}${currentSuffix} — current`);
+
+    const assessment = assessSession(snap);
+    const suggestion = assessment ? `<div class="rb-suggestion">⚠ ${escHtml(assessment.detail)}</div>` : '';
+
+    recapBanner.innerHTML = `
+      <div class="rb-title">${escHtml(snap.company || 'Unnamed prospect')} — ${escHtml(snap.industry || '')}${snap.size ? ' · ' + escHtml(snap.size) : ''}</div>
+      <div class="rb-timeline">${escHtml(parts.join(' → '))}</div>
+      ${suggestion}
+    `;
+  }
+
+  // ── Stage tabs — jump to a read-only view of a past stage's actual saved output ──
+  function renderStageTabs() {
+    stageTabs.hidden = stageHistory.length === 0;
+    if (stageTabs.hidden) { stageTabs.innerHTML = ''; return; }
+    const pastTabs = stageHistory.map((h, i) =>
+      `<button type="button" class="stage-tab${viewingHistoryIndex === i ? ' active' : ''}" data-idx="${i}">${escHtml(PATH_LABELS[h.path] || h.path)}${h.sentAt ? ' · ' + escHtml(fmtDate(h.sentAt)) : ''}</button>`
+    ).join('');
+    const currentTab = `<button type="button" class="stage-tab${viewingHistoryIndex === null ? ' active' : ''}" data-idx="current">${escHtml(PATH_LABELS[selectedPath] || selectedPath)} (current)</button>`;
+    stageTabs.innerHTML = pastTabs + currentTab;
+    stageTabs.querySelectorAll('.stage-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.idx === 'current') exitHistoryView();
+        else enterHistoryView(Number(btn.dataset.idx));
+      });
+    });
+  }
+
+  function enterHistoryView(index) {
+    const entry = stageHistory[index];
+    if (!entry || !entry.outputs) { showToast('No saved output for that stage.'); return; }
+    viewingHistoryIndex = index;
+
+    outputHeadActionsLive.hidden = true;
+    outputHeadActionsHistory.hidden = false;
+    sentBadge.hidden = true;
+
+    coldOutputs.hidden = entry.path !== 'cold';
+    warmOutputs.hidden = entry.path !== 'warm';
+    quotingOutputs.hidden = entry.path !== 'quoting';
+    outputTitle.textContent = `Outputs — ${PATH_LABELS[entry.path] || entry.path} (history${entry.sentAt ? ', sent ' + fmtDate(entry.sentAt) : ''})`;
+
+    const hex = entry.themeColor || currentTheme;
+    const fd = entry.payload || buildPayload();
+
+    if (entry.path === 'cold') renderColdOutputs(entry.outputs, fd, hex);
+    if (entry.path === 'warm') renderWarmOutputs(entry.outputs, fd, hex, entry.includeFirstImpression);
+    if (entry.path === 'quoting') renderQuotingOutputs(entry.outputs, fd, hex);
+
+    // Copy is fine on historical content; pushing stale content to Salesbuildr is not.
+    pushWidgetBtn.hidden = true;
+    pushPackBtn.hidden = true;
+
+    outputArea.hidden = false;
+    updateEmptyState();
+    renderStageTabs();
+  }
+
+  function exitHistoryView() {
+    viewingHistoryIndex = null;
+    outputHeadActionsHistory.hidden = true;
+    outputHeadActionsLive.hidden = false;
+    pushWidgetBtn.hidden = false;
+    pushPackBtn.hidden = false;
+    if (generatedOutputs) {
+      renderOutputs();
+    } else {
+      outputArea.hidden = true;
+      updateEmptyState();
+    }
+    renderStageTabs();
   }
 
   function reapplyTheme() {
@@ -496,11 +601,13 @@
   }
 
   // -- Cold --
-  function renderColdOutputs(data) {
+  function renderColdOutputs(data, fd, hex) {
+    fd = fd || buildPayload();
+    hex = hex || currentTheme;
     const email = data.email || {};
     emailSubject.textContent = email.subject || '';
     emailBody.textContent = email.body || '';
-    leaveBehindFrame.innerHTML = buildLeaveBehindHtml(data.leaveBehind || {}, currentTheme, buildPayload());
+    leaveBehindFrame.innerHTML = buildLeaveBehindHtml(data.leaveBehind || {}, hex, fd);
   }
 
   function buildLeaveBehindHtml(lb, hex, fd) {
@@ -528,14 +635,17 @@
   }
 
   // -- Warm --
-  function renderWarmOutputs(data) {
+  function renderWarmOutputs(data, fd, hex, includeFI) {
+    fd = fd || buildPayload();
+    hex = hex || currentTheme;
+    if (includeFI === undefined) includeFI = includeFirstImpression;
     const fu = data.followUpEmail || {};
     followUpSubject.textContent = fu.subject || '';
-    followUpFrame.innerHTML = buildFollowUpEmailHtml(fu, currentTheme, buildPayload());
+    followUpFrame.innerHTML = buildFollowUpEmailHtml(fu, hex, fd);
 
-    const hasWidget = includeFirstImpression && data.firstImpressionWidget;
+    const hasWidget = includeFI && data.firstImpressionWidget;
     firstImpressionPanel.hidden = !hasWidget;
-    if (hasWidget) widgetFrame.innerHTML = buildFirstImpressionWidgetHtml(data.firstImpressionWidget, currentTheme, buildPayload());
+    if (hasWidget) widgetFrame.innerHTML = buildFirstImpressionWidgetHtml(data.firstImpressionWidget, hex, fd);
   }
 
   function buildFollowUpEmailHtml(fu, hex, fd) {
@@ -598,10 +708,11 @@
   }
 
   // -- Quoting --
-  function renderQuotingOutputs(data) {
-    renderProposalPack(data.proposalPack || {});
+  function renderQuotingOutputs(data, fd, hex) {
+    fd = fd || buildPayload();
+    hex = hex || currentTheme;
+    renderProposalPack(data.proposalPack || {}, hex);
 
-    const fd = buildPayload();
     proposalPlanHead.innerHTML = `
       <div class="pp-title">Recommended proposal structure for:</div>
       <div class="pp-meta">${escHtml(fd.industry)} · ${escHtml(fd.size)} staff${fd.company ? ' · ' + escHtml(fd.company) : ''}</div>
@@ -628,12 +739,13 @@
       .join('');
   }
 
-  function renderProposalPack(pack) {
+  function renderProposalPack(pack, hex) {
+    hex = hex || currentTheme;
     pack = pack || {};
-    welcomeLetterFrame.innerHTML = buildWelcomeLetterHtml(pack.welcomeLetter || '', currentTheme);
-    problemStatementFrame.innerHTML = buildProblemStatementHtml(pack.problemStatement || '', currentTheme);
-    whyItMattersFrame.innerHTML = buildWhyItMattersHtml(pack.whyItMatters || '', currentTheme);
-    solutionApproachFrame.innerHTML = buildSolutionApproachHtml(pack.solutionApproach || '', currentTheme);
+    welcomeLetterFrame.innerHTML = buildWelcomeLetterHtml(pack.welcomeLetter || '', hex);
+    problemStatementFrame.innerHTML = buildProblemStatementHtml(pack.problemStatement || '', hex);
+    whyItMattersFrame.innerHTML = buildWhyItMattersHtml(pack.whyItMatters || '', hex);
+    solutionApproachFrame.innerHTML = buildSolutionApproachHtml(pack.solutionApproach || '', hex);
   }
 
   // These four widgets are pushed to Salesbuildr — names/company/signature use live merge
@@ -790,6 +902,7 @@
     moveToWarmBtn.hidden = !(selectedPath === 'cold');
     moveToQuotingBtn.hidden = !(selectedPath === 'warm');
     autoSave('sent');
+    renderRecapBanner();
     showToast('Marked as sent.');
   }
 
@@ -804,12 +917,22 @@
 
   function onMoveToWarm() {
     // Transform this session in place — same card, same id, no duplicate.
-    stageHistory.push({ path: selectedPath, sentAt });
+    // Snapshot the FULL content of the stage we're leaving (not just a breadcrumb) so it can
+    // be viewed read-only later via the stage tabs — this is what "Was Cold Prospect" recovers.
+    stageHistory.push({
+      path: selectedPath,
+      sentAt,
+      outputs: generatedOutputs,
+      payload: lastPayload || buildPayload(),
+      includeFirstImpression,
+      themeColor: currentTheme
+    });
     selectedPath = 'warm';
     sessionStatus = 'in_progress';
     sentAt = null;
     generatedOutputs = null;
     lastPayload = null;
+    viewingHistoryIndex = null;
     setSelectedPills([]);
     engagementFreeTextEl.value = '';
     document.querySelectorAll('.path-card').forEach(c => c.classList.toggle('active', c.dataset.path === 'warm'));
@@ -819,6 +942,8 @@
     renderConcernChip();
     outputArea.hidden = true;
     updateEmptyState();
+    renderRecapBanner();
+    renderStageTabs();
     goToStepUnchecked(3);
     autoSave('in_progress');
     showToast('Moved to Warm — add a quick engagement note below, then continue to generate.');
@@ -827,18 +952,29 @@
   function onMoveToQuoting() {
     // Transform this session in place — same card, same id, no duplicate.
     // Engagement notes carry forward unchanged — same conversation, same signal.
-    stageHistory.push({ path: selectedPath, sentAt });
+    // Snapshot the FULL content of the stage we're leaving, same reasoning as onMoveToWarm.
+    stageHistory.push({
+      path: selectedPath,
+      sentAt,
+      outputs: generatedOutputs,
+      payload: lastPayload || buildPayload(),
+      includeFirstImpression,
+      themeColor: currentTheme
+    });
     selectedPath = 'quoting';
     sessionStatus = 'in_progress';
     sentAt = null;
     generatedOutputs = null;
     lastPayload = null;
+    viewingHistoryIndex = null;
     document.querySelectorAll('.path-card').forEach(c => c.classList.toggle('active', c.dataset.path === 'quoting'));
     updatePathCaption('quoting');
     warmExtra.hidden = true;
     engagementNotesBlock.hidden = false;
     outputArea.hidden = true;
     updateEmptyState();
+    renderRecapBanner();
+    renderStageTabs();
     goToStepUnchecked(4);
     autoSave('in_progress');
     showToast('Moved to Quoting — your engagement notes carried over. Review Step 4 and generate the proposal pack.');
@@ -935,10 +1071,13 @@
     sessionStatus = 'in_progress';
     sentAt = null;
     stageHistory = [];
+    viewingHistoryIndex = null;
 
     outputArea.hidden = true;
     document.getElementById('step4').hidden = false;
     updateEmptyState();
+    renderRecapBanner();
+    renderStageTabs();
     hideError();
     autoSaveReady = true;
     goToStep(1);
@@ -989,6 +1128,7 @@
     sessionStatus = sess.status || 'in_progress';
     sentAt = sess.sentAt || null;
     stageHistory = sess.stageHistory || [];
+    viewingHistoryIndex = null;
 
     if (generatedOutputs) {
       document.getElementById('step4').hidden = true;
@@ -997,6 +1137,8 @@
       outputArea.hidden = true;
       document.getElementById('step4').hidden = false;
       updateEmptyState();
+      renderRecapBanner();
+      renderStageTabs();
     }
 
     currentStep = sess.currentStep || (generatedOutputs ? 4 : 1);
@@ -1032,31 +1174,32 @@
     return (Date.now() - ms) / 86400000;
   }
 
+  function assessSession(sess) {
+    if (sess.status === 'sent') {
+      const d = sess.sentAt ? daysSince(sess.sentAt) : daysSince(sess.updatedAt);
+      if (d >= STALE_DAYS) {
+        const nextPath = sess.path === 'cold' ? 'Warm' : sess.path === 'warm' ? 'Quoting' : null;
+        return { detail: `Sent ${Math.floor(d)}d ago as ${PATH_LABELS[sess.path] || sess.path}${nextPath ? ` — ready to move to ${nextPath}?` : ' — no update since.'}`, days: d };
+      }
+    } else if (sess.status === 'generated') {
+      const d = daysSince(sess.updatedAt);
+      if (d >= STALE_DAYS) {
+        return { detail: `Outputs ready ${Math.floor(d)}d ago — not yet marked sent.`, days: d };
+      }
+    } else if (sess.status === 'in_progress') {
+      const d = daysSince(sess.updatedAt);
+      if (d >= STALE_DAYS && (sess.currentStep || 1) < 4) {
+        return { detail: `Left at Step ${sess.currentStep || 1} of 4, ${Math.floor(d)}d ago.`, days: d };
+      }
+    }
+    return null;
+  }
+
   function computeDigest(sessions) {
     const items = [];
     sessions.forEach(sess => {
-      if (sess.status === 'sent') {
-        const d = sess.sentAt ? daysSince(sess.sentAt) : daysSince(sess.updatedAt);
-        if (d >= STALE_DAYS) {
-          const nextPath = sess.path === 'cold' ? 'Warm' : sess.path === 'warm' ? 'Quoting' : null;
-          items.push({
-            id: sess.id,
-            company: sess.company || 'Unnamed prospect',
-            detail: `Sent ${Math.floor(d)}d ago as ${PATH_LABELS[sess.path] || sess.path}${nextPath ? ` — ready to move to ${nextPath}?` : ' — no update since.'}`,
-            days: d
-          });
-        }
-      } else if (sess.status === 'generated') {
-        const d = daysSince(sess.updatedAt);
-        if (d >= STALE_DAYS) {
-          items.push({ id: sess.id, company: sess.company || 'Unnamed prospect', detail: `Outputs ready ${Math.floor(d)}d ago — not yet marked sent.`, days: d });
-        }
-      } else if (sess.status === 'in_progress') {
-        const d = daysSince(sess.updatedAt);
-        if (d >= STALE_DAYS && (sess.currentStep || 1) < 4) {
-          items.push({ id: sess.id, company: sess.company || 'Unnamed prospect', detail: `Left at Step ${sess.currentStep || 1} of 4, ${Math.floor(d)}d ago.`, days: d });
-        }
-      }
+      const a = assessSession(sess);
+      if (a) items.push({ id: sess.id, company: sess.company || 'Unnamed prospect', detail: a.detail, days: a.days });
     });
     items.sort((a, b) => b.days - a.days);
     return items;
