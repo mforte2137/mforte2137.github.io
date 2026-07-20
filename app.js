@@ -130,6 +130,18 @@ const TOOLS = [
     icon: "chart"
   },
   {
+    title: "New Business Kit",
+    shortLabel: "New Business",
+    description:
+      "Turn new logo prospecting into a guided, step-by-step process. Cold prospect? Get a plain text email and industry risk leave-behind. Warm prospect? Get an Outlook-ready follow-up email and first widgets. Ready to quote? Get a personalised proposal plan with the right tools in the right order.",
+    category: "Proposal",
+    url: "https://widgetcreator.netlify.app/new-business-kit.html",
+    badge: "new",
+    updated: "2026-07-14",
+    gradient: "rocket",
+    icon: "rocket"
+  },
+  {
     title: "Proposal Defence Kit",
     shortLabel: "Defence Kit",
     description:
@@ -597,6 +609,7 @@ const GRADIENTS = {
   jade:    "linear-gradient(135deg, #064e3b 0%, #0d9488 55%, #5eead4 100%)",
   cobalt:  "linear-gradient(135deg, #172554 0%, #1d4ed8 55%, #3b82f6 100%)",
   azure:   "linear-gradient(135deg, #0c3a6e 0%, #0284c7 55%, #38bdf8 100%)",
+  rocket:  "linear-gradient(135deg, #7f1d1d 0%, #dc2626 50%, #fb923c 100%)",
   fern:    "linear-gradient(135deg, #14532d 0%, #22c55e 55%, #86efac 100%)",
   copper:  "linear-gradient(135deg, #7c2d12 0%, #c2410c 45%, #fb923c 100%)",
   mint:    "linear-gradient(135deg, #022c22 0%, #059669 55%, #6ee7b7 100%)",
@@ -1179,6 +1192,13 @@ Your data stays with you. Files are read locally in the browser and never transm
       out:   "Three outputs: (1) A full-screen web-based slideshow for in-person meetings — open in browser, present full-screen, navigate with arrow keys. (2) A PDF via browser print for emailing as a follow-up or to smaller clients. (3) Salesbuildr widgets pushed individually or as a pack — combine with recommended services for a QBR + proposal sent to accounts where face-to-face meetings aren't possible.",
       when:  "Preparing for a quarterly or annual client business review. Sending a professional review remotely to smaller accounts via Salesbuildr. Wanting to combine a business review with an upsell proposal in one Salesbuildr quote.",
       not:   "Not a PSA or RMM integration — data is entered manually. Not a replacement for Project Reports, which handles in-flight project status updates by email."
+    },
+    "New Business Kit": {
+      who:   "MSP sales reps, business owners, or account managers pursuing new logos — whether reaching out cold, following up after a first meeting, or moving a warm prospect to a proposal.",
+      input: "Company name (optional), industry, company size, contact name and role (optional), trigger for outreach (referral / event / news / proactive / renewal / inbound / reactivation + optional one-line detail), relationship stage (Cold / Warm / Quoting). Guided 4-step process. Sessions auto-save to localStorage — up to 5 active prospect sessions with JSON export/import.",
+      out:   "Cold path: plain text outreach email + industry risk snapshot PDF leave-behind. Warm path: Outlook-optimised HTML follow-up email + optional First Impression widget for Salesbuildr. Quoting path: personalised proposal plan recommending 3–5 hub tools in the right sequence for that prospect.",
+      when:  "Reaching out to a prospect for the first time. Following up after an initial meeting. Building a proposal for a new prospect. Turning new logo activities from effortful and unfamiliar into a guided, repeatable process.",
+      not:   "Not a CRM or pipeline tracker. Not a marketing automation platform. Not a replacement for the Proposal Widget Builder — the quoting path guides the rep to existing hub tools."
     },
     "Proposal Defence Kit": {
       who:   "MSP sales reps dealing with a stalled or rejected proposal — where a prospect has raised pricing concerns, mentioned a competitor, flagged objections, or gone quiet.",
