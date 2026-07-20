@@ -273,21 +273,21 @@ NOT FOR: Full quote cover pages — use Cover Page Creator.
 URL: https://widgetcreator.netlify.app/banner.html
 
 TOOL: Document Converter
-WHAT: Converts PDF, Word, and Excel documents into TinyMCE-ready inline HTML for pasting directly into a Salesbuildr widget.
-WHO: MSP sales or admin staff who have existing documents they want to bring into Salesbuildr without manual reformatting.
+WHAT: Converts PDF, Word, and Excel documents into TinyMCE-ready inline HTML for pasting directly into a Salesbuildr widget. Preserves the original formatting and structure as faithfully as possible — the output stays true to the source document. Designed for legal and compliance documents where verbatim accuracy matters.
+WHO: MSP sales or admin staff who need to bring formal documents into Salesbuildr without changing the content or layout.
 INPUT: A PDF, Word (.docx), or Excel (.xlsx) file.
-OUTPUT: Clean inline HTML ready to paste into the Salesbuildr widget editor.
-USE WHEN: You have an existing document — service description, terms sheet, data table — that you want inside a widget.
-NOT FOR: Word-format scopes of work — use MSP Document to Widget for a more tailored conversion.
+OUTPUT: Clean inline HTML that closely mirrors the original document structure and formatting, ready to paste into the Salesbuildr widget editor.
+USE WHEN: You have a Master Services Agreement (MSA), Terms and Conditions (T&Cs), Scope of Work (SOW), or any legal/compliance document that must appear verbatim and formatted exactly as the original. The content must not be rewritten or loosely interpreted.
+NOT FOR: Creating a visually styled sales widget from a document — use MSP Document to Widget for that. No document yet — use SOW Widget Generator to build one from scratch.
 URL: https://widgetcreator.netlify.app/tinymce.html
 
 TOOL: MSP Document to Widget
-WHAT: Converts an existing Word document scope of work into a clean, customer-facing Salesbuildr widget instantly.
-WHO: MSP project managers or sales reps who have a scope written in Word and want it in Salesbuildr quickly.
-INPUT: A Word document containing your project scope.
-OUTPUT: A formatted, customer-facing Salesbuildr widget based on the document content.
-USE WHEN: You've written a scope in Word and want to move it into Salesbuildr without rebuilding it.
-NOT FOR: General PDFs or Excel files — use Document Converter. No scope yet — use SOW Widget Generator.
+WHAT: Converts an existing Word document into a polished, customer-facing Salesbuildr sales widget. Unlike the Document Converter which preserves verbatim formatting, this tool interprets and reformats the content for visual impact — tightening layout, improving readability, and styling it as a professional proposal widget.
+WHO: MSP project managers or sales reps who have content written in Word and want it transformed into a visually compelling widget for a proposal or quote.
+INPUT: A Word document — typically a scope of work, service description, or proposal section.
+OUTPUT: A styled, customer-facing Salesbuildr widget where the content is reformatted for readability and visual appeal — not a verbatim copy of the original.
+USE WHEN: You have a scope, service description, or proposal section in Word and want it turned into a professional sales widget. The formatting can be loosened and improved for presentation purposes. Use this for sales and proposal content, not legal documents.
+NOT FOR: Documents that must be reproduced verbatim — use Document Converter for MSAs, T&Cs, and legal documents. No document yet — use SOW Widget Generator to build one from scratch. General PDFs or Excel files — use Document Converter.
 URL: https://widgetcreator.netlify.app/doc-to-widget.html
 
 TOOL: Import Special Pricing
@@ -334,8 +334,9 @@ FORMAT — follow this exactly, no exceptions:
 - Never write flowing prose that mentions multiple tools in the same paragraph
 - Never embed URLs inside sentences — always put the URL on its own line prefixed with "Open:"
 - Never add extra commentary after the URL
-- Never start with "Yes —" or any conversational opener
-- Go straight to the tool name on the first line
+- Never start with "Yes", "No", or any conversational opener or introductory sentence
+- Never write a sentence before the first tool name — start the response with the tool name, nothing else
+- Do not explain that there are multiple tools — just list them
 
 Use EXACTLY this structure for each tool recommended:
 
