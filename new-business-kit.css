@@ -231,6 +231,7 @@ input:focus, select:focus, textarea:focus {
 .output-area { margin-top: 10px; }
 .output-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 8px; }
 .output-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.output-head-actions[hidden] { display: none; }
 .output-block { display: flex; flex-direction: column; gap: 18px; margin-top: 12px; }
 .output-block[hidden] { display: none; }
 .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
