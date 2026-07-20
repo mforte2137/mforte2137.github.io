@@ -128,7 +128,7 @@ Industry: ${industry}
 Company size: ${size} employees
 Contact: ${contact || '(not provided)'}${role ? `, role: ${role}` : ''}
 Trigger context: ${triggerContext}${triggerDetail ? ` — specific detail: "${triggerDetail}"` : ''}
-MSP name: ${mspName || 'Your MSP'}
+Your company (the MSP sending this outreach — NOT the prospect's current provider): ${mspName || 'Your MSP'}
 `.trim();
 
   // Shared by Warm and Quoting — both need the actual conversation content, not just
@@ -141,7 +141,7 @@ Contact: ${contact || '(not provided)'}${role ? `, role: ${role}` : ''}
 How this relationship originally started (background only — do not lead with this, it was likely already referenced in an earlier email): ${triggerContext}${triggerDetail ? ` — "${triggerDetail}"` : ''}
 What's actually known about this engagement from conversations so far (THIS is the main source of content — do not fall back on generic industry language if this is present):
 ${engagementSummary || '(not provided — keep content short and clearly templated/placeholder so the rep knows to fill in specifics before sending)'}
-MSP name: ${mspName || 'Your MSP'}
+Your company (the MSP sending this — NOT the prospect's current or former provider, even if the notes above mention "another MSP" or "current MSP"): ${mspName || 'Your MSP'}
 `.trim();
 
   let systemPrompt, userMessage;
@@ -167,6 +167,7 @@ Return JSON only — no preamble, no markdown, no backticks. Match this exact sh
   } else if (path === 'warm') {
     systemPrompt = `You write warm B2B follow-up communications for MSPs after a first meeting or conversation with a prospect.
 CRITICAL: This prospect has already received a cold outreach message that referenced the industry generically and the original reason for contact. This follow-up must NOT repeat that framing — it must sound like it comes from an actual conversation that happened, using specific details the rep captured about that conversation (company size, current tools, concerns raised, what the prospect said mattered to them). If those details are thin or absent, keep the summary bullets short and clearly templated/placeholder so the rep knows to edit them — never fall back on generic industry-risk language, since that would just repeat the cold email in nicer formatting.
+CRITICAL — do not confuse entities: "Your company" in the context below is the MSP sending this email (the sender). If the engagement notes mention the prospect currently has "another MSP," "an internal IT person," "no dedicated MSP," or similar, that refers to a separate, unnamed third party or their own staff — NEVER state or imply the prospect is currently a customer of, or working with, "your company." Your company is reaching OUT to them; it is not their existing provider.
 The original outreach trigger (referral, event, etc.) is background only — mention it briefly if at all (e.g. "great meeting you at X"), never as the substance of the email.
 Industry knowledge must be genuine and specific to size and sector, but should feel like it's drawing on what was actually said, not a generic industry primer.
 Tone: warm, professional, confident.
@@ -197,6 +198,7 @@ Write plain body prose only for each of 4 pieces — NO greeting/salutation, NO 
 
 CRITICAL CONSTRAINTS for all 4 pieces:
 - This is general sales narrative, NOT a parts/services list. Never name specific products, vendors, SKUs, license names, or brands. Never invent or imply specific pricing, quantities, or contract terms — those are added downstream from the MSP's own catalog.
+- Do not confuse entities: "Your company" in the context below is the MSP writing this proposal (the sender). If the engagement notes mention the prospect currently has "another MSP," "an internal IT person," "no dedicated MSP," or similar, that refers to a separate, unnamed third party or their own staff — NEVER state or imply the prospect is currently a customer of "your company." This proposal is being written TO win their business, not describing an existing relationship.
 - Draw primarily from "what's actually known about this engagement" in the context below (the tapped signals and any specific notes) — not just industry+size generically. If little is known, keep content directionally useful but avoid inventing specifics that weren't given.
 - Tone: peer-to-peer consultative — confident and warm, like a trusted advisor, not corporate or salesy.
 - Vertical fluency should show through one specific, genuine detail about the industry — not a vague "we understand your industry" claim.
