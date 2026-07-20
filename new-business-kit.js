@@ -484,6 +484,7 @@
     outputHeadActionsLive.hidden = false;
     pushWidgetBtn.hidden = false;
     pushPackBtn.hidden = false;
+    pushStatus.hidden = true;
 
     coldOutputs.hidden = selectedPath !== 'cold';
     warmOutputs.hidden = selectedPath !== 'warm';
@@ -561,6 +562,7 @@
     outputHeadActionsLive.hidden = true;
     outputHeadActionsHistory.hidden = false;
     sentBadge.hidden = true;
+    pushStatus.hidden = true;
 
     coldOutputs.hidden = entry.path !== 'cold';
     warmOutputs.hidden = entry.path !== 'warm';
@@ -968,6 +970,8 @@
     renderConcernChip();
     outputArea.hidden = true;
     updateEmptyState();
+    pushStatus.hidden = true;
+    credsInline.hidden = true;
     renderRecapBanner();
     renderStageTabs();
     goToStepUnchecked(3);
@@ -1011,6 +1015,8 @@
     engagementNotesBlock.hidden = false;
     outputArea.hidden = true;
     updateEmptyState();
+    pushStatus.hidden = true;
+    credsInline.hidden = true;
     renderRecapBanner();
     renderStageTabs();
     goToStepUnchecked(4);
@@ -1118,6 +1124,8 @@
     updateEmptyState();
     renderRecapBanner();
     renderStageTabs();
+    pushStatus.hidden = true;
+    credsInline.hidden = true;
     hideError();
     autoSaveReady = true;
     goToStep(1);
@@ -1177,6 +1185,8 @@
       outputArea.hidden = true;
       document.getElementById('step4').hidden = false;
       updateEmptyState();
+      pushStatus.hidden = true;
+      credsInline.hidden = true;
       renderRecapBanner();
       renderStageTabs();
     }
