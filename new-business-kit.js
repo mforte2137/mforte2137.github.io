@@ -1388,7 +1388,9 @@
     };
     sessions.unshift(copy);
     saveSessions(sessions.slice(0, SESSION_LIMIT));
-    renderSessionCards();
+    resumeSession(copy);
+    companyEl.focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     showToast('New prospect started with the same industry, trigger, and engagement notes — just add the company name.');
   }
 
