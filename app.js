@@ -1377,18 +1377,18 @@ Your data stays with you. Files are read locally in the browser and never transm
       not:   "Full quote cover pages — use Cover Page Creator."
     },
     "Document Converter": {
-      who:   "MSP sales or admin staff who have existing documents they want to bring into Salesbuildr without manual reformatting.",
+      who:   "MSP sales or admin staff who need to bring formal legal or compliance documents into Salesbuildr without altering content or layout.",
       input: "A PDF, Word (.docx), or Excel (.xlsx) file.",
-      out:   "Clean inline HTML ready to paste into the Salesbuildr widget editor.",
-      when:  "You have an existing document — service description, terms sheet, data table — that you want inside a widget.",
-      not:   "Word-format scopes of work — use MSP Document to Widget for a more tailored conversion."
+      out:   "Clean inline HTML that mirrors the original document structure and formatting as faithfully as possible — verbatim, not rewritten.",
+      when:  "You have a Master Services Agreement (MSA), Terms and Conditions (T&Cs), Scope of Work (SOW), or any legal/compliance document that must appear verbatim and formatted exactly as the original.",
+      not:   "Sales widgets where visual styling matters more than verbatim accuracy — use MSP Document to Widget instead."
     },
     "MSP Document to Widget": {
-      who:   "MSP project managers or sales reps who have a scope written in Word and want it in Salesbuildr quickly.",
-      input: "A Word document containing your project scope.",
-      out:   "A formatted, customer-facing Salesbuildr widget based on the document content.",
-      when:  "You've written a scope in Word and want to move it into Salesbuildr without rebuilding it.",
-      not:   "General PDFs or Excel files — use Document Converter. No scope yet — use SOW Widget Generator."
+      who:   "MSP project managers or sales reps who want to transform Word content into a polished, visually styled sales widget.",
+      input: "A Word document — typically a scope of work, service description, or proposal section.",
+      out:   "A styled, customer-facing Salesbuildr widget where content is reformatted for readability and visual appeal — not a verbatim copy.",
+      when:  "You have a scope, service description, or proposal section in Word and want it turned into a professional sales widget. Formatting can be loosened and improved for presentation. Use for sales and proposal content, not legal documents.",
+      not:   "Documents that must be reproduced verbatim (MSAs, T&Cs, legal documents) — use Document Converter. No document yet — use SOW Widget Generator."
     },
     "Import Special Pricing": {
       who:   "MSP purchasing or sales staff who receive deal-reg pricing files from vendors.",
