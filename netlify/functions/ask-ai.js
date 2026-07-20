@@ -38,6 +38,15 @@ USE WHEN: Preparing for a QBR or annual review. Sending a business review remote
 NOT FOR: In-flight project status updates — use Project Reports. PSA or RMM data is not pulled automatically — all inputs are manual.
 URL: https://widgetcreator.netlify.app/business-review.html
 
+TOOL: New Business Kit
+WHAT: A guided 4-step tool that turns new logo prospecting into a manageable, step-by-step process. Three paths based on relationship stage: Cold (plain text outreach email personalised to trigger and industry + one-page industry risk snapshot PDF leave-behind), Warm (Outlook-optimised 600px HTML follow-up email summarising what was heard and recommending a next step, plus optional First Impression widget for Salesbuildr), and Quoting (personalised proposal plan recommending 3–5 hub tools in the right sequence for that prospect's industry, size, and context). All paths share the same 4-step guided input: who the prospect is, what the trigger is, where the relationship stands, and a preview of outputs before generating. Sessions auto-save to localStorage — up to 5 active prospect sessions with status tracking (In Progress / Generated / Sent) and JSON export/import for cross-device workflow.
+WHO: MSP sales reps, business owners, or account managers pursuing new logos at any stage of the outreach journey.
+INPUT: Company name (optional), industry, size, contact role (optional), trigger (referral / event / proactive / renewal / inbound / reactivation + optional detail), relationship stage (Cold / Warm / Quoting), colour theme.
+OUTPUT: Cold: plain text email + printable PDF leave-behind. Warm: Outlook HTML email + optional Salesbuildr widget. Quoting: proposal plan with links to recommended hub tools.
+USE WHEN: Reaching out to a new prospect cold. Following up after a first meeting. Planning a proposal for a new logo. Turning unfamiliar new business activities into a guided, repeatable process.
+NOT FOR: Existing client account management — use Account Growth Widget or Business Review Builder. CRM or pipeline management. Marketing automation sequences.
+URL: https://widgetcreator.netlify.app/new-business-kit.html
+
 TOOL: Proposal Defence Kit
 WHAT: A modular tool for stalled or rejected proposals. Three optional modules — Competitor Comparison (calm value comparison when a cheaper quote has been mentioned), Pricing Justification (breaks down what's included and reframes cost as insurance), and Objection & FAQ (addresses specific concerns in a confident FAQ widget). Each active module generates a customer-facing widget for a re-quote AND private talking points for the follow-up call, shown in an on-screen modal with a copy button.
 WHO: MSP sales reps dealing with a stalled proposal, a rejected quote, a competitor mention, or pricing pushback.
