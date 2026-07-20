@@ -535,12 +535,17 @@
   function renderStageTabs() {
     stageTabs.hidden = stageHistory.length === 0;
     if (stageTabs.hidden) { stageTabs.innerHTML = ''; return; }
-    const pastTabs = stageHistory.map((h, i) =>
-      `<button type="button" class="stage-tab${viewingHistoryIndex === i ? ' active' : ''}" data-idx="${i}">${escHtml(PATH_LABELS[h.path] || h.path)}${h.sentAt ? ' · ' + escHtml(fmtDate(h.sentAt)) : ''}</button>`
-    ).join('');
+    const pastTabs = stageHistory.map((h, i) => {
+      const hasSnapshot = !!h.outputs;
+      const label = `${escHtml(PATH_LABELS[h.path] || h.path)}${h.sentAt ? ' · ' + escHtml(fmtDate(h.sentAt)) : ''}`;
+      if (!hasSnapshot) {
+        return `<button type="button" class="stage-tab no-snapshot" disabled title="No saved snapshot for this stage (from before this feature existed)">${label} — no snapshot</button>`;
+      }
+      return `<button type="button" class="stage-tab${viewingHistoryIndex === i ? ' active' : ''}" data-idx="${i}">${label}</button>`;
+    }).join('');
     const currentTab = `<button type="button" class="stage-tab${viewingHistoryIndex === null ? ' active' : ''}" data-idx="current">${escHtml(PATH_LABELS[selectedPath] || selectedPath)} (current)</button>`;
     stageTabs.innerHTML = pastTabs + currentTab;
-    stageTabs.querySelectorAll('.stage-tab').forEach(btn => {
+    stageTabs.querySelectorAll('.stage-tab[data-idx]').forEach(btn => {
       btn.addEventListener('click', () => {
         if (btn.dataset.idx === 'current') exitHistoryView();
         else enterHistoryView(Number(btn.dataset.idx));
@@ -579,18 +584,26 @@
   }
 
   function exitHistoryView() {
+    // Always flip these first, unconditionally — so even if something below throws,
+    // the person is never left staring at a stuck "read-only" state with no way out.
     viewingHistoryIndex = null;
     outputHeadActionsHistory.hidden = true;
     outputHeadActionsLive.hidden = false;
     pushWidgetBtn.hidden = false;
     pushPackBtn.hidden = false;
-    if (generatedOutputs) {
-      renderOutputs();
-    } else {
-      outputArea.hidden = true;
-      updateEmptyState();
+
+    try {
+      if (generatedOutputs) {
+        renderOutputs();
+      } else {
+        outputArea.hidden = true;
+        updateEmptyState();
+      }
+      renderStageTabs();
+    } catch (e) {
+      console.error('exitHistoryView render failed:', e);
+      showToast('Something went wrong restoring the current view — try switching sessions and back.');
     }
-    renderStageTabs();
   }
 
   function reapplyTheme() {
@@ -915,18 +928,31 @@
     }
   }
 
+  let stageTransformInProgress = false; // guards against a double-click pushing two identical stage entries
+
   function onMoveToWarm() {
+    if (stageTransformInProgress) return;
+    if (selectedPath !== 'cold') return; // this transform only makes sense from Cold — guards against any re-entry
+    stageTransformInProgress = true;
+    moveToWarmBtn.disabled = true;
+    moveToWarmBtn.hidden = true;
+
     // Transform this session in place — same card, same id, no duplicate.
     // Snapshot the FULL content of the stage we're leaving (not just a breadcrumb) so it can
     // be viewed read-only later via the stage tabs — this is what "Was Cold Prospect" recovers.
-    stageHistory.push({
-      path: selectedPath,
-      sentAt,
-      outputs: generatedOutputs,
-      payload: lastPayload || buildPayload(),
-      includeFirstImpression,
-      themeColor: currentTheme
-    });
+    // Guard: never push two consecutive entries for the same path (defends against a double-click
+    // or any other accidental double-invocation producing a duplicate "Cold → Cold" entry).
+    const lastEntry = stageHistory[stageHistory.length - 1];
+    if (!lastEntry || lastEntry.path !== selectedPath) {
+      stageHistory.push({
+        path: selectedPath,
+        sentAt,
+        outputs: generatedOutputs,
+        payload: lastPayload || buildPayload(),
+        includeFirstImpression,
+        themeColor: currentTheme
+      });
+    }
     selectedPath = 'warm';
     sessionStatus = 'in_progress';
     sentAt = null;
@@ -947,20 +973,32 @@
     goToStepUnchecked(3);
     autoSave('in_progress');
     showToast('Moved to Warm — add a quick engagement note below, then continue to generate.');
+    moveToWarmBtn.disabled = false;
+    stageTransformInProgress = false;
   }
 
   function onMoveToQuoting() {
+    if (stageTransformInProgress) return;
+    if (selectedPath !== 'warm') return; // this transform only makes sense from Warm — guards against any re-entry
+    stageTransformInProgress = true;
+    moveToQuotingBtn.disabled = true;
+    moveToQuotingBtn.hidden = true;
+
     // Transform this session in place — same card, same id, no duplicate.
     // Engagement notes carry forward unchanged — same conversation, same signal.
     // Snapshot the FULL content of the stage we're leaving, same reasoning as onMoveToWarm.
-    stageHistory.push({
-      path: selectedPath,
-      sentAt,
-      outputs: generatedOutputs,
-      payload: lastPayload || buildPayload(),
-      includeFirstImpression,
-      themeColor: currentTheme
-    });
+    // Guard: never push two consecutive entries for the same path (see onMoveToWarm).
+    const lastEntry = stageHistory[stageHistory.length - 1];
+    if (!lastEntry || lastEntry.path !== selectedPath) {
+      stageHistory.push({
+        path: selectedPath,
+        sentAt,
+        outputs: generatedOutputs,
+        payload: lastPayload || buildPayload(),
+        includeFirstImpression,
+        themeColor: currentTheme
+      });
+    }
     selectedPath = 'quoting';
     sessionStatus = 'in_progress';
     sentAt = null;
@@ -978,6 +1016,8 @@
     goToStepUnchecked(4);
     autoSave('in_progress');
     showToast('Moved to Quoting — your engagement notes carried over. Review Step 4 and generate the proposal pack.');
+    moveToQuotingBtn.disabled = false;
+    stageTransformInProgress = false;
   }
 
   // ── Sessions ───────────────────────────────────────
