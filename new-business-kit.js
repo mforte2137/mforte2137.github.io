@@ -1300,7 +1300,7 @@
       <div class="sc-menu" hidden>
         ${isArchived
           ? '<button data-act="restore">Restore</button><button data-act="delete">Delete permanently</button>'
-          : '<button data-act="archive">Archive</button><button data-act="duplicate">Duplicate</button><button data-act="export">Export</button>'}
+          : '<button data-act="archive">Archive</button><button data-act="duplicate" title="Start a new prospect with the same industry, trigger, and engagement notes">Similar Prospect</button><button data-act="export">Export</button>'}
       </div>
       <div class="sc-company">${escHtml(sess.company || 'Unnamed prospect')}</div>
       <div class="sc-meta-row">
@@ -1367,11 +1367,29 @@
   function duplicateSession(sess) {
     const sessions = getSessions();
     if (sessions.length >= SESSION_LIMIT) { limitMsg.hidden = false; return; }
-    const copy = { ...sess, id: 'nbk_' + Date.now(), company: (sess.company || 'Unnamed prospect') + ' (copy)', status: 'in_progress', sentAt: null, stageHistory: [], outputs: null, lastPayload: null, updatedAt: new Date().toISOString(), createdAt: new Date().toISOString() };
+    // Duplicate exists to reuse context for a DIFFERENT, similar prospect (e.g. batch
+    // outreach across a vertical) — not to clone the same company again. Once a prospect
+    // is quoted it graduates to a customer in Salesbuildr/the PSA, and any further activity
+    // for that company originates there, not here — so identity/status/outputs always reset.
+    const copy = {
+      ...sess,
+      id: 'nbk_' + Date.now(),
+      company: '',
+      contact: '',
+      currentStep: 1,
+      includeFirstImpression: false,
+      status: 'in_progress',
+      sentAt: null,
+      stageHistory: [],
+      outputs: null,
+      lastPayload: null,
+      updatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
     sessions.unshift(copy);
     saveSessions(sessions.slice(0, SESSION_LIMIT));
     renderSessionCards();
-    showToast('Session duplicated.');
+    showToast('New prospect started with the same industry, trigger, and engagement notes — just add the company name.');
   }
 
   function exportSession(sess) {
