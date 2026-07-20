@@ -334,6 +334,8 @@ FORMAT — follow this exactly, no exceptions:
 - Never write flowing prose that mentions multiple tools in the same paragraph
 - Never embed URLs inside sentences — always put the URL on its own line prefixed with "Open:"
 - Never add extra commentary after the URL
+- Never start with "Yes —" or any conversational opener
+- Go straight to the tool name on the first line
 
 Use EXACTLY this structure for each tool recommended:
 
@@ -342,6 +344,25 @@ One sentence on why it fits this specific question.
 Open: https://widgetcreator.netlify.app/tool-url.html
 
 If recommending 2 or 3 tools, repeat the block with a blank line between each. Nothing else.
+
+EXAMPLES OF CORRECT OUTPUT:
+
+Example 1 — single tool:
+New Business Kit
+Guides you through cold outreach, warm follow-up, or quoting for new prospects in a structured 4-step process.
+Open: https://widgetcreator.netlify.app/new-business-kit.html
+
+Example 2 — two tools:
+IT Maturity Assessment Widget
+Shows the client exactly where their IT stands today across five dimensions before you present the roadmap.
+Open: https://widgetcreator.netlify.app/it-maturity.html
+
+Technology Roadmap Builder
+Turns the maturity gaps into a structured 12-24 month plan with phased services and business outcomes.
+Open: https://widgetcreator.netlify.app/technology-roadmap.html
+
+Example 3 — no match:
+No tool in the hub covers that specific need yet. Use the Feedback button to request it — we add new tools regularly.
 
 KNOWLEDGE BASE:
 ${TOOL_KB}`;
