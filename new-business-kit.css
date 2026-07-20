@@ -222,6 +222,8 @@ input:focus, select:focus, textarea:focus {
 .stage-tab { font-family: 'Source Sans Pro', sans-serif; font-size: 11.5px; font-weight: 600; padding: 5px 13px; border: 1px solid var(--border-2); border-radius: 20px; background: var(--bg-panel); color: var(--text-2); cursor: pointer; }
 .stage-tab:hover { border-color: var(--accent-border); background: var(--accent-bg); }
 .stage-tab.active { background: var(--text); border-color: var(--text); color: #fff; }
+.stage-tab.no-snapshot { opacity: 0.45; cursor: not-allowed; font-style: italic; }
+.stage-tab.no-snapshot:hover { border-color: var(--border-2); background: var(--bg-panel); }
 
 .history-note { font-size: 12px; color: var(--warn); font-weight: 600; }
 
