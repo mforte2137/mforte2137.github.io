@@ -1065,12 +1065,13 @@ Your data stays with you. Files are read locally in the browser and never transm
   });
 
   function simpleMd(text) {
-    // Strip markdown formatting for clean display
     return text
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/^[\-\*]\s+/gm, '')   // remove bullet chars
-      .replace(/`(.+?)`/g, '$1');
+      .replace(/^[\-\*]\s+/gm, '')
+      .replace(/`(.+?)`/g, '$1')
+      // Convert any bare URLs to clickable links (safety net for prose responses)
+      .replace(/(https?:\/\/[^\s<"]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:underline;">$1</a>');
   }
 
   function renderResponse(text) {
