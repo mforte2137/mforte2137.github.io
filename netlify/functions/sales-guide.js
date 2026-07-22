@@ -475,8 +475,7 @@ Do the catalog matches cover everything the customer asked for? If not, what spe
     const catalogList = services
       .slice(0, 150) // cap at 150 to keep prompt tight
       .map(s => `${s.id}|||${s.name}|||${s.type}|||${s.unit}`)
-      .join('
-');
+      .join('\n');
 
     const engagementDescriptions = {
       managed_services:      'fully managed IT services — helpdesk, monitoring, endpoint protection, backup',
