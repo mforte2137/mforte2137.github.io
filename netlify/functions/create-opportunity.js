@@ -249,11 +249,11 @@ exports.handler = async (event) => {
 
     // ── upsert-opportunity ──────────────────────────────────
     if (action === 'upsert-opportunity') {
-      // Updates description of an EXISTING opportunity using its real
-      // externalIdentifier (AT record ID). Never creates new records —
-      // avoids the PSA sync issue caused by fake ext IDs.
-      const { name, description, extId, companyId, contactId, ownerId, pipelineStageId, categoryId } = body;
-      if (!extId) return err('extId required.', 400);
+      // Updates description of an EXISTING opportunity.
+      // Uses internal SB id if available (works for all opportunities),
+      // falls back to externalIdentifier for PSA-synced opportunities.
+      const { name, description, oppId, extId, companyId, contactId, ownerId, pipelineStageId, categoryId } = body;
+      if (!oppId && !extId) return err('oppId or extId required.', 400);
 
       // Echo back all existing field IDs so Salesbuildr doesn't
       // treat missing fields as intentional removals
@@ -264,14 +264,19 @@ exports.handler = async (event) => {
       if (pipelineStageId) payload.pipelineStageId = pipelineStageId;
       if (categoryId)      payload.categoryId      = categoryId;
 
-      const res  = await fetch(`${BASE}/opportunity/ext/${encodeURIComponent(extId)}`, {
+      // Prefer internal ID (always present) over externalIdentifier (PSA only)
+      const url = oppId
+        ? `${BASE}/opportunity/${encodeURIComponent(oppId)}`
+        : `${BASE}/opportunity/ext/${encodeURIComponent(extId)}`;
+
+      const res  = await fetch(url, {
         method:  'PUT',
         headers,
         body:    JSON.stringify(payload)
       });
       const data = await res.json();
 
-      if (!res.ok) return err(data?.message || data?.error || 'Failed to create opportunity.');
+      if (!res.ok) return err(data?.message || data?.error || 'Failed to update opportunity.');
       return ok({ opportunity: data });
     }
 
