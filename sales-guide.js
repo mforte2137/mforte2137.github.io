@@ -2028,14 +2028,93 @@ async function loadGuidedCatalog() {
   $('oppServiceTotal').classList.add('hidden');
 
   try {
-    const res     = await callCreateOpp('fetch-guided-catalog', { apiKey, tenantUrl: intKey });
-    const catalog = res.catalog || [];
-    if (res._debug) console.log('[Sales Guide] catalog debug:', JSON.stringify(res._debug, null, 2));
-    renderServiceSelection(catalog);
+    // Step 1 — fetch all services from catalog (no label filter, works for any MSP)
+    list.innerHTML = '<div class="opp-contact-loading">Loading your catalog…</div>';
+    const catalogRes = await callCreateOpp('fetch-catalog-services', { apiKey, tenantUrl: intKey });
+    const services   = catalogRes.services || [];
+    console.log('[Sales Guide] catalog: ' + services.length + ' services fetched (of ' + catalogRes.totalFetched + ' total products)');
+
+    if (services.length === 0) {
+      list.innerHTML = '<div class="opp-contact-none">No services found in your catalog. Make sure your products are listed in Salesbuildr.</div>';
+      $('oppStep3').classList.remove('hidden');
+      return;
+    }
+
+    // Step 2 — match services to engagement type via Haiku
+    list.innerHTML = '<div class="opp-contact-loading">Matching services to this engagement…</div>';
+    const engType    = currentRec && currentRec.engagement_type ? currentRec.engagement_type : 'mixed';
+    const staffCount = parseInt(currentAnswers && currentAnswers.staffCount) || 1;
+
+    const matchRes  = await fetch('/api/sales-guide', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ action: 'match-to-engagement', services: services, engagementType: engType, staffCount: staffCount })
+    });
+    const matchData = await matchRes.json();
+
+    const recommended = new Set(matchData.recommended || []);
+    const optional    = new Set(matchData.optional    || []);
+
+    console.log('[Sales Guide] matched: ' + recommended.size + ' recommended, ' + optional.size + ' optional');
+
+    renderServiceSelectionFromMatch(services, recommended, optional, staffCount);
+
   } catch (e) {
-    list.innerHTML = `<div class="opp-contact-none">Could not load catalog — ${esc(e.message)}</div>`;
+    list.innerHTML = '<div class="opp-contact-none">Could not load catalog — ' + esc(e.message) + '</div>';
     $('oppStep3').classList.remove('hidden');
   }
+}
+
+// ── Render service selection from semantic match ─────────
+// Used by Discovery mode — works with any MSP catalog, no labels needed.
+function renderServiceSelectionFromMatch(services, recommended, optional, defaultQty) {
+  const list = $('oppServiceList');
+  if (!list) return;
+
+  let html = '';
+
+  const recItems   = services.filter(s => recommended.has(s.id));
+  const optItems   = services.filter(s => optional.has(s.id));
+  const extraItems = services.filter(s => !recommended.has(s.id) && !optional.has(s.id));
+
+  if (recItems.length > 0) {
+    html += '<div class="opp-svc-section-label">Recommended for this engagement</div>';
+    recItems.forEach(function(item) {
+      var qty = isProjectFee(item) ? 1 : defaultQty;
+      html += svcRow(item, qty, true, 'matched', 'Recommended');
+    });
+  }
+
+  if (optItems.length > 0) {
+    html += '<div class="opp-svc-section-label" style="margin-top:10px;">Optional add-ons</div>';
+    optItems.forEach(function(item) {
+      var qty = isProjectFee(item) ? 1 : defaultQty;
+      html += svcRow(item, qty, false, 'optional', 'Optional');
+    });
+  }
+
+  if (extraItems.length > 0) {
+    html += '<div class="opp-svc-section-label" style="margin-top:10px;">Also in your catalog</div>';
+    extraItems.forEach(function(item) {
+      var qty = isProjectFee(item) ? 1 : defaultQty;
+      html += svcRow(item, qty, false, 'extra', '');
+    });
+  }
+
+  if (!html) {
+    html = '<div class="opp-contact-none">No services matched — select items manually from your catalog.</div>';
+  }
+
+  list.innerHTML = html;
+
+  list.querySelectorAll('.opp-svc-check, .opp-svc-qty').forEach(function(el) {
+    el.addEventListener('change', updateServiceTotal);
+    el.addEventListener('input',  updateServiceTotal);
+  });
+  updateServiceTotal();
+
+  $('oppStep3').classList.remove('hidden');
+  $('oppStep3').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // Maps engagement type → the catalog label that's relevant for that engagement
@@ -2393,8 +2472,8 @@ async function doConnectOpportunity() {
     const oppRes = await callCreateOpp('upsert-opportunity', {
       name:           opp.name,
       description,
-      oppId:          opp.id,              // internal SB ID — always present
-      extId:          opp.extId || undefined, // PSA ext ID — may be empty
+      oppId:          opp.id,
+      extId:          opp.extId || undefined,
       companyId:      selectedOppCompany.id,
       contactId:      opp.contactId       || undefined,
       ownerId:        opp.ownerId         || undefined,
