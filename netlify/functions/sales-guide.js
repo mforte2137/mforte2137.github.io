@@ -462,5 +462,88 @@ Do the catalog matches cover everything the customer asked for? If not, what spe
     } catch (e) { return err(e.message); }
   }
 
+    // ── ACTION: match-to-engagement ──────────────────────────
+  // Takes the MSP's catalog services and an engagement type,
+  // uses Haiku to semantically match the most relevant items.
+  // Returns ranked matches — works with any MSP catalog, no labels needed.
+  if (action === 'match-to-engagement') {
+    const { services, engagementType, staffCount } = body;
+    if (!Array.isArray(services) || services.length === 0) return err('services required.', 400);
+    if (!engagementType) return err('engagementType required.', 400);
+
+    // Build a compact catalog list for Haiku — id|||name|||type|||unit
+    const catalogList = services
+      .slice(0, 150) // cap at 150 to keep prompt tight
+      .map(s => `${s.id}|||${s.name}|||${s.type}|||${s.unit}`)
+      .join('
+');
+
+    const engagementDescriptions = {
+      managed_services:      'fully managed IT services — helpdesk, monitoring, endpoint protection, backup',
+      network_upgrade:       'network infrastructure upgrade — firewall, switching, wireless, monitoring',
+      endpoint_refresh:      'endpoint/device refresh — laptops, desktops, endpoint protection, patch management',
+      server_eol:            'server end of life — server replacement or migration, backup, monitoring',
+      security_project:      'security project — EDR, email security, DNS filtering, backup, MDR',
+      compliance:            'compliance project — HIPAA, NIST, cyber insurance controls, security monitoring',
+      new_client_onboarding: 'new client onboarding — full managed services stack, helpdesk, security, backup',
+      project_plus_managed:  'project plus managed services — hardware project with ongoing managed services',
+      voip_project:          'VoIP or phone system upgrade — hosted VoIP, UCaaS, Teams Voice, monitoring',
+      backup_dr:             'backup and disaster recovery — cloud backup, DR planning, recovery testing',
+      copilot_ai:            'Microsoft Copilot and AI readiness — M365 Copilot licensing, governance, training',
+      mixed:                 'general IT services — managed support, security, backup',
+    };
+
+    const engDesc = engagementDescriptions[engagementType] || 'managed IT services';
+    const qty = staffCount || 1;
+
+    const prompt = `You are matching an MSP's service catalog to a customer engagement type.
+
+ENGAGEMENT: ${engDesc}
+STAFF COUNT: ${qty}
+
+CATALOG (id|||name|||type|||unit):
+${catalogList}
+
+Select the most relevant catalog items for this engagement. Return ONLY a JSON object with two arrays:
+- "recommended": array of catalog IDs that are core to this engagement (pre-select these)
+- "optional": array of catalog IDs that are useful add-ons for this engagement
+
+Rules:
+- Include 3-8 items in recommended, 0-4 in optional
+- Prefer recurring/monthly services over one-time items
+- Prefer bundles that cover multiple services
+- Do not include items clearly unrelated to the engagement
+- Return only IDs that appear in the catalog above
+- No markdown, no explanation, just the JSON object`;
+
+    try {
+      const res = await fetch(ANTHROPIC_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 400,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await res.json();
+      const text = (data?.content?.[0]?.text || '{}').replace(/```json?|```/g, '').trim();
+      const objMatch = text.match(/\{[\s\S]*?\}/);
+      const result = objMatch ? JSON.parse(objMatch[0]) : { recommended: [], optional: [] };
+
+      return ok({
+        recommended: Array.isArray(result.recommended) ? result.recommended : [],
+        optional:    Array.isArray(result.optional)    ? result.optional    : [],
+      });
+    } catch(e) {
+      return err(e.message || 'Matching failed');
+    }
+  }
+
     return err('Unknown action.', 400);
 };
