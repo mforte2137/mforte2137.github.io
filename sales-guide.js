@@ -2028,14 +2028,109 @@ async function loadGuidedCatalog() {
   $('oppServiceTotal').classList.add('hidden');
 
   try {
-    const res     = await callCreateOpp('fetch-guided-catalog', { apiKey, tenantUrl: intKey });
-    const catalog = res.catalog || [];
-    if (res._debug) console.log('[Sales Guide] catalog debug:', JSON.stringify(res._debug, null, 2));
-    renderServiceSelection(catalog);
+    // Step 1 — fetch services from catalog (no label filter, works for any MSP)
+    list.innerHTML = '<div class="opp-contact-loading">Loading your catalog…</div>';
+    const catalogRes = await callCreateOpp('fetch-catalog-services', { apiKey, tenantUrl: intKey });
+    const services   = catalogRes.services || [];
+    console.log(`[Sales Guide] catalog: ${services.length} services fetched (of ${catalogRes.totalFetched} total products)`);
+
+    if (services.length === 0) {
+      list.innerHTML = '<div class="opp-contact-none">No services found in your catalog. Make sure your products are listed in Salesbuildr.</div>';
+      $('oppStep3').classList.remove('hidden');
+      return;
+    }
+
+    // Step 2 — match services to engagement type via Haiku
+    list.innerHTML = '<div class="opp-contact-loading">Matching services to this engagement…</div>';
+    const engType   = currentRec?.engagement_type || 'mixed';
+    const staffCount = parseInt(currentAnswers?.staffCount) || 1;
+
+    const matchRes  = await fetch('/api/sales-guide', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ action: 'match-to-engagement', services, engagementType: engType, staffCount })
+    });
+    const matchData = await matchRes.json();
+
+    const recommended = new Set(matchData.recommended || []);
+    const optional    = new Set(matchData.optional    || []);
+
+    console.log(`[Sales Guide] matched: ${recommended.size} recommended, ${optional.size} optional`);
+
+    // Build a catalog-compatible structure for renderServiceSelection
+    // Map services to the format renderServiceSelection expects
+    const catalogForRender = services.map(s => ({
+      ...s,
+      labels: recommended.has(s.id) ? ['guided'] :
+              optional.has(s.id)    ? ['guided'] : [],
+      _recommended: recommended.has(s.id),
+      _optional:    optional.has(s.id),
+    }));
+
+    renderServiceSelectionFromMatch(services, recommended, optional, staffCount);
+
   } catch (e) {
     list.innerHTML = `<div class="opp-contact-none">Could not load catalog — ${esc(e.message)}</div>`;
     $('oppStep3').classList.remove('hidden');
   }
+}
+
+// ── Render service selection from semantic match ─────────
+// Used by Discovery mode — works with any MSP catalog, no labels needed.
+// Haiku has already identified which items are recommended/optional.
+function renderServiceSelectionFromMatch(services, recommended, optional, defaultQty) {
+  const list = $('oppServiceList');
+  if (!list) return;
+
+  const usedIds = new Set();
+  let html = '';
+
+  // Recommended items — pre-selected
+  const recItems = services.filter(s => recommended.has(s.id));
+  const optItems = services.filter(s => optional.has(s.id));
+  const extraItems = services.filter(s => !recommended.has(s.id) && !optional.has(s.id));
+
+  if (recItems.length > 0) {
+    html += `<div class="opp-svc-section-label">Recommended for this engagement</div>`;
+    recItems.forEach(item => {
+      const qty = isProjectFee(item) ? 1 : defaultQty;
+      html += svcRow(item, qty, true, 'matched', 'Recommended');
+      usedIds.add(item.id);
+    });
+  }
+
+  if (optItems.length > 0) {
+    html += `<div class="opp-svc-section-label" style="margin-top:10px;">Optional add-ons</div>`;
+    optItems.forEach(item => {
+      const qty = isProjectFee(item) ? 1 : defaultQty;
+      html += svcRow(item, qty, false, 'optional', 'Optional');
+      usedIds.add(item.id);
+    });
+  }
+
+  if (extraItems.length > 0) {
+    html += `<div class="opp-svc-section-label" style="margin-top:10px;">Also in your catalog</div>`;
+    extraItems.forEach(item => {
+      const qty = isProjectFee(item) ? 1 : defaultQty;
+      html += svcRow(item, qty, false, 'extra', '');
+    });
+  }
+
+  if (!html) {
+    html = '<div class="opp-contact-none">No services matched — select items manually from your catalog.</div>';
+  }
+
+  list.innerHTML = html;
+
+  // Wire up totals
+  list.querySelectorAll('.opp-svc-check, .opp-svc-qty').forEach(el => {
+    el.addEventListener('change', updateServiceTotal);
+    el.addEventListener('input',  updateServiceTotal);
+  });
+  updateServiceTotal();
+
+  $('oppStep3').classList.remove('hidden');
+  $('oppStep3').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // Maps engagement type → the catalog label that's relevant for that engagement
