@@ -558,6 +558,37 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
           return ok({ results, matched, created, failed, catalogMissing, catalogSize: catalog.length });
         }
 
+        // ── fetch-catalog-services ───────────────────────────────
+    // Returns all services and bundles from the MSP's catalog.
+    // No label filter — works with any MSP's catalog out of the box.
+    // Hardware products are excluded — only service-type items returned.
+    // Called as the first step in Discovery catalog matching.
+    if (action === 'fetch-catalog-services') {
+      const res  = await fetch(`${BASE}/product?size=500`, { headers });
+      const data = res.ok ? await res.json() : {};
+      const all  = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
+
+      // Keep only services, bundles, and labor — exclude hardware/software products
+      const services = all
+        .filter(p => {
+          if (p.listed === false) return false;
+          const t = (p.productType || p.type || '').toLowerCase();
+          // Include: service, bundle, labor, recurring items
+          // Exclude: product (hardware/software one-time items)
+          if (t === 'product') return false;
+          return true;
+        })
+        .map(p => ({
+          id:    p.id,
+          name:  p.name || '',
+          price: p.price ?? p.recurringPrice ?? 0,
+          type:  (p.productType || p.type || '').toLowerCase(),
+          unit:  (p.unit || p.term || '').toLowerCase(),
+        }));
+
+      return ok({ services, totalFetched: all.length });
+    }
+
         return err('Unknown action.', 400);
 
   } catch (e) {
