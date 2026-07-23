@@ -661,7 +661,6 @@ function renderResults(mode, title, rec) {
         ${hw.never_forget ? `<div class="hw-forget">${esc(hw.never_forget)}</div>` : ''}
       </div>`).join('');
     hwSection.classList.remove('hidden');
-    openSection(hwSection);
   } else {
     hwSection.classList.add('hidden'); // No hardware = hide entirely
   }
@@ -688,7 +687,6 @@ function renderResults(mode, title, rec) {
   const briefs = rec.widget_briefs;
   const briefLabels = { w1:'W1 · Their Situation', w2:'W2 · Why Now', w3:'W3 · Why Trust Us', w4:'W4 · What They Get', w5:'W5 · Investment' };
   if (briefs) {
-    openSection($('widgetBriefsSection'));
     $('widgetBriefs').innerHTML = ['w1','w2','w3','w4','w5'].map(w => `
       <div class="brief-item">
         <div class="brief-w">${briefLabels[w]}</div>
@@ -802,30 +800,10 @@ $('copyWidgetsBtn')?.addEventListener('click', async () => {
 });
 
 // Open scope builder with pre-selected preset
-$('openScopeBtn')?.addEventListener('click', () => {
-  const preset = currentRec ? (SCOPE_PRESET_MAP[currentRec.engagement_type] || '') : '';
-  window.open(`project-scope.html${preset ? '?preset='+preset+'&from=guide' : ''}`, '_blank');
-});
+
 
 // Open ROI builder with pre-filled context
-$('openRoiBtn')?.addEventListener('click', () => {
-  const params = new URLSearchParams();
-  if (currentAnswers.industry)   params.set('industry',   currentAnswers.industry.split('/')[0].trim().toLowerCase());
-  if (currentAnswers.staffCount) params.set('staff',      currentAnswers.staffCount);
-  if (currentRec?.services_recommended) {
-    const svcs = currentRec.services_recommended.filter(s => !s.optional).map(s => {
-      const n = s.service.toLowerCase();
-      if (n.includes('security') || n.includes('edr')) return 'security';
-      if (n.includes('backup') || n.includes('recovery')) return 'backup';
-      if (n.includes('helpdesk') || n.includes('noc') || n.includes('monitoring')) return 'helpdesk';
-      if (n.includes('compliance')) return 'compliance';
-      return null;
-    }).filter(Boolean);
-    if (svcs.length) params.set('services', [...new Set(svcs)].join(','));
-  }
-  params.set('from', 'guide');
-  window.open(`roi-builder.html?${params.toString()}`, '_blank');
-});
+
 
 // ── Generate service widget ──────────────────────────────
 // ── Apply brand color to service widget ──────────────────
