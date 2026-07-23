@@ -368,7 +368,116 @@ Write a short, professional cover note for the quote.`;
     } catch (e) { return err(e.message); }
   }
 
-    // ── ACTION: suggest-products ─────────────────────────────
+  // ── ACTION: quick-quote-standalone ─────────────────────
+  // Standalone Quick Quote — no catalog needed.
+  // Step 1: identify distinct product requests from natural language
+  // Step 2: web search 2 results per item, business-grade
+  // Step 3: generate a cover note
+  // Returns: { items: [{name, suggestions:[{name,description,manufacturer,mpn,approx_price}]}], cover_note }
+  if (action === 'quick-quote-standalone') {
+    const { request } = body;
+    if (!request) return err('Product request required.', 400);
+
+    try {
+      // Step 1 — identify distinct product types
+      const identifyRes = await fetch(ANTHROPIC_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 300,
+          messages: [{ role: 'user', content: 'Extract the distinct product types from this request. Return ONLY a JSON array of short product type strings. Example: ["27-inch monitor","USB-C dock","wireless keyboard"]
+
+Request: "' + request + '"' }]
+        })
+      });
+      const identifyData = await identifyRes.json();
+      const identifyText = (identifyData?.content?.[0]?.text || '[]').replace(/```json?|```/g, '').trim();
+      const arrMatch = identifyText.match(/\[[\s\S]*?\]/);
+      const productTypes = arrMatch ? JSON.parse(arrMatch[0]) : [request];
+
+      // Step 2 — web search per product type, 2 results each
+      const items = [];
+      for (const productType of productTypes.slice(0, 6)) {
+        try {
+          const searchRes = await fetch(ANTHROPIC_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': process.env.ANTHROPIC_API_KEY,
+              'anthropic-version': '2023-06-01',
+              'anthropic-beta': 'web-search-2025-03-05'
+            },
+            body: JSON.stringify({
+              model: 'claude-haiku-4-5-20251001',
+              max_tokens: 600,
+              tools: [
+                { type: 'web_search_20250305', name: 'web_search' },
+                {
+                  name: 'submit_product_suggestions',
+                  description: 'Submit exactly 2 product suggestions for this item type',
+                  input_schema: {
+                    type: 'object',
+                    properties: {
+                      suggestions: {
+                        type: 'array',
+                        maxItems: 2,
+                        items: {
+                          type: 'object',
+                          properties: {
+                            name:         { type: 'string', description: 'Full product name' },
+                            description:  { type: 'string', description: 'One sentence — what it does, key specs in plain language' },
+                            manufacturer: { type: 'string', description: 'Brand name' },
+                            mpn:          { type: 'string', description: 'Manufacturer part number' },
+                            approx_price: { type: 'number', description: 'Approximate retail price in USD as a number' }
+                          },
+                          required: ['name', 'manufacturer', 'mpn']
+                        }
+                      }
+                    },
+                    required: ['suggestions']
+                  }
+                }
+              ],
+              tool_choice: { type: 'auto' },
+              system: 'You are a product research assistant for an MSP. Find exactly 2 real, currently available business-grade products. Search CDW, Insight, Connection, Provantage, or manufacturer sites. Avoid Amazon, Best Buy, Walmart. Return accurate MPNs. Use the submit_product_suggestions tool.',
+              messages: [{ role: 'user', content: 'Find 2 business-grade products for: "' + productType + '". Original request context: "' + request + '"' }]
+            })
+          });
+          const searchData = await searchRes.json();
+          const tool = Array.isArray(searchData.content)
+            ? searchData.content.find(b => b.type === 'tool_use' && b.name === 'submit_product_suggestions')
+            : null;
+          items.push({
+            requestedItem: productType,
+            suggestions: tool ? (tool.input.suggestions || []).slice(0, 2) : []
+          });
+        } catch(e) {
+          items.push({ requestedItem: productType, suggestions: [] });
+        }
+      }
+
+      // Step 3 — cover note
+      const productList = items.map(i => i.requestedItem).join(', ');
+      const coverRes = await fetch(ANTHROPIC_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 200,
+          system: 'Write a brief, warm, professional cover note for a product quote. Plain business English. 2-3 sentences. No bullet points.',
+          messages: [{ role: 'user', content: 'Write a cover note for a quote that includes: ' + productList }]
+        })
+      });
+      const coverData = await coverRes.json();
+      const coverNote = coverData?.content?.[0]?.text || '';
+
+      return ok({ items, cover_note: coverNote });
+
+    } catch(e) { return err(e.message); }
+  }
+
+  // ── ACTION: suggest-products ─────────────────────────────
   // Fires when Quick Quote finds zero catalog matches.
   // Uses web search to find real products with MPNs so the
   // rep can import them from the Salesbuildr marketplace.
