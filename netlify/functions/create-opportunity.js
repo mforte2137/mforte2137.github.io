@@ -472,11 +472,14 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
         // ── match-spec-items ────────────────────────────────────
         // Execution mode — faithful to design desk spec.
         //
-        // SERVICES & LABOR: always in catalog — match only, never create.
-        //   If not found → catalogMissing (warning to rep)
+        // SERVICES & LABOR:
+        //   1. Exact ID match (mpn/internalProductId/ean/externalIdentifier)
+        //   2. If not found → semantic name match via Haiku
+        //   3. If still not found → catalogMissing warning
         //
-        // HARDWARE & SOFTWARE: match first, auto-create if not found.
-        //   Auto-created products get MPN so Fetch info can pull disti data.
+        // HARDWARE & SOFTWARE:
+        //   1. Exact MPN match
+        //   2. If not found → auto-create with MPN (always goes in quote)
         if (action === 'match-spec-items') {
           const { items } = body;
           if (!Array.isArray(items) || items.length === 0) return err('items required.', 400);
@@ -489,7 +492,13 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
           const all     = catData?.results || catData?.data || catData?.items || (Array.isArray(catData) ? catData : []);
           const catalog = all.filter(p => p.listed !== false);
 
-          // Exact ID match — checks mpn, internalProductId, ean, externalIdentifier
+          // Catalog split — services for fallback matching
+          const catalogServices = catalog.filter(p => {
+            const t = (p.productType || p.type || '').toLowerCase();
+            return t !== 'product';
+          });
+
+          // Exact ID match across all identifier fields
           function matchById(specMpn) {
             if (!specMpn) return null;
             const needle = specMpn.toLowerCase().replace(/[^a-z0-9-/]/g, '');
@@ -515,36 +524,26 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
           }
 
           const results        = [];
-          const catalogMissing = []; // services/labor not found — rep must add manually
+          const needsFallback  = []; // services not found by ID — try semantic
+          const catalogMissing = []; // services not found by either method
 
+          // Pass 1 — exact ID match for everything
           for (const item of items) {
             const isServiceOrLabor = item.type === 'service' || item.type === 'labor';
             const found = matchById(item.mpn);
 
             if (found) {
-              // Found in catalog — always use existing product
               results.push({ specItem: item, catalogProduct: fmt(found, false), qty: item.quantity || 1, status: 'matched' });
-
             } else if (isServiceOrLabor) {
-              // Services/labor MUST be in catalog — flag as missing, don't auto-create
-              catalogMissing.push({ specItem: item });
-
+              needsFallback.push(item); // try semantic next
             } else {
-              // Hardware/software not in catalog — auto-create with MPN
+              // Hardware/software — auto-create with MPN
               try {
-                const payload = {
-                  name:       item.name,
-                  categoryId: GUIDED_CATEGORY_ID,
-                  listed:     true,
-                };
-                if (item.mpn && item.mpn.toUpperCase() !== 'INTERNAL') {
-                  payload.mpn = item.mpn;
-                }
+                const payload = { name: item.name, categoryId: GUIDED_CATEGORY_ID, listed: true };
+                if (item.mpn && item.mpn.toUpperCase() !== 'INTERNAL') payload.mpn = item.mpn;
                 if (item.description) payload.shortDescription = item.description.slice(0, 200);
-
                 const createRes  = await fetch(`${BASE}/product`, { method: 'POST', headers, body: JSON.stringify(payload) });
                 const createData = await createRes.json();
-
                 if (createRes.ok && createData?.id) {
                   results.push({ specItem: item, catalogProduct: fmt(createData, true), qty: item.quantity || 1, status: 'created' });
                 } else {
@@ -556,43 +555,62 @@ Return a JSON array of the IDs of matching products. Return [] if nothing matche
             }
           }
 
+          // Pass 2 — semantic fallback for unmatched services/labor
+          if (needsFallback.length > 0 && catalogServices.length > 0) {
+            try {
+              const catalogList = catalogServices
+                .slice(0, 100)
+                .map(s => s.id + '|||' + s.name)
+                .join('\n');
+
+              const itemList = needsFallback
+                .map((item, i) => i + ': ' + item.name)
+                .join('\n');
+
+              const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-api-key': process.env.ANTHROPIC_API_KEY,
+                  'anthropic-version': '2023-06-01'
+                },
+                body: JSON.stringify({
+                  model: 'claude-haiku-4-5-20251001',
+                  max_tokens: 300,
+                  messages: [{ role: 'user', content: 'Match these service/labor items to the closest catalog entry.\n\nSPEC ITEMS (index: name):\n' + itemList + '\n\nCATALOG (id|||name):\n' + catalogList + '\n\nReturn ONLY a JSON object mapping index to catalog ID (null if no reasonable match). Example: {"0":"catalogId1","1":null}. No markdown.' }]
+                })
+              });
+
+              const aiData = await aiRes.json();
+              const aiText = (aiData?.content?.[0]?.text || '{}').replace(/```json?|```/g, '').trim();
+              const objMatch = aiText.match(/\{[\s\S]*?\}/);
+              const idMap = objMatch ? JSON.parse(objMatch[0]) : {};
+              const catalogMap = new Map(catalog.map(p => [p.id, p]));
+
+              needsFallback.forEach((item, i) => {
+                const catalogId = idMap[String(i)];
+                if (catalogId && catalogMap.has(catalogId)) {
+                  results.push({ specItem: item, catalogProduct: fmt(catalogMap.get(catalogId), false), qty: item.quantity || 1, status: 'fuzzy' });
+                } else {
+                  catalogMissing.push({ specItem: item });
+                }
+              });
+            } catch(e) {
+              // Semantic fallback failed — put all in catalogMissing
+              needsFallback.forEach(item => catalogMissing.push({ specItem: item }));
+            }
+          } else {
+            // No catalog services to match against
+            needsFallback.forEach(item => catalogMissing.push({ specItem: item }));
+          }
+
           const matched = results.filter(r => r.status === 'matched');
+          const fuzzy   = results.filter(r => r.status === 'fuzzy');
           const created = results.filter(r => r.status === 'created');
           const failed  = results.filter(r => r.status === 'failed');
 
-          return ok({ results, matched, created, failed, catalogMissing, catalogSize: catalog.length });
+          return ok({ results, matched, fuzzy, created, failed, catalogMissing, catalogSize: catalog.length });
         }
-
-        // ── fetch-catalog-services ───────────────────────────────
-    // Returns all services and bundles from the MSP's catalog.
-    // No label filter — works with any MSP's catalog out of the box.
-    // Hardware products are excluded — only service-type items returned.
-    // Called as the first step in Discovery catalog matching.
-    if (action === 'fetch-catalog-services') {
-      const res  = await fetch(`${BASE}/product?size=500`, { headers });
-      const data = res.ok ? await res.json() : {};
-      const all  = data?.results || data?.data || data?.items || (Array.isArray(data) ? data : []);
-
-      // Keep only services, bundles, and labor — exclude hardware/software products
-      const services = all
-        .filter(p => {
-          if (p.listed === false) return false;
-          const t = (p.productType || p.type || '').toLowerCase();
-          // Include: service, bundle, labor, recurring items
-          // Exclude: product (hardware/software one-time items)
-          if (t === 'product') return false;
-          return true;
-        })
-        .map(p => ({
-          id:    p.id,
-          name:  p.name || '',
-          price: p.price ?? p.recurringPrice ?? 0,
-          type:  (p.productType || p.type || '').toLowerCase(),
-          unit:  (p.unit || p.term || '').toLowerCase(),
-        }));
-
-      return ok({ services, totalFetched: all.length });
-    }
 
         return err('Unknown action.', 400);
 
