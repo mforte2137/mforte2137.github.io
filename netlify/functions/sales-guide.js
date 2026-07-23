@@ -122,7 +122,7 @@ const DISCOVER_TOOL = {
       },
       service_widget_html: {
         type: 'string',
-        description: 'A self-contained HTML widget describing the recommended service stack for this engagement in buyer language. No product names or brand names — describe what each service DOES for the business. Use simple inline styles. IMPORTANT: Use ONLY #1a1a1a for text, #2563eb for accent/heading color, #eff6ff for light background tints, and #ffffff for white backgrounds. 3-5 service categories. Each with a short headline and 1-2 sentence description of the business outcome it delivers. Format as a clean, professional widget that could appear in a sales proposal.'
+        description: 'A self-contained HTML widget describing the recommended service stack for this engagement in buyer language. No product names or brand names. IMPORTANT styling rules: use ONLY these colors: #0d2d5e for all headings and accent elements, #2563eb for borders and highlights, #0d2d5e at 8% opacity (use #e8edf5) for light backgrounds, #333333 for body text, #ffffff for white. Match this exact structure: outer div with max-width:600px, padding:24px, font-family:Segoe UI Arial sans-serif. Section headers as h3 with color:#0d2d5e and border-left:3px solid #2563eb padding-left:10px. Body text as p with color:#333333 font-size:14px line-height:1.6. Light background sections use background:#e8edf5 padding:12px border-radius:4px. Include 3-5 service categories, each with a headline and 1-2 sentence buyer-language description of the business outcome. No CDATA tags. No XML. Pure HTML only.'
       }
     },
     required: ['coaching_insight', 'engagement_type', 'solution_bullets', 'hardware_needed', 'w1_situation', 'w2_urgency', 'w3_trust', 'w4_outcome', 'w5_investment']
