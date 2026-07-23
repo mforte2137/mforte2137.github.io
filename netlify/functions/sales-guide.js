@@ -386,9 +386,7 @@ Write a short, professional cover note for the quote.`;
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 300,
-          messages: [{ role: 'user', content: 'Extract the distinct product types from this request. Return ONLY a JSON array of short product type strings. Example: ["27-inch monitor","USB-C dock","wireless keyboard"]
-
-Request: "' + request + '"' }]
+          messages: [{ role: 'user', content: 'Extract the distinct product types from this request. Return ONLY a JSON array of short product type strings. Example: ["27-inch monitor","USB-C dock","wireless keyboard"]\n\nRequest: "' + request + '"' }]
         })
       });
       const identifyData = await identifyRes.json();
