@@ -294,6 +294,8 @@ $('discGenerateBtn')?.addEventListener('click', async () => {
     if (!data.ok) throw new Error(data.error || 'Recommendation failed');
     console.log('[Sales Guide] stop_reason:', data.stop_reason);
     currentRec     = normaliseRec(data.recommendation);
+    console.log('[Discovery] service_widget_html present:', !!currentRec?.service_widget_html, 'length:', currentRec?.service_widget_html?.length || 0);
+    console.log('[Discovery] rec keys:', Object.keys(currentRec));
     currentAnswers = answers;
     renderResults('discovery', answers.company || 'New Opportunity', currentRec);
   } catch (e) {
