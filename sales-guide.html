@@ -514,15 +514,25 @@
                 <button type="button" id="oppSearchBtn" class="btn-opp-action">Search →</button>
               </div>
               <div id="oppCompanyResults" class="opp-company-results hidden"></div>
-              <div id="oppCompanySelected" class="opp-company-selected hidden"></div>
+              <div id="oppCompanySelected" class="opp-company-selected hidden">
+                <div class="company-selected-tag">
+                  <span id="oppSelectedCompanyName"></span>
+                  <button type="button" id="changeCompanyBtn" class="change-company-btn">Change</button>
+                </div>
+              </div>
             </div>
 
             <!-- Step 2: Opportunity -->
-            <div class="opp-step hidden" id="oppOppStep">
+            <div class="opp-step hidden" id="oppOppStep" style=""><div id="oppStep2" style="display:contents;"></div>
               <div class="opp-step-hd"><span class="opp-step-num">2</span> Select opportunity</div>
               <p class="opp-step-hint">Select the opportunity you already created in Salesbuildr or Autotask. The Sales Brief will be added to its Description.</p>
               <div id="oppOppList" class="opp-company-results hidden"></div>
-              <div id="oppOppSelected" class="opp-company-selected hidden"></div>
+              <div id="oppOppSelected" class="opp-company-selected hidden">
+                <div class="company-selected-tag">
+                  <span id="oppSelectedOppName"></span>
+                  <button type="button" id="changeOppBtn" class="change-company-btn">Change</button>
+                </div>
+              </div>
             </div>
 
             <!-- Step 3: Services (Discovery only) -->
@@ -539,10 +549,11 @@
               <div class="opp-step-hd" id="oppQuoteStepHd"><span class="opp-step-num" id="oppQuoteStepNum">3</span> Quote <span class="opp-optional">optional</span></div>
               <div id="oppBriefWrap">
                 <button type="button" class="opp-brief-toggle" id="oppBriefToggle">
-                  ▶ Preview Sales Brief <span class="opp-brief-hint">Will be saved to the opportunity Description</span>
+                  <span id="oppBriefToggleLabel">▶ Preview Sales Brief</span> <span class="opp-brief-hint">Will be saved to the opportunity Description</span>
                 </button>
                 <div class="opp-brief-preview hidden" id="oppBriefPreview">
                   <pre class="brief-pre" id="oppBriefPre"></pre>
+                  <div id="oppBriefText" style="display:none;"></div>
                 </div>
               </div>
               <label class="opp-check-label"><input type="checkbox" id="oppCreateQuote" checked> Create a draft quote</label>
@@ -559,6 +570,7 @@
               <div id="oppCreateWorking" class="opp-working hidden">
                 <div class="spinner-sm"></div>
                 <span id="oppCreateWorkingMsg">Saving sales brief…</span>
+                <span id="oppWorkingMsg"></span>
               </div>
               <div id="oppCreateResult" class="hidden"></div>
             </div>
