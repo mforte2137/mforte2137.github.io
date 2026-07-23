@@ -1307,3 +1307,44 @@ h1, h2, h3, h4 {
   overflow: hidden;
   margin-bottom: 14px;
 }
+
+/* ── Quick Quote standalone — per-item groups ────────────── */
+.qq-item-group {
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-panel);
+}
+.qq-item-group-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px;
+  background: var(--bg-row);
+  border-bottom: 1px solid var(--border);
+}
+.qq-item-group-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px; font-weight: 700; color: var(--text);
+  flex: 1;
+}
+.qq-item-group-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: var(--text-3);
+  background: var(--border); padding: 2px 8px; border-radius: 20px;
+}
+.qq-suggestions-inner { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
+.qq-no-results { font-size: 13px; color: var(--text-3); font-style: italic; padding: 4px 0; }
+
+/* Connect callout */
+.qq-connect-callout {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px; margin-top: 16px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+.qq-connect-icon { font-size: 20px; flex-shrink: 0; }
+.qq-connect-body { flex: 1; min-width: 200px; font-size: 13px; color: var(--text-2); line-height: 1.5; }
+.qq-connect-body strong { color: var(--text); }
