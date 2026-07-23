@@ -408,40 +408,49 @@
     </div>
 
     <!-- Hardware checklist (Discovery only, if hardware needed) -->
-    <div id="hardwareSection" class="result-section hidden">
-      <div class="section-header">
+    <div id="hardwareSection" class="result-section collapsible hidden">
+      <button type="button" class="collapsible-header" aria-expanded="false" onclick="toggleSection(this)">
         <span class="section-icon">🔧</span>
         <div>
-          <div class="section-title">Hardware checklist — confirm at site visit</div>
-          <div class="section-sub">These components need to be specified before you can finalise the quote. Use this list at the site survey.</div>
+          <div class="section-title">Hardware &amp; Infrastructure checklist</div>
+          <div class="section-sub">Confirm these at the site visit before finalising the quote</div>
         </div>
+        <span class="collapsible-chevron">▾</span>
+      </button>
+      <div class="collapsible-body" hidden>
+        <div id="hardwareList" class="hardware-list"></div>
+        <div class="hardware-note">After the site visit, use the <strong>Special Bid Converter</strong> to import distributor pricing directly into Salesbuildr.</div>
       </div>
-      <div id="hardwareList" class="hardware-list"></div>
-      <div class="hardware-note">After the site visit, use the <strong>Special Bid Converter</strong> to import distributor pricing directly into Salesbuildr.</div>
     </div>
 
     <!-- Services recommended -->
-    <div id="servicesSection" class="result-section hidden">
-      <div class="section-header">
+    <div id="servicesSection" class="result-section collapsible hidden">
+      <button type="button" class="collapsible-header" aria-expanded="false" onclick="toggleSection(this)">
         <span class="section-icon">⚡</span>
         <div>
           <div class="section-title">Recommended service framework</div>
           <div class="section-sub">Industry-standard services for this engagement — map these to your catalog items</div>
         </div>
+        <span class="collapsible-chevron">▾</span>
+      </button>
+      <div class="collapsible-body" hidden>
+        <div id="servicesList" class="services-list"></div>
       </div>
-      <div id="servicesList" class="services-list"></div>
     </div>
 
     <!-- Widget briefs preview -->
-    <div class="result-section">
-      <div class="section-header">
+    <div class="result-section collapsible" id="widgetBriefsSection">
+      <button type="button" class="collapsible-header" aria-expanded="false" onclick="toggleSection(this)">
         <span class="section-icon">📄</span>
         <div>
           <div class="section-title">Proposal narrative — W1 to W5</div>
           <div class="section-sub">These briefs drive the five buyer-journey widgets. Click "Generate Widgets" to build them.</div>
         </div>
+        <span class="collapsible-chevron">▾</span>
+      </button>
+      <div class="collapsible-body" hidden>
+        <div id="widgetBriefs" class="widget-briefs"></div>
       </div>
-      <div id="widgetBriefs" class="widget-briefs"></div>
     </div>
 
     <!-- Execution quote lines — Phase B catalog matching -->
@@ -532,20 +541,25 @@
 
     <!-- Service widget — generated from engagement type, no catalog needed -->
     <div id="serviceWidgetWrap" class="hidden" style="margin-top:16px;">
-      <div class="result-section">
-        <div class="section-header">
+      <div class="result-section collapsible">
+        <button type="button" class="collapsible-header" aria-expanded="true" onclick="toggleSection(this)">
           <span class="section-icon">⚡</span>
           <div>
             <div class="section-title">Recommended Services Widget</div>
             <div class="section-sub">Buyer-language description of the service stack — ready to paste into your quote</div>
           </div>
-          <button type="button" id="copyServiceWidgetBtn" class="btn-secondary" style="margin-left:auto;white-space:nowrap;">📋 Copy HTML</button>
+          <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+            <button type="button" id="copyServiceWidgetBtn" class="btn-secondary" style="white-space:nowrap;" onclick="event.stopPropagation()">📋 Copy HTML</button>
+            <span class="collapsible-chevron open">▾</span>
+          </div>
+        </button>
+        <div class="collapsible-body">
+          <div id="serviceWidgetWorking" class="action-working hidden">
+            <div class="spinner-sm"></div>
+            <span>Generating service widget…</span>
+          </div>
+          <div id="serviceWidgetFrame" style="width:100%;min-height:100px;background:#fff;overflow:hidden;"></div>
         </div>
-        <div id="serviceWidgetWorking" class="action-working hidden">
-          <div class="spinner-sm"></div>
-          <span>Generating service widget…</span>
-        </div>
-        <div id="serviceWidgetFrame" style="width:100%;min-height:100px;background:#fff;border-radius:4px;overflow:hidden;"></div>
       </div>
     </div>
 
