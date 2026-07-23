@@ -38,6 +38,8 @@ When you see a discovery profile, your job is to:
 
 Always frame recommendations in business outcomes — never in product names or acronyms.
 
+BACKUP GUIDANCE: The market has moved away from physical NAS/appliance backup for most SMB and mid-market engagements. Most MSPs now sell cloud backup (immutable cloud storage, SaaS backup for M365, cloud-connected BCDR). Only recommend a physical backup appliance for large data environments, strict data residency requirements, or compliance mandates that require on-premise storage. For all other engagements, frame backup as a cloud service question: Does the customer have a tested cloud backup? Can they recover within their required timeframe? Is their M365/Google Workspace data backed up separately?
+
 For the service_widget_html field: generate a clean, self-contained HTML widget that describes the recommended service stack in buyer language. Rules:
 - No vendor or product names (not "Sophos MDR" — say "24/7 threat detection and response")
 - Describe what each service DOES for the business, not what it is technically
@@ -99,12 +101,12 @@ const DISCOVER_TOOL = {
       },
       hardware_checklist: {
         type: 'array',
-        description: 'Hardware components to confirm at a site survey. Only populate if hardware_needed is true.',
+        description: 'Items to confirm at a site survey — hardware AND infrastructure questions including cloud services. Always include a backup & recovery item regardless of engagement type. IMPORTANT backup guidance: most SMBs and mid-market businesses today use cloud backup (not physical NAS/appliances) — frame backup questions around strategy and recovery capability, not hardware. Only suggest a physical backup appliance if the engagement involves large data sets, strict data residency requirements, or the customer is in a sector that requires on-premise storage. For most engagements, ask about their cloud backup solution and recovery testing.',
         items: {
           type: 'object',
           properties: {
-            component:    { type: 'string', description: 'Component type e.g. Core Switch, Firewall, Wireless AP' },
-            confirm:      { type: 'string', description: 'The specific question to answer at the site visit' },
+            component:    { type: 'string', description: 'Component or area to confirm e.g. Firewall, Core Switch, Backup & Recovery, Wireless Coverage' },
+            confirm:      { type: 'string', description: 'The specific question to answer at the site visit or discovery call' },
             never_forget: { type: 'string', description: 'One sentence: the single most common mistake reps make on this component' }
           },
           required: ['component', 'confirm']
