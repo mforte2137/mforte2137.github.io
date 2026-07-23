@@ -37,6 +37,15 @@ When you see a discovery profile, your job is to:
 5. Provide specific, buyer-focused briefs for each of the 5 proposal widgets
 
 Always frame recommendations in business outcomes — never in product names or acronyms.
+
+For the service_widget_html field: generate a clean, self-contained HTML widget that describes the recommended service stack in buyer language. Rules:
+- No vendor or product names (not "Sophos MDR" — say "24/7 threat detection and response")
+- Describe what each service DOES for the business, not what it is technically
+- 3-5 service categories appropriate to the engagement type
+- Use simple inline CSS only — no external dependencies
+- Professional appearance suitable for a sales proposal
+- Include a brief intro sentence at the top
+
 Use the submit_discovery_recommendation tool to return your output.`;
 
 // ── Execution system prompt ───────────────────────────────
@@ -110,6 +119,10 @@ const DISCOVER_TOOL = {
       roi_angle: {
         type: 'string',
         description: 'The strongest ROI angle for this customer — productivity, security risk, compliance, or cost savings? One sentence.'
+      },
+      service_widget_html: {
+        type: 'string',
+        description: 'A self-contained HTML widget describing the recommended service stack for this engagement in buyer language. No product names or brand names — describe what each service DOES for the business. Use simple inline styles. 3-5 service categories. Each with a short headline and 1-2 sentence description of the business outcome it delivers. Format as a clean, professional widget that could appear in a sales proposal.'
       }
     },
     required: ['coaching_insight', 'engagement_type', 'solution_bullets', 'hardware_needed', 'w1_situation', 'w2_urgency', 'w3_trust', 'w4_outcome', 'w5_investment']
@@ -289,7 +302,7 @@ Build a sales recommendation and widget briefs for this opportunity.`;
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 1500,
+          max_tokens: 2500,
           system: DISCOVER_SYSTEM,
           tools: [DISCOVER_TOOL],
           tool_choice: { type: 'tool', name: 'submit_discovery_recommendation' },
