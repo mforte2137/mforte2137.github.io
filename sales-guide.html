@@ -519,6 +519,36 @@
       </div>
     </div>
 
+    <!-- Service widget generation button — Discovery mode only -->
+    <div id="serviceWidgetActionWrap" class="hidden" style="margin-bottom:16px;">
+      <div class="action-card" style="grid-column:1/-1;">
+        <div class="action-icon">⚡</div>
+        <div class="action-title">Generate Services Widget</div>
+        <div class="action-desc">Create a buyer-language widget describing the recommended service stack — no catalog or API needed. Paste directly into your quote.</div>
+        <button type="button" id="genServiceWidgetBtn" class="btn-action btn-primary-action">Generate Services Widget →</button>
+        <div id="serviceWidgetResult" class="action-result hidden"></div>
+      </div>
+    </div>
+
+    <!-- Service widget — generated from engagement type, no catalog needed -->
+    <div id="serviceWidgetWrap" class="hidden" style="margin-top:16px;">
+      <div class="result-section">
+        <div class="section-header">
+          <span class="section-icon">⚡</span>
+          <div>
+            <div class="section-title">Recommended Services Widget</div>
+            <div class="section-sub">Buyer-language description of the service stack — ready to paste into your quote</div>
+          </div>
+          <button type="button" id="copyServiceWidgetBtn" class="btn-secondary" style="margin-left:auto;white-space:nowrap;">📋 Copy HTML</button>
+        </div>
+        <div id="serviceWidgetWorking" class="action-working hidden">
+          <div class="spinner-sm"></div>
+          <span>Generating service widget…</span>
+        </div>
+        <iframe id="serviceWidgetFrame" style="width:100%;border:none;min-height:300px;display:none;" sandbox="allow-same-origin"></iframe>
+      </div>
+    </div>
+
     <!-- Salesbuildr widget push (shown after widgets generated) -->
     <div id="widgetOutput" class="widget-output hidden">
 
