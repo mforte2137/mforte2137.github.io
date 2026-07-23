@@ -331,23 +331,25 @@ async function execMatchCatalog(lineItems) {
 
     const results        = res.results        || [];
     const matched        = res.matched        || [];
+    const fuzzy          = res.fuzzy          || [];
     const created        = res.created        || [];
     const failed         = res.failed         || [];
     const catalogMissing = res.catalogMissing || [];
     const total          = results.length + catalogMissing.length;
 
-    // All successful items (matched + created) go into the quote list
-    const allGood = results.filter(r => r.status === 'matched' || r.status === 'created');
+    // All successful items (matched + fuzzy + created) go into the quote list
+    const allGood = results.filter(r => r.status === 'matched' || r.status === 'fuzzy' || r.status === 'created');
     renderExecMatchedItems(allGood);
 
     // Show catalog-missing services as warning, failed items as error
     renderExecFailed(failed, catalogMissing);
 
     const sub = [];
-    if (matched.length        > 0) sub.push(`${matched.length} matched from catalog`);
-    if (created.length        > 0) sub.push(`${created.length} hardware created`);
-    if (catalogMissing.length > 0) sub.push(`${catalogMissing.length} services not found in catalog`);
-    if (failed.length         > 0) sub.push(`${failed.length} failed`);
+    if (matched.length        > 0) sub.push(matched.length + ' matched from catalog');
+    if (fuzzy.length          > 0) sub.push(fuzzy.length + ' matched by name');
+    if (created.length        > 0) sub.push(created.length + ' hardware created');
+    if (catalogMissing.length > 0) sub.push(catalogMissing.length + ' services not found in catalog');
+    if (failed.length         > 0) sub.push(failed.length + ' failed');
     $('execQuoteLinesSub').textContent = sub.join(' · ') || 'No items to process';
 
   } catch(e) {
@@ -377,7 +379,7 @@ function renderExecMatchedItems(matched) {
           <span class="opp-svc-name">${esc(catalogProduct.name)}</span>
           <div class="opp-svc-meta">
             ${price > 0 ? `<span class="opp-svc-price">$${price.toFixed(2)}${uLabel} each</span>` : ''}
-            <span class="opp-svc-badge ${status === 'created' ? 'optional' : 'matched'}">${status === 'created' ? 'new' : esc(specItem.type)}</span>
+            <span class="opp-svc-badge ${status === 'created' ? 'optional' : status === 'fuzzy' ? 'optional' : 'matched'}">${status === 'created' ? 'new' : status === 'fuzzy' ? 'name match' : esc(specItem.type)}</span>
             ${catalogProduct.vendor ? `<span class="opp-svc-badge extra">${esc(catalogProduct.vendor)}</span>` : ''}
           </div>
           <div style="font-size:11px;color:var(--mute);margin-top:2px;">Spec: ${esc(specItem.name)}${specItem.mpn ? ' · MPN: ' + esc(specItem.mpn) : ''}</div>
