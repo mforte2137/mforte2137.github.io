@@ -121,9 +121,13 @@ function normaliseRec(rec) {
     w5: cleanStr(rec.w5_investment || rec.widget_briefs?.w5 || ''),
   };
 
-  // Debug — remove once briefs are confirmed working
-  console.log('[Sales Guide] normalised widget_briefs:', JSON.stringify(rec.widget_briefs, null, 2));
-  console.log('[Sales Guide] raw rec keys:', Object.keys(rec));
+  // Strip CDATA artifacts Claude sometimes wraps HTML in
+  if (typeof rec.service_widget_html === 'string') {
+    rec.service_widget_html = rec.service_widget_html
+      .replace(/<!\[CDATA\[/gi, '')
+      .replace(/\]\]>/gi, '')
+      .trim();
+  }
 
   return rec;
 }
@@ -149,10 +153,11 @@ $('guideColorPicker')?.addEventListener('input', () => {
   guideColor = $('guideColorPicker').value;
   $('guideColorHex').value = guideColor.toUpperCase();
   syncPresets(guideColor);
+  updateWidgetColors(guideColor);
 });
 $('guideColorHex')?.addEventListener('input', () => {
   const v = $('guideColorHex').value.trim().startsWith('#') ? $('guideColorHex').value.trim() : '#' + $('guideColorHex').value.trim();
-  if (isValidHex(v)) { guideColor = v; $('guideColorPicker').value = v; syncPresets(v); }
+  if (isValidHex(v)) { guideColor = v; $('guideColorPicker').value = v; syncPresets(v); updateWidgetColors(v); }
 });
 document.querySelectorAll('.guide-preset').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -160,14 +165,34 @@ document.querySelectorAll('.guide-preset').forEach(btn => {
     $('guideColorPicker').value = guideColor;
     $('guideColorHex').value    = guideColor.toUpperCase();
     syncPresets(guideColor);
+    updateWidgetColors(guideColor);
   });
 });
 function syncPresets(color) {
   document.querySelectorAll('.guide-preset').forEach(b => b.classList.toggle('active', b.dataset.color === color));
-  // Re-render service widget with new color if it's visible
+}
+
+function updateWidgetColors(color) {
+  // Re-render service widget with new color if visible
   if ($('serviceWidgetWrap') && !$('serviceWidgetWrap').classList.contains('hidden')) {
     applyServiceWidgetColor(color);
   }
+  // Re-render the 5-widget preview if visible
+  if ($('widgetOutput') && !$('widgetOutput').classList.contains('hidden') && generatedWidgets.length > 0) {
+    const isCombined = document.querySelector('input[name="widgetMode"]:checked')?.value !== 'individual';
+    const html = isCombined
+      ? generatedWidgets.map(w => recolorWidget(w.html, color)).join('\n<div style="height:20px;"></div>\n')
+      : recolorWidget(generatedWidgets[0]?.html || '', color);
+    $('previewFrame').srcdoc = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;background:#fff;}</style></head><body>' + html + '</body></html>';
+    $('htmlCode').value = html;
+  }
+}
+
+function recolorWidget(html, color) {
+  if (!html) return html;
+  const lighter = lightenHex(color, 0.91);
+  // Replace the two known brand colors the widget generator uses
+  return html.replace(/#0d2d5e/gi, color).replace(/#2563eb/gi, color).replace(/#e8edf5/gi, lighter).replace(/#f0f4fa/gi, lighter);
 }
 
 // ── Mode selection ────────────────────────────────────────
