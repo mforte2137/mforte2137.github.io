@@ -1042,228 +1042,110 @@ $('qq-request')?.addEventListener('input', () => {
   $('qqCount').textContent = $('qq-request').value.length;
 });
 
-// ── Restore saved credentials when mode opens ─────────────
-document.querySelectorAll('.mode-card[data-mode="quickquote"]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    setTimeout(() => {
-      const a = localStorage.getItem(LS_API_KEY), i = localStorage.getItem(LS_TENANT_URL);
-      if (a) $('qqApiKey').value = a;
-      if (i) $('qqTenantUrl').value = i;
-      if (a && i) $('qqRemember').checked = true;
-    }, 50);
-  });
+// ── Show/hide connect panel ───────────────────────────────
+$('qqShowConnectBtn')?.addEventListener('click', () => {
+  const panel = $('qqConnectPanel');
+  if (panel) panel.classList.remove('hidden');
+  $('qqShowConnectBtn').closest('.qq-connect-callout')?.classList.add('hidden');
+  // Pre-fill saved credentials
+  const a = localStorage.getItem(LS_API_KEY), t = localStorage.getItem(LS_TENANT_URL);
+  if (a) $('qqApiKey').value = a;
+  if (t) $('qqTenantUrl').value = t;
+  if (a && t) $('qqRemember').checked = true;
 });
 
-// ── Extract keywords from plain-language request ──────────
-// Splits the request into meaningful words, filters stop words
-// and very short tokens, returns unique lowercased keywords.
-function extractKeywords(request) {
-  const stopWords = new Set([
-    'i','a','an','the','and','or','for','with','have','please','also',
-    'some','would','just','can','us','our','their','my','this','that',
-    'like','good','great','any','brand','need','want','get',
-    // Number words — quantity hints, not product terms
-    'one','two','three','four','five','six','seven','eight','nine','ten',
-    'eleven','twelve','fifteen','twenty','thirty'
-  ]);
-  // Collapse "512 gb" → "512gb", "27 inch" → "27inch", "16 gb" → "16gb" before splitting
-  // so spaced specs match the same way as joined ones
-  const collapsed = request.toLowerCase()
-    .replace(/(\d+)\s*(gb|tb|mb|ghz|mhz|inch|in)/g, '$1$2')
-    .replace(/(\d+)\s*"/g, '$1inch');
-  const normalized = collapsed.replace(/[^a-z0-9 ]/g, ' ');
-  return [...new Set(
-    normalized.split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w))
-  )];
-}
+// ── Quick Quote standalone search ─────────────────────────
+$('qqSearchBtn')?.addEventListener('click', doQQStandaloneSearch);
 
-// ── Search catalog ────────────────────────────────────────
-$('qqSearchBtn')?.addEventListener('click', doQQCatalogSearch);
-
-async function doQQCatalogSearch() {
+async function doQQStandaloneSearch() {
   clearError('qqError');
   const request = $('qq-request')?.value.trim() || '';
-  const apiKey  = $('qqApiKey')?.value.trim() || '';
-  const intKey  = $('qqTenantUrl')?.value.trim() || '';
-
-  if (!request)           { showError('qqError', 'Describe what the customer needs first.'); return; }
-  if (!apiKey || !intKey) { showError('qqError', 'Enter your API credentials to search your catalog.'); return; }
-
-  if ($('qqRemember')?.checked) {
-    localStorage.setItem(LS_API_KEY, apiKey);
-    localStorage.setItem(LS_TENANT_URL, intKey);
-  } else {
-    localStorage.removeItem(LS_API_KEY);
-    localStorage.removeItem(LS_TENANT_URL);
-  }
+  if (!request) { showError('qqError', 'Describe what the customer needs first.'); return; }
 
   $('qqSearchBtn').disabled    = true;
-  $('qqSearchBtn').textContent = 'Searching catalog…';
+  $('qqSearchBtn').textContent = 'Finding products…';
   $('qqResultsWrap').classList.add('hidden');
+  $('qqItemsWrap').innerHTML   = '';
 
-
-  console.log('[Quick Quote] request:', request);
+  // Show working state
+  setWorking('Finding products…', 'Searching for business-grade products with real MPNs');
+  showSection('working-view');
 
   try {
-    // Search catalog — Claude Haiku matches products semantically
-    const catRes = await callCreateOpp('search-products', {
-      query: request,
-      apiKey,
-      tenantUrl: intKey
-    });
-    console.log('[Quick Quote] catalog response:', catRes);
-    console.log('[Quick Quote] catalog size:', catRes.catalogSize, '— matched:', catRes.matched);
-    if (catRes.products?.length) {
-      console.log('[Quick Quote] matched:', catRes.products.map(p => p.name.slice(0,40)));
-    }
-
-    const products = catRes.products || [];
-
-    // 2. Generate cover note in parallel (non-blocking)
-    const coverPromise = fetch('/api/sales-guide', {
-      method: 'POST',
+    const res  = await fetch('/api/sales-guide', {
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'quick-quote', request })
-    }).then(r => r.json()).catch(e => {
-      console.warn('[Quick Quote] cover note failed:', e);
-      return { ok: false };
+      body:    JSON.stringify({ action: 'quick-quote-standalone', request })
     });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Search failed');
 
-    // 3. Render product list immediately
-    renderQQProducts(products, request);
+    showSection('quickquote-view');
+    renderQQStandaloneResults(data.items || [], data.cover_note || '');
     $('qqResultsWrap').classList.remove('hidden');
     $('qqResultsWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    // 4. Zero matches — web search + cover note
-    if (products.length === 0) {
-      const noMatchHint = $('qqProductList');
-      if (noMatchHint) noMatchHint.innerHTML = '';
-      $('qqMatchSub').textContent = 'No matches in your catalog — searching the web…';
-      renderQQSuggestions(null, true);
-      // Run web search and cover note in parallel
-      const suggestPromise = fetch('/api/sales-guide', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'suggest-products', request })
-      }).then(r => r.json()).catch(() => ({ ok: false }));
-
-      const [suggestData, coverData] = await Promise.all([suggestPromise, coverPromise]);
-      renderQQSuggestions(suggestData.ok ? suggestData : null, false);
-
-      // Show cover note even for zero catalog matches
-      if (coverData.ok && coverData.cover_note) {
-        $('qqCoverText').textContent = coverData.cover_note;
-      } else {
-        $('qqCoverText').textContent = '(Cover note unavailable.)';
-      }
-      return;
-    }
-
-    // 5. Some matches found — check if anything is missing from the request
-    const matchedNames = products.map(p => p.name);
-    const missingCheck = fetch('/api/sales-guide', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'find-missing', request, matchedNames })
-    }).then(r => r.json()).catch(() => ({ ok: false }));
-
-    // 6. Fill cover note in parallel
-    $('qqCoverText').textContent = 'Writing cover note…';
-    const [coverData, missingData] = await Promise.all([coverPromise, missingCheck]);
-
-    if (coverData.ok && coverData.cover_note) {
-      $('qqCoverText').textContent = coverData.cover_note;
-    } else {
-      $('qqCoverText').textContent = '(Cover note unavailable.)';
-    }
-
-    // 7. If items are missing, fire web search for them
-    if (missingData.ok && !missingData.all_covered && missingData.missing_items?.length > 0) {
-      renderQQSuggestions(null, true);
-      try {
-        const missingRequest = missingData.missing_items.join(', ');
-        const suggestRes = await fetch('/api/sales-guide', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'suggest-products', request: missingRequest })
-        });
-        const suggestData = await suggestRes.json();
-        renderQQSuggestions(suggestData.ok ? suggestData : null, false);
-      } catch (e) {
-        renderQQSuggestions(null, false);
-      }
-    }
-
   } catch (e) {
-    console.error('[Quick Quote] error:', e);
-    showError('qqError', e.message || 'Search failed — check your credentials and try again.');
-    $('qqResultsWrap').classList.add('hidden');
+    showSection('quickquote-view');
+    showError('qqError', e.message || 'Search failed — please try again.');
   }
 
   $('qqSearchBtn').disabled    = false;
-  $('qqSearchBtn').textContent = 'Search My Catalog →';
+  $('qqSearchBtn').textContent = 'Find Products →';
 }
 
-// ── Render matched products ───────────────────────────────
-// Availability badge — shown when we can determine a product is not currently available.
-// We're conservative: only warn when we have clear evidence of unavailability.
-// Until we know the exact field names the API returns, we surface _rawAvail in console
-// and show a neutral "Check availability" badge on items where listed===false.
-function qqAvailBadge(p) {
-  // listed:false means the rep has hidden this product — flag it clearly.
-  // This is the only availability signal the Salesbuildr API returns on products.
-  if (p.listed === false) {
-    return '<span class="opp-svc-badge" style="background:rgba(220,38,38,.1);color:#dc2626;">Not listed — verify before quoting</span>';
-  }
-  return '';
-}
+// ── Render per-item product groups ────────────────────────
+function renderQQStandaloneResults(items, coverNote) {
+  const wrap = $('qqItemsWrap');
+  if (!wrap) return;
 
-// ── Render web-search suggestions (zero catalog match fallback) ──
-function renderQQSuggestions(data, isLoading) {
-  const wrap = $('qqSuggestionsWrap');
-  const body = $('qqSuggestionsBody');
-  if (!wrap || !body) { console.error('[QQ] qqSuggestionsWrap or qqSuggestionsBody not found'); return; }
-
-  wrap.classList.remove('hidden');
-
-  if (isLoading) {
-    body.innerHTML = '<div class="qq-suggest-loading"><div class="spinner-sm"></div> Searching the web for matching products…</div>';
+  if (items.length === 0) {
+    wrap.innerHTML = '<div class="result-section"><p style="color:var(--text-3);font-size:14px;">No products found — try rephrasing your request.</p></div>';
     return;
   }
 
-  const suggestions = data?.suggestions || [];
-  if (suggestions.length === 0) {
-    body.innerHTML = '<div class="qq-suggest-none">No matching products found online. Try rephrasing your request or contact your distributor directly.</div>';
-    return;
-  }
+  wrap.innerHTML = items.map((item, itemIdx) => {
+    const suggs = item.suggestions || [];
+    const suggestionsHtml = suggs.length === 0
+      ? '<p class="qq-no-results">No results found for this item.</p>'
+      : suggs.map((s, i) => {
+          const globalIdx = itemIdx * 10 + i;
+          const price = typeof s.approx_price === 'number' ? s.approx_price : 0;
+          return '<div class="qq-suggest-item" id="qq-suggest-' + globalIdx + '">' +
+            '<div class="qq-suggest-header">' +
+              '<span class="qq-suggest-name">' + esc(s.name) + '</span>' +
+              (price > 0 ? '<span class="qq-suggest-price">~$' + price.toFixed(2) + '</span>' : '') +
+            '</div>' +
+            '<div class="qq-suggest-desc">' + esc(s.description || '') + '</div>' +
+            '<div class="qq-suggest-meta">' +
+              '<span class="qq-suggest-mfr">' + esc(s.manufacturer || '') + '</span>' +
+              (s.mpn ? '<button class="qq-mpn-btn" onclick="qqCopyMpn(this,'' + esc(s.mpn) + '')">' +
+                '<span class="qq-mpn-label">MPN</span>' +
+                '<span class="qq-mpn-value">' + esc(s.mpn) + '</span>' +
+                '<span class="qq-mpn-copy">Copy</span>' +
+              '</button>' : '') +
+              '<button class="qq-add-btn" onclick="qqAddToCatalog(this,' + globalIdx + ')"' +
+                ' data-name="' + esc(s.name) + '"' +
+                ' data-mpn="' + esc(s.mpn || '') + '"' +
+                ' data-vendor="' + esc(s.manufacturer || '') + '"' +
+                ' data-desc="' + esc(s.description || '') + '"' +
+                ' data-price="' + price + '">+ Add to my catalog</button>' +
+              '<span class="qq-add-result" id="qq-add-result-' + globalIdx + '"></span>' +
+            '</div>' +
+          '</div>';
+        }).join('');
 
-  body.innerHTML = suggestions.map((s, i) => `
-    <div class="qq-suggest-item" id="qq-suggest-${i}">
-      <div class="qq-suggest-header">
-        <span class="qq-suggest-name">${esc(s.name)}</span>
-        ${s.approx_price ? `<span class="qq-suggest-price">${esc(s.approx_price)}</span>` : ''}
-      </div>
-      <div class="qq-suggest-desc">${esc(s.description)}</div>
-      <div class="qq-suggest-meta">
-        <span class="qq-suggest-mfr">${esc(s.manufacturer)}</span>
-        ${s.mpn ? `
-          <button class="qq-mpn-btn" onclick="qqCopyMpn(this, '${esc(s.mpn)}')">
-            <span class="qq-mpn-label">MPN</span>
-            <span class="qq-mpn-value">${esc(s.mpn)}</span>
-            <span class="qq-mpn-copy">Copy</span>
-          </button>` : ''}
-        <button class="qq-add-btn" onclick="qqAddToCatalog(this, ${i})"
-          data-name="${esc(s.name)}"
-          data-mpn="${esc(s.mpn || '')}"
-          data-vendor="${esc(s.manufacturer || '')}"
-          data-desc="${esc(s.description || '')}"
-          data-price="${typeof s.approx_price === 'number' ? s.approx_price : 0}">
-          + Add to my catalog
-        </button>
-        <span class="qq-add-result" id="qq-add-result-${i}"></span>
-      </div>
-    </div>`).join('');
+    return '<div class="qq-item-group">' +
+      '<div class="qq-item-group-header">' +
+        '<span class="qq-item-group-label">' + esc(item.requestedItem) + '</span>' +
+        '<span class="qq-item-group-count">' + suggs.length + ' option' + (suggs.length !== 1 ? 's' : '') + '</span>' +
+      '</div>' +
+      '<div class="qq-suggestions-inner">' + suggestionsHtml + '</div>' +
+    '</div>';
+  }).join('');
 
+  // Cover note
+  if ($('qqCoverText')) $('qqCoverText').textContent = coverNote;
 }
 
 function qqCopyMpn(btn, mpn) {
@@ -1281,17 +1163,27 @@ async function qqAddToCatalog(btn, idx) {
   const apiKey = $('qqApiKey')?.value.trim() || '';
   const intKey = $('qqTenantUrl')?.value.trim() || '';
   if (!apiKey || !intKey) {
+    // Show connect panel
+    $('qqConnectPanel')?.classList.remove('hidden');
+    $('qqConnectCallout')?.classList.add('hidden');
     const resultEl = document.getElementById('qq-add-result-' + idx);
-    if (resultEl) { resultEl.textContent = 'Enter API credentials first'; resultEl.style.color = '#dc2626'; }
+    if (resultEl) { resultEl.textContent = 'Enter your credentials in the panel below first'; resultEl.style.color = 'var(--warn)'; }
+    $('qqConnectPanel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     return;
+  }
+
+  // Save credentials if remember checked
+  if ($('qqRemember')?.checked) {
+    localStorage.setItem(LS_API_KEY, apiKey);
+    localStorage.setItem(LS_TENANT_URL, intKey);
   }
 
   btn.disabled = true;
   btn.textContent = 'Adding…';
   const resultEl = document.getElementById('qq-add-result-' + idx);
+  const approxPrice = parseFloat(btn.dataset.price) || 0;
 
   try {
-    const approxPrice = parseFloat(btn.dataset.price) || 0;
     const res = await callCreateOpp('create-product', {
       name:             btn.dataset.name,
       mpn:              btn.dataset.mpn    || undefined,
@@ -1303,214 +1195,35 @@ async function qqAddToCatalog(btn, idx) {
     });
     if (!res.ok) throw new Error(res.error || 'Failed to create product');
 
-    const newProduct = res.product;
     btn.textContent = '✓ Added';
     btn.style.background = 'var(--good)';
     btn.style.borderColor = 'var(--good)';
     btn.style.color = '#fff';
 
     if (resultEl) {
-      resultEl.textContent = '';
-      const msg = document.createElement('span');
-      msg.innerHTML = 'Added &amp; included in quote below &nbsp;·&nbsp; <em>Open in Salesbuildr → hit Fetch info for real pricing</em>';
-      msg.style.color = 'var(--good)';
-      resultEl.appendChild(msg);
+      resultEl.innerHTML = '<span style="color:var(--good)">Added to catalog · Open in Salesbuildr → hit <strong>Fetch info</strong> for real pricing</span>';
     }
-
-    // Add to matched products so it's included in the quote
-    qqInjectAddedProduct({
-      id:     newProduct.id,
-      name:   newProduct.name || btn.dataset.name,
-      price:  approxPrice,
-      unit:   '',
-      vendor: newProduct.vendor || btn.dataset.vendor || '',
-      sku:    newProduct.mpn   || btn.dataset.mpn    || '',
-      approx: true,
-    });
-
-    // Show pricing notice in the app — only in UI, nothing goes to SB
-    qqShowPricingNotice(approxPrice);
-
   } catch (e) {
     btn.disabled = false;
     btn.textContent = '+ Add to my catalog';
-    if (resultEl) { resultEl.textContent = e.message; resultEl.style.color = '#dc2626'; }
+    if (resultEl) { resultEl.textContent = e.message; resultEl.style.color = 'var(--danger)'; }
   }
 }
 
-// Show a non-intrusive pricing notice when a web product is added
-function qqShowPricingNotice(approxPrice) {
-  // Remove any existing notice first
-  document.getElementById('qqPricingNotice')?.remove();
-
-  const notice = document.createElement('div');
-  notice.id = 'qqPricingNotice';
-  notice.style.cssText = 'margin-top:8px;padding:8px 12px;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;font-size:12px;color:#92400e;display:flex;align-items:center;gap:8px;';
-  notice.innerHTML = '⚠ ' +
-    (approxPrice > 0
-      ? 'Approximate cost $' + approxPrice.toFixed(2) + ' used — Salesbuildr will apply your category markup to set the sell price. Open the product and hit <strong>Fetch info</strong> to get real distributor pricing if available.'
-      : 'No cost set — open the product in Salesbuildr to set pricing before sending this quote.');
-
-  const list = $('qqProductList');
-  if (list) list.parentElement.insertBefore(notice, list.nextSibling);
-}
-
-// Inject a newly-created product into the matched products list
-function qqInjectAddedProduct(product) {
-  const list = $('qqProductList');
-  if (!list) return;
-
-  const uLabel = unitLabel(product.unit || '');
-  const row = document.createElement('label');
-  row.className = 'opp-svc-item is-matched qq-just-added';
-  row.innerHTML =
-    '<input type="checkbox" class="opp-svc-check"' +
-    ' data-id="' + esc(product.id) + '"' +
-    ' data-name="' + esc(product.name) + '"' +
-    ' data-price="' + (product.price || 0) + '"' +
-    ' data-unit="' + esc(uLabel) + '" checked>' +
-    '<div class="opp-svc-info">' +
-      '<span class="opp-svc-name">' + esc(product.name) + '</span>' +
-      '<div class="opp-svc-meta">' +
-        (product.price > 0 ? '<span class="opp-svc-price">' + (product.approx ? '~$' : '$') + product.price.toFixed(2) + uLabel + ' each' + (product.approx ? ' (approx.)' : '') + '</span>' : '<span class="opp-svc-price">Price on request</span>') +
-        (product.vendor ? '<span class="opp-svc-badge extra">' + esc(product.vendor) + '</span>' : '') +
-        (product.sku    ? '<span class="opp-svc-badge extra">' + esc(product.sku) + '</span>' : '') +
-        '<span class="opp-svc-badge matched">Just added</span>' +
-      '</div>' +
-    '</div>' +
-    '<div class="opp-svc-qty-wrap"><label>Qty</label>' +
-      '<input type="number" class="opp-svc-qty" value="1" min="1" max="999">' +
-    '</div>' +
-    '<span class="opp-svc-line-total">' + (product.price > 0 ? '$' + product.price.toFixed(2) + uLabel : 'Price on request') + '</span>';
-
-  // Wire up the new row's listeners
-  row.querySelectorAll('.opp-svc-check, .opp-svc-qty').forEach(el => {
-    el.addEventListener('change', updateQQTotal);
-    el.addEventListener('input',  updateQQTotal);
+$('qqCopyCoverBtn')?.addEventListener('click', () => {
+  const text = $('qqCoverText')?.textContent || '';
+  navigator.clipboard?.writeText(text).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0;';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
   });
+  const btn = $('qqCopyCoverBtn');
+  const orig = btn.textContent;
+  btn.textContent = '✓ Copied!';
+  setTimeout(() => btn.textContent = orig, 2000);
+});
 
-  list.appendChild(row);
-
-  // Show the product list and connect section if they were hidden (zero-match state)
-  $('qqResultsWrap')?.classList.remove('hidden');
-  $('qqConnectSection')?.classList.remove('hidden');
-
-  // Update totals and scroll into view
-  updateQQTotal();
-  row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-  // Update subtitle
-  const sub = $('qqMatchSub');
-  if (sub) {
-    const count = list.querySelectorAll('.opp-svc-item').length;
-    sub.textContent = count + ' product' + (count !== 1 ? 's' : '') + ' — tick what you want to quote';
-  }
-}
-
-function renderQQProducts(products, request) {
-  qqMatchedProducts = [];
-  qqSelectedCompany = null;
-  qqSelectedOpportunity = null;
-
-  // Reset connect flow
-  $('qqCompanyResults').classList.add('hidden');
-  $('qqCompanySelected').classList.add('hidden');
-  $('qqOppStep').classList.add('hidden');
-  $('qqQuoteStep').classList.add('hidden');
-  $('qqCreateResult').classList.add('hidden');
-  $('qqUnmatched').classList.add('hidden');
-  $('qqSuggestionsWrap')?.classList.add('hidden');
-  document.getElementById('qqPricingNotice')?.remove();
-  const qqSB = $('qqSuggestionsBody'); if (qqSB) qqSB.innerHTML = '';
-
-  const list = $('qqProductList');
-
-  if (products.length === 0) {
-    list.innerHTML = ''; // cleared — suggestions panel takes over for zero matches
-    $('qqMatchSub').textContent = 'No matches found';
-    $('qqProductTotal').classList.add('hidden');
-    return;
-  }
-
-  $('qqMatchSub').textContent = `${products.length} product${products.length !== 1 ? 's' : ''} found — tick what you want to quote`;
-
-  // Select-all / clear-all convenience controls
-  const controls = document.createElement('div');
-  controls.style.cssText = 'display:flex;gap:10px;margin-bottom:8px;';
-  controls.innerHTML =
-    '<button type="button" class="btn-save" id="qqSelectAll" style="font-size:12px;padding:5px 12px;">✓ Select all</button>' +
-    '<button type="button" class="btn-save" id="qqClearAll"  style="font-size:12px;padding:5px 12px;">✕ Clear all</button>';
-  list.parentElement.insertBefore(controls, list);
-  document.getElementById('qqSelectAll')?.addEventListener('click', () => {
-    list.querySelectorAll('.opp-svc-check').forEach(c => c.checked = true);
-    updateQQTotal();
-  });
-  document.getElementById('qqClearAll')?.addEventListener('click', () => {
-    list.querySelectorAll('.opp-svc-check').forEach(c => c.checked = false);
-    updateQQTotal();
-  });
-
-  list.innerHTML = products.map(p => {
-    const uLabel = unitLabel(p.unit);
-    const lineTot = (p.price || 0) * 1;
-    return `
-      <label class="opp-svc-item is-matched">
-        <input type="checkbox" class="opp-svc-check"
-          data-id="${esc(p.id)}" data-name="${esc(p.name)}"
-          data-price="${p.price || 0}" data-unit="${esc(uLabel)}">
-        <div class="opp-svc-info">
-          <span class="opp-svc-name">${esc(p.name)}</span>
-          <div class="opp-svc-meta">
-            ${p.price > 0 ? `<span class="opp-svc-price">$${p.price.toFixed(2)}${uLabel} each</span>` : '<span class="opp-svc-price">Price on request</span>'}
-            ${p.vendor ? `<span class="opp-svc-badge extra">${esc(p.vendor)}</span>` : ''}
-            ${p.sku    ? `<span class="opp-svc-badge extra">${esc(p.sku)}</span>`    : ''}
-            ${qqAvailBadge(p)}
-          </div>
-        </div>
-        <div class="opp-svc-qty-wrap">
-          <label>Qty</label>
-          <input type="number" class="opp-svc-qty" value="1" min="1" max="999">
-        </div>
-        <span class="opp-svc-line-total">$${lineTot.toFixed(2)}${uLabel}</span>
-      </label>`;
-  }).join('');
-
-  list.querySelectorAll('.opp-svc-check, .opp-svc-qty').forEach(el => {
-    el.addEventListener('change', updateQQTotal);
-    el.addEventListener('input',  updateQQTotal);
-  });
-  updateQQTotal();
-}
-
-function updateQQTotal() {
-  let total = 0, count = 0;
-  qqMatchedProducts = [];
-  $('qqProductList').querySelectorAll('.opp-svc-item').forEach(row => {
-    const check   = row.querySelector('.opp-svc-check');
-    const qty     = parseInt(row.querySelector('.opp-svc-qty')?.value) || 1;
-    const price   = parseFloat(check?.dataset.price) || 0;
-    const uSuffix = check?.dataset.unit || '';
-    const line    = price * qty;
-    const lineEl  = row.querySelector('.opp-svc-line-total');
-    if (lineEl) lineEl.textContent = price > 0 ? `$${line.toFixed(2)}${uSuffix}` : 'Price on request';
-    row.style.opacity = check?.checked ? '1' : '0.5';
-    if (check?.checked) {
-      count++;
-      total += line;
-      qqMatchedProducts.push({ id: check.dataset.id, name: check.dataset.name, qty, price });
-    }
-  });
-
-  const totalEl = $('qqProductTotal');
-  if (count > 0) {
-    totalEl.innerHTML = `<span>${count} item${count !== 1 ? 's' : ''} selected</span><span><strong>$${total.toFixed(2)}</strong> total</span>`;
-    totalEl.classList.remove('hidden');
-  } else {
-    totalEl.classList.add('hidden');
-  }
-}
-
-// ── Company search ────────────────────────────────────────
 $('qqCompanySearchBtn')?.addEventListener('click', doQQCompanySearch);
 $('qqCompanyName')?.addEventListener('keydown', e => { if (e.key === 'Enter') doQQCompanySearch(); });
 
