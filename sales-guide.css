@@ -1348,3 +1348,30 @@ h1, h2, h3, h4 {
 .qq-connect-icon { font-size: 20px; flex-shrink: 0; }
 .qq-connect-body { flex: 1; min-width: 200px; font-size: 13px; color: var(--text-2); line-height: 1.5; }
 .qq-connect-body strong { color: var(--text); }
+
+/* ── Collapsible sections ────────────────────────────────── */
+.result-section.collapsible { padding: 0; }
+
+.collapsible-header {
+  width: 100%;
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px;
+  background: none; border: none; cursor: pointer;
+  text-align: left; transition: background .12s;
+  border-radius: 8px;
+}
+.collapsible-header:hover { background: var(--bg-row); }
+
+.collapsible-chevron {
+  font-size: 14px; color: var(--text-3);
+  margin-left: auto; flex-shrink: 0;
+  transition: transform .2s;
+  display: inline-block;
+}
+.collapsible-chevron.open { transform: rotate(180deg); }
+
+.collapsible-body {
+  padding: 0 20px 16px;
+  border-top: 1px solid var(--border);
+}
+.collapsible-body[hidden] { display: none; }
