@@ -1119,7 +1119,7 @@ function renderQQStandaloneResults(items, coverNote) {
             '<div class="qq-suggest-desc">' + esc(s.description || '') + '</div>' +
             '<div class="qq-suggest-meta">' +
               '<span class="qq-suggest-mfr">' + esc(s.manufacturer || '') + '</span>' +
-              (s.mpn ? '<button class="qq-mpn-btn" onclick="qqCopyMpn(this,'' + esc(s.mpn) + '')">' +
+              (s.mpn ? '<button class="qq-mpn-btn" onclick="qqCopyMpn(this,\'' + esc(s.mpn) + '\')">' +
                 '<span class="qq-mpn-label">MPN</span>' +
                 '<span class="qq-mpn-value">' + esc(s.mpn) + '</span>' +
                 '<span class="qq-mpn-copy">Copy</span>' +
@@ -1218,8 +1218,11 @@ $('qqCopyCoverBtn')?.addEventListener('click', () => {
     document.body.appendChild(ta); ta.select(); document.execCommand('copy');
     document.body.removeChild(ta);
   });
-  const btn = 
-
+  const btn = $('qqCopyCoverBtn');
+  const orig = btn.textContent;
+  btn.textContent = '✓ Copied!';
+  setTimeout(() => btn.textContent = orig, 2000);
+});
 
 // ── Init ──────────────────────────────────────────────────
 initCredentials();
