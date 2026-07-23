@@ -792,12 +792,7 @@ $('genServiceWidgetBtn')?.addEventListener('click', async () => {
 
   const frame = $('serviceWidgetFrame');
   if (frame) {
-    frame.style.display = 'block';
-    frame.srcdoc = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;background:#fff;}</style></head><body>' + brandedHtml + '</body></html>';
-    // Auto-resize iframe to content height
-    frame.onload = () => {
-      try { frame.style.minHeight = frame.contentDocument.body.scrollHeight + 20 + 'px'; } catch(e) {}
-    };
+    frame.innerHTML = brandedHtml;
   }
 
   $('serviceWidgetWorking')?.classList.add('hidden');
