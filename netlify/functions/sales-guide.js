@@ -118,15 +118,15 @@ const DISCOVER_TOOL = {
       w3_trust:     { type: 'string', description: 'W3 — trust angle in 1-2 sentences: why is this MSP the right partner for this?' },
       w4_outcome:   { type: 'string', description: 'W4 — outcomes in 1-2 sentences: what does their business look like after this?' },
       w5_investment:{ type: 'string', description: 'W5 — investment framing in 1-2 sentences: what does it replace, prevent, or enable?' },
+      service_widget_html: {
+        type: 'string',
+        description: 'A self-contained HTML widget describing the recommended service stack for this engagement in buyer language. No product names or brand names. IMPORTANT styling rules: use ONLY these colors: #0d2d5e for all headings and accent elements, #2563eb for borders and highlights, #e8edf5 for light background tints, #333333 for body text, #ffffff for white. LAYOUT: outer div must be width:100% with NO max-width limit, padding:24px, font-family:Segoe UI Arial sans-serif, NO border, NO box-shadow, NO outline on the outer div. Section headers as h3 with color:#0d2d5e and border-left:3px solid #2563eb padding-left:10px margin:0 0 6px 0. Body text as p with color:#333333 font-size:14px line-height:1.6 margin:0 0 16px 0. Light background sections use background:#e8edf5 padding:12px NO border NO border-radius. Include 3-5 service categories each with a headline and 1-2 sentence buyer-language description of the business outcome. No CDATA tags. No XML. Pure HTML only.'
+      },
       roi_angle: {
         type: 'string',
         description: 'The strongest ROI angle for this customer — productivity, security risk, compliance, or cost savings? One sentence.'
       },
-      service_widget_html: {
-        type: 'string',
-        description: 'A self-contained HTML widget describing the recommended service stack for this engagement in buyer language. No product names or brand names. IMPORTANT styling rules: use ONLY these colors: #0d2d5e for all headings and accent elements, #2563eb for borders and highlights, #e8edf5 for light background tints, #333333 for body text, #ffffff for white. LAYOUT: outer div must be width:100% with NO max-width limit, padding:24px, font-family:Segoe UI Arial sans-serif, NO border, NO box-shadow, NO outline on the outer div. Section headers as h3 with color:#0d2d5e and border-left:3px solid #2563eb padding-left:10px margin:0 0 6px 0. Body text as p with color:#333333 font-size:14px line-height:1.6 margin:0 0 16px 0. Light background sections use background:#e8edf5 padding:12px NO border NO border-radius. Include 3-5 service categories each with a headline and 1-2 sentence buyer-language description of the business outcome. No CDATA tags. No XML. Pure HTML only.'
-      }
-    },
+   },
     required: ['coaching_insight', 'engagement_type', 'solution_bullets', 'hardware_needed', 'w1_situation', 'w2_urgency', 'w3_trust', 'w4_outcome', 'w5_investment']
   }
 };
@@ -304,7 +304,7 @@ Build a sales recommendation and widget briefs for this opportunity.`;
         headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 2500,
+          max_tokens: 4000,
           system: DISCOVER_SYSTEM,
           tools: [DISCOVER_TOOL],
           tool_choice: { type: 'tool', name: 'submit_discovery_recommendation' },
