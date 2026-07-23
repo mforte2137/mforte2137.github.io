@@ -810,30 +810,24 @@ function applyServiceWidgetColor(color) {
 
   const lighter = lightenHex(color, 0.92);
 
-  // Replace ALL hex color patterns in the widget HTML with brand colors
-  // Strategy: any 6-digit hex that looks like a dark/accent color → brand color
-  //           any light background hex → lighter brand tint
-  let html = currentRec.service_widget_html;
-
-  // Find all unique hex colors used in the HTML
-  const hexPattern = /#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/g;
-  const foundColors = [...new Set(html.match(hexPattern) || [])];
-
-  foundColors.forEach(hex => {
-    const r = parseInt(hex.slice(1,3), 16);
-    const g = parseInt(hex.slice(3,5), 16);
-    const b = parseInt(hex.slice(5,7), 16);
-    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-
-    if (brightness < 180 && !(r > 200 && g > 200 && b > 200)) {
-      // Dark/medium color — replace with brand color
-      html = html.split(hex).join(color);
-    } else if (brightness >= 220 && (r !== g || g !== b)) {
-      // Light tinted color (not pure white/grey) — replace with light brand tint
-      html = html.split(hex).join(lighter);
-    }
-    // Pure whites (#fff, #ffffff) and pure greys left unchanged
-  });
+  // Direct replacement of all known colors Claude might use
+  let html = currentRec.service_widget_html
+    .replace(/#0d2d5e/gi, color)
+    .replace(/#2563eb/gi, color)
+    .replace(/#1e5bb8/gi, color)
+    .replace(/#1a5276/gi, color)
+    .replace(/#154360/gi, color)
+    .replace(/#1e40af/gi, color)
+    .replace(/#003087/gi, color)
+    .replace(/#1565c0/gi, color)
+    .replace(/#e8edf5/gi, lighter)
+    .replace(/#eff6ff/gi, lighter)
+    .replace(/#dbeafe/gi, lighter)
+    .replace(/#e3f2fd/gi, lighter)
+    .replace(/#eaf0fb/gi, lighter)
+    .replace(/<!\[CDATA\[/gi, '')
+    .replace(/\]\]>/gi, '')
+    .trim();
 
   frame.innerHTML = html;
 }
