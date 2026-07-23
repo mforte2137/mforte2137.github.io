@@ -101,7 +101,7 @@ const DISCOVER_TOOL = {
       },
       hardware_checklist: {
         type: 'array',
-        description: 'Items to confirm at a site survey — hardware AND infrastructure questions including cloud services. Always include a backup & recovery item regardless of engagement type. IMPORTANT backup guidance: most SMBs and mid-market businesses today use cloud backup (not physical NAS/appliances) — frame backup questions around strategy and recovery capability, not hardware. Only suggest a physical backup appliance if the engagement involves large data sets, strict data residency requirements, or the customer is in a sector that requires on-premise storage. For most engagements, ask about their cloud backup solution and recovery testing.',
+        description: 'Items to confirm at a site survey or discovery call — ALWAYS populate this with 3-5 items regardless of hardware_needed. Include infrastructure questions AND cloud service questions. Always include a backup & recovery item. IMPORTANT backup guidance: most SMBs use cloud backup not physical NAS — ask about backup strategy and recovery testing, not hardware. Only suggest a physical backup appliance for large data environments or strict data residency requirements.',
         items: {
           type: 'object',
           properties: {
