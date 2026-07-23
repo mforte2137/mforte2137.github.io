@@ -643,6 +643,12 @@ function renderResults(mode, title, rec) {
   }
 
   $('widgetOutput').classList.add('hidden');
+
+  // Show service widget action in Discovery mode only
+  const swaWrap = $('serviceWidgetActionWrap');
+  if (swaWrap) swaWrap.classList.toggle('hidden', mode !== 'discovery');
+  $('serviceWidgetWrap')?.classList.add('hidden');
+
   showSection('results-view');
 
   // Auto-open Salesbuildr widget push if creds saved
@@ -765,6 +771,55 @@ $('openRoiBtn')?.addEventListener('click', () => {
   }
   params.set('from', 'guide');
   window.open(`roi-builder.html?${params.toString()}`, '_blank');
+});
+
+// ── Generate service widget ──────────────────────────────
+$('genServiceWidgetBtn')?.addEventListener('click', async () => {
+  if (!currentRec?.service_widget_html) {
+    // Not in rec — show error
+    const el = $('serviceWidgetResult');
+    if (el) { el.textContent = 'No service widget available — re-run Discovery to generate one.'; el.className = 'action-result error'; el.classList.remove('hidden'); }
+    return;
+  }
+
+  $('genServiceWidgetBtn').disabled = true;
+  $('serviceWidgetWorking')?.classList.remove('hidden');
+  $('serviceWidgetWrap')?.classList.remove('hidden');
+  $('serviceWidgetWrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Apply brand color to the widget HTML
+  const brandedHtml = currentRec.service_widget_html.replace(/#0d2d5e/gi, guideColor).replace(/#2563eb/gi, guideColor);
+
+  const frame = $('serviceWidgetFrame');
+  if (frame) {
+    frame.style.display = 'block';
+    frame.srcdoc = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{margin:0;background:#fff;}</style></head><body>' + brandedHtml + '</body></html>';
+    // Auto-resize iframe to content height
+    frame.onload = () => {
+      try { frame.style.minHeight = frame.contentDocument.body.scrollHeight + 20 + 'px'; } catch(e) {}
+    };
+  }
+
+  $('serviceWidgetWorking')?.classList.add('hidden');
+  $('genServiceWidgetBtn').disabled = false;
+
+  const el = $('serviceWidgetResult');
+  if (el) { el.textContent = '✓ Service widget ready — copy HTML and paste into your quote'; el.className = 'action-result ok'; el.classList.remove('hidden'); }
+});
+
+$('copyServiceWidgetBtn')?.addEventListener('click', () => {
+  if (!currentRec?.service_widget_html) return;
+  const html = currentRec.service_widget_html;
+  navigator.clipboard?.writeText(html).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = html; ta.style.cssText = 'position:fixed;opacity:0;';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+  const btn = $('copyServiceWidgetBtn');
+  const orig = btn.textContent;
+  btn.textContent = '✓ Copied!';
+  setTimeout(() => btn.textContent = orig, 2000);
 });
 
 // Start over
