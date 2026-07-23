@@ -164,6 +164,10 @@ document.querySelectorAll('.guide-preset').forEach(btn => {
 });
 function syncPresets(color) {
   document.querySelectorAll('.guide-preset').forEach(b => b.classList.toggle('active', b.dataset.color === color));
+  // Re-render service widget with new color if it's visible
+  if ($('serviceWidgetWrap') && !$('serviceWidgetWrap').classList.contains('hidden')) {
+    applyServiceWidgetColor(color);
+  }
 }
 
 // ── Mode selection ────────────────────────────────────────
@@ -774,6 +778,41 @@ $('openRoiBtn')?.addEventListener('click', () => {
 });
 
 // ── Generate service widget ──────────────────────────────
+// ── Apply brand color to service widget ──────────────────
+function applyServiceWidgetColor(color) {
+  const frame = $('serviceWidgetFrame');
+  if (!frame || !currentRec?.service_widget_html) return;
+
+  const lighter = lightenHex(color, 0.92);
+
+  // Replace ALL hex color patterns in the widget HTML with brand colors
+  // Strategy: any 6-digit hex that looks like a dark/accent color → brand color
+  //           any light background hex → lighter brand tint
+  let html = currentRec.service_widget_html;
+
+  // Find all unique hex colors used in the HTML
+  const hexPattern = /#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})/g;
+  const foundColors = [...new Set(html.match(hexPattern) || [])];
+
+  foundColors.forEach(hex => {
+    const r = parseInt(hex.slice(1,3), 16);
+    const g = parseInt(hex.slice(3,5), 16);
+    const b = parseInt(hex.slice(5,7), 16);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+
+    if (brightness < 180 && !(r > 200 && g > 200 && b > 200)) {
+      // Dark/medium color — replace with brand color
+      html = html.split(hex).join(color);
+    } else if (brightness >= 220 && (r !== g || g !== b)) {
+      // Light tinted color (not pure white/grey) — replace with light brand tint
+      html = html.split(hex).join(lighter);
+    }
+    // Pure whites (#fff, #ffffff) and pure greys left unchanged
+  });
+
+  frame.innerHTML = html;
+}
+
 $('genServiceWidgetBtn')?.addEventListener('click', async () => {
   if (!currentRec?.service_widget_html) {
     // Not in rec — show error
@@ -788,12 +827,7 @@ $('genServiceWidgetBtn')?.addEventListener('click', async () => {
   $('serviceWidgetWrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   // Apply brand color to the widget HTML
-  const brandedHtml = currentRec.service_widget_html.replace(/#0d2d5e/gi, guideColor).replace(/#2563eb/gi, guideColor);
-
-  const frame = $('serviceWidgetFrame');
-  if (frame) {
-    frame.innerHTML = brandedHtml;
-  }
+  applyServiceWidgetColor(guideColor);
 
   $('serviceWidgetWorking')?.classList.add('hidden');
   $('genServiceWidgetBtn').disabled = false;
