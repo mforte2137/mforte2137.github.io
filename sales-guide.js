@@ -132,6 +132,28 @@ function normaliseRec(rec) {
   return rec;
 }
 
+// ── Collapsible sections ──────────────────────────────────
+function toggleSection(btn) {
+  const body    = btn.nextElementSibling;
+  const chevron = btn.querySelector('.collapsible-chevron');
+  const isOpen  = !body.hidden;
+  body.hidden   = isOpen;
+  if (chevron) chevron.classList.toggle('open', !isOpen);
+  btn.setAttribute('aria-expanded', String(!isOpen));
+}
+
+// Open a collapsible section programmatically
+function openSection(sectionEl) {
+  if (!sectionEl) return;
+  const btn  = sectionEl.querySelector('.collapsible-header');
+  const body = sectionEl.querySelector('.collapsible-body');
+  if (!body || !body.hidden) return;
+  if (body) body.hidden = false;
+  const chevron = btn?.querySelector('.collapsible-chevron');
+  if (chevron) chevron.classList.add('open');
+  btn?.setAttribute('aria-expanded', 'true');
+}
+
 // ── Helpers ───────────────────────────────────────────────
 function showSection(id) {
   ['mode-view','discovery-view','execution-view','quickquote-view','working-view','results-view'].forEach(s => {
@@ -639,6 +661,7 @@ function renderResults(mode, title, rec) {
         ${hw.never_forget ? `<div class="hw-forget">${esc(hw.never_forget)}</div>` : ''}
       </div>`).join('');
     hwSection.classList.remove('hidden');
+    openSection(hwSection);
   } else {
     hwSection.classList.add('hidden'); // No hardware = hide entirely
   }
@@ -656,6 +679,7 @@ function renderResults(mode, title, rec) {
         </div>
       </div>`).join('');
     svcSection.classList.remove('hidden');
+    openSection(svcSection);
   } else {
     svcSection.classList.add('hidden');
   }
@@ -664,6 +688,7 @@ function renderResults(mode, title, rec) {
   const briefs = rec.widget_briefs;
   const briefLabels = { w1:'W1 · Their Situation', w2:'W2 · Why Now', w3:'W3 · Why Trust Us', w4:'W4 · What They Get', w5:'W5 · Investment' };
   if (briefs) {
+    openSection($('widgetBriefsSection'));
     $('widgetBriefs').innerHTML = ['w1','w2','w3','w4','w5'].map(w => `
       <div class="brief-item">
         <div class="brief-w">${briefLabels[w]}</div>
