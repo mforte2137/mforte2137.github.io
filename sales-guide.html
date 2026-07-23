@@ -280,7 +280,7 @@
     <div class="form-header">
       <button type="button" class="back-btn" id="qqBackBtn">← Change mode</button>
       <h2>🛒 Quick Quote <span class="mode-tag">"I have a specific product request"</span></h2>
-      <p class="form-lead">Describe what the customer needs in plain language — we'll search your Salesbuildr catalog, match the products, and you can create a quote in seconds.</p>
+      <p class="form-lead">Describe what the customer needs in plain language — product names, quantities, preferences. We'll find business-grade options with real MPNs from the web.</p>
     </div>
 
     <div class="q-card">
@@ -292,59 +292,19 @@
       </div>
     </div>
 
-    <div class="q-card">
-      <div class="q-body">
-        <label class="q-label">Your API credentials</label>
-        <p class="q-hint">Used to search your Salesbuildr product catalog and create the quote.</p>
-        <div class="sb-fields" style="margin-bottom:8px;">
-          <div class="sb-field">
-            <label class="sb-label">Tenant URL <span class="sb-where">e.g. https://acme.salesbuildr.com</span></label>
-            <input type="text" id="qqTenantUrl" class="sb-input" placeholder="https://yourcompany.salesbuildr.com" autocomplete="off">
-          </div>
-          <div class="sb-field">
-            <label class="sb-label">API Key <span class="sb-where">Admin → Integrations → API Key</span></label>
-            <input type="password" id="qqApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
-          </div>
-        </div>
-        <label class="sb-remember"><input type="checkbox" id="qqRemember"> Remember on this device</label>
-      </div>
-    </div>
-
     <div class="form-footer">
-      <button type="button" id="qqSearchBtn" class="btn-generate">Search My Catalog →</button>
+      <button type="button" id="qqSearchBtn" class="btn-generate">Find Products →</button>
     </div>
     <div id="qqError" class="form-error hidden"></div>
 
-    <!-- Product results -->
+    <!-- Results — grouped by product type -->
     <div id="qqResultsWrap" class="hidden" style="margin-top:24px;">
 
-      <div class="result-section">
-        <div class="section-header">
-          <span class="section-icon">📦</span>
-          <div>
-            <div class="section-title">Matched products</div>
-            <div class="section-sub" id="qqMatchSub">Review and adjust quantities before creating the quote</div>
-          </div>
-        </div>
-        <div id="qqProductList" class="opp-service-list"></div>
-        <div id="qqProductTotal" class="opp-service-total hidden"></div>
-        <div id="qqUnmatched" class="opp-svc-unmatched hidden" style="margin-top:10px;"></div>
-      </div>
+      <!-- Per-item product suggestions -->
+      <div id="qqItemsWrap"></div>
 
-      <!-- Web search suggestions — only shown when catalog returns zero matches -->
-      <div id="qqSuggestionsWrap" class="qq-suggestions hidden">
-        <div class="section-header">
-          <span class="section-icon">🌐</span>
-          <div>
-            <div class="section-title">Not in your catalog — suggestions from the web</div>
-            <div class="section-sub">Copy the MPN and import from the Salesbuildr marketplace</div>
-          </div>
-        </div>
-        <div id="qqSuggestionsBody"></div>
-      </div>
-
-
-      <div class="result-section" id="qqCoverSection">
+      <!-- Cover note -->
+      <div class="result-section" id="qqCoverSection" style="margin-top:16px;">
         <div class="section-header">
           <span class="section-icon">✉️</span>
           <div>
@@ -353,50 +313,40 @@
           </div>
           <button type="button" id="qqCopyCoverBtn" class="btn-secondary" style="margin-left:auto;white-space:nowrap;">📋 Copy</button>
         </div>
-        <div id="qqCoverText" style="font-size:14px;color:var(--ink);line-height:1.7;white-space:pre-wrap;"></div>
+        <div id="qqCoverText" style="font-size:14px;color:var(--text);line-height:1.7;white-space:pre-wrap;"></div>
       </div>
 
-      <div class="result-section" id="qqConnectSection">
-        <div class="section-header">
-          <span class="section-icon">🚀</span>
-          <div>
-            <div class="section-title">Create quote in Salesbuildr</div>
-            <div class="section-sub">Find the opportunity and create a draft quote with the selected products</div>
-          </div>
+      <!-- Optional: Add to Salesbuildr -->
+      <div class="qq-connect-callout" id="qqConnectCallout">
+        <span class="qq-connect-icon">🚀</span>
+        <div class="qq-connect-body">
+          <strong>Have Salesbuildr credentials?</strong>
+          Use the <em>+ Add to my catalog</em> button on any product to push it directly into your Salesbuildr catalog — then import it into any quote.
         </div>
-
-        <div class="opp-step" style="margin-bottom:12px;">
-          <div class="opp-step-hd"><span class="opp-step-num">1</span> Find company</div>
-          <div class="opp-search-row">
-            <input type="text" id="qqCompanyName" class="sb-input" placeholder="Type company name…" maxlength="80">
-            <button type="button" id="qqCompanySearchBtn" class="btn-opp-action">Search →</button>
-          </div>
-          <div id="qqCompanyResults" class="opp-company-results hidden"></div>
-          <div id="qqCompanySelected" class="opp-company-selected hidden"></div>
-        </div>
-
-        <div class="opp-step hidden" id="qqOppStep">
-          <div class="opp-step-hd"><span class="opp-step-num">2</span> Select opportunity</div>
-          <p class="opp-step-hint">Select the opportunity to attach this quote to.</p>
-          <div id="qqOppList" class="opp-company-results hidden"></div>
-          <div id="qqOppSelected" class="opp-company-selected hidden"></div>
-        </div>
-
-        <div class="opp-step hidden" id="qqQuoteStep">
-          <div class="opp-step-hd"><span class="opp-step-num">3</span> Create quote</div>
-          <div class="opp-field" style="margin-bottom:10px;">
-            <label class="sb-label">Quote title</label>
-            <input type="text" id="qqQuoteTitle" class="sb-input" maxlength="120" placeholder="e.g. Acme Corp — Monitor &amp; Peripherals">
-          </div>
-          <button type="button" id="qqCreateQuoteBtn" class="btn-opp-create">Create Draft Quote →</button>
-          <div id="qqCreateWorking" class="opp-working hidden">
-            <div class="spinner-sm"></div>
-            <span id="qqCreateWorkingMsg">Creating quote…</span>
-          </div>
-          <div id="qqCreateResult" class="hidden" style="margin-top:10px;"></div>
-        </div>
-
+        <button type="button" id="qqShowConnectBtn" class="btn-secondary">Connect →</button>
       </div>
+
+      <!-- Connect panel — collapsed by default -->
+      <div id="qqConnectPanel" class="hidden" style="margin-top:12px;">
+        <div class="q-card">
+          <div class="q-body">
+            <label class="q-label">Add products to Salesbuildr catalog</label>
+            <p class="q-hint">Enter your credentials to push selected products directly into your catalog.</p>
+            <div class="sb-fields" style="margin-bottom:8px;">
+              <div class="sb-field">
+                <label class="sb-label">Tenant URL <span class="sb-where">e.g. https://acme.salesbuildr.com</span></label>
+                <input type="text" id="qqTenantUrl" class="sb-input" placeholder="https://yourcompany.salesbuildr.com" autocomplete="off">
+              </div>
+              <div class="sb-field">
+                <label class="sb-label">API Key <span class="sb-where">Admin → Integrations → API Key</span></label>
+                <input type="password" id="qqApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
+              </div>
+            </div>
+            <label class="sb-remember"><input type="checkbox" id="qqRemember"> Remember on this device</label>
+          </div>
+        </div>
+      </div>
+
     </div>
 
   </section>
