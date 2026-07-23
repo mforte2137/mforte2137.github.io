@@ -122,7 +122,7 @@ const DISCOVER_TOOL = {
       },
       service_widget_html: {
         type: 'string',
-        description: 'A self-contained HTML widget describing the recommended service stack for this engagement in buyer language. No product names or brand names — describe what each service DOES for the business. Use simple inline styles. 3-5 service categories. Each with a short headline and 1-2 sentence description of the business outcome it delivers. Format as a clean, professional widget that could appear in a sales proposal.'
+        description: 'A self-contained HTML widget describing the recommended service stack for this engagement in buyer language. No product names or brand names — describe what each service DOES for the business. Use simple inline styles. IMPORTANT: Use ONLY #1a1a1a for text, #2563eb for accent/heading color, #eff6ff for light background tints, and #ffffff for white backgrounds. 3-5 service categories. Each with a short headline and 1-2 sentence description of the business outcome it delivers. Format as a clean, professional widget that could appear in a sales proposal.'
       }
     },
     required: ['coaching_insight', 'engagement_type', 'solution_bullets', 'hardware_needed', 'w1_situation', 'w2_urgency', 'w3_trust', 'w4_outcome', 'w5_investment']
