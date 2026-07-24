@@ -639,8 +639,7 @@ function renderResults(mode, title, rec) {
     if (items.length > 0) {
       renderLineItems(items);
       lineItemsSection.classList.remove('hidden');
-      // Phase B — kick off catalog matching
-      execMatchCatalog(items);
+      // No catalog matching — CSV is imported directly into Salesbuildr
     } else {
       lineItemsSection.classList.add('hidden');
     }
@@ -2624,20 +2623,9 @@ async function doConnectOpportunity() {
       const quoteTitle   = $('oppQuoteTitle').value.trim() || opp.name;
       const quotePayload = { opportunityId: opp.id, title: quoteTitle, ...creds };
       if (currentMode === 'execution') {
+        // Spec to Proposal — just create the quote with the guided template
+        // Products are imported separately via CSV import in Salesbuildr
         quotePayload.executionQuote = true;
-        // Re-read from DOM in case updateExecTotal hasn't run yet
-        if (execMatchedProducts.length === 0) {
-          // Force a re-read from the checked items in the UI
-          $('execMatchedList')?.querySelectorAll('.exec-svc-check:checked').forEach(check => {
-            const qty = parseInt(check.closest('.opp-svc-item')?.querySelector('.opp-svc-qty')?.value) || 1;
-            execMatchedProducts.push({ id: check.dataset.id, name: check.dataset.name, qty, price: parseFloat(check.dataset.price) || 0 });
-          });
-        }
-        console.log('[Exec] products being sent to quote:', execMatchedProducts.length, execMatchedProducts.map(p => p.id));
-        if (execMatchedProducts.length > 0) {
-          quotePayload.products = execMatchedProducts.map(p => ({ id: p.id, quantity: p.qty || 1 }));
-          serviceCount = execMatchedProducts.length;
-        }
       } else {
         if (selectedServices.length > 0) quotePayload.products = selectedServices;
       }
