@@ -399,7 +399,7 @@ h1, h2, h3, h4 {
 /* ── Results ─────────────────────────────────────────────── */
 .results-layout {
   display: grid;
-  grid-template-columns: 420px 1fr;
+  grid-template-columns: 520px 1fr;
   gap: 24px;
   align-items: start;
 }
