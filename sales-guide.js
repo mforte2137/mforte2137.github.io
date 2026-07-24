@@ -710,10 +710,13 @@ function renderResults(mode, title, rec) {
 
   $('widgetOutput').classList.add('hidden');
 
-  // Show service widget action in Discovery mode only
+  // Show correct panels based on mode
   const swaWrap = $('serviceWidgetActionWrap');
   if (swaWrap) swaWrap.classList.toggle('hidden', mode !== 'discovery');
   $('serviceWidgetWrap')?.classList.add('hidden');
+  // Discovery: show widget push panel, hide full connect panel
+  $('discoveryPushWrap')?.classList.toggle('hidden', mode !== 'discovery');
+  $('createOppWrap')?.classList.toggle('hidden', mode === 'discovery');
 
   showSection('results-view');
 
@@ -734,6 +737,7 @@ function renderResults(mode, title, rec) {
 
   // Initialise Phase 2 Create in Salesbuildr panel
   initCreateOppPanel();
+  if (mode === 'discovery') initDiscoveryPush();
 }
 
 // ── Generate widgets ──────────────────────────────────────
@@ -890,6 +894,56 @@ $('copyServiceWidgetBtn')?.addEventListener('click', () => {
   const orig = btn.textContent;
   btn.textContent = '✓ Copied!';
   setTimeout(() => btn.textContent = orig, 2000);
+});
+
+// ── Discovery widget push ─────────────────────────────────
+function initDiscoveryPush() {
+  const a = localStorage.getItem(LS_API_KEY), t = localStorage.getItem(LS_TENANT_URL);
+  if (a) $('discApiKey').value  = a;
+  if (t) $('discTenantUrl').value = t;
+  if (a && t) $('discRemember').checked = true;
+}
+
+$('discPushBtn')?.addEventListener('click', async () => {
+  const apiKey    = $('discApiKey')?.value.trim()    || '';
+  const tenantUrl = $('discTenantUrl')?.value.trim() || '';
+  const prefix    = $('discPrefix')?.value.trim()    || '';
+  const result    = $('discPushResult');
+
+  if (!apiKey || !tenantUrl) {
+    if (result) { result.textContent = 'Enter your tenant URL and API key first.'; result.className = 'sb-result error'; result.classList.remove('hidden'); }
+    return;
+  }
+  if (generatedWidgets.length === 0) {
+    if (result) { result.textContent = 'Generate the 5 widgets first before pushing to Salesbuildr.'; result.className = 'sb-result error'; result.classList.remove('hidden'); }
+    return;
+  }
+
+  if ($('discRemember')?.checked) {
+    localStorage.setItem(LS_API_KEY, apiKey);
+    localStorage.setItem(LS_TENANT_URL, tenantUrl);
+  }
+
+  $('discPushBtn').disabled = true;
+  $('discPushBtn').textContent = 'Saving…';
+  if (result) result.classList.add('hidden');
+
+  try {
+    const res  = await fetch('/api/push-widgets', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ widgets: generatedWidgets, prefix, apiKey, tenantUrl })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Push failed');
+    $('discPushBtn').textContent = '✓ Saved to Salesbuildr';
+    $('discPushBtn').classList.add('is-done');
+    if (result) { result.textContent = data.message || (generatedWidgets.length + ' widgets saved to your widget library'); result.className = 'sb-result ok'; result.classList.remove('hidden'); }
+  } catch(e) {
+    $('discPushBtn').disabled = false;
+    $('discPushBtn').textContent = 'Save Widgets to Library →';
+    if (result) { result.textContent = e.message; result.className = 'sb-result error'; result.classList.remove('hidden'); }
+  }
 });
 
 // ── Print / Download checklist ───────────────────────────
@@ -1456,15 +1510,52 @@ const LIBRARY_SERVICES = [
 let stackServices   = [];
 let stackDragSrc    = null;
 
+// Fallback descriptions for common service names not in LIBRARY_SERVICES
+const SERVICE_DESCRIPTIONS = {
+  'Managed IT Support & Helpdesk':      'Dedicated support for your team — fast response to IT issues so staff stay productive and frustration stays low.',
+  'Endpoint Security & EDR':            'Monitors every device for suspicious behaviour in real time, catching threats that traditional antivirus misses.',
+  'Endpoint Detection & Response':      'Monitors every device for suspicious behaviour in real time, catching threats that traditional antivirus misses.',
+  'Email Security & Anti-Phishing':     'Advanced filtering blocks malicious emails and phishing attempts before they land in inboxes.',
+  'DNS Filtering & Web Protection':     'Blocks malicious websites, phishing domains, and unwanted content at the DNS layer before they reach your users.',
+  'Backup & Disaster Recovery':         'Ensures your data can be recovered quickly after accidental deletion, ransomware, or a service outage.',
+  'Compliance Management & Reporting':  'Automates evidence collection and control monitoring so you always know your compliance posture and stay audit-ready.',
+  'Network Monitoring & Management':    'Continuous visibility into network health, bandwidth, and device status — with alerts before issues affect users.',
+  'Security Awareness Training':        'Turns your staff into a line of defence with ongoing phishing simulations and bite-sized training modules.',
+  'Patch Management':                   'Keeps every server and workstation up to date automatically, closing the vulnerabilities attackers exploit most.',
+  'MFA & Identity Protection':          'Prevents credential-based attacks by requiring a second factor for every login — one of the highest-impact security controls available.',
+  'Dark Web Monitoring':                'Alerts you the moment staff credentials appear in breach databases — before attackers can exploit them.',
+  'Microsoft 365 Management':           'Keeps your cloud productivity suite secure, licensed, and running — including Exchange, Teams, and SharePoint.',
+  'VoIP & Communications':              'Moves your phone system to the cloud — cutting costs, enabling remote calling, and integrating with your collaboration tools.',
+  'Server Monitoring & Administration': '24/7 monitoring and managed support for your server infrastructure — catching issues before they cause downtime.',
+  'Cloud Backup & Recovery':            'Ensures your data can be recovered quickly after accidental deletion, ransomware, or a service outage — without manual intervention.',
+  'Virtual CIO Advisory':               'Provides strategic IT guidance aligned to your business goals — budgeting, roadmap planning, and vendor management.',
+};
+
+function getServiceDescription(name) {
+  // 1. Exact match in fallback descriptions
+  if (SERVICE_DESCRIPTIONS[name]) return SERVICE_DESCRIPTIONS[name];
+  // 2. Match against library by name similarity
+  const lower = name.toLowerCase();
+  const lib = LIBRARY_SERVICES.find(l => l.name.toLowerCase() === lower ||
+    lower.includes(l.name.toLowerCase().split(' ')[0]) ||
+    l.name.toLowerCase().includes(lower.split(' ')[0]));
+  if (lib) return lib.description;
+  // 3. Generic fallback
+  return 'Proactive management and support to keep your business running securely and efficiently.';
+}
+
 function initStack(recommendedServices) {
-  // Pre-populate from Claude's recommended services
-  stackServices = recommendedServices.slice(0, 5).map((s, i) => ({
-    id:          'svc-' + Date.now() + '-' + i,
-    libId:       null,
-    name:        s.service || s.name || '',
-    description: s.reason  || s.description || '',
-    priority:    s.optional ? 'optional' : 'recommended',
-  }));
+  // Pre-populate from curated services, matching library descriptions where possible
+  stackServices = recommendedServices.slice(0, 5).map((s, i) => {
+    const name = s.service || s.name || '';
+    return {
+      id:          'svc-' + Date.now() + '-' + i,
+      libId:       null,
+      name,
+      description: s.reason || s.description || getServiceDescription(name),
+      priority:    s.optional ? 'optional' : 'recommended',
+    };
+  });
   renderCurationStack();
   renderCurationLibrary();
 }
