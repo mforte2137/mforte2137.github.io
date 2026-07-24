@@ -197,7 +197,12 @@ function syncPresets(color) {
 function updateWidgetColors(color) {
   // Re-render service widget with new color if visible
   if ($('serviceWidgetWrap') && !$('serviceWidgetWrap').classList.contains('hidden')) {
-    applyServiceWidgetColor(color);
+    if (stackServices.length > 0) {
+      const frame = $('serviceWidgetFrame');
+      if (frame) frame.innerHTML = generateServiceWidgetHtml(color);
+    } else {
+      applyServiceWidgetColor(color);
+    }
   }
   // Re-render the 5-widget preview if visible
   if ($('widgetOutput') && !$('widgetOutput').classList.contains('hidden') && generatedWidgets.length > 0) {
@@ -679,6 +684,15 @@ function renderResults(mode, title, rec) {
       </div>`).join('');
     svcSection.classList.remove('hidden');
     openSection(svcSection);
+    // Init curation stack and show curation panel
+    if (mode === 'discovery') {
+      initStack(curatedServices);
+      const curationSec = document.getElementById('curationSection');
+      if (curationSec) {
+        curationSec.classList.remove('hidden');
+        openSection(curationSec);
+      }
+    }
   } else {
     svcSection.classList.add('hidden');
   }
@@ -836,31 +850,36 @@ function applyServiceWidgetColor(color) {
 }
 
 $('genServiceWidgetBtn')?.addEventListener('click', async () => {
-  if (!currentRec?.service_widget_html) {
-    // Not in rec — show error
+  if (stackServices.length === 0 && !currentRec?.service_widget_html) {
     const el = $('serviceWidgetResult');
-    if (el) { el.textContent = 'No service widget available — re-run Discovery to generate one.'; el.className = 'action-result error'; el.classList.remove('hidden'); }
+    if (el) { el.textContent = 'Run Discovery first to generate a service widget.'; el.className = 'action-result error'; el.classList.remove('hidden'); }
     return;
   }
 
   $('genServiceWidgetBtn').disabled = true;
-  $('serviceWidgetWorking')?.classList.remove('hidden');
   $('serviceWidgetWrap')?.classList.remove('hidden');
-  $('serviceWidgetWrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-  // Apply brand color to the widget HTML
-  applyServiceWidgetColor(guideColor);
+  const frame = $('serviceWidgetFrame');
+  if (stackServices.length > 0) {
+    // Generate from curated stack
+    if (frame) frame.innerHTML = generateServiceWidgetHtml(guideColor);
+  } else {
+    // Fall back to Claude's HTML
+    applyServiceWidgetColor(guideColor);
+  }
 
-  $('serviceWidgetWorking')?.classList.add('hidden');
   $('genServiceWidgetBtn').disabled = false;
 
   const el = $('serviceWidgetResult');
   if (el) { el.textContent = '✓ Service widget ready — copy HTML and paste into your quote'; el.className = 'action-result ok'; el.classList.remove('hidden'); }
 });
 
+
 $('copyServiceWidgetBtn')?.addEventListener('click', () => {
-  if (!currentRec?.service_widget_html) return;
-  const html = currentRec.service_widget_html;
+  const html = stackServices.length > 0
+    ? generateServiceWidgetHtml(guideColor)
+    : (currentRec?.service_widget_html || '');
+  if (!html) return;
   navigator.clipboard?.writeText(html).catch(() => {
     const ta = document.createElement('textarea');
     ta.value = html; ta.style.cssText = 'position:fixed;opacity:0;';
@@ -1405,6 +1424,224 @@ $('qqCopyCoverBtn')?.addEventListener('click', () => {
   btn.textContent = '✓ Copied!';
   setTimeout(() => btn.textContent = orig, 2000);
 });
+
+// ═══════════════════════════════════════════════════════════
+// SERVICE CURATION — Discovery mode
+// Drag-drop stack + library, generates widget HTML directly
+// ═══════════════════════════════════════════════════════════
+
+const LIBRARY_SERVICES = [
+  { id: 'lib-mfa',        name: 'MFA & Conditional Access',      description: 'Prevents credential-based attacks by requiring a second factor for every login — one of the highest-impact security controls available.' },
+  { id: 'lib-edr',        name: 'Endpoint Detection & Response',  description: 'Monitors every device for suspicious behaviour in real time, catching threats that traditional antivirus misses.' },
+  { id: 'lib-backup',     name: 'Cloud Backup & Recovery',        description: 'Ensures your data can be recovered quickly after accidental deletion, ransomware, or a service outage — without manual intervention.' },
+  { id: 'lib-patch',      name: 'Patch Management',               description: 'Keeps every server and workstation up to date automatically, closing the vulnerabilities attackers exploit most.' },
+  { id: 'lib-sec-review', name: 'Security Posture Review',        description: 'A structured assessment of your current environment that identifies gaps, prioritises remediation, and gives you a clear action plan.' },
+  { id: 'lib-awareness',  name: 'Security Awareness Training',    description: 'Turns your staff into a line of defence with ongoing phishing simulations and bite-sized training modules.' },
+  { id: 'lib-email-arch', name: 'Email Archiving',                description: 'Maintains a tamper-proof, searchable record of all email — important for compliance, legal discovery, and audit trails.' },
+  { id: 'lib-siem',       name: 'SIEM & Log Monitoring',          description: 'Correlates security events across your environment 24/7, alerting on anomalies before they become incidents.' },
+  { id: 'lib-intune',     name: 'Endpoint Management (Intune)',   description: 'Gives you centralised control over every device — patching, compliance policies, app deployment, and remote wipe.' },
+  { id: 'lib-dns',        name: 'DNS Filtering',                  description: 'Blocks malicious websites, phishing domains, and unwanted content at the DNS layer before they reach your users.' },
+  { id: 'lib-drp',        name: 'Disaster Recovery Planning',     description: 'Documents and tests a repeatable process for restoring operations after a major incident.' },
+  { id: 'lib-voip',       name: 'VoIP & Business Comms',          description: 'Moves your phone system to the cloud — cutting costs, enabling remote calling, and integrating with Teams.' },
+  { id: 'lib-pw',         name: 'Password Manager Deployment',    description: 'Eliminates weak and reused passwords across the organisation with a managed, policy-enforced password vault.' },
+  { id: 'lib-sd-wan',     name: 'SD-WAN & Network Optimisation',  description: 'Improves reliability and performance for cloud applications by intelligently routing traffic across connections.' },
+  { id: 'lib-dark-web',   name: 'Dark Web Monitoring',            description: 'Alerts you the moment staff credentials appear in breach databases — before attackers can exploit them.' },
+  { id: 'lib-vci',        name: 'Virtual CIO Advisory',           description: 'Provides strategic IT guidance aligned to your business goals — budgeting, roadmap planning, and vendor management.' },
+  { id: 'lib-net-mon',    name: 'Network Monitoring',             description: 'Continuous visibility into network health, bandwidth, and device status — with alerts before issues affect users.' },
+  { id: 'lib-helpdesk',   name: 'Managed Helpdesk',               description: 'Dedicated support for your team — fast response to IT issues so staff stay productive and frustration stays low.' },
+  { id: 'lib-compliance', name: 'Compliance Management',          description: 'Automates evidence collection and control monitoring so you always know your compliance posture and stay audit-ready.' },
+];
+
+// Stack state — populated when Discovery results render
+let stackServices   = [];
+let stackDragSrc    = null;
+
+function initStack(recommendedServices) {
+  // Pre-populate from Claude's recommended services
+  stackServices = recommendedServices.slice(0, 5).map((s, i) => ({
+    id:          'svc-' + Date.now() + '-' + i,
+    libId:       null,
+    name:        s.service || s.name || '',
+    description: s.reason  || s.description || '',
+    priority:    s.optional ? 'optional' : 'recommended',
+  }));
+  renderCurationStack();
+  renderCurationLibrary();
+}
+
+function addToStack(svc) {
+  if (stackServices.length >= 6) { alert('Stack is full (max 6). Remove a service first.'); return; }
+  stackServices.push(svc);
+  renderCurationStack();
+  renderCurationLibrary();
+  updateServiceWidgetPreview();
+}
+
+function removeFromStack(id) {
+  stackServices = stackServices.filter(s => s.id !== id);
+  renderCurationStack();
+  renderCurationLibrary();
+  updateServiceWidgetPreview();
+}
+
+function toggleStackPriority(id) {
+  const svc = stackServices.find(s => s.id === id);
+  if (!svc) return;
+  svc.priority = svc.priority === 'recommended' ? 'optional' : 'recommended';
+  renderCurationStack();
+  updateServiceWidgetPreview();
+}
+
+function renderCurationStack() {
+  const container = document.getElementById('curationStack');
+  const empty     = document.getElementById('curationStackEmpty');
+  const count     = document.getElementById('curationStackCount');
+  if (!container) return;
+
+  if (count) count.textContent = stackServices.length + ' / 6';
+
+  if (stackServices.length === 0) {
+    container.innerHTML = '';
+    if (empty) empty.hidden = false;
+    return;
+  }
+  if (empty) empty.hidden = true;
+
+  container.innerHTML = stackServices.map((svc, index) => {
+    const isRec = svc.priority === 'recommended';
+    return '<div class="curation-card" draggable="true" data-id="' + esc(svc.id) + '" data-index="' + index + '">' +
+      '<div class="curation-card-bar" style="background:' + (isRec ? guideColor : '#D1D5DB') + '"></div>' +
+      '<div class="curation-drag">⠿</div>' +
+      '<div class="curation-card-body">' +
+        '<div class="curation-card-top">' +
+          '<span class="curation-card-name">' + esc(svc.name) + '</span>' +
+          '<button type="button" class="curation-priority-btn ' + (isRec ? 'is-rec' : 'is-opt') + '" data-id="' + esc(svc.id) + '">' + (isRec ? '★ Recommended' : '◎ Optional') + '</button>' +
+        '</div>' +
+        '<p class="curation-card-desc">' + esc(svc.description) + '</p>' +
+      '</div>' +
+      '<button type="button" class="curation-remove-btn" data-id="' + esc(svc.id) + '" title="Remove">×</button>' +
+    '</div>';
+  }).join('');
+
+  // Wire events
+  container.querySelectorAll('.curation-priority-btn').forEach(btn => {
+    btn.addEventListener('click', () => toggleStackPriority(btn.dataset.id));
+  });
+  container.querySelectorAll('.curation-remove-btn').forEach(btn => {
+    btn.addEventListener('click', () => removeFromStack(btn.dataset.id));
+  });
+
+  // Drag-drop reorder
+  container.querySelectorAll('.curation-card').forEach(card => {
+    card.addEventListener('dragstart', e => {
+      stackDragSrc = parseInt(card.dataset.index);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', 'stack');
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      container.querySelectorAll('.curation-card').forEach(c => c.classList.remove('drag-over'));
+    });
+    card.addEventListener('dragover', e => {
+      if (!e.dataTransfer.types.includes('text/plain')) return;
+      e.preventDefault();
+      container.querySelectorAll('.curation-card').forEach(c => c.classList.remove('drag-over'));
+      card.classList.add('drag-over');
+    });
+    card.addEventListener('drop', e => {
+      e.preventDefault();
+      const toIdx = parseInt(card.dataset.index);
+      if (stackDragSrc !== null && stackDragSrc !== toIdx) {
+        const moved = stackServices.splice(stackDragSrc, 1)[0];
+        stackServices.splice(toIdx, 0, moved);
+        stackDragSrc = null;
+        renderCurationStack();
+        updateServiceWidgetPreview();
+      }
+    });
+  });
+
+  // Stack drop zone for library drag
+  container.addEventListener('dragover', e => {
+    if (e.dataTransfer.types.includes('application/x-lib-id')) e.preventDefault();
+  });
+  container.addEventListener('drop', e => {
+    const libId = e.dataTransfer.getData('application/x-lib-id');
+    if (!libId) return;
+    const lib = LIBRARY_SERVICES.find(l => l.id === libId);
+    if (lib) addToStack({ id: 'lib-' + lib.id + '-' + Date.now(), libId: lib.id, name: lib.name, description: lib.description, priority: 'recommended' });
+  });
+}
+
+function renderCurationLibrary() {
+  const list = document.getElementById('curationLibrary');
+  if (!list) return;
+
+  const q = (document.getElementById('curationLibSearch')?.value || '').toLowerCase();
+  const inStack = new Set(stackServices.map(s => s.libId).filter(Boolean));
+
+  list.innerHTML = LIBRARY_SERVICES
+    .filter(lib => !q || lib.name.toLowerCase().includes(q))
+    .map(lib => {
+      const inStk = inStack.has(lib.id);
+      return '<div class="curation-lib-item' + (inStk ? ' in-stack' : '') + '" ' +
+        'draggable="' + (!inStk) + '" data-lib-id="' + esc(lib.id) + '" data-name="' + esc(lib.name) + '" title="' + esc(lib.description) + '">' +
+        '<span class="curation-lib-name">' + esc(lib.name) + '</span>' +
+        '<button type="button" class="curation-lib-btn" data-lib-id="' + esc(lib.id) + '">' + (inStk ? '✓' : '+') + '</button>' +
+      '</div>';
+    }).join('');
+
+  list.querySelectorAll('.curation-lib-btn:not([disabled])').forEach(btn => {
+    const lib = LIBRARY_SERVICES.find(l => l.id === btn.dataset.libId);
+    if (!lib || inStack.has(lib.id)) return;
+    btn.addEventListener('click', () => addToStack({ id: 'lib-' + lib.id + '-' + Date.now(), libId: lib.id, name: lib.name, description: lib.description, priority: 'recommended' }));
+  });
+  list.querySelectorAll('.curation-lib-item[draggable="true"]').forEach(item => {
+    item.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('application/x-lib-id', item.dataset.libId);
+      e.dataTransfer.effectAllowed = 'copy';
+    });
+  });
+}
+
+function generateServiceWidgetHtml(color) {
+  if (stackServices.length === 0) return '';
+  const recBg = lightenHex(color, 0.90);
+
+  const rows = stackServices.map(svc => {
+    const isRec      = svc.priority === 'recommended';
+    const accentColor = isRec ? color : '#D1D5DB';
+    const badge = isRec
+      ? '<span style="display:inline-block;font-family:Arial,sans-serif;font-size:9px;font-weight:bold;letter-spacing:0.07em;text-transform:uppercase;padding:2px 9px;border-radius:20px;background:' + recBg + ';color:' + color + ';">★ Recommended</span>'
+      : '<span style="display:inline-block;font-family:Arial,sans-serif;font-size:9px;font-weight:bold;letter-spacing:0.07em;text-transform:uppercase;padding:2px 9px;border-radius:20px;background:#F5F5F2;color:#9CA3AF;border:1px solid #E5E3DC;">Optional</span>';
+    return '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:8px;border-collapse:collapse;">' +
+      '<tr><td width="4" style="background:' + accentColor + ';padding:0;">&nbsp;</td>' +
+      '<td width="8" style="padding:0;">&nbsp;</td>' +
+      '<td style="padding:12px 14px;background:#FAFAF7;border:1px solid #E8E6DF;border-left:none;">' +
+        '<table width="100%" cellpadding="0" cellspacing="0" border="0">' +
+          '<tr><td style="padding-bottom:5px;"><span style="font-family:Arial,sans-serif;font-size:13px;font-weight:bold;color:#0B0E14;">' + esc(svc.name) + '</span>&nbsp;&nbsp;' + badge + '</td></tr>' +
+          '<tr><td><p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#4B5563;line-height:1.55;">' + esc(svc.description) + '</p></td></tr>' +
+        '</table>' +
+      '</td></tr></table>';
+  }).join('');
+
+  return '<div style="background:#FFFFFF;border:1px solid #E8E6DF;border-radius:6px;padding:22px 24px;font-family:Arial,sans-serif;width:100%;">' +
+    '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:18px;border-collapse:collapse;">' +
+      '<tr><td width="4" style="background:' + color + ';padding:0;">&nbsp;</td>' +
+      '<td width="12" style="padding:0;">&nbsp;</td>' +
+      '<td style="padding:4px 0;">' +
+        '<h5 style="margin:0 0 3px;font-family:Arial,sans-serif;font-size:17px;font-weight:bold;color:#0B0E14;">Recommended Services</h5>' +
+        '<p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#6B7280;">Services that support this engagement — select what makes sense for your customer.</p>' +
+      '</td></tr>' +
+    '</table>' + rows + '</div>';
+}
+
+function updateServiceWidgetPreview() {
+  const frame = document.getElementById('serviceWidgetFrame');
+  if (!frame || document.getElementById('serviceWidgetWrap')?.classList.contains('hidden')) return;
+  frame.innerHTML = generateServiceWidgetHtml(guideColor);
+}
 
 // ── Init ──────────────────────────────────────────────────
 initCredentials();
