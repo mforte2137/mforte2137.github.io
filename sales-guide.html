@@ -447,6 +447,42 @@
           </div>
         </div>
 
+        <!-- Service curation — Discovery mode -->
+        <div id="curationSection" class="result-section collapsible hidden">
+          <button type="button" class="collapsible-header" aria-expanded="true" onclick="toggleSection(this)">
+            <span class="section-icon">🎛️</span>
+            <div>
+              <div class="section-title">Curate your services</div>
+              <div class="section-sub">Drag to reorder · click × to remove · add from library</div>
+            </div>
+            <span class="collapsible-chevron open">▾</span>
+          </button>
+          <div class="collapsible-body">
+            <div class="curation-layout">
+
+              <!-- Stack -->
+              <div class="curation-stack-col">
+                <div class="curation-col-header">
+                  <span class="curation-col-title">Active stack</span>
+                  <span id="curationStackCount" class="curation-count">0 / 6</span>
+                </div>
+                <div id="curationStack" class="curation-stack-list"></div>
+                <div id="curationStackEmpty" class="curation-empty" hidden>Drag services from the library →</div>
+              </div>
+
+              <!-- Library -->
+              <div class="curation-lib-col">
+                <div class="curation-col-header">
+                  <span class="curation-col-title">Library</span>
+                </div>
+                <input type="search" id="curationLibSearch" class="curation-lib-search" placeholder="Search services…" oninput="renderCurationLibrary()">
+                <div id="curationLibrary" class="curation-lib-list"></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
         <!-- W1-W5 — collapsible, closed by default -->
         <div class="result-section collapsible" id="widgetBriefsSection">
           <button type="button" class="collapsible-header" aria-expanded="false" onclick="toggleSection(this)">
