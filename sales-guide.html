@@ -518,7 +518,34 @@
           </div>
         </div>
 
-        <!-- Connect to Salesbuildr -->
+        <!-- Connect to Salesbuildr — Discovery: widget push only -->
+        <div class="result-section hidden" id="discoveryPushWrap">
+          <div class="section-header">
+            <span class="section-icon">🚀</span>
+            <div>
+              <div class="section-title">Save widgets to Salesbuildr</div>
+              <div class="section-sub">Push the generated widgets directly to your Salesbuildr widget library</div>
+            </div>
+          </div>
+          <div class="sb-fields" style="margin-bottom:8px;">
+            <div class="sb-field">
+              <label class="sb-label">Tenant URL <span class="sb-where">e.g. https://acme.salesbuildr.com</span></label>
+              <input type="text" id="discTenantUrl" class="sb-input" placeholder="https://yourcompany.salesbuildr.com" autocomplete="off">
+            </div>
+            <div class="sb-field">
+              <label class="sb-label">API Key <span class="sb-where">Admin → Integrations → API Key</span></label>
+              <input type="password" id="discApiKey" class="sb-input" placeholder="Your API key" autocomplete="new-password">
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <label class="sb-remember"><input type="checkbox" id="discRemember"> Remember on this device</label>
+            <input type="text" id="discPrefix" class="sb-prefix" maxlength="40" placeholder="Optional label e.g. Acme Corp">
+            <button type="button" id="discPushBtn" class="btn-push">Save Widgets to Library →</button>
+          </div>
+          <div id="discPushResult" class="sb-result hidden" style="margin-top:8px;"></div>
+        </div>
+
+        <!-- Connect to Salesbuildr — Spec to Proposal: full opportunity flow -->
         <div class="create-opp-wrap hidden" id="createOppWrap">
           <button type="button" class="create-opp-toggle" id="createOppToggle">
             <div class="create-opp-hd">
