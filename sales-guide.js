@@ -652,7 +652,6 @@ function renderResults(mode, title, rec) {
 
   // Hardware checklist (Discovery only)
   const hwSection = $('hardwareSection');
-  console.log('[HW] checklist:', rec.hardware_checklist?.length, rec.hardware_checklist);
   if (mode === 'discovery' && rec.hardware_checklist?.length > 0) {
     const list = $('hardwareList');
     list.innerHTML = rec.hardware_checklist.map(hw => `
