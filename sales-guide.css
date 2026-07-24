@@ -1438,3 +1438,89 @@ h1, h2, h3, h4 {
   font-size: 10px; padding: 4px 10px;
   border-bottom: none; margin-bottom: 0;
 }
+
+/* ── Service curation panel ──────────────────────────────── */
+.curation-layout {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 16px;
+  align-items: start;
+}
+.curation-col-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.curation-col-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text-3);
+}
+.curation-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: var(--text-3);
+  background: var(--bg-row); padding: 1px 8px; border-radius: 20px;
+}
+.curation-stack-list { display: flex; flex-direction: column; gap: 6px; min-height: 60px; }
+.curation-empty { font-size: 13px; color: var(--text-3); font-style: italic; padding: 12px 0; text-align: center; }
+
+.curation-card {
+  display: grid; grid-template-columns: 4px 20px 1fr auto;
+  align-items: start; gap: 0;
+  background: var(--bg-panel); border: 1px solid var(--border);
+  border-radius: 0; cursor: grab;
+  transition: box-shadow .12s;
+}
+.curation-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.curation-card.dragging { opacity: .5; }
+.curation-card.drag-over { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-border); }
+.curation-card-bar { grid-row: 1 / 3; width: 4px; align-self: stretch; border-radius: 0; }
+.curation-drag {
+  grid-column: 2; padding: 10px 4px;
+  color: var(--text-3); font-size: 14px; cursor: grab; user-select: none;
+  letter-spacing: -2px;
+}
+.curation-card-body { grid-column: 3; padding: 8px 10px; min-width: 0; }
+.curation-card-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 3px; }
+.curation-card-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.curation-card-desc { font-size: 12px; color: var(--text-3); line-height: 1.4; margin: 0; }
+.curation-priority-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; font-weight: 700; letter-spacing: .06em;
+  padding: 2px 8px; border-radius: 20px; border: none; cursor: pointer;
+  white-space: nowrap;
+}
+.curation-priority-btn.is-rec { background: var(--good-bg); color: var(--good); }
+.curation-priority-btn.is-opt { background: var(--bg-row); color: var(--text-3); border: 1px solid var(--border-2); }
+.curation-remove-btn {
+  grid-column: 4; padding: 8px 10px 0;
+  background: none; border: none; color: var(--text-3);
+  font-size: 18px; cursor: pointer; line-height: 1;
+}
+.curation-remove-btn:hover { color: var(--danger); }
+
+/* Library column */
+.curation-lib-search {
+  width: 100%; font-family: 'Inter', sans-serif; font-size: 12px;
+  padding: 5px 8px; border: 1px solid var(--border-2); border-radius: 0;
+  background: var(--bg); color: var(--text); outline: none;
+  margin-bottom: 6px;
+}
+.curation-lib-search:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+.curation-lib-list { display: flex; flex-direction: column; gap: 3px; max-height: 320px; overflow-y: auto; }
+.curation-lib-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  padding: 6px 8px; border: 1px solid var(--border); border-radius: 0;
+  background: var(--bg-panel); cursor: grab; transition: background .1s;
+  font-size: 12px; color: var(--text);
+}
+.curation-lib-item:hover:not(.in-stack) { background: var(--bg-row); border-color: var(--accent-border); }
+.curation-lib-item.in-stack { opacity: .45; cursor: default; }
+.curation-lib-name { flex: 1; font-size: 12px; }
+.curation-lib-btn {
+  flex-shrink: 0; width: 20px; height: 20px;
+  border: 1px solid var(--border-2); background: var(--bg-row);
+  border-radius: 50%; font-size: 12px; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--accent); font-weight: 700;
+}
+.curation-lib-item.in-stack .curation-lib-btn { color: var(--good); border-color: var(--good); cursor: default; }
