@@ -197,8 +197,10 @@ function syncPresets(color) {
 function updateWidgetColors(color) {
   // Re-render service widget with new color if visible
   if ($('serviceWidgetWrap') && !$('serviceWidgetWrap').classList.contains('hidden')) {
-    if (stackServices.length > 0) {
-      const frame = $('serviceWidgetFrame');
+    const frame = $('serviceWidgetFrame');
+    if (currentMode === 'execution') {
+      if (frame) frame.innerHTML = generateSpecSummaryWidget(currentRec?.line_items || [], color);
+    } else if (stackServices.length > 0) {
       if (frame) frame.innerHTML = generateServiceWidgetHtml(color);
     } else {
       applyServiceWidgetColor(color);
@@ -712,8 +714,26 @@ function renderResults(mode, title, rec) {
 
   // Show correct panels based on mode
   const swaWrap = $('serviceWidgetActionWrap');
-  if (swaWrap) swaWrap.classList.toggle('hidden', mode !== 'discovery');
+  if (swaWrap) swaWrap.classList.remove('hidden'); // show in all modes
   $('serviceWidgetWrap')?.classList.add('hidden');
+
+  // Update service widget button label by mode
+  const swBtn   = $('genServiceWidgetBtn');
+  const swTitle = document.querySelector('#serviceWidgetActionWrap .action-title');
+  const swDesc  = document.querySelector('#serviceWidgetActionWrap .action-desc');
+  if (mode === 'execution') {
+    if (swBtn)   swBtn.textContent   = 'Generate Spec Summary Widget →';
+    if (swTitle) swTitle.textContent = 'Generate Spec Summary Widget';
+    if (swDesc)  swDesc.textContent  = "Creates a What's Included widget from your design desk spec — ready to paste into the quote.";
+  } else {
+    if (swBtn)   swBtn.textContent   = 'Generate Services Widget →';
+    if (swTitle) swTitle.textContent = 'Generate Services Widget';
+    if (swDesc)  swDesc.textContent  = 'Buyer-language description of the service stack — no catalog or API needed.';
+  }
+
+  // Show CSV import tip in execution mode
+  $('csvImportTip')?.classList.toggle('hidden', mode !== 'execution');
+
   // Discovery: show widget push panel, hide full connect panel
   $('discoveryPushWrap')?.classList.toggle('hidden', mode !== 'discovery');
   $('createOppWrap')?.classList.toggle('hidden', mode === 'discovery');
@@ -854,35 +874,40 @@ function applyServiceWidgetColor(color) {
 }
 
 $('genServiceWidgetBtn')?.addEventListener('click', async () => {
-  if (stackServices.length === 0 && !currentRec?.service_widget_html) {
-    const el = $('serviceWidgetResult');
-    if (el) { el.textContent = 'Run Discovery first to generate a service widget.'; el.className = 'action-result error'; el.classList.remove('hidden'); }
-    return;
-  }
-
   $('genServiceWidgetBtn').disabled = true;
-  $('serviceWidgetWrap')?.classList.remove('hidden');
 
-  const frame = $('serviceWidgetFrame');
-  if (stackServices.length > 0) {
-    // Generate from curated stack
-    if (frame) frame.innerHTML = generateServiceWidgetHtml(guideColor);
+  if (currentMode === 'execution') {
+    // Spec to Proposal — generate "What's Included" summary widget from line items
+    showSpecSummaryWidget();
   } else {
-    // Fall back to Claude's HTML
-    applyServiceWidgetColor(guideColor);
+    // Discovery — generate from curated stack
+    if (stackServices.length === 0 && !currentRec?.service_widget_html) {
+      const el = $('serviceWidgetResult');
+      if (el) { el.textContent = 'Run Discovery first to generate a service widget.'; el.className = 'action-result error'; el.classList.remove('hidden'); }
+      $('genServiceWidgetBtn').disabled = false;
+      return;
+    }
+    $('serviceWidgetWrap')?.classList.remove('hidden');
+    const frame = $('serviceWidgetFrame');
+    if (stackServices.length > 0) {
+      if (frame) frame.innerHTML = generateServiceWidgetHtml(guideColor);
+    } else {
+      applyServiceWidgetColor(guideColor);
+    }
+    const el = $('serviceWidgetResult');
+    if (el) { el.textContent = '✓ Service widget ready — copy HTML and paste into your quote'; el.className = 'action-result ok'; el.classList.remove('hidden'); }
   }
 
   $('genServiceWidgetBtn').disabled = false;
-
-  const el = $('serviceWidgetResult');
-  if (el) { el.textContent = '✓ Service widget ready — copy HTML and paste into your quote'; el.className = 'action-result ok'; el.classList.remove('hidden'); }
 });
 
 
 $('copyServiceWidgetBtn')?.addEventListener('click', () => {
-  const html = stackServices.length > 0
-    ? generateServiceWidgetHtml(guideColor)
-    : (currentRec?.service_widget_html || '');
+  const html = currentMode === 'execution'
+    ? generateSpecSummaryWidget(currentRec?.line_items || [], guideColor)
+    : stackServices.length > 0
+      ? generateServiceWidgetHtml(guideColor)
+      : (currentRec?.service_widget_html || '');
   if (!html) return;
   navigator.clipboard?.writeText(html).catch(() => {
     const ta = document.createElement('textarea');
@@ -945,6 +970,59 @@ $('discPushBtn')?.addEventListener('click', async () => {
     if (result) { result.textContent = e.message; result.className = 'sb-result error'; result.classList.remove('hidden'); }
   }
 });
+
+// ── Spec to Proposal — spec summary widget ───────────────
+function generateSpecSummaryWidget(lineItems, color) {
+  if (!lineItems || lineItems.length === 0) return '';
+  const lighter = lightenHex(color, 0.92);
+
+  const groups = { hardware: [], service: [], labor: [], software: [], unknown: [] };
+  lineItems.forEach(item => groups[item.type || 'unknown']?.push(item));
+
+  const groupConfig = [
+    { key: 'hardware', label: 'Hardware being installed',        icon: '🔧' },
+    { key: 'software', label: 'Software & Licenses',             icon: '💿' },
+    { key: 'service',  label: 'Managed services being activated', icon: '⚡' },
+    { key: 'labor',    label: 'Professional services included',   icon: '👷' },
+  ];
+
+  const groupHtml = groupConfig
+    .filter(g => groups[g.key]?.length > 0)
+    .map(g => {
+      const items = groups[g.key].map(item =>
+        '<tr><td style="padding:4px 0;font-family:Arial,sans-serif;font-size:12px;color:#4B5563;border-bottom:1px solid #F5F5F2;">' +
+        esc(item.name) +
+        (item.quantity > 1 ? ' <span style="color:#9CA3AF;">×' + item.quantity + '</span>' : '') +
+        (item.mpn ? ' <span style="font-family:monospace;font-size:11px;color:#9CA3AF;">(' + esc(item.mpn) + ')</span>' : '') +
+        '</td><td style="padding:4px 0 4px 12px;font-family:Arial,sans-serif;font-size:11px;color:#9CA3AF;white-space:nowrap;border-bottom:1px solid #F5F5F2;text-align:right;">' +
+        esc(item.unit || '') + '</td></tr>'
+      ).join('');
+
+      return '<div style="margin-bottom:16px;">' +
+        '<div style="font-family:Arial,sans-serif;font-size:12px;font-weight:bold;color:' + color + ';text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid ' + color + ';">' +
+        g.icon + ' ' + esc(g.label) + '</div>' +
+        '<table width="100%" cellpadding="0" cellspacing="0" border="0">' + items + '</table>' +
+      '</div>';
+    }).join('');
+
+  return '<div style="background:#FFFFFF;border:1px solid #E8E6DF;border-radius:6px;padding:22px 24px;font-family:Arial,sans-serif;width:100%;">' +
+    '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:18px;">' +
+      '<tr><td width="4" style="background:' + color + ';">&nbsp;</td>' +
+      '<td width="12">&nbsp;</td>' +
+      '<td><h5 style="margin:0 0 3px;font-family:Arial,sans-serif;font-size:17px;font-weight:bold;color:#0B0E14;">What\'s Included</h5>' +
+      '<p style="margin:0;font-family:Arial,sans-serif;font-size:12px;color:#6B7280;">Everything confirmed in the design desk specification for this engagement.</p></td></tr>' +
+    '</table>' + groupHtml + '</div>';
+}
+
+function showSpecSummaryWidget() {
+  const items = currentRec?.line_items || [];
+  if (items.length === 0) return;
+  const frame = $('serviceWidgetFrame');
+  if (frame) frame.innerHTML = generateSpecSummaryWidget(items, guideColor);
+  $('serviceWidgetWrap')?.classList.remove('hidden');
+  const result = $('serviceWidgetResult');
+  if (result) { result.textContent = '✓ Spec summary widget ready — copy HTML to paste into your quote'; result.className = 'action-result ok'; result.classList.remove('hidden'); }
+}
 
 // ── Print / Download checklist ───────────────────────────
 $('downloadChecklistBtn')?.addEventListener('click', () => {
