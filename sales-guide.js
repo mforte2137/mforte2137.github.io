@@ -659,13 +659,15 @@ function renderResults(mode, title, rec) {
   const hwSection = $('hardwareSection');
   if (mode === 'discovery' && rec.hardware_checklist?.length > 0) {
     const list = $('hardwareList');
-    list.innerHTML = rec.hardware_checklist.map(hw => `
+    if (!list) { console.warn('[HW] hardwareList element not found'); }
+    else list.innerHTML = rec.hardware_checklist.map(hw => `
       <div class="hw-item">
         <div class="hw-component">🔧 ${esc(hw.component)}</div>
         ${hw.confirm   ? `<div class="hw-confirm">${esc(hw.confirm)}</div>` : ''}
         ${hw.never_forget ? `<div class="hw-forget">${esc(hw.never_forget)}</div>` : ''}
       </div>`).join('');
     hwSection.classList.remove('hidden');
+    console.log('[HW] section shown, items:', rec.hardware_checklist.length);
   } else {
     hwSection.classList.add('hidden'); // No hardware = hide entirely
   }
