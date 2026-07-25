@@ -1240,15 +1240,71 @@ btnSave.addEventListener('click', async () => {
   const company = state.company.trim() || 'Untitled';
   btnSave.textContent = '⏳ Saving…'; btnSave.disabled = true;
   try {
-    const thumb = await exportToPNG();
+    // Generate a small thumbnail (max 400px wide) for the sidebar — not full 300dpi
+    const thumb = await exportThumbnail();
     const recents = getSaved().filter(r => r.company !== company);
     recents.unshift({ company, savedAt: Date.now(), thumb, mode: currentMode, canvasSize, state: JSON.stringify(state) });
     if (recents.length > MAX_RECENTS) recents.length = MAX_RECENTS;
     localStorage.setItem(LS_KEY, JSON.stringify(recents));
     renderSidebar(); toast(`"${company}" saved`);
-  } catch(err){ console.error(err); toast('Save failed');
+  } catch(err){ console.error(err); toast('Save failed — ' + err.message);
   } finally { btnSave.textContent = '💾 Save'; btnSave.disabled = false; }
 });
+
+/* Small thumbnail for sidebar — max 400px wide, keeps aspect ratio */
+async function exportThumbnail() {
+  const H    = getCanvasH();
+  const sc   = Math.min(400 / A4_W, 200 / H); // never larger than 400×200
+  const outW = Math.round(A4_W * sc);
+  const outH = Math.round(H    * sc);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = outW; canvas.height = outH;
+  const cc = canvas.getContext('2d');
+  cc.imageSmoothingEnabled = true; cc.imageSmoothingQuality = 'high';
+
+  // Background only — fast, no image loading needed for a thumbnail
+  if (currentMode === 'logo') {
+    const accH1 = state.accentMode !== 'none'  ? Math.round(state.accent1H*sc) : 0;
+    const accH2 = state.accentMode === 'double' ? Math.round(state.accent2H*sc) : 0;
+    const mainH = outH - accH1 - accH2;
+    const mainY = state.accentPos === 'above' ? accH1+accH2 : 0;
+    cc.save(); cc.beginPath(); cc.rect(0, mainY, outW, mainH); cc.clip();
+    drawBackground(cc, outW, mainH, state); cc.restore();
+    if (state.accentMode !== 'none') {
+      if (state.accentPos === 'below') {
+        cc.fillStyle = state.accent1; cc.fillRect(0, mainH, outW, accH1);
+        if (state.accentMode === 'double') { cc.fillStyle = state.accent2; cc.fillRect(0, mainH+accH1, outW, accH2); }
+      } else {
+        cc.fillStyle = state.accent1; cc.fillRect(0, 0, outW, accH1);
+        if (state.accentMode === 'double') { cc.fillStyle = state.accent2; cc.fillRect(0, accH1, outW, accH2); }
+      }
+    }
+  } else {
+    drawBackground(cc, outW, outH, state);
+  }
+
+  // Draw layers at thumbnail scale
+  for (const layer of state.layers) {
+    if (layer.type === 'image' && layer.src) {
+      await new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+          const dw = Math.round(layer.w * sc);
+          const dh = (layer.lock || !layer.h) ? Math.round(img.naturalHeight * (dw / img.naturalWidth)) : Math.round(layer.h * sc);
+          cc.save(); cc.globalAlpha = (layer.opacity ?? 100) / 100;
+          cc.drawImage(img, Math.round(layer.x*sc), Math.round(layer.y*sc), dw, dh);
+          cc.restore(); resolve();
+        };
+        img.onerror = resolve; img.src = layer.src;
+      });
+    } else if (layer.type === 'shape') {
+      drawShape(cc, layer, sc);
+    }
+  }
+
+  return canvas.toDataURL('image/jpeg', 0.7); // JPEG for smaller size
+}
 
 function loadEntry(entry) {
   const saved = JSON.parse(entry.state);
