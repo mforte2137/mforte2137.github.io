@@ -28,44 +28,51 @@
       <div class="topbar-left">
         <h1>Banner Creator <span class="tag">MSP Toolkit</span></h1>
         <div class="mode-tabs">
-          <button class="mode-tab active" data-mode="logo" id="tab-logo">🖼 Logo Banner</button>
-          <button class="mode-tab" data-mode="header" id="tab-header">✦ Header Banner</button>
+          <button class="mode-tab active" id="tab-logo">🖼 Logo Banner</button>
+          <button class="mode-tab" id="tab-header">✦ Header Banner</button>
         </div>
       </div>
       <div class="topbar-actions">
-        <button id="btn-undo" class="btn-ghost-top" title="Undo (Ctrl+Z / Cmd+Z)" disabled>↩ Undo</button>
+        <button id="btn-undo" class="btn-ghost-top" disabled>↩ Undo</button>
         <button id="btn-clear" class="btn-ghost-top">↺ Clear</button>
         <button id="btn-save" class="btn-secondary">💾 Save</button>
-        <div class="export-mode-wrap">
-          <div class="seg-control" id="seg-export">
-            <button class="seg active" data-val="print">🖨 300 dpi</button>
-            <button class="seg" data-val="web">🌐 96 dpi</button>
-          </div>
-        </div>
-        <button id="btn-download" class="btn-primary">⬇ Download PNG</button>
+        <button id="btn-download" class="btn-primary">⬇ Download PNG 300dpi</button>
       </div>
     </header>
 
     <div id="workspace">
-
-      <!-- ══ CONTROLS ══════════════════════════════════════ -->
       <section id="controls">
 
+        <!-- Company -->
         <div class="ctrl-group">
           <label class="ctrl-label">MSP Company Name</label>
           <input type="text" id="inp-company" placeholder="e.g. Acme IT Solutions" />
         </div>
 
-        <div class="ctrl-group">
-          <label class="ctrl-label">Banner Height <span id="height-val" class="val-badge">280px</span></label>
-          <input type="range" id="inp-height" min="120" max="600" value="280" step="4" />
+        <!-- Canvas size (logo mode only) -->
+        <div id="size-section">
+          <div class="ctrl-group">
+            <label class="ctrl-label">Canvas Size</label>
+            <div class="seg-control" id="seg-canvas-size">
+              <button class="seg active" data-val="banner">Banner</button>
+              <button class="seg" data-val="a4">Full A4 Page</button>
+            </div>
+          </div>
+          <div id="height-section">
+            <div class="ctrl-group">
+              <label class="ctrl-label">Banner Height <span id="height-val" class="val-badge">280px</span></label>
+              <input type="range" id="inp-height" min="120" max="600" value="280" step="4" />
+            </div>
+          </div>
         </div>
 
+        <!-- Corner radius -->
         <div class="ctrl-group">
           <label class="ctrl-label">Corner Radius <span id="radius-val" class="val-badge">0px</span></label>
           <input type="range" id="inp-radius" min="0" max="40" value="0" step="1" />
         </div>
 
+        <!-- Background style -->
         <div class="ctrl-group">
           <label class="ctrl-label">Background Style</label>
           <div class="seg-control" id="seg-bg-type-logo">
@@ -130,7 +137,7 @@
           </div>
         </div>
 
-        <!-- Accent Bands (logo mode only) -->
+        <!-- Accent bands (logo mode only) -->
         <div id="accent-section">
           <div class="ctrl-group">
             <label class="ctrl-label">Accent Bands</label>
@@ -142,7 +149,7 @@
           </div>
           <div id="accent-controls" style="display:none">
             <div class="ctrl-group">
-              <label class="ctrl-label">Band Position</label>
+              <label class="ctrl-label">Position</label>
               <div class="seg-control" id="seg-accent-pos">
                 <button class="seg active" data-val="below">Below</button>
                 <button class="seg" data-val="above">Above</button>
@@ -181,7 +188,7 @@
           </div>
         </div>
 
-        <!-- Drop Shadow -->
+        <!-- Drop shadow -->
         <div class="ctrl-group">
           <label class="ctrl-label">Drop Shadow
             <label class="toggle-switch"><input type="checkbox" id="inp-shadow" /><span class="toggle-track"></span></label>
@@ -213,14 +220,14 @@
           </div>
         </div>
 
-        <!-- Text Overlay — Heading -->
+        <!-- Heading text -->
         <div class="ctrl-group">
           <label class="ctrl-label">Heading Text
             <label class="toggle-switch"><input type="checkbox" id="inp-text-on" /><span class="toggle-track"></span></label>
           </label>
           <div id="text-controls" style="display:none">
             <div class="ctrl-group" style="margin-top:8px">
-              <textarea id="inp-text" rows="2" placeholder="e.g. Protect Cloud Application Data&#10;(Shift+Enter for new line)"></textarea>
+              <textarea id="inp-text" rows="2" placeholder="Heading text (Shift+Enter for new line)"></textarea>
             </div>
             <div class="ctrl-row" style="margin-top:8px">
               <div class="ctrl-group half">
@@ -228,7 +235,7 @@
                 <select id="inp-font" class="select-inp">
                   <option value="Arial, sans-serif">Arial</option>
                   <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
-                  <option value="Georgia, serif">Georgia (Serif)</option>
+                  <option value="Georgia, serif">Georgia</option>
                   <option value="'Courier New', monospace">Courier New</option>
                 </select>
               </div>
@@ -263,19 +270,19 @@
               </div>
             </div>
             <div class="hint-box" style="margin-top:8px">
-              <strong>Tip:</strong> Click heading on preview then <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> to nudge. <kbd>Shift</kbd>=10px.
+              <strong>Tip:</strong> Click heading on preview then <kbd>←→↑↓</kbd> to nudge. <kbd>Shift</kbd>=10px.
             </div>
           </div>
         </div>
 
-        <!-- Text Overlay — Sub-heading -->
+        <!-- Sub-heading text -->
         <div class="ctrl-group">
           <label class="ctrl-label">Sub-heading Text
             <label class="toggle-switch"><input type="checkbox" id="inp-sub-on" /><span class="toggle-track"></span></label>
           </label>
           <div id="sub-controls" style="display:none">
             <div class="ctrl-group" style="margin-top:8px">
-              <textarea id="inp-sub" rows="2" placeholder="e.g. Effortlessly backup, search and restore&#10;(Shift+Enter for new line)"></textarea>
+              <textarea id="inp-sub" rows="2" placeholder="Sub-heading text (Shift+Enter for new line)"></textarea>
             </div>
             <div class="ctrl-row" style="margin-top:8px">
               <div class="ctrl-group half">
@@ -283,7 +290,7 @@
                 <select id="inp-sub-font" class="select-inp">
                   <option value="Arial, sans-serif">Arial</option>
                   <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
-                  <option value="Georgia, serif">Georgia (Serif)</option>
+                  <option value="Georgia, serif">Georgia</option>
                   <option value="'Courier New', monospace">Courier New</option>
                 </select>
               </div>
@@ -318,23 +325,27 @@
               </div>
             </div>
             <div class="hint-box" style="margin-top:8px">
-              <strong>Tip:</strong> Click sub-heading on preview then <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> to nudge. <kbd>Shift</kbd>=10px.
+              <strong>Tip:</strong> Click sub-heading on preview then <kbd>←→↑↓</kbd> to nudge. <kbd>Shift</kbd>=10px.
             </div>
           </div>
         </div>
 
-        <!-- ── IMAGE LAYERS (logo mode only) ──────────── -->
-        <div id="logo-section">
-          <div class="ctrl-label" style="margin-bottom:6px">Image Layers
-            <span class="val-badge" style="font-size:10px;margin-left:4px">1=back · 4=front</span>
+        <!-- Unified layers -->
+        <div id="layers-section">
+          <div class="layers-header">
+            <span class="ctrl-label">Layers <span class="val-badge" id="layer-count-badge">0</span></span>
+            <div class="layer-add-btns">
+              <button class="btn-add-layer" id="btn-add-image">＋ Image</button>
+              <button class="btn-add-layer" id="btn-add-shape">＋ Shape</button>
+            </div>
           </div>
-          <div class="hint-box" style="margin-bottom:10px;font-size:10px">
-            Upload up to 4 images. Drag on preview to position. Use <strong>remove.bg</strong> first for transparent PNG cutouts.
+          <div class="hint-box" style="margin-top:6px;font-size:10px">
+            Layers render bottom→top. Drag on preview to position. Use <strong>remove.bg</strong> for transparent PNGs.
           </div>
-          <div id="image-layers-list"></div>
+          <div id="layers-list" style="margin-top:8px"></div>
         </div>
 
-      </section><!-- /controls -->
+      </section>
 
       <!-- PREVIEW -->
       <section id="preview-panel">
@@ -343,17 +354,17 @@
           <div id="preview-outer">
             <div id="preview-banner">
               <div id="pv-main"></div>
-              <div id="pv-images"></div>
-              <div id="pv-text" style="display:none"></div>
-              <div id="pv-sub" style="display:none"></div>
+              <div id="pv-layers"></div>
+              <div id="pv-text"   style="display:none"></div>
+              <div id="pv-sub"    style="display:none"></div>
               <div id="pv-border"></div>
             </div>
           </div>
         </div>
-        <p class="preview-note">Click an image to select it, then drag or use arrow keys to reposition.</p>
+        <p class="preview-note">Click a layer element to select it, then drag or use arrow keys to reposition.</p>
       </section>
 
-    </div><!-- /workspace -->
+    </div>
   </main>
 
   <!-- ── RIGHT SIDEBAR — Brand Extractor ───────────────── -->
