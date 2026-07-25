@@ -653,11 +653,12 @@ function makeSliderRow(label, initVal, min, max, value, onChange) {
 function getLayerIdx(id) { return state.layers.findIndex(l => l.id === id); }
 
 function swapLayers(a, b) {
-  if (b < 0 || b >= state.layers.length) { toast('Already at ' + (b < 0 ? 'bottom' : 'top')); return; }
+  if (b < 0) { toast('Already at bottom (back)'); return; }
+  if (b >= state.layers.length) { toast('Already at top (front)'); return; }
   pushHistory();
   [state.layers[a], state.layers[b]] = [state.layers[b], state.layers[a]];
   rebuildLayerCards(); rebuildLayerPreviews(); render();
-  toast('Layer moved');
+  toast('Layer moved ' + (b > a ? 'forward ↑' : 'back ↓'));
 }
 
 function loadImageToLayer(file, layerId, dropText, thumb, nameEl, card) {
@@ -707,7 +708,6 @@ function rebuildLayerPreviews() {
       const el = document.createElement('div');
       el.className = 'pv-layer-el';
       el.dataset.lid = layer.id;
-      pvLayersEl.appendChild(el);
       layerEls.set(layer.id, { el });
       // Wire drag
       el.addEventListener('mousedown', e => {
@@ -716,6 +716,12 @@ function rebuildLayerPreviews() {
         startLayerDrag(e, layer.id);
       });
     }
+  });
+  // ── Reorder DOM to match state.layers order (bottom→top = first→last child) ──
+  pvLayersEl.innerHTML = '';
+  state.layers.forEach(layer => {
+    const obj = layerEls.get(layer.id);
+    if (obj) pvLayersEl.appendChild(obj.el);
   });
 }
 
