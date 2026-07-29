@@ -608,7 +608,6 @@ document.getElementById('docsTicketBtn').addEventListener('click', async () => {
   const screenshots     = document.getElementById('docsScreenshots').value.trim();
   const relatedArticles = document.getElementById('docsRelatedArticles').value.trim();
   const existingArticle = document.getElementById('docsExistingArticle').value.trim();
-  const searchContext   = document.getElementById('docsSearchOutputText').innerText.trim();
   const btn             = document.getElementById('docsTicketBtn');
 
   if (!articleTitle) { alert('Please enter an article title.'); return; }
@@ -625,7 +624,6 @@ document.getElementById('docsTicketBtn').addEventListener('click', async () => {
     const contentPrompt = `You are preparing the CONTENT field for a Jira [customer-docs] ticket that an AI agent (Skynet) will use to write a Salesbuildr help-center article.
 
 ARTICLE TITLE: ${articleTitle}
-${searchContext ? `\nKB SEARCH CONTEXT (what currently exists or is missing):\n${searchContext}` : ''}
 
 AGENT NOTES FROM SUPPORT TEAM:
 ${notes}
@@ -803,6 +801,16 @@ Do not invent product details. Do not use double dashes.`;
     btnLoader.classList.add('hidden');
   }
 }
+
+document.getElementById('kbClearBtn').addEventListener('click', () => {
+  document.getElementById('kbAskInput').value = '';
+  document.getElementById('kbAnswerBlock').classList.add('hidden');
+  document.getElementById('kbAnswerText').innerHTML = '';
+  document.getElementById('kbArticlesBlock').classList.add('hidden');
+  document.getElementById('kbArticlesList').innerHTML = '';
+  document.getElementById('kbCreateTicket').classList.add('hidden');
+  kbLastArticles = [];
+});
 
 document.getElementById('kbAskBtn').addEventListener('click', runKbAsk);
 
