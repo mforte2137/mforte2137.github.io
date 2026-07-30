@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Customer Check-In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="customer-checkin.css" />
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="app-header-inner">
+      <div class="app-title">Customer Check-In</div>
+      <nav class="tabs">
+        <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+        <button class="tab-btn" data-tab="campaign">Build Campaign</button>
+        <button class="tab-btn" data-tab="contacts">Manage Contacts</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="app-main">
+
+    <!-- ============ DASHBOARD TAB ============ -->
+    <section id="tab-dashboard" class="tab-panel active">
+      <div class="panel-header-row">
+        <h1>Up Next</h1>
+        <div id="noGroupsMsg" class="hint-text" hidden>No groups have contacts assigned yet — head to Manage Contacts to set up your 4 groups.</div>
+      </div>
+
+      <div id="upcomingGroupCard" class="card upcoming-card" hidden>
+        <div class="upcoming-top">
+          <div>
+            <div class="kicker" id="upGroupDueLabel">DUE</div>
+            <h2 id="upGroupName">Group 1</h2>
+            <div class="muted-text" id="upGroupDate">Send date: —</div>
+          </div>
+          <div class="upcoming-actions">
+            <button class="btn-secondary" id="btnCopyBcc">Copy BCC List</button>
+            <button class="btn-secondary" id="btnViewLast">View Last Email Sent</button>
+          </div>
+        </div>
+
+        <div id="noCampaignBanner" class="callout callout-warn" hidden>
+          No campaign created yet for this group. Go to <strong>Build Campaign</strong> to draft one.
+        </div>
+
+        <div id="draftReadyBanner" class="callout callout-good" hidden>
+          A draft is ready for this group. Review it in <strong>Build Campaign</strong>, then mark it sent.
+        </div>
+
+        <table class="contact-table" id="upcomingContactsTable">
+          <thead>
+            <tr><th>Contact</th><th>Company</th><th>Email</th><th>Reply Status</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <h3 class="section-heading">Other Groups</h3>
+      <div id="otherGroupsList" class="other-groups-grid"></div>
+    </section>
+
+    <!-- ============ BUILD CAMPAIGN TAB ============ -->
+    <section id="tab-campaign" class="tab-panel">
+      <div class="panel-header-row">
+        <h1>Build Campaign</h1>
+      </div>
+
+      <div class="two-col-layout">
+        <div class="col-form">
+
+          <label>Group</label>
+          <select id="campaignGroupSelect"></select>
+
+          <div id="lastEmailReference" class="callout" hidden>
+            <div class="kicker">Last sent to this group</div>
+            <div id="lastEmailRefContent" class="muted-text small-text"></div>
+          </div>
+
+          <label>Quick check-in intro</label>
+          <textarea id="introNotes" rows="3" placeholder="e.g. Just checking in, hope things are going well this quarter..."></textarea>
+
+          <label>Tip or feature to highlight</label>
+          <textarea id="tipNotes" rows="4" placeholder="e.g. New Autotask integration tip, or a security best practice worth flagging..."></textarea>
+
+          <button class="btn-accent" id="btnGenerate">Generate with AI</button>
+          <div id="generateStatus" class="muted-text small-text" hidden></div>
+
+        </div>
+
+        <div class="col-output">
+          <label>Draft Email</label>
+          <input type="text" id="draftSubject" placeholder="Subject line" />
+          <textarea id="draftBody" rows="16" placeholder="Your generated email will appear here — feel free to edit it."></textarea>
+
+          <div class="draft-actions">
+            <button class="btn-secondary" id="btnCopyDraft">Copy to Clipboard</button>
+            <button class="btn-secondary" id="btnSaveDraft">Save Draft</button>
+            <button class="btn-primary" id="btnMarkSent">Copy &amp; Mark Group as Sent</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MANAGE CONTACTS TAB ============ -->
+    <section id="tab-contacts" class="tab-panel">
+      <div class="panel-header-row">
+        <h1>Manage Contacts</h1>
+        <button class="btn-accent" id="btnAddContact">+ Add Contact</button>
+      </div>
+
+      <div class="filter-row">
+        <input type="text" id="contactSearch" placeholder="Search company or name..." />
+        <select id="filterGroup">
+          <option value="">All Groups</option>
+          <option value="1">Group 1</option>
+          <option value="2">Group 2</option>
+          <option value="3">Group 3</option>
+          <option value="4">Group 4</option>
+          <option value="unassigned">Unassigned</option>
+        </select>
+        <label class="checkbox-label"><input type="checkbox" id="showRemoved" /> Show removed</label>
+      </div>
+
+      <table class="contact-table full" id="contactsTable">
+        <thead>
+          <tr>
+            <th>Company</th><th>Country</th><th>PSA</th>
+            <th>Contact</th><th>Email</th><th>Group</th>
+            <th>Reply Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <!-- ============ MODAL: Last Email Sent ============ -->
+  <div id="lastEmailModal" class="modal-overlay" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalGroupTitle">Last Email — Group 1</h3>
+        <button class="modal-close" id="modalCloseBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="modalEmptyState" class="muted-text" hidden>No email has been sent to this group yet.</div>
+        <div id="modalContent" hidden>
+          <div class="muted-text small-text" id="modalDate"></div>
+          <div class="modal-subject" id="modalSubject"></div>
+          <div class="modal-email-body" id="modalBody"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: Add / Edit Contact ============ -->
+  <div id="contactModal" class="modal-overlay" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="contactModalTitle">Add Contact</h3>
+        <button class="modal-close" id="contactModalCloseBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="cmId" />
+        <label>Company</label>
+        <input type="text" id="cmCompany" />
+        <label>Country</label>
+        <input type="text" id="cmCountry" />
+        <label>PSA</label>
+        <input type="text" id="cmPsa" />
+        <label>First Name</label>
+        <input type="text" id="cmFirstName" />
+        <label>Last Name</label>
+        <input type="text" id="cmLastName" />
+        <label>Email</label>
+        <input type="email" id="cmEmail" />
+        <label>Group</label>
+        <select id="cmGroup">
+          <option value="">Unassigned</option>
+          <option value="1">Group 1</option>
+          <option value="2">Group 2</option>
+          <option value="3">Group 3</option>
+          <option value="4">Group 4</option>
+        </select>
+
+        <hr />
+        <div class="muted-text small-text">Optional second contact at this company</div>
+        <label>Second Contact First Name</label>
+        <input type="text" id="cmFirstName2" />
+        <label>Second Contact Last Name</label>
+        <input type="text" id="cmLastName2" />
+        <label>Second Contact Email</label>
+        <input type="email" id="cmEmail2" />
+
+        <div class="modal-footer-actions">
+          <button class="btn-secondary" id="cmSaveBtn">Save Contact</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: Reply Status ============ -->
+  <div id="replyModal" class="modal-overlay" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Update Reply Status</h3>
+        <button class="modal-close" id="replyModalCloseBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="rmContactId" />
+        <div class="pill-group" id="replyPillGroup">
+          <button class="pill" data-status="none">No reply yet</button>
+          <button class="pill pill-good" data-status="replied_no_action">Replied — no action needed</button>
+          <button class="pill pill-info" data-status="replied_meeting">Replied — wants a meeting</button>
+          <button class="pill pill-neutral" data-status="other">Other</button>
+        </div>
+        <div id="replySubjectWrap" hidden>
+          <label>Meeting about...</label>
+          <input type="text" id="rmSubject" placeholder="e.g. Renewal pricing, new firewall rollout" />
+        </div>
+        <div id="replyOtherWrap" hidden>
+          <label>Note</label>
+          <textarea id="rmOther" rows="3"></textarea>
+        </div>
+        <div class="modal-footer-actions">
+          <button class="btn-secondary" id="rmSaveBtn">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="customer-checkin.js"></script>
+</body>
+</html>
