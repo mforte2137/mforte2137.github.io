@@ -183,6 +183,21 @@ input:focus, select:focus, textarea:focus {
 }
 .upcoming-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
+.date-edit-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.date-input {
+  width: auto;
+  font-size: 12px;
+  padding: 4px 8px;
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+.other-group-card .date-input {
+  margin-top: 4px;
+  font-size: 12px;
+  padding: 3px 6px;
+}
+
 .kicker {
   font-family: 'Montserrat', sans-serif;
   font-size: 10px;
