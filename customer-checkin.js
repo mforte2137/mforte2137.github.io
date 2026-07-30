@@ -553,6 +553,55 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
 
+function exportBackup() {
+  const data = {
+    exportedAt: new Date().toISOString(),
+    contacts: getContacts(),
+    groups: getGroups()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = isoDate(new Date());
+  a.href = url;
+  a.download = 'customer-checkin-backup-' + stamp + '.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('Backup downloaded.');
+}
+
+function importBackup(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    let data;
+    try {
+      data = JSON.parse(reader.result);
+    } catch (e) {
+      showToast('That file is not valid JSON.');
+      return;
+    }
+    if (!Array.isArray(data.contacts) || !Array.isArray(data.groups)) {
+      showToast('That file does not look like a Customer Check-In backup.');
+      return;
+    }
+    const confirmMsg = 'Import this backup? This will replace all current contacts and groups in this browser' +
+      (data.exportedAt ? ' (backup from ' + formatDate(data.exportedAt.slice(0, 10)) + ')' : '') + '.';
+    if (!confirm(confirmMsg)) return;
+
+    setContacts(data.contacts);
+    setGroups(data.groups);
+    localStorage.setItem(LS_SEEDED, '1');
+
+    renderDashboard();
+    renderContactsTab();
+    if (document.getElementById('tab-campaign').classList.contains('active')) renderCampaignTab();
+    showToast('Backup imported successfully.');
+  };
+  reader.readAsText(file);
+}
+
 /* ============================================================
    Init
    ============================================================ */
@@ -591,6 +640,16 @@ function init() {
   // Close modals on overlay click
   document.querySelectorAll('.modal-overlay').forEach(overlay => {
     overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.hidden = true; });
+  });
+
+  document.getElementById('btnExportBackup').addEventListener('click', exportBackup);
+  document.getElementById('btnImportBackup').addEventListener('click', () => {
+    document.getElementById('importFileInput').click();
+  });
+  document.getElementById('importFileInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) importBackup(file);
+    e.target.value = '';
   });
 }
 
