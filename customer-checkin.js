@@ -156,7 +156,9 @@ function renderDashboard() {
   else { dueLabel.textContent = 'DUE IN ' + diffDays + ' DAYS'; }
 
   document.getElementById('upGroupName').textContent = upcoming.name;
-  document.getElementById('upGroupDate').textContent = 'Send date: ' + formatDate(upcoming.nextSendDate);
+  const dateInput = document.getElementById('upGroupDateInput');
+  dateInput.value = upcoming.nextSendDate;
+  dateInput.onchange = () => updateGroupSendDate(upcoming.id, dateInput.value);
 
   document.getElementById('noCampaignBanner').hidden = !!upcoming.draft;
   document.getElementById('draftReadyBanner').hidden = !upcoming.draft;
@@ -192,11 +194,28 @@ function renderDashboard() {
     div.className = 'other-group-card';
     div.innerHTML = `
       <div class="g-name">${escapeHtml(g.name)}</div>
-      <div class="g-date">Next send: ${formatDate(g.nextSendDate)}</div>
+      <div class="date-edit-row">
+        <span class="g-date">Next send:</span>
+        <input type="date" class="date-input" value="${g.nextSendDate}" data-group-date="${g.id}" />
+      </div>
       <div class="g-count">${count} contact${count === 1 ? '' : 's'}</div>
     `;
     otherList.appendChild(div);
   });
+  otherList.querySelectorAll('[data-group-date]').forEach(input => {
+    input.addEventListener('change', () => updateGroupSendDate(Number(input.dataset.groupDate), input.value));
+  });
+}
+
+function updateGroupSendDate(groupId, newDate) {
+  if (!newDate) return;
+  const groups = getGroups();
+  const idx = groups.findIndex(g => g.id === groupId);
+  if (idx === -1) return;
+  groups[idx].nextSendDate = newDate;
+  setGroups(groups);
+  renderDashboard();
+  showToast(groups[idx].name + ' send date set to ' + formatDate(newDate) + '.');
 }
 
 function replyBadge(c) {
