@@ -317,6 +317,23 @@ input:focus, select:focus, textarea:focus {
 }
 .draft-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
 
+.send-group-meta {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+  align-items: start;
+  margin-top: 4px;
+}
+.send-group-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+@media (max-width: 700px) {
+  .send-group-meta { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 800px) {
   .two-col-layout { grid-template-columns: 1fr; }
   .col-form { border-right: none; border-bottom: 1px solid var(--border); padding: 4px 0 24px; }
