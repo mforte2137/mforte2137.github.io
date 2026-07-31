@@ -267,6 +267,17 @@ function renderCampaignTab() {
   select.onchange = loadCampaignForGroup;
 }
 
+function refreshCampaignGroupOptionLabels() {
+  const select = document.getElementById('campaignGroupSelect');
+  const keep = select.value;
+  const groups = getGroups();
+  select.innerHTML = groups.map(g => {
+    const count = activeContactsInGroup(g.id).length;
+    return `<option value="${g.id}">${escapeHtml(g.name)} — ${count} contacts — next send ${formatDate(g.nextSendDate)}</option>`;
+  }).join('');
+  select.value = keep;
+}
+
 function currentCampaignGroup() {
   const id = Number(document.getElementById('campaignGroupSelect').value);
   return getGroups().find(g => g.id === id);
@@ -275,6 +286,12 @@ function currentCampaignGroup() {
 function loadCampaignForGroup() {
   const g = currentCampaignGroup();
   if (!g) return;
+  const dateInput = document.getElementById('campaignGroupDateInput');
+  dateInput.value = g.nextSendDate;
+  dateInput.onchange = () => {
+    updateGroupSendDate(g.id, dateInput.value);
+    refreshCampaignGroupOptionLabels();
+  };
   const refBox = document.getElementById('lastEmailReference');
   const last = g.history[g.history.length - 1];
   refBox.hidden = !last;
