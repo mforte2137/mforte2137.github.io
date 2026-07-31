@@ -53,11 +53,11 @@
         </div>
 
         <div id="noCampaignBanner" class="callout callout-warn" hidden>
-          No campaign created yet for this group. Go to <strong>Build Campaign</strong> to draft one.
+          No campaign created yet this month. Go to <strong>Build Campaign</strong> to write one — you'll reuse it for every group.
         </div>
 
         <div id="draftReadyBanner" class="callout callout-good" hidden>
-          A draft is ready for this group. Review it in <strong>Build Campaign</strong>, then mark it sent.
+          This month's campaign is ready. Copy it from <strong>Build Campaign</strong> when this group's turn comes up.
         </div>
 
         <table class="contact-table" id="upcomingContactsTable">
@@ -76,46 +76,73 @@
     <section id="tab-campaign" class="tab-panel">
       <div class="panel-header-row">
         <h1>Build Campaign</h1>
+        <div class="muted-text small-text" id="campaignMonthLabel"></div>
       </div>
 
-      <div class="two-col-layout">
-        <div class="col-form">
+      <!-- ============ THIS MONTH'S CAMPAIGN ============ -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="panel-header-row" style="margin-bottom:10px;">
+          <h2>This Month's Campaign</h2>
+          <button class="btn-secondary" id="btnNewMonth">Start New Month's Campaign</button>
+        </div>
 
-          <label>Group</label>
-          <select id="campaignGroupSelect"></select>
+        <div id="noCampaignYet" class="hint-text" hidden>Write this once — you'll reuse it for every group as their week comes up.</div>
 
-          <label>Send Date for This Group</label>
-          <input type="date" id="campaignGroupDateInput" />
+        <div id="lastMonthReference" class="callout" hidden>
+          <div class="kicker">Last month's campaign (for reference — don't repeat it)</div>
+          <div id="lastMonthRefContent" class="muted-text small-text"></div>
+        </div>
 
-          <div id="lastEmailReference" class="callout" hidden>
+        <div class="two-col-layout">
+          <div class="col-form">
+            <label>Quick check-in intro</label>
+            <textarea id="introNotes" rows="3" placeholder="e.g. Just checking in, hope things are going well this quarter..."></textarea>
+
+            <label>Tip or feature to highlight</label>
+            <textarea id="tipNotes" rows="4" placeholder="e.g. New Autotask integration tip, or a security best practice worth flagging..."></textarea>
+
+            <button class="btn-accent" id="btnGenerate">Generate with AI</button>
+            <div id="generateStatus" class="muted-text small-text" hidden></div>
+          </div>
+
+          <div class="col-output">
+            <label>Subject</label>
+            <input type="text" id="draftSubject" placeholder="Subject line" />
+            <label>Email Body</label>
+            <textarea id="draftBody" rows="14" placeholder="Your generated email will appear here — feel free to edit it. This is reused for every group's send this month."></textarea>
+            <div class="draft-actions">
+              <button class="btn-secondary" id="btnCopyDraft">Copy Email to Clipboard</button>
+              <button class="btn-secondary" id="btnSaveDraft">Save Campaign</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ SEND TO A GROUP ============ -->
+      <div class="card">
+        <h2 style="margin-bottom:10px;">Send This Campaign to a Group</h2>
+
+        <label>Group</label>
+        <select id="campaignGroupSelect"></select>
+
+        <div class="send-group-meta">
+          <div>
+            <label style="margin-top:10px;">Send Date for This Group</label>
+            <input type="date" id="campaignGroupDateInput" />
+          </div>
+          <div id="lastEmailReference" class="callout" hidden style="margin-top:10px;">
             <div class="kicker">Last sent to this group</div>
             <div id="lastEmailRefContent" class="muted-text small-text"></div>
           </div>
-
-          <label>Quick check-in intro</label>
-          <textarea id="introNotes" rows="3" placeholder="e.g. Just checking in, hope things are going well this quarter..."></textarea>
-
-          <label>Tip or feature to highlight</label>
-          <textarea id="tipNotes" rows="4" placeholder="e.g. New Autotask integration tip, or a security best practice worth flagging..."></textarea>
-
-          <button class="btn-accent" id="btnGenerate">Generate with AI</button>
-          <div id="generateStatus" class="muted-text small-text" hidden></div>
-
         </div>
 
-        <div class="col-output">
-          <label>Draft Email</label>
-          <input type="text" id="draftSubject" placeholder="Subject line" />
-          <textarea id="draftBody" rows="16" placeholder="Your generated email will appear here — feel free to edit it."></textarea>
-
-          <div class="draft-actions">
-            <button class="btn-secondary" id="btnCopyDraft">Copy to Clipboard</button>
-            <button class="btn-secondary" id="btnSaveDraft">Save Draft</button>
-            <button class="btn-primary" id="btnMarkSent">Copy &amp; Mark Group as Sent</button>
-          </div>
+        <div class="send-group-actions">
+          <button class="btn-secondary" id="btnCopyBccCampaign">Copy BCC List for This Group</button>
+          <button class="btn-primary" id="btnMarkSent">Copy Email &amp; Mark Group as Sent</button>
         </div>
       </div>
     </section>
+
 
     <!-- ============ MANAGE CONTACTS TAB ============ -->
     <section id="tab-contacts" class="tab-panel">
