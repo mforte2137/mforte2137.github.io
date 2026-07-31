@@ -6,6 +6,7 @@
 const LS_CONTACTS = 'cci_contacts';
 const LS_GROUPS = 'cci_groups';
 const LS_SEEDED = 'cci_seeded_v1';
+const LS_CAMPAIGN = 'cci_current_campaign';
 
 /* ---------- Seed data (from companies-2026-07-30.csv) ---------- */
 const SEED_COMPANIES = [
@@ -97,6 +98,24 @@ function activeContactsInGroup(groupId) {
   return getContacts().filter(c => c.status === 'active' && String(c.groupId) === String(groupId));
 }
 
+/* ---------- Shared monthly campaign ---------- */
+function getCurrentCampaign() {
+  const raw = localStorage.getItem(LS_CAMPAIGN);
+  return raw ? JSON.parse(raw) : null;
+}
+function setCurrentCampaign(campaign) { localStorage.setItem(LS_CAMPAIGN, JSON.stringify(campaign)); }
+function clearCurrentCampaign() { localStorage.removeItem(LS_CAMPAIGN); }
+
+function getMostRecentSentCampaign() {
+  let latest = null;
+  getGroups().forEach(g => {
+    (g.history || []).forEach(entry => {
+      if (!latest || new Date(entry.date) > new Date(latest.date)) latest = entry;
+    });
+  });
+  return latest;
+}
+
 /* ============================================================
    Tabs
    ============================================================ */
@@ -160,8 +179,8 @@ function renderDashboard() {
   dateInput.value = upcoming.nextSendDate;
   dateInput.onchange = () => updateGroupSendDate(upcoming.id, dateInput.value);
 
-  document.getElementById('noCampaignBanner').hidden = !!upcoming.draft;
-  document.getElementById('draftReadyBanner').hidden = !upcoming.draft;
+  document.getElementById('noCampaignBanner').hidden = !!getCurrentCampaign();
+  document.getElementById('draftReadyBanner').hidden = !getCurrentCampaign();
 
   const tbody = document.querySelector('#upcomingContactsTable tbody');
   tbody.innerHTML = '';
@@ -255,6 +274,27 @@ document.addEventListener('DOMContentLoaded', () => {
    BUILD CAMPAIGN TAB
    ============================================================ */
 function renderCampaignTab() {
+  document.getElementById('campaignMonthLabel').textContent =
+    new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
+
+  // Shared campaign card
+  const campaign = getCurrentCampaign();
+  document.getElementById('noCampaignYet').hidden = !!campaign;
+  document.getElementById('draftSubject').value = campaign ? campaign.subject || '' : '';
+  document.getElementById('draftBody').value = campaign ? campaign.body || '' : '';
+  document.getElementById('introNotes').value = campaign ? campaign.introNotes || '' : '';
+  document.getElementById('tipNotes').value = campaign ? campaign.tipNotes || '' : '';
+
+  const lastCampaign = getMostRecentSentCampaign();
+  const refBox = document.getElementById('lastMonthReference');
+  refBox.hidden = !lastCampaign;
+  if (lastCampaign) {
+    document.getElementById('lastMonthRefContent').textContent =
+      formatDate(lastCampaign.date) + ' — "' + (lastCampaign.subject || 'no subject') + '" — ' +
+      lastCampaign.body.slice(0, 220) + (lastCampaign.body.length > 220 ? '…' : '');
+  }
+
+  // Group select for sending
   const groups = getGroups();
   const select = document.getElementById('campaignGroupSelect');
   const upcoming = getUpcomingGroup();
@@ -263,8 +303,8 @@ function renderCampaignTab() {
     return `<option value="${g.id}">${escapeHtml(g.name)} — ${count} contacts — next send ${formatDate(g.nextSendDate)}</option>`;
   }).join('');
   if (upcoming) select.value = upcoming.id;
-  loadCampaignForGroup();
-  select.onchange = loadCampaignForGroup;
+  loadSendGroupPanel();
+  select.onchange = loadSendGroupPanel;
 }
 
 function refreshCampaignGroupOptionLabels() {
@@ -283,7 +323,7 @@ function currentCampaignGroup() {
   return getGroups().find(g => g.id === id);
 }
 
-function loadCampaignForGroup() {
+function loadSendGroupPanel() {
   const g = currentCampaignGroup();
   if (!g) return;
   const dateInput = document.getElementById('campaignGroupDateInput');
@@ -299,30 +339,16 @@ function loadCampaignForGroup() {
     document.getElementById('lastEmailRefContent').textContent =
       formatDate(last.date) + ' — "' + (last.subject || 'no subject') + '" — ' + last.body.slice(0, 220) + (last.body.length > 220 ? '…' : '');
   }
-  // Load any saved draft
-  if (g.draft) {
-    document.getElementById('draftSubject').value = g.draft.subject || '';
-    document.getElementById('draftBody').value = g.draft.body || '';
-    document.getElementById('introNotes').value = g.draft.introNotes || '';
-    document.getElementById('tipNotes').value = g.draft.tipNotes || '';
-  } else {
-    document.getElementById('draftSubject').value = '';
-    document.getElementById('draftBody').value = '';
-    document.getElementById('introNotes').value = '';
-    document.getElementById('tipNotes').value = '';
-  }
 }
 
 async function handleGenerate() {
-  const g = currentCampaignGroup();
-  if (!g) return;
   const introNotes = document.getElementById('introNotes').value.trim();
   const tipNotes = document.getElementById('tipNotes').value.trim();
   if (!tipNotes && !introNotes) {
     showToast('Add a quick note about the check-in or tip first.');
     return;
   }
-  const last = g.history[g.history.length - 1];
+  const last = getMostRecentSentCampaign();
   const statusEl = document.getElementById('generateStatus');
   statusEl.hidden = false;
   statusEl.textContent = 'Generating...';
@@ -342,50 +368,73 @@ async function handleGenerate() {
     if (!data.ok) throw new Error(data.error || 'Generation failed.');
     document.getElementById('draftSubject').value = data.subject || '';
     document.getElementById('draftBody').value = data.body || '';
-    statusEl.textContent = 'Draft ready — feel free to edit before sending.';
-    setTimeout(() => { statusEl.hidden = true; }, 3000);
+    statusEl.textContent = 'Draft ready — feel free to edit, then save it below.';
+    setTimeout(() => { statusEl.hidden = true; }, 3500);
+    saveCampaign(false);
   } catch (err) {
     statusEl.textContent = 'Error: ' + err.message;
   }
 }
 
-function saveDraft(markSent) {
-  const g = currentCampaignGroup();
-  if (!g) return;
+function saveCampaign(silent) {
   const subject = document.getElementById('draftSubject').value.trim();
   const body = document.getElementById('draftBody').value.trim();
-  if (!body) { showToast('Nothing to save yet — generate or write an email first.'); return; }
+  if (!body) { if (!silent) showToast('Nothing to save yet — generate or write an email first.'); return; }
+  setCurrentCampaign({
+    subject, body,
+    introNotes: document.getElementById('introNotes').value,
+    tipNotes: document.getElementById('tipNotes').value,
+    createdDate: isoDate(new Date())
+  });
+  document.getElementById('noCampaignYet').hidden = true;
+  renderDashboard();
+  if (!silent) showToast('This month\'s campaign saved.');
+}
+
+function startNewMonthCampaign() {
+  if (!confirm('Start a new month\'s campaign? This clears the current subject, body, and notes — last month\'s sent copies stay archived in each group\'s history.')) return;
+  clearCurrentCampaign();
+  renderCampaignTab();
+  renderDashboard();
+  showToast('Ready for a new month\'s campaign.');
+}
+
+function markGroupSent() {
+  const g = currentCampaignGroup();
+  const campaign = getCurrentCampaign();
+  if (!g) return;
+  if (!campaign || !campaign.body) {
+    showToast('Write or generate this month\'s campaign first.');
+    return;
+  }
+  if (!confirm('Copy this email and mark ' + g.name + ' as sent? Its next send date will move forward one month.')) return;
 
   const groups = getGroups();
   const idx = groups.findIndex(x => x.id === g.id);
-
-  groups[idx].draft = {
-    subject, body,
-    introNotes: document.getElementById('introNotes').value,
-    tipNotes: document.getElementById('tipNotes').value
-  };
-
-  if (markSent) {
-    const today = isoDate(new Date());
-    groups[idx].history.push({ date: today, subject, body });
-    groups[idx].lastSentDate = today;
-    const next = new Date(today + 'T00:00:00');
-    next.setMonth(next.getMonth() + 1);
-    groups[idx].nextSendDate = isoDate(next);
-    groups[idx].draft = null;
-  }
-
+  const today = isoDate(new Date());
+  groups[idx].history.push({ date: today, subject: campaign.subject, body: campaign.body });
+  groups[idx].lastSentDate = today;
+  const next = new Date(today + 'T00:00:00');
+  next.setMonth(next.getMonth() + 1);
+  groups[idx].nextSendDate = isoDate(next);
   setGroups(groups);
 
-  if (markSent) {
-    navigator.clipboard.writeText(body).then(() => {
-      showToast(g.name + ' marked as sent. Email copied — paste into Gmail BCC send.');
-    }).catch(() => showToast(g.name + ' marked as sent.'));
-    renderCampaignTab();
-    renderDashboard();
-  } else {
-    showToast('Draft saved for ' + g.name + '.');
-  }
+  navigator.clipboard.writeText(campaign.body).then(() => {
+    showToast(g.name + ' marked as sent. Email copied — paste into Gmail.');
+  }).catch(() => showToast(g.name + ' marked as sent.'));
+
+  renderCampaignTab();
+  renderDashboard();
+}
+
+function copyBccForCampaignGroup() {
+  const g = currentCampaignGroup();
+  if (!g) return;
+  const emails = activeContactsInGroup(g.id).map(c => c.email).filter(Boolean);
+  if (!emails.length) { showToast('No emails saved for this group yet.'); return; }
+  navigator.clipboard.writeText(emails.join(', ')).then(() =>
+    showToast('BCC list copied (' + emails.length + ' emails) for ' + g.name + '.')
+  );
 }
 
 /* ============================================================
@@ -633,12 +682,10 @@ function init() {
     if (!body.trim()) { showToast('Nothing to copy yet.'); return; }
     navigator.clipboard.writeText(body).then(() => showToast('Copied to clipboard.'));
   });
-  document.getElementById('btnSaveDraft').addEventListener('click', () => saveDraft(false));
-  document.getElementById('btnMarkSent').addEventListener('click', () => {
-    if (confirm('Copy this email and mark the group as sent? The next send date will move forward one month.')) {
-      saveDraft(true);
-    }
-  });
+  document.getElementById('btnSaveDraft').addEventListener('click', () => saveCampaign(false));
+  document.getElementById('btnNewMonth').addEventListener('click', startNewMonthCampaign);
+  document.getElementById('btnMarkSent').addEventListener('click', markGroupSent);
+  document.getElementById('btnCopyBccCampaign').addEventListener('click', copyBccForCampaignGroup);
 
   document.getElementById('btnAddContact').addEventListener('click', () => openContactModal(null));
   document.getElementById('contactModalCloseBtn').addEventListener('click', () => document.getElementById('contactModal').hidden = true);
