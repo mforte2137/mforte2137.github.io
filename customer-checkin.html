@@ -18,6 +18,7 @@
         <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
         <button class="tab-btn" data-tab="campaign">Build Campaign</button>
         <button class="tab-btn" data-tab="contacts">Manage Contacts</button>
+        <button class="tab-btn" data-tab="notes">Company Notes</button>
       </nav>
       <div class="header-actions">
         <button class="btn-secondary" id="btnExportBackup">Export Backup</button>
@@ -136,9 +137,20 @@
           </div>
         </div>
 
+        <div class="recipients-header">
+          <label style="margin:14px 0 0;">Recipients for This Send</label>
+          <div class="recipients-toggle-links">
+            <button class="link-btn" id="btnSelectAllRecipients">Select All</button>
+            <button class="link-btn" id="btnSelectNoneRecipients">Select None</button>
+          </div>
+        </div>
+        <div class="hint-text small-text" style="margin-bottom:6px;">Contacts with an existing reply status are unchecked by default — they'll roll over to next month automatically. Untick anyone else who's already been in touch.</div>
+        <div id="sendRecipientsList" class="recipient-list"></div>
+        <div class="muted-text small-text" id="recipientCountLabel" style="margin-top:6px;"></div>
+
         <div class="send-group-actions">
-          <button class="btn-secondary" id="btnCopyBccCampaign">Copy BCC List for This Group</button>
-          <button class="btn-primary" id="btnMarkSent">Copy Email &amp; Mark Group as Sent</button>
+          <button class="btn-secondary" id="btnCopyBccCampaign">Copy BCC List for Selected</button>
+          <button class="btn-primary" id="btnMarkSent">Copy Email &amp; Mark Selected as Sent</button>
         </div>
       </div>
     </section>
@@ -174,6 +186,71 @@
         </thead>
         <tbody></tbody>
       </table>
+    </section>
+
+    <!-- ============ COMPANY NOTES TAB ============ -->
+    <section id="tab-notes" class="tab-panel">
+      <div class="panel-header-row">
+        <h1>Company Notes</h1>
+      </div>
+
+      <div id="notesSearchWrap">
+        <input type="text" id="notesCompanySearch" placeholder="Search company or contact name..." autocomplete="off" />
+        <div id="notesCompanyResults" class="search-results" hidden></div>
+      </div>
+
+      <div id="notesCompanyView" hidden>
+        <div class="panel-header-row" style="margin-top:8px;">
+          <div>
+            <h2 id="notesCompanyName">Company Name</h2>
+            <div class="muted-text small-text" id="notesCompanyMeta"></div>
+          </div>
+          <button class="btn-secondary" id="btnChangeCompany">Change Company</button>
+        </div>
+
+        <div class="card" style="margin-bottom:18px;">
+          <h3>Add a Note</h3>
+          <div class="note-form-row">
+            <div>
+              <label>Date</label>
+              <input type="date" id="noteDate" />
+            </div>
+            <div>
+              <label>Regarding Contact (optional)</label>
+              <select id="noteContact"></select>
+            </div>
+          </div>
+          <div class="note-form-row">
+            <div>
+              <label>Meeting Link (optional)</label>
+              <input type="text" id="noteMeetingLink" placeholder="https://..." />
+            </div>
+            <div>
+              <label>Follow-Up Date (optional)</label>
+              <input type="date" id="noteFollowUpDate" />
+            </div>
+          </div>
+          <label>What happened</label>
+          <textarea id="noteBody" rows="3" placeholder="e.g. Mary replied, needs help with templates, set up a meeting. Seemed happy. Follow up next month re: widgets."></textarea>
+          <div class="draft-actions">
+            <button class="btn-primary" id="btnSaveNote">Save Note</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:18px;">
+          <div class="panel-header-row" style="margin-bottom:8px;">
+            <h3>Quick Report for Sales</h3>
+            <button class="btn-accent" id="btnGenerateReport">Generate Report</button>
+          </div>
+          <div id="reportStatus" class="muted-text small-text" hidden></div>
+          <div id="reportStale" class="callout callout-warn" hidden></div>
+          <div id="reportEmpty" class="hint-text" hidden>No report yet — add a note or two, then generate one.</div>
+          <div id="reportContent" class="modal-email-body" hidden></div>
+        </div>
+
+        <h3 class="section-heading" style="margin-top:0;">Note History</h3>
+        <div id="notesTimeline"></div>
+      </div>
     </section>
 
   </main>
@@ -264,6 +341,9 @@
         <div id="replyOtherWrap" hidden>
           <label>Note</label>
           <textarea id="rmOther" rows="3"></textarea>
+        </div>
+        <div id="replyLogNoteWrap" hidden style="margin-top:12px;">
+          <label class="checkbox-label"><input type="checkbox" id="rmLogAsNote" /> Also add this as a Company Note</label>
         </div>
         <div class="modal-footer-actions">
           <button class="btn-secondary" id="rmSaveBtn">Save</button>
