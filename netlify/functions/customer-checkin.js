@@ -59,15 +59,21 @@ Rules:
     // mode === 'report'
     const companyName = (body.companyName || '').trim();
     const notes = Array.isArray(body.notes) ? body.notes : [];
+    const todayDate = (body.todayDate || '').trim() || new Date().toISOString().slice(0, 10);
     if (!companyName || !notes.length) {
       return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: 'companyName and at least one note are required.' }) };
     }
 
     systemPrompt = `You help an MSP account manager quickly recall their history with a client company, so they can brief an internal sales colleague in a few sentences — the kind of thing said out loud in a hallway, not a formal report.
 
+Today's date is ${todayDate}. Each note below has its own date, which may be in the past (something that already happened) or in the future (something scheduled/planned but not yet happened). This distinction matters a lot:
+- For notes dated on or before today: describe them as things that already happened, in past tense (e.g. "emailed them on August 10", "Mary replied and set up a meeting").
+- For notes dated after today: describe them as upcoming/scheduled, not completed (e.g. "has a meeting scheduled for August 5 to discuss...", "is planning to follow up next month about..."). Never say a future-dated event "happened" or use past tense for it.
+- Compare every note's date against today's date (${todayDate}) individually before deciding tense — do not assume chronological note order means everything is in the past.
+
 Rules:
 - Length: 3-5 sentences, plain English, no headers or bullet points.
-- Cover, in a natural narrative: what's happened chronologically (briefly), current sentiment/status, any scheduled meeting or follow-up, and the clear next step if one exists.
+- Cover, in a natural narrative: what's happened so far (past tense, only for past-dated notes), current sentiment/status, any scheduled meeting or follow-up (future tense, clearly marked as upcoming), and the clear next step if one exists.
 - Tone: plain, factual, conversational — like briefing a colleague, not writing marketing copy.
 - Use the actual dates and contact names given where relevant, but keep it tight.
 - Return ONLY valid JSON, no markdown, no backticks, no preamble, in exactly this shape:
@@ -82,7 +88,7 @@ Rules:
       return '- ' + parts.filter(Boolean).join(' — ');
     }).join('\n');
 
-    userMessage = `Company: ${companyName}\n\nChronological notes:\n${notesList}`;
+    userMessage = `Today's date: ${todayDate}\nCompany: ${companyName}\n\nChronological notes (check each date against today's date before writing):\n${notesList}`;
   }
 
   try {
