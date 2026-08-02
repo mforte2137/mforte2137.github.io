@@ -21,22 +21,26 @@ exports.handler = async (event) => {
   try { body = JSON.parse(event.body); }
   catch { return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: 'Invalid JSON.' }) }; }
 
-  // 4. Validate required fields
-  const introNotes = (body.introNotes || '').trim();
-  const tipNotes = (body.tipNotes || '').trim();
-  if (!introNotes && !tipNotes) {
-    return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: 'introNotes or tipNotes is required.' }) };
-  }
-  const lastEmailBody = (body.lastEmailBody || '').trim();
-  const lastEmailDate = (body.lastEmailDate || '').trim();
+  const mode = body.mode === 'report' ? 'report' : 'email';
 
-  // 5. Do the work — call Anthropic API
   const claudeApiKey = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY;
   if (!claudeApiKey) {
     return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: 'No Anthropic API key configured.' }) };
   }
 
-  const systemPrompt = `You write short, informal "just checking in" emails from an MSP account manager to busy IT service provider contacts (their own customers/partners). These recipients are extremely busy — the email must be brief, warm, low-pressure, and genuinely useful, never salesy or corporate.
+  let systemPrompt, userMessage;
+
+  if (mode === 'email') {
+    // 4. Validate required fields
+    const introNotes = (body.introNotes || '').trim();
+    const tipNotes = (body.tipNotes || '').trim();
+    if (!introNotes && !tipNotes) {
+      return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: 'introNotes or tipNotes is required.' }) };
+    }
+    const lastEmailBody = (body.lastEmailBody || '').trim();
+    const lastEmailDate = (body.lastEmailDate || '').trim();
+
+    systemPrompt = `You write short, informal "just checking in" emails from an MSP account manager to busy IT service provider contacts (their own customers/partners). These recipients are extremely busy — the email must be brief, warm, low-pressure, and genuinely useful, never salesy or corporate.
 
 Rules:
 - Tone: informal, friendly, human. Like a quick note from someone who knows them, not a marketing email.
@@ -47,9 +51,38 @@ Rules:
 - Return ONLY valid JSON, no markdown, no backticks, no preamble, in exactly this shape:
 {"subject": "short subject line", "body": "full email body as plain text with line breaks as \\n"}`;
 
-  let userMessage = `Intro / check-in notes from the sender:\n${introNotes || '(none given — just a general friendly check-in)'}\n\nTip or feature to highlight:\n${tipNotes || '(none given)'}`;
-  if (lastEmailBody) {
-    userMessage += `\n\nFor reference, here is the email sent to this same group last time (sent ${lastEmailDate}) — do NOT repeat this content, cover something new:\n${lastEmailBody}`;
+    userMessage = `Intro / check-in notes from the sender:\n${introNotes || '(none given — just a general friendly check-in)'}\n\nTip or feature to highlight:\n${tipNotes || '(none given)'}`;
+    if (lastEmailBody) {
+      userMessage += `\n\nFor reference, here is the email sent to this same group last time (sent ${lastEmailDate}) — do NOT repeat this content, cover something new:\n${lastEmailBody}`;
+    }
+  } else {
+    // mode === 'report'
+    const companyName = (body.companyName || '').trim();
+    const notes = Array.isArray(body.notes) ? body.notes : [];
+    if (!companyName || !notes.length) {
+      return { statusCode: 400, headers, body: JSON.stringify({ ok: false, error: 'companyName and at least one note are required.' }) };
+    }
+
+    systemPrompt = `You help an MSP account manager quickly recall their history with a client company, so they can brief an internal sales colleague in a few sentences — the kind of thing said out loud in a hallway, not a formal report.
+
+Rules:
+- Length: 3-5 sentences, plain English, no headers or bullet points.
+- Cover, in a natural narrative: what's happened chronologically (briefly), current sentiment/status, any scheduled meeting or follow-up, and the clear next step if one exists.
+- Tone: plain, factual, conversational — like briefing a colleague, not writing marketing copy.
+- Use the actual dates and contact names given where relevant, but keep it tight.
+- Return ONLY valid JSON, no markdown, no backticks, no preamble, in exactly this shape:
+{"report": "the narrative summary as plain text"}`;
+
+    const notesList = notes.map(n => {
+      const parts = [n.date];
+      if (n.contactName) parts.push(n.contactName);
+      parts.push(n.body);
+      if (n.meetingLink) parts.push('(meeting link on file)');
+      if (n.followUpDate) parts.push('(follow-up set for ' + n.followUpDate + ')');
+      return '- ' + parts.filter(Boolean).join(' — ');
+    }).join('\n');
+
+    userMessage = `Company: ${companyName}\n\nChronological notes:\n${notesList}`;
   }
 
   try {
@@ -88,10 +121,17 @@ Rules:
     }
 
     // 6. Return consistent shape
+    if (mode === 'email') {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ ok: true, subject: parsed.subject || '', body: parsed.body || '' })
+      };
+    }
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ ok: true, subject: parsed.subject || '', body: parsed.body || '' })
+      body: JSON.stringify({ ok: true, report: parsed.report || '' })
     };
   } catch (err) {
     return { statusCode: 500, headers, body: JSON.stringify({ ok: false, error: err.message || 'Unexpected error.' }) };
