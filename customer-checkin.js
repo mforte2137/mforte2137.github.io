@@ -7,6 +7,8 @@ const LS_CONTACTS = 'cci_contacts';
 const LS_GROUPS = 'cci_groups';
 const LS_SEEDED = 'cci_seeded_v1';
 const LS_CAMPAIGN = 'cci_current_campaign';
+const LS_NOTES = 'cci_company_notes';
+const LS_REPORTS = 'cci_company_reports';
 
 /* ---------- Seed data (from companies-2026-07-30.csv) ---------- */
 const SEED_COMPANIES = [
@@ -129,6 +131,7 @@ function initTabs() {
       if (btn.dataset.tab === 'dashboard') renderDashboard();
       if (btn.dataset.tab === 'campaign') renderCampaignTab();
       if (btn.dataset.tab === 'contacts') renderContactsTab();
+      if (btn.dataset.tab === 'notes') renderNotesTab();
     });
   });
 }
@@ -339,6 +342,32 @@ function loadSendGroupPanel() {
     document.getElementById('lastEmailRefContent').textContent =
       formatDate(last.date) + ' — "' + (last.subject || 'no subject') + '" — ' + last.body.slice(0, 220) + (last.body.length > 220 ? '…' : '');
   }
+  renderSendRecipients(g.id);
+}
+
+function renderSendRecipients(groupId) {
+  const contacts = activeContactsInGroup(groupId);
+  const list = document.getElementById('sendRecipientsList');
+  list.innerHTML = contacts.map(c => `
+    <div class="recipient-row">
+      <input type="checkbox" data-recipient="${c.id}" ${c.replyStatus === 'none' ? 'checked' : ''} />
+      <span class="recipient-name">${escapeHtml(c.firstName + ' ' + c.lastName).trim() || escapeHtml(c.company)}</span>
+      <span class="recipient-email">${escapeHtml(c.email) || '— no email —'}</span>
+      ${replyBadge(c)}
+    </div>
+  `).join('');
+  list.querySelectorAll('[data-recipient]').forEach(cb => cb.addEventListener('change', updateRecipientCountLabel));
+  updateRecipientCountLabel();
+}
+
+function getSelectedRecipientIds() {
+  return Array.from(document.querySelectorAll('#sendRecipientsList [data-recipient]:checked')).map(cb => cb.dataset.recipient);
+}
+
+function updateRecipientCountLabel() {
+  const total = document.querySelectorAll('#sendRecipientsList [data-recipient]').length;
+  const selected = getSelectedRecipientIds().length;
+  document.getElementById('recipientCountLabel').textContent = selected + ' of ' + total + ' selected for this send.';
 }
 
 async function handleGenerate() {
@@ -407,7 +436,16 @@ function markGroupSent() {
     showToast('Write or generate this month\'s campaign first.');
     return;
   }
-  if (!confirm('Copy this email and mark ' + g.name + ' as sent? Its next send date will move forward one month.')) return;
+  const selectedIds = getSelectedRecipientIds();
+  if (!selectedIds.length) {
+    showToast('No recipients selected for this send.');
+    return;
+  }
+  const skippedCount = document.querySelectorAll('#sendRecipientsList [data-recipient]').length - selectedIds.length;
+  const confirmMsg = 'Copy this email and mark ' + g.name + ' as sent to ' + selectedIds.length + ' recipient' + (selectedIds.length === 1 ? '' : 's') +
+    (skippedCount ? ' (' + skippedCount + ' skipped, rolling over to next month)' : '') +
+    '? The group\'s next send date will move forward one month.';
+  if (!confirm(confirmMsg)) return;
 
   const groups = getGroups();
   const idx = groups.findIndex(x => x.id === g.id);
@@ -418,6 +456,13 @@ function markGroupSent() {
   next.setMonth(next.getMonth() + 1);
   groups[idx].nextSendDate = isoDate(next);
   setGroups(groups);
+
+  const contacts = getContacts();
+  selectedIds.forEach(id => {
+    const cIdx = contacts.findIndex(c => c.id === id);
+    if (cIdx !== -1) contacts[cIdx].lastEmailedDate = today;
+  });
+  setContacts(contacts);
 
   navigator.clipboard.writeText(campaign.body).then(() => {
     showToast(g.name + ' marked as sent. Email copied — paste into Gmail.');
@@ -430,8 +475,12 @@ function markGroupSent() {
 function copyBccForCampaignGroup() {
   const g = currentCampaignGroup();
   if (!g) return;
-  const emails = activeContactsInGroup(g.id).map(c => c.email).filter(Boolean);
-  if (!emails.length) { showToast('No emails saved for this group yet.'); return; }
+  const selectedIds = new Set(getSelectedRecipientIds());
+  const emails = activeContactsInGroup(g.id)
+    .filter(c => selectedIds.has(c.id))
+    .map(c => c.email)
+    .filter(Boolean);
+  if (!emails.length) { showToast('No emails selected for this group yet.'); return; }
   navigator.clipboard.writeText(emails.join(', ')).then(() =>
     showToast('BCC list copied (' + emails.length + ' emails) for ' + g.name + '.')
   );
@@ -592,6 +641,10 @@ function updateReplyPillUI() {
   });
   document.getElementById('replySubjectWrap').hidden = selectedReplyStatus !== 'replied_meeting';
   document.getElementById('replyOtherWrap').hidden = selectedReplyStatus !== 'other';
+  const logWrap = document.getElementById('replyLogNoteWrap');
+  const showLogOption = selectedReplyStatus === 'replied_meeting' || selectedReplyStatus === 'other';
+  logWrap.hidden = !showLogOption;
+  if (showLogOption) document.getElementById('rmLogAsNote').checked = true;
 }
 
 function saveReplyModal() {
@@ -603,10 +656,262 @@ function saveReplyModal() {
   contacts[idx].replySubject = document.getElementById('rmSubject').value.trim();
   contacts[idx].replyOther = document.getElementById('rmOther').value.trim();
   setContacts(contacts);
+
+  if (!document.getElementById('replyLogNoteWrap').hidden && document.getElementById('rmLogAsNote').checked) {
+    const c = contacts[idx];
+    let body = '';
+    if (selectedReplyStatus === 'replied_meeting') {
+      body = 'Replied — wants a meeting' + (c.replySubject ? ' about: ' + c.replySubject : '') + '.';
+    } else if (selectedReplyStatus === 'other') {
+      body = c.replyOther || 'Replied — other.';
+    }
+    const notes = getNotes();
+    notes.push({
+      id: uid(),
+      company: c.company,
+      contactId: c.id,
+      date: isoDate(new Date()),
+      meetingLink: '',
+      followUpDate: '',
+      body,
+      createdAt: new Date().toISOString()
+    });
+    setNotes(notes);
+  }
+
   document.getElementById('replyModal').hidden = true;
   renderContactsTab();
   renderDashboard();
   showToast('Reply status updated.');
+}
+
+/* ============================================================
+   COMPANY NOTES TAB
+   ============================================================ */
+function getNotes() { return JSON.parse(localStorage.getItem(LS_NOTES) || '[]'); }
+function setNotes(n) { localStorage.setItem(LS_NOTES, JSON.stringify(n)); }
+function getReports() { return JSON.parse(localStorage.getItem(LS_REPORTS) || '{}'); }
+function setReports(r) { localStorage.setItem(LS_REPORTS, JSON.stringify(r)); }
+
+let currentNotesCompany = null;
+
+function getAllCompanyNames() {
+  const names = new Set(getContacts().map(c => c.company).filter(Boolean));
+  return Array.from(names).sort();
+}
+
+function renderNotesTab() {
+  document.getElementById('notesCompanySearch').value = '';
+  document.getElementById('notesCompanyResults').hidden = true;
+  if (currentNotesCompany && getAllCompanyNames().includes(currentNotesCompany)) {
+    showNotesCompanyView(currentNotesCompany);
+  } else {
+    currentNotesCompany = null;
+    document.getElementById('notesCompanyView').hidden = true;
+  }
+}
+
+function searchNotesCompanies(query) {
+  const resultsEl = document.getElementById('notesCompanyResults');
+  const q = query.trim().toLowerCase();
+  if (!q) { resultsEl.hidden = true; resultsEl.innerHTML = ''; return; }
+
+  const contacts = getContacts();
+  const matchesByCompany = new Map();
+  contacts.forEach(c => {
+    const fullName = (c.firstName + ' ' + c.lastName).trim();
+    const hay = (c.company + ' ' + fullName + ' ' + (c.firstName2 || '') + ' ' + (c.lastName2 || '')).toLowerCase();
+    if (hay.includes(q) && c.company) {
+      if (!matchesByCompany.has(c.company)) matchesByCompany.set(c.company, []);
+      if (fullName) matchesByCompany.get(c.company).push(fullName);
+    }
+  });
+
+  const entries = Array.from(matchesByCompany.entries()).slice(0, 8);
+  if (!entries.length) {
+    resultsEl.innerHTML = '<div class="search-result-row muted-text">No matching company or contact.</div>';
+    resultsEl.hidden = false;
+    return;
+  }
+  resultsEl.innerHTML = entries.map(([company, names]) => `
+    <div class="search-result-row" data-company="${escapeHtml(company)}">
+      <div class="sr-company">${escapeHtml(company)}</div>
+      ${names.length ? `<div class="sr-meta">${escapeHtml(names.join(', '))}</div>` : ''}
+    </div>
+  `).join('');
+  resultsEl.hidden = false;
+  resultsEl.querySelectorAll('[data-company]').forEach(row => {
+    row.addEventListener('click', () => {
+      document.getElementById('notesCompanySearch').value = '';
+      resultsEl.hidden = true;
+      showNotesCompanyView(row.dataset.company);
+    });
+  });
+}
+
+function showNotesCompanyView(company) {
+  currentNotesCompany = company;
+  document.getElementById('notesCompanyView').hidden = false;
+  document.getElementById('notesCompanyName').textContent = company;
+
+  const contactsAtCompany = getContacts().filter(c => c.company === company);
+  const meta = contactsAtCompany[0] || {};
+  document.getElementById('notesCompanyMeta').textContent =
+    [meta.country, meta.psa].filter(Boolean).join(' — ');
+
+  const contactSelect = document.getElementById('noteContact');
+  contactSelect.innerHTML = '<option value="">General / no specific contact</option>' +
+    contactsAtCompany.map(c => {
+      const n1 = (c.firstName + ' ' + c.lastName).trim();
+      const n2 = (c.firstName2 + ' ' + c.lastName2).trim();
+      let opts = '';
+      if (n1) opts += `<option value="${c.id}">${escapeHtml(n1)}</option>`;
+      if (n2) opts += `<option value="${c.id}::2">${escapeHtml(n2)} (2nd contact)</option>`;
+      return opts;
+    }).join('');
+
+  document.getElementById('noteDate').value = isoDate(new Date());
+  document.getElementById('noteMeetingLink').value = '';
+  document.getElementById('noteFollowUpDate').value = '';
+  document.getElementById('noteBody').value = '';
+
+  renderNotesTimeline(company);
+  renderReportSection(company);
+}
+
+function renderNotesTimeline(company) {
+  const notes = getNotes().filter(n => n.company === company).sort((a, b) => new Date(b.date) - new Date(a.date));
+  const el = document.getElementById('notesTimeline');
+  if (!notes.length) {
+    el.innerHTML = '<div class="hint-text">No notes yet for this company.</div>';
+    return;
+  }
+  const contacts = getContacts();
+  el.innerHTML = notes.map(n => {
+    const contact = contacts.find(c => c.id === n.contactId);
+    let contactLabel = '';
+    if (contact) {
+      contactLabel = n.contactId && n.contactId.includes && n.contactId.includes('::2')
+        ? (contact.firstName2 + ' ' + contact.lastName2).trim()
+        : (contact.firstName + ' ' + contact.lastName).trim();
+    }
+    return `
+      <div class="note-entry">
+        <div class="note-entry-top">
+          <div class="note-entry-date">${formatDate(n.date)}${contactLabel ? ' — ' + escapeHtml(contactLabel) : ''}</div>
+          <div class="note-entry-tags">
+            ${n.followUpDate ? `<span class="badge badge-info">Follow up: ${formatDate(n.followUpDate)}</span>` : ''}
+            <button class="btn-danger" data-delete-note="${n.id}">Delete</button>
+          </div>
+        </div>
+        <div class="note-entry-body">${escapeHtml(n.body)}</div>
+        ${n.meetingLink ? `<div class="note-entry-link"><a href="${escapeHtml(n.meetingLink)}" target="_blank" rel="noopener">${escapeHtml(n.meetingLink)}</a></div>` : ''}
+      </div>
+    `;
+  }).join('');
+  el.querySelectorAll('[data-delete-note]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!confirm('Delete this note?')) return;
+      setNotes(getNotes().filter(n => n.id !== btn.dataset.deleteNote));
+      renderNotesTimeline(company);
+      renderReportSection(company);
+    });
+  });
+}
+
+function saveNote() {
+  if (!currentNotesCompany) return;
+  const body = document.getElementById('noteBody').value.trim();
+  if (!body) { showToast('Add a note first.'); return; }
+  const notes = getNotes();
+  notes.push({
+    id: uid(),
+    company: currentNotesCompany,
+    contactId: document.getElementById('noteContact').value || null,
+    date: document.getElementById('noteDate').value || isoDate(new Date()),
+    meetingLink: document.getElementById('noteMeetingLink').value.trim(),
+    followUpDate: document.getElementById('noteFollowUpDate').value || '',
+    body,
+    createdAt: new Date().toISOString()
+  });
+  setNotes(notes);
+
+  document.getElementById('noteMeetingLink').value = '';
+  document.getElementById('noteFollowUpDate').value = '';
+  document.getElementById('noteBody').value = '';
+
+  renderNotesTimeline(currentNotesCompany);
+  renderReportSection(currentNotesCompany);
+  showToast('Note saved.');
+}
+
+function renderReportSection(company) {
+  const reports = getReports();
+  const report = reports[company];
+  const notes = getNotes().filter(n => n.company === company);
+
+  document.getElementById('reportEmpty').hidden = notes.length > 0 || !!report;
+  document.getElementById('reportContent').hidden = !report;
+  document.getElementById('reportStale').hidden = true;
+
+  if (report) {
+    document.getElementById('reportContent').textContent = report.summary;
+    document.getElementById('reportContent').hidden = false;
+    const newCount = notes.length - report.noteCountAtGeneration;
+    if (newCount > 0) {
+      document.getElementById('reportStale').hidden = false;
+      document.getElementById('reportStale').textContent =
+        newCount + ' new note' + (newCount === 1 ? '' : 's') + ' since this report — regenerate for the latest.';
+    }
+  }
+}
+
+async function generateReport() {
+  if (!currentNotesCompany) return;
+  const notes = getNotes().filter(n => n.company === currentNotesCompany).sort((a, b) => new Date(a.date) - new Date(b.date));
+  if (!notes.length) { showToast('Add at least one note first.'); return; }
+
+  const contacts = getContacts();
+  const notesForApi = notes.map(n => {
+    const contact = contacts.find(c => c.id === n.contactId);
+    let contactLabel = '';
+    if (contact) {
+      contactLabel = (n.contactId && n.contactId.includes && n.contactId.includes('::2'))
+        ? (contact.firstName2 + ' ' + contact.lastName2).trim()
+        : (contact.firstName + ' ' + contact.lastName).trim();
+    }
+    return { date: n.date, contactName: contactLabel, meetingLink: n.meetingLink, followUpDate: n.followUpDate, body: n.body };
+  });
+
+  const statusEl = document.getElementById('reportStatus');
+  statusEl.hidden = false;
+  statusEl.textContent = 'Generating report...';
+
+  try {
+    const res = await fetch('/api/customer-checkin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'report',
+        companyName: currentNotesCompany,
+        notes: notesForApi
+      })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Report generation failed.');
+
+    const reports = getReports();
+    reports[currentNotesCompany] = {
+      summary: data.report || '',
+      generatedAt: new Date().toISOString(),
+      noteCountAtGeneration: notes.length
+    };
+    setReports(reports);
+    renderReportSection(currentNotesCompany);
+    statusEl.hidden = true;
+  } catch (err) {
+    statusEl.textContent = 'Error: ' + err.message;
+  }
 }
 
 /* ============================================================
@@ -623,7 +928,10 @@ function exportBackup() {
   const data = {
     exportedAt: new Date().toISOString(),
     contacts: getContacts(),
-    groups: getGroups()
+    groups: getGroups(),
+    campaign: getCurrentCampaign(),
+    notes: getNotes(),
+    reports: getReports()
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -658,11 +966,15 @@ function importBackup(file) {
 
     setContacts(data.contacts);
     setGroups(data.groups);
+    if (data.campaign) setCurrentCampaign(data.campaign); else clearCurrentCampaign();
+    setNotes(Array.isArray(data.notes) ? data.notes : []);
+    setReports(data.reports && typeof data.reports === 'object' ? data.reports : {});
     localStorage.setItem(LS_SEEDED, '1');
 
     renderDashboard();
     renderContactsTab();
     if (document.getElementById('tab-campaign').classList.contains('active')) renderCampaignTab();
+    if (document.getElementById('tab-notes').classList.contains('active')) renderNotesTab();
     showToast('Backup imported successfully.');
   };
   reader.readAsText(file);
@@ -686,6 +998,14 @@ function init() {
   document.getElementById('btnNewMonth').addEventListener('click', startNewMonthCampaign);
   document.getElementById('btnMarkSent').addEventListener('click', markGroupSent);
   document.getElementById('btnCopyBccCampaign').addEventListener('click', copyBccForCampaignGroup);
+  document.getElementById('btnSelectAllRecipients').addEventListener('click', () => {
+    document.querySelectorAll('#sendRecipientsList [data-recipient]').forEach(cb => cb.checked = true);
+    updateRecipientCountLabel();
+  });
+  document.getElementById('btnSelectNoneRecipients').addEventListener('click', () => {
+    document.querySelectorAll('#sendRecipientsList [data-recipient]').forEach(cb => cb.checked = false);
+    updateRecipientCountLabel();
+  });
 
   document.getElementById('btnAddContact').addEventListener('click', () => openContactModal(null));
   document.getElementById('contactModalCloseBtn').addEventListener('click', () => document.getElementById('contactModal').hidden = true);
@@ -714,6 +1034,19 @@ function init() {
     const file = e.target.files[0];
     if (file) importBackup(file);
     e.target.value = '';
+  });
+
+  document.getElementById('notesCompanySearch').addEventListener('input', (e) => searchNotesCompanies(e.target.value));
+  document.getElementById('btnChangeCompany').addEventListener('click', () => {
+    currentNotesCompany = null;
+    document.getElementById('notesCompanyView').hidden = true;
+    document.getElementById('notesCompanySearch').focus();
+  });
+  document.getElementById('btnSaveNote').addEventListener('click', saveNote);
+  document.getElementById('btnGenerateReport').addEventListener('click', generateReport);
+  document.addEventListener('click', (e) => {
+    const wrap = document.getElementById('notesSearchWrap');
+    if (wrap && !wrap.contains(e.target)) document.getElementById('notesCompanyResults').hidden = true;
   });
 }
 
