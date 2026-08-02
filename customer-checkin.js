@@ -852,11 +852,13 @@ function renderReportSection(company) {
 
   document.getElementById('reportEmpty').hidden = notes.length > 0 || !!report;
   document.getElementById('reportContent').hidden = !report;
+  document.getElementById('reportActions').hidden = !report;
   document.getElementById('reportStale').hidden = true;
 
   if (report) {
     document.getElementById('reportContent').textContent = report.summary;
     document.getElementById('reportContent').hidden = false;
+    document.getElementById('reportActions').hidden = false;
     const newCount = notes.length - report.noteCountAtGeneration;
     if (newCount > 0) {
       document.getElementById('reportStale').hidden = false;
@@ -894,7 +896,8 @@ async function generateReport() {
       body: JSON.stringify({
         mode: 'report',
         companyName: currentNotesCompany,
-        notes: notesForApi
+        notes: notesForApi,
+        todayDate: isoDate(new Date())
       })
     });
     const data = await res.json();
@@ -1044,6 +1047,11 @@ function init() {
   });
   document.getElementById('btnSaveNote').addEventListener('click', saveNote);
   document.getElementById('btnGenerateReport').addEventListener('click', generateReport);
+  document.getElementById('btnCopyReport').addEventListener('click', () => {
+    const text = document.getElementById('reportContent').textContent;
+    if (!text.trim()) { showToast('Nothing to copy yet.'); return; }
+    navigator.clipboard.writeText(text).then(() => showToast('Report copied to clipboard.'));
+  });
   document.addEventListener('click', (e) => {
     const wrap = document.getElementById('notesSearchWrap');
     if (wrap && !wrap.contains(e.target)) document.getElementById('notesCompanyResults').hidden = true;
