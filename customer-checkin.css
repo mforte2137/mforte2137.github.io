@@ -334,6 +334,83 @@ input:focus, select:focus, textarea:focus {
   .send-group-meta { grid-template-columns: 1fr; }
 }
 
+/* ---------- Recipient checklist ---------- */
+.recipients-header { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+.recipients-toggle-links { display: flex; gap: 12px; }
+.link-btn {
+  background: none; border: none; color: var(--accent);
+  font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 600;
+  cursor: pointer; padding: 0; text-decoration: underline;
+}
+.recipient-list {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.recipient-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.recipient-row:last-child { border-bottom: none; }
+.recipient-row:hover { background: var(--bg-row); }
+.recipient-row input[type="checkbox"] { width: auto; }
+.recipient-name { flex: 1; min-width: 140px; }
+.recipient-email { color: var(--text-2); flex: 1; min-width: 160px; font-size: 12px; }
+
+/* ---------- Company Notes tab ---------- */
+#notesSearchWrap { position: relative; max-width: 420px; margin-bottom: 20px; }
+.search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-2);
+  border-top: none;
+  z-index: 10;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.search-result-row {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+.search-result-row:hover { background: var(--bg-row); }
+.search-result-row .sr-company { font-weight: 600; }
+.search-result-row .sr-meta { color: var(--text-2); font-size: 11px; }
+
+.note-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 600px) { .note-form-row { grid-template-columns: 1fr; } }
+
+.note-entry {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  background: var(--bg-panel);
+}
+.note-entry-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.note-entry-date { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 12px; color: var(--text); }
+.note-entry-tags { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.note-entry-body { font-size: 13px; white-space: pre-wrap; color: var(--text); }
+.note-entry-link { font-size: 12px; color: var(--accent); }
+
 @media (max-width: 800px) {
   .two-col-layout { grid-template-columns: 1fr; }
   .col-form { border-right: none; border-bottom: 1px solid var(--border); padding: 4px 0 24px; }
