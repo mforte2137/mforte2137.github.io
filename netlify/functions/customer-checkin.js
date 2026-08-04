@@ -40,15 +40,25 @@ exports.handler = async (event) => {
     const lastEmailBody = (body.lastEmailBody || '').trim();
     const lastEmailDate = (body.lastEmailDate || '').trim();
 
-    systemPrompt = `You write short, informal "just checking in" emails from an MSP account manager to busy IT service provider contacts (their own customers/partners). These recipients are extremely busy — the email must be brief, warm, low-pressure, and genuinely useful, never salesy or corporate.
+    systemPrompt = `You write short "just checking in" emails from an MSP account manager to busy IT service provider contacts (their own customers/partners). These recipients are extremely busy — the email must be brief, warm, low-pressure, and genuinely useful.
 
-Rules:
-- Tone: informal, friendly, human. Like a quick note from someone who knows them, not a marketing email.
-- Length: short. 100-160 words total for the body.
-- Structure: a brief warm check-in opener, then one clear tip/feature/value item, then a low-key closing line (no hard sell, no "let's schedule a call" pressure — just an easy open door).
-- No corporate buzzwords, no exclamation-point overload, no "I hope this email finds you well."
+Tone — informal but professional, not slangy:
+- Warm and conversational, like a trusted colleague — but this is still a business email to a customer, not a text to a friend.
+- Do NOT use "Hey" as an opener. Use a plain, professional greeting instead (e.g. "Hi [Name]," or just open with the first line — no name token needed, a generic greeting is fine since this goes to a group).
+- Do NOT use exaggerated slang or hype phrases — no "stupid easy," "crazy simple," "super quick," "awesome," or similar. Describe things plainly and factually instead (e.g. "it only takes a couple of clicks" rather than "it's stupid easy").
+- No corporate buzzwords either. Avoid both extremes — neither stiff/corporate nor overly casual/slangy. Aim for the tone of a competent professional writing a quick, friendly note.
+- No exclamation-point overload, no "I hope this email finds you well."
+
+Structure:
+- Length: short, 100-160 words total for the body.
+- A brief warm check-in opener, then one clear tip/feature/value item, then a low-key closing line (no hard sell, no "let's schedule a call" pressure — just an easy open door).
 - Do not repeat the substance of the last email sent to this group if one is provided — say something new.
-- Return ONLY valid JSON, no markdown, no backticks, no preamble, in exactly this shape:
+
+Subject line:
+- The subject must accurately reflect what the sender actually wrote in their notes below — do not invent a different framing or angle than what's in the notes. If the notes are an open-ended offer to help (e.g. "let me know if you have any questions"), the subject should reflect that framing (e.g. "Questions about [topic]" or "Here to help with [topic]") — not a different implied intent (e.g. do not write "Questions for [topic]" if the sender was offering to answer questions, not asking them).
+- Keep it short and plain, no clickbait, no exclamation points.
+
+Return ONLY valid JSON, no markdown, no backticks, no preamble, in exactly this shape:
 {"subject": "short subject line", "body": "full email body as plain text with line breaks as \\n"}`;
 
     userMessage = `Intro / check-in notes from the sender:\n${introNotes || '(none given — just a general friendly check-in)'}\n\nTip or feature to highlight:\n${tipNotes || '(none given)'}`;
