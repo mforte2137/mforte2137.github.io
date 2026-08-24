@@ -228,16 +228,28 @@ function setStatusFilter(btn, status) {
     applyFilters();
 }
 
+function normalise(str) {
+    return (str || '').toLowerCase()
+        .replace(/-/g, ' ')           // non-billable → non billable
+        .replace(/\//g, ' ')          // ConnectWise/Autotask → ConnectWise Autotask
+        .replace(/&/g, 'and')         // quotes & opportunities → quotes and opportunities
+        .replace(/\bsb\b/g, 'salesbuildr')   // sb → salesbuildr
+        .replace(/\bcw\b/g, 'connectwise')   // cw → connectwise
+        .replace(/\s+/g, ' ')         // collapse multiple spaces
+        .trim();
+}
+
 function applyFilters() {
-    const query    = (document.getElementById('searchInput')?.value || '').toLowerCase();
+    const raw      = (document.getElementById('searchInput')?.value || '');
+    const query    = normalise(raw);
     const category = document.getElementById('categoryFilter')?.value || '';
 
     const filtered = knowledgeBase.filter(issue => {
         const matchSearch = query === '' ||
-            issue.title.toLowerCase().includes(query) ||
-            (issue.description?.toLowerCase().includes(query)) ||
-            (issue.solution?.toLowerCase().includes(query)) ||
-            Object.values(issue.references || {}).some(r => r?.toLowerCase().includes(query));
+            normalise(issue.title).includes(query) ||
+            normalise(issue.description).includes(query) ||
+            normalise(issue.solution).includes(query) ||
+            Object.values(issue.references || {}).some(r => normalise(r).includes(query));
 
         const matchCat    = category === '' || issue.category === category;
         const matchStatus = activeStatusFilter === '' || issue.status === activeStatusFilter;
