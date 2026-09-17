@@ -1123,13 +1123,27 @@ h1, h2, h3, h4 {
 
 .kb-answer-block.hidden { display: none; }
 
-.kb-answer-text {
-  font-family: 'Inter', sans-serif;
-  font-size: 12px;
-  line-height: 1.7;
-  color: var(--text);
-  white-space: pre-wrap;
-  word-break: break-word;
+.kb-answer-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kb-bot-block {
+  background: var(--info-bg) !important;
+  border-color: rgba(30, 64, 175, 0.2) !important;
+  border-left: 3px solid var(--info) !important;
+}
+
+.kb-bot-label {
+  color: var(--info) !important;
 }
 
 /* Articles block */
