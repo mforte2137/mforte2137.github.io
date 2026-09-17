@@ -645,6 +645,22 @@ ${text}`;
     outputBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     saveToHistory('Translation', text.slice(0, 80) + (text.length > 80 ? '...' : ''), translation);
 
+    // Wire draft reply button
+    document.getElementById('translateDraftReplyBtn').onclick = () => {
+      // Switch to Reply tab
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector('.nav-item[data-tab="reply"]').classList.add('active');
+      document.getElementById('tab-reply').classList.add('active');
+      // Pre-fill conversation with translation
+      document.getElementById('replyConversation').value = translation;
+      // Add context note about original language
+      const detected = document.getElementById('translateDetected').textContent;
+      const lang = detected ? detected.replace('Detected language:', '').trim() : 'another language';
+      document.getElementById('replyContext').value = `This conversation was originally in ${lang} and has been translated to English.`;
+      document.getElementById('tab-reply').scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
   } catch (e) {
     alert('Error: ' + e.message);
   } finally {
