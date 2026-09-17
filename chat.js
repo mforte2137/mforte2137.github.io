@@ -695,29 +695,32 @@ ${relatedArticles || 'Only if they exist, otherwise skip.'}`;
 });
 
 // ─── KB PANEL ─────────────────────────────────
-// Stores last search articles for copy buttons
 let kbLastArticles = [];
 
 async function runKbAsk() {
   const query = document.getElementById('kbAskInput').value.trim();
   if (!query) return;
 
-  const btn        = document.getElementById('kbAskBtn');
-  const btnText    = btn.querySelector('.kb-ask-btn-text');
-  const btnLoader  = btn.querySelector('.kb-ask-btn-loader');
-  const answerBlock   = document.getElementById('kbAnswerBlock');
-  const answerText    = document.getElementById('kbAnswerText');
-  const articlesBlock = document.getElementById('kbArticlesBlock');
-  const articlesList  = document.getElementById('kbArticlesList');
+  const btn       = document.getElementById('kbAskBtn');
+  const btnText   = btn.querySelector('.kb-ask-btn-text');
+  const btnLoader = btn.querySelector('.kb-ask-btn-loader');
 
   btn.disabled = true;
   btnText.classList.add('hidden');
   btnLoader.classList.remove('hidden');
-  answerBlock.classList.add('hidden');
-  articlesBlock.classList.add('hidden');
+
+  // Reset all blocks
+  document.getElementById('kbAnswerBlock').classList.add('hidden');
+  document.getElementById('kbAnswerText').innerHTML = '';
+  document.getElementById('kbBotBlock').classList.add('hidden');
+  document.getElementById('kbBotText').innerHTML = '';
+  document.getElementById('kbBotLink').classList.add('hidden');
+  document.getElementById('kbArticlesBlock').classList.add('hidden');
+  document.getElementById('kbArticlesList').innerHTML = '';
+  document.getElementById('kbCreateTicket').classList.add('hidden');
 
   try {
-    // Step 1: search KB for matching articles
+    // ── Step 1: Search public KB ───────────────────────────────────────────
     const kbText    = await searchFeaturebase(query);
     const gapIdx    = kbText.indexOf('THE GAP');
     const kbClean   = gapIdx !== -1 ? kbText.slice(0, gapIdx).trim() : kbText.trim();
@@ -726,83 +729,106 @@ async function runKbAsk() {
                       kbClean.toLowerCase().includes('does not exist') ||
                       kbClean.toLowerCase().includes('none found');
 
-    // Step 2: ask Claude to give a direct answer grounded in KB results
-    const answerPrompt = `You are answering a support question on behalf of Salesbuildr.
+    if (!noResults) {
+      // ── KB found something — show answer and articles ──────────────────
+      const answerPrompt = `You are answering a support question on behalf of Salesbuildr.
 
 QUESTION: "${query}"
 
-${!noResults ? `KNOWLEDGE BASE CONTEXT — use this as your only source of truth:
+KNOWLEDGE BASE CONTEXT — use this as your only source of truth:
 ${kbClean}
 
-Answer the question directly and concisely based only on the KB context above. 2-3 sentences maximum. If the KB doesn't contain enough to fully answer, say so briefly.` : `No matching article was found in the Salesbuildr knowledge base for this query. Say so clearly in one sentence.`}
-
+Answer the question directly and concisely. 2-3 sentences maximum.
 Do not invent product details. Do not use double dashes.`;
 
-    const answer = await callClaude(answerPrompt);
-    // Render answer with basic markdown
-    answerText.innerHTML = kbClean
-      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:var(--accent);">$1</a>')
-      .replace(/\n/g, '<br>');
-    answerBlock.classList.remove('hidden');
+      const answer = await callClaude(answerPrompt);
+      const answerText = document.getElementById('kbAnswerText');
+      answerText.innerHTML = answer
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:var(--accent);">$1</a>')
+        .replace(/\n/g, '<br>');
+      document.getElementById('kbAnswerBlock').classList.remove('hidden');
 
-    // Extract article links
-    const urlRegex = /https?:\/\/[^\s\)\"]+/g;
-    const titleUrlPairs = [];
-    const lines = kbClean.split('\n');
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const urls = line.match(urlRegex);
-      if (urls) {
-        let title = '';
-        const boldMatch = line.match(/\*\*([^*]+)\*\*/);
-        if (boldMatch) {
-          title = boldMatch[1];
-        } else if (i > 0) {
-          const prevBold = lines[i-1].match(/\*\*([^*]+)\*\*/);
-          if (prevBold) title = prevBold[1];
-        }
-        for (const url of urls) {
-          if (url.includes('featurebase') || url.includes('salesbuildr') || url.includes('feedback')) {
-            if (!title) {
-              const slug = url.split('/').pop() || '';
-              title = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).replace(/^\d+\s*/, '');
-            }
-            if (title && !titleUrlPairs.find(p => p.url === url)) {
-              titleUrlPairs.push({ title: title.trim(), url });
+      // Extract article links
+      const urlRegex    = /https?:\/\/[^\s\)\"]+/g;
+      const titleUrlPairs = [];
+      const lines       = kbClean.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const urls = line.match(urlRegex);
+        if (urls) {
+          let title = '';
+          const boldMatch = line.match(/\*\*([^*]+)\*\*/);
+          if (boldMatch) title = boldMatch[1];
+          else if (i > 0) { const pb = lines[i-1].match(/\*\*([^*]+)\*\*/); if (pb) title = pb[1]; }
+          for (const url of urls) {
+            if (url.includes('featurebase') || url.includes('salesbuildr') || url.includes('feedback')) {
+              if (!title) { const slug = url.split('/').pop() || ''; title = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).replace(/^\d+\s*/, ''); }
+              if (title && !titleUrlPairs.find(p => p.url === url)) titleUrlPairs.push({ title: title.trim(), url });
             }
           }
         }
       }
-    }
-
-    kbLastArticles = titleUrlPairs;
-
-    if (titleUrlPairs.length) {
-      articlesList.innerHTML = titleUrlPairs.map((item, i) => `
-        <div class="kb-article-item">
-          <a class="kb-article-link" href="${item.url}" target="_blank" title="${item.title}">${item.title}</a>
-          <button class="kb-article-copy" data-index="${i}">Copy</button>
-        </div>
-      `).join('');
-
-      articlesList.querySelectorAll('.kb-article-copy').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const article = kbLastArticles[parseInt(btn.dataset.index)];
-          if (!article) return;
-          navigator.clipboard.writeText(article.url).then(() => {
-            btn.textContent = 'Copied!';
-            btn.classList.add('copied');
-            setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+      kbLastArticles = titleUrlPairs;
+      if (titleUrlPairs.length) {
+        const articlesList = document.getElementById('kbArticlesList');
+        articlesList.innerHTML = titleUrlPairs.map((item, i) => `
+          <div class="kb-article-item">
+            <a class="kb-article-link" href="${item.url}" target="_blank" title="${item.title}">${item.title}</a>
+            <button class="kb-article-copy" data-index="${i}">Copy</button>
+          </div>`).join('');
+        articlesList.querySelectorAll('.kb-article-copy').forEach(b => {
+          b.addEventListener('click', () => {
+            const article = kbLastArticles[parseInt(b.dataset.index)];
+            if (!article) return;
+            navigator.clipboard.writeText(article.url).then(() => {
+              b.textContent = 'Copied!'; b.classList.add('copied');
+              setTimeout(() => { b.textContent = 'Copy'; b.classList.remove('copied'); }, 2000);
+            });
           });
         });
-      });
+        document.getElementById('kbArticlesBlock').classList.remove('hidden');
+      }
 
-      articlesBlock.classList.remove('hidden');
+    } else {
+      // ── KB found nothing — escalate to Internal Questions Bot ─────────
+      btnLoader.textContent = 'Asking bot...';
+      try {
+        const botRes = await fetch('/.netlify/functions/slack-bot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: query })
+        });
+        if (botRes.ok) {
+          const botData = await botRes.json();
+          if (botData.answer) {
+            const botText = document.getElementById('kbBotText');
+            botText.innerHTML = botData.answer
+              .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+              .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
+              .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+              .replace(/^[•\-] (.+)$/gm, '<li>$1</li>')
+              .replace(/(<li>[\s\S]+?<\/li>)/g, '<ul>$1</ul>')
+              .replace(/\n/g, '<br>');
+            if (botData.thread_url) {
+              const botLink = document.getElementById('kbBotLink');
+              botLink.href = botData.thread_url;
+              botLink.classList.remove('hidden');
+            }
+            document.getElementById('kbBotBlock').classList.remove('hidden');
+          } else {
+            // Bot timed out — show plain "not found" message
+            document.getElementById('kbAnswerText').innerHTML = 'No information found in the public KB or internal documentation for this query.';
+            document.getElementById('kbAnswerBlock').classList.remove('hidden');
+          }
+        }
+      } catch (_) {
+        document.getElementById('kbAnswerText').innerHTML = 'Public KB found nothing. Internal bot query failed — try again.';
+        document.getElementById('kbAnswerBlock').classList.remove('hidden');
+      }
     }
 
-    // Always show create ticket button after a search
+    // Always show create ticket button
     document.getElementById('kbCreateTicket').classList.remove('hidden');
 
   } catch (e) {
@@ -812,6 +838,7 @@ Do not invent product details. Do not use double dashes.`;
     btn.disabled = false;
     btnText.classList.remove('hidden');
     btnLoader.classList.add('hidden');
+    btnLoader.textContent = '...';
   }
 }
 
@@ -819,6 +846,9 @@ document.getElementById('kbClearBtn').addEventListener('click', () => {
   document.getElementById('kbAskInput').value = '';
   document.getElementById('kbAnswerBlock').classList.add('hidden');
   document.getElementById('kbAnswerText').innerHTML = '';
+  document.getElementById('kbBotBlock').classList.add('hidden');
+  document.getElementById('kbBotText').innerHTML = '';
+  document.getElementById('kbBotLink').classList.add('hidden');
   document.getElementById('kbArticlesBlock').classList.add('hidden');
   document.getElementById('kbArticlesList').innerHTML = '';
   document.getElementById('kbCreateTicket').classList.add('hidden');
