@@ -63,11 +63,16 @@ exports.handler = async function (event) {
       );
 
       if (botReply) {
+        // Strip the Sources section — internal doc paths shouldn't reach the customer reply
+        let answer = botReply.text || '';
+        const sourcesIdx = answer.search(/\n\*?Sources?:?\*?/i);
+        if (sourcesIdx !== -1) answer = answer.slice(0, sourcesIdx).trim();
+
         return {
           statusCode: 200,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            answer:     botReply.text,
+            answer,
             thread_url: `https://salesbuildr.slack.com/archives/${CHANNEL_ID}/p${messageTs.replace('.', '')}`
           })
         };
