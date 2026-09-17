@@ -397,7 +397,15 @@ Do not use double dashes (--). Write in a natural, direct, human tone.`;
       const botBlock = document.getElementById('replyInternalBot');
       const botText  = document.getElementById('replyInternalBotText');
       const botLink  = document.getElementById('replyInternalBotLink');
-      botText.innerText = botAnswer;
+      // Render basic markdown — bold, italic, bullets
+      botText.innerHTML = botAnswer
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+        .replace(/_([\s\S]+?)_/g, '<em>$1</em>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/^[•\-] (.+)$/gm, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+        .replace(/\n/g, '<br>');
       if (botThreadUrl) {
         botLink.href = botThreadUrl;
         botLink.classList.remove('hidden');
