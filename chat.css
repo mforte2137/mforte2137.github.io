@@ -984,19 +984,27 @@ h1, h2, h3, h4 {
   color: var(--accent-2);
 }
 
-.translate-action-row {
-  padding: 12px 16px 16px;
-  display: flex;
-  justify-content: flex-end;
-  border-top: 1px solid var(--border);
+.internal-bot-block {
+  background: var(--info-bg) !important;
+  border-color: rgba(30, 64, 175, 0.2) !important;
+  border-left-color: var(--info) !important;
 }
 
-.translate-detected {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  color: var(--text-3);
-  font-style: italic;
+.internal-bot-block .doc-gap-header {
+  color: var(--info) !important;
 }
+
+.internal-bot-link {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--info);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+}
+
+.internal-bot-link:hover { text-decoration: underline; }
+.internal-bot-link.hidden { display: none; }
 
 /* =============================================
    KB PANEL (persistent right sidebar)
