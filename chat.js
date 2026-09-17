@@ -587,6 +587,71 @@ Only use URLs from the list. Never construct URLs.`;
   return await callClaude(prompt);
 }
 
+// ─── TRANSLATE TAB ────────────────────────────
+document.getElementById('translateClearBtn').addEventListener('click', () => {
+  document.getElementById('translateInput').value = '';
+  document.getElementById('translateOutput').classList.add('hidden');
+  document.getElementById('translateOutputText').innerText = '';
+  document.getElementById('translateDetected').textContent = '';
+});
+
+document.getElementById('translateBtn').addEventListener('click', async () => {
+  const text = document.getElementById('translateInput').value.trim();
+  const btn  = document.getElementById('translateBtn');
+
+  if (!text) { alert('Please paste a conversation to translate.'); return; }
+
+  setLoading(btn, true);
+  document.getElementById('translateDetected').textContent = '';
+
+  try {
+    const prompt = `Translate the following customer support conversation into English.
+
+Keep the conversation structure intact — preserve who said what (e.g. "Customer:", "Agent:" labels if present). If the text is already in English, say so and return it unchanged.
+
+At the very start of your response, on its own line, write:
+Detected language: [language name]
+
+Then leave a blank line, then give the full translation.
+
+CONVERSATION:
+${text}`;
+
+    const result = await callClaude(prompt);
+
+    // Extract detected language line
+    const lines = result.split('\n');
+    let detectedLine = '';
+    let translationStart = 0;
+
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].toLowerCase().startsWith('detected language:')) {
+        detectedLine = lines[i];
+        translationStart = i + 1;
+        break;
+      }
+    }
+
+    const translation = lines.slice(translationStart).join('\n').trim();
+
+    if (detectedLine) {
+      document.getElementById('translateDetected').textContent = detectedLine;
+    }
+
+    const outputBlock = document.getElementById('translateOutput');
+    const outputText  = document.getElementById('translateOutputText');
+    outputText.innerText = translation;
+    outputBlock.classList.remove('hidden');
+    outputBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    saveToHistory('Translation', text.slice(0, 80) + (text.length > 80 ? '...' : ''), translation);
+
+  } catch (e) {
+    alert('Error: ' + e.message);
+  } finally {
+    setLoading(btn, false);
+  }
+});
+
 // ─── DOCS TYPE TOGGLE ─────────────────────────
 document.querySelectorAll('[data-doctype]').forEach(btn => {
   btn.addEventListener('click', () => {
