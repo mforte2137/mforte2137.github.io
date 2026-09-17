@@ -310,27 +310,60 @@ document.getElementById('replyBtn').addEventListener('click', async () => {
 
   setLoading(btn, true);
 
+  // Reset all callouts
+  document.getElementById('replyDocGap').classList.add('hidden');
+  document.getElementById('replyInternalBot').classList.add('hidden');
+
   try {
-    // ── Step 1: Extract the core question from the conversation ───────────
+    // ── Step 1: Extract core question ─────────────────────────────────────
     const extractPrompt = `Read this customer support conversation and extract the core question or issue in 10 words or less. Return only the question, nothing else.
 
 CONVERSATION:
 ${conversation}`;
-
     const coreQuestion = await callClaude(extractPrompt);
 
-    // ── Step 2: Search Featurebase KB for relevant articles ───────────────
-    let kbContext = '';
+    // ── Step 2: Search Featurebase KB ─────────────────────────────────────
+    let kbContext    = '';
+    let kbSource     = 'none'; // 'kb' | 'bot' | 'none'
+    let botAnswer    = '';
+    let botThreadUrl = '';
+
     try {
       const kbText = await searchFeaturebase(coreQuestion);
       const gapIdx = kbText.indexOf('THE GAP');
       kbContext = gapIdx !== -1 ? kbText.slice(0, gapIdx).trim() : kbText.trim();
-    } catch (_) {
-      // KB search failed silently — reply still drafts without it
+      const noKb = kbContext.toLowerCase().includes('no articles') ||
+                   kbContext.toLowerCase().includes('none found') ||
+                   kbContext.toLowerCase().includes('no published') ||
+                   kbContext.toLowerCase().includes('does not exist');
+      if (!noKb && kbContext) kbSource = 'kb';
+    } catch (_) { /* silent */ }
+
+    // ── Step 3: If KB found nothing, ask Internal Questions Bot ───────────
+    if (kbSource === 'none') {
+      try {
+        const botRes = await fetch('/.netlify/functions/slack-bot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: coreQuestion })
+        });
+        if (botRes.ok) {
+          const botData = await botRes.json();
+          if (botData.answer) {
+            botAnswer    = botData.answer;
+            botThreadUrl = botData.thread_url || '';
+            kbSource     = 'bot';
+          }
+        }
+      } catch (_) { /* silent */ }
     }
 
-    // ── Step 3: Draft reply grounded in KB results ────────────────────────
-    const hasKbResults = kbContext && !kbContext.toLowerCase().includes('no articles') && !kbContext.toLowerCase().includes('no published');
+    // ── Step 4: Draft reply grounded in best available source ─────────────
+    const sourceContext = kbSource === 'kb'
+      ? `KNOWLEDGE BASE RESULTS — use as primary source of truth:\n${kbContext}\n\nReference the relevant article naturally in your reply with its URL.`
+      : kbSource === 'bot'
+      ? `INTERNAL DOCUMENTATION — use as source of truth:\n${botAnswer}\n\nDo not mention that this came from an internal bot. Present the information naturally.`
+      : `No matching documentation was found. Draft the best reply you can from the conversation, but do not invent specific product details.`;
 
     const prompt = `A customer has sent the following conversation. Draft a reply I can send to them.
 
@@ -340,73 +373,45 @@ ${context ? `\nEXTRA CONTEXT:\n${context}` : ''}
 
 TONE: ${toneMap[tone]}
 
-${hasKbResults
-  ? `KNOWLEDGE BASE RESULTS — use these as your primary source of truth for any product details:
-${kbContext}
+${sourceContext}
 
-If a relevant article was found, reference it naturally in your reply (e.g. "You can find full details in our [article title] article here: [url]"). Do not invent product details beyond what the KB results and conversation contain.`
-  : `No matching KB article was found for this query. Draft the best reply you can from the conversation context, but be careful not to invent specific product details you are not certain about.`
-}
-
-At the end of your response, include one of these two sections:
-
-If a relevant KB article was found and referenced:
-KB ARTICLE REFERENCED
-[Article title and URL]
-
-If no relevant article exists in the KB:
-DOCUMENTATION GAP DETECTED
-[A plain-English description of what is missing — what question the docs don't answer]
-
-Always include exactly one of these two sections.`;
+Do not use double dashes (--). Write in a natural, direct, human tone.`;
 
     const result = await callClaude(prompt);
 
-    // ── Step 4: Parse reply and KB/gap section ────────────────────────────
-    const refMarker = 'KB ARTICLE REFERENCED';
-    const gapMarker = 'DOCUMENTATION GAP DETECTED';
-
-    let replyText = result;
-    let gapText   = '';
-    let refText   = '';
-
-    const refIndex = result.indexOf(refMarker);
-    const gapIndex = result.indexOf(gapMarker);
-
-    if (refIndex !== -1) {
-      replyText = result.slice(0, refIndex).trim();
-      refText   = result.slice(refIndex + refMarker.length).trim();
-    } else if (gapIndex !== -1) {
-      replyText = result.slice(0, gapIndex).trim();
-      gapText   = result.slice(gapIndex + gapMarker.length).trim();
-    }
-
+    // ── Step 5: Render output and appropriate callout ─────────────────────
     const outputBlock = document.getElementById('replyOutput');
     const outputText  = document.getElementById('replyOutputText');
+    outputText.innerText = result;
+    outputBlock.classList.remove('hidden');
+
     const docGapBlock = document.getElementById('replyDocGap');
     const docGapText  = document.getElementById('replyDocGapText');
 
-    outputText.innerText = replyText;
-    outputBlock.classList.remove('hidden');
-
-    if (gapText) {
-      // No article found — show amber gap callout
-      docGapText.innerText = gapText;
-      docGapBlock.querySelector('.doc-gap-header span').textContent = 'Documentation Gap Detected';
-      docGapBlock.classList.remove('kb-found');
-      docGapBlock.classList.remove('hidden');
-    } else if (refText) {
-      // Article found — show green confirmation
-      docGapText.innerText = refText;
+    if (kbSource === 'kb') {
+      docGapText.innerText = kbContext;
       docGapBlock.querySelector('.doc-gap-header span').textContent = 'KB Article Referenced';
       docGapBlock.classList.add('kb-found');
       docGapBlock.classList.remove('hidden');
+    } else if (kbSource === 'bot') {
+      const botBlock = document.getElementById('replyInternalBot');
+      const botText  = document.getElementById('replyInternalBotText');
+      const botLink  = document.getElementById('replyInternalBotLink');
+      botText.innerText = botAnswer;
+      if (botThreadUrl) {
+        botLink.href = botThreadUrl;
+        botLink.classList.remove('hidden');
+      }
+      botBlock.classList.remove('hidden');
     } else {
-      docGapBlock.classList.add('hidden');
+      docGapText.innerText = `No matching article or internal documentation found for: "${coreQuestion}"`;
+      docGapBlock.querySelector('.doc-gap-header span').textContent = 'Documentation Gap Detected';
+      docGapBlock.classList.remove('kb-found');
+      docGapBlock.classList.remove('hidden');
     }
 
     outputBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    saveToHistory('Reply', conversation.slice(0, 80) + (conversation.length > 80 ? '...' : ''), replyText);
+    saveToHistory('Reply', conversation.slice(0, 80) + (conversation.length > 80 ? '...' : ''), result);
 
   } catch (e) {
     alert('Error: ' + e.message);
@@ -586,87 +591,6 @@ Only use URLs from the list. Never construct URLs.`;
 
   return await callClaude(prompt);
 }
-
-// ─── TRANSLATE TAB ────────────────────────────
-document.getElementById('translateClearBtn').addEventListener('click', () => {
-  document.getElementById('translateInput').value = '';
-  document.getElementById('translateOutput').classList.add('hidden');
-  document.getElementById('translateOutputText').innerText = '';
-  document.getElementById('translateDetected').textContent = '';
-});
-
-document.getElementById('translateBtn').addEventListener('click', async () => {
-  const text = document.getElementById('translateInput').value.trim();
-  const btn  = document.getElementById('translateBtn');
-
-  if (!text) { alert('Please paste a conversation to translate.'); return; }
-
-  setLoading(btn, true);
-  document.getElementById('translateDetected').textContent = '';
-
-  try {
-    const prompt = `Translate the following customer support conversation into English.
-
-Keep the conversation structure intact — preserve who said what (e.g. "Customer:", "Agent:" labels if present). If the text is already in English, say so and return it unchanged.
-
-At the very start of your response, on its own line, write:
-Detected language: [language name]
-
-Then leave a blank line, then give the full translation.
-
-CONVERSATION:
-${text}`;
-
-    const result = await callClaude(prompt);
-
-    // Extract detected language line
-    const lines = result.split('\n');
-    let detectedLine = '';
-    let translationStart = 0;
-
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].toLowerCase().startsWith('detected language:')) {
-        detectedLine = lines[i];
-        translationStart = i + 1;
-        break;
-      }
-    }
-
-    const translation = lines.slice(translationStart).join('\n').trim();
-
-    if (detectedLine) {
-      document.getElementById('translateDetected').textContent = detectedLine;
-    }
-
-    const outputBlock = document.getElementById('translateOutput');
-    const outputText  = document.getElementById('translateOutputText');
-    outputText.innerText = translation;
-    outputBlock.classList.remove('hidden');
-    outputBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    saveToHistory('Translation', text.slice(0, 80) + (text.length > 80 ? '...' : ''), translation);
-
-    // Wire draft reply button
-    document.getElementById('translateDraftReplyBtn').onclick = () => {
-      // Switch to Reply tab
-      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      document.querySelector('.nav-item[data-tab="reply"]').classList.add('active');
-      document.getElementById('tab-reply').classList.add('active');
-      // Pre-fill conversation with translation
-      document.getElementById('replyConversation').value = translation;
-      // Add context note about original language
-      const detected = document.getElementById('translateDetected').textContent;
-      const lang = detected ? detected.replace('Detected language:', '').trim() : 'another language';
-      document.getElementById('replyContext').value = `This conversation was originally in ${lang} and has been translated to English.`;
-      document.getElementById('tab-reply').scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-  } catch (e) {
-    alert('Error: ' + e.message);
-  } finally {
-    setLoading(btn, false);
-  }
-});
 
 // ─── DOCS TYPE TOGGLE ─────────────────────────
 document.querySelectorAll('[data-doctype]').forEach(btn => {
