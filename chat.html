@@ -304,10 +304,13 @@
 
       <div class="kb-panel-body">
         <textarea class="kb-ask-input" id="kbAskInput" placeholder="e.g. How does the customer set up their email integration?"></textarea>
-        <button class="kb-ask-btn" id="kbAskBtn">
-          <span class="kb-ask-btn-text">Ask</span>
-          <span class="kb-ask-btn-loader hidden">...</span>
-        </button>
+        <div class="kb-ask-row">
+          <button class="kb-ask-btn" id="kbAskBtn">
+            <span class="kb-ask-btn-text">Ask</span>
+            <span class="kb-ask-btn-loader hidden">...</span>
+          </button>
+          <button class="kb-clear-btn" id="kbClearBtn">Clear</button>
+        </div>
 
         <div class="kb-answer-block hidden" id="kbAnswerBlock">
           <div class="kb-answer-text" id="kbAnswerText"></div>
