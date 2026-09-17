@@ -729,6 +729,10 @@ async function runKbAsk() {
                       kbClean.toLowerCase().includes('does not exist') ||
                       kbClean.toLowerCase().includes('none found');
 
+    // Escalate to bot if: no KB results, OR KB found something but flagged a gap
+    const hasGap    = kbText.includes('THE GAP') || kbClean.toLowerCase().includes("what's not covered") || kbClean.toLowerCase().includes('not covered') || kbClean.toLowerCase().includes("doesn't explain") || kbClean.toLowerCase().includes("doesn't go into");
+    const needsBot  = noResults || hasGap;
+
     if (!noResults) {
       // ── KB found something — show answer and articles ──────────────────
       const answerPrompt = `You are answering a support question on behalf of Salesbuildr.
@@ -748,6 +752,36 @@ Do not invent product details. Do not use double dashes.`;
         .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:var(--accent);">$1</a>')
         .replace(/\n/g, '<br>');
       document.getElementById('kbAnswerBlock').classList.remove('hidden');
+
+      // If KB had a gap, also query the Internal Bot for deeper detail
+      if (hasGap) {
+        try {
+          const botRes = await fetch('/.netlify/functions/slack-bot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: query })
+          });
+          if (botRes.ok) {
+            const botData = await botRes.json();
+            if (botData.answer) {
+              const botText = document.getElementById('kbBotText');
+              botText.innerHTML = botData.answer
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/^[•\-] (.+)$/gm, '<li>$1</li>')
+                .replace(/(<li>[\s\S]+?<\/li>)/g, '<ul>$1</ul>')
+                .replace(/\n/g, '<br>');
+              if (botData.thread_url) {
+                const botLink = document.getElementById('kbBotLink');
+                botLink.href = botData.thread_url;
+                botLink.classList.remove('hidden');
+              }
+              document.getElementById('kbBotBlock').classList.remove('hidden');
+            }
+          }
+        } catch (_) { /* silent */ }
+      }
 
       // Extract article links
       const urlRegex    = /https?:\/\/[^\s\)\"]+/g;
@@ -791,7 +825,7 @@ Do not invent product details. Do not use double dashes.`;
       }
 
     } else {
-      // ── KB found nothing — escalate to Internal Questions Bot ─────────
+      // ── KB found nothing OR partial — escalate to Internal Questions Bot ─
       btnLoader.textContent = 'Asking bot...';
       try {
         const botRes = await fetch('/.netlify/functions/slack-bot', {
