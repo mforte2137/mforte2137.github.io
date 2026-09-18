@@ -716,11 +716,17 @@ Here is the full content of the relevant articles:
 
 ${richContext}
 
-Based on this content, give a specific, direct answer using the actual article content — not a summary or pointer to read the article. If the article explains steps, list them. If it names specific things (like distributor setup instructions), include them.
+Based on this content, give a specific, direct answer using the actual article content.
 
-Are there any gaps — things the query asks about that the articles don't cover?
+IMPORTANT RULES:
+- If the article describes a self-serve UI flow (steps the user can do themselves), tell the customer to follow those steps. Do NOT suggest contacting support unless the article explicitly says to.
+- If the article says setup instructions appear inside the Salesbuildr tool itself (e.g. in a panel or modal), tell the customer exactly where to find them in the tool.
+- List the actual steps from the article. Do not summarise vaguely or redirect to "read the article".
+- Only mention things not covered if there is a genuine gap — do not hedge or add uncertainty where the article is clear.
 
-If there is a gap, end with:
+Are there any gaps — things the query asks about that the articles genuinely don't cover?
+
+If there is a real gap, end with:
 THE GAP
 [plain-English description of what is missing]
 
