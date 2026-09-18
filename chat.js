@@ -650,7 +650,7 @@ ${alsoReply ? '\nAfter the ticket, add a section clearly separated by the marker
 
 // ─── FEATUREBASE SEARCH ───────────────────────
 async function searchFeaturebase(query) {
-  // Step 1: fetch article list from Featurebase
+  // Step 1: fetch article list
   const fbRes = await fetch('/.netlify/functions/featurebase', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -668,31 +668,87 @@ async function searchFeaturebase(query) {
     return 'No articles found in the Salesbuildr knowledge base.';
   }
 
-  // Step 2: ask Claude to match query against the article list
+  // Step 2: ask Claude to identify matching article IDs
   const articleList = articles
     .map((a, i) => {
       const desc = a.description ? ` — ${a.description}` : '';
-      return `${i + 1}. ${a.title}${desc}\n   ${a.url}`;
+      return `${i + 1}. [ID:${a.id}] ${a.title}${desc}\n   ${a.url}`;
     })
     .join('\n');
 
-  const prompt = `Search the Salesbuildr knowledge base for: "${query}"
+  const matchPrompt = `Search the Salesbuildr knowledge base for: "${query}"
 
 ARTICLES (${articles.length} total):
 ${articleList}
 
-Match the query against titles AND descriptions. Reply with:
-1. Relevant articles found (title + URL) — or "None found" if nothing matches
-2. One sentence on what each covers
-3. Whether anything in the query is NOT covered
+Identify up to 2 articles most relevant to the query. Reply with ONLY a JSON array of their IDs, e.g.: ["abc123","def456"]
+If nothing is relevant, reply with: []`;
 
-If there is a gap, end with exactly:
+  const matchResult = await callClaude(matchPrompt);
+
+  // Parse matched IDs
+  let matchedIds = [];
+  try {
+    const jsonStr = matchResult.match(/\[.*?\]/s)?.[0] || '[]';
+    matchedIds = JSON.parse(jsonStr).filter(id => id && typeof id === 'string');
+  } catch (_) { matchedIds = []; }
+
+  // Step 3: fetch full content of matched articles
+  if (matchedIds.length > 0) {
+    const contentRes = await fetch('/.netlify/functions/featurebase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ articleIds: matchedIds })
+    });
+
+    if (contentRes.ok) {
+      const { contents } = await contentRes.json();
+
+      if (contents && contents.length > 0) {
+        const richContext = contents.map(a =>
+          `ARTICLE: ${a.title}\nURL: ${a.url}\n\nCONTENT:\n${a.content}`
+        ).join('\n\n---\n\n');
+
+        // Step 4: answer query using full article content
+        const answerPrompt = `Search the Salesbuildr knowledge base for: "${query}"
+
+Here is the full content of the relevant articles:
+
+${richContext}
+
+Based on this content, give a specific, direct answer using the actual article content — not a summary or pointer to read the article. If the article explains steps, list them. If it names specific things (like distributor setup instructions), include them.
+
+Are there any gaps — things the query asks about that the articles don't cover?
+
+If there is a gap, end with:
+THE GAP
+[plain-English description of what is missing]
+
+Only reference information actually present in the articles above.`;
+
+        return await callClaude(answerPrompt);
+      }
+    }
+  }
+
+  // Fallback — no matches found
+  const fallbackPrompt = `Search the Salesbuildr knowledge base for: "${query}"
+
+ARTICLES (${articles.length} total):
+${articles.map((a, i) => `${i + 1}. ${a.title}${a.description ? ` — ${a.description}` : ''}\n   ${a.url}`).join('\n')}
+
+Match query against titles AND descriptions. Reply with:
+1. Relevant articles found (title + URL) — or "None found"
+2. One sentence on what each covers
+3. Whether anything is NOT covered
+
+If there is a gap, end with:
 THE GAP
 [plain-English description of what is missing]
 
 Only use URLs from the list. Never construct URLs.`;
 
-  return await callClaude(prompt);
+  return await callClaude(fallbackPrompt);
 }
 
 // ─── TRANSLATE TAB ────────────────────────────
