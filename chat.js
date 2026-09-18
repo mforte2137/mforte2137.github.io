@@ -587,12 +587,7 @@ document.getElementById('ticketBtn').addEventListener('click', async () => {
         });
         if (postRes.ok) {
           const postData = await postRes.json();
-          if (postData.debug) {
-            console.log('Featurebase debug:', JSON.stringify(postData, null, 2));
-            const slugCount  = (postData.slugSearchResult?.data  || []).length;
-            const titleCount = (postData.titleSearchResult?.data || []).length;
-            alert(`Featurebase post lookup debug:\nSlug: "${postData.slug}"\nSlug search (${postData.slugSearchStatus}): ${slugCount} results\nTitle search (${postData.titleSearchStatus}): ${titleCount} results\n\nCheck browser console (F12) for full API response.`);
-          } else if (postData.post) {
+          if (postData.post) {
             scopePostId    = postData.post.id;
             scopePostTitle = postData.post.title;
           }
