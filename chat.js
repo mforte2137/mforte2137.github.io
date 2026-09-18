@@ -587,7 +587,12 @@ document.getElementById('ticketBtn').addEventListener('click', async () => {
         });
         if (postRes.ok) {
           const postData = await postRes.json();
-          if (postData.post) {
+          if (postData.debug) {
+            // Debug mode — show raw info in the hint
+            console.log('Featurebase debug:', JSON.stringify(postData, null, 2));
+            document.getElementById('scopePostHint').textContent = `Debug: slug="${postData.slug}" — slug search: ${postData.slugSearchStatus}, found ${(postData.slugSearchResult?.data||[]).length} results. Title search: ${postData.titleSearchStatus}, found ${(postData.titleSearchResult?.data||[]).length} results. Check browser console for full details.`;
+            document.getElementById('ticketOutput').classList.remove('hidden');
+          } else if (postData.post) {
             scopePostId    = postData.post.id;
             scopePostTitle = postData.post.title;
           }
