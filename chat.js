@@ -132,18 +132,11 @@ document.getElementById('ticketClearBtn').addEventListener('click', () => {
   document.getElementById('ticketType').value = 'bug';
 });
 
-document.getElementById('docsClearBtn').addEventListener('click', () => {
-  document.getElementById('docsArticleTitle').value = '';
-  document.getElementById('docsContentNotes').value = '';
-  document.getElementById('docsScreenshots').value = '';
-  document.getElementById('docsRelatedArticles').value = '';
-  document.getElementById('docsExistingArticle').value = '';
-  document.getElementById('docsCollection').selectedIndex = 0;
-  document.getElementById('docsTicketOutput').classList.add('hidden');
-  document.querySelectorAll('[data-doctype]').forEach(b => b.classList.remove('active'));
-  document.querySelector('[data-doctype="new"]').classList.add('active');
-  document.getElementById('docsArticleType').value = 'new';
-  document.getElementById('docsExistingArticleGroup').classList.add('hidden');
+document.getElementById('translateClearBtn').addEventListener('click', () => {
+  document.getElementById('translateInput').value = '';
+  document.getElementById('translateOutput').classList.add('hidden');
+  document.getElementById('translateOutputText').innerText = '';
+  document.getElementById('translateDetected').textContent = '';
 });
 
 // ─── HISTORY DRAWER ───────────────────────────
@@ -600,92 +593,67 @@ Only use URLs from the list. Never construct URLs.`;
   return await callClaude(prompt);
 }
 
-// ─── DOCS TYPE TOGGLE ─────────────────────────
-document.querySelectorAll('[data-doctype]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('[data-doctype]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const type = btn.dataset.doctype;
-    document.getElementById('docsArticleType').value = type;
-    const existingGroup = document.getElementById('docsExistingArticleGroup');
-    existingGroup.classList.toggle('hidden', type === 'new');
-  });
-});
+// ─── TRANSLATE TAB ────────────────────────────
+document.getElementById('translateBtn').addEventListener('click', async () => {
+  const text = document.getElementById('translateInput').value.trim();
+  const btn  = document.getElementById('translateBtn');
 
-// ─── BUILD JIRA TICKET ────────────────────────
-document.getElementById('docsTicketBtn').addEventListener('click', async () => {
-  const articleTitle    = document.getElementById('docsArticleTitle').value.trim();
-  const type            = document.getElementById('docsArticleType').value;
-  const collection      = document.getElementById('docsCollection').value;
-  const notes           = document.getElementById('docsContentNotes').value.trim();
-  const screenshots     = document.getElementById('docsScreenshots').value.trim();
-  const relatedArticles = document.getElementById('docsRelatedArticles').value.trim();
-  const existingArticle = document.getElementById('docsExistingArticle').value.trim();
-  const btn             = document.getElementById('docsTicketBtn');
-
-  if (!articleTitle) { alert('Please enter an article title.'); return; }
-  if (!notes)        { alert('Please add some notes for the content field.'); return; }
-
-  const typeLabel = type === 'new' ? 'New article'
-    : type === 'update' ? `Update existing${existingArticle ? ` — ${existingArticle}` : ''}`
-    : 'Not sure — agent, check and decide';
+  if (!text) { alert('Please paste a conversation to translate.'); return; }
 
   setLoading(btn, true);
+  document.getElementById('translateDetected').textContent = '';
 
   try {
-    // Ask Claude to polish the notes into proper article content
-    const contentPrompt = `You are preparing the CONTENT field for a Jira [customer-docs] ticket that an AI agent (Skynet) will use to write a Salesbuildr help-center article.
+    const prompt = `Translate the following customer support conversation into English.
 
-ARTICLE TITLE: ${articleTitle}
+Keep the conversation structure intact — preserve who said what (e.g. "Customer:", "Agent:" labels if present). If the text is already in English, say so and return it unchanged.
 
-AGENT NOTES FROM SUPPORT TEAM:
-${notes}
+At the very start of your response, on its own line, write:
+Detected language: [language name]
 
-Write polished, structured article content that Skynet can use directly. Rules:
-- Use clear headings, numbered steps for procedures, bullet points for options
-- Bold key UI labels and menu paths
-- Where you are unsure of specific UI details, write [confirm with dev] as a placeholder
-- Do not use double dashes (--)
-- Keep the tone clear, direct and practical
-- Do not add a title line — just the body content
-- Output the content only, no preamble`;
+Then leave a blank line, then give the full translation.
 
-    const polishedContent = await callClaude(contentPrompt);
+CONVERSATION:
+${text}`;
 
-    // Build the full Jira ticket
-    const ticket = `TITLE
-[customer-docs] ${articleTitle}
+    const result = await callClaude(prompt);
 
-ASSIGNEE
-Skynet
+    const lines = result.split('\n');
+    let detectedLine = '';
+    let translationStart = 0;
 
-WHAT
-Help-center article. Documentation only — no code changes.
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].toLowerCase().startsWith('detected language:')) {
+        detectedLine = lines[i];
+        translationStart = i + 1;
+        break;
+      }
+    }
 
-NEW OR UPDATE?
-${typeLabel}
+    const translation = lines.slice(translationStart).join('\n').trim();
 
-COLLECTION (HELP-CENTER SECTION)
-${collection}
+    if (detectedLine) {
+      document.getElementById('translateDetected').textContent = detectedLine;
+    }
 
-ARTICLE TITLE
-${articleTitle}
-
-CONTENT
-${polishedContent}
-
-Verify the facts against how the product actually works and correct the text if something is wrong.
-${screenshots ? `\nSCREENSHOTS\n${screenshots}` : '\nSCREENSHOTS\nNone provided — agent to capture as needed.'}
-
-RELATED ARTICLES
-${relatedArticles || 'Only if they exist, otherwise skip.'}`;
-
-    const outputBlock = document.getElementById('docsTicketOutput');
-    const outputText  = document.getElementById('docsTicketOutputText');
-    outputText.innerText = ticket;
+    const outputBlock = document.getElementById('translateOutput');
+    const outputText  = document.getElementById('translateOutputText');
+    outputText.innerText = translation;
     outputBlock.classList.remove('hidden');
     outputBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    saveToHistory('Docs Ticket', articleTitle, ticket);
+
+    document.getElementById('translateDraftReplyBtn').onclick = () => {
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector('.nav-item[data-tab="reply"]').classList.add('active');
+      document.getElementById('tab-reply').classList.add('active');
+      document.getElementById('replyConversation').value = translation;
+      const lang = detectedLine ? detectedLine.replace('Detected language:', '').trim() : 'another language';
+      document.getElementById('replyContext').value = `This conversation was originally in ${lang} and has been translated to English.`;
+      document.getElementById('tab-reply').scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    saveToHistory('Translation', text.slice(0, 80) + (text.length > 80 ? '...' : ''), translation);
 
   } catch (e) {
     alert('Error: ' + e.message);
@@ -861,20 +829,14 @@ document.getElementById('kbAskInput').addEventListener('keydown', (e) => {
 });
 
 document.getElementById('kbCreateTicketBtn').addEventListener('click', () => {
-  // Switch to docs tab
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelector('.nav-item[data-tab="docs"]').classList.add('active');
-  document.getElementById('tab-docs').classList.add('active');
-
-  // Pre-fill article title from KB query
+  document.querySelector('.nav-item[data-tab="reply"]').classList.add('active');
+  document.getElementById('tab-reply').classList.add('active');
   const query = document.getElementById('kbAskInput').value.trim();
   if (query) {
-    const titleEl = document.getElementById('docsArticleTitle');
-    if (!titleEl.value) titleEl.value = query.charAt(0).toUpperCase() + query.slice(1);
+    document.getElementById('replyConversation').value = '';
+    document.getElementById('replyContext').value = query;
   }
-
-  // Scroll to top of docs tab
-  document.getElementById('tab-docs').scrollTo({ top: 0, behavior: 'smooth' });
-  document.getElementById('docsArticleTitle').focus();
+  document.getElementById('tab-reply').scrollTo({ top: 0, behavior: 'smooth' });
 });
