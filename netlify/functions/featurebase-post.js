@@ -50,15 +50,27 @@ exports.handler = async function (event) {
         const titleQuery = slug.replace(/-/g, ' ');
         const titleRes   = await fetch(`https://do.featurebase.app/v2/posts?search=${encodeURIComponent(titleQuery)}&limit=5`, { headers });
         const titleData  = await titleRes.json();
-        // Pick the closest match — prefer exact slug match in title
         const posts = titleData.data || [];
         post = posts.find(p => (p.slug || '') === slug) ||
                posts.find(p => (p.title || '').toLowerCase().includes(titleQuery.toLowerCase().slice(0, 20))) ||
                posts[0];
-      }
 
-      if (!post) {
-        return { statusCode: 404, body: JSON.stringify({ error: 'Post not found. Check the URL and try again.' }) };
+        // Debug — return raw results so we can see what the API gives us
+        if (!post) {
+          return {
+            statusCode: 200,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              debug: true,
+              slug,
+              titleQuery,
+              slugSearchStatus: searchRes.status,
+              slugSearchResult: searchData,
+              titleSearchStatus: titleRes.status,
+              titleSearchResult: titleData
+            })
+          };
+        }
       }
 
       return {
