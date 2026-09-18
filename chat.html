@@ -73,6 +73,15 @@
             <textarea class="field-textarea short" id="replyContext" placeholder="Any extra framing — e.g. 'customer is on trial', 'this is a repeat issue'..."></textarea>
           </div>
 
+          <div class="input-group">
+            <label class="field-label">Screenshots <span class="field-optional">(optional — paste, drag & drop, or click to upload)</span></label>
+            <div class="image-drop-zone" id="imageDropZone">
+              <input type="file" id="imageFileInput" accept="image/*" multiple style="display:none" />
+              <span class="image-drop-hint">Paste an image, drag & drop, or <button class="image-browse-btn" id="imageBrowseBtn">browse</button></span>
+            </div>
+            <div class="image-preview-list" id="imagePreviewList"></div>
+          </div>
+
           <div class="input-row">
             <div class="input-group inline">
               <label class="field-label">Tone</label>
