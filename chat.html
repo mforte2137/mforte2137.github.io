@@ -27,7 +27,7 @@
         </button>
         <button class="nav-item" data-tab="ticket">
           <span class="nav-icon">⬡</span>
-          <span class="nav-label">Ticket</span>
+          <span class="nav-label">Scope</span>
         </button>
         <button class="nav-item" data-tab="translate">
           <span class="nav-icon">⇄</span>
@@ -123,97 +123,76 @@
         </div>
       </section>
 
-      <!-- TICKET TAB -->
+      <!-- SCOPE TAB -->
       <section class="tab-panel" id="tab-ticket">
         <div class="panel-header">
           <div class="panel-header-row">
             <div>
-              <h1 class="panel-title">Ticket</h1>
-              <p class="panel-subtitle">Format a bug or feature request for Jira.</p>
+              <h1 class="panel-title">Scope</h1>
+              <p class="panel-subtitle">Turn a customer's raw request into a structured brief — posts back to Featurebase as an admin comment.</p>
             </div>
             <button class="btn-clear" id="ticketClearBtn">Clear</button>
           </div>
         </div>
 
         <div class="panel-body">
+
           <div class="input-row flush">
             <label class="field-label">Type</label>
             <div class="toggle-group">
-              <button class="toggle-btn active" data-type="bug">Bug</button>
+              <button class="toggle-btn active" data-type="bug">Bug Report</button>
               <button class="toggle-btn" data-type="feature">Feature Request</button>
             </div>
           </div>
           <input type="hidden" id="ticketType" value="bug" />
 
           <div class="input-group">
-            <label class="field-label">Area</label>
-            <select class="field-select" id="ticketArea">
-              <option value="">Select area...</option>
-              <option>Opportunities</option>
-              <option>Quotes</option>
-              <option>Products</option>
-              <option>Storefront</option>
-              <option>Whitespace</option>
-              <option>Post-Sale</option>
-              <option>Companies</option>
-              <option>Contacts</option>
-              <option>Distributors</option>
-              <option>Integrations</option>
-              <option>Admin</option>
-              <option>Dashboard</option>
-            </select>
+            <label class="field-label">Featurebase post URL <span class="field-optional">(optional — paste to send scope back automatically)</span></label>
+            <input class="field-input" id="ticketPostUrl" type="text" placeholder="https://salesbuildr.featurebase.app/p/your-post-slug" />
           </div>
 
           <div class="input-group">
-            <label class="field-label">Short description</label>
-            <input class="field-input" id="ticketShortDesc" type="text" placeholder="e.g. UDF value not persisted on opportunity creation" />
+            <label class="field-label">Customer's request or conversation</label>
+            <textarea class="field-textarea tall" id="ticketDetails" placeholder="Paste what the customer wrote in Featurebase, or the support conversation where they described the issue or request..."></textarea>
           </div>
 
           <div class="input-group">
-            <label class="field-label">Details / conversation</label>
-            <textarea class="field-textarea tall" id="ticketDetails" placeholder="Paste the conversation or describe the issue in detail..."></textarea>
+            <label class="field-label">Additional context <span class="field-optional">(optional)</span></label>
+            <textarea class="field-textarea short" id="ticketContext" placeholder="Anything you know about the product behaviour, what was investigated, or follow-up details from the conversation..."></textarea>
           </div>
 
           <div class="input-row">
-            <label class="checkbox-label">
-              <input type="checkbox" id="ticketAlsoReply" />
-              <span>Also draft a customer reply</span>
-            </label>
+            <div></div>
             <button class="btn-primary" id="ticketBtn">
-              <span class="btn-text">Generate Ticket</span>
+              <span class="btn-text">Generate Scope</span>
               <span class="btn-loader hidden">...</span>
             </button>
           </div>
 
-          <div class="output-block hidden" id="ticketKbBlock">
-            <div class="output-header">
-              <span class="output-label">KB Article Found — Review Before Raising</span>
-              <div class="output-actions">
-                <button class="copy-btn" data-target="ticketKbText">Copy</button>
-              </div>
-            </div>
-            <div class="output-text kb-found-text" id="ticketKbText"></div>
-          </div>
-
           <div class="output-block hidden" id="ticketOutput">
             <div class="output-header">
-              <span class="output-label">Ticket Draft</span>
+              <span class="output-label" id="ticketOutputLabel">Scope Brief</span>
               <div class="output-actions">
                 <button class="copy-btn" data-target="ticketOutputText">Copy</button>
               </div>
             </div>
             <div class="output-text" id="ticketOutputText"></div>
+            <div class="scope-post-row" id="scopePostRow">
+              <div class="scope-post-hint" id="scopePostHint"></div>
+              <button class="btn-primary" id="scopePostBtn">
+                <span class="btn-text">Post to Featurebase</span>
+                <span class="btn-loader hidden">...</span>
+              </button>
+            </div>
           </div>
 
-          <div class="output-block hidden" id="ticketReplyOutput">
+          <div class="output-block hidden" id="scopePostedBlock">
             <div class="output-header">
-              <span class="output-label">Customer Reply</span>
-              <div class="output-actions">
-                <button class="copy-btn" data-target="ticketReplyOutputText">Copy</button>
-              </div>
+              <span class="output-label">Posted to Featurebase</span>
             </div>
-            <div class="output-text" id="ticketReplyOutputText"></div>
+            <div class="output-text" id="scopePostedText"></div>
           </div>
+
         </div>
       </section>
 
