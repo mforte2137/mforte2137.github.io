@@ -22,6 +22,12 @@ RULES FOR ALL RESPONSES:
 - When referring to the customer in tickets, they should be able to refer to themselves as "We".
 - Check the documentation at help.salesbuildr.com if a customer asks something that is clearly explained there, and reference the relevant article.
 
+WHEN ANSWERING FROM KB ARTICLES:
+- Answer using only what the article says. Do not add reasoning or assumptions beyond the article content.
+- If the article describes a self-serve flow, tell the customer to follow those steps. Never suggest contacting support unless the article explicitly says to.
+- If the article says instructions are inside the Salesbuildr tool itself, direct the customer there. Do not speculate about what those instructions might say.
+- Do not hedge with phrases like "this may vary" or "I'd recommend checking with your account manager" unless the article says that.
+
 TICKET FORMATTING:
 - Bug titles follow the pattern: [Area]: [Short description]
   Example: "Opportunity: UDF value not persisted on opportunity creation - requires second save"
@@ -383,9 +389,9 @@ document.getElementById('replyBtn').addEventListener('click', async () => {
   if (!conversation) { alert('Please paste a conversation first.'); return; }
 
   const toneMap = {
-    brief:    'Keep the reply concise — 2 to 3 short paragraphs maximum.',
-    standard: 'Write a clear, complete reply at a natural length.',
-    detailed: 'Write a thorough, detailed reply covering all aspects of the issue.'
+    brief:    'Be very concise — 2 to 3 short paragraphs maximum. No greetings, no sign-off.',
+    standard: 'Be direct and concise. Answer the question clearly. No unnecessary padding, no "great question", no lengthy sign-offs. 3 to 4 short paragraphs maximum.',
+    detailed: 'Be thorough — cover all aspects of the issue with full context and steps.'
   };
 
   setLoading(btn, true);
@@ -468,7 +474,12 @@ TONE: ${toneMap[tone]}
 
 ${sourceContext}
 
-Do not use double dashes (--). Write in a natural, direct, human tone.${attachedImages.length ? '\nScreenshots are attached — reference what you see in them where relevant to the reply.' : ''}`;
+STYLE RULES:
+- Do not use double dashes (--)
+- No "Great question!", no "I hope this helps", no "feel free to reach out" — cut all filler
+- Answer the question directly, then stop
+- If the article describes steps, list them cleanly
+- Do not add offers to help further unless genuinely warranted${attachedImages.length ? '\n- Screenshots are attached — reference what you see in them where relevant' : ''}`;
 
     const result = await callClaude(prompt, {
       images: attachedImages.length ? attachedImages : undefined
@@ -710,27 +721,25 @@ If nothing is relevant, reply with: []`;
         ).join('\n\n---\n\n');
 
         // Step 4: answer query using full article content
-        const answerPrompt = `Search the Salesbuildr knowledge base for: "${query}"
+        const answerPrompt = `You are answering a customer support question using ONLY the content of these KB articles. Do not add anything that is not in the articles.
 
-Here is the full content of the relevant articles:
+QUESTION: "${query}"
 
+ARTICLE CONTENT:
 ${richContext}
 
-Based on this content, give a specific, direct answer using the actual article content.
+STRICT RULES — follow these exactly:
+1. Answer using ONLY information from the articles above. Do not add reasoning, assumptions, or general knowledge.
+2. If the article describes self-serve steps (a UI flow the user does themselves), list those exact steps. Do not suggest contacting support.
+3. If the article says credentials or instructions appear inside the Salesbuildr tool itself, tell the customer to go there — do not speculate about what those credentials might be.
+4. Do not say things like "this varies by distributor" or "I'd recommend checking with your account manager" unless the article explicitly says that.
+5. If the article does not cover something the customer asked, say so plainly at the end.
 
-IMPORTANT RULES:
-- If the article describes a self-serve UI flow (steps the user can do themselves), tell the customer to follow those steps. Do NOT suggest contacting support unless the article explicitly says to.
-- If the article says setup instructions appear inside the Salesbuildr tool itself (e.g. in a panel or modal), tell the customer exactly where to find them in the tool.
-- List the actual steps from the article. Do not summarise vaguely or redirect to "read the article".
-- Only mention things not covered if there is a genuine gap — do not hedge or add uncertainty where the article is clear.
-
-Are there any gaps — things the query asks about that the articles genuinely don't cover?
-
-If there is a real gap, end with:
+If there is a genuine gap (something the customer asked that is not in the article at all), end with:
 THE GAP
-[plain-English description of what is missing]
+[what is missing]
 
-Only reference information actually present in the articles above.`;
+Do not add a THE GAP section if the article covers the topic — even partially.`;
 
         return await callClaude(answerPrompt);
       }
