@@ -29,9 +29,9 @@
           <span class="nav-icon">⬡</span>
           <span class="nav-label">Ticket</span>
         </button>
-        <button class="nav-item" data-tab="docs">
-          <span class="nav-icon">◎</span>
-          <span class="nav-label">Docs</span>
+        <button class="nav-item" data-tab="translate">
+          <span class="nav-icon">⇄</span>
+          <span class="nav-label">Translate</span>
         </button>
       </nav>
 
@@ -208,92 +208,44 @@
         </div>
       </section>
 
-      <!-- DOCS TAB -->
-      <section class="tab-panel" id="tab-docs">
+      <!-- TRANSLATE TAB -->
+      <section class="tab-panel" id="tab-translate">
         <div class="panel-header">
           <div class="panel-header-row">
             <div>
-              <h1 class="panel-title">Docs</h1>
-              <p class="panel-subtitle">Build a Jira <code class="inline-code">[customer-docs]</code> ticket ready for Skynet. Use the KB panel on the right to check if an article already exists.</p>
+              <h1 class="panel-title">Translate</h1>
+              <p class="panel-subtitle">Paste a customer conversation in any language and read it in English.</p>
             </div>
-            <button class="btn-clear" id="docsClearBtn">Clear</button>
+            <button class="btn-clear" id="translateClearBtn">Clear</button>
           </div>
         </div>
 
         <div class="panel-body">
-
           <div class="input-group">
-            <label class="field-label">Article title <span class="field-optional">(as customers will see it)</span></label>
-            <input class="field-input" id="docsArticleTitle" type="text" placeholder="e.g. Where to configure multi-currency" />
-          </div>
-
-          <div class="input-row flush">
-            <label class="field-label">New or update?</label>
-            <div class="toggle-group">
-              <button class="toggle-btn active" data-doctype="new">New article</button>
-              <button class="toggle-btn" data-doctype="update">Update existing</button>
-              <button class="toggle-btn" data-doctype="unsure">Not sure</button>
-            </div>
-          </div>
-          <input type="hidden" id="docsArticleType" value="new" />
-
-          <div class="input-group hidden" id="docsExistingArticleGroup">
-            <label class="field-label">Existing article <span class="field-optional">(name or URL)</span></label>
-            <input class="field-input" id="docsExistingArticle" type="text" placeholder="e.g. Multi-Entity & Currency or https://..." />
-          </div>
-
-          <div class="input-group">
-            <label class="field-label">Collection <span class="field-optional">(help-center section)</span></label>
-            <select class="field-select" id="docsCollection">
-              <option value="agent, pick the best fit">Not sure — agent, pick the best fit</option>
-              <option value="Getting Started">Getting Started</option>
-              <option value="Quotes">Quotes</option>
-              <option value="Products">Products</option>
-              <option value="Storefront">Storefront</option>
-              <option value="Whitespace">Whitespace</option>
-              <option value="Post-Sale">Post-Sale</option>
-              <option value="Companies">Companies</option>
-              <option value="Contacts">Contacts</option>
-              <option value="Distributors">Distributors</option>
-              <option value="Integrations">Integrations</option>
-              <option value="Admin">Admin</option>
-            </select>
-          </div>
-
-          <div class="input-group">
-            <label class="field-label">Your notes <span class="field-optional">(rough is fine — Claude will polish for the CONTENT field)</span></label>
-            <textarea class="field-textarea tall" id="docsContentNotes" placeholder="Describe what the article should cover. How the feature works, where to find it, gotchas, steps... Claude will turn these into polished article content."></textarea>
-          </div>
-
-          <div class="input-group">
-            <label class="field-label">Screenshots <span class="field-optional">(optional)</span></label>
-            <textarea class="field-textarea short" id="docsScreenshots" placeholder="Menu paths to capture (e.g. Settings > Financial > Pricing Rules) and/or numbered filenames (01-pricing-rules.png). Test account: triple-seven, connectwise-dev-1, or halo-demo."></textarea>
-          </div>
-
-          <div class="input-group">
-            <label class="field-label">Related articles <span class="field-optional">(optional — only if they exist)</span></label>
-            <input class="field-input" id="docsRelatedArticles" type="text" placeholder="e.g. Multi-Entity & Currency, Quote Editor..." />
+            <label class="field-label">Conversation</label>
+            <textarea class="field-textarea tall" id="translateInput" placeholder="Paste the conversation here — Dutch, French, German, or any other language..."></textarea>
           </div>
 
           <div class="input-row">
-            <div></div>
-            <button class="btn-primary" id="docsTicketBtn">
-              <span class="btn-text">Build Ticket</span>
+            <div class="translate-detected" id="translateDetected"></div>
+            <button class="btn-primary" id="translateBtn">
+              <span class="btn-text">Translate to English</span>
               <span class="btn-loader hidden">...</span>
             </button>
           </div>
 
-          <!-- Ticket output -->
-          <div class="output-block hidden" id="docsTicketOutput">
+          <div class="output-block hidden" id="translateOutput">
             <div class="output-header">
-              <span class="output-label">Jira Ticket — [customer-docs]</span>
+              <span class="output-label">English Translation</span>
               <div class="output-actions">
-                <button class="copy-btn" data-target="docsTicketOutputText">Copy ticket</button>
+                <button class="copy-btn" data-target="translateOutputText">Copy</button>
               </div>
             </div>
-            <div class="output-text" id="docsTicketOutputText"></div>
+            <div class="output-text" id="translateOutputText"></div>
+            <div class="translate-action-row">
+              <button class="btn-primary" id="translateDraftReplyBtn">Draft a reply to this →</button>
+            </div>
           </div>
-
         </div>
       </section>
 
@@ -339,7 +291,7 @@
 
         <div class="kb-create-ticket hidden" id="kbCreateTicket">
           <button class="kb-create-ticket-btn" id="kbCreateTicketBtn">
-            + Create Jira ticket for this topic
+            → Use this to draft a reply
           </button>
         </div>
       </div>
