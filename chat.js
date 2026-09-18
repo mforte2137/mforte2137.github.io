@@ -89,6 +89,77 @@ function renderHistory() {
   });
 }
 
+// ─── IMAGE UPLOAD ─────────────────────────────
+const MAX_IMAGES = 3;
+let attachedImages = []; // [{ base64, mediaType, previewUrl }]
+
+function renderImagePreviews() {
+  const list = document.getElementById('imagePreviewList');
+  list.innerHTML = attachedImages.map((img, i) => `
+    <div class="image-preview-item">
+      <img src="${img.previewUrl}" alt="Screenshot ${i+1}" />
+      <button class="image-preview-remove" data-index="${i}">✕</button>
+    </div>
+  `).join('');
+  list.querySelectorAll('.image-preview-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      attachedImages.splice(parseInt(btn.dataset.index), 1);
+      renderImagePreviews();
+    });
+  });
+}
+
+async function addImageFile(file) {
+  if (!file.type.startsWith('image/')) return;
+  if (attachedImages.length >= MAX_IMAGES) {
+    alert(`Maximum ${MAX_IMAGES} images per request.`);
+    return;
+  }
+  const mediaType = file.type; // e.g. 'image/jpeg'
+  const base64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+  const previewUrl = URL.createObjectURL(file);
+  attachedImages.push({ base64, mediaType, previewUrl });
+  renderImagePreviews();
+}
+
+// Browse button
+document.getElementById('imageBrowseBtn').addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('imageFileInput').click();
+});
+
+document.getElementById('imageFileInput').addEventListener('change', (e) => {
+  Array.from(e.target.files).forEach(addImageFile);
+  e.target.value = '';
+});
+
+// Drag and drop
+const dropZone = document.getElementById('imageDropZone');
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.classList.add('drag-over');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  Array.from(e.dataTransfer.files).forEach(addImageFile);
+});
+
+// Paste anywhere on the page
+document.addEventListener('paste', (e) => {
+  // Only intercept if Reply tab is active
+  if (!document.getElementById('tab-reply').classList.contains('active')) return;
+  const items = Array.from(e.clipboardData.items || []);
+  const imageItems = items.filter(item => item.type.startsWith('image/'));
+  imageItems.forEach(item => addImageFile(item.getAsFile()));
+});
+
 // ─── TABS ─────────────────────────────────────
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -115,6 +186,9 @@ document.getElementById('replyClearBtn').addEventListener('click', () => {
   document.getElementById('replyTone').value = 'standard';
   document.getElementById('replyOutput').classList.add('hidden');
   document.getElementById('replyDocGap').classList.add('hidden');
+  document.getElementById('replyInternalBot').classList.add('hidden');
+  attachedImages = [];
+  renderImagePreviews();
 });
 
 document.getElementById('ticketClearBtn').addEventListener('click', () => {
@@ -250,12 +324,25 @@ document.querySelectorAll('.copy-btn').forEach(btn => {
 
 // ─── API CALL ─────────────────────────────────
 async function callClaude(userPrompt, options = {}) {
+  // Build message content — text only, or text + images
+  let messageContent;
+  if (options.images && options.images.length > 0) {
+    messageContent = [
+      ...options.images.map(img => ({
+        type: 'image',
+        source: { type: 'base64', media_type: img.mediaType, data: img.base64 }
+      })),
+      { type: 'text', text: userPrompt }
+    ];
+  } else {
+    messageContent = userPrompt;
+  }
+
   const payload = {
-    // Sonnet for web search (Haiku doesn't support the tool), Haiku for everything else
     model: options.webSearch ? 'claude-sonnet-4-5' : 'claude-haiku-4-5',
     max_tokens: 1500,
     system: instructions,
-    messages: [{ role: 'user', content: userPrompt }]
+    messages: [{ role: 'user', content: messageContent }]
   };
 
   if (options.webSearch) {
@@ -308,16 +395,25 @@ document.getElementById('replyBtn').addEventListener('click', async () => {
   document.getElementById('replyInternalBot').classList.add('hidden');
 
   try {
-    // ── Step 1: Extract core question ─────────────────────────────────────
+    // ── Step 1: Extract core question (include images if attached) ─────────
     const extractPrompt = `Read this customer support conversation and extract the core question or issue in 10 words or less. Return only the question, nothing else.
-
+${attachedImages.length ? '\nScreenshots are also attached — factor them into the question if they reveal additional context.' : ''}
 CONVERSATION:
 ${conversation}`;
-    const coreQuestion = await callClaude(extractPrompt);
+    const coreQuestion = await callClaude(extractPrompt, {
+      images: attachedImages.length ? attachedImages : undefined
+    });
+
+    // ── Step 1b: If images attached, get a description for the Slack bot ───
+    let imageDescription = '';
+    if (attachedImages.length > 0) {
+      const descPrompt = `Describe what you see in these screenshots in 2-3 sentences. Focus on: what UI/screen is shown, any error messages, relevant settings or values visible. Be specific and factual.`;
+      imageDescription = await callClaude(descPrompt, { images: attachedImages });
+    }
 
     // ── Step 2: Search Featurebase KB ─────────────────────────────────────
     let kbContext    = '';
-    let kbSource     = 'none'; // 'kb' | 'bot' | 'none'
+    let kbSource     = 'none';
     let botAnswer    = '';
     let botThreadUrl = '';
 
@@ -335,10 +431,14 @@ ${conversation}`;
     // ── Step 3: If KB found nothing, ask Internal Questions Bot ───────────
     if (kbSource === 'none') {
       try {
+        // Build enriched question — include image description if available
+        const botQuestion = imageDescription
+          ? `${coreQuestion}\n\nScreenshot context: ${imageDescription}`
+          : coreQuestion;
         const botRes = await fetch('/.netlify/functions/slack-bot', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: coreQuestion })
+          body: JSON.stringify({ question: botQuestion })
         });
         if (botRes.ok) {
           const botData = await botRes.json();
@@ -368,9 +468,11 @@ TONE: ${toneMap[tone]}
 
 ${sourceContext}
 
-Do not use double dashes (--). Write in a natural, direct, human tone.`;
+Do not use double dashes (--). Write in a natural, direct, human tone.${attachedImages.length ? '\nScreenshots are attached — reference what you see in them where relevant to the reply.' : ''}`;
 
-    const result = await callClaude(prompt);
+    const result = await callClaude(prompt, {
+      images: attachedImages.length ? attachedImages : undefined
+    });
 
     // ── Step 5: Render output and appropriate callout ─────────────────────
     const outputBlock = document.getElementById('replyOutput');
