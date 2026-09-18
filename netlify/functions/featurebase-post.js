@@ -31,18 +31,31 @@ exports.handler = async function (event) {
     if (action === 'get_post') {
       const { postUrl } = body;
 
-      // Extract slug from Featurebase URL
-      // e.g. https://salesbuildr.featurebase.app/p/my-feature-slug
+      // Extract slug from URL — works for both:
+      // https://salesbuildr.featurebase.app/p/my-slug
+      // https://feedback.salesbuildr.com/p/my-slug
       const slugMatch = postUrl.match(/\/p\/([^/?#]+)/);
       if (!slugMatch) {
         return { statusCode: 400, body: JSON.stringify({ error: 'Could not extract post slug from URL.' }) };
       }
       const slug = slugMatch[1];
 
-      // Search for the post by slug
+      // Try 1: search by slug directly
       const searchRes  = await fetch(`https://do.featurebase.app/v2/posts?slug=${encodeURIComponent(slug)}&limit=1`, { headers });
       const searchData = await searchRes.json();
-      const post       = (searchData.data || [])[0];
+      let post         = (searchData.data || [])[0];
+
+      // Try 2: search by title derived from slug (slug words → title)
+      if (!post) {
+        const titleQuery = slug.replace(/-/g, ' ');
+        const titleRes   = await fetch(`https://do.featurebase.app/v2/posts?search=${encodeURIComponent(titleQuery)}&limit=5`, { headers });
+        const titleData  = await titleRes.json();
+        // Pick the closest match — prefer exact slug match in title
+        const posts = titleData.data || [];
+        post = posts.find(p => (p.slug || '') === slug) ||
+               posts.find(p => (p.title || '').toLowerCase().includes(titleQuery.toLowerCase().slice(0, 20))) ||
+               posts[0];
+      }
 
       if (!post) {
         return { statusCode: 404, body: JSON.stringify({ error: 'Post not found. Check the URL and try again.' }) };
