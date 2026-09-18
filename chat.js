@@ -534,123 +534,200 @@ STYLE RULES:
   }
 });
 
-// ─── TICKET TAB ───────────────────────────────
+// ─── SCOPE TAB ────────────────────────────────
+let scopePostId   = null; // Featurebase post ID if URL was provided
+let scopePostTitle = '';
+
+// Clear button
+document.getElementById('ticketClearBtn').addEventListener('click', () => {
+  document.getElementById('ticketDetails').value = '';
+  document.getElementById('ticketContext').value = '';
+  document.getElementById('ticketPostUrl').value = '';
+  document.getElementById('ticketOutput').classList.add('hidden');
+  document.getElementById('scopePostedBlock').classList.add('hidden');
+  document.querySelectorAll('.toggle-btn[data-type]').forEach(b => b.classList.remove('active'));
+  document.querySelector('.toggle-btn[data-type="bug"]').classList.add('active');
+  document.getElementById('ticketType').value = 'bug';
+  scopePostId    = null;
+  scopePostTitle = '';
+});
+
+// Type toggle
+document.querySelectorAll('.toggle-btn[data-type]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.toggle-btn[data-type]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('ticketType').value = btn.dataset.type;
+  });
+});
+
+// Generate scope
 document.getElementById('ticketBtn').addEventListener('click', async () => {
-  const type       = document.getElementById('ticketType').value;
-  const area       = document.getElementById('ticketArea').value;
-  const shortDesc  = document.getElementById('ticketShortDesc').value.trim();
-  const details    = document.getElementById('ticketDetails').value.trim();
-  const alsoReply  = document.getElementById('ticketAlsoReply').checked;
-  const btn        = document.getElementById('ticketBtn');
+  const type    = document.getElementById('ticketType').value;
+  const details = document.getElementById('ticketDetails').value.trim();
+  const context = document.getElementById('ticketContext').value.trim();
+  const postUrl = document.getElementById('ticketPostUrl').value.trim();
+  const btn     = document.getElementById('ticketBtn');
 
-  if (!area)      { alert('Please select an area.'); return; }
-  if (!shortDesc) { alert('Please enter a short description.'); return; }
-  if (!details)   { alert('Please provide details or paste a conversation.'); return; }
+  if (!details) { alert('Please paste the customer\'s request or conversation.'); return; }
 
-  const typeLabel = type === 'bug' ? 'Bug' : 'Feature Request';
+  const typeLabel = type === 'bug' ? 'Bug Report' : 'Feature Request';
+  setLoading(btn, true);
+  scopePostId    = null;
+  scopePostTitle = '';
+
+  try {
+    // ── Step 1: Resolve Featurebase post URL if provided ──────────────────
+    if (postUrl) {
+      try {
+        const postRes = await fetch('/.netlify/functions/featurebase-post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get_post', postUrl })
+        });
+        if (postRes.ok) {
+          const postData = await postRes.json();
+          if (postData.post) {
+            scopePostId    = postData.post.id;
+            scopePostTitle = postData.post.title;
+          }
+        }
+      } catch (_) { /* silent — still generate scope */ }
+    }
+
+    // ── Step 2: Generate structured scope ─────────────────────────────────
+    const prompt = type === 'feature'
+      ? `You are a product manager writing a structured feature request brief for the Salesbuildr development team.
+
+The customer submitted the following request:
+${details}
+${context ? `\nAdditional context from the support agent:\n${context}` : ''}
+
+Write a structured feature brief using EXACTLY these sections. Be specific and concrete — no vague filler.
+
+**Summary**
+One paragraph. What the customer is trying to do and why the current product doesn't support it.
+
+**Background**
+The workflow or use case context. What the customer does today and where it breaks down.
+
+**What Was Investigated**
+Any workarounds or alternatives that were explored and why they don't solve the problem. If nothing was investigated, write "Not yet investigated — further discovery needed."
+
+**The Gap**
+A precise description of what is missing from the product today.
+
+**Requested Feature**
+Specific requirements — what the feature should do, where it should appear, how it should behave. Use bullet points.
+
+**Why This Matters**
+Business impact. Who else is affected. What happens if this isn't built.
+
+**Proposed Priority**
+Low / Medium / Medium-High / High with a one-line justification.
+
+Write in clear, direct English. No double dashes. Do not include customer names or company names.`
+
+      : `You are a product manager writing a structured bug report for the Salesbuildr development team.
+
+The customer reported the following issue:
+${details}
+${context ? `\nAdditional context from the support agent:\n${context}` : ''}
+
+Write a structured bug report using EXACTLY these sections.
+
+**Summary**
+One paragraph. What is broken and what the customer was trying to do.
+
+**Steps to Reproduce**
+Numbered steps to trigger the bug. If unknown, write "To be confirmed with customer."
+
+**Expected Behaviour**
+What should happen.
+
+**Actual Behaviour**
+What actually happens.
+
+**Impact**
+How this affects the customer's workflow. Severity — is it blocking or a workaround exists?
+
+**What Was Investigated**
+Any investigation already done. If none, write "Not yet investigated."
+
+**Proposed Priority**
+Low / Medium / Medium-High / High / Critical with a one-line justification.
+
+Write in clear, direct English. No double dashes. Do not include customer names or company names.`;
+
+    const result = await callClaude(prompt);
+
+    // ── Step 3: Show output ───────────────────────────────────────────────
+    const outputBlock = document.getElementById('ticketOutput');
+    const outputText  = document.getElementById('ticketOutputText');
+    const outputLabel = document.getElementById('ticketOutputLabel');
+    const postRow     = document.getElementById('scopePostRow');
+    const postHint    = document.getElementById('scopePostHint');
+
+    outputLabel.textContent = typeLabel + ' Brief';
+    outputText.innerText    = result;
+    outputBlock.classList.remove('hidden');
+    document.getElementById('scopePostedBlock').classList.add('hidden');
+
+    // Show post row with appropriate hint
+    if (scopePostId) {
+      postHint.textContent = `Will post as private admin comment on: "${scopePostTitle}"`;
+    } else if (postUrl) {
+      postHint.textContent = 'Could not find that Featurebase post — copy and paste manually.';
+      document.getElementById('scopePostBtn').disabled = true;
+    } else {
+      postHint.textContent = 'No post URL provided — copy the brief and paste it into Featurebase manually.';
+      document.getElementById('scopePostBtn').disabled = true;
+    }
+    postRow.style.display = 'flex';
+
+    outputBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    saveToHistory('Scope (' + typeLabel + ')', details.slice(0, 80) + (details.length > 80 ? '...' : ''), result);
+
+  } catch (e) {
+    alert('Error: ' + e.message);
+  } finally {
+    setLoading(btn, false);
+  }
+});
+
+// Post to Featurebase
+document.getElementById('scopePostBtn').addEventListener('click', async () => {
+  if (!scopePostId) return;
+  const content = document.getElementById('ticketOutputText').innerText;
+  const btn     = document.getElementById('scopePostBtn');
 
   setLoading(btn, true);
 
   try {
-    // ── Step 1: Search KB to check if this is documented behaviour ────────
-    let kbNote = '';
-    try {
-      const kbText   = await searchFeaturebase(shortDesc);
-      const gapIdx   = kbText.indexOf('THE GAP');
-      const kbResult = gapIdx !== -1 ? kbText.slice(0, gapIdx).trim() : kbText.trim();
-      const noArticle = kbResult.toLowerCase().includes('no articles') ||
-                        kbResult.toLowerCase().includes('no published') ||
-                        kbResult.toLowerCase().includes('does not exist') ||
-                        kbResult.toLowerCase().includes('none found');
-      const cleanResult = kbResult.split(/\n---|\n## Documentation Gap/i)[0].trim();
-      if (!noArticle) kbNote = cleanResult;
-    } catch (_) {
-      // KB check failed silently — ticket still drafts without it
+    const res = await fetch('/.netlify/functions/featurebase-post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action:    'post_comment',
+        postId:    scopePostId,
+        content,
+        isPrivate: true
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert('Failed to post: ' + (data.error || res.status));
+      return;
     }
 
-    // ── Step 2: Draft the ticket, informed by KB result ───────────────────
-    const prompt = `Draft a Jira ${typeLabel} ticket based on the following.
-
-Area: ${area}
-Short description: ${shortDesc}
-Details / conversation:
-${details}
-
-${kbNote ? `KNOWLEDGE BASE CONTEXT — an article may already cover some of this behaviour:
-${kbNote}
-If this article suggests the reported behaviour is actually documented and expected, note that clearly in the Description so the team can assess before investigating.
-` : ''}
-FORMAT THE TICKET EXACTLY AS FOLLOWS:
-
-Title: ${area}: ${shortDesc}
-
-Type: ${typeLabel}
-
-Description:
-[2-3 sentence overview of the issue or request, written from the customer's perspective. The customer should be able to refer to themselves as "We". If relevant KB articles were found, note them here so the team can check whether this is documented behaviour before investigating.]
-
-${type === 'bug' ? `Steps to Reproduce:
-[Numbered steps]
-
-Expected Behaviour:
-[What should happen]
-
-Actual Behaviour:
-[What actually happens]
-
-Impact:
-[Business or workflow impact]` : `Use Case:
-[Why this is needed, from the customer's perspective]
-
-Proposed Solution:
-[What the customer is asking for]
-
-Expected Benefit:
-[What would improve for the customer]`}
-
-Leave a blank line after every section. Do not include customer names or end-customer data.
-${alsoReply ? '\nAfter the ticket, add a section clearly separated by the marker CUSTOMER_REPLY_START, then write a reply I can send to the customer about this issue or request.' : ''}`;
-
-    const result = await callClaude(prompt);
-
-    const ticketOutput     = document.getElementById('ticketOutput');
-    const ticketOutputText = document.getElementById('ticketOutputText');
-    const replyOutput      = document.getElementById('ticketReplyOutput');
-    const replyOutputText  = document.getElementById('ticketReplyOutputText');
-
-    const replyMarker = 'CUSTOMER_REPLY_START';
-    const replyIndex  = result.indexOf(replyMarker);
-
-    let ticketText = result;
-    let replyText  = '';
-
-    if (replyIndex !== -1) {
-      ticketText = result.slice(0, replyIndex).trim();
-      replyText  = result.slice(replyIndex + replyMarker.length).trim();
-    }
-
-    ticketOutputText.innerText = ticketText;
-    ticketOutput.classList.remove('hidden');
-
-    if (alsoReply && replyText) {
-      replyOutputText.innerText = replyText;
-      replyOutput.classList.remove('hidden');
-    } else {
-      replyOutput.classList.add('hidden');
-    }
-
-    // Show KB note as green callout if an article was found
-    const ticketKbBlock = document.getElementById('ticketKbBlock');
-    const ticketKbText  = document.getElementById('ticketKbText');
-    if (kbNote && ticketKbBlock) {
-      ticketKbText.innerText = kbNote;
-      ticketKbBlock.classList.remove('hidden');
-    } else if (ticketKbBlock) {
-      ticketKbBlock.classList.add('hidden');
-    }
-
-    ticketOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    saveToHistory('Ticket (' + typeLabel + ')', area + ': ' + shortDesc, ticketText);
+    const postedBlock = document.getElementById('scopePostedBlock');
+    const postedText  = document.getElementById('scopePostedText');
+    postedText.innerText = `Posted as a private admin comment on "${scopePostTitle}" in Featurebase. Only admins can see it.`;
+    postedBlock.classList.remove('hidden');
+    document.getElementById('scopePostBtn').disabled = true;
+    postedBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
   } catch (e) {
     alert('Error: ' + e.message);
