@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Salesbuildr Support Tool</title>
+  <title>Salesbuildr Support Hub</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
@@ -17,7 +17,7 @@
     <aside class="sidebar">
       <div class="sidebar-brand">
         <span class="brand-dot"></span>
-        <span class="brand-name">Support<br/>Tool</span>
+        <span class="brand-name">Support<br/>Hub</span>
       </div>
 
       <nav class="sidebar-nav">
@@ -42,7 +42,7 @@
         </button>
         <button class="settings-btn" id="settingsBtn">
           <span>⚙</span>
-          <span>Instructions</span>
+          <span>Tool Instructions</span>
         </button>
       </div>
     </aside>
@@ -55,8 +55,8 @@
         <div class="panel-header">
           <div class="panel-header-row">
             <div>
-              <h1 class="panel-title">Draft Reply</h1>
-              <p class="panel-subtitle">Paste a customer conversation and get a ready-to-send response.</p>
+              <h1 class="panel-title">Reply</h1>
+              <p class="panel-subtitle">Paste a customer conversation — the tool researches and drafts a response.</p>
             </div>
             <button class="btn-clear" id="replyClearBtn">Clear</button>
           </div>
@@ -128,8 +128,8 @@
         <div class="panel-header">
           <div class="panel-header-row">
             <div>
-              <h1 class="panel-title">Draft Ticket</h1>
-              <p class="panel-subtitle">Create a Jira-ready bug or feature request ticket.</p>
+              <h1 class="panel-title">Ticket</h1>
+              <p class="panel-subtitle">Format a bug or feature request for Jira.</p>
             </div>
             <button class="btn-clear" id="ticketClearBtn">Clear</button>
           </div>
@@ -223,7 +223,7 @@
           <div class="panel-header-row">
             <div>
               <h1 class="panel-title">Translate</h1>
-              <p class="panel-subtitle">Paste a customer conversation in any language and read it in English.</p>
+              <p class="panel-subtitle">Read any conversation in English, then draft a reply.</p>
             </div>
             <button class="btn-clear" id="translateClearBtn">Clear</button>
           </div>
@@ -264,8 +264,8 @@
     <aside class="kb-panel">
       <div class="kb-panel-header">
         <div>
-          <h2 class="kb-panel-title">Ask the KB</h2>
-          <p class="kb-panel-subtitle">Get answers grounded in your knowledge base, with article links to share.</p>
+          <h2 class="kb-panel-title">Research</h2>
+          <p class="kb-panel-subtitle">Ask anything — searches the public KB and internal documentation.</p>
         </div>
         <span class="kb-panel-brand">Salesbuildr KB</span>
       </div>
@@ -339,10 +339,10 @@
   <div class="drawer-overlay hidden" id="drawerOverlay"></div>
   <aside class="drawer hidden" id="instructionsDrawer">
     <div class="drawer-header">
-      <h2 class="drawer-title">Instructions</h2>
+      <h2 class="drawer-title">Tool Instructions</h2>
       <button class="drawer-close" id="drawerClose">✕</button>
     </div>
-    <p class="drawer-hint">This context is sent with every request. Update it as your product knowledge grows.</p>
+    <p class="drawer-hint">This is the system prompt sent with every request. It defines tone, rules, and product context. Edit it as the product evolves or your team's needs change.</p>
     <textarea class="drawer-textarea" id="instructionsText"></textarea>
     <div class="drawer-footer">
       <button class="btn-secondary" id="instructionsReset">Reset to default</button>
