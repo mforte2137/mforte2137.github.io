@@ -398,7 +398,7 @@ document.getElementById('replyBtn').addEventListener('click', async () => {
   document.getElementById('replyInternalBot').classList.add('hidden');
 
   try {
-    // ── Step 1: Extract core question (include images if attached) ─────────
+    // ── Step 1: Extract core question ─────────────────────────────────────
     const extractPrompt = `Read this customer support conversation and extract the core question or issue in 10 words or less. Return only the question, nothing else.
 ${attachedImages.length ? '\nScreenshots are also attached — factor them into the question if they reveal additional context.' : ''}
 CONVERSATION:
@@ -407,60 +407,77 @@ ${conversation}`;
       images: attachedImages.length ? attachedImages : undefined
     });
 
-    // ── Step 1b: If images attached, get a description for the Slack bot ───
+    // ── Step 1b: Describe images for the Slack bot if attached ────────────
     let imageDescription = '';
     if (attachedImages.length > 0) {
       const descPrompt = `Describe what you see in these screenshots in 2-3 sentences. Focus on: what UI/screen is shown, any error messages, relevant settings or values visible. Be specific and factual.`;
       imageDescription = await callClaude(descPrompt, { images: attachedImages });
     }
 
-    // ── Step 2: Search Featurebase KB ─────────────────────────────────────
-    let kbContext    = '';
+    // ── Step 2: Run KB search and Internal Bot in PARALLEL ────────────────
+    // Both always run — bot answer takes priority, KB provides article links
+    const botQuestion = imageDescription
+      ? `${coreQuestion}\n\nScreenshot context: ${imageDescription}`
+      : coreQuestion;
+
+    const [kbResult, botResult] = await Promise.allSettled([
+      searchFeaturebase(coreQuestion),
+      fetch('/.netlify/functions/slack-bot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: botQuestion })
+      }).then(r => r.ok ? r.json() : null).catch(() => null)
+    ]);
+
+    // Process KB result
+    const kbRaw    = kbResult.status === 'fulfilled' ? kbResult.value : '';
+    const gapIdx   = kbRaw.indexOf('THE GAP');
+    const kbText   = gapIdx !== -1 ? kbRaw.slice(0, gapIdx).trim() : kbRaw.trim();
+    const noKb     = !kbText ||
+                     kbText.toLowerCase().includes('no articles') ||
+                     kbText.toLowerCase().includes('none found') ||
+                     kbText.toLowerCase().includes('no published') ||
+                     kbText.toLowerCase().includes('does not exist');
+    const kbContext = noKb ? '' : kbText;
+
+    // Process bot result
+    const botData    = botResult.status === 'fulfilled' ? botResult.value : null;
+    const botAnswer  = botData?.answer || '';
+    const botThreadUrl = botData?.thread_url || '';
+
+    // ── Step 3: Build source context — bot is primary, KB supplements ─────
+    let sourceContext = '';
     let kbSource     = 'none';
-    let botAnswer    = '';
-    let botThreadUrl = '';
 
-    try {
-      const kbText = await searchFeaturebase(coreQuestion);
-      const gapIdx = kbText.indexOf('THE GAP');
-      kbContext = gapIdx !== -1 ? kbText.slice(0, gapIdx).trim() : kbText.trim();
-      const noKb = kbContext.toLowerCase().includes('no articles') ||
-                   kbContext.toLowerCase().includes('none found') ||
-                   kbContext.toLowerCase().includes('no published') ||
-                   kbContext.toLowerCase().includes('does not exist');
-      if (!noKb && kbContext) kbSource = 'kb';
-    } catch (_) { /* silent */ }
+    if (botAnswer && kbContext) {
+      // Best case: both sources — bot answer is primary truth, KB adds article links
+      sourceContext = `INTERNAL DOCUMENTATION (primary source — use this for the actual answer):
+${botAnswer}
 
-    // ── Step 3: If KB found nothing, ask Internal Questions Bot ───────────
-    if (kbSource === 'none') {
-      try {
-        // Build enriched question — include image description if available
-        const botQuestion = imageDescription
-          ? `${coreQuestion}\n\nScreenshot context: ${imageDescription}`
-          : coreQuestion;
-        const botRes = await fetch('/.netlify/functions/slack-bot', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: botQuestion })
-        });
-        if (botRes.ok) {
-          const botData = await botRes.json();
-          if (botData.answer) {
-            botAnswer    = botData.answer;
-            botThreadUrl = botData.thread_url || '';
-            kbSource     = 'bot';
-          }
-        }
-      } catch (_) { /* silent */ }
+KNOWLEDGE BASE CONTEXT (use only for article links to include in your reply):
+${kbContext}`;
+      kbSource = 'both';
+    } else if (botAnswer) {
+      // Bot only
+      sourceContext = `INTERNAL DOCUMENTATION — use as source of truth:
+${botAnswer}
+
+Do not mention that this came from an internal bot. Present the information naturally.`;
+      kbSource = 'bot';
+    } else if (kbContext) {
+      // KB only
+      sourceContext = `KNOWLEDGE BASE RESULTS — use as source of truth:
+${kbContext}
+
+Reference the relevant article naturally in your reply with its URL.`;
+      kbSource = 'kb';
+    } else {
+      // Nothing found
+      sourceContext = `No matching documentation was found. Draft the best reply you can from the conversation context alone. Be honest if you don't know something — say the team will look into it and ask for any information that would help investigate (screenshot, URL).`;
+      kbSource = 'none';
     }
 
-    // ── Step 4: Draft reply grounded in best available source ─────────────
-    const sourceContext = kbSource === 'kb'
-      ? `KNOWLEDGE BASE RESULTS — use as primary source of truth:\n${kbContext}\n\nReference the relevant article naturally in your reply with its URL.`
-      : kbSource === 'bot'
-      ? `INTERNAL DOCUMENTATION — use as source of truth:\n${botAnswer}\n\nDo not mention that this came from an internal bot. Present the information naturally.`
-      : `No matching documentation was found. Draft the best reply you can from the conversation, but do not invent specific product details.`;
-
+    // ── Step 4: Draft reply ───────────────────────────────────────────────
     const prompt = `A customer has sent the following conversation. Draft a reply I can send to them.
 
 CONVERSATION:
@@ -476,15 +493,15 @@ STYLE RULES:
 - No "Great question!", no "I hope this helps", no "feel free to reach out" — cut all filler
 - Answer the question directly, then stop
 - You are writing to a customer — keep it simple and human
-- NEVER direct a customer to internal logs, error consoles, sync diagnostic panels, or Settings > Tools > Issues. These are internal tools the customer has never seen and should not be asked to navigate.
-- If the issue needs investigation, ask for a screenshot and/or a URL. That is all a customer can reasonably provide.
-- If the KB article describes internal troubleshooting steps, translate them into what you need FROM the customer, not what the customer should do themselves.${attachedImages.length ? '\n- Screenshots are attached — reference what you see in them where relevant' : ''}`;
+- NEVER direct a customer to internal logs, error consoles, sync diagnostic panels, or Settings > Tools > Issues. These are internal tools the customer has never seen.
+- If the issue needs investigation, ask for a screenshot and/or a URL from the relevant external system (e.g. ConnectWise, Autotask). That is all a customer can reasonably provide.
+- If the internal documentation describes how the system works behind the scenes, use that knowledge to ask the right question — not to make the customer debug their own system.${attachedImages.length ? '\n- Screenshots are attached — reference what you see in them where relevant' : ''}`;
 
     const result = await callClaude(prompt, {
       images: attachedImages.length ? attachedImages : undefined
     });
 
-    // ── Step 5: Render output and appropriate callout ─────────────────────
+    // ── Step 5: Render output ─────────────────────────────────────────────
     const outputBlock = document.getElementById('replyOutput');
     const outputText  = document.getElementById('replyOutputText');
     outputText.innerText = result;
@@ -492,33 +509,35 @@ STYLE RULES:
 
     const docGapBlock = document.getElementById('replyDocGap');
     const docGapText  = document.getElementById('replyDocGapText');
+    const botBlock    = document.getElementById('replyInternalBot');
+    const botText     = document.getElementById('replyInternalBotText');
+    const botLink     = document.getElementById('replyInternalBotLink');
 
-    if (kbSource === 'kb') {
+    if (kbSource === 'both' || kbSource === 'kb') {
       docGapText.innerText = kbContext;
       docGapBlock.querySelector('.doc-gap-header span').textContent = 'KB Article Referenced';
       docGapBlock.classList.add('kb-found');
       docGapBlock.classList.remove('hidden');
-    } else if (kbSource === 'bot') {
-      const botBlock = document.getElementById('replyInternalBot');
-      const botText  = document.getElementById('replyInternalBotText');
-      const botLink  = document.getElementById('replyInternalBotLink');
-      // Render basic markdown — bold, italic, bullets
+    }
+
+    if (kbSource === 'both' || kbSource === 'bot') {
       botText.innerHTML = botAnswer
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-        .replace(/_([\s\S]+?)_/g, '<em>$1</em>')
         .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
         .replace(/^[•\-] (.+)$/gm, '<li>$1</li>')
-        .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+        .replace(/(<li>[\s\S]+?<\/li>)/g, '<ul>$1</ul>')
         .replace(/\n/g, '<br>');
       if (botThreadUrl) {
         botLink.href = botThreadUrl;
         botLink.classList.remove('hidden');
       }
       botBlock.classList.remove('hidden');
-    } else {
-      docGapText.innerText = `No matching article or internal documentation found for: "${coreQuestion}"`;
-      docGapBlock.querySelector('.doc-gap-header span').textContent = 'Documentation Gap Detected';
+    }
+
+    if (kbSource === 'none') {
+      docGapText.innerText = `No matching documentation found for: "${coreQuestion}" — reply drafted from conversation context only.`;
+      docGapBlock.querySelector('.doc-gap-header span').textContent = 'Documentation Gap';
       docGapBlock.classList.remove('kb-found');
       docGapBlock.classList.remove('hidden');
     }
