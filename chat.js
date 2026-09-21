@@ -475,8 +475,10 @@ STYLE RULES:
 - Do not use double dashes (--)
 - No "Great question!", no "I hope this helps", no "feel free to reach out" — cut all filler
 - Answer the question directly, then stop
-- If the article describes steps, list them cleanly
-- Do not add offers to help further unless genuinely warranted${attachedImages.length ? '\n- Screenshots are attached — reference what you see in them where relevant' : ''}`;
+- You are writing to a customer — keep it simple and human
+- NEVER direct a customer to internal logs, error consoles, sync diagnostic panels, or Settings > Tools > Issues. These are internal tools the customer has never seen and should not be asked to navigate.
+- If the issue needs investigation, ask for a screenshot and/or a URL. That is all a customer can reasonably provide.
+- If the KB article describes internal troubleshooting steps, translate them into what you need FROM the customer, not what the customer should do themselves.${attachedImages.length ? '\n- Screenshots are attached — reference what you see in them where relevant' : ''}`;
 
     const result = await callClaude(prompt, {
       images: attachedImages.length ? attachedImages : undefined
@@ -807,7 +809,8 @@ STRICT RULES — follow these exactly:
 2. If the article describes self-serve steps (a UI flow the user does themselves), list those exact steps. Do not suggest contacting support.
 3. If the article says credentials or instructions appear inside the Salesbuildr tool itself, tell the customer to go there — do not speculate about what those credentials might be.
 4. Do not say things like "this varies by distributor" or "I'd recommend checking with your account manager" unless the article explicitly says that.
-5. If the article does not cover something the customer asked, say so plainly at the end.
+5. If the article contains internal troubleshooting steps (like checking logs, error consoles, or admin diagnostic panels), do NOT pass those to the customer. Instead, note what information those steps would reveal, and ask the customer for a screenshot or URL that would give you the same information.
+6. If the article does not cover something the customer asked, say so plainly at the end.
 
 If there is a genuine gap (something the customer asked that is not in the article at all), end with:
 THE GAP
