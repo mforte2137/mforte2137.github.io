@@ -420,11 +420,7 @@ ${conversation}`;
 
     const [kbResult, botResult] = await Promise.allSettled([
       searchFeaturebase(coreQuestion),
-      fetch('/.netlify/functions/slack-bot', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: botQuestion })
-      }).then(r => r.ok ? r.json() : null).catch(() => null)
+      querySlackBot(botQuestion)
     ]);
 
     // Process KB result
@@ -752,6 +748,35 @@ document.getElementById('scopePostBtn').addEventListener('click', async () => {
   }
 });
 
+// ─── SLACK BOT QUERY ──────────────────────────
+// Two-step: post question, then poll separately for answer
+async function querySlackBot(question) {
+  // Step 1: post question, get message_ts back immediately
+  const postRes = await fetch('/.netlify/functions/slack-bot', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question })
+  });
+
+  if (!postRes.ok) return null;
+  const postData = await postRes.json();
+  if (!postData.message_ts) return null;
+
+  // Step 2: poll for the real answer in a separate function call
+  const pollRes = await fetch('/.netlify/functions/slack-poll', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message_ts: postData.message_ts,
+      channel_id: postData.channel_id
+    })
+  });
+
+  if (!pollRes.ok) return null;
+  const pollData = await pollRes.json();
+  return pollData.answer ? pollData : null;
+}
+
 // ─── FEATUREBASE SEARCH ───────────────────────
 async function searchFeaturebase(query) {
   // Step 1: fetch article list
@@ -958,11 +983,7 @@ async function runKbAsk() {
     // ── Run KB search and bot query in parallel ────────────────────────────
     const [kbResult, botResult] = await Promise.allSettled([
       searchFeaturebase(query),
-      fetch('/.netlify/functions/slack-bot', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: query })
-      }).then(r => r.ok ? r.json() : null).catch(() => null)
+      querySlackBot(query)
     ]);
 
     const kbText    = kbResult.status === 'fulfilled' ? kbResult.value : '';
