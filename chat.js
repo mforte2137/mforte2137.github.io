@@ -980,22 +980,14 @@ async function runKbAsk() {
   document.getElementById('kbCreateTicket').classList.add('hidden');
 
   try {
-    // ── Run KB search and bot query in parallel ────────────────────────────
-    const [kbResult, botResult] = await Promise.allSettled([
-      searchFeaturebase(query),
-      querySlackBot(query)
-    ]);
-
-    const kbText    = kbResult.status === 'fulfilled' ? kbResult.value : '';
+    // ── Step 1: Run KB search first — show result immediately ──────────────
+    const kbText    = await searchFeaturebase(query).catch(() => '');
     const gapIdx    = kbText.indexOf('THE GAP');
     const kbClean   = gapIdx !== -1 ? kbText.slice(0, gapIdx).trim() : kbText.trim();
     const noResults = !kbClean || kbClean.toLowerCase().includes('no articles') ||
                       kbClean.toLowerCase().includes('no published') ||
                       kbClean.toLowerCase().includes('does not exist') ||
                       kbClean.toLowerCase().includes('none found');
-
-    const botData   = botResult.status === 'fulfilled' ? botResult.value : null;
-    const botAnswer = botData?.answer || '';
 
     if (!noResults) {
       // ── KB found something — show answer and articles ──────────────────
@@ -1059,41 +1051,52 @@ Do not invent product details. Do not use double dashes.`;
       }
     }
 
-    // ── Always show bot answer if it came back ─────────────────────────────
-    if (botAnswer) {
+    // ── Show create ticket button — disabled while bot is running ─────────
+    const createTicketBtn = document.getElementById('kbCreateTicketBtn');
+    const botWaiting      = document.getElementById('kbBotWaiting');
+    createTicketBtn.disabled = true;
+    botWaiting.classList.remove('hidden');
+    document.getElementById('kbCreateTicket').classList.remove('hidden');
+
+    // Re-enable Ask button now
+    btn.disabled = false;
+    btnText.classList.remove('hidden');
+    btnLoader.classList.add('hidden');
+    btnLoader.textContent = '...';
+
+    // ── Step 2: Query bot in background — update when ready ───────────────
+    querySlackBot(query).then(botData => {
+      // Enable draft button now that bot result is in
+      createTicketBtn.disabled = false;
+      botWaiting.classList.add('hidden');
+
+      if (!botData?.answer) return;
       const botText = document.getElementById('kbBotText');
-      botText.innerHTML = botAnswer
+      botText.innerHTML = botData.answer
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
         .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
         .replace(/^[•\-] (.+)$/gm, '<li>$1</li>')
         .replace(/(<li>[\s\S]+?<\/li>)/g, '<ul>$1</ul>')
         .replace(/\n/g, '<br>');
-      if (botData?.thread_url) {
+      if (botData.thread_url) {
         const botLink = document.getElementById('kbBotLink');
         botLink.href = botData.thread_url;
         botLink.classList.remove('hidden');
       }
       document.getElementById('kbBotBlock').classList.remove('hidden');
-    }
-
-    // If neither source found anything
-    if (noResults && !botAnswer) {
-      document.getElementById('kbAnswerText').innerHTML = 'No information found in the public KB or internal documentation for this query.';
-      document.getElementById('kbAnswerBlock').classList.remove('hidden');
-    }
-
-    // Always show create ticket button
-    document.getElementById('kbCreateTicket').classList.remove('hidden');
+    }).catch(() => {
+      // Bot failed — still enable button so KB answer can be used
+      createTicketBtn.disabled = false;
+      botWaiting.classList.add('hidden');
+    });
 
   } catch (e) {
     document.getElementById('kbAnswerText').innerText = 'Something went wrong: ' + e.message;
     document.getElementById('kbAnswerBlock').classList.remove('hidden');
-  } finally {
     btn.disabled = false;
     btnText.classList.remove('hidden');
     btnLoader.classList.add('hidden');
-    btnLoader.textContent = '...';
   }
 }
 
