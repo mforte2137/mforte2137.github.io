@@ -42,7 +42,7 @@ exports.handler = async function (event) {
     const messageTs = postData.ts;
 
     // ── Step 2: Poll for bot reply in thread (up to 20 seconds) ──────────
-    const maxAttempts = 8;
+    const maxAttempts = 12;
     const delayMs     = 2500;
 
     for (let i = 0; i < maxAttempts; i++) {
@@ -57,10 +57,33 @@ exports.handler = async function (event) {
 
       if (!threadData.ok) continue;
 
-      // Find the first reply from the bot (not our own message)
-      const botReply = (threadData.messages || []).find(
-        m => m.ts !== messageTs && m.bot_id
-      );
+      // Find a substantive reply from the bot — ignore short acknowledgements
+      const ACKNOWLEDGEMENTS = [
+        'looking into it',
+        'let me check',
+        'one moment',
+        'give me a moment',
+        'checking',
+        'on it',
+        'researching',
+        'searching',
+      ];
+
+      const botReply = (threadData.messages || []).find(m => {
+        if (m.ts === messageTs) return false;
+        if (!m.bot_id) return false;
+        // Strip Slack emoji codes (:emoji_name:) then clean to plain text
+        const cleaned = (m.text || '')
+          .replace(/:[a-z0-9_+-]+:/g, '')  // remove :emoji_name: codes
+          .replace(/[^a-z ]/gi, '')
+          .toLowerCase()
+          .trim();
+        // Skip if it matches a known acknowledgement phrase
+        if (ACKNOWLEDGEMENTS.some(ack => cleaned.includes(ack))) return false;
+        // Skip if remaining text is very short after stripping emoji
+        if (cleaned.length < 30) return false;
+        return true;
+      });
 
       if (botReply) {
         // Strip the Sources section — internal doc paths shouldn't reach the customer reply
