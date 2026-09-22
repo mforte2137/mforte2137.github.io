@@ -1375,9 +1375,34 @@ h1, h2, h3, h4 {
   text-align: center;
 }
 
-.kb-create-ticket-btn:hover {
+.kb-create-ticket-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.kb-create-ticket-btn:hover:not(:disabled) {
   border-color: var(--accent);
   background: var(--accent-bg);
+}
+
+.kb-bot-waiting {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--info);
+  letter-spacing: 0.04em;
+}
+
+.kb-bot-waiting.hidden { display: none; }
+
+.kb-bot-waiting-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--info);
+  animation: pulse 1s ease-in-out infinite;
 }
 
 /* =============================================
