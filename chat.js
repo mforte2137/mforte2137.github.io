@@ -412,45 +412,64 @@ ${conversation}`;
       imageDescription = await callClaude(descPrompt, { images: attachedImages });
     }
 
-    // ── Step 2: Run KB search and Internal Bot in PARALLEL ────────────────
-    // Both always run — bot answer takes priority, KB provides article links
-    const botQuestion = imageDescription
-      ? `${coreQuestion}\n\nScreenshot context: ${imageDescription}`
-      : coreQuestion;
+    // ── Step 2: Check if research context already provided ───────────────
+    // If coming from Research panel, context field has bot+KB answers — skip re-querying
+    const hasResearchContext = context.includes('INTERNAL BOT ANSWER:') || context.includes('PUBLIC KB:');
 
-    const [kbResult, botResult] = await Promise.allSettled([
-      searchFeaturebase(coreQuestion),
-      querySlackBot(botQuestion)
-    ]);
+    let kbContext    = '';
+    let botAnswer    = '';
+    let botThreadUrl = '';
+    let kbSource     = 'none';
 
-    // Process KB result
-    const kbRaw    = kbResult.status === 'fulfilled' ? kbResult.value : '';
-    const gapIdx   = kbRaw.indexOf('THE GAP');
-    const kbText   = gapIdx !== -1 ? kbRaw.slice(0, gapIdx).trim() : kbRaw.trim();
-    const noKb     = !kbText ||
+    if (hasResearchContext) {
+      // Use the pre-filled research context directly
+      kbSource = 'provided';
+    } else {
+      // ── Run KB search and Internal Bot in PARALLEL ──────────────────────
+      const botQuestion = imageDescription
+        ? `${coreQuestion}\n\nScreenshot context: ${imageDescription}`
+        : coreQuestion;
+
+      const [kbResult, botResult] = await Promise.allSettled([
+        searchFeaturebase(coreQuestion),
+        querySlackBot(botQuestion)
+      ]);
+
+      // Process KB result
+      const kbRaw  = kbResult.status === 'fulfilled' ? kbResult.value : '';
+      const gapIdx = kbRaw.indexOf('THE GAP');
+      const kbText = gapIdx !== -1 ? kbRaw.slice(0, gapIdx).trim() : kbRaw.trim();
+      const noKb   = !kbText ||
                      kbText.toLowerCase().includes('no articles') ||
                      kbText.toLowerCase().includes('none found') ||
                      kbText.toLowerCase().includes('no published') ||
                      kbText.toLowerCase().includes('does not exist');
-    const kbContext = noKb ? '' : kbText;
+      kbContext = noKb ? '' : kbText;
 
-    // Process bot result
-    const botData    = botResult.status === 'fulfilled' ? botResult.value : null;
-    const botAnswer  = botData?.answer || '';
-    const botThreadUrl = botData?.thread_url || '';
+      // Process bot result
+      const botData  = botResult.status === 'fulfilled' ? botResult.value : null;
+      botAnswer      = botData?.answer || '';
+      botThreadUrl   = botData?.thread_url || '';
 
-    // ── Step 3: Build source context — bot is primary, KB supplements ─────
+      if (botAnswer && kbContext)   kbSource = 'both';
+      else if (botAnswer)           kbSource = 'bot';
+      else if (kbContext)           kbSource = 'kb';
+    }
+
+    // ── Step 3: Build source context ──────────────────────────────────────
     let sourceContext = '';
-    let kbSource     = 'none';
 
-    if (botAnswer && kbContext) {
+    if (kbSource === 'provided') {
+      // Research panel already gathered both sources — use them directly
+      sourceContext = `RESEARCH CONTEXT (use this as your source of truth — bot answer takes priority over KB):
+${context}`;
+    } else if (kbSource === 'both') {
       // Best case: both sources — bot answer is primary truth, KB adds article links
       sourceContext = `INTERNAL DOCUMENTATION (primary source — use this for the actual answer):
 ${botAnswer}
 
 KNOWLEDGE BASE CONTEXT (use only for article links to include in your reply):
 ${kbContext}`;
-      kbSource = 'both';
     } else if (botAnswer) {
       // Bot only
       sourceContext = `INTERNAL DOCUMENTATION — use as source of truth:
@@ -476,7 +495,7 @@ Reference the relevant article naturally in your reply with its URL.`;
 
 CONVERSATION:
 ${conversation}
-${context ? `\nEXTRA CONTEXT:\n${context}` : ''}
+${context && kbSource !== 'provided' ? `\nEXTRA CONTEXT:\n${context}` : ''}
 
 TONE: ${toneMap[tone]}
 
@@ -1124,10 +1143,24 @@ document.getElementById('kbCreateTicketBtn').addEventListener('click', () => {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelector('.nav-item[data-tab="reply"]').classList.add('active');
   document.getElementById('tab-reply').classList.add('active');
-  const query = document.getElementById('kbAskInput').value.trim();
-  if (query) {
-    document.getElementById('replyConversation').value = '';
-    document.getElementById('replyContext').value = query;
+
+  const query     = document.getElementById('kbAskInput').value.trim();
+  const botAnswer = document.getElementById('kbBotText').innerText.trim();
+  const kbAnswer  = document.getElementById('kbAnswerText').innerText.trim();
+
+  // Put the question in the conversation field
+  if (query) document.getElementById('replyConversation').value = query;
+
+  // Put the combined research into context so Reply tab skips its own bot query
+  const contextParts = [];
+  if (botAnswer) contextParts.push(`INTERNAL BOT ANSWER:\n${botAnswer}`);
+  if (kbAnswer && !kbAnswer.toLowerCase().includes('no information found')) {
+    contextParts.push(`PUBLIC KB:\n${kbAnswer}`);
   }
+  if (contextParts.length) {
+    document.getElementById('replyContext').value = contextParts.join('\n\n');
+  }
+
   document.getElementById('tab-reply').scrollTo({ top: 0, behavior: 'smooth' });
+  document.getElementById('replyConversation').focus();
 });
