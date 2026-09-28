@@ -25,11 +25,12 @@ exports.handler = async function (event) {
       return { statusCode: 400, body: JSON.stringify({ error: 'message_ts and channel_id required.' }) };
     }
 
-    // Poll for up to 22 seconds (8 attempts × 2.5s + 2s initial wait = ~22s, under 26s limit)
-    await new Promise(r => setTimeout(r, 2000));
+    // Strategy: wait 5s for bot to process acknowledgement, then poll every 3s
+    // Total: 5s + (6 × 3s) = 23s — safely under 26s Netlify limit
+    await new Promise(r => setTimeout(r, 5000));
 
-    const maxAttempts = 8;
-    const delayMs     = 2500;
+    const maxAttempts = 6;
+    const delayMs     = 3000;
 
     for (let i = 0; i < maxAttempts; i++) {
       await new Promise(r => setTimeout(r, delayMs));
@@ -46,7 +47,6 @@ exports.handler = async function (event) {
         if (m.ts === message_ts) return false;
         if (!m.bot_id) return false;
 
-        // Strip Slack emoji codes then check for acknowledgement phrases
         const cleaned = (m.text || '')
           .replace(/:[a-z0-9_+-]+:/g, '')
           .replace(/[^a-z ]/gi, '')
@@ -60,7 +60,6 @@ exports.handler = async function (event) {
 
       if (botReply) {
         let answer = botReply.text || '';
-        // Strip Sources section
         const sourcesIdx = answer.search(/\n\*?Sources?:?\*?/i);
         if (sourcesIdx !== -1) answer = answer.slice(0, sourcesIdx).trim();
 
@@ -75,7 +74,7 @@ exports.handler = async function (event) {
       }
     }
 
-    // Timed out
+    // Timed out — return null so frontend can show KB answer only
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
