@@ -45,18 +45,13 @@ exports.handler = async (event) => {
         const compData = await compResp.json();
         const results = compData.results || [];
 
-        // Prefer exact name match, then priority: supplier > manufacturer > distributor
+        // Only use manufacturer type companies — API requires this
         const exactMatches = results.filter(c =>
           c.name.toLowerCase() === fields.vendor.toLowerCase()
+          && c.type === 'manufacturer'
         );
-        const pool = exactMatches.length > 0 ? exactMatches : results;
-        const typePriority = ['supplier', 'manufacturer', 'distributor'];
-        let match = null;
-        for (const type of typePriority) {
-          match = pool.find(c => c.type === type);
-          if (match) break;
-        }
-        if (!match) match = pool[0];
+        const allMfr = results.filter(c => c.type === 'manufacturer');
+        const match = exactMatches[0] || allMfr[0];
 
         if (match) {
           resolvedFields.vendor = match.id;
