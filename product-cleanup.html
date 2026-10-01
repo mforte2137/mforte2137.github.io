@@ -126,12 +126,12 @@
         <div class="step-panel" id="step-red" style="display:none;">
           <div class="step-panel-header">
             <div class="step-panel-num">Step <span class="step-num-val"></span></div>
-            <h2 class="step-panel-title">Unlist Candidates</h2>
+            <h2 class="step-panel-title">Invalid Part Numbers</h2>
             <div class="step-panel-count"><span id="step-red-count">—</span> products</div>
           </div>
           <div class="step-panel-body">
             <div class="step-guidance">
-              <p class="step-guidance-main">These products <strong>cannot be ordered from any distributor</strong> — either the part number is missing, invalid, or the product doesn't exist in any feed. There's no reason to keep them in your active catalog.</p>
+              <p class="step-guidance-main">These products have <strong>no part number, or a part number that isn't a real orderable product</strong> — such as internal codes, bundle identifiers, or licensing SKUs. They can't be sourced from any distributor and serve no purpose in your active catalog.</p>
               <p class="step-guidance-safe">✓ Safe to unlist — items are not deleted and can be re-listed at any time.</p>
             </div>
             <div class="step-actions-primary">
@@ -180,13 +180,13 @@
         <div class="step-panel" id="step-orange" style="display:none;">
           <div class="step-panel-header">
             <div class="step-panel-num">Step <span class="step-num-val"></span></div>
-            <h2 class="step-panel-title">Likely Unlist</h2>
+            <h2 class="step-panel-title">Not Found in Distribution</h2>
             <div class="step-panel-count"><span id="step-orange-count">—</span> products</div>
           </div>
           <div class="step-panel-body">
             <div class="step-guidance">
-              <p class="step-guidance-main">These products have a valid part number but <strong>aren't found in any distributor feed</strong>. They may be discontinued, legacy hardware, or products you source outside distribution.</p>
-              <p class="step-guidance-safe">✓ Run AI Analysis to get a note on each product explaining why it's not found — then review before unlisting.</p>
+              <p class="step-guidance-main">These products have a valid part number but <strong>aren't found in any distributor feed</strong>. They may be discontinued, end-of-life, or products you source directly outside distribution.</p>
+              <p class="step-guidance-safe">✓ Run AI Analysis to get a note on each product explaining why it's not found — then decide whether to unlist or keep.</p>
             </div>
             <div class="step-actions-primary">
               <button class="btn btn-primary" id="stepOrangeAnalyzeBtn">ANALYZE &amp; REVIEW</button>
