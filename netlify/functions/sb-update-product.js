@@ -36,7 +36,7 @@ exports.handler = async (event) => {
 
   if (fields.vendor && !fields.vendorId && !skipLookup) {
     try {
-      const compUrl = `${tenantUrl}/public-api/company?query=${encodeURIComponent(fields.vendor)}&filters=type:manufacturer&size=5`;
+      const compUrl = `${tenantUrl}/public-api/company?query=${encodeURIComponent(fields.vendor)}&size=20`;
       const compResp = await fetch(compUrl, {
         headers: { 'api-key': apiKey, 'Content-Type': 'application/json' },
       });
@@ -45,30 +45,21 @@ exports.handler = async (event) => {
         const compData = await compResp.json();
         const results = compData.results || [];
 
-        // Find exact match first, then fallback to first result
-        const exact = results.find(c =>
+        // Prefer exact name match, then priority: supplier > manufacturer > distributor
+        const exactMatches = results.filter(c =>
           c.name.toLowerCase() === fields.vendor.toLowerCase()
         );
-        const match = exact || results[0];
+        const pool = exactMatches.length > 0 ? exactMatches : results;
+        const typePriority = ['supplier', 'manufacturer', 'distributor'];
+        let match = null;
+        for (const type of typePriority) {
+          match = pool.find(c => c.type === type);
+          if (match) break;
+        }
+        if (!match) match = pool[0];
 
         if (match) {
-          // Send vendor with company ID — API accepts vendor: <companyId>
           resolvedFields.vendor = match.id;
-        } else {
-          // No manufacturer found — try without type filter
-          const compUrl2 = `${tenantUrl}/public-api/company?query=${encodeURIComponent(fields.vendor)}&size=5`;
-          const compResp2 = await fetch(compUrl2, {
-            headers: { 'api-key': apiKey, 'Content-Type': 'application/json' },
-          });
-          if (compResp2.ok) {
-            const compData2 = await compResp2.json();
-            const results2 = compData2.results || [];
-            const exact2 = results2.find(c =>
-              c.name.toLowerCase() === fields.vendor.toLowerCase()
-            );
-            const match2 = exact2 || results2[0];
-            if (match2) resolvedFields.vendor = match2.id;
-          }
         }
       }
     } catch (e) {
