@@ -13,7 +13,7 @@ exports.handler = async (event) => {
   try { body = JSON.parse(event.body); }
   catch { return { statusCode: 400, body: JSON.stringify({ ok: false, error: 'Invalid JSON.' }) }; }
 
-  const { tenantUrl, apiKey, name, website, city, country, number } = body;
+  const { tenantUrl, apiKey, name, website, street, city, state, zip, country, number } = body;
 
   if (!tenantUrl || !apiKey || !name) {
     return { statusCode: 400, body: JSON.stringify({ ok: false, error: 'tenantUrl, apiKey, and name are required.' }) };
@@ -24,8 +24,13 @@ exports.handler = async (event) => {
     type: 'manufacturer',
     number: number || name.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 20),
     website: website || `https://www.${name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
-    ...(city    && { city }),
-    ...(country && { country }),
+    address: {
+      street: street || '-',
+      city: city || '-',
+      zip: zip || '-',
+      state: state || '-',
+      country: country || 'US',
+    },
   };
 
   try {
