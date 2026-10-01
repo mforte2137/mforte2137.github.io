@@ -65,14 +65,10 @@ exports.handler = async (event) => {
     );
     const pool = exactMatches.length > 0 ? exactMatches : results;
 
-    // Priority: supplier > manufacturer > distributor > other
-    // Supplier type is used by distributor-linked companies in SB
-    const typePriority = ['supplier', 'manufacturer', 'distributor'];
-    let match = null;
-    for (const type of typePriority) {
-      match = pool.find(c => c.type === type);
-      if (match) break;
-    }
+    // Must be manufacturer type — API requires this for vendor field
+    const mfrMatches = pool.filter(c => c.type === 'manufacturer');
+    let match = mfrMatches[0] || null;
+    // Fallback to any match only if no manufacturer found
     if (!match) match = pool[0];
 
     return {
