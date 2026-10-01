@@ -1060,7 +1060,14 @@ function renderMfrGroups(container, groups) {
             if (resp.ok && result.ok) {
               const p = allProducts.find(x => x.id === id);
               if (p) { p.manufacturer = mfrNameToUse; p.mfrMismatch = false; }
-            } else { errors++; }
+            } else {
+              errors++;
+              // Show first error in progress label so we can diagnose
+              if (errors === 1) {
+                document.getElementById('unlistProgressLabel').textContent =
+                  `Error: ${result.error || JSON.stringify(result)}`;
+              }
+            }
           } catch { errors++; }
           done++;
           document.getElementById('unlistProgressBar').style.width =
@@ -1072,18 +1079,17 @@ function renderMfrGroups(container, groups) {
 
       document.getElementById('unlistProgressLabel').textContent = errors === 0
         ? `Done — ${done} products updated to "${mfrNameToUse}".`
-        : `${done - errors} succeeded, ${errors} failed.`;
+        : `${done - errors} succeeded, ${errors} failed. See error above.`;
 
       if (errors === 0) {
         setTimeout(() => { document.getElementById('progressModal').style.display = 'none'; }, 3000);
       } else {
+        // Stay open — add close button so user can read the error
         const closeBtn = document.createElement('button');
         closeBtn.className = 'btn btn-secondary';
         closeBtn.textContent = 'CLOSE';
         closeBtn.style.marginTop = '12px';
-        closeBtn.addEventListener('click', () => {
-          document.getElementById('progressModal').style.display = 'none';
-        });
+        closeBtn.onclick = () => { document.getElementById('progressModal').style.display = 'none'; };
         document.getElementById('progressModal').querySelector('.modal-body').appendChild(closeBtn);
       }
 
