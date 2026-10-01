@@ -1062,10 +1062,16 @@ function renderMfrGroups(container, groups) {
               if (p) { p.manufacturer = mfrNameToUse; p.mfrMismatch = false; }
             } else {
               errors++;
-              // Show first error in progress label so we can diagnose
+              // Show first error detail in a persistent element
               if (errors === 1) {
-                document.getElementById('unlistProgressLabel').textContent =
-                  `Error: ${result.error || JSON.stringify(result)}`;
+                let errEl = document.getElementById('mfrUpdateError');
+                if (!errEl) {
+                  errEl = document.createElement('p');
+                  errEl.id = 'mfrUpdateError';
+                  errEl.style.cssText = 'font-size:11px;color:var(--red);margin-top:8px;font-family:var(--font-mono);word-break:break-all;';
+                  document.getElementById('progressModal').querySelector('.modal-body').appendChild(errEl);
+                }
+                errEl.textContent = `API error: ${result.error || JSON.stringify(result)}`;
               }
             }
           } catch { errors++; }
