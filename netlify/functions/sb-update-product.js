@@ -52,7 +52,8 @@ exports.handler = async (event) => {
         const match = exact || results[0];
 
         if (match) {
-          resolvedFields.vendorId = match.id;
+          // Send vendor with company ID — API accepts vendor: <companyId>
+          resolvedFields.vendor = match.id;
         } else {
           // No manufacturer found — try without type filter
           const compUrl2 = `${tenantUrl}/public-api/company?query=${encodeURIComponent(fields.vendor)}&size=5`;
@@ -66,19 +67,17 @@ exports.handler = async (event) => {
               c.name.toLowerCase() === fields.vendor.toLowerCase()
             );
             const match2 = exact2 || results2[0];
-            if (match2) resolvedFields.vendorId = match2.id;
+            if (match2) resolvedFields.vendor = match2.id;
           }
         }
       }
     } catch (e) {
       console.error('Company lookup failed:', e);
     }
-
-    // Remove the string vendor field — API wants vendorId
-    delete resolvedFields.vendor;
   }
 
-  if (!resolvedFields.vendorId && fields.vendor && !skipLookup) {
+  // If vendor is still a name string (lookup failed), return error
+  if (resolvedFields.vendor === fields.vendor && !skipLookup) {
     return {
       statusCode: 422,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
@@ -108,7 +107,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ ok: true, productId, vendorId: resolvedFields.vendorId }),
+      body: JSON.stringify({ ok: true, productId, vendor: resolvedFields.vendor }),
     };
   } catch (err) {
     return {
