@@ -1551,9 +1551,14 @@ function showDashboard() {
   document.getElementById('wizardTable').style.display = 'none';
   document.getElementById('headerActions').style.display = 'flex';
 
-  // Pass saved step directly into buildWizard so there's no race condition
+  // Only resume saved session if it's for the same tenant
   const saved = getSavedSession();
-  buildWizard(saved?.activeStepId || null);
+  const { tenantUrl } = getCreds();
+  const sameTenant = saved?.tenantUrl?.replace(/\/$/, '') === tenantUrl.replace(/\/$/, '');
+  if (!sameTenant && saved) {
+    clearSavedSession();
+  }
+  buildWizard(sameTenant ? (saved?.activeStepId || null) : null);
 }
 
 function buildWizard(resumeStepId = null) {
