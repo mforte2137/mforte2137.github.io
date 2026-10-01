@@ -33,8 +33,8 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Try manufacturer type first
-    const url = `${tenantUrl}/public-api/company?query=${encodeURIComponent(query)}&filters=type:manufacturer&size=10`;
+    // Search all company types — no filter, get all matches
+    const url = `${tenantUrl}/public-api/company?query=${encodeURIComponent(query)}&size=20`;
     const resp = await fetch(url, {
       headers: { 'api-key': apiKey, 'Content-Type': 'application/json' },
     });
@@ -51,43 +51,34 @@ exports.handler = async (event) => {
     const data = await resp.json();
     const results = data.results || [];
 
-    // Exact match first, then first result
-    const exact = results.find(c => c.name.toLowerCase() === query.toLowerCase());
-    const match = exact || results[0];
-
-    if (match) {
+    if (results.length === 0) {
       return {
         statusCode: 200,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ ok: true, companyId: match.id, companyName: match.name }),
+        body: JSON.stringify({ ok: false, companyId: null, error: `"${query}" not found as a company in Salesbuildr.` }),
       };
     }
 
-    // Fallback — search without type filter
-    const url2 = `${tenantUrl}/public-api/company?query=${encodeURIComponent(query)}&size=10`;
-    const resp2 = await fetch(url2, {
-      headers: { 'api-key': apiKey, 'Content-Type': 'application/json' },
-    });
+    // Exact name matches only
+    const exactMatches = results.filter(c =>
+      c.name.toLowerCase() === query.toLowerCase()
+    );
+    const pool = exactMatches.length > 0 ? exactMatches : results;
 
-    if (resp2.ok) {
-      const data2 = await resp2.json();
-      const results2 = data2.results || [];
-      const exact2 = results2.find(c => c.name.toLowerCase() === query.toLowerCase());
-      const match2 = exact2 || results2[0];
-      if (match2) {
-        return {
-          statusCode: 200,
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-          body: JSON.stringify({ ok: true, companyId: match2.id, companyName: match2.name }),
-        };
-      }
+    // Priority: supplier > manufacturer > distributor > other
+    // Supplier type is used by distributor-linked companies in SB
+    const typePriority = ['supplier', 'manufacturer', 'distributor'];
+    let match = null;
+    for (const type of typePriority) {
+      match = pool.find(c => c.type === type);
+      if (match) break;
     }
+    if (!match) match = pool[0];
 
-    // Not found
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ ok: false, companyId: null, error: `"${query}" not found as a company in Salesbuildr.` }),
+      body: JSON.stringify({ ok: true, companyId: match.id, companyName: match.name, companyType: match.type }),
     };
 
   } catch (err) {
