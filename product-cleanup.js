@@ -954,17 +954,59 @@ function renderMfrGroups(container, groups) {
         const formId = `create-${mfrNameToUse.replace(/[^a-zA-Z0-9]/g, '-')}`;
         noteEl.innerHTML = `
           <div style="margin-bottom:10px;">⚠ <strong>"${escHtml(mfrNameToUse)}"</strong> not found as a manufacturer in Salesbuildr. Create it here:</div>
-          <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:8px;">
             <div>
               <label class="field-label" style="font-size:9px;">COMPANY NAME</label>
-              <input id="${formId}-name" class="connect-input" style="font-size:11px;padding:5px 8px;width:160px;" value="${escHtml(mfrNameToUse)}" />
+              <input id="${formId}-name" class="connect-input" style="font-size:11px;padding:5px 8px;width:100%;" value="${escHtml(mfrNameToUse)}" />
             </div>
             <div>
               <label class="field-label" style="font-size:9px;">WEBSITE</label>
-              <input id="${formId}-website" class="connect-input" style="font-size:11px;padding:5px 8px;width:200px;" placeholder="https://www.example.com" />
+              <input id="${formId}-website" class="connect-input" style="font-size:11px;padding:5px 8px;width:100%;" placeholder="https://www.example.com" />
             </div>
-            <button class="btn btn-primary" id="${formId}-create" style="font-size:10px;padding:6px 12px;">CREATE &amp; UPDATE</button>
+            <div>
+              <label class="field-label" style="font-size:9px;">STREET</label>
+              <input id="${formId}-street" class="connect-input" style="font-size:11px;padding:5px 8px;width:100%;" placeholder="123 Main St" />
+            </div>
+            <div>
+              <label class="field-label" style="font-size:9px;">CITY</label>
+              <input id="${formId}-city" class="connect-input" style="font-size:11px;padding:5px 8px;width:100%;" placeholder="City" />
+            </div>
+            <div>
+              <label class="field-label" style="font-size:9px;">STATE / PROVINCE</label>
+              <input id="${formId}-state" class="connect-input" style="font-size:11px;padding:5px 8px;width:100%;" placeholder="CA" />
+            </div>
+            <div>
+              <label class="field-label" style="font-size:9px;">ZIP / POSTAL</label>
+              <input id="${formId}-zip" class="connect-input" style="font-size:11px;padding:5px 8px;width:100%;" placeholder="12345" />
+            </div>
+            <div>
+              <label class="field-label" style="font-size:9px;">COUNTRY</label>
+              <select id="${formId}-country" class="connect-input" style="font-size:11px;padding:5px 8px;width:100%;">
+                <option value="US">United States</option>
+                <option value="GB">United Kingdom</option>
+                <option value="AU">Australia</option>
+                <option value="NL">Netherlands</option>
+                <option value="DE">Germany</option>
+                <option value="FR">France</option>
+                <option value="CA">Canada</option>
+                <option value="BE">Belgium</option>
+                <option value="SE">Sweden</option>
+                <option value="NO">Norway</option>
+                <option value="DK">Denmark</option>
+                <option value="FI">Finland</option>
+                <option value="IE">Ireland</option>
+                <option value="NZ">New Zealand</option>
+                <option value="SG">Singapore</option>
+                <option value="ZA">South Africa</option>
+                <option value="CH">Switzerland</option>
+                <option value="AT">Austria</option>
+                <option value="ES">Spain</option>
+                <option value="IT">Italy</option>
+                <option value="JP">Japan</option>
+              </select>
+            </div>
           </div>
+          <button class="btn btn-primary" id="${formId}-create" style="font-size:10px;padding:6px 12px;">CREATE &amp; UPDATE</button>
           <div id="${formId}-status" style="font-size:11px;margin-top:6px;color:var(--text-muted);min-height:16px;"></div>`;
         groupEl.appendChild(noteEl);
 
@@ -972,6 +1014,11 @@ function renderMfrGroups(container, groups) {
           document.getElementById(`${formId}-create`)?.addEventListener('click', async () => {
             const name    = document.getElementById(`${formId}-name`)?.value.trim();
             const website = document.getElementById(`${formId}-website`)?.value.trim();
+            const street  = document.getElementById(`${formId}-street`)?.value.trim();
+            const city    = document.getElementById(`${formId}-city`)?.value.trim();
+            const state   = document.getElementById(`${formId}-state`)?.value.trim();
+            const zip     = document.getElementById(`${formId}-zip`)?.value.trim();
+            const country = document.getElementById(`${formId}-country`)?.value.trim();
             const status  = document.getElementById(`${formId}-status`);
             const createBtn = document.getElementById(`${formId}-create`);
             if (!name) { if (status) status.textContent = 'Company name required.'; return; }
@@ -982,7 +1029,7 @@ function renderMfrGroups(container, groups) {
               const cr = await fetch('/api/sb-create-company', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tenantUrl, apiKey, name, website }),
+                body: JSON.stringify({ tenantUrl, apiKey, name, website, street, city, state, zip, country }),
               });
               const cd = await cr.json();
               if (!cd.ok) {
