@@ -1584,7 +1584,7 @@ function getSteps() {
   const steps = [
     {
       id: 'red',
-      label: 'Unlist Candidates',
+      label: 'Invalid Part Numbers',
       count: counts.red,
       show: true,
     },
@@ -1602,7 +1602,7 @@ function getSteps() {
     },
     {
       id: 'orange',
-      label: 'Likely Unlist',
+      label: 'Not in Distribution',
       count: counts.orange,
       show: true,
     },
@@ -1761,7 +1761,7 @@ function wireStepButtons(stepId) {
     if (btn) btn.onclick = () => {
       activeBucketFilter = 'red';
       document.getElementById('bucketFilter').value = 'red';
-      showTableView('UNLIST CANDIDATES');
+      showTableView('INVALID PART NUMBERS');
     };
   }
 
@@ -1790,7 +1790,7 @@ function wireStepButtons(stepId) {
         analyzeBtn.onclick = () => {
           activeBucketFilter = 'orange';
           document.getElementById('bucketFilter').value = 'orange';
-          showTableView('LIKELY UNLIST');
+          showTableView('NOT FOUND IN DISTRIBUTION');
         };
       } else {
         analyzeBtn.textContent = 'ANALYZE & REVIEW';
@@ -1798,7 +1798,7 @@ function wireStepButtons(stepId) {
           await handleAnalyze();
           activeBucketFilter = 'orange';
           document.getElementById('bucketFilter').value = 'orange';
-          showTableView('LIKELY UNLIST');
+          showTableView('NOT FOUND IN DISTRIBUTION');
         };
       }
     }
@@ -1860,7 +1860,7 @@ function renderGroupedView(groupMap) {
 
   document.getElementById('wizardBody').style.display = 'none';
   document.getElementById('wizardTable').style.display = 'block';
-  document.getElementById('tableTitle').textContent = 'LIKELY UNLIST — GROUPED BY THEME';
+  document.getElementById('tableTitle').textContent = 'NOT FOUND IN DISTRIBUTION — GROUPED BY THEME';
   updateTableFinishBtn();
 
   // Replace table content with grouped view
