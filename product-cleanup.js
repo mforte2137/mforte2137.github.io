@@ -1053,8 +1053,7 @@ function renderMfrGroups(container, groups) {
               body: JSON.stringify({
                 tenantUrl, apiKey,
                 productId: id,
-                fields: { vendor: companyId },
-                skipLookup: true,
+                fields: { vendor: mfrNameToUse },
               }),
             });
             const result = await resp.json();
