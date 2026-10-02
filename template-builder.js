@@ -302,13 +302,13 @@ ${paras}
     const grid = $('engGrid');
     grid.innerHTML = ENGAGEMENTS.map((e, i) => `
       <button type="button" class="eng-card" data-key="${e.key}">
-        <div class="eng-thumb" style="background-image:url('${imageUrl(e.image)}'), linear-gradient(135deg, #0b1a33 0%, #1a3a6e 100%);">
+        <div class="eng-thumb" style="background-image:url('${imageUrl(e.image)}'), linear-gradient(135deg, #eaf1fc 0%, #d6e4f8 100%);">
           <span class="eng-thumb-num">${String(i + 1).padStart(2, '0')}</span>
         </div>
         <div class="eng-text"><h3>${esc(e.name)}</h3><p>${esc(e.desc)}</p></div>
       </button>`).join('') + `
       <button type="button" class="eng-card eng-card-custom" data-key="custom">
-        <div class="eng-thumb" style="background-image:url('${imageUrl(CUSTOM_IMAGE)}'), linear-gradient(135deg, #0b1a33 0%, #1a3a6e 100%);">
+        <div class="eng-thumb" style="background-image:url('${imageUrl(CUSTOM_IMAGE)}'), linear-gradient(135deg, #eaf1fc 0%, #d6e4f8 100%);">
           <span class="eng-thumb-num">12</span>
         </div>
         <div class="eng-text"><h3>Custom Engagement</h3><p>Describe your own engagement and the AI writes every widget.</p></div>
@@ -428,7 +428,7 @@ ${paras}
     screenSelect.hidden = true;
     screenBuild.hidden = false;
     $('engName').textContent = eng.name;
-    $('engThumb').style.backgroundImage = `url('${imageUrl(eng.image)}'), linear-gradient(135deg, #0b1a33, #1a3a6e)`;
+    $('engThumb').style.backgroundImage = `url('${imageUrl(eng.image)}'), linear-gradient(135deg, #eaf1fc, #d6e4f8)`;
     renderAllCards();
     updateOutputVisibility();
     updateDelivery();
