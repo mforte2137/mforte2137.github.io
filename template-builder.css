@@ -148,7 +148,7 @@ textarea { resize: vertical; }
 .select-head h2 { font-size: 22px; }
 .select-sub { color: var(--text-2); font-size: 14px; margin-top: 4px; }
 .eng-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 18px;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px;
 }
 .eng-card {
   display: flex; flex-direction: column; text-align: left;
@@ -157,27 +157,26 @@ textarea { resize: vertical; }
   transition: border-color 0.15s;
 }
 .eng-card:hover { border-color: var(--accent-border); }
-.eng-card:hover .eng-thumb::after { opacity: 0.35; }
+.eng-card:hover .eng-thumb { filter: brightness(0.97); }
 .eng-card.active { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+/* Short image strip. Light tint shows until the real hero images are hosted. */
 .eng-thumb {
-  position: relative; aspect-ratio: 16 / 9; width: 100%;
-  background-color: #0b1a33;
-  background-image: linear-gradient(135deg, #0b1a33 0%, #1a3a6e 100%);
+  position: relative; height: 84px; width: 100%;
+  background-color: var(--accent-bg);
+  background-image: linear-gradient(135deg, #eaf1fc 0%, #d6e4f8 100%);
   background-size: cover; background-position: center;
-}
-.eng-thumb::after {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(5,10,20,0) 40%, rgba(5,10,20,0.6) 100%);
-  opacity: 0.5; transition: opacity 0.2s;
+  border-bottom: 1px solid var(--border);
 }
 .eng-thumb-num {
-  position: absolute; left: 12px; bottom: 10px; z-index: 1;
-  font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 12px;
-  color: rgba(255,255,255,0.85);
+  position: absolute; left: 10px; bottom: 8px;
+  font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 11px;
+  color: var(--accent-2); background: rgba(255,255,255,0.92);
+  padding: 2px 8px; border-radius: 20px;
 }
-.eng-text { padding: 12px 14px 14px; }
-.eng-text h3 { font-size: 14px; line-height: 1.3; }
-.eng-text p  { font-size: 13px; color: var(--text-2); margin-top: 4px; line-height: 1.4; }
+.eng-card.active .eng-thumb-num { background: var(--accent); color: #fff; }
+.eng-text { padding: 10px 12px 12px; }
+.eng-text h3 { font-size: 13px; line-height: 1.3; }
+.eng-text p  { font-size: 12px; color: var(--text-2); margin-top: 3px; line-height: 1.4; }
 
 .eng-custom {
   margin-top: 16px; background: var(--bg-panel);
@@ -217,8 +216,8 @@ textarea { resize: vertical; }
 .eng-display { display: flex; gap: 12px; align-items: center; }
 .eng-display-thumb {
   width: 88px; flex-shrink: 0; aspect-ratio: 16 / 9; border-radius: 4px;
-  background-color: #0b1a33; background-image: linear-gradient(135deg, #0b1a33, #1a3a6e);
-  background-size: cover; background-position: center;
+  background-color: var(--accent-bg); background-image: linear-gradient(135deg, #eaf1fc, #d6e4f8);
+  background-size: cover; background-position: center; border: 1px solid var(--border);
 }
 .eng-display-text .section-label { margin-bottom: 2px; }
 .eng-display-name { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 14px; line-height: 1.3; }
@@ -428,6 +427,9 @@ textarea { resize: vertical; }
 .guide dl dd { font-size: 15px; color: var(--text-2); max-width: 70ch; }
 
 /* ── Responsive ──────────────────────────────── */
+@media (max-width: 1100px) {
+  .eng-grid { grid-template-columns: repeat(3, 1fr); }
+}
 @media (max-width: 960px) {
   .eng-grid { grid-template-columns: repeat(2, 1fr); }
   .conn-fields { grid-template-columns: 1fr; }
