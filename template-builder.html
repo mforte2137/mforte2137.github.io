@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Template Builder — Salesbuildr</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="template-builder.css" />
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ── Header ─────────────────────────────────── -->
+  <header class="app-header">
+    <div class="app-header-inner">
+      <div>
+        <p class="app-kicker">Salesbuildr Innovation Suite</p>
+        <h1 class="app-title">Template Builder</h1>
+      </div>
+      <div class="header-actions">
+        <span class="conn-chip" id="connChip" hidden></span>
+        <button type="button" class="btn-secondary" id="helpBtnHeader">? How this works</button>
+        <a class="btn-link" href="template-builder-guide.html" target="_blank" rel="noopener">View full guide →</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══ SCREEN 1 — Connect + select engagement ══════ -->
+  <main class="screen-select" id="screenSelect">
+
+    <section class="conn-card" aria-labelledby="connTitle">
+      <div class="conn-head">
+        <h2 id="connTitle">How will you get templates into Salesbuildr?</h2>
+        <div class="seg" role="radiogroup" aria-label="Delivery method">
+          <button type="button" class="seg-btn" role="radio" data-mode="api" id="modeApiBtn">Push with the Public API</button>
+          <button type="button" class="seg-btn" role="radio" data-mode="copy" id="modeCopyBtn">Copy and paste</button>
+        </div>
+      </div>
+
+      <div class="conn-body" id="connApi">
+        <p class="conn-note">The tool creates the quote template (and optional widget templates) straight in your Salesbuildr account. Create an API key at Admin → Integrations → API Key.</p>
+        <div class="conn-fields">
+          <label class="field">
+            <span class="field-label">Tenant URL</span>
+            <input type="url" id="tenantUrl" placeholder="https://yourcompany.salesbuildr.com" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span class="field-label">API key</span>
+            <input type="password" id="apiKey" placeholder="Paste your API key" autocomplete="off" />
+          </label>
+          <button type="button" class="btn-primary" id="testConnBtn">Save and test</button>
+        </div>
+        <p class="conn-status" id="connStatus" hidden></p>
+      </div>
+
+      <div class="conn-body" id="connCopy" hidden>
+        <p class="conn-note">No API needed. You'll generate the widgets here, then copy their HTML and paste it into a blank quote template you create in Salesbuildr — all at once, or one widget at a time.</p>
+      </div>
+    </section>
+
+    <section aria-labelledby="engTitle">
+      <div class="select-head">
+        <h2 id="engTitle">Choose an engagement</h2>
+        <p class="select-sub">Each preset sets the hero image and tells the AI what is being proposed.</p>
+      </div>
+      <div class="eng-grid" id="engGrid"></div>
+
+      <div class="eng-custom" id="engCustom" hidden>
+        <div class="eng-custom-head">
+          <div>
+            <h3>Custom engagement</h3>
+            <p>Name it and describe it — the AI writes every widget from your description, without preset assumptions.</p>
+          </div>
+        </div>
+        <label class="field">
+          <span class="field-label">Engagement name</span>
+          <input type="text" id="customName" maxlength="60" placeholder="e.g. Managed Print Services" />
+        </label>
+        <label class="field">
+          <span class="field-label">Describe your engagement — what is being proposed, and what problem does it solve?</span>
+          <textarea id="customDescription" rows="3" placeholder="e.g. A managed print service for a multi-site dental group: replacing ageing printers, central billing, and secure print release for patient records."></textarea>
+        </label>
+        <button type="button" class="btn-primary" id="customContinueBtn">Continue with custom engagement</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ══ SCREEN 2 — Split view ═══════════════════════ -->
+  <div class="split-layout" id="screenBuild" hidden>
+
+    <!-- Left: sticky config -->
+    <aside class="split-left" aria-label="Template settings">
+
+      <div class="eng-display">
+        <div class="eng-display-thumb" id="engThumb"></div>
+        <div class="eng-display-text">
+          <span class="section-label">Engagement</span>
+          <p class="eng-display-name" id="engName"></p>
+          <button type="button" class="btn-link" id="changeEngBtn">← Change</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <span class="section-label">Brand colour</span>
+        <div class="swatch-row" id="swatchRow">
+          <button type="button" class="swatch" data-hex="#0f1f3d" style="background:#0f1f3d" title="Navy"     aria-label="Navy"></button>
+          <button type="button" class="swatch" data-hex="#2E74DC" style="background:#2E74DC" title="Blue"     aria-label="Blue"></button>
+          <button type="button" class="swatch" data-hex="#475569" style="background:#475569" title="Slate"    aria-label="Slate"></button>
+          <button type="button" class="swatch" data-hex="#065f46" style="background:#065f46" title="Emerald"  aria-label="Emerald"></button>
+          <button type="button" class="swatch" data-hex="#0f766e" style="background:#0f766e" title="Teal"     aria-label="Teal"></button>
+          <button type="button" class="swatch" data-hex="#991B1B" style="background:#991B1B" title="Crimson"  aria-label="Crimson"></button>
+          <button type="button" class="swatch" data-hex="#92400e" style="background:#92400e" title="Amber"    aria-label="Amber"></button>
+          <button type="button" class="swatch" data-hex="#1a1a1a" style="background:#1a1a1a" title="Charcoal" aria-label="Charcoal"></button>
+        </div>
+        <div class="custom-hex-row">
+          <input type="color" id="colorPicker" value="#2E74DC" aria-label="Pick a custom colour" />
+          <input type="text" id="hexInput" value="#2E74DC" maxlength="7" spellcheck="false" aria-label="Hex colour" />
+        </div>
+      </div>
+
+      <div class="panel">
+        <span class="section-label">Language</span>
+        <div class="lang-toggle" role="radiogroup" aria-label="Language">
+          <button type="button" class="lang-btn" role="radio" data-lang="UK"><span class="flag">🇬🇧</span> UK English</button>
+          <button type="button" class="lang-btn" role="radio" data-lang="US"><span class="flag">🇺🇸</span> US English</button>
+        </div>
+        <p class="field-hint">Sets spelling, regulatory references and tone.</p>
+      </div>
+
+      <div class="panel">
+        <label class="field">
+          <span class="section-label">Your company name</span>
+          <input type="text" id="mspName" placeholder="e.g. Acme IT Solutions" />
+        </label>
+        <p class="field-hint">Names the template. Inside the widgets, <code>{{servicingBranch.name}}</code> fills your name in automatically.</p>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <span class="section-label">Widgets</span>
+          <button type="button" class="btn-link small" id="helpBtnWidgets">? Why this works</button>
+        </div>
+        <div class="widget-checks" id="widgetChecks"></div>
+        <p class="form-error" id="formError" hidden></p>
+      </div>
+
+      <div class="left-actions">
+        <button type="button" class="btn-accent btn-lg" id="generateBtn">Generate template</button>
+        <button type="button" class="btn-secondary" id="clearBtn">Clear</button>
+      </div>
+    </aside>
+
+    <!-- Right: previews -->
+    <section class="split-right" aria-label="Widget previews">
+
+      <div class="empty-state" id="emptyState">
+        <h2>Your template appears here</h2>
+        <p>Set your brand colour, language and company name, choose your widgets, then select <strong>Generate template</strong>. Every widget is editable — click any text to change it.</p>
+      </div>
+
+      <div id="output" hidden>
+        <div class="progress" id="progress">
+          <p class="progress-title" id="progressTitle"></p>
+          <ul class="progress-list" id="progressList"></ul>
+        </div>
+
+        <div class="notice" id="langNotice" hidden>
+          <span id="langNoticeText"></span>
+          <button type="button" class="btn-secondary small" id="langRegenBtn">Regenerate all</button>
+        </div>
+
+        <div class="preview-list" id="previewList"></div>
+
+        <details class="products" id="productsPanel" hidden>
+          <summary>💡 Suggested products for this template</summary>
+          <div class="products-body">
+            <p id="productsIntro"></p>
+            <ul id="productsList"></ul>
+            <p class="field-hint">These are suggestions only — add products from your own catalogue in Salesbuildr. Nothing in this list is pushed.</p>
+          </div>
+        </details>
+
+        <details class="paste-help" id="pasteHelp" hidden>
+          <summary>How to paste into Salesbuildr</summary>
+          <ol>
+            <li>In Salesbuildr, create a new, blank quote template and give it a name — e.g. <em id="pasteHelpName">Security Package — Acme IT</em>.</li>
+            <li>Add a widget to the template for each widget you copy here. Use a widget type that supports products, so reps can add products under each section.</li>
+            <li>Open the widget's editor. If the toolbar has a <strong>source code</strong> button (<code>&lt;&gt;</code>), open it and paste there — that keeps the formatting exactly. Otherwise paste straight into the editor.</li>
+            <li>Save the widget, then come back and select <strong>Copy next</strong> for the following widget. Ticks show which widgets you've already copied.</li>
+          </ol>
+          <p class="field-hint"><strong>Copy all</strong> puts every selected widget into one paste — quickest, but it all lands in a single widget. Copy one at a time if you want reps to add products under each section.</p>
+        </details>
+
+        <!-- Delivery bar -->
+        <div class="delivery" id="delivery" hidden>
+
+          <div class="delivery-row">
+            <div class="delivery-group" id="pushGroup">
+              <span class="delivery-label">Push to Salesbuildr</span>
+              <div class="delivery-btns">
+                <button type="button" class="btn-accent" id="pushTemplateBtn">Create quote template</button>
+                <button type="button" class="btn-secondary" id="pushWidgetsBtn">Create widget templates</button>
+                <button type="button" class="btn-secondary" id="pushBothBtn">Both</button>
+              </div>
+            </div>
+
+            <div class="delivery-group" id="copyGroup">
+              <span class="delivery-label">Copy and paste</span>
+              <div class="delivery-btns">
+                <button type="button" class="btn-secondary" id="copyAllBtn">Copy all</button>
+                <button type="button" class="btn-secondary" id="copyNextBtn">Copy next</button>
+              </div>
+            </div>
+          </div>
+
+          <p class="delivery-switch" id="deliverySwitch"></p>
+
+          <!-- Inline credentials (API mode, creds missing) -->
+          <div class="creds-inline" id="credsInline" hidden>
+            <p>Enter your Salesbuildr details to push. They're saved in this browser only.</p>
+            <div class="creds-fields">
+              <input type="url" id="credsTenantUrl" placeholder="https://yourcompany.salesbuildr.com" />
+              <input type="password" id="credsApiKey" placeholder="API key" />
+              <button type="button" class="btn-primary" id="credsSaveBtn">Save and push</button>
+              <button type="button" class="btn-secondary" id="credsCancelBtn">Cancel</button>
+            </div>
+          </div>
+
+          <!-- Name conflict -->
+          <div class="conflict" id="conflictPanel" hidden>
+            <p id="conflictText"></p>
+            <div class="delivery-btns">
+              <button type="button" class="btn-primary" id="conflictUpdateBtn">Update existing</button>
+              <button type="button" class="btn-secondary" id="conflictNewBtn">Create new copy</button>
+              <button type="button" class="btn-secondary" id="conflictCancelBtn">Cancel</button>
+            </div>
+          </div>
+
+          <p class="push-status" id="pushStatus" hidden></p>
+
+
+          <div class="after-push" id="afterPush" hidden>
+            <button type="button" class="btn-primary" id="anotherBtn">Generate another template</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ══ Reference panel (slide-in, non-blocking) ═══ -->
+  <aside class="ref-panel" id="refPanel" hidden aria-labelledby="refTitle">
+    <div class="ref-head">
+      <h2 id="refTitle">Why this works</h2>
+      <button type="button" class="ref-close" id="refCloseBtn" aria-label="Close">×</button>
+    </div>
+    <div class="ref-body">
+      <p>Most MSP proposals fail before they're read. Pricing on page one. Legal on page two. The customer hasn't been given a single reason to care yet.</p>
+
+      <h3>The 8 widgets — and what each one does for the sale</h3>
+      <dl class="ref-list">
+        <dt>Banner</dt><dd>Sets the visual tone immediately. Professional, branded, engagement-specific.</dd>
+        <dt>Cover Letter</dt><dd>The personal opening. Uses the client's name, written by a named person. Signals care.</dd>
+        <dt>Executive Summary</dt><dd>For busy decision-makers who won't read everything. One page. Three outcomes.</dd>
+        <dt>W1 Their Situation</dt><dd>Shows the customer you've listened. They read their own reality back — that alone sets you apart.</dd>
+        <dt>W2 Why Now</dt><dd>Creates urgency without pressure. Connects the cost of inaction to something already happening in their world.</dd>
+        <dt>W3 What We Do</dt><dd>Positions you as the expert. Not a feature list — a clear explanation of the outcome they're buying.</dd>
+        <dt>W4 Why Us</dt><dd>Answers the question every buyer is silently asking. Differentiates on trust and track record, not price.</dd>
+        <dt>W5 Next Steps</dt><dd>Removes the last objection before they sign. Makes it easy to say yes.</dd>
+      </dl>
+
+      <h3>Before you send</h3>
+      <p>Check the statistic in W2 and its source, and add your real certifications and track record to W4. The AI deliberately leaves those generic so nothing is made up.</p>
+
+      <h3>After you push</h3>
+      <ol>
+        <li>Open Salesbuildr → Templates and find your new template.</li>
+        <li>Start a new quote from it.</li>
+        <li>Use the Add Products option on each widget to add your services and pricing.</li>
+        <li>Edit any widget copy that needs personalising for this client.</li>
+        <li>Send.</li>
+      </ol>
+
+      <h3>No Public API?</h3>
+      <p>Choose <strong>Copy and paste</strong>. Create a blank quote template in Salesbuildr, then copy the widgets here — all at once, or one at a time with <strong>Copy next</strong> — and paste each into a widget in your template.</p>
+
+      <p class="field-hint">The suggested products list is a starting point only — add from your own catalogue, not from the list.</p>
+      <p><a class="btn-link" href="template-builder-guide.html" target="_blank" rel="noopener">Read the full guide →</a></p>
+    </div>
+  </aside>
+
+</div>
+<script src="template-builder.js"></script>
+</body>
+</html>
