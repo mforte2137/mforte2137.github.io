@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Template Builder Guide — Salesbuildr</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="template-builder.css" />
+</head>
+<body>
+<div class="app-shell">
+  <header class="app-header">
+    <div class="app-header-inner">
+      <div>
+        <p class="app-kicker">Salesbuildr Innovation Suite</p>
+        <h1 class="app-title">Template Builder Guide</h1>
+      </div>
+      <div class="header-actions">
+        <a class="btn-primary" href="template-builder.html" style="text-decoration:none;">Open Template Builder</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="guide">
+    <h1>Build a complete quote template in five minutes</h1>
+    <p class="lede">Template Builder answers the question every new Salesbuildr customer asks: “I need some templates — where do I start?” Pick an engagement, set your brand, and get a ready-to-use quote template with a banner, cover letter, executive summary and the five proposal widgets that win deals.</p>
+
+    <nav class="guide-toc" aria-label="Contents">
+      <ol>
+        <li><a href="#intro">Introduction</a></li>
+        <li><a href="#framework">The 5W framework</a></li>
+        <li><a href="#presets">Engagement presets</a></li>
+        <li><a href="#branding">Branding</a></li>
+        <li><a href="#language">UK vs US English</a></li>
+        <li><a href="#delivery">Getting it into Salesbuildr</a></li>
+        <li><a href="#after">After you push</a></li>
+        <li><a href="#products">The suggested products list</a></li>
+        <li><a href="#customising">Customising widget copy</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ol>
+    </nav>
+
+    <section id="intro">
+      <h2>1. Introduction</h2>
+      <p>Most MSP proposals fail before they’re read. Pricing on page one. Legal on page two. The customer hasn’t been given a single reason to care yet.</p>
+      <p>Template Builder fixes the order. Every template it creates tells a story first — what the customer is dealing with, why it matters now, what you’ll do and why they should trust you — so by the time they reach your products and pricing, they already want to say yes.</p>
+      <p>It’s built for two people: Salesbuildr CS agents giving a new tenant three or four starter templates during onboarding, and MSPs who want a professional template for a new engagement type without building it widget by widget.</p>
+      <h3>How it works</h3>
+      <ol class="steps">
+        <li>Choose how the template gets into Salesbuildr — push with the Public API, or copy and paste.</li>
+        <li>Pick one of 11 engagement presets, or describe a custom engagement.</li>
+        <li>Set your brand colour, language and company name.</li>
+        <li>Choose which of the 8 widgets to include (all are on by default).</li>
+        <li>Generate, review and edit the widgets in place.</li>
+        <li>Push to Salesbuildr, or copy the widgets and paste them into a blank template.</li>
+      </ol>
+    </section>
+
+    <section id="framework">
+      <h2>2. The 5W framework</h2>
+      <p>The heart of every template is five widgets that answer, in order, the questions a buyer silently asks while reading a proposal.</p>
+      <dl>
+        <dt><span class="wtag">W1</span> Their Situation</dt>
+        <dd>Shows the customer you’ve listened. It mirrors their reality back in their own terms — the pressures common to this kind of engagement. When a buyer reads their own situation described accurately, you’ve already separated yourself from every proposal that opens with a product list.</dd>
+        <dt><span class="wtag">W2</span> Why Now</dt>
+        <dd>Creates urgency without pressure. It connects the cost of doing nothing to something already happening in their world — a trend, a regulation, a rising risk — and closes with what each month of waiting costs.</dd>
+        <dt><span class="wtag">W3</span> What We Do</dt>
+        <dd>Positions you as the expert. Not a feature list: a clear explanation of the outcome they’re buying, how the engagement runs in phases, and what working with you feels like.</dd>
+        <dt><span class="wtag">W4</span> Why Us</dt>
+        <dd>Answers “why should I trust you with this?” It differentiates on accountability, method and track record — never on price.</dd>
+        <dt><span class="wtag">W5</span> Next Steps</dt>
+        <dd>Removes the last objection. Three simple steps — what happens when they agree, what you do first, what they need to do — so saying yes feels easy.</dd>
+      </dl>
+      <h3>The supporting widgets</h3>
+      <dl>
+        <dt>Banner Image</dt>
+        <dd>A cinematic, engagement-specific hero image with your company name and the engagement title. Sets a professional tone in the first second.</dd>
+        <dt>Cover Letter</dt>
+        <dd>A personal opening addressed to the client contact by first name and signed by the rep who creates the quote.</dd>
+        <dt>Executive Summary</dt>
+        <dd>One page for the decision-maker who won’t read everything: what the engagement delivers, three outcomes, and how to think about the investment.</dd>
+      </dl>
+      <div class="callout"><p><strong>When to drop widgets.</strong> For a small add-on sale to an existing client, W1 and the cover letter can feel heavy — untick them. For a new-logo deal, keep all eight.</p></div>
+    </section>
+
+    <section id="presets">
+      <h2>3. Engagement presets</h2>
+      <p>Each preset sets the banner image and tells the AI exactly what is being proposed, so the copy is specific to that engagement rather than generic.</p>
+      <table>
+        <thead><tr><th>Preset</th><th>Covers</th></tr></thead>
+        <tbody>
+          <tr><td>Managed IT Services — New Client</td><td>Taking over day-to-day IT: helpdesk, monitoring, patching, security baseline and strategic planning.</td></tr>
+          <tr><td>Microsoft 365 Licensing & Migration</td><td>Moving email and files to Microsoft 365, rightsizing licences and securing the tenant.</td></tr>
+          <tr><td>Microsoft Copilot / AI Rollout</td><td>Preparing data, permissions and people for Copilot and practical AI adoption.</td></tr>
+          <tr><td>Network Refresh</td><td>Replacing ageing switches, firewalls and Wi-Fi with a reliable, documented network.</td></tr>
+          <tr><td>Security Package</td><td>Layered protection: endpoint, email security, MFA, awareness training and monitoring.</td></tr>
+          <tr><td>Backup & Disaster Recovery</td><td>Tested backups and a recovery plan the business can rely on.</td></tr>
+          <tr><td>Cyber Insurance Readiness</td><td>Meeting insurer security requirements to obtain or renew cover on good terms.</td></tr>
+          <tr><td>Cloud Migration (Azure / Hybrid)</td><td>Moving servers and workloads to Azure or a hybrid model with minimal disruption.</td></tr>
+          <tr><td>Hardware Refresh</td><td>Replacing end-of-life laptops, desktops and servers on a planned lifecycle.</td></tr>
+          <tr><td>VoIP / Phone System</td><td>A modern cloud phone system with mobility, call handling and a smooth number port.</td></tr>
+          <tr><td>Compliance Engagement</td><td>Meeting a regulatory or certification standard with documented controls and evidence.</td></tr>
+          <tr><td>Custom Engagement</td><td>Anything else. Name it and describe what’s being proposed and the problem it solves — the AI writes every widget from your description.</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:12px;">Onboarding a new tenant? Generate one template, push it, then select <strong>Generate another template</strong>. Your branding and Salesbuildr details are kept, so the next one takes a minute.</p>
+    </section>
+
+    <section id="branding">
+      <h2>4. Branding</h2>
+      <p>Your brand colour is applied to the gradient headers, section labels, accent borders, numbered steps and badges in every widget, and to the accent text on the banner. Changing it updates every preview instantly — no regeneration — and keeps any edits you’ve made.</p>
+      <p>Choose a colour three ways: one of eight presets, the colour picker square (your operating system’s full picker), or by typing a hex code such as <code>#2E74DC</code> (the <code>#</code> is optional).</p>
+      <h3>Finding your hex code</h3>
+      <ul>
+        <li>Ask whoever looks after your brand, or check your brand guidelines.</li>
+        <li>Open your website, right-click your logo or a brand-coloured button, choose Inspect, and look for a colour value beginning with <code>#</code>.</li>
+        <li>Use a free colour-picker browser extension on your own website.</li>
+      </ul>
+      <p>Mid to dark colours work best — the headers use white text.</p>
+    </section>
+
+    <section id="language">
+      <h2>5. UK vs US English</h2>
+      <p>Pick the market your customers are in. The choice is passed to the AI as a firm instruction, so it applies across every widget.</p>
+      <table>
+        <thead><tr><th></th><th>🇬🇧 UK English</th><th>🇺🇸 US English</th></tr></thead>
+        <tbody>
+          <tr><td>Spelling</td><td>organisation, colour, licence, recognise</td><td>organization, color, license, recognize</td></tr>
+          <tr><td>Regulation</td><td>Cyber Essentials, ICO, UK GDPR, NCSC guidance</td><td>HIPAA, FTC Safeguards Rule, NIST CSF, state privacy laws</td></tr>
+          <tr><td>Tone</td><td>Professional, slightly more formal</td><td>Direct and confident</td></tr>
+          <tr><td>Sign-off</td><td>Kind regards</td><td>Best regards</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:12px;">Dates such as the quote expiry use Salesbuildr’s own merge tag, so they follow your tenant’s date settings. If you switch language after generating, the tool reminds you to regenerate.</p>
+    </section>
+
+    <section id="delivery">
+      <h2>6. Getting it into Salesbuildr</h2>
+      <p>There are two ways, and you choose on the first screen. You can switch at any time from the bar under the previews.</p>
+
+      <h3>Push with the Public API</h3>
+      <p>Enter your tenant URL and an API key (Admin → Integrations → API Key). They’re saved in your browser only and shared with the other Innovation Suite tools. Then choose:</p>
+      <ul>
+        <li><strong>Create quote template</strong> — one template containing every selected widget, in order, named “Engagement — Your Company”. This is the one most people want.</li>
+        <li><strong>Create widget templates</strong> — each widget saved separately (e.g. “Security Package – Why Now”) so you can mix and match them in any quote.</li>
+        <li><strong>Both</strong> — the template and the individual widgets in one go. Best for onboarding.</li>
+      </ul>
+      <p>Everything is validated with Salesbuildr before it’s created. If a template with the same name already exists, you choose whether to update it or create a new copy.</p>
+
+      <h3>Copy and paste (no Public API)</h3>
+      <p>Not every Salesbuildr plan includes the Public API. You can still use every widget:</p>
+      <ol class="steps">
+        <li>In Salesbuildr, create a new, blank quote template and name it — e.g. “Security Package — Acme IT”.</li>
+        <li>Back in Template Builder, choose how to copy:
+          <ul>
+            <li><strong>Copy all</strong> — every selected widget in one go (the button shows how many). Fastest, but everything lands in one widget.</li>
+            <li><strong>Copy next</strong> — copies one widget at a time, in template order, and tells you which one you’ve copied (“2 of 8”). Each widget card also has its own <strong>Copy HTML</strong> button, and a tick shows what you’ve already copied.</li>
+          </ul>
+        </li>
+        <li>In your Salesbuildr template, add a widget for each one you paste. Use a widget type that supports products, so reps can add products under each section.</li>
+        <li>Open the widget’s editor. If the toolbar has a source code button (<code>&lt;&gt;</code>), paste there — it keeps the formatting exactly. Otherwise paste straight into the editor.</li>
+        <li>Save, return to Template Builder and select <strong>Copy next</strong> until every widget is in.</li>
+      </ol>
+      <div class="callout"><p><strong>Tip:</strong> copying one widget at a time takes a few minutes longer but gives a much better template — reps can add products under W3, for example, right where the solution is described.</p></div>
+    </section>
+
+    <section id="after">
+      <h2>7. After you push</h2>
+      <ol class="steps">
+        <li>Open Salesbuildr → Templates and find your new template.</li>
+        <li>Start a new quote from it.</li>
+        <li>Use the Add Products option on each widget to add your services and pricing.</li>
+        <li>Edit any copy that needs personalising for this client.</li>
+        <li>Send.</li>
+      </ol>
+      <p>Merge tags such as <code>{{company.name}}</code> (the client), <code>{{servicingBranch.name}}</code> (you), <code>{{contact.firstName}}</code> and <code>{{creator.fullName}}</code> are filled in automatically when the quote is viewed — leave them in place.</p>
+    </section>
+
+    <section id="products">
+      <h2>8. The suggested products list</h2>
+      <p>After generating, a collapsible panel lists the products and services MSPs typically include for that engagement — for example EDR, email security and awareness training for a Security Package.</p>
+      <p>It’s a prompt, not a catalogue. Nothing in the list is pushed to Salesbuildr. Add products from your own catalogue, at your own pricing, using the vendors you actually resell.</p>
+    </section>
+
+    <section id="customising">
+      <h2>9. Customising widget copy</h2>
+      <p>Every widget is editable in place — click any text in the preview and type. Edits are kept if you change the brand colour and are saved in your browser as you go. Regenerating a widget replaces your edits to that widget only.</p>
+      <table>
+        <thead><tr><th>Widget</th><th>Always personalise</th><th>Usually fine as generated</th></tr></thead>
+        <tbody>
+          <tr><td>Cover Letter</td><td>Anything that should sound like you</td><td>Structure, merge tags, sign-off</td></tr>
+          <tr><td>Executive Summary</td><td>Outcomes, if you have proof points</td><td>Investment framing</td></tr>
+          <tr><td>W1 Their Situation</td><td>Pain points you hear most from your clients</td><td>Headline, intro</td></tr>
+          <tr><td>W2 Why Now</td><td><strong>Check the statistic and source</strong> before sending</td><td>Risks and closing line</td></tr>
+          <tr><td>W3 What We Do</td><td>Phase names, to match how you actually deliver</td><td>Intro and experience</td></tr>
+          <tr><td>W4 Why Us</td><td><strong>Add your real certifications, years in business and results</strong></td><td>Overall structure</td></tr>
+          <tr><td>W5 Next Steps</td><td>Steps, if your onboarding differs</td><td>Closing line, footer</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:12px;">W4 is deliberately generic: the AI is told never to invent credentials, client numbers or testimonials, so nothing untrue ends up in front of a customer.</p>
+    </section>
+
+    <section id="faq">
+      <h2>10. FAQ</h2>
+      <dl>
+        <dt>Do I need the Salesbuildr Public API?</dt>
+        <dd>No. Choose “Copy and paste” and paste the widgets into a template you create yourself. The API just saves you the pasting.</dd>
+        <dt>Where are my API key and tenant URL stored?</dt>
+        <dd>In your browser only. They’re sent to Salesbuildr through our server when you push, and are never saved on the server.</dd>
+        <dt>Why doesn’t the tool fill in my company name automatically?</dt>
+        <dd>Salesbuildr’s company endpoint lists your customers, not your own business. Type it once and the tool remembers it. Inside the widgets, <code>{{servicingBranch.name}}</code> fills in your name automatically anyway.</dd>
+        <dt>The banner image doesn’t show in the PDF or email.</dt>
+        <dd>Some email clients and PDF renderers ignore background images. The banner falls back to a dark navy panel so the text stays readable. It always shows in Salesbuildr’s web quote view.</dd>
+        <dt>Can I edit the template after pushing?</dt>
+        <dd>Yes — it’s a normal Salesbuildr template. Edit it in Salesbuildr like any other.</dd>
+        <dt>A widget failed to generate.</dt>
+        <dd>Select “Try again” on that widget. The others are unaffected.</dd>
+        <dt>I closed the tab. Is my work lost?</dt>
+        <dd>No. Your current template and edits are saved in your browser and restored when you return.</dd>
+        <dt>How is this different from the Proposal Widget Builder?</dt>
+        <dd>The Proposal Widget Builder creates a bespoke proposal for one client. Template Builder creates reusable templates you start every quote of that type from.</dd>
+      </dl>
+    </section>
+  </main>
+</div>
+</body>
+</html>
